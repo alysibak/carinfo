@@ -81,3 +81,63 @@ export async function fetchVehiclesByMakeModelYear(
     return [];
   }
 }
+
+/**
+ * Fetch all models for a specific make and year
+ */
+export async function fetchModelsForMakeYear(make: string, year: number): Promise<NHTSAModel[]> {
+  try {
+    const response = await axios.get(
+      `${NHTSA_BASE_URL}/GetModelsForMakeYear/make/${encodeURIComponent(make)}/modelyear/${year}?format=json`
+    );
+    return response.data.Results || [];
+  } catch (error) {
+    console.error(`Error fetching models for ${make} ${year}:`, error);
+    return [];
+  }
+}
+
+/**
+ * Fetch safety ratings for a specific make/model/year
+ */
+export async function fetchSafetyRatings(make: string, model: string, year: number): Promise<any> {
+  try {
+    const response = await axios.get(
+      `https://api.nhtsa.gov/SafetyRatings/modelyear/${year}/make/${encodeURIComponent(make)}/model/${encodeURIComponent(model)}?format=json`
+    );
+    return response.data.Results || [];
+  } catch (error) {
+    console.error(`Error fetching safety ratings for ${make} ${model} ${year}:`, error);
+    return [];
+  }
+}
+
+/**
+ * Fetch detailed vehicle specifications using WMI (World Manufacturer Identifier)
+ */
+export async function fetchVehicleSpecifications(make: string, model: string, year: number): Promise<any> {
+  try {
+    const response = await axios.get(
+      `${NHTSA_BASE_URL}/GetVehicleVariableValuesList/make/${encodeURIComponent(make)}/model/${encodeURIComponent(model)}/year/${year}?format=json`
+    );
+    return response.data.Results || [];
+  } catch (error) {
+    console.error(`Error fetching specifications for ${make} ${model} ${year}:`, error);
+    return [];
+  }
+}
+
+/**
+ * Fetch all makes for a specific year
+ */
+export async function fetchMakesForYear(year: number): Promise<NHTSAMake[]> {
+  try {
+    const response = await axios.get(
+      `${NHTSA_BASE_URL}/GetMakesForVehicleType/car?year=${year}&format=json`
+    );
+    return response.data.Results || [];
+  } catch (error) {
+    console.error(`Error fetching makes for year ${year}:`, error);
+    return [];
+  }
+}
