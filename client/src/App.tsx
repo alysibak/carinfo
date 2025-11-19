@@ -1,5 +1,4 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Header from './components/Header';
 import Landing from './pages/Landing';
 import Explore from './pages/Explore';
 import VehicleGrid from './pages/VehicleGrid';
@@ -10,8 +9,7 @@ import Compare from './pages/Compare';
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-slate-900">
-        <Header />
+      <div className="min-h-screen bg-black">
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/explore/:category" element={<Explore />} />

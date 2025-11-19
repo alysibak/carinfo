@@ -2,26 +2,24 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import * as api from '../services/api';
 import type { CarSpecs, SearchQuery } from '../types/car.types';
-import { getCarImageUrl } from '../utils/carImages';
 
 export default function VehicleGrid() {
   const { category, subcategory } = useParams<{ category: string; subcategory: string }>();
   const [cars, setCars] = useState<CarSpecs[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState<'year' | 'horsepower' | 'price'>('year');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     loadVehicles();
-  }, [category, subcategory, sortBy, sortOrder]);
+  }, [category, subcategory]);
 
   const loadVehicles = async () => {
     setLoading(true);
 
     const query: SearchQuery = {
       filters: {},
-      sort: { field: sortBy, order: sortOrder },
+      sort: { field: 'year', order: 'desc' },
       limit: 100,
     };
 
@@ -51,7 +49,7 @@ export default function VehicleGrid() {
         '1990s': { min: 1995, max: 1999 },
         '2000s': { min: 2000, max: 2009 },
         '2010s': { min: 2010, max: 2019 },
-        '2020s': { min: 2020, max: 2024 },
+        '2020s': { min: 2020, max: 2025 },
       };
       query.filters!.year = eraRanges[subcategory!];
     }
@@ -61,162 +59,148 @@ export default function VehicleGrid() {
     setLoading(false);
   };
 
-  const getCategoryPath = () => {
-    const names: Record<string, Record<string, string>> = {
-      'body-style': {
-        'sedan': 'Sedans',
-        'suv': 'SUVs',
-        'truck': 'Trucks',
-        'coupe': 'Coupes',
-        'hatchback': 'Hatchbacks',
-        'wagon': 'Wagons',
-        'convertible': 'Convertibles',
-        'minivan': 'Minivans',
-      },
-      'era': {
-        '1990s': '1990s Classics',
-        '2000s': '2000s Evolution',
-        '2010s': '2010s Innovation',
-        '2020s': '2020s Future',
-      },
-    };
-
-    if (category === 'brand') {
-      return subcategory!.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-    }
-
-    return names[category!]?.[subcategory!] || subcategory;
+  const getCategoryTitle = () => {
+    return subcategory?.toUpperCase().replace(/-/g, ' ') || '';
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <svg className="animate-spin h-16 w-16 text-blue-500 mx-auto mb-4" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-          </svg>
-          <div className="text-slate-400 text-xl">Loading vehicles...</div>
+          <div className="inline-block w-16 h-16 border-2 border-zinc-800 border-t-white rounded-full animate-spin mb-4" />
+          <p className="text-xs tracking-[0.3em] text-zinc-700 uppercase">Loading</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900">
-      <div className="container mx-auto px-4 py-8">
-        {/* Breadcrumb & Back */}
-        <div className="flex items-center justify-between mb-8">
+    <div className="min-h-screen bg-black text-white">
+      {/* Header Section */}
+      <section className="h-screen flex flex-col items-center justify-center relative overflow-hidden border-b border-zinc-800">
+        <div className="absolute inset-0 bg-gradient-to-b from-black via-zinc-900 to-black opacity-50" />
+
+        <div className="relative z-10 text-center px-8 max-w-6xl w-full">
+          {/* Back Link */}
           <Link
             to={`/explore/${category}`}
-            className="inline-flex items-center text-slate-400 hover:text-white transition group"
+            className="inline-flex items-center gap-3 text-xs tracking-[0.3em] text-zinc-600 hover:text-white transition-colors mb-12 group"
           >
-            <svg className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <svg className="w-6 h-6 group-hover:-translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
             </svg>
-            Back
+            <span>BACK</span>
           </Link>
 
-          <div className="flex items-center space-x-4">
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'year' | 'horsepower' | 'price')}
-              className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="year">Sort by Year</option>
-              <option value="horsepower">Sort by Power</option>
-              <option value="price">Sort by Price</option>
-            </select>
-
-            <button
-              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              className="p-2 bg-slate-800 border border-slate-700 rounded-lg hover:bg-slate-700 transition"
-            >
-              {sortOrder === 'desc' ? (
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              ) : (
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                </svg>
-              )}
-            </button>
+          <div className="overflow-hidden mb-8">
+            <h1 className="text-7xl md:text-8xl font-black tracking-tighter">
+              {getCategoryTitle()}
+            </h1>
           </div>
-        </div>
 
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            {getCategoryPath()}
-          </h1>
-          <p className="text-xl text-slate-400">
-            {cars.length} vehicles found
+          <div className="h-px w-48 bg-gradient-to-r from-transparent via-zinc-700 to-transparent mx-auto mb-8" />
+
+          <p className="text-sm tracking-[0.3em] text-zinc-600 uppercase mb-8">
+            {cars.length} Vehicles Available
           </p>
+
+          {cars.length === 0 && (
+            <div className="mt-12">
+              <p className="text-2xl font-light tracking-wider text-zinc-700 uppercase">
+                No vehicles found
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* Vehicle Grid */}
-        {cars.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {cars.map((car, index) => (
-              <div
-                key={car.id}
-                onClick={() => navigate(`/car/${car.id}`)}
-                className="group cursor-pointer bg-slate-800 rounded-xl overflow-hidden border-2 border-slate-700 hover:border-blue-500 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl animate-slide-up"
-                style={{ animationDelay: `${index * 30}ms` }}
-              >
-                {/* Image */}
-                <div className="relative h-48 overflow-hidden bg-gradient-to-br from-slate-700 to-slate-900">
-                  <img
-                    src={getCarImageUrl(car.make, car.model, car.year)}
-                    alt={`${car.year} ${car.make} ${car.model}`}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 to-transparent"></div>
-
-                  {/* Year badge */}
-                  <div className="absolute bottom-3 left-3 bg-blue-600 px-3 py-1 rounded-full text-white text-sm font-bold">
-                    {car.year}
-                  </div>
-                </div>
-
-                {/* Info */}
-                <div className="p-5">
-                  <h3 className="text-xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">
-                    {car.make} {car.model}
-                  </h3>
-
-                  <div className="space-y-2 text-sm mb-4">
-                    <div className="flex justify-between text-slate-400">
-                      <span>Engine</span>
-                      <span className="text-white font-semibold">{car.engine.horsepower} HP</span>
-                    </div>
-                    <div className="flex justify-between text-slate-400">
-                      <span>0-60 mph</span>
-                      <span className="text-white font-semibold">
-                        {car.performance.zeroToSixty ? `${car.performance.zeroToSixty}s` : 'N/A'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-700">
-                    <span className="text-slate-400">View Details</span>
-                    <svg className="w-5 h-5 text-blue-400 group-hover:translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-20">
-            <div className="text-6xl mb-4">🔍</div>
-            <h2 className="text-2xl font-bold text-white mb-2">No vehicles found</h2>
-            <p className="text-slate-400">Try adjusting your selection</p>
+        {/* Scroll Indicator */}
+        {cars.length > 0 && (
+          <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 animate-bounce">
+            <div className="w-px h-16 bg-gradient-to-b from-white to-transparent" />
           </div>
         )}
-      </div>
+      </section>
+
+      {/* Vehicle List - Full Screen Sections */}
+      {cars.map((car, index) => (
+        <div
+          key={car.id}
+          onClick={() => navigate(`/car/${car.id}`)}
+          className="block"
+          onMouseEnter={() => setHoveredIndex(index)}
+          onMouseLeave={() => setHoveredIndex(null)}
+        >
+          <section className="h-screen flex items-center justify-center relative overflow-hidden border-b border-zinc-800 group cursor-pointer">
+            {/* Background Effect */}
+            <div
+              className={`absolute inset-0 bg-white transition-opacity duration-700 ${
+                hoveredIndex === index ? 'opacity-5' : 'opacity-0'
+              }`}
+            />
+
+            {/* Grid Pattern */}
+            <div className="absolute inset-0 opacity-5">
+              <div className="absolute inset-0" style={{
+                backgroundImage: 'linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px)',
+                backgroundSize: '50px 50px'
+              }} />
+            </div>
+
+            {/* Content */}
+            <div className="relative z-10 text-center px-8 max-w-5xl">
+              {/* Year */}
+              <div className="mb-6">
+                <p className="text-7xl md:text-8xl font-black text-zinc-900 group-hover:text-zinc-800 transition-colors duration-700">
+                  {car.year}
+                </p>
+              </div>
+
+              {/* Make & Model */}
+              <div className="mb-8">
+                <h2 className="text-5xl md:text-7xl font-black tracking-tighter group-hover:tracking-wider transition-all duration-700 mb-2">
+                  {car.make.toUpperCase()}
+                </h2>
+                <p className="text-3xl md:text-5xl font-light tracking-[0.2em] text-zinc-500 group-hover:text-zinc-400 transition-colors duration-700">
+                  {car.model}
+                </p>
+              </div>
+
+              {/* Divider */}
+              <div className={`h-px w-96 mx-auto mb-8 transition-all duration-700 ${
+                hoveredIndex === index
+                  ? 'bg-gradient-to-r from-transparent via-white to-transparent'
+                  : 'bg-gradient-to-r from-transparent via-zinc-800 to-transparent'
+              }`} />
+
+              {/* Specs */}
+              <div className="grid grid-cols-3 gap-12 mb-8">
+                <div>
+                  <p className="text-xs tracking-[0.3em] text-zinc-700 mb-2 uppercase">Power</p>
+                  <p className="text-2xl font-bold">{car.engine.horsepower}<span className="text-sm text-zinc-600 ml-1">HP</span></p>
+                </div>
+                <div>
+                  <p className="text-xs tracking-[0.3em] text-zinc-700 mb-2 uppercase">Engine</p>
+                  <p className="text-2xl font-bold">{car.engine.displacement}</p>
+                </div>
+                <div>
+                  <p className="text-xs tracking-[0.3em] text-zinc-700 mb-2 uppercase">Drive</p>
+                  <p className="text-2xl font-bold">{car.driveType}</p>
+                </div>
+              </div>
+
+              {/* Enter Arrow */}
+              <div className={`inline-flex items-center gap-4 text-xs tracking-[0.3em] transition-all duration-700 ${
+                hoveredIndex === index ? 'text-white translate-x-4' : 'text-zinc-700 translate-x-0'
+              }`}>
+                <span>VIEW DETAILS</span>
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </div>
+            </div>
+          </section>
+        </div>
+      ))}
     </div>
   );
 }
