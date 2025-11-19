@@ -540,7 +540,7 @@ async function main() {
       const startYear = model.includes('Cybertruck') || model.includes('Ioniq') || model.includes('EV6') ? 2022 :
                        model.includes('ID.4') || model.includes('Lyriq') ? 2021 :
                        model.includes('Model 3') || model.includes('Model Y') ? 2017 :
-                       2000;
+                       1995;
 
       for (let year = startYear; year <= 2025; year++) {
         // Generate multiple trims per year
