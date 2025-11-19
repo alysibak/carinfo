@@ -1,0 +1,984 @@
+{
+  "cars": [
+    {
+      "id": "car-001",
+      "make": "Toyota",
+      "model": "Camry",
+      "year": 2023,
+      "trim": "XSE V6",
+      "countryOfOrigin": "Japan",
+      "engine": {
+        "displacement": 3.5,
+        "horsepower": 301,
+        "torque": 267,
+        "fuelType": "gasoline",
+        "cylinders": 6,
+        "configuration": "V6"
+      },
+      "performance": {
+        "zeroToSixty": 5.8,
+        "topSpeed": 135,
+        "quarterMile": 14.2
+      },
+      "dimensions": {
+        "length": 192.7,
+        "width": 72.4,
+        "height": 56.9,
+        "wheelbase": 111.2,
+        "curbWeight": 3572
+      },
+      "fuelEconomy": {
+        "city": 22,
+        "highway": 32,
+        "combined": 26
+      },
+      "transmission": {
+        "type": "automatic",
+        "speeds": 8
+      },
+      "driveType": "FWD",
+      "bodyStyle": "sedan",
+      "safetyRating": {
+        "overall": 5,
+        "frontal": 5,
+        "side": 5,
+        "rollover": 4
+      },
+      "price": {
+        "msrp": 36420,
+        "min": 35000,
+        "max": 38000
+      }
+    },
+    {
+      "id": "car-002",
+      "make": "Honda",
+      "model": "Civic",
+      "year": 2023,
+      "trim": "Type R",
+      "countryOfOrigin": "Japan",
+      "engine": {
+        "displacement": 2.0,
+        "horsepower": 315,
+        "torque": 310,
+        "fuelType": "gasoline",
+        "cylinders": 4,
+        "configuration": "Inline-4 Turbo"
+      },
+      "performance": {
+        "zeroToSixty": 4.9,
+        "topSpeed": 169,
+        "quarterMile": 13.4
+      },
+      "dimensions": {
+        "length": 179.9,
+        "width": 73.9,
+        "height": 55.7,
+        "wheelbase": 107.7,
+        "curbWeight": 3186
+      },
+      "fuelEconomy": {
+        "city": 22,
+        "highway": 28,
+        "combined": 25
+      },
+      "transmission": {
+        "type": "manual",
+        "speeds": 6
+      },
+      "driveType": "FWD",
+      "bodyStyle": "hatchback",
+      "safetyRating": {
+        "overall": 5,
+        "frontal": 5,
+        "side": 5,
+        "rollover": 4
+      },
+      "price": {
+        "msrp": 43990,
+        "min": 43000,
+        "max": 45000
+      }
+    },
+    {
+      "id": "car-003",
+      "make": "Ford",
+      "model": "Mustang",
+      "year": 2023,
+      "trim": "GT",
+      "countryOfOrigin": "USA",
+      "engine": {
+        "displacement": 5.0,
+        "horsepower": 486,
+        "torque": 418,
+        "fuelType": "gasoline",
+        "cylinders": 8,
+        "configuration": "V8"
+      },
+      "performance": {
+        "zeroToSixty": 4.2,
+        "topSpeed": 163,
+        "quarterMile": 12.5
+      },
+      "dimensions": {
+        "length": 188.5,
+        "width": 75.4,
+        "height": 54.4,
+        "wheelbase": 107.1,
+        "curbWeight": 3825
+      },
+      "fuelEconomy": {
+        "city": 15,
+        "highway": 24,
+        "combined": 18
+      },
+      "transmission": {
+        "type": "automatic",
+        "speeds": 10
+      },
+      "driveType": "RWD",
+      "bodyStyle": "coupe",
+      "safetyRating": {
+        "overall": 4,
+        "frontal": 4,
+        "side": 4,
+        "rollover": 3
+      },
+      "price": {
+        "msrp": 44695,
+        "min": 44000,
+        "max": 46000
+      }
+    },
+    {
+      "id": "car-004",
+      "make": "BMW",
+      "model": "M3",
+      "year": 2023,
+      "trim": "Competition",
+      "countryOfOrigin": "Germany",
+      "engine": {
+        "displacement": 3.0,
+        "horsepower": 503,
+        "torque": 479,
+        "fuelType": "gasoline",
+        "cylinders": 6,
+        "configuration": "Inline-6 Twin-Turbo"
+      },
+      "performance": {
+        "zeroToSixty": 3.4,
+        "topSpeed": 180,
+        "quarterMile": 11.6
+      },
+      "dimensions": {
+        "length": 187.4,
+        "width": 74.3,
+        "height": 56.8,
+        "wheelbase": 112.8,
+        "curbWeight": 3890
+      },
+      "fuelEconomy": {
+        "city": 16,
+        "highway": 23,
+        "combined": 19
+      },
+      "transmission": {
+        "type": "automatic",
+        "speeds": 8
+      },
+      "driveType": "RWD",
+      "bodyStyle": "sedan",
+      "safetyRating": {
+        "overall": 5,
+        "frontal": 5,
+        "side": 5,
+        "rollover": 4
+      },
+      "price": {
+        "msrp": 77995,
+        "min": 77000,
+        "max": 80000
+      }
+    },
+    {
+      "id": "car-005",
+      "make": "Tesla",
+      "model": "Model 3",
+      "year": 2023,
+      "trim": "Performance",
+      "countryOfOrigin": "USA",
+      "engine": {
+        "displacement": 0,
+        "horsepower": 480,
+        "torque": 471,
+        "fuelType": "electric",
+        "configuration": "Dual Electric Motors"
+      },
+      "performance": {
+        "zeroToSixty": 3.1,
+        "topSpeed": 162,
+        "quarterMile": 11.3
+      },
+      "dimensions": {
+        "length": 184.8,
+        "width": 72.8,
+        "height": 56.8,
+        "wheelbase": 113.2,
+        "curbWeight": 4048
+      },
+      "fuelEconomy": {
+        "city": 131,
+        "highway": 126,
+        "combined": 128
+      },
+      "transmission": {
+        "type": "automatic",
+        "speeds": 1
+      },
+      "driveType": "AWD",
+      "bodyStyle": "sedan",
+      "safetyRating": {
+        "overall": 5,
+        "frontal": 5,
+        "side": 5,
+        "rollover": 5
+      },
+      "price": {
+        "msrp": 53990,
+        "min": 53000,
+        "max": 55000
+      }
+    },
+    {
+      "id": "car-006",
+      "make": "Porsche",
+      "model": "911",
+      "year": 2023,
+      "trim": "Carrera",
+      "countryOfOrigin": "Germany",
+      "engine": {
+        "displacement": 3.0,
+        "horsepower": 379,
+        "torque": 331,
+        "fuelType": "gasoline",
+        "cylinders": 6,
+        "configuration": "Flat-6 Twin-Turbo"
+      },
+      "performance": {
+        "zeroToSixty": 3.8,
+        "topSpeed": 182,
+        "quarterMile": 11.9
+      },
+      "dimensions": {
+        "length": 177.9,
+        "width": 72.9,
+        "height": 51.1,
+        "wheelbase": 96.5,
+        "curbWeight": 3382
+      },
+      "fuelEconomy": {
+        "city": 18,
+        "highway": 24,
+        "combined": 20
+      },
+      "transmission": {
+        "type": "dual-clutch",
+        "speeds": 8
+      },
+      "driveType": "RWD",
+      "bodyStyle": "coupe",
+      "safetyRating": {
+        "overall": 4,
+        "frontal": 4,
+        "side": 5,
+        "rollover": 4
+      },
+      "price": {
+        "msrp": 106100,
+        "min": 105000,
+        "max": 110000
+      }
+    },
+    {
+      "id": "car-007",
+      "make": "Mercedes-Benz",
+      "model": "S-Class",
+      "year": 2023,
+      "trim": "S 500",
+      "countryOfOrigin": "Germany",
+      "engine": {
+        "displacement": 3.0,
+        "horsepower": 429,
+        "torque": 384,
+        "fuelType": "hybrid",
+        "cylinders": 6,
+        "configuration": "Inline-6 Turbo + Electric Motor"
+      },
+      "performance": {
+        "zeroToSixty": 4.9,
+        "topSpeed": 130,
+        "quarterMile": 13.2
+      },
+      "dimensions": {
+        "length": 206.5,
+        "width": 75.8,
+        "height": 58.9,
+        "wheelbase": 126.6,
+        "curbWeight": 4839
+      },
+      "fuelEconomy": {
+        "city": 23,
+        "highway": 32,
+        "combined": 27
+      },
+      "transmission": {
+        "type": "automatic",
+        "speeds": 9
+      },
+      "driveType": "RWD",
+      "bodyStyle": "sedan",
+      "safetyRating": {
+        "overall": 5,
+        "frontal": 5,
+        "side": 5,
+        "rollover": 5
+      },
+      "price": {
+        "msrp": 114500,
+        "min": 114000,
+        "max": 118000
+      }
+    },
+    {
+      "id": "car-008",
+      "make": "Chevrolet",
+      "model": "Corvette",
+      "year": 2023,
+      "trim": "Stingray",
+      "countryOfOrigin": "USA",
+      "engine": {
+        "displacement": 6.2,
+        "horsepower": 490,
+        "torque": 465,
+        "fuelType": "gasoline",
+        "cylinders": 8,
+        "configuration": "V8"
+      },
+      "performance": {
+        "zeroToSixty": 2.9,
+        "topSpeed": 194,
+        "quarterMile": 11.2
+      },
+      "dimensions": {
+        "length": 182.3,
+        "width": 76.1,
+        "height": 48.6,
+        "wheelbase": 107.2,
+        "curbWeight": 3535
+      },
+      "fuelEconomy": {
+        "city": 15,
+        "highway": 27,
+        "combined": 19
+      },
+      "transmission": {
+        "type": "dual-clutch",
+        "speeds": 8
+      },
+      "driveType": "RWD",
+      "bodyStyle": "coupe",
+      "safetyRating": {
+        "overall": 4,
+        "frontal": 4,
+        "side": 5,
+        "rollover": 3
+      },
+      "price": {
+        "msrp": 65895,
+        "min": 65000,
+        "max": 68000
+      }
+    },
+    {
+      "id": "car-009",
+      "make": "Audi",
+      "model": "RS 6 Avant",
+      "year": 2023,
+      "trim": "Performance",
+      "countryOfOrigin": "Germany",
+      "engine": {
+        "displacement": 4.0,
+        "horsepower": 621,
+        "torque": 627,
+        "fuelType": "gasoline",
+        "cylinders": 8,
+        "configuration": "V8 Twin-Turbo"
+      },
+      "performance": {
+        "zeroToSixty": 3.3,
+        "topSpeed": 190,
+        "quarterMile": 11.4
+      },
+      "dimensions": {
+        "length": 195.4,
+        "width": 79.9,
+        "height": 57.9,
+        "wheelbase": 116.7,
+        "curbWeight": 4795
+      },
+      "fuelEconomy": {
+        "city": 15,
+        "highway": 22,
+        "combined": 17
+      },
+      "transmission": {
+        "type": "automatic",
+        "speeds": 8
+      },
+      "driveType": "AWD",
+      "bodyStyle": "wagon",
+      "safetyRating": {
+        "overall": 5,
+        "frontal": 5,
+        "side": 5,
+        "rollover": 4
+      },
+      "price": {
+        "msrp": 121095,
+        "min": 120000,
+        "max": 125000
+      }
+    },
+    {
+      "id": "car-010",
+      "make": "Mazda",
+      "model": "MX-5 Miata",
+      "year": 2023,
+      "trim": "Grand Touring",
+      "countryOfOrigin": "Japan",
+      "engine": {
+        "displacement": 2.0,
+        "horsepower": 181,
+        "torque": 151,
+        "fuelType": "gasoline",
+        "cylinders": 4,
+        "configuration": "Inline-4"
+      },
+      "performance": {
+        "zeroToSixty": 6.5,
+        "topSpeed": 135,
+        "quarterMile": 15.0
+      },
+      "dimensions": {
+        "length": 154.1,
+        "width": 68.3,
+        "height": 48.8,
+        "wheelbase": 90.9,
+        "curbWeight": 2453
+      },
+      "fuelEconomy": {
+        "city": 26,
+        "highway": 35,
+        "combined": 30
+      },
+      "transmission": {
+        "type": "manual",
+        "speeds": 6
+      },
+      "driveType": "RWD",
+      "bodyStyle": "convertible",
+      "safetyRating": {
+        "overall": 4,
+        "frontal": 4,
+        "side": 5,
+        "rollover": 3
+      },
+      "price": {
+        "msrp": 32270,
+        "min": 31000,
+        "max": 33500
+      }
+    },
+    {
+      "id": "car-011",
+      "make": "Volkswagen",
+      "model": "Golf GTI",
+      "year": 2023,
+      "trim": "Autobahn",
+      "countryOfOrigin": "Germany",
+      "engine": {
+        "displacement": 2.0,
+        "horsepower": 241,
+        "torque": 273,
+        "fuelType": "gasoline",
+        "cylinders": 4,
+        "configuration": "Inline-4 Turbo"
+      },
+      "performance": {
+        "zeroToSixty": 5.9,
+        "topSpeed": 155,
+        "quarterMile": 14.3
+      },
+      "dimensions": {
+        "length": 168.0,
+        "width": 70.4,
+        "height": 56.8,
+        "wheelbase": 103.8,
+        "curbWeight": 3243
+      },
+      "fuelEconomy": {
+        "city": 24,
+        "highway": 34,
+        "combined": 28
+      },
+      "transmission": {
+        "type": "dual-clutch",
+        "speeds": 7
+      },
+      "driveType": "FWD",
+      "bodyStyle": "hatchback",
+      "safetyRating": {
+        "overall": 5,
+        "frontal": 5,
+        "side": 5,
+        "rollover": 4
+      },
+      "price": {
+        "msrp": 34670,
+        "min": 34000,
+        "max": 36000
+      }
+    },
+    {
+      "id": "car-012",
+      "make": "Subaru",
+      "model": "WRX STI",
+      "year": 2022,
+      "trim": "Limited",
+      "countryOfOrigin": "Japan",
+      "engine": {
+        "displacement": 2.5,
+        "horsepower": 310,
+        "torque": 290,
+        "fuelType": "gasoline",
+        "cylinders": 4,
+        "configuration": "Flat-4 Turbo"
+      },
+      "performance": {
+        "zeroToSixty": 4.9,
+        "topSpeed": 159,
+        "quarterMile": 13.5
+      },
+      "dimensions": {
+        "length": 180.9,
+        "width": 70.7,
+        "height": 58.1,
+        "wheelbase": 104.9,
+        "curbWeight": 3434
+      },
+      "fuelEconomy": {
+        "city": 16,
+        "highway": 22,
+        "combined": 19
+      },
+      "transmission": {
+        "type": "manual",
+        "speeds": 6
+      },
+      "driveType": "AWD",
+      "bodyStyle": "sedan",
+      "safetyRating": {
+        "overall": 5,
+        "frontal": 5,
+        "side": 5,
+        "rollover": 4
+      },
+      "price": {
+        "msrp": 42595,
+        "min": 42000,
+        "max": 44000
+      }
+    },
+    {
+      "id": "car-013",
+      "make": "Nissan",
+      "model": "GT-R",
+      "year": 2023,
+      "trim": "Premium",
+      "countryOfOrigin": "Japan",
+      "engine": {
+        "displacement": 3.8,
+        "horsepower": 565,
+        "torque": 467,
+        "fuelType": "gasoline",
+        "cylinders": 6,
+        "configuration": "V6 Twin-Turbo"
+      },
+      "performance": {
+        "zeroToSixty": 2.9,
+        "topSpeed": 196,
+        "quarterMile": 11.1
+      },
+      "dimensions": {
+        "length": 183.9,
+        "width": 74.6,
+        "height": 54.5,
+        "wheelbase": 109.4,
+        "curbWeight": 3933
+      },
+      "fuelEconomy": {
+        "city": 16,
+        "highway": 22,
+        "combined": 18
+      },
+      "transmission": {
+        "type": "dual-clutch",
+        "speeds": 6
+      },
+      "driveType": "AWD",
+      "bodyStyle": "coupe",
+      "safetyRating": {
+        "overall": 4,
+        "frontal": 4,
+        "side": 4,
+        "rollover": 3
+      },
+      "price": {
+        "msrp": 116040,
+        "min": 115000,
+        "max": 120000
+      }
+    },
+    {
+      "id": "car-014",
+      "make": "Hyundai",
+      "model": "Ioniq 5",
+      "year": 2023,
+      "trim": "AWD Limited",
+      "countryOfOrigin": "South Korea",
+      "engine": {
+        "displacement": 0,
+        "horsepower": 320,
+        "torque": 446,
+        "fuelType": "electric",
+        "configuration": "Dual Electric Motors"
+      },
+      "performance": {
+        "zeroToSixty": 4.5,
+        "topSpeed": 115,
+        "quarterMile": 12.8
+      },
+      "dimensions": {
+        "length": 182.5,
+        "width": 74.4,
+        "height": 63.2,
+        "wheelbase": 118.1,
+        "curbWeight": 4675
+      },
+      "fuelEconomy": {
+        "city": 98,
+        "highway": 87,
+        "combined": 92
+      },
+      "transmission": {
+        "type": "automatic",
+        "speeds": 1
+      },
+      "driveType": "AWD",
+      "bodyStyle": "suv",
+      "safetyRating": {
+        "overall": 5,
+        "frontal": 5,
+        "side": 5,
+        "rollover": 4
+      },
+      "price": {
+        "msrp": 55500,
+        "min": 54000,
+        "max": 57000
+      }
+    },
+    {
+      "id": "car-015",
+      "make": "Kia",
+      "model": "EV6",
+      "year": 2023,
+      "trim": "GT-Line AWD",
+      "countryOfOrigin": "South Korea",
+      "engine": {
+        "displacement": 0,
+        "horsepower": 320,
+        "torque": 446,
+        "fuelType": "electric",
+        "configuration": "Dual Electric Motors"
+      },
+      "performance": {
+        "zeroToSixty": 4.6,
+        "topSpeed": 115,
+        "quarterMile": 12.9
+      },
+      "dimensions": {
+        "length": 184.3,
+        "width": 74.4,
+        "height": 61.0,
+        "wheelbase": 114.2,
+        "curbWeight": 4603
+      },
+      "fuelEconomy": {
+        "city": 99,
+        "highway": 88,
+        "combined": 94
+      },
+      "transmission": {
+        "type": "automatic",
+        "speeds": 1
+      },
+      "driveType": "AWD",
+      "bodyStyle": "suv",
+      "safetyRating": {
+        "overall": 5,
+        "frontal": 5,
+        "side": 5,
+        "rollover": 4
+      },
+      "price": {
+        "msrp": 52200,
+        "min": 51000,
+        "max": 54000
+      }
+    },
+    {
+      "id": "car-016",
+      "make": "Ferrari",
+      "model": "F8 Tributo",
+      "year": 2023,
+      "trim": "Base",
+      "countryOfOrigin": "Italy",
+      "engine": {
+        "displacement": 3.9,
+        "horsepower": 710,
+        "torque": 568,
+        "fuelType": "gasoline",
+        "cylinders": 8,
+        "configuration": "V8 Twin-Turbo"
+      },
+      "performance": {
+        "zeroToSixty": 2.9,
+        "topSpeed": 211,
+        "quarterMile": 10.6
+      },
+      "dimensions": {
+        "length": 179.8,
+        "width": 78.1,
+        "height": 47.8,
+        "wheelbase": 104.3,
+        "curbWeight": 3164
+      },
+      "fuelEconomy": {
+        "city": 15,
+        "highway": 19,
+        "combined": 16
+      },
+      "transmission": {
+        "type": "dual-clutch",
+        "speeds": 7
+      },
+      "driveType": "RWD",
+      "bodyStyle": "coupe",
+      "price": {
+        "msrp": 280000,
+        "min": 275000,
+        "max": 290000
+      }
+    },
+    {
+      "id": "car-017",
+      "make": "Lamborghini",
+      "model": "Huracan",
+      "year": 2023,
+      "trim": "EVO",
+      "countryOfOrigin": "Italy",
+      "engine": {
+        "displacement": 5.2,
+        "horsepower": 631,
+        "torque": 443,
+        "fuelType": "gasoline",
+        "cylinders": 10,
+        "configuration": "V10"
+      },
+      "performance": {
+        "zeroToSixty": 2.9,
+        "topSpeed": 202,
+        "quarterMile": 10.7
+      },
+      "dimensions": {
+        "length": 175.6,
+        "width": 76.0,
+        "height": 45.9,
+        "wheelbase": 103.1,
+        "curbWeight": 3427
+      },
+      "fuelEconomy": {
+        "city": 13,
+        "highway": 18,
+        "combined": 15
+      },
+      "transmission": {
+        "type": "dual-clutch",
+        "speeds": 7
+      },
+      "driveType": "AWD",
+      "bodyStyle": "coupe",
+      "price": {
+        "msrp": 261274,
+        "min": 260000,
+        "max": 270000
+      }
+    },
+    {
+      "id": "car-018",
+      "make": "Lexus",
+      "model": "LC 500",
+      "year": 2023,
+      "trim": "Base",
+      "countryOfOrigin": "Japan",
+      "engine": {
+        "displacement": 5.0,
+        "horsepower": 471,
+        "torque": 398,
+        "fuelType": "gasoline",
+        "cylinders": 8,
+        "configuration": "V8"
+      },
+      "performance": {
+        "zeroToSixty": 4.4,
+        "topSpeed": 168,
+        "quarterMile": 12.8
+      },
+      "dimensions": {
+        "length": 187.4,
+        "width": 75.6,
+        "height": 53.0,
+        "wheelbase": 113.0,
+        "curbWeight": 4280
+      },
+      "fuelEconomy": {
+        "city": 16,
+        "highway": 25,
+        "combined": 19
+      },
+      "transmission": {
+        "type": "automatic",
+        "speeds": 10
+      },
+      "driveType": "RWD",
+      "bodyStyle": "coupe",
+      "safetyRating": {
+        "overall": 5,
+        "frontal": 5,
+        "side": 5,
+        "rollover": 4
+      },
+      "price": {
+        "msrp": 98450,
+        "min": 97000,
+        "max": 100000
+      }
+    },
+    {
+      "id": "car-019",
+      "make": "Acura",
+      "model": "NSX",
+      "year": 2022,
+      "trim": "Type S",
+      "countryOfOrigin": "Japan",
+      "engine": {
+        "displacement": 3.5,
+        "horsepower": 600,
+        "torque": 492,
+        "fuelType": "hybrid",
+        "cylinders": 6,
+        "configuration": "V6 Twin-Turbo + Electric Motors"
+      },
+      "performance": {
+        "zeroToSixty": 2.7,
+        "topSpeed": 191,
+        "quarterMile": 10.8
+      },
+      "dimensions": {
+        "length": 176.0,
+        "width": 76.3,
+        "height": 47.8,
+        "wheelbase": 103.5,
+        "curbWeight": 3878
+      },
+      "fuelEconomy": {
+        "city": 21,
+        "highway": 22,
+        "combined": 21
+      },
+      "transmission": {
+        "type": "dual-clutch",
+        "speeds": 9
+      },
+      "driveType": "AWD",
+      "bodyStyle": "coupe",
+      "price": {
+        "msrp": 171495,
+        "min": 170000,
+        "max": 175000
+      }
+    },
+    {
+      "id": "car-020",
+      "make": "Genesis",
+      "model": "G70",
+      "year": 2023,
+      "trim": "3.3T Sport",
+      "countryOfOrigin": "South Korea",
+      "engine": {
+        "displacement": 3.3,
+        "horsepower": 365,
+        "torque": 376,
+        "fuelType": "gasoline",
+        "cylinders": 6,
+        "configuration": "V6 Twin-Turbo"
+      },
+      "performance": {
+        "zeroToSixty": 4.5,
+        "topSpeed": 167,
+        "quarterMile": 12.9
+      },
+      "dimensions": {
+        "length": 184.4,
+        "width": 73.4,
+        "height": 55.7,
+        "wheelbase": 111.6,
+        "curbWeight": 3847
+      },
+      "fuelEconomy": {
+        "city": 18,
+        "highway": 26,
+        "combined": 21
+      },
+      "transmission": {
+        "type": "automatic",
+        "speeds": 8
+      },
+      "driveType": "AWD",
+      "bodyStyle": "sedan",
+      "safetyRating": {
+        "overall": 5,
+        "frontal": 5,
+        "side": 5,
+        "rollover": 4
+      },
+      "price": {
+        "msrp": 50825,
+        "min": 50000,
+        "max": 52000
+      }
+    }
+  ],
+  "lastUpdated": "2025-11-19T00:00:00.000Z"
+}
