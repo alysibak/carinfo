@@ -566,8 +566,14 @@ async function main() {
   console.log(`\n🎉 Generation complete!`);
   console.log(`📊 Total vehicles: ${totalCount}\n`);
 
+  // Wrap in proper database structure
+  const database = {
+    cars: allVehicles,
+    lastUpdated: new Date().toISOString()
+  };
+
   const outputPath = path.join(__dirname, '..', 'data', 'cars.json');
-  fs.writeFileSync(outputPath, JSON.stringify(allVehicles, null, 2));
+  fs.writeFileSync(outputPath, JSON.stringify(database, null, 2));
 
   const fileSize = fs.statSync(outputPath).size;
   console.log(`💾 Saved to: ${outputPath}`);
