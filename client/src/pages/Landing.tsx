@@ -131,8 +131,8 @@ export default function Landing() {
             </p>
           </div>
 
-          {/* Quick Start Button */}
-          <div className="overflow-hidden">
+          {/* Quick Action Buttons */}
+          <div className="flex items-center justify-center gap-4 flex-wrap">
             <button
               onClick={() => setShowQuiz(true)}
               className="group relative inline-flex items-center gap-4 px-12 py-6 border border-white hover:bg-white hover:text-black transition-all duration-300 animate-fade-in"
@@ -142,6 +142,20 @@ export default function Landing() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
             </button>
+
+            <Link
+              to="/identify"
+              className="group relative inline-flex items-center gap-4 px-12 py-6 border border-zinc-700 hover:border-white hover:bg-zinc-900 transition-all duration-300 animate-fade-in"
+            >
+              <span className="text-sm tracking-[0.3em] font-bold">📸 VISUAL SEARCH</span>
+            </Link>
+
+            <Link
+              to="/garage"
+              className="group relative inline-flex items-center gap-4 px-12 py-6 border border-zinc-700 hover:border-white hover:bg-zinc-900 transition-all duration-300 animate-fade-in"
+            >
+              <span className="text-sm tracking-[0.3em] font-bold">🏁 MY GARAGE</span>
+            </Link>
           </div>
         </div>
 

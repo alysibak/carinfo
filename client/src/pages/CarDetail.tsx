@@ -38,6 +38,22 @@ export default function CarDetail() {
     }
   };
 
+  const handleAddToGarage = () => {
+    if (!car) return;
+
+    const garage = JSON.parse(localStorage.getItem('dreamGarage') || '[]');
+
+    // Check if already in garage
+    if (garage.find((c: CarSpecs) => c.id === car.id)) {
+      alert('This car is already in your garage!');
+      return;
+    }
+
+    garage.push(car);
+    localStorage.setItem('dreamGarage', JSON.stringify(garage));
+    alert('Added to your Dream Garage!');
+  };
+
   if (loading || !car) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 flex items-center justify-center">
@@ -168,7 +184,13 @@ export default function CarDetail() {
                 </div>
 
                 {/* CTA Buttons */}
-                <div className="flex items-center space-x-4 mt-8">
+                <div className="flex items-center space-x-4 mt-8 flex-wrap gap-4">
+                  <button
+                    onClick={handleAddToGarage}
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all transform hover:scale-105 shadow-lg shadow-purple-500/50"
+                  >
+                    🏁 Add to Garage
+                  </button>
                   <button
                     onClick={handleAddToComparison}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all transform hover:scale-105 shadow-lg shadow-blue-500/50"
