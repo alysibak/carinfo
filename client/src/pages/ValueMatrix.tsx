@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import * as api from '../services/api';
 import type { CarSpecs } from '../types/car.types';
+import AggregateStats from '../components/AggregateStats';
 
 type AxisMode = 'horsepower' | 'mpg' | 'torque';
 
@@ -374,8 +375,24 @@ export default function ValueMatrix() {
             </ResponsiveContainer>
           </div>
 
-          {/* Legend & Insights */}
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Stats, Legend & Insights */}
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Aggregate Stats */}
+            <AggregateStats
+              cars={allCars.filter((car) => {
+                const price = car.price?.msrp || 0;
+                const hasValidPrice = price > 0 && price >= priceRange[0] && price <= priceRange[1];
+                const hasValidMetric =
+                  (axisMode === 'horsepower' && car.engine.horsepower > 0) ||
+                  (axisMode === 'mpg' && (car.fuelEconomy.combined || 0) > 0) ||
+                  (axisMode === 'torque' && car.engine.torque > 0);
+                const matchesBodyStyle =
+                  selectedBodyStyles.size === 0 || selectedBodyStyles.has(car.bodyStyle);
+                return hasValidPrice && hasValidMetric && matchesBodyStyle;
+              })}
+              title="FILTERED RESULTS"
+            />
+
             {/* Legend */}
             <div className="bg-zinc-950 border border-zinc-900 p-6">
               <h2 className="text-lg font-black tracking-tight mb-4 uppercase">Legend</h2>

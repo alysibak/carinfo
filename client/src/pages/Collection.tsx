@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import * as api from '../services/api';
 import type { CarSpecs, SearchQuery } from '../types/car.types';
 import { getDealRating, getDealRatingColor, getDealRatingLabel, getSegment } from '../utils/marketIntelligence';
+import AggregateStats from '../components/AggregateStats';
 
 interface CollectionConfig {
   title: string;
@@ -328,6 +329,11 @@ export default function Collection() {
           </div>
         ) : (
           <div className="max-w-7xl mx-auto">
+            {/* Aggregate Stats */}
+            <div className="mb-8">
+              <AggregateStats cars={filteredCars} title={collection.title} />
+            </div>
+
             {/* Grid of vehicles */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-zinc-900">
               {filteredCars.map((car) => {
