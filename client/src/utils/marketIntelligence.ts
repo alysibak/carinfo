@@ -1,5 +1,82 @@
 import type { CarSpecs } from '../types/car.types';
 
+// Energy pricing constants (average US prices)
+const GAS_PRICE_PER_GALLON = 3.5;
+const ELECTRICITY_PRICE_PER_KWH = 0.14;
+
+// Calculate cost per mile for any vehicle type
+export interface CostPerMile {
+  costPerMile: number; // Dollars per mile
+  annualCost: number; // Cost for 15,000 miles/year
+  fuelType: string;
+  efficiencyMetric: string; // "MPG" or "MPGe" or "Blend"
+}
+
+export function calculateCostPerMile(car: CarSpecs): CostPerMile {
+  const mpg = car.fuelEconomy.combined || 0;
+  const fuelType = car.engine.fuelType;
+
+  if (fuelType === 'electric') {
+    // Electric: kWh/100mi varies, but typical EV: 120 MPGe ≈ 28 kWh/100mi
+    // Formula: 33.7 kWh = 1 gallon gasoline equivalent
+    // So: kWhPer100Mi = 33.7 * 100 / MPGe
+    const mpge = mpg || 100; // If no data, assume 100 MPGe
+    const kWhPer100Mi = (33.7 * 100) / mpge;
+    const kWhPerMile = kWhPer100Mi / 100;
+    const costPerMile = kWhPerMile * ELECTRICITY_PRICE_PER_KWH;
+
+    return {
+      costPerMile: Math.round(costPerMile * 1000) / 1000, // Round to 3 decimals
+      annualCost: Math.round(costPerMile * 15000),
+      fuelType: 'Electric',
+      efficiencyMetric: `${mpge} MPGe`,
+    };
+  } else if (fuelType === 'hybrid' || fuelType === 'plug-in hybrid') {
+    // Hybrid: Use MPG directly but assume 70% gas, 30% electric for plug-in
+    const gasFraction = fuelType === 'plug-in hybrid' ? 0.7 : 1.0;
+    const electricFraction = fuelType === 'plug-in hybrid' ? 0.3 : 0.0;
+
+    const gasCostPerMile = mpg > 0 ? (GAS_PRICE_PER_GALLON / mpg) : 0.15;
+
+    // Estimate electric portion (plug-in hybrids typically get ~25 miles electric)
+    const electricCostPerMile = fuelType === 'plug-in hybrid' ? 0.04 : 0;
+
+    const costPerMile = (gasFraction * gasCostPerMile) + (electricFraction * electricCostPerMile);
+
+    return {
+      costPerMile: Math.round(costPerMile * 1000) / 1000,
+      annualCost: Math.round(costPerMile * 15000),
+      fuelType: fuelType === 'plug-in hybrid' ? 'Plug-in Hybrid' : 'Hybrid',
+      efficiencyMetric: `${mpg} MPG`,
+    };
+  } else {
+    // Gasoline or Diesel
+    const costPerMile = mpg > 0 ? (GAS_PRICE_PER_GALLON / mpg) : 0.15;
+
+    return {
+      costPerMile: Math.round(costPerMile * 1000) / 1000,
+      annualCost: Math.round(costPerMile * 15000),
+      fuelType: fuelType === 'diesel' ? 'Diesel' : 'Gasoline',
+      efficiencyMetric: `${mpg} MPG`,
+    };
+  }
+}
+
+// NEW: Efficiency score normalized across all fuel types
+export function calculateEfficiencyScore(car: CarSpecs): number {
+  const costPerMile = calculateCostPerMile(car).costPerMile;
+
+  // Lower cost per mile = higher score
+  // Typical range: $0.03 (Tesla) to $0.20 (truck)
+  // Scale to 0-100
+  const maxCost = 0.20;
+  const minCost = 0.03;
+
+  const normalizedScore = 100 * (1 - (Math.min(costPerMile, maxCost) - minCost) / (maxCost - minCost));
+
+  return Math.max(0, Math.min(100, normalizedScore));
+}
+
 // Calculate derived performance metrics
 export interface DerivedMetrics {
   powerDensity: number; // HP per liter
@@ -8,6 +85,8 @@ export interface DerivedMetrics {
   hpPerDollar: number; // HP per $1000
   mpgPerDollar: number; // MPG per $1000
   valueScore: number; // Composite score
+  costPerMile: number; // Cost per mile (normalized across fuel types)
+  efficiencyScore: number; // 0-100 normalized efficiency
 }
 
 export function calculateDerivedMetrics(car: CarSpecs): DerivedMetrics {
@@ -24,8 +103,22 @@ export function calculateDerivedMetrics(car: CarSpecs): DerivedMetrics {
   const hpPerDollar = price > 0 ? (hp / price) * 1000 : 0;
   const mpgPerDollar = price > 0 ? (mpg / price) * 1000 : 0;
 
-  // Composite value score (normalized)
-  const valueScore = (hpPerDollar * 50) + (mpgPerDollar * 100);
+  // NEW: Calculate normalized efficiency and cost per mile
+  const costPerMileData = calculateCostPerMile(car);
+  const efficiencyScore = calculateEfficiencyScore(car);
+
+  // NEW: Updated value score formula
+  // Performance score (0-100): Based on power-to-weight
+  const performanceScore = Math.min(100, powerToWeight * 500); // 0.2 HP/lb = 100
+
+  // Reliability score (placeholder - would use real data)
+  const reliabilityScore = 75; // Default to 75/100
+
+  // NEW VALUE FORMULA: (Performance × Efficiency × Reliability) / Price
+  // Higher score = better value
+  const valueScore = price > 0
+    ? (performanceScore * efficiencyScore * reliabilityScore) / (price / 100)
+    : 0;
 
   return {
     powerDensity,
@@ -34,6 +127,8 @@ export function calculateDerivedMetrics(car: CarSpecs): DerivedMetrics {
     hpPerDollar,
     mpgPerDollar,
     valueScore,
+    costPerMile: costPerMileData.costPerMile,
+    efficiencyScore,
   };
 }
 
@@ -391,4 +486,49 @@ export function predictZeroToSixty(car: CarSpecs): ZeroToSixtyPrediction {
     confidence,
     method: 'predicted',
   };
+}
+
+// Fuel-type-aware filtering helpers
+export type FuelTypeFilter = 'all' | 'gasoline' | 'hybrid' | 'electric' | 'gasoline-only';
+
+export function shouldIncludeInFuelEconomySearch(car: CarSpecs, fuelTypeFilter: FuelTypeFilter): boolean {
+  const fuelType = car.engine.fuelType;
+
+  // If searching for fuel economy (MPG), exclude EVs by default unless explicitly requested
+  if (fuelTypeFilter === 'gasoline-only') {
+    return fuelType === 'gasoline' || fuelType === 'diesel';
+  }
+
+  if (fuelTypeFilter === 'gasoline') {
+    return fuelType === 'gasoline' || fuelType === 'diesel' || fuelType === 'hybrid';
+  }
+
+  if (fuelTypeFilter === 'hybrid') {
+    return fuelType === 'hybrid' || fuelType === 'plug-in hybrid';
+  }
+
+  if (fuelTypeFilter === 'electric') {
+    return fuelType === 'electric';
+  }
+
+  // 'all' includes everything
+  return true;
+}
+
+export function getDefaultFuelTypeForPersona(persona: string | null): FuelTypeFilter {
+  // Personas focused on fuel economy should default to gasoline-only (excludes EVs)
+  if (persona === 'commuter') {
+    return 'gasoline'; // Include hybrids but EVs must be explicitly selected
+  }
+
+  // Other personas can include all
+  return 'all';
+}
+
+export function filterCarsByFuelType(cars: CarSpecs[], fuelTypeFilter: FuelTypeFilter): CarSpecs[] {
+  if (fuelTypeFilter === 'all') {
+    return cars;
+  }
+
+  return cars.filter(car => shouldIncludeInFuelEconomySearch(car, fuelTypeFilter));
 }

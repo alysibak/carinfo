@@ -2,7 +2,7 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import * as api from '../services/api';
 import type { CarSpecs, SearchQuery } from '../types/car.types';
-import { getDealRating, getDealRatingColor, getDealRatingLabel, getSegment } from '../utils/marketIntelligence';
+import { getDealRating, getDealRatingColor, getDealRatingLabel, getSegment, filterCarsByFuelType, type FuelTypeFilter } from '../utils/marketIntelligence';
 import AggregateStats from '../components/AggregateStats';
 
 type SmartSort = 'best-value' | 'bang-for-buck' | 'lowest-tco' | 'daily-driver' | 'weekend' | 'resale' | 'eco' | 'track';
@@ -16,6 +16,7 @@ export default function SmartSearch() {
   const [smartSort, setSmartSort] = useState<SmartSort>('best-value');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [fuelTypeFilter, setFuelTypeFilter] = useState<FuelTypeFilter>('gasoline');
   const navigate = useNavigate();
 
   // Get persona from URL params
@@ -31,7 +32,7 @@ export default function SmartSearch() {
 
   useEffect(() => {
     applySmartSort();
-  }, [allCars, smartSort, searchTerm]);
+  }, [allCars, smartSort, searchTerm, fuelTypeFilter]);
 
   const loadAllDatabaseCars = async () => {
     try {
@@ -139,6 +140,9 @@ export default function SmartSearch() {
   const applySmartSort = () => {
     let filtered = [...allCars];
 
+    // Apply fuel type filter
+    filtered = filterCarsByFuelType(filtered, fuelTypeFilter);
+
     // Apply search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
@@ -242,7 +246,7 @@ export default function SmartSearch() {
           {/* Filter Controls */}
           {showFilters && (
             <div className="max-w-7xl mx-auto mt-6 pt-6 border-t border-zinc-900">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Search */}
                 <div>
                   <label className="block text-xs tracking-widest text-zinc-700 mb-2">SEARCH</label>
@@ -270,13 +274,34 @@ export default function SmartSearch() {
                     ))}
                   </select>
                 </div>
+
+                {/* Fuel Type Filter */}
+                <div>
+                  <label className="block text-xs tracking-widest text-zinc-700 mb-2">FUEL TYPE</label>
+                  <select
+                    value={fuelTypeFilter}
+                    onChange={(e) => setFuelTypeFilter(e.target.value as FuelTypeFilter)}
+                    className="w-full bg-zinc-950 border border-zinc-800 px-4 py-2 text-sm focus:outline-none focus:border-zinc-600 transition-colors"
+                  >
+                    <option value="all">ALL VEHICLES</option>
+                    <option value="gasoline">GASOLINE + HYBRID</option>
+                    <option value="gasoline-only">GASOLINE ONLY</option>
+                    <option value="hybrid">HYBRID ONLY</option>
+                    <option value="electric">ELECTRIC ONLY</option>
+                  </select>
+                </div>
               </div>
 
-              {/* Smart Sort Description */}
-              <div className="mt-4 p-4 bg-zinc-950 border border-zinc-900">
+              {/* Filter Descriptions */}
+              <div className="mt-4 p-4 bg-zinc-950 border border-zinc-900 space-y-2">
                 <p className="text-xs tracking-widest text-zinc-600 text-center">
                   {smartSortOptions.find(o => o.value === smartSort)?.desc.toUpperCase()}
                 </p>
+                {fuelTypeFilter === 'gasoline' && (
+                  <p className="text-xs text-blue-400 text-center">
+                    💡 EVs excluded from fuel economy filtering (MPGe ≠ MPG)
+                  </p>
+                )}
               </div>
             </div>
           )}
