@@ -6,6 +6,7 @@ import { getCarImageUrl } from '../utils/carImages';
 import { useCarStore } from '../stores/carStore';
 import TCOCalculator from '../components/TCOCalculator';
 import MarketIntelligence from '../components/MarketIntelligence';
+import { predictZeroToSixty } from '../utils/marketIntelligence';
 
 export default function CarDetail() {
   const { id } = useParams<{ id: string }>();
@@ -177,9 +178,31 @@ export default function CarDetail() {
                   </div>
                   <div className="bg-slate-900/80 backdrop-blur-sm p-6 rounded-xl border border-slate-700">
                     <div className="text-4xl font-bold text-purple-400 mb-1">
-                      {car.performance.zeroToSixty || 'N/A'}
+                      {(() => {
+                        const prediction = predictZeroToSixty(car);
+                        return prediction.predicted;
+                      })()}
                     </div>
-                    <div className="text-slate-400">0-60 mph (s)</div>
+                    <div className="text-slate-400 flex items-center gap-2">
+                      <span>0-60 mph (s)</span>
+                      {(() => {
+                        const prediction = predictZeroToSixty(car);
+                        if (prediction.method === 'predicted') {
+                          return (
+                            <span
+                              className="text-xs px-2 py-0.5 rounded border"
+                              style={{
+                                borderColor: prediction.confidence === 'high' ? '#10b981' : prediction.confidence === 'medium' ? '#f59e0b' : '#ef4444',
+                                color: prediction.confidence === 'high' ? '#10b981' : prediction.confidence === 'medium' ? '#f59e0b' : '#ef4444',
+                              }}
+                            >
+                              EST
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
                   </div>
                   <div className="bg-slate-900/80 backdrop-blur-sm p-6 rounded-xl border border-slate-700">
                     <div className="text-4xl font-bold text-green-400 mb-1">
@@ -304,7 +327,28 @@ export default function CarDetail() {
                   </div>
                   <div className="flex justify-between py-3 border-b border-slate-700">
                     <span className="text-slate-400">0-60 mph</span>
-                    <span className="text-white font-semibold">{car.performance.zeroToSixty || 'N/A'}s</span>
+                    <span className="text-white font-semibold flex items-center gap-2">
+                      {(() => {
+                        const prediction = predictZeroToSixty(car);
+                        return (
+                          <>
+                            {prediction.predicted}s
+                            {prediction.method === 'predicted' && (
+                              <span
+                                className="text-xs px-2 py-0.5 rounded border font-bold"
+                                style={{
+                                  borderColor: prediction.confidence === 'high' ? '#10b981' : prediction.confidence === 'medium' ? '#f59e0b' : '#ef4444',
+                                  color: prediction.confidence === 'high' ? '#10b981' : prediction.confidence === 'medium' ? '#f59e0b' : '#ef4444',
+                                }}
+                                title={`Estimated based on power-to-weight ratio (${prediction.confidence} confidence)`}
+                              >
+                                EST
+                              </span>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </span>
                   </div>
                   <div className="flex justify-between py-3 border-b border-slate-700">
                     <span className="text-slate-400">Top Speed</span>
