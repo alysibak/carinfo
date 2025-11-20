@@ -122,7 +122,7 @@ export default function VehicleGrid() {
                 >
                   {/* Year */}
                   <div className="mb-4">
-                    <p className="text-5xl font-black text-zinc-900 group-hover:text-zinc-800 transition-colors">
+                    <p className="text-5xl font-black text-zinc-700 group-hover:text-zinc-600 transition-colors">
                       {car.year}
                     </p>
                   </div>
