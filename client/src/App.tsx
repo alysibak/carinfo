@@ -9,6 +9,7 @@ import Collection from './pages/Collection';
 import SmartSearch from './pages/SmartSearch';
 import DreamGarage from './pages/DreamGarage';
 import BattleMode from './pages/BattleMode';
+import ValueMatrix from './pages/ValueMatrix';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
           <Route path="/smart-search" element={<SmartSearch />} />
           <Route path="/garage" element={<DreamGarage />} />
           <Route path="/battle" element={<BattleMode />} />
+          <Route path="/value-matrix" element={<ValueMatrix />} />
         </Routes>
       </div>
     </Router>
