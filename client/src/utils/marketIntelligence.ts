@@ -149,9 +149,11 @@ export function calculateDerivedMetrics(car: CarSpecs): DerivedMetrics {
   const price = car.price?.msrp || 0;
   const mpg = car.fuelEconomy.combined || 0;
 
-  const powerDensity = displacement > 0 ? hp / displacement : 0;
+  // For EVs (displacement = 0), displacement-based metrics are N/A
+  const isEV = car.engine.fuelType === 'electric' || displacement === 0;
+  const powerDensity = !isEV && displacement > 0 ? hp / displacement : NaN;
   const powerToWeight = weight > 0 ? hp / weight : 0;
-  const torqueDensity = displacement > 0 ? torque / displacement : 0;
+  const torqueDensity = !isEV && displacement > 0 ? torque / displacement : NaN;
   const hpPerDollar = price > 0 ? (hp / price) * 1000 : 0;
   const mpgPerDollar = price > 0 ? (mpg / price) * 1000 : 0;
 
@@ -230,14 +232,9 @@ export function calculateMarketPosition(
   const hpPercentile = calculatePercentile(carHp, hps);
   const mpgPercentile = calculatePercentile(carMpg, mpgs);
 
-  // Value percentile: high HP + high MPG + low price = good value
-  const valueScores = segment.map(c => {
-    const p = c.price?.msrp || 1;
-    const h = c.engine.horsepower;
-    const m = c.fuelEconomy.combined || 0;
-    return (h * m) / p;
-  });
-  const carValueScore = (carHp * carMpg) / (carPrice || 1);
+  // Value percentile: Use NEW value formula (Performance × Efficiency × Reliability) / Price
+  const valueScores = segment.map(c => calculateDerivedMetrics(c).valueScore);
+  const carValueScore = calculateDerivedMetrics(car).valueScore;
   const valuePercentile = calculatePercentile(carValueScore, valueScores);
 
   const priceVsAvg = avgPrice > 0 ? ((carPrice - avgPrice) / avgPrice) * 100 : 0;
