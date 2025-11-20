@@ -1,8 +1,15 @@
 import type { CarSpecs } from '../types/car.types';
 
-// Energy pricing constants (average US prices)
-const GAS_PRICE_PER_GALLON = 3.5;
-const ELECTRICITY_PRICE_PER_KWH = 0.14;
+// Energy pricing (default US averages, can be customized)
+export interface EnergyPrices {
+  gasPrice: number; // $/gallon
+  electricityPrice: number; // $/kWh
+}
+
+const DEFAULT_ENERGY_PRICES: EnergyPrices = {
+  gasPrice: 3.5,
+  electricityPrice: 0.14,
+};
 
 // Calculate cost per mile for any vehicle type
 export interface CostPerMile {
@@ -12,7 +19,8 @@ export interface CostPerMile {
   efficiencyMetric: string; // "MPG" or "MPGe" or "Blend"
 }
 
-export function calculateCostPerMile(car: CarSpecs): CostPerMile {
+export function calculateCostPerMile(car: CarSpecs, customPrices?: EnergyPrices): CostPerMile {
+  const prices = customPrices || DEFAULT_ENERGY_PRICES;
   const mpg = car.fuelEconomy.combined || 0;
   const fuelType = car.engine.fuelType;
 
@@ -23,7 +31,7 @@ export function calculateCostPerMile(car: CarSpecs): CostPerMile {
     const mpge = mpg || 100; // If no data, assume 100 MPGe
     const kWhPer100Mi = (33.7 * 100) / mpge;
     const kWhPerMile = kWhPer100Mi / 100;
-    const costPerMile = kWhPerMile * ELECTRICITY_PRICE_PER_KWH;
+    const costPerMile = kWhPerMile * prices.electricityPrice;
 
     return {
       costPerMile: Math.round(costPerMile * 1000) / 1000, // Round to 3 decimals
@@ -36,10 +44,11 @@ export function calculateCostPerMile(car: CarSpecs): CostPerMile {
     const gasFraction = fuelType === 'plug-in hybrid' ? 0.7 : 1.0;
     const electricFraction = fuelType === 'plug-in hybrid' ? 0.3 : 0.0;
 
-    const gasCostPerMile = mpg > 0 ? (GAS_PRICE_PER_GALLON / mpg) : 0.15;
+    const gasCostPerMile = mpg > 0 ? (prices.gasPrice / mpg) : 0.15;
 
     // Estimate electric portion (plug-in hybrids typically get ~25 miles electric)
-    const electricCostPerMile = fuelType === 'plug-in hybrid' ? 0.04 : 0;
+    const kWhPerMile = 0.3; // Typical plug-in hybrid electric efficiency
+    const electricCostPerMile = fuelType === 'plug-in hybrid' ? (kWhPerMile * prices.electricityPrice) : 0;
 
     const costPerMile = (gasFraction * gasCostPerMile) + (electricFraction * electricCostPerMile);
 
@@ -51,7 +60,7 @@ export function calculateCostPerMile(car: CarSpecs): CostPerMile {
     };
   } else {
     // Gasoline or Diesel
-    const costPerMile = mpg > 0 ? (GAS_PRICE_PER_GALLON / mpg) : 0.15;
+    const costPerMile = mpg > 0 ? (prices.gasPrice / mpg) : 0.15;
 
     return {
       costPerMile: Math.round(costPerMile * 1000) / 1000,
@@ -77,6 +86,48 @@ export function calculateEfficiencyScore(car: CarSpecs): number {
   return Math.max(0, Math.min(100, normalizedScore));
 }
 
+// Reliability scoring based on brand reputation and vehicle characteristics
+export function calculateReliabilityScore(car: CarSpecs): number {
+  const make = car.make.toLowerCase();
+
+  // Brand reliability scores (0-100) based on industry data
+  const brandScores: Record<string, number> = {
+    // Top Tier (85-95)
+    'toyota': 92, 'lexus': 95, 'mazda': 88, 'honda': 90, 'acura': 88, 'subaru': 87, 'porsche': 85,
+    // High Tier (75-84)
+    'hyundai': 82, 'kia': 80, 'genesis': 78, 'buick': 81, 'mini': 76, 'nissan': 78, 'infiniti': 76,
+    // Mid Tier (65-74)
+    'chevrolet': 72, 'ford': 70, 'volkswagen': 68, 'audi': 70, 'bmw': 68, 'mercedes-benz': 67,
+    'volvo': 73, 'cadillac': 69,
+    // Lower Tier (55-64)
+    'chrysler': 62, 'dodge': 60, 'jeep': 58, 'ram': 61, 'gmc': 65, 'lincoln': 64, 'alfa romeo': 56,
+    'jaguar': 55, 'land rover': 52, 'tesla': 65,
+    // Economy (70-80)
+    'mitsubishi': 75, 'suzuki': 78,
+  };
+
+  let score = brandScores[make] || 70;
+
+  // Age penalty
+  const age = 2025 - car.year;
+  if (age > 10) score -= (age - 10) * 2;
+  else if (age > 5) score -= (age - 5) * 1;
+  else if (age <= 2) score += 3;
+
+  // Drivetrain complexity
+  if (car.driveType === 'AWD' || car.driveType === '4WD') score -= 3;
+
+  // Fuel type adjustments
+  if (car.engine.fuelType === 'electric') score += 8; // Fewer moving parts
+  else if (car.engine.fuelType === 'hybrid' || car.engine.fuelType === 'plug-in hybrid') score -= 5;
+
+  // Engine stress
+  if (car.engine.displacement > 5.0) score -= 4;
+  else if (car.engine.displacement < 2.0 && car.engine.horsepower > 200) score -= 6; // Turbo stress
+
+  return Math.max(40, Math.min(100, score));
+}
+
 // Calculate derived performance metrics
 export interface DerivedMetrics {
   powerDensity: number; // HP per liter
@@ -87,6 +138,7 @@ export interface DerivedMetrics {
   valueScore: number; // Composite score
   costPerMile: number; // Cost per mile (normalized across fuel types)
   efficiencyScore: number; // 0-100 normalized efficiency
+  reliabilityScore: number; // 0-100 brand-based reliability
 }
 
 export function calculateDerivedMetrics(car: CarSpecs): DerivedMetrics {
@@ -111,8 +163,8 @@ export function calculateDerivedMetrics(car: CarSpecs): DerivedMetrics {
   // Performance score (0-100): Based on power-to-weight
   const performanceScore = Math.min(100, powerToWeight * 500); // 0.2 HP/lb = 100
 
-  // Reliability score (placeholder - would use real data)
-  const reliabilityScore = 75; // Default to 75/100
+  // Reliability score (brand + age + characteristics)
+  const reliabilityScore = calculateReliabilityScore(car);
 
   // NEW VALUE FORMULA: (Performance × Efficiency × Reliability) / Price
   // Higher score = better value
@@ -129,6 +181,7 @@ export function calculateDerivedMetrics(car: CarSpecs): DerivedMetrics {
     valueScore,
     costPerMile: costPerMileData.costPerMile,
     efficiencyScore,
+    reliabilityScore,
   };
 }
 
@@ -531,4 +584,180 @@ export function filterCarsByFuelType(cars: CarSpecs[], fuelTypeFilter: FuelTypeF
   }
 
   return cars.filter(car => shouldIncludeInFuelEconomySearch(car, fuelTypeFilter));
+}
+
+// Price Reality Mode: Estimate market value based on depreciation
+export type PriceMode = 'msrp' | 'market' | 'used';
+
+export interface PriceEstimate {
+  price: number;
+  mode: PriceMode;
+  label: string;
+  confidence: 'high' | 'medium' | 'low';
+}
+
+export function estimatePrice(car: CarSpecs, mode: PriceMode): PriceEstimate {
+  const msrp = car.price?.msrp || 0;
+  const age = 2025 - car.year;
+
+  if (mode === 'msrp') {
+    return {
+      price: msrp,
+      mode: 'msrp',
+      label: 'MSRP',
+      confidence: 'high',
+    };
+  }
+
+  // Depreciation curve (varies by segment)
+  const isLuxury = ['BMW', 'Mercedes-Benz', 'Audi', 'Lexus', 'Porsche', 'Jaguar', 'Land Rover', 'Cadillac'].includes(car.make);
+  const isEV = car.engine.fuelType === 'electric';
+  const isReliable = ['Toyota', 'Honda', 'Lexus', 'Mazda', 'Subaru'].includes(car.make);
+
+  // Depreciation rates per year (first 5 years, then slower)
+  let depreciationRate: number;
+  if (isLuxury && !isEV) {
+    depreciationRate = age <= 5 ? 0.15 : 0.08; // Luxury depreciates fast
+  } else if (isEV) {
+    depreciationRate = age <= 3 ? 0.12 : 0.10; // EVs moderate depreciation
+  } else if (isReliable) {
+    depreciationRate = age <= 5 ? 0.10 : 0.06; // Reliable holds value
+  } else {
+    depreciationRate = age <= 5 ? 0.12 : 0.07; // Average
+  }
+
+  // Calculate depreciated value
+  const yearsToApply = age <= 5 ? age : 5 + (age - 5) * 0.6;
+  const depreciationFactor = Math.pow(1 - depreciationRate, yearsToApply);
+  let estimatedPrice = msrp * depreciationFactor;
+
+  // Market adjustment (current year cars may sell above MSRP)
+  if (mode === 'market') {
+    if (age === 0) {
+      estimatedPrice = msrp * 1.05; // New cars 5% markup
+    } else if (age === 1) {
+      estimatedPrice = msrp * 0.88; // 1 year old
+    }
+
+    return {
+      price: Math.round(estimatedPrice),
+      mode: 'market',
+      label: 'Est. Market',
+      confidence: age <= 3 ? 'medium' : 'low',
+    };
+  }
+
+  // Used market (assume 15k miles/year average wear)
+  if (mode === 'used') {
+    const mileagePenalty = age * 0.02; // -2% per year for mileage
+    estimatedPrice *= (1 - mileagePenalty);
+
+    // Floor price (cars don't depreciate to zero)
+    const floorPrice = msrp * 0.15; // Minimum 15% of MSRP
+    estimatedPrice = Math.max(estimatedPrice, floorPrice);
+
+    return {
+      price: Math.round(estimatedPrice),
+      mode: 'used',
+      label: 'Est. Used',
+      confidence: age <= 5 ? 'medium' : 'low',
+    };
+  }
+
+  return {
+    price: msrp,
+    mode: 'msrp',
+    label: 'MSRP',
+    confidence: 'high',
+  };
+}
+
+// Generate "Why This Car?" explanations for search results
+export interface MatchReason {
+  icon: string;
+  text: string;
+  type: 'positive' | 'neutral' | 'highlight';
+}
+
+export function generateMatchReasons(car: CarSpecs, filters?: {
+  maxPrice?: number;
+  minMpg?: number;
+  minHp?: number;
+  bodyStyle?: string[];
+}): MatchReason[] {
+  const reasons: MatchReason[] = [];
+  const derivedMetrics = calculateDerivedMetrics(car);
+  const mpg = car.fuelEconomy.combined || 0;
+
+  // Check price
+  if (filters?.maxPrice && car.price?.msrp && car.price.msrp < filters.maxPrice) {
+    reasons.push({
+      icon: '💰',
+      text: `Under $${(filters.maxPrice / 1000).toFixed(0)}K`,
+      type: 'positive',
+    });
+  }
+
+  // Check MPG
+  if (mpg > 35) {
+    reasons.push({
+      icon: '⛽',
+      text: `${mpg} MPG (Excellent)`,
+      type: 'highlight',
+    });
+  } else if (filters?.minMpg && mpg >= filters.minMpg) {
+    reasons.push({
+      icon: '⛽',
+      text: `${mpg} MPG`,
+      type: 'positive',
+    });
+  }
+
+  // Check power
+  if (car.engine.horsepower > 300) {
+    reasons.push({
+      icon: '⚡',
+      text: `${car.engine.horsepower} HP`,
+      type: 'highlight',
+    });
+  }
+
+  // Check value score
+  if (derivedMetrics.valueScore > 1000) {
+    reasons.push({
+      icon: '🏆',
+      text: 'Top Value Score',
+      type: 'highlight',
+    });
+  }
+
+  // Check reliability
+  if (derivedMetrics.reliabilityScore >= 85) {
+    reasons.push({
+      icon: '✓',
+      text: `${derivedMetrics.reliabilityScore}/100 Reliability`,
+      type: 'positive',
+    });
+  }
+
+  // Check efficiency
+  if (derivedMetrics.efficiencyScore >= 85) {
+    reasons.push({
+      icon: '🌱',
+      text: 'Low Cost Per Mile',
+      type: 'positive',
+    });
+  }
+
+  // Check age
+  const age = 2025 - car.year;
+  if (age <= 2) {
+    reasons.push({
+      icon: '🆕',
+      text: 'Nearly New',
+      type: 'neutral',
+    });
+  }
+
+  return reasons.slice(0, 3); // Limit to 3 reasons
 }
