@@ -4,12 +4,14 @@ import * as api from '../services/api';
 import type { CarSpecs } from '../types/car.types';
 import { getCarImageUrl } from '../utils/carImages';
 import { useCarStore } from '../stores/carStore';
+import TCOCalculator from '../components/TCOCalculator';
 
 export default function CarDetail() {
   const { id } = useParams<{ id: string }>();
   const [car, setCar] = useState<CarSpecs | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'specs' | 'history' | 'reviews'>('specs');
+  const [showTCO, setShowTCO] = useState(false);
   const { addCarToComparison, comparedCars } = useCarStore();
   const navigate = useNavigate();
 
@@ -172,6 +174,12 @@ export default function CarDetail() {
                     className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all transform hover:scale-105 shadow-lg shadow-blue-500/50"
                   >
                     Add to Comparison
+                  </button>
+                  <button
+                    onClick={() => setShowTCO(true)}
+                    className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all transform hover:scale-105 shadow-lg shadow-green-500/50"
+                  >
+                    Calculate TCO
                   </button>
                   <button
                     onClick={() => setActiveTab('specs')}
@@ -478,6 +486,11 @@ export default function CarDetail() {
             </Link>
           </div>
         </div>
+      )}
+
+      {/* TCO Calculator Modal */}
+      {showTCO && car && (
+        <TCOCalculator car={car} onClose={() => setShowTCO(false)} />
       )}
     </div>
   );

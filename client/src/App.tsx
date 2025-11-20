@@ -5,6 +5,8 @@ import VehicleGrid from './pages/VehicleGrid';
 import CarDetail from './pages/CarDetail';
 import Home from './pages/Home';
 import Compare from './pages/Compare';
+import Collection from './pages/Collection';
+import SmartSearch from './pages/SmartSearch';
 
 function App() {
   return (
@@ -17,6 +19,8 @@ function App() {
           <Route path="/car/:id" element={<CarDetail />} />
           <Route path="/home" element={<Home />} />
           <Route path="/compare" element={<Compare />} />
+          <Route path="/collection/:collectionId" element={<Collection />} />
+          <Route path="/smart-search" element={<SmartSearch />} />
         </Routes>
       </div>
     </Router>
