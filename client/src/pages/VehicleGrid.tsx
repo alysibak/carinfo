@@ -2,10 +2,12 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import * as api from '../services/api';
 import type { CarSpecs, SearchQuery } from '../types/car.types';
+import { getDealRating, getDealRatingColor, getDealRatingLabel, getSegment } from '../utils/marketIntelligence';
 
 export default function VehicleGrid() {
   const { category, subcategory } = useParams<{ category: string; subcategory: string }>();
   const [allCars, setAllCars] = useState<CarSpecs[]>([]);
+  const [allDatabaseCars, setAllDatabaseCars] = useState<CarSpecs[]>([]);
   const [filteredCars, setFilteredCars] = useState<CarSpecs[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<'year' | 'horsepower' | 'name'>('year');
@@ -16,11 +18,21 @@ export default function VehicleGrid() {
 
   useEffect(() => {
     loadVehicles();
+    loadAllDatabaseCars();
   }, [category, subcategory]);
 
   useEffect(() => {
     applyFiltersAndSort();
   }, [allCars, sortBy, sortOrder, searchTerm]);
+
+  const loadAllDatabaseCars = async () => {
+    try {
+      const results = await api.searchCars({ limit: 15000 });
+      setAllDatabaseCars(results.results);
+    } catch (error) {
+      console.error('Failed to load all database cars:', error);
+    }
+  };
 
   const loadVehicles = async () => {
     setLoading(true);
@@ -213,18 +225,36 @@ export default function VehicleGrid() {
           <div className="max-w-7xl mx-auto">
             {/* Grid of vehicles */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-zinc-900">
-              {filteredCars.map((car) => (
-                <div
-                  key={car.id}
-                  onClick={() => navigate(`/car/${car.id}`)}
-                  className="bg-black p-8 hover:bg-zinc-950 transition-all duration-300 cursor-pointer group border border-zinc-900 hover:border-zinc-700"
-                >
-                  {/* Year */}
-                  <div className="mb-4">
-                    <p className="text-5xl font-black text-zinc-700 group-hover:text-zinc-600 transition-colors">
-                      {car.year}
-                    </p>
-                  </div>
+              {filteredCars.map((car) => {
+                const segment = allDatabaseCars.length > 0 ? getSegment(car, allDatabaseCars) : [];
+                const dealRating = segment.length >= 5 ? getDealRating(car, segment) : null;
+
+                return (
+                  <div
+                    key={car.id}
+                    onClick={() => navigate(`/car/${car.id}`)}
+                    className="bg-black p-8 hover:bg-zinc-950 transition-all duration-300 cursor-pointer group border border-zinc-900 hover:border-zinc-700 relative"
+                  >
+                    {/* Deal Rating Badge */}
+                    {dealRating && (
+                      <div
+                        className="absolute top-4 right-4 px-3 py-1.5 text-xs font-black tracking-wider border-2"
+                        style={{
+                          backgroundColor: `${getDealRatingColor(dealRating)}20`,
+                          color: getDealRatingColor(dealRating),
+                          borderColor: getDealRatingColor(dealRating),
+                        }}
+                      >
+                        {getDealRatingLabel(dealRating)}
+                      </div>
+                    )}
+
+                    {/* Year */}
+                    <div className="mb-4">
+                      <p className="text-5xl font-black text-zinc-700 group-hover:text-zinc-600 transition-colors">
+                        {car.year}
+                      </p>
+                    </div>
 
                   {/* Make & Model */}
                   <div className="mb-6">
@@ -267,7 +297,8 @@ export default function VehicleGrid() {
                     </svg>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
