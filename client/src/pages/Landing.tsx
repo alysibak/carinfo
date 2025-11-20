@@ -144,6 +144,13 @@ export default function Landing() {
             </button>
 
             <Link
+              to="/value-matrix"
+              className="group relative inline-flex items-center gap-4 px-12 py-6 border border-zinc-700 hover:border-white hover:bg-zinc-900 transition-all duration-300 animate-fade-in"
+            >
+              <span className="text-sm tracking-[0.3em] font-bold">📊 VALUE MATRIX</span>
+            </Link>
+
+            <Link
               to="/garage"
               className="group relative inline-flex items-center gap-4 px-12 py-6 border border-zinc-700 hover:border-white hover:bg-zinc-900 transition-all duration-300 animate-fade-in"
             >
