@@ -5,13 +5,22 @@ import type { CarSpecs, SearchQuery } from '../types/car.types';
 
 export default function VehicleGrid() {
   const { category, subcategory } = useParams<{ category: string; subcategory: string }>();
-  const [cars, setCars] = useState<CarSpecs[]>([]);
+  const [allCars, setAllCars] = useState<CarSpecs[]>([]);
+  const [filteredCars, setFilteredCars] = useState<CarSpecs[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState<'year' | 'horsepower' | 'name'>('year');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     loadVehicles();
   }, [category, subcategory]);
+
+  useEffect(() => {
+    applyFiltersAndSort();
+  }, [allCars, sortBy, sortOrder, searchTerm]);
 
   const loadVehicles = async () => {
     setLoading(true);
@@ -19,7 +28,7 @@ export default function VehicleGrid() {
     const query: SearchQuery = {
       filters: {},
       sort: { field: 'year', order: 'desc' },
-      limit: 50,
+      limit: 10000, // Get all vehicles
     };
 
     // Apply filters based on category and subcategory
@@ -53,8 +62,39 @@ export default function VehicleGrid() {
     }
 
     const results = await api.searchCars(query);
-    setCars(results.results);
+    setAllCars(results.results);
     setLoading(false);
+  };
+
+  const applyFiltersAndSort = () => {
+    let filtered = [...allCars];
+
+    // Apply search filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(car =>
+        car.make.toLowerCase().includes(term) ||
+        car.model.toLowerCase().includes(term) ||
+        car.year.toString().includes(term)
+      );
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let compareValue = 0;
+
+      if (sortBy === 'year') {
+        compareValue = a.year - b.year;
+      } else if (sortBy === 'horsepower') {
+        compareValue = a.engine.horsepower - b.engine.horsepower;
+      } else if (sortBy === 'name') {
+        compareValue = `${a.make} ${a.model}`.localeCompare(`${b.make} ${b.model}`);
+      }
+
+      return sortOrder === 'asc' ? compareValue : -compareValue;
+    });
+
+    setFilteredCars(filtered);
   };
 
   const getCategoryTitle = () => {
@@ -93,28 +133,87 @@ export default function VehicleGrid() {
                 {getCategoryTitle()}
               </h1>
               <p className="text-xs tracking-[0.3em] text-zinc-700 mt-1">
-                {cars.length} AVAILABLE
+                {filteredCars.length} OF {allCars.length}
               </p>
             </div>
 
-            <div className="w-20" />
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="text-xs tracking-[0.3em] text-zinc-600 hover:text-white transition-colors"
+            >
+              {showFilters ? 'HIDE' : 'FILTER'}
+            </button>
           </div>
+
+          {/* Filter Controls */}
+          {showFilters && (
+            <div className="max-w-7xl mx-auto mt-6 pt-6 border-t border-zinc-900">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Search */}
+                <div>
+                  <label className="block text-xs tracking-widest text-zinc-700 mb-2">SEARCH</label>
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Make, model, year..."
+                    className="w-full bg-zinc-950 border border-zinc-800 px-4 py-2 text-sm focus:outline-none focus:border-zinc-600 transition-colors"
+                  />
+                </div>
+
+                {/* Sort By */}
+                <div>
+                  <label className="block text-xs tracking-widest text-zinc-700 mb-2">SORT BY</label>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as 'year' | 'horsepower' | 'name')}
+                    className="w-full bg-zinc-950 border border-zinc-800 px-4 py-2 text-sm focus:outline-none focus:border-zinc-600 transition-colors"
+                  >
+                    <option value="year">YEAR</option>
+                    <option value="horsepower">POWER</option>
+                    <option value="name">NAME</option>
+                  </select>
+                </div>
+
+                {/* Sort Order */}
+                <div>
+                  <label className="block text-xs tracking-widest text-zinc-700 mb-2">ORDER</label>
+                  <select
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+                    className="w-full bg-zinc-950 border border-zinc-800 px-4 py-2 text-sm focus:outline-none focus:border-zinc-600 transition-colors"
+                  >
+                    <option value="desc">HIGH TO LOW</option>
+                    <option value="asc">LOW TO HIGH</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Content with padding for fixed header */}
-      <div className="pt-32 px-8 pb-16">
-        {cars.length === 0 ? (
+      <div className={`${showFilters ? 'pt-64' : 'pt-32'} px-8 pb-16 transition-all duration-300`}>
+        {filteredCars.length === 0 ? (
           <div className="text-center py-32">
-            <p className="text-2xl font-light tracking-wider text-zinc-700 uppercase">
+            <p className="text-2xl font-light tracking-wider text-zinc-700 uppercase mb-4">
               No vehicles found
             </p>
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="text-xs tracking-widest text-zinc-600 hover:text-white transition-colors"
+              >
+                CLEAR SEARCH
+              </button>
+            )}
           </div>
         ) : (
           <div className="max-w-7xl mx-auto">
             {/* Grid of vehicles */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-zinc-900">
-              {cars.map((car) => (
+              {filteredCars.map((car) => (
                 <div
                   key={car.id}
                   onClick={() => navigate(`/car/${car.id}`)}
