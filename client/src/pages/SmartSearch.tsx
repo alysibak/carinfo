@@ -2,12 +2,14 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import * as api from '../services/api';
 import type { CarSpecs, SearchQuery } from '../types/car.types';
+import { getDealRating, getDealRatingColor, getDealRatingLabel, getSegment } from '../utils/marketIntelligence';
 
 type SmartSort = 'best-value' | 'bang-for-buck' | 'lowest-tco' | 'daily-driver' | 'weekend' | 'resale' | 'eco' | 'track';
 
 export default function SmartSearch() {
   const [searchParams] = useSearchParams();
   const [allCars, setAllCars] = useState<CarSpecs[]>([]);
+  const [allDatabaseCars, setAllDatabaseCars] = useState<CarSpecs[]>([]);
   const [filteredCars, setFilteredCars] = useState<CarSpecs[]>([]);
   const [loading, setLoading] = useState(true);
   const [smartSort, setSmartSort] = useState<SmartSort>('best-value');
@@ -23,11 +25,21 @@ export default function SmartSearch() {
 
   useEffect(() => {
     loadVehicles();
+    loadAllDatabaseCars();
   }, [persona, minPrice, maxPrice]);
 
   useEffect(() => {
     applySmartSort();
   }, [allCars, smartSort, searchTerm]);
+
+  const loadAllDatabaseCars = async () => {
+    try {
+      const results = await api.searchCars({ limit: 15000 });
+      setAllDatabaseCars(results.results);
+    } catch (error) {
+      console.error('Failed to load all database cars:', error);
+    }
+  };
 
   const loadVehicles = async () => {
     setLoading(true);
@@ -300,13 +312,30 @@ export default function SmartSearch() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-zinc-900">
               {filteredCars.map((car, index) => {
                 const score = calculateScore(car, smartSort);
+                const segment = allDatabaseCars.length > 0 ? getSegment(car, allDatabaseCars) : [];
+                const dealRating = segment.length >= 5 ? getDealRating(car, segment) : null;
+
                 return (
                   <div
                     key={car.id}
                     onClick={() => navigate(`/car/${car.id}`)}
                     className="bg-black p-8 hover:bg-zinc-950 transition-all duration-300 cursor-pointer group border border-zinc-900 hover:border-zinc-700 relative"
                   >
-                    {/* Top 3 Badge */}
+                    {/* Deal Rating Badge (Top-Left) */}
+                    {dealRating && (
+                      <div
+                        className="absolute top-4 left-4 px-3 py-1.5 text-xs font-black tracking-wider border-2"
+                        style={{
+                          backgroundColor: `${getDealRatingColor(dealRating)}20`,
+                          color: getDealRatingColor(dealRating),
+                          borderColor: getDealRatingColor(dealRating),
+                        }}
+                      >
+                        {getDealRatingLabel(dealRating)}
+                      </div>
+                    )}
+
+                    {/* Top 3 Badge (Top-Right) */}
                     {index < 3 && (
                       <div className="absolute top-4 right-4">
                         <div className="bg-white text-black px-3 py-1 text-xs font-black tracking-widest">
