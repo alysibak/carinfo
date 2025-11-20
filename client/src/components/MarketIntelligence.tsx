@@ -6,6 +6,7 @@ import {
   formatPercentage,
   getWeightClass,
   getPowerClass,
+  calculateCostPerMile,
 } from '../utils/marketIntelligence';
 
 interface MarketIntelligenceProps {
@@ -17,6 +18,7 @@ export default function MarketIntelligence({ car, allCars }: MarketIntelligenceP
   const segment = getSegment(car, allCars);
   const derivedMetrics = calculateDerivedMetrics(car);
   const marketPosition = segment.length >= 5 ? calculateMarketPosition(car, segment) : null;
+  const costPerMileData = calculateCostPerMile(car);
 
   const priceInfo = marketPosition ? formatPercentage(marketPosition.priceVsAvg, false) : null;
   const hpInfo = marketPosition ? formatPercentage(marketPosition.hpVsAvg, true) : null;
@@ -127,11 +129,28 @@ export default function MarketIntelligence({ car, allCars }: MarketIntelligenceP
               </span>
             </div>
 
+            <div className="flex justify-between items-center py-2 border-b border-slate-700">
+              <span className="text-slate-300">Cost Per Mile</span>
+              <div className="text-right">
+                <span className="text-white font-bold text-lg">
+                  ${costPerMileData.costPerMile.toFixed(3)}
+                </span>
+                <p className="text-xs text-slate-500 mt-1">
+                  {costPerMileData.fuelType} • ${costPerMileData.annualCost.toLocaleString()}/yr
+                </p>
+              </div>
+            </div>
+
             <div className="flex justify-between items-center py-2">
-              <span className="text-slate-300">MPG per $1000</span>
-              <span className="text-white font-bold text-lg">
-                {derivedMetrics.mpgPerDollar.toFixed(3)}
-              </span>
+              <span className="text-slate-300">Efficiency Score</span>
+              <div className="text-right">
+                <span className="text-white font-bold text-lg">
+                  {derivedMetrics.efficiencyScore.toFixed(0)}/100
+                </span>
+                <p className="text-xs text-slate-500 mt-1">
+                  {costPerMileData.efficiencyMetric}
+                </p>
+              </div>
             </div>
           </div>
         </div>

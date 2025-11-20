@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import * as api from '../services/api';
 import type { CarSpecs, SearchQuery } from '../types/car.types';
-import { getDealRating, getDealRatingColor, getDealRatingLabel, getSegment } from '../utils/marketIntelligence';
+import { getDealRating, getDealRatingColor, getDealRatingLabel, getSegment, filterCarsByFuelType, type FuelTypeFilter } from '../utils/marketIntelligence';
 import AggregateStats from '../components/AggregateStats';
 
 interface CollectionConfig {
@@ -116,6 +116,7 @@ export default function Collection() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [fuelTypeFilter, setFuelTypeFilter] = useState<FuelTypeFilter>('gasoline');
   const navigate = useNavigate();
 
   const collection = collectionId ? collections[collectionId] : null;
@@ -129,7 +130,7 @@ export default function Collection() {
 
   useEffect(() => {
     applyFiltersAndSort();
-  }, [allCars, sortBy, sortOrder, searchTerm]);
+  }, [allCars, sortBy, sortOrder, searchTerm, fuelTypeFilter]);
 
   const loadAllDatabaseCars = async () => {
     try {
@@ -151,6 +152,9 @@ export default function Collection() {
 
   const applyFiltersAndSort = () => {
     let filtered = [...allCars];
+
+    // Apply fuel type filter
+    filtered = filterCarsByFuelType(filtered, fuelTypeFilter);
 
     // Apply search filter
     if (searchTerm) {
@@ -295,17 +299,30 @@ export default function Collection() {
                   </select>
                 </div>
 
-                {/* Quick Jump */}
+                {/* Fuel Type Filter */}
                 <div>
-                  <label className="block text-xs tracking-widest text-zinc-700 mb-2">SMART SEARCH</label>
-                  <button
-                    onClick={() => navigate('/smart-search')}
-                    className="w-full bg-zinc-950 border border-zinc-800 px-4 py-2 text-sm hover:border-zinc-600 transition-colors text-left"
+                  <label className="block text-xs tracking-widest text-zinc-700 mb-2">FUEL TYPE</label>
+                  <select
+                    value={fuelTypeFilter}
+                    onChange={(e) => setFuelTypeFilter(e.target.value as FuelTypeFilter)}
+                    className="w-full bg-zinc-950 border border-zinc-800 px-4 py-2 text-sm focus:outline-none focus:border-zinc-600 transition-colors"
                   >
-                    USE PERSONA QUIZ
-                  </button>
+                    <option value="all">ALL VEHICLES</option>
+                    <option value="gasoline">GAS + HYBRID</option>
+                    <option value="gasoline-only">GAS ONLY</option>
+                    <option value="hybrid">HYBRID ONLY</option>
+                    <option value="electric">ELECTRIC ONLY</option>
+                  </select>
                 </div>
               </div>
+
+              {fuelTypeFilter === 'gasoline' && (
+                <div className="mt-4 p-3 bg-zinc-950 border border-zinc-900">
+                  <p className="text-xs text-blue-400 text-center">
+                    💡 EVs excluded from fuel economy filtering (MPGe ≠ MPG)
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
