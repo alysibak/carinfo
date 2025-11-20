@@ -141,7 +141,7 @@ export default function MarketIntelligence({ car, allCars }: MarketIntelligenceP
               </div>
             </div>
 
-            <div className="flex justify-between items-center py-2">
+            <div className="flex justify-between items-center py-2 border-b border-slate-700">
               <span className="text-slate-300">Efficiency Score</span>
               <div className="text-right">
                 <span className="text-white font-bold text-lg">
@@ -149,6 +149,23 @@ export default function MarketIntelligence({ car, allCars }: MarketIntelligenceP
                 </span>
                 <p className="text-xs text-slate-500 mt-1">
                   {costPerMileData.efficiencyMetric}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center py-2">
+              <span className="text-slate-300">Reliability Score</span>
+              <div className="text-right">
+                <span
+                  className="font-bold text-lg"
+                  style={{
+                    color: derivedMetrics.reliabilityScore >= 80 ? '#10b981' : derivedMetrics.reliabilityScore >= 65 ? '#f59e0b' : '#ef4444'
+                  }}
+                >
+                  {derivedMetrics.reliabilityScore.toFixed(0)}/100
+                </span>
+                <p className="text-xs text-slate-500 mt-1">
+                  {car.make} • {2025 - car.year} years old
                 </p>
               </div>
             </div>
