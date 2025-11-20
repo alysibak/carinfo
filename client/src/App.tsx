@@ -7,7 +7,6 @@ import Home from './pages/Home';
 import Compare from './pages/Compare';
 import Collection from './pages/Collection';
 import SmartSearch from './pages/SmartSearch';
-import CarIdentifier from './components/CarIdentifier';
 import DreamGarage from './pages/DreamGarage';
 import BattleMode from './pages/BattleMode';
 
@@ -24,7 +23,6 @@ function App() {
           <Route path="/compare" element={<Compare />} />
           <Route path="/collection/:collectionId" element={<Collection />} />
           <Route path="/smart-search" element={<SmartSearch />} />
-          <Route path="/identify" element={<CarIdentifier />} />
           <Route path="/garage" element={<DreamGarage />} />
           <Route path="/battle" element={<BattleMode />} />
         </Routes>
