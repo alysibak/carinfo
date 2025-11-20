@@ -5,10 +5,12 @@ import type { CarSpecs } from '../types/car.types';
 import { getCarImageUrl } from '../utils/carImages';
 import { useCarStore } from '../stores/carStore';
 import TCOCalculator from '../components/TCOCalculator';
+import MarketIntelligence from '../components/MarketIntelligence';
 
 export default function CarDetail() {
   const { id } = useParams<{ id: string }>();
   const [car, setCar] = useState<CarSpecs | null>(null);
+  const [allCars, setAllCars] = useState<CarSpecs[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'specs' | 'history' | 'reviews'>('specs');
   const [showTCO, setShowTCO] = useState(false);
@@ -17,6 +19,7 @@ export default function CarDetail() {
 
   useEffect(() => {
     loadCar();
+    loadAllCars();
   }, [id]);
 
   const loadCar = async () => {
@@ -28,6 +31,15 @@ export default function CarDetail() {
       console.error('Failed to load car:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAllCars = async () => {
+    try {
+      const results = await api.searchCars({ limit: 15000 });
+      setAllCars(results.results);
+    } catch (error) {
+      console.error('Failed to load all cars:', error);
     }
   };
 
@@ -254,6 +266,11 @@ export default function CarDetail() {
         {activeTab === 'specs' && (
           <div className="animate-fade-in">
             <h2 className="text-4xl font-bold text-white mb-12">Complete Specifications</h2>
+
+            {/* Market Intelligence */}
+            {allCars.length > 0 && (
+              <MarketIntelligence car={car} allCars={allCars} />
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Engine */}
