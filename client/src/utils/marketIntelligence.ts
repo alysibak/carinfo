@@ -312,3 +312,83 @@ export function calculateAggregateStats(cars: CarSpecs[]): AggregateStats {
     bodyStyleBreakdown,
   };
 }
+
+// Predict 0-60 time for vehicles with missing data
+export interface ZeroToSixtyPrediction {
+  predicted: number;
+  confidence: 'high' | 'medium' | 'low';
+  method: 'actual' | 'predicted';
+}
+
+export function predictZeroToSixty(car: CarSpecs): ZeroToSixtyPrediction {
+  // If actual value exists, return it
+  if (car.performance.zeroToSixty && car.performance.zeroToSixty > 0) {
+    return {
+      predicted: car.performance.zeroToSixty,
+      confidence: 'high',
+      method: 'actual',
+    };
+  }
+
+  // Calculate power-to-weight ratio (HP per 1000 lbs)
+  const hp = car.engine.horsepower;
+  const weight = car.dimensions.curbWeight;
+  const powerToWeight = (hp / weight) * 1000;
+
+  // Drivetrain factor (AWD launches faster, FWD slower)
+  let drivetrainFactor = 1.0;
+  if (car.driveType === 'AWD' || car.driveType === '4WD') {
+    drivetrainFactor = 0.92; // 8% faster
+  } else if (car.driveType === 'FWD') {
+    drivetrainFactor = 1.08; // 8% slower
+  }
+
+  // Transmission factor
+  let transmissionFactor = 1.0;
+  if (car.transmission.type === 'dual-clutch') {
+    transmissionFactor = 0.95; // 5% faster
+  } else if (car.transmission.type === 'cvt') {
+    transmissionFactor = 1.05; // 5% slower
+  }
+
+  // Electric vehicles are much faster
+  let electricBonus = 1.0;
+  if (car.engine.fuelType === 'electric') {
+    electricBonus = 0.7; // 30% faster
+  }
+
+  // Base formula: 0-60 time is inversely proportional to power-to-weight
+  // Formula derived from real-world data:
+  // - High-performance cars: ~200 HP/ton = ~3.5s 0-60
+  // - Average cars: ~100 HP/ton = ~7s 0-60
+  // - Economy cars: ~60 HP/ton = ~10s 0-60
+
+  // Base time calculation
+  const baseTime = 700 / powerToWeight; // Empirical constant
+
+  // Apply all factors
+  const predicted = baseTime * drivetrainFactor * transmissionFactor * electricBonus;
+
+  // Clamp to reasonable range (2-15 seconds)
+  const clampedTime = Math.max(2.0, Math.min(15.0, predicted));
+
+  // Determine confidence based on typical patterns
+  let confidence: 'high' | 'medium' | 'low' = 'medium';
+
+  if (car.engine.fuelType === 'electric') {
+    // Electric predictions are more reliable due to consistent torque delivery
+    confidence = 'high';
+  } else if (powerToWeight > 150) {
+    // High-performance cars (>150 HP/ton) are very predictable
+    confidence = 'high';
+  } else if (powerToWeight < 70) {
+    // Very low power cars have more variability
+    confidence = 'low';
+  }
+
+  return {
+    predicted: Math.round(clampedTime * 10) / 10, // Round to 1 decimal
+    confidence,
+    method: 'predicted',
+  };
+}
