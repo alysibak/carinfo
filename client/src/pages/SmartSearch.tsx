@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import * as api from '../services/api';
 import type { CarSpecs, SearchQuery } from '../types/car.types';
 import { getDealRating, getDealRatingColor, getDealRatingLabel, getSegment } from '../utils/marketIntelligence';
+import AggregateStats from '../components/AggregateStats';
 
 type SmartSort = 'best-value' | 'bang-for-buck' | 'lowest-tco' | 'daily-driver' | 'weekend' | 'resale' | 'eco' | 'track';
 
@@ -300,6 +301,11 @@ export default function SmartSearch() {
           </div>
         ) : (
           <div className="max-w-7xl mx-auto">
+            {/* Aggregate Stats */}
+            <div className="mb-8">
+              <AggregateStats cars={filteredCars} title="MATCHED RESULTS" />
+            </div>
+
             {/* Smart Sort Indicator */}
             <div className="mb-8 text-center">
               <p className="text-xs tracking-[0.3em] text-zinc-700 uppercase mb-2">
