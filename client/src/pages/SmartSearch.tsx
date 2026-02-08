@@ -1,5 +1,5 @@
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import * as api from '../services/api';
 import type { CarSpecs, SearchQuery } from '../types/car.types';
 import { getDealRating, getDealRatingColor, getDealRatingLabel, getSegment, filterCarsByFuelType, type FuelTypeFilter } from '../utils/marketIntelligence';
@@ -7,16 +7,18 @@ import AggregateStats from '../components/AggregateStats';
 
 type SmartSort = 'best-value' | 'bang-for-buck' | 'lowest-tco' | 'daily-driver' | 'weekend' | 'resale' | 'eco' | 'track';
 
+const PAGE_SIZE = 50;
+
 export default function SmartSearch() {
   const [searchParams] = useSearchParams();
   const [allCars, setAllCars] = useState<CarSpecs[]>([]);
-  const [allDatabaseCars, setAllDatabaseCars] = useState<CarSpecs[]>([]);
   const [filteredCars, setFilteredCars] = useState<CarSpecs[]>([]);
   const [loading, setLoading] = useState(true);
   const [smartSort, setSmartSort] = useState<SmartSort>('best-value');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [fuelTypeFilter, setFuelTypeFilter] = useState<FuelTypeFilter>('gasoline');
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const navigate = useNavigate();
 
   // Get persona from URL params
@@ -27,21 +29,12 @@ export default function SmartSearch() {
 
   useEffect(() => {
     loadVehicles();
-    loadAllDatabaseCars();
   }, [persona, minPrice, maxPrice]);
 
   useEffect(() => {
     applySmartSort();
+    setVisibleCount(PAGE_SIZE);
   }, [allCars, smartSort, searchTerm, fuelTypeFilter]);
-
-  const loadAllDatabaseCars = async () => {
-    try {
-      const results = await api.searchCars({ limit: 15000 });
-      setAllDatabaseCars(results.results);
-    } catch (error) {
-      console.error('Failed to load all database cars:', error);
-    }
-  };
 
   const loadVehicles = async () => {
     setLoading(true);
@@ -51,7 +44,7 @@ export default function SmartSearch() {
         price: { min: minPrice, max: maxPrice },
       },
       sort: { field: 'year', order: 'desc' },
-      limit: 10000,
+      limit: 500,
     };
 
     // Apply persona-based filters
@@ -69,7 +62,6 @@ export default function SmartSearch() {
     } else if (priority === 'power') {
       query.filters!.horsepower = { min: 300 };
     } else if (priority === 'safety') {
-      // Filter for family-friendly vehicles with safety in mind
       query.filters!.bodyStyle = ['suv', 'minivan', 'wagon', 'sedan'];
     } else if (priority === 'space') {
       query.filters!.bodyStyle = ['suv', 'minivan', 'wagon'];
@@ -80,62 +72,59 @@ export default function SmartSearch() {
     setLoading(false);
   };
 
-  const calculateScore = (car: CarSpecs, algorithm: SmartSort): number => {
+  const calculateScore = useCallback((car: CarSpecs, algorithm: SmartSort): number => {
     const price = car.price?.msrp || 50000;
     const hp = car.engine.horsepower;
     const mpg = car.fuelEconomy.combined || 20;
     const safety = car.safetyRating?.overall || 3;
-    const reliability = 4; // Would come from reliability database
+    const reliability = 4;
     const zeroToSixty = car.performance.zeroToSixty || 8;
 
     switch (algorithm) {
       case 'best-value':
-        // (Reliability × MPG × Safety) ÷ Price
         return (reliability * mpg * safety) / (price / 10000);
 
       case 'bang-for-buck':
-        // HP ÷ Price
         return hp / (price / 1000);
 
-      case 'lowest-tco':
-        // 5-year Total Cost of Ownership (simplified)
-        const fuelCostPerYear = (15000 / mpg) * 3.5; // 15k miles/year at $3.5/gal
+      case 'lowest-tco': {
+        const fuelCostPerYear = (15000 / mpg) * 3.5;
         const maintenanceCostPerYear = 1000;
-        const insuranceCostPerYear = price * 0.01; // 1% of price
+        const insuranceCostPerYear = price * 0.01;
         const tco = price + (fuelCostPerYear + maintenanceCostPerYear + insuranceCostPerYear) * 5;
-        return 1000000 / tco; // Inverse so lower TCO = higher score
+        return 1000000 / tco;
+      }
 
       case 'daily-driver':
-        // MPG × Reliability × Comfort (simplified)
         return mpg * reliability * (car.dimensions.length / 100);
 
-      case 'weekend':
-        // HP × (1 / 0-60 time) × Fun Factor
+      case 'weekend': {
         const funFactor = ['coupe', 'convertible', 'sports car'].includes(car.bodyStyle) ? 1.5 : 1;
         return hp * (10 / zeroToSixty) * funFactor;
+      }
 
-      case 'resale':
-        // Brand Prestige × Age Factor × Reliability
+      case 'resale': {
         const luxuryBrands = ['Mercedes-Benz', 'BMW', 'Audi', 'Lexus', 'Porsche'];
         const prestige = luxuryBrands.includes(car.make) ? 1.5 : 1;
         const ageFactor = Math.max(0, 10 - (2025 - car.year)) / 10;
         return prestige * ageFactor * reliability * 100;
+      }
 
-      case 'eco':
-        // MPG × (Electric Bonus) × Emissions (simplified)
+      case 'eco': {
         const electricBonus = car.engine.fuelType === 'electric' ? 2 : car.engine.fuelType === 'hybrid' ? 1.5 : 1;
         return mpg * electricBonus * 10;
+      }
 
-      case 'track':
-        // HP × (1 / 0-60) × Weight Factor
+      case 'track': {
         const weight = car.dimensions.curbWeight;
         const weightFactor = 5000 / weight;
         return hp * (10 / zeroToSixty) * weightFactor;
+      }
 
       default:
         return 0;
     }
-  };
+  }, []);
 
   const applySmartSort = () => {
     let filtered = [...allCars];
@@ -157,11 +146,37 @@ export default function SmartSearch() {
     filtered.sort((a, b) => {
       const scoreA = calculateScore(a, smartSort);
       const scoreB = calculateScore(b, smartSort);
-      return scoreB - scoreA; // Higher score first
+      return scoreB - scoreA;
     });
 
     setFilteredCars(filtered);
   };
+
+  // Memoize scores so render doesn't recompute them
+  const scoreMap = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const car of filteredCars) {
+      map.set(car.id, calculateScore(car, smartSort));
+    }
+    return map;
+  }, [filteredCars, smartSort, calculateScore]);
+
+  // Compute deal ratings only for the visible page of cars, using the filtered
+  // results as the segment pool (avoids loading the entire database).
+  const dealRatingMap = useMemo(() => {
+    const map = new Map<string, ReturnType<typeof getDealRating> | null>();
+    const visible = filteredCars.slice(0, visibleCount);
+    for (const car of visible) {
+      const segment = getSegment(car, filteredCars);
+      map.set(car.id, segment.length >= 5 ? getDealRating(car, segment) : null);
+    }
+    return map;
+  }, [filteredCars, visibleCount]);
+
+  const visibleCars = useMemo(
+    () => filteredCars.slice(0, visibleCount),
+    [filteredCars, visibleCount],
+  );
 
   const getPersonaTitle = () => {
     if (persona === 'commuter') return 'THE COMMUTER';
@@ -341,10 +356,9 @@ export default function SmartSearch() {
 
             {/* Grid of vehicles */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-zinc-900">
-              {filteredCars.map((car, index) => {
-                const score = calculateScore(car, smartSort);
-                const segment = allDatabaseCars.length > 0 ? getSegment(car, allDatabaseCars) : [];
-                const dealRating = segment.length >= 5 ? getDealRating(car, segment) : null;
+              {visibleCars.map((car, index) => {
+                const score = scoreMap.get(car.id) ?? 0;
+                const dealRating = dealRatingMap.get(car.id) ?? null;
 
                 return (
                   <div
@@ -426,6 +440,18 @@ export default function SmartSearch() {
                 );
               })}
             </div>
+
+            {/* Load More */}
+            {visibleCount < filteredCars.length && (
+              <div className="text-center mt-12">
+                <button
+                  onClick={() => setVisibleCount(prev => prev + PAGE_SIZE)}
+                  className="px-8 py-3 border border-zinc-800 text-xs tracking-[0.3em] text-zinc-500 hover:text-white hover:border-zinc-600 transition-all uppercase"
+                >
+                  Load More ({filteredCars.length - visibleCount} remaining)
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
