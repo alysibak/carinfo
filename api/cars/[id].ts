@@ -1,4 +1,4 @@
-import * as carService from '../../server/src/services/car.service.js';
+import * as carService from '../../server/src/services/car.service';
 
 export default async function handler(req: any, res: any) {
   try {
