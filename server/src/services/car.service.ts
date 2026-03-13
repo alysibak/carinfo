@@ -1,4 +1,4 @@
-import type { CarSpecs, SearchQuery, CarFilter } from '../types/car.types.js';
+import type { CarSpecs, SearchQuery, CarFilter } from '../types/car.types';
 import { readFileSync, existsSync } from 'fs';
 import { join, dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
