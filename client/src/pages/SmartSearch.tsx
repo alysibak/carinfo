@@ -39,37 +39,43 @@ export default function SmartSearch() {
   const loadVehicles = async () => {
     setLoading(true);
 
-    const query: SearchQuery = {
-      filters: {
-        price: { min: minPrice, max: maxPrice },
-      },
-      sort: { field: 'year', order: 'desc' },
-      limit: 500,
-    };
+    try {
+      const query: SearchQuery = {
+        filters: {
+          price: { min: minPrice, max: maxPrice },
+        },
+        sort: { field: 'year', order: 'desc' },
+        limit: 500,
+      };
 
-    // Apply persona-based filters
-    if (persona === 'commuter') {
-      query.filters!.fuelEconomy = { min: 25 };
-    } else if (persona === 'gearhead') {
-      query.filters!.horsepower = { min: 250 };
-    } else if (persona === 'family') {
-      query.filters!.bodyStyle = ['suv', 'minivan', 'wagon'];
+      // Apply persona-based filters
+      if (persona === 'commuter') {
+        query.filters!.fuelEconomy = { min: 25 };
+      } else if (persona === 'gearhead') {
+        query.filters!.horsepower = { min: 250 };
+      } else if (persona === 'family') {
+        query.filters!.bodyStyle = ['suv', 'minivan', 'wagon'];
+      }
+
+      // Apply priority filters
+      if (priority === 'mpg') {
+        query.filters!.fuelEconomy = { min: 30 };
+      } else if (priority === 'power') {
+        query.filters!.horsepower = { min: 300 };
+      } else if (priority === 'safety') {
+        query.filters!.bodyStyle = ['suv', 'minivan', 'wagon', 'sedan'];
+      } else if (priority === 'space') {
+        query.filters!.bodyStyle = ['suv', 'minivan', 'wagon'];
+      }
+
+      const results = await api.searchCars(query);
+      setAllCars(results.results);
+    } catch (error) {
+      console.error('SmartSearch load failed:', error);
+      setAllCars([]);
+    } finally {
+      setLoading(false);
     }
-
-    // Apply priority filters
-    if (priority === 'mpg') {
-      query.filters!.fuelEconomy = { min: 30 };
-    } else if (priority === 'power') {
-      query.filters!.horsepower = { min: 300 };
-    } else if (priority === 'safety') {
-      query.filters!.bodyStyle = ['suv', 'minivan', 'wagon', 'sedan'];
-    } else if (priority === 'space') {
-      query.filters!.bodyStyle = ['suv', 'minivan', 'wagon'];
-    }
-
-    const results = await api.searchCars(query);
-    setAllCars(results.results);
-    setLoading(false);
   };
 
   const calculateScore = useCallback((car: CarSpecs, algorithm: SmartSort): number => {

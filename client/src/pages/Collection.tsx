@@ -145,9 +145,15 @@ export default function Collection() {
     if (!collection) return;
 
     setLoading(true);
-    const results = await api.searchCars(collection.query);
-    setAllCars(results.results);
-    setLoading(false);
+    try {
+      const results = await api.searchCars(collection.query);
+      setAllCars(results.results);
+    } catch (error) {
+      console.error('Failed to load collection vehicles:', error);
+      setAllCars([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const applyFiltersAndSort = () => {

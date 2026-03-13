@@ -64,9 +64,15 @@ export default function ValueMatrix() {
 
   const loadCars = async () => {
     setLoading(true);
-    const results = await api.searchCars({ limit: 15000 });
-    setAllCars(results.results);
-    setLoading(false);
+    try {
+      const results = await api.searchCars({ limit: 15000 });
+      setAllCars(results.results);
+    } catch (error) {
+      console.error('Failed to load ValueMatrix cars:', error);
+      setAllCars([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const processChartData = () => {
