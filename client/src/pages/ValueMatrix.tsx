@@ -194,6 +194,7 @@ export default function ValueMatrix() {
           <p className="text-xs tracking-[0.3em] text-zinc-700 uppercase">
             Loading Market Data
           </p>
+        </div>
       </div>
     );
   }

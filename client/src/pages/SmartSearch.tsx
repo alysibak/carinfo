@@ -265,6 +265,7 @@ export default function SmartSearch() {
         <div className="text-center">
           <div className="inline-block w-16 h-16 border-2 border-zinc-800 border-t-white rounded-full animate-spin mb-4" />
           <p className="text-xs tracking-[0.3em] text-zinc-700 uppercase">Finding Your Perfect Match</p>
+        </div>
       </div>
     );
   }
