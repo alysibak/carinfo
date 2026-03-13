@@ -1,10 +1,6 @@
 import type { CarSpecs, SearchQuery, CarFilter } from '../types/car.types';
 import { readFileSync, existsSync } from 'fs';
-import { join, dirname, resolve } from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { join, resolve } from 'path';
 
 function getDbPathCandidates(): string[] {
   // In serverless (Vercel), `__dirname` can be inside the function bundle and
