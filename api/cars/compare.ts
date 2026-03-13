@@ -1,4 +1,4 @@
-import * as carService from '../../server/src/services/car.service';
+import * as carService from '../_lib/carService';
 
 function parseJsonBody(body: any): any {
   if (body == null) return {};
