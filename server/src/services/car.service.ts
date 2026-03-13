@@ -38,6 +38,60 @@ let countryIndex: Map<string, Car[]> = new Map();
 let cachedMakes: string[] = [];
 let cachedStats: ReturnType<typeof computeStatistics> | null = null;
 
+// Minimal built-in dataset so deployments still work even if `cars.json` is missing.
+// This is primarily useful for serverless platforms (e.g. Vercel) where bundling a
+// large JSON file may be deferred to a later optimization.
+const FALLBACK_CARS: Car[] = [
+  {
+    id: 'car-001',
+    make: 'Toyota',
+    model: 'Camry',
+    year: 2022,
+    trim: 'XSE',
+    countryOfOrigin: 'Japan',
+    engine: {
+      displacement: 3.5,
+      horsepower: 301,
+      torque: 267,
+      fuelType: 'gasoline',
+      cylinders: 6,
+      configuration: 'V6',
+    },
+    performance: { zeroToSixty: 5.8, topSpeed: 135 },
+    dimensions: { length: 192.1, width: 72.4, height: 56.9, wheelbase: 111.2, curbWeight: 3572 },
+    fuelEconomy: { city: 22, highway: 32, combined: 26 },
+    transmission: { type: 'automatic', speeds: 8 },
+    driveType: 'FWD',
+    bodyStyle: 'sedan',
+    safetyRating: { overall: 5 },
+    price: { msrp: 34400 },
+  },
+  {
+    id: 'car-002',
+    make: 'Ford',
+    model: 'Mustang',
+    year: 2021,
+    trim: 'GT',
+    countryOfOrigin: 'USA',
+    engine: {
+      displacement: 5.0,
+      horsepower: 450,
+      torque: 410,
+      fuelType: 'gasoline',
+      cylinders: 8,
+      configuration: 'V8',
+    },
+    performance: { zeroToSixty: 4.2, topSpeed: 155 },
+    dimensions: { length: 188.5, width: 75.4, height: 54.3, wheelbase: 107.1, curbWeight: 3705 },
+    fuelEconomy: { city: 15, highway: 24, combined: 18 },
+    transmission: { type: 'manual', speeds: 6 },
+    driveType: 'RWD',
+    bodyStyle: 'coupe',
+    safetyRating: { overall: 5 },
+    price: { msrp: 36800 },
+  },
+];
+
 /**
  * Load the database once into memory and build all indexes.
  */
@@ -45,8 +99,10 @@ function initDatabase(): void {
   if (cachedCars.length > 0) return; // already loaded
 
   if (!existsSync(DB_PATH)) {
-    cachedCars = [];
+    console.warn(`[car.service] Missing database file at ${DB_PATH}. Using fallback dataset.`);
+    cachedCars = FALLBACK_CARS;
     lastUpdated = new Date().toISOString();
+    buildIndexes();
     return;
   }
 
