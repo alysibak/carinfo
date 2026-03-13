@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import * as api from '../services/api';
 import type { CarSpecs, SearchQuery } from '../types/car.types';
 import { getDealRating, getDealRatingColor, getDealRatingLabel, getSegment } from '../utils/marketIntelligence';
@@ -15,6 +15,11 @@ export default function VehicleGrid() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedBodyStyles, setSelectedBodyStyles] = useState<string[]>([]);
+  const [selectedFuelTypes, setSelectedFuelTypes] = useState<string[]>([]);
+  const [selectedDriveTypes, setSelectedDriveTypes] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(36);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -24,7 +29,23 @@ export default function VehicleGrid() {
 
   useEffect(() => {
     applyFiltersAndSort();
-  }, [allCars, sortBy, sortOrder, searchTerm]);
+    setCurrentPage(1);
+  }, [allCars, sortBy, sortOrder, searchTerm, selectedBodyStyles, selectedFuelTypes, selectedDriveTypes]);
+
+  const bodyStyleOptions = useMemo(
+    () => Array.from(new Set(allCars.map((car) => car.bodyStyle))).sort(),
+    [allCars]
+  );
+
+  const fuelTypeOptions = useMemo(
+    () => Array.from(new Set(allCars.map((car) => car.engine.fuelType))).sort(),
+    [allCars]
+  );
+
+  const driveTypeOptions = useMemo(
+    () => Array.from(new Set(allCars.map((car) => car.driveType))).sort(),
+    [allCars]
+  );
 
   const loadAllDatabaseCars = async () => {
     try {
@@ -98,6 +119,22 @@ export default function VehicleGrid() {
       );
     }
 
+    // Apply quick facet filters
+    if (selectedBodyStyles.length > 0) {
+      const set = new Set(selectedBodyStyles);
+      filtered = filtered.filter((car) => set.has(car.bodyStyle));
+    }
+
+    if (selectedFuelTypes.length > 0) {
+      const set = new Set(selectedFuelTypes);
+      filtered = filtered.filter((car) => set.has(car.engine.fuelType));
+    }
+
+    if (selectedDriveTypes.length > 0) {
+      const set = new Set(selectedDriveTypes);
+      filtered = filtered.filter((car) => set.has(car.driveType));
+    }
+
     // Apply sorting
     filtered.sort((a, b) => {
       let compareValue = 0;
@@ -119,6 +156,12 @@ export default function VehicleGrid() {
   const getCategoryTitle = () => {
     return subcategory?.toUpperCase().replace(/-/g, ' ') || '';
   };
+
+  const totalPages = Math.max(1, Math.ceil(filteredCars.length / pageSize));
+  const clampedCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = (clampedCurrentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const pageCars = filteredCars.slice(startIndex, endIndex);
 
   if (loading) {
     return (
@@ -152,25 +195,44 @@ export default function VehicleGrid() {
                 {getCategoryTitle()}
               </h1>
               <p className="text-xs tracking-[0.3em] text-zinc-700 mt-1">
-                {filteredCars.length} OF {allCars.length}
+                {filteredCars.length} OF {allCars.length} VEHICLES
               </p>
             </div>
 
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="text-xs tracking-[0.3em] text-zinc-600 hover:text-white transition-colors"
-            >
-              {showFilters ? 'HIDE' : 'FILTER'}
-            </button>
+            <div className="flex items-center gap-6">
+              <div className="hidden md:flex items-center gap-2 text-[10px] tracking-[0.25em] text-zinc-600">
+                <span>PER PAGE</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    const value = Number(e.target.value) || 36;
+                    setPageSize(value);
+                    setCurrentPage(1);
+                  }}
+                  className="bg-black border border-zinc-800 px-2 py-1 text-[10px] tracking-[0.25em] focus:outline-none focus:border-zinc-600"
+                >
+                  <option value={24}>24</option>
+                  <option value={36}>36</option>
+                  <option value={60}>60</option>
+                </select>
+              </div>
+
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="text-xs tracking-[0.3em] text-zinc-600 hover:text-white transition-colors"
+              >
+                {showFilters ? 'HIDE FILTERS' : 'FILTERS'}
+              </button>
+            </div>
           </div>
 
           {/* Filter Controls */}
           {showFilters && (
             <div className="max-w-7xl mx-auto mt-6 pt-6 border-t border-zinc-900">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 {/* Search */}
-                <div>
-                  <label className="block text-xs tracking-widest text-zinc-700 mb-2">SEARCH</label>
+                <div className="space-y-2">
+                  <label className="block text-xs tracking-widest text-zinc-700">SEARCH</label>
                   <input
                     type="text"
                     value={searchTerm}
@@ -178,33 +240,135 @@ export default function VehicleGrid() {
                     placeholder="Make, model, year..."
                     className="w-full bg-zinc-950 border border-zinc-800 px-4 py-2 text-sm focus:outline-none focus:border-zinc-600 transition-colors"
                   />
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-zinc-600">
+                    TYPE TO REFINE RESULTS
+                  </p>
                 </div>
 
-                {/* Sort By */}
-                <div>
-                  <label className="block text-xs tracking-widest text-zinc-700 mb-2">SORT BY</label>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as 'year' | 'horsepower' | 'name')}
-                    className="w-full bg-zinc-950 border border-zinc-800 px-4 py-2 text-sm focus:outline-none focus:border-zinc-600 transition-colors"
-                  >
-                    <option value="year">YEAR</option>
-                    <option value="horsepower">POWER</option>
-                    <option value="name">NAME</option>
-                  </select>
+                {/* Body Style */}
+                <div className="space-y-2">
+                  <label className="block text-xs tracking-widest text-zinc-700">BODY STYLE</label>
+                  <div className="flex flex-wrap gap-2">
+                    {bodyStyleOptions.map((style) => {
+                      const active = selectedBodyStyles.includes(style);
+                      return (
+                        <button
+                          key={style}
+                          type="button"
+                          onClick={() =>
+                            setSelectedBodyStyles((prev) =>
+                              prev.includes(style) ? prev.filter((s) => s !== style) : [...prev, style]
+                            )
+                          }
+                          className={`px-3 py-1 text-[11px] uppercase tracking-[0.2em] border rounded-full transition-colors ${
+                            active
+                              ? 'bg-white text-black border-white'
+                              : 'border-zinc-700 text-zinc-400 hover:border-zinc-400 hover:text-white'
+                          }`}
+                        >
+                          {style}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                {/* Sort Order */}
-                <div>
-                  <label className="block text-xs tracking-widest text-zinc-700 mb-2">ORDER</label>
-                  <select
-                    value={sortOrder}
-                    onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
-                    className="w-full bg-zinc-950 border border-zinc-800 px-4 py-2 text-sm focus:outline-none focus:border-zinc-600 transition-colors"
+                {/* Fuel Type */}
+                <div className="space-y-2">
+                  <label className="block text-xs tracking-widest text-zinc-700">FUEL</label>
+                  <div className="flex flex-wrap gap-2">
+                    {fuelTypeOptions.map((type) => {
+                      const active = selectedFuelTypes.includes(type);
+                      return (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() =>
+                            setSelectedFuelTypes((prev) =>
+                              prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+                            )
+                          }
+                          className={`px-3 py-1 text-[11px] uppercase tracking-[0.2em] border rounded-full transition-colors ${
+                            active
+                              ? 'bg-white text-black border-white'
+                              : 'border-zinc-700 text-zinc-400 hover:border-zinc-400 hover:text-white'
+                          }`}
+                        >
+                          {type}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Drive Type + Sort */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="block text-xs tracking-widest text-zinc-700">DRIVE</label>
+                    <div className="flex flex-wrap gap-2">
+                      {driveTypeOptions.map((drive) => {
+                        const active = selectedDriveTypes.includes(drive);
+                        return (
+                          <button
+                            key={drive}
+                            type="button"
+                            onClick={() =>
+                              setSelectedDriveTypes((prev) =>
+                                prev.includes(drive) ? prev.filter((d) => d !== drive) : [...prev, drive]
+                              )
+                            }
+                            className={`px-3 py-1 text-[11px] uppercase tracking-[0.2em] border rounded-full transition-colors ${
+                              active
+                                ? 'bg-white text-black border-white'
+                                : 'border-zinc-700 text-zinc-400 hover:border-zinc-400 hover:text-white'
+                            }`}
+                          >
+                            {drive}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] tracking-[0.25em] text-zinc-700 mb-1">SORT BY</label>
+                      <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value as 'year' | 'horsepower' | 'name')}
+                        className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-[11px] focus:outline-none focus:border-zinc-600 transition-colors"
+                      >
+                        <option value="year">YEAR</option>
+                        <option value="horsepower">POWER</option>
+                        <option value="name">NAME</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] tracking-[0.25em] text-zinc-700 mb-1">ORDER</label>
+                      <select
+                        value={sortOrder}
+                        onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+                        className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-[11px] focus:outline-none focus:border-zinc-600 transition-colors"
+                      >
+                        <option value="desc">HIGH TO LOW</option>
+                        <option value="asc">LOW TO HIGH</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedBodyStyles([]);
+                      setSelectedFuelTypes([]);
+                      setSelectedDriveTypes([]);
+                      setSearchTerm('');
+                    }}
+                    className="mt-1 text-[10px] uppercase tracking-[0.25em] text-zinc-500 hover:text-white"
                   >
-                    <option value="desc">HIGH TO LOW</option>
-                    <option value="asc">LOW TO HIGH</option>
-                  </select>
+                    CLEAR ALL
+                  </button>
                 </div>
               </div>
             </div>
@@ -229,15 +393,65 @@ export default function VehicleGrid() {
             )}
           </div>
         ) : (
-          <div className="max-w-7xl mx-auto">
-            {/* Aggregate Stats */}
-            <div className="mb-8">
-              <AggregateStats cars={filteredCars} title="CURRENT RESULTS" />
-            </div>
+            <div className="max-w-7xl mx-auto">
+              {/* Aggregate Stats */}
+              <div className="mb-4 md:mb-6">
+                <AggregateStats cars={filteredCars} title="CURRENT RESULTS" />
+              </div>
 
-            {/* Grid of vehicles */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-zinc-900">
-              {filteredCars.map((car) => {
+              {/* Pagination summary */}
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6 text-[11px] tracking-[0.25em] text-zinc-600">
+                <div>
+                  {filteredCars.length > 0 && (
+                    <span>
+                      SHOWING {startIndex + 1}-{Math.min(endIndex, filteredCars.length)} OF {filteredCars.length}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 md:hidden">
+                    <span className="text-[10px] uppercase">PER PAGE</span>
+                    <select
+                      value={pageSize}
+                      onChange={(e) => {
+                        const value = Number(e.target.value) || 36;
+                        setPageSize(value);
+                        setCurrentPage(1);
+                      }}
+                      className="bg-black border border-zinc-800 px-2 py-1 text-[10px] tracking-[0.25em] focus:outline-none focus:border-zinc-600"
+                    >
+                      <option value={24}>24</option>
+                      <option value={36}>36</option>
+                      <option value={60}>60</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={clampedCurrentPage === 1}
+                      className="px-3 py-1 border border-zinc-800 text-[10px] uppercase tracking-[0.2em] disabled:opacity-40 disabled:cursor-not-allowed hover:border-zinc-600 transition-colors"
+                    >
+                      PREV
+                    </button>
+                    <span className="text-[10px] text-zinc-500">
+                      {clampedCurrentPage} / {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={clampedCurrentPage === totalPages}
+                      className="px-3 py-1 border border-zinc-800 text-[10px] uppercase tracking-[0.2em] disabled:opacity-40 disabled:cursor-not-allowed hover:border-zinc-600 transition-colors"
+                    >
+                      NEXT
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Grid of vehicles */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-zinc-900">
+                {pageCars.map((car) => {
                 const segment = allDatabaseCars.length > 0 ? getSegment(car, allDatabaseCars) : [];
                 const dealRating = segment.length >= 5 ? getDealRating(car, segment) : null;
 
@@ -308,11 +522,11 @@ export default function VehicleGrid() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                     </svg>
                   </div>
-                </div>
-                );
-              })}
+                  </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
         )}
       </div>
     </div>
