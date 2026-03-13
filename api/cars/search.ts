@@ -1,5 +1,5 @@
-import * as carService from '../../server/src/services/car.service';
-import type { SearchQuery } from '../../server/src/types/car.types';
+import * as carService from '../_lib/carService';
+import type { SearchQuery } from '../_lib/carService';
 
 function parseJsonBody(body: any): any {
   if (body == null) return {};
