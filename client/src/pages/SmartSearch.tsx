@@ -40,35 +40,65 @@ export default function SmartSearch() {
     setLoading(true);
 
     try {
-      const query: SearchQuery = {
-        filters: {
-          price: { min: minPrice, max: maxPrice },
-        },
+      // Base filters from persona quiz URL params
+      const baseFilters: SearchQuery['filters'] = {
+        price: { min: minPrice, max: maxPrice },
+      };
+
+      // Persona-based defaults
+      if (persona === 'commuter') {
+        baseFilters.fuelEconomy = { min: 25 };
+      } else if (persona === 'gearhead') {
+        baseFilters.horsepower = { min: 250 };
+      } else if (persona === 'family') {
+        baseFilters.bodyStyle = ['suv', 'minivan', 'wagon'];
+      }
+
+      // Priority-based overrides (can tighten persona filters)
+      if (priority === 'mpg') {
+        baseFilters.fuelEconomy = { min: 30 };
+      } else if (priority === 'power') {
+        baseFilters.horsepower = { min: 300 };
+      } else if (priority === 'safety') {
+        baseFilters.bodyStyle = ['suv', 'minivan', 'wagon', 'sedan'];
+      } else if (priority === 'space') {
+        baseFilters.bodyStyle = ['suv', 'minivan', 'wagon'];
+      }
+
+      const initialQuery: SearchQuery = {
+        filters: baseFilters,
         sort: { field: 'year', order: 'desc' },
         limit: 500,
       };
 
-      // Apply persona-based filters
-      if (persona === 'commuter') {
-        query.filters!.fuelEconomy = { min: 25 };
-      } else if (persona === 'gearhead') {
-        query.filters!.horsepower = { min: 250 };
-      } else if (persona === 'family') {
-        query.filters!.bodyStyle = ['suv', 'minivan', 'wagon'];
+      let results = await api.searchCars(initialQuery);
+
+      // If the persona/priority combo is too strict and returns nothing,
+      // gracefully relax filters so the user never hits a dead-end screen.
+      if (results.total === 0 && (persona || priority)) {
+        const relaxedFilters: SearchQuery['filters'] = {
+          price: {
+            min: Math.max(0, Math.floor(minPrice * 0.8)),
+            max: maxPrice && maxPrice < 999999
+              ? Math.max(maxPrice, minPrice > 0 ? Math.floor(minPrice * 1.5) : maxPrice)
+              : maxPrice,
+          },
+        };
+
+        const relaxedQuery: SearchQuery = {
+          filters: relaxedFilters,
+          sort: { field: 'year', order: 'desc' },
+          limit: 500,
+        };
+
+        console.warn('SmartSearch: relaxing persona/priority filters due to empty results.', {
+          initialFilters: baseFilters,
+          relaxedFilters,
+        });
+
+        results = await api.searchCars(relaxedQuery);
       }
 
-      // Apply priority filters
-      if (priority === 'mpg') {
-        query.filters!.fuelEconomy = { min: 30 };
-      } else if (priority === 'power') {
-        query.filters!.horsepower = { min: 300 };
-      } else if (priority === 'safety') {
-        query.filters!.bodyStyle = ['suv', 'minivan', 'wagon', 'sedan'];
-      } else if (priority === 'space') {
-        query.filters!.bodyStyle = ['suv', 'minivan', 'wagon'];
-      }
-
-      const results = await api.searchCars(query);
       setAllCars(results.results);
     } catch (error) {
       console.error('SmartSearch load failed:', error);
