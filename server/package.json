@@ -9,7 +9,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "fetch-nhtsa": "tsx scripts/fetch-nhtsa-real-data.ts",
-    "generate-db": "tsx scripts/generate-massive-database.ts"
+    "generate-db": "tsx scripts/generate-massive-database.ts",
+    "generate-portfolio-db": "tsx scripts/generate-portfolio-database.ts"
   },
   "dependencies": {
     "express": "^4.18.2",
