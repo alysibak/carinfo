@@ -117,23 +117,33 @@ const FALLBACK_CARS: Car[] = [
 function initDatabase(): void {
   if (cachedCars.length > 0) return; // already loaded
 
-  const dbPath = resolveDbPath();
-  if (!dbPath) {
-    console.warn(
-      `[car.service] Missing database file. Tried: ${getDbPathCandidates().join(', ')}. Using fallback dataset.`,
+  try {
+    const dbPath = resolveDbPath();
+    if (!dbPath) {
+      console.warn(
+        `[car.service] Missing database file. Tried: ${getDbPathCandidates().join(', ')}. Using fallback dataset.`,
+      );
+      cachedCars = FALLBACK_CARS;
+      lastUpdated = new Date().toISOString();
+      buildIndexes();
+      return;
+    }
+
+    const raw = readFileSync(dbPath, 'utf-8');
+    const db: CarDatabase = JSON.parse(raw);
+    cachedCars = db.cars;
+    lastUpdated = db.lastUpdated;
+
+    buildIndexes();
+  } catch (error) {
+    console.error(
+      '[car.service] Failed to initialize database from cars.json, falling back to built-in dataset:',
+      error,
     );
     cachedCars = FALLBACK_CARS;
     lastUpdated = new Date().toISOString();
     buildIndexes();
-    return;
   }
-
-  const raw = readFileSync(dbPath, 'utf-8');
-  const db: CarDatabase = JSON.parse(raw);
-  cachedCars = db.cars;
-  lastUpdated = db.lastUpdated;
-
-  buildIndexes();
 }
 
 function addToMapIndex(map: Map<string, Car[]>, key: string, car: Car): void {
