@@ -1,34 +1,16 @@
-import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import type { CarSpecs } from '../types/car.types';
+import { useGarageStore } from '../stores/garageStore';
 
 export default function DreamGarage() {
-  const [garage, setGarage] = useState<CarSpecs[]>([]);
   const [shareLink, setShareLink] = useState('');
   const [showShareModal, setShowShareModal] = useState(false);
+  const garage = useGarageStore((s) => s.cars);
+  const removeFromGarage = useGarageStore((s) => s.remove);
+  const clearGarage = useGarageStore((s) => s.clear);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    loadGarage();
-  }, []);
-
-  const loadGarage = () => {
-    const saved = localStorage.getItem('dreamGarage');
-    if (saved) {
-      setGarage(JSON.parse(saved));
-    }
-  };
-
-  const removeFromGarage = (carId: string) => {
-    const updated = garage.filter(car => car.id !== carId);
-    setGarage(updated);
-    localStorage.setItem('dreamGarage', JSON.stringify(updated));
-  };
-
-  const clearGarage = () => {
+  const confirmAndClear = () => {
     if (confirm('Are you sure you want to clear your entire garage?')) {
-      setGarage([]);
-      localStorage.removeItem('dreamGarage');
+      clearGarage();
     }
   };
 
@@ -77,7 +59,7 @@ export default function DreamGarage() {
             </div>
 
             <button
-              onClick={clearGarage}
+              onClick={confirmAndClear}
               className="text-xs tracking-[0.3em] text-zinc-600 hover:text-red-500 transition-colors"
             >
               CLEAR

@@ -7,6 +7,7 @@ interface CarStore {
   searchResults: SearchResults | null;
   searchQuery: SearchQuery;
   isSearching: boolean;
+  searchError: string | null;
 
   // Comparison state
   comparedCars: CarSpecs[];
@@ -37,6 +38,7 @@ export const useCarStore = create<CarStore>((set, get) => ({
     offset: 0,
   },
   isSearching: false,
+  searchError: null,
   comparedCars: [],
   maxCompared: 5,
   availableMakes: [],
@@ -48,13 +50,13 @@ export const useCarStore = create<CarStore>((set, get) => ({
   },
 
   performSearch: async () => {
-    set({ isSearching: true });
+    set({ isSearching: true, searchError: null });
     try {
       const results = await api.searchCars(get().searchQuery);
-      set({ searchResults: results, isSearching: false });
+      set({ searchResults: results, isSearching: false, searchError: null });
     } catch (error) {
       console.error('Search failed:', error);
-      set({ isSearching: false });
+      set({ isSearching: false, searchError: 'Search failed. Please try again.' });
     }
   },
 

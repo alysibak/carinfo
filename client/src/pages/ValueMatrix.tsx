@@ -46,6 +46,7 @@ export default function ValueMatrix() {
   const [allCars, setAllCars] = useState<CarSpecs[]>([]);
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [axisMode, setAxisMode] = useState<AxisMode>('horsepower');
   const [hoveredCar, setHoveredCar] = useState<ChartDataPoint | null>(null);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 150000]);
@@ -64,12 +65,14 @@ export default function ValueMatrix() {
 
   const loadCars = async () => {
     setLoading(true);
+    setError(null);
     try {
       const results = await api.searchCars({ limit: 15000 });
       setAllCars(results.results);
     } catch (error) {
       console.error('Failed to load ValueMatrix cars:', error);
       setAllCars([]);
+      setError('Unable to load value matrix data right now.');
     } finally {
       setLoading(false);
     }
@@ -191,6 +194,25 @@ export default function ValueMatrix() {
           <p className="text-xs tracking-[0.3em] text-zinc-700 uppercase">
             Loading Market Data
           </p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center px-6">
+          <div className="inline-block w-16 h-16 border-2 border-zinc-800 border-t-red-500 rounded-full animate-spin mb-4" />
+          <p className="text-sm tracking-[0.3em] text-zinc-600 uppercase mb-4">
+            VALUE MATRIX UNAVAILABLE
+          </p>
+          <p className="text-zinc-400 mb-6">{error}</p>
+          <button
+            onClick={loadCars}
+            className="inline-flex items-center px-6 py-3 rounded-lg bg-white text-black text-xs tracking-[0.3em] font-semibold hover:bg-zinc-200 transition"
+          >
+            RETRY
+          </button>
         </div>
       </div>
     );

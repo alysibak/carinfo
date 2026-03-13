@@ -1,10 +1,17 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import PersonaQuiz, { PersonaResult } from '../components/PersonaQuiz';
+import * as api from '../services/api';
 
 export default function Landing() {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [showQuiz, setShowQuiz] = useState(false);
+  const [stats, setStats] = useState<{
+    totalCars: number;
+    totalMakes: number;
+    yearRange: { min: number; max: number };
+  } | null>(null);
+  const [statsError, setStatsError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const handleQuizComplete = (persona: PersonaResult) => {
@@ -21,6 +28,25 @@ export default function Landing() {
 
     navigate(`/smart-search?${params.toString()}`);
   };
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const data = await api.getStatistics();
+        if (data && typeof data.totalCars === 'number') {
+          setStats({
+            totalCars: data.totalCars,
+            totalMakes: data.totalMakes,
+            yearRange: data.yearRange,
+          });
+        }
+      } catch (e) {
+        console.error('Failed to load landing stats:', e);
+        setStatsError('Live stats unavailable');
+      }
+    };
+    loadStats();
+  }, []);
 
   const smartCollections = [
     {
@@ -119,8 +145,15 @@ export default function Landing() {
 
           <div className="overflow-hidden">
             <p className="text-xl md:text-2xl font-light tracking-[0.3em] text-zinc-400 mb-12 animate-slide-up uppercase">
-              15,470 Vehicles • 31 Manufacturers • 1995-2025
+              {stats
+                ? `${stats.totalCars.toLocaleString()} Vehicles • ${stats.totalMakes} Manufacturers • ${stats.yearRange.min}-${stats.yearRange.max}`
+                : 'Thousands of Vehicles • Multiple Manufacturers • 1990s–2020s'}
             </p>
+            {statsError && (
+              <p className="text-xs tracking-[0.3em] text-zinc-600 mb-4 uppercase">
+                {statsError}
+              </p>
+            )}
           </div>
 
           <div className="h-px w-64 bg-gradient-to-r from-transparent via-white to-transparent mx-auto mb-12 animate-scale-in" />
