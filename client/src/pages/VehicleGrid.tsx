@@ -38,45 +38,51 @@ export default function VehicleGrid() {
   const loadVehicles = async () => {
     setLoading(true);
 
-    const query: SearchQuery = {
-      filters: {},
-      sort: { field: 'year', order: 'desc' },
-      limit: 10000, // Get all vehicles
-    };
-
-    // Apply filters based on category and subcategory
-    if (category === 'body-style') {
-      query.filters!.bodyStyle = [subcategory!];
-    } else if (category === 'brand') {
-      query.filters!.make = [subcategory!.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')];
-    } else if (category === 'purpose') {
-      if (subcategory === 'eco-friendly') {
-        query.filters!.fuelType = ['electric', 'hybrid', 'plug-in hybrid'];
-      } else if (subcategory === 'performance') {
-        query.filters!.horsepower = { min: 300 };
-      } else if (subcategory === 'family') {
-        query.filters!.bodyStyle = ['suv', 'minivan', 'wagon'];
-      } else if (subcategory === 'off-road') {
-        query.filters!.bodyStyle = ['suv', 'truck'];
-        query.filters!.driveType = ['AWD', '4WD'];
-      } else if (subcategory === 'luxury') {
-        query.filters!.price = { min: 50000 };
-      } else if (subcategory === 'daily-commute') {
-        query.filters!.fuelEconomy = { min: 25 };
-      }
-    } else if (category === 'era') {
-      const eraRanges: Record<string, { min: number; max: number }> = {
-        '1990s': { min: 1995, max: 1999 },
-        '2000s': { min: 2000, max: 2009 },
-        '2010s': { min: 2010, max: 2019 },
-        '2020s': { min: 2020, max: 2025 },
+    try {
+      const query: SearchQuery = {
+        filters: {},
+        sort: { field: 'year', order: 'desc' },
+        limit: 10000, // Get all vehicles
       };
-      query.filters!.year = eraRanges[subcategory!];
-    }
 
-    const results = await api.searchCars(query);
-    setAllCars(results.results);
-    setLoading(false);
+      // Apply filters based on category and subcategory
+      if (category === 'body-style') {
+        query.filters!.bodyStyle = [subcategory!];
+      } else if (category === 'brand') {
+        query.filters!.make = [subcategory!.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')];
+      } else if (category === 'purpose') {
+        if (subcategory === 'eco-friendly') {
+          query.filters!.fuelType = ['electric', 'hybrid', 'plug-in hybrid'];
+        } else if (subcategory === 'performance') {
+          query.filters!.horsepower = { min: 300 };
+        } else if (subcategory === 'family') {
+          query.filters!.bodyStyle = ['suv', 'minivan', 'wagon'];
+        } else if (subcategory === 'off-road') {
+          query.filters!.bodyStyle = ['suv', 'truck'];
+          query.filters!.driveType = ['AWD', '4WD'];
+        } else if (subcategory === 'luxury') {
+          query.filters!.price = { min: 50000 };
+        } else if (subcategory === 'daily-commute') {
+          query.filters!.fuelEconomy = { min: 25 };
+        }
+      } else if (category === 'era') {
+        const eraRanges: Record<string, { min: number; max: number }> = {
+          '1990s': { min: 1995, max: 1999 },
+          '2000s': { min: 2000, max: 2009 },
+          '2010s': { min: 2010, max: 2019 },
+          '2020s': { min: 2020, max: 2025 },
+        };
+        query.filters!.year = eraRanges[subcategory!];
+      }
+
+      const results = await api.searchCars(query);
+      setAllCars(results.results);
+    } catch (error) {
+      console.error('Failed to load vehicle grid:', error);
+      setAllCars([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const applyFiltersAndSort = () => {
