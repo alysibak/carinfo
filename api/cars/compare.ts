@@ -1,3 +1,5 @@
+import * as carService from '../../server/src/services/car.service';
+
 function parseJsonBody(body: any): any {
   if (body == null) return {};
   if (typeof body === 'string') {
@@ -26,9 +28,6 @@ export default async function handler(req: any, res: any) {
     if (ids.length > 5) {
       return res.status(400).json({ success: false, error: 'Maximum 5 cars can be compared' });
     }
-
-    // Dynamically import the ESM car service so it works in Vercel's CJS runtime.
-    const carService = await import('../../server/src/services/car.service');
 
     const cars = carService.getCarsByIds(ids);
     res.status(200).json({ success: true, data: cars });
