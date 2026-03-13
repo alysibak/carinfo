@@ -14,6 +14,7 @@ export default function SmartSearch() {
   const [allCars, setAllCars] = useState<CarSpecs[]>([]);
   const [filteredCars, setFilteredCars] = useState<CarSpecs[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [smartSort, setSmartSort] = useState<SmartSort>('best-value');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -26,6 +27,7 @@ export default function SmartSearch() {
   const minPrice = parseInt(searchParams.get('minPrice') || '0');
   const maxPrice = parseInt(searchParams.get('maxPrice') || '999999');
   const priority = searchParams.get('priority') as 'mpg' | 'power' | 'safety' | 'space' | null;
+  const usage = searchParams.get('usage') as 'commute' | 'family' | 'fun' | 'work' | null;
 
   useEffect(() => {
     loadVehicles();
@@ -38,6 +40,7 @@ export default function SmartSearch() {
 
   const loadVehicles = async () => {
     setLoading(true);
+    setError(null);
 
     try {
       // Base filters from persona quiz URL params
@@ -63,6 +66,22 @@ export default function SmartSearch() {
         baseFilters.bodyStyle = ['suv', 'minivan', 'wagon', 'sedan'];
       } else if (priority === 'space') {
         baseFilters.bodyStyle = ['suv', 'minivan', 'wagon'];
+      }
+
+      // Usage-based hints (light-touch adjustments layered on top)
+      if (usage === 'commute') {
+        baseFilters.fuelEconomy = {
+          min: Math.max(baseFilters.fuelEconomy?.min || 0, 28),
+        };
+      } else if (usage === 'family') {
+        baseFilters.bodyStyle = baseFilters.bodyStyle || ['suv', 'minivan', 'wagon'];
+      } else if (usage === 'fun') {
+        baseFilters.horsepower = {
+          min: Math.max(baseFilters.horsepower?.min || 0, 300),
+        };
+      } else if (usage === 'work') {
+        baseFilters.bodyStyle = baseFilters.bodyStyle || ['truck', 'van'];
+        baseFilters.driveType = baseFilters.driveType || ['4WD', 'AWD'];
       }
 
       const initialQuery: SearchQuery = {
@@ -103,6 +122,7 @@ export default function SmartSearch() {
     } catch (error) {
       console.error('SmartSearch load failed:', error);
       setAllCars([]);
+      setError('Unable to load smart search results right now.');
     } finally {
       setLoading(false);
     }
@@ -245,6 +265,25 @@ export default function SmartSearch() {
         <div className="text-center">
           <div className="inline-block w-16 h-16 border-2 border-zinc-800 border-t-white rounded-full animate-spin mb-4" />
           <p className="text-xs tracking-[0.3em] text-zinc-700 uppercase">Finding Your Perfect Match</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center px-6">
+          <div className="inline-block w-16 h-16 border-2 border-zinc-800 border-t-red-500 rounded-full animate-spin mb-4" />
+          <p className="text-sm tracking-[0.3em] text-zinc-600 uppercase mb-4">
+            SMART SEARCH UNAVAILABLE
+          </p>
+          <p className="text-zinc-400 mb-6">{error}</p>
+          <button
+            onClick={loadVehicles}
+            className="inline-flex items-center px-6 py-3 rounded-lg bg-white text-black text-xs tracking-[0.3em] font-semibold hover:bg-zinc-200 transition"
+          >
+            RETRY
+          </button>
         </div>
       </div>
     );

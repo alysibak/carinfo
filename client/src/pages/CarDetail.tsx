@@ -1,9 +1,10 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import * as api from '../services/api';
-import type { CarSpecs } from '../types/car.types';
+import type { CarSpecs, SearchQuery } from '../types/car.types';
 import { getCarImageUrl } from '../utils/carImages';
 import { useCarStore } from '../stores/carStore';
+import { useGarageStore } from '../stores/garageStore';
 import TCOCalculator from '../components/TCOCalculator';
 import MarketIntelligence from '../components/MarketIntelligence';
 import { predictZeroToSixty } from '../utils/marketIntelligence';
@@ -13,9 +14,11 @@ export default function CarDetail() {
   const [car, setCar] = useState<CarSpecs | null>(null);
   const [allCars, setAllCars] = useState<CarSpecs[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'specs' | 'history' | 'reviews'>('specs');
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'specs' | 'history'>('specs');
   const [showTCO, setShowTCO] = useState(false);
   const { addCarToComparison, comparedCars } = useCarStore();
+  const addToGarage = useGarageStore((s) => s.add);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,12 +29,65 @@ export default function CarDetail() {
   const loadCar = async () => {
     if (!id) return;
     try {
+      setLoading(true);
+      setError(null);
       const data = await api.getCarById(id);
       setCar(data);
     } catch (error) {
-      console.error('Failed to load car:', error);
+      console.error('Failed to load car by id:', error);
+      // If direct lookup by ID fails (e.g. slug like toyota-camry-1999-base),
+      // fall back to a best-effort slug-based search.
+      await tryLoadCarBySlug(id);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const tryLoadCarBySlug = async (slug: string) => {
+    const parts = slug.split('-').filter(Boolean);
+    const yearIndex = parts.findIndex((p) => /^\d{4}$/.test(p));
+    if (yearIndex === -1) {
+      setError('Unable to load this vehicle right now.');
+      setCar(null);
+      return;
+    }
+
+    const year = parseInt(parts[yearIndex], 10);
+    const makePart = parts[0] || '';
+    const modelParts = parts.slice(1, yearIndex);
+
+    const toTitle = (s: string) =>
+      s
+        .split(' ')
+        .map((w) => (w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : ''))
+        .join(' ')
+        .trim();
+
+    const make = toTitle(makePart.replace(/_/g, ' '));
+    const model = toTitle(modelParts.join(' ').replace(/_/g, ' '));
+
+    const filters: SearchQuery['filters'] = {
+      year: { min: year, max: year },
+    };
+    if (make) filters.make = [make];
+    if (model) filters.model = [model];
+
+    try {
+      const results = await api.searchCars({
+        filters,
+        limit: 10,
+      });
+      if (results.results.length > 0) {
+        setCar(results.results[0]);
+        setError(null);
+      } else {
+        setError('We could not find a matching vehicle in the database.');
+        setCar(null);
+      }
+    } catch (e) {
+      console.error('Slug fallback search failed:', e);
+      setError('Unable to load this vehicle right now.');
+      setCar(null);
     }
   };
 
@@ -53,21 +109,15 @@ export default function CarDetail() {
 
   const handleAddToGarage = () => {
     if (!car) return;
-
-    const garage = JSON.parse(localStorage.getItem('dreamGarage') || '[]');
-
-    // Check if already in garage
-    if (garage.find((c: CarSpecs) => c.id === car.id)) {
+    const res = addToGarage(car);
+    if (!res.ok && res.reason === 'duplicate') {
       alert('This car is already in your garage!');
       return;
     }
-
-    garage.push(car);
-    localStorage.setItem('dreamGarage', JSON.stringify(garage));
     alert('Added to your Dream Garage!');
   };
 
-  if (loading || !car) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 flex items-center justify-center">
         <div className="text-center">
@@ -81,33 +131,26 @@ export default function CarDetail() {
     );
   }
 
-  // Mock reviews data
-  const reviews = [
-    {
-      author: 'John Smith',
-      rating: 5,
-      date: '2024-01-15',
-      title: 'Excellent Performance',
-      content: 'This car exceeded all my expectations. The handling is superb and the engine is incredibly responsive.',
-      helpful: 45,
-    },
-    {
-      author: 'Sarah Johnson',
-      rating: 4,
-      date: '2023-12-10',
-      title: 'Great Daily Driver',
-      content: 'Perfect for my daily commute. Fuel economy is better than advertised and the interior is very comfortable.',
-      helpful: 32,
-    },
-    {
-      author: 'Mike Chen',
-      rating: 5,
-      date: '2023-11-22',
-      title: 'Best Purchase Ever',
-      content: 'Had this for 6 months now and absolutely love it. Reliability has been perfect and maintenance costs are low.',
-      helpful: 28,
-    },
-  ];
+  if (!car) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 flex items-center justify-center">
+        <div className="text-center px-4">
+          <div className="text-4xl mb-4">😕</div>
+          <div className="text-slate-200 text-2xl mb-2">We couldn&apos;t find that vehicle.</div>
+          {error && <div className="text-slate-500 mb-4">{error}</div>}
+          <button
+            onClick={() => window.history.back()}
+            className="inline-flex items-center px-6 py-3 rounded-lg bg-slate-800 text-white hover:bg-slate-700 transition"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Generate timeline based on year
   const timeline = [];
@@ -265,7 +308,6 @@ export default function CarDetail() {
             {[
               { id: 'specs', label: 'Specifications', icon: '📊' },
               { id: 'history', label: 'Vehicle History', icon: '📅' },
-              { id: 'reviews', label: 'Reviews', icon: '⭐' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -491,66 +533,6 @@ export default function CarDetail() {
           </div>
         )}
 
-        {activeTab === 'reviews' && (
-          <div className="animate-fade-in">
-            <div className="flex items-center justify-between mb-12">
-              <h2 className="text-4xl font-bold text-white">Owner Reviews</h2>
-              <div className="flex items-center space-x-4">
-                <div className="text-center">
-                  <div className="text-5xl font-bold text-yellow-400">4.7</div>
-                  <div className="text-slate-400">out of 5</div>
-                  <div className="text-yellow-400 text-2xl mt-2">⭐⭐⭐⭐⭐</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              {reviews.map((review, index) => (
-                <div key={index} className="bg-slate-800 rounded-xl p-8 border border-slate-700 animate-slide-up" style={{ animationDelay: `${index * 100}ms` }}>
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <div className="flex items-center space-x-3 mb-2">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                          {review.author.charAt(0)}
-                        </div>
-                        <div>
-                          <div className="text-white font-semibold">{review.author}</div>
-                          <div className="text-slate-400 text-sm">{new Date(review.date).toLocaleDateString()}</div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-yellow-400 text-xl">
-                      {'⭐'.repeat(review.rating)}
-                    </div>
-                  </div>
-
-                  <h3 className="text-xl font-bold text-white mb-3">{review.title}</h3>
-                  <p className="text-slate-300 text-lg mb-4">{review.content}</p>
-
-                  <div className="flex items-center space-x-6 text-slate-400 text-sm">
-                    <button className="flex items-center space-x-2 hover:text-white transition">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-                      </svg>
-                      <span>Helpful ({review.helpful})</span>
-                    </button>
-                    <button className="hover:text-white transition">Reply</button>
-                    <button className="hover:text-white transition">Share</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Write Review CTA */}
-            <div className="mt-12 text-center bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-xl p-12 border border-blue-500/30">
-              <h3 className="text-3xl font-bold text-white mb-4">Share Your Experience</h3>
-              <p className="text-slate-300 text-lg mb-6">Help others make informed decisions</p>
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all transform hover:scale-105">
-                Write a Review
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Floating Comparison Bar */}
