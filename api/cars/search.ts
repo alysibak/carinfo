@@ -1,4 +1,3 @@
-﻿import * as carService from '../../server/src/services/car.service';
 import type { SearchQuery } from '../../server/src/types/car.types';
 
 function parseJsonBody(body: any): any {
@@ -21,6 +20,10 @@ export default async function handler(req: any, res: any) {
     }
 
     const query = parseJsonBody(req.body) as SearchQuery;
+
+    // Dynamically import the ESM car service so it works in Vercel's CJS runtime.
+    const carService = await import('../../server/src/services/car.service');
+
     const results = carService.searchCars(query);
     res.status(200).json({ success: true, data: results });
   } catch (error) {
