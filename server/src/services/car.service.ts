@@ -1,12 +1,31 @@
 import type { CarSpecs, SearchQuery, CarFilter } from '../types/car.types.js';
 import { readFileSync, existsSync } from 'fs';
-import { join, dirname } from 'path';
+import { join, dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const DB_PATH = join(__dirname, '../../data/cars.json');
+function getDbPathCandidates(): string[] {
+  // In serverless (Vercel), `__dirname` can be inside the function bundle and
+  // relative paths to `server/data` may not work unless explicitly included.
+  // We try a few common roots in priority order.
+  return [
+    // Most robust when deploying the repo layout
+    resolve(process.cwd(), 'server', 'data', 'cars.json'),
+    // If only /data is bundled at repo root
+    resolve(process.cwd(), 'data', 'cars.json'),
+    // Local dev / compiled server layout
+    join(__dirname, '../../data/cars.json'),
+  ];
+}
+
+function resolveDbPath(): string | null {
+  for (const p of getDbPathCandidates()) {
+    if (existsSync(p)) return p;
+  }
+  return null;
+}
 
 type Car = CarSpecs & { id: string };
 
@@ -98,15 +117,18 @@ const FALLBACK_CARS: Car[] = [
 function initDatabase(): void {
   if (cachedCars.length > 0) return; // already loaded
 
-  if (!existsSync(DB_PATH)) {
-    console.warn(`[car.service] Missing database file at ${DB_PATH}. Using fallback dataset.`);
+  const dbPath = resolveDbPath();
+  if (!dbPath) {
+    console.warn(
+      `[car.service] Missing database file. Tried: ${getDbPathCandidates().join(', ')}. Using fallback dataset.`,
+    );
     cachedCars = FALLBACK_CARS;
     lastUpdated = new Date().toISOString();
     buildIndexes();
     return;
   }
 
-  const raw = readFileSync(DB_PATH, 'utf-8');
+  const raw = readFileSync(dbPath, 'utf-8');
   const db: CarDatabase = JSON.parse(raw);
   cachedCars = db.cars;
   lastUpdated = db.lastUpdated;
