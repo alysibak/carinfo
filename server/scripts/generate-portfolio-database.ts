@@ -159,13 +159,28 @@ function estimateSpecs(
     (bodyStyle === 'truck' || bodyStyle === 'suv' ? 3800 : 3200) + (isElectric ? 400 : 0);
 
   // Price estimates
-  let msrp = 30000;
-  if (bodyStyle === 'truck' || bodyStyle === 'suv') msrp += 8000;
-  if (isPerformance) msrp += 15000;
-  if (isElectric) msrp += 10000;
-  if (['BMW', 'Mercedes-Benz', 'Audi', 'Lexus'].includes(make)) msrp += 12000;
+  // Base MSRP by segment so "UNDER $20K" budgets still match something.
+  // These are not exact MSRPs; they're meant to be plausible and consistent.
+  let msrp =
+    bodyStyle === 'truck' ? 30000 :
+    bodyStyle === 'suv' ? 24000 :
+    bodyStyle === 'coupe' || bodyStyle === 'convertible' ? 26000 :
+    bodyStyle === 'hatchback' || bodyStyle === 'wagon' ? 21000 :
+    20000; // sedan/minivan/van baseline
 
-  msrp += yearDelta * 800;
+  // Brand positioning
+  if (['BMW', 'Mercedes-Benz', 'Audi', 'Lexus'].includes(make)) msrp += 18000;
+  if (['Hyundai', 'Kia', 'Nissan', 'Volkswagen', 'Subaru'].includes(make)) msrp -= 1500;
+
+  // Powertrain + performance premiums
+  if (isPerformance) msrp += 12000;
+  if (isElectric) msrp += 9000;
+
+  // Newer years trend higher, but avoid exploding totals.
+  msrp += yearDelta * 500;
+
+  // Guardrails (keeps the dataset sane)
+  msrp = Math.max(14000, msrp);
 
   return {
     engine: {
