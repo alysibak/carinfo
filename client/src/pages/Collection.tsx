@@ -4,6 +4,7 @@ import * as api from '../services/api';
 import type { CarSpecs, SearchQuery } from '../types/car.types';
 import { getDealRating, getDealRatingColor, getDealRatingLabel, getSegment, filterCarsByFuelType, type FuelTypeFilter } from '../utils/marketIntelligence';
 import AggregateStats from '../components/AggregateStats';
+import { useAllCars } from '../hooks/useAllCars';
 
 interface CollectionConfig {
   title: string;
@@ -72,7 +73,7 @@ const collections: Record<string, CollectionConfig> = {
     query: {
       filters: {
         horsepower: { min: 300 },
-        bodyStyle: ['coupe', 'convertible', 'sports car'],
+        bodyStyle: ['coupe', 'convertible'],
       },
       sort: { field: 'horsepower', order: 'desc' },
       limit: 10000,
@@ -85,7 +86,7 @@ const collections: Record<string, CollectionConfig> = {
     query: {
       filters: {
         bodyStyle: ['truck'],
-        driveType: ['4WD', 'AWD'],
+        driveType: ['AWD'],
       },
       sort: { field: 'year', order: 'desc' },
       limit: 10000,
@@ -109,7 +110,7 @@ const collections: Record<string, CollectionConfig> = {
 export default function Collection() {
   const { collectionId } = useParams<{ collectionId: string }>();
   const [allCars, setAllCars] = useState<CarSpecs[]>([]);
-  const [allDatabaseCars, setAllDatabaseCars] = useState<CarSpecs[]>([]);
+  const { cars: allDatabaseCars } = useAllCars();
   const [filteredCars, setFilteredCars] = useState<CarSpecs[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<'year' | 'horsepower' | 'name' | 'mpg'>('year');
@@ -124,22 +125,12 @@ export default function Collection() {
   useEffect(() => {
     if (collection) {
       loadVehicles();
-      loadAllDatabaseCars();
     }
   }, [collectionId]);
 
   useEffect(() => {
     applyFiltersAndSort();
   }, [allCars, sortBy, sortOrder, searchTerm, fuelTypeFilter]);
-
-  const loadAllDatabaseCars = async () => {
-    try {
-      const results = await api.searchCars({ limit: 15000 });
-      setAllDatabaseCars(results.results);
-    } catch (error) {
-      console.error('Failed to load all database cars:', error);
-    }
-  };
 
   const loadVehicles = async () => {
     if (!collection) return;

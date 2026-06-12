@@ -38,7 +38,7 @@ export default function FilterSidebar() {
   const fuelTypes = ['gasoline', 'diesel', 'electric', 'hybrid', 'plug-in hybrid'];
   const transmissionTypes = ['manual', 'automatic', 'cvt', 'dual-clutch'];
   const driveTypes = ['FWD', 'RWD', 'AWD', '4WD'];
-  const countries = ['USA', 'Japan', 'Germany', 'Italy', 'South Korea', 'UK', 'France'];
+  const countries = ['USA', 'Japan', 'Germany', 'Italy', 'South Korea', 'UK', 'Sweden'];
 
   return (
     <div className="bg-slate-800 rounded-xl shadow-2xl p-6 space-y-6 border border-slate-700 sticky top-4 max-h-[calc(100vh-120px)] overflow-y-auto">

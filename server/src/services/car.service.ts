@@ -26,8 +26,79 @@ function resolveDbPath(): string | null {
 type Car = CarSpecs & { id: string };
 
 interface CarDatabase {
-  cars: Car[];
+  cars: unknown[];
   lastUpdated: string;
+}
+
+/** Raw JSON record shape from generate-massive-database.ts (differs from CarSpecs). */
+type RawCarRecord = Record<string, unknown> & { id: string };
+
+function parseDisplacement(value: unknown): number {
+  if (typeof value === 'number' && !Number.isNaN(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    if (/electric\s*motor/i.test(value)) {
+      return 0;
+    }
+    const match = value.match(/[\d.]+/);
+    if (match) {
+      return parseFloat(match[0]);
+    }
+  }
+  return 0;
+}
+
+/**
+ * Normalize a raw JSON record to the Car type expected by indexes and API consumers.
+ * Handles legacy field names (country, drivetrain, pricing) from cars.json.
+ */
+function normalizeCar(raw: RawCarRecord): Car {
+  const countryOfOrigin =
+    (raw.countryOfOrigin as string | undefined) ??
+    (raw.country as string | undefined) ??
+    '';
+
+  const driveType =
+    (raw.driveType as Car['driveType'] | undefined) ??
+    (raw.drivetrain as Car['driveType'] | undefined) ??
+    'FWD';
+
+  const existingPrice = raw.price as Car['price'] | undefined;
+  const rawPricing = raw.pricing as
+    | { msrp?: number; minPrice?: number; maxPrice?: number }
+    | undefined;
+
+  const price: Car['price'] | undefined = existingPrice
+    ? existingPrice
+    : rawPricing
+      ? {
+          msrp: rawPricing.msrp,
+          min: rawPricing.minPrice,
+          max: rawPricing.maxPrice,
+        }
+      : undefined;
+
+  const rawEngine = raw.engine as Car['engine'] & { displacement?: unknown };
+  const engine: Car['engine'] = {
+    ...rawEngine,
+    displacement: parseDisplacement(rawEngine?.displacement),
+  };
+
+  const {
+    country: _country,
+    drivetrain: _drivetrain,
+    pricing: _pricing,
+    ...rest
+  } = raw;
+
+  return {
+    ...(rest as Omit<Car, 'countryOfOrigin' | 'driveType' | 'price' | 'engine'>),
+    countryOfOrigin,
+    driveType,
+    price,
+    engine,
+  };
 }
 
 // ─── In-memory cache & indexes ────────────────────────────────────────────────
@@ -127,7 +198,7 @@ function initDatabase(): void {
 
     const raw = readFileSync(dbPath, 'utf-8');
     const db: CarDatabase = JSON.parse(raw);
-    cachedCars = db.cars;
+    cachedCars = db.cars.map((record) => normalizeCar(record as RawCarRecord));
     lastUpdated = db.lastUpdated;
 
     buildIndexes();

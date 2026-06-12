@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { CarSpecs } from '../types/car.types';
+import { calculateCostPerMile } from '../utils/marketIntelligence';
 
 interface TCOCalculatorProps {
   car: CarSpecs;
@@ -10,13 +11,25 @@ export default function TCOCalculator({ car, onClose }: TCOCalculatorProps) {
   const [yearsOwned, setYearsOwned] = useState(5);
   const [milesPerYear, setMilesPerYear] = useState(15000);
   const [gasPrice, setGasPrice] = useState(3.5);
+  const [electricityPrice, setElectricityPrice] = useState(0.14);
   const [insuranceRate, setInsuranceRate] = useState(0.01);
   const [maintenancePerYear, setMaintenancePerYear] = useState(1000);
   const [downPayment, setDownPayment] = useState(0);
   const [loanRate, setLoanRate] = useState(0.05);
 
+  const fuelType = car.engine.fuelType;
+  const isElectric = fuelType === 'electric';
+  const isPlugInHybrid = fuelType === 'plug-in hybrid';
+  const showElectricityInput = isElectric || isPlugInHybrid;
+  const showGasInput = !isElectric;
+
   const msrp = car.price?.msrp || 35000;
   const mpg = car.fuelEconomy.combined || 25;
+
+  const costPerMile = calculateCostPerMile(car, {
+    gasPrice,
+    electricityPrice,
+  }).costPerMile;
 
   // Calculate TCO components
   const purchasePrice = msrp;
@@ -26,7 +39,7 @@ export default function TCOCalculator({ car, onClose }: TCOCalculatorProps) {
   const totalLoanPayments = monthlyPayment * yearsOwned * 12;
   const totalInterestPaid = totalLoanPayments - loanAmount;
 
-  const fuelCostPerYear = (milesPerYear / mpg) * gasPrice;
+  const fuelCostPerYear = costPerMile * milesPerYear;
   const totalFuelCost = fuelCostPerYear * yearsOwned;
 
   const insuranceCostPerYear = purchasePrice * insuranceRate;
@@ -49,6 +62,14 @@ export default function TCOCalculator({ car, onClose }: TCOCalculatorProps) {
     estimatedResaleValue;
 
   const monthlyTCO = totalCostOfOwnership / (yearsOwned * 12);
+
+  const fuelLabel = isElectric
+    ? 'Energy (electric)'
+    : isPlugInHybrid
+      ? 'Fuel & Energy'
+      : 'Fuel';
+
+  const efficiencyLabel = isElectric ? 'MPGe' : 'MPG';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center p-8 overflow-y-auto">
@@ -111,18 +132,36 @@ export default function TCOCalculator({ car, onClose }: TCOCalculatorProps) {
               </div>
 
               {/* Gas Price */}
-              <div>
-                <label className="block text-xs tracking-widest text-zinc-700 mb-2">
-                  GAS PRICE ($/GALLON)
-                </label>
-                <input
-                  type="number"
-                  value={gasPrice}
-                  onChange={(e) => setGasPrice(parseFloat(e.target.value) || 3.5)}
-                  step="0.1"
-                  className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-lg font-bold focus:outline-none focus:border-zinc-600 transition-colors"
-                />
-              </div>
+              {showGasInput && (
+                <div>
+                  <label className="block text-xs tracking-widest text-zinc-700 mb-2">
+                    GAS PRICE ($/GALLON)
+                  </label>
+                  <input
+                    type="number"
+                    value={gasPrice}
+                    onChange={(e) => setGasPrice(parseFloat(e.target.value) || 3.5)}
+                    step="0.1"
+                    className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-lg font-bold focus:outline-none focus:border-zinc-600 transition-colors"
+                  />
+                </div>
+              )}
+
+              {/* Electricity Price */}
+              {showElectricityInput && (
+                <div>
+                  <label className="block text-xs tracking-widest text-zinc-700 mb-2">
+                    ELECTRICITY PRICE ($/KWH)
+                  </label>
+                  <input
+                    type="number"
+                    value={electricityPrice}
+                    onChange={(e) => setElectricityPrice(parseFloat(e.target.value) || 0.14)}
+                    step="0.01"
+                    className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-lg font-bold focus:outline-none focus:border-zinc-600 transition-colors"
+                  />
+                </div>
+              )}
 
               {/* Down Payment */}
               <div>
@@ -217,7 +256,7 @@ export default function TCOCalculator({ car, onClose }: TCOCalculatorProps) {
               )}
 
               <div className="flex justify-between items-center pb-3 border-b border-zinc-900">
-                <span className="tracking-widest text-zinc-700 uppercase">Fuel ({yearsOwned} years)</span>
+                <span className="tracking-widest text-zinc-700 uppercase">{fuelLabel} ({yearsOwned} years)</span>
                 <span className="text-lg font-bold">${Math.round(totalFuelCost).toLocaleString()}</span>
               </div>
 
@@ -242,11 +281,11 @@ export default function TCOCalculator({ car, onClose }: TCOCalculatorProps) {
               <h4 className="text-xs tracking-[0.3em] text-zinc-700 mb-4 uppercase">Key Metrics</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-zinc-950 border border-zinc-900 p-4">
-                  <p className="text-xs tracking-widest text-zinc-700 mb-2">FUEL COST/YR</p>
+                  <p className="text-xs tracking-widest text-zinc-700 mb-2">ENERGY COST/YR</p>
                   <p className="text-2xl font-black">${Math.round(fuelCostPerYear).toLocaleString()}</p>
                 </div>
                 <div className="bg-zinc-950 border border-zinc-900 p-4">
-                  <p className="text-xs tracking-widest text-zinc-700 mb-2">MPG</p>
+                  <p className="text-xs tracking-widest text-zinc-700 mb-2">{efficiencyLabel}</p>
                   <p className="text-2xl font-black">{mpg}</p>
                 </div>
                 <div className="bg-zinc-950 border border-zinc-900 p-4">

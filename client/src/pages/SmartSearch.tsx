@@ -2,7 +2,7 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import * as api from '../services/api';
 import type { CarSpecs, SearchQuery } from '../types/car.types';
-import { getDealRating, getDealRatingColor, getDealRatingLabel, getSegment, filterCarsByFuelType, type FuelTypeFilter } from '../utils/marketIntelligence';
+import { getDealRating, getDealRatingColor, getDealRatingLabel, getSegment, filterCarsByFuelType, calculateReliabilityScore, type FuelTypeFilter } from '../utils/marketIntelligence';
 import AggregateStats from '../components/AggregateStats';
 
 type SmartSort = 'best-value' | 'bang-for-buck' | 'lowest-tco' | 'daily-driver' | 'weekend' | 'resale' | 'eco' | 'track';
@@ -23,7 +23,7 @@ export default function SmartSearch() {
   const navigate = useNavigate();
 
   // Get persona from URL params
-  const persona = searchParams.get('persona') as 'commuter' | 'gearhead' | 'family' | null;
+  const persona = searchParams.get('persona') as 'commuter' | 'gearhead' | 'family' | 'work' | null;
   const minPrice = parseInt(searchParams.get('minPrice') || '0');
   const maxPrice = parseInt(searchParams.get('maxPrice') || '999999');
   const priority = searchParams.get('priority') as 'mpg' | 'power' | 'safety' | 'space' | null;
@@ -55,6 +55,9 @@ export default function SmartSearch() {
         baseFilters.horsepower = { min: 250 };
       } else if (persona === 'family') {
         baseFilters.bodyStyle = ['suv', 'minivan', 'wagon'];
+      } else if (persona === 'work') {
+        baseFilters.bodyStyle = ['truck'];
+        baseFilters.driveType = ['AWD'];
       }
 
       // Priority-based overrides (can tighten persona filters)
@@ -81,7 +84,7 @@ export default function SmartSearch() {
         };
       } else if (usage === 'work') {
         baseFilters.bodyStyle = baseFilters.bodyStyle || ['truck', 'van'];
-        baseFilters.driveType = baseFilters.driveType || ['4WD', 'AWD'];
+        baseFilters.driveType = baseFilters.driveType || ['AWD'];
       }
 
       const initialQuery: SearchQuery = {
@@ -133,7 +136,7 @@ export default function SmartSearch() {
     const hp = car.engine.horsepower;
     const mpg = car.fuelEconomy.combined || 20;
     const safety = car.safetyRating?.overall || 3;
-    const reliability = 4;
+    const reliability = calculateReliabilityScore(car) / 20;
     const zeroToSixty = car.performance.zeroToSixty || 8;
 
     switch (algorithm) {
@@ -155,7 +158,7 @@ export default function SmartSearch() {
         return mpg * reliability * (car.dimensions.length / 100);
 
       case 'weekend': {
-        const funFactor = ['coupe', 'convertible', 'sports car'].includes(car.bodyStyle) ? 1.5 : 1;
+        const funFactor = ['coupe', 'convertible'].includes(car.bodyStyle) ? 1.5 : 1;
         return hp * (10 / zeroToSixty) * funFactor;
       }
 

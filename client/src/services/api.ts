@@ -58,3 +58,34 @@ export async function getStatistics(): Promise<any> {
   const response = await api.get('/cars/stats/overview');
   return response.data.data;
 }
+
+let allCarsCache: CarSpecs[] | null = null;
+let allCarsPromise: Promise<CarSpecs[]> | null = null;
+
+export function invalidateAllCarsCache(): void {
+  allCarsCache = null;
+  allCarsPromise = null;
+}
+
+/**
+ * Fetch the full vehicle dataset once per session (in-memory cache only).
+ */
+export async function fetchAllCars(): Promise<CarSpecs[]> {
+  if (allCarsCache) {
+    return allCarsCache;
+  }
+  if (allCarsPromise) {
+    return allCarsPromise;
+  }
+
+  allCarsPromise = searchCars({ limit: 15000 })
+    .then((results) => {
+      allCarsCache = results.results;
+      return allCarsCache;
+    })
+    .finally(() => {
+      allCarsPromise = null;
+    });
+
+  return allCarsPromise;
+}

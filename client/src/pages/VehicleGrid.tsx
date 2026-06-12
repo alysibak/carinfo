@@ -4,11 +4,12 @@ import * as api from '../services/api';
 import type { CarSpecs, SearchQuery } from '../types/car.types';
 import { getDealRating, getDealRatingColor, getDealRatingLabel, getSegment } from '../utils/marketIntelligence';
 import AggregateStats from '../components/AggregateStats';
+import { useAllCars } from '../hooks/useAllCars';
 
 export default function VehicleGrid() {
   const { category, subcategory } = useParams<{ category: string; subcategory: string }>();
   const [allCars, setAllCars] = useState<CarSpecs[]>([]);
-  const [allDatabaseCars, setAllDatabaseCars] = useState<CarSpecs[]>([]);
+  const { cars: allDatabaseCars } = useAllCars();
   const [filteredCars, setFilteredCars] = useState<CarSpecs[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<'year' | 'horsepower' | 'name'>('year');
@@ -24,7 +25,6 @@ export default function VehicleGrid() {
 
   useEffect(() => {
     loadVehicles();
-    loadAllDatabaseCars();
   }, [category, subcategory]);
 
   useEffect(() => {
@@ -47,15 +47,6 @@ export default function VehicleGrid() {
     [allCars]
   );
 
-  const loadAllDatabaseCars = async () => {
-    try {
-      const results = await api.searchCars({ limit: 15000 });
-      setAllDatabaseCars(results.results);
-    } catch (error) {
-      console.error('Failed to load all database cars:', error);
-    }
-  };
-
   const loadVehicles = async () => {
     setLoading(true);
 
@@ -70,7 +61,7 @@ export default function VehicleGrid() {
       if (category === 'body-style') {
         query.filters!.bodyStyle = [subcategory!];
       } else if (category === 'brand') {
-        query.filters!.make = [subcategory!.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')];
+        query.filters!.make = [decodeURIComponent(subcategory!)];
       } else if (category === 'purpose') {
         if (subcategory === 'eco-friendly') {
           query.filters!.fuelType = ['electric', 'hybrid', 'plug-in hybrid'];
@@ -154,7 +145,8 @@ export default function VehicleGrid() {
   };
 
   const getCategoryTitle = () => {
-    return subcategory?.toUpperCase().replace(/-/g, ' ') || '';
+    if (!subcategory) return '';
+    return decodeURIComponent(subcategory).toUpperCase();
   };
 
   const totalPages = Math.max(1, Math.ceil(filteredCars.length / pageSize));

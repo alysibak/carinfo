@@ -5,7 +5,7 @@ interface PersonaQuizProps {
 }
 
 export interface PersonaResult {
-  type: 'commuter' | 'gearhead' | 'family';
+  type: 'commuter' | 'gearhead' | 'family' | 'work';
   budget: { min: number; max: number };
   priority: 'mpg' | 'power' | 'safety' | 'space';
   usage: 'commute' | 'family' | 'fun' | 'work';
@@ -29,9 +29,11 @@ export default function PersonaQuiz({ onComplete }: PersonaQuizProps) {
   };
 
   const determinePersona = (answers: Partial<PersonaResult>): PersonaResult => {
-    let type: 'commuter' | 'gearhead' | 'family' = 'commuter';
+    let type: PersonaResult['type'] = 'commuter';
 
-    if (answers.priority === 'power' || answers.usage === 'fun') {
+    if (answers.usage === 'work') {
+      type = 'work';
+    } else if (answers.priority === 'power' || answers.usage === 'fun') {
       type = 'gearhead';
     } else if (answers.priority === 'safety' || answers.priority === 'space' || answers.usage === 'family') {
       type = 'family';
