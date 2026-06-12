@@ -1,25 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { CarSpecs } from '../types/car.types';
+import { useGarageStore } from '../stores/garageStore';
 
 export default function BattleMode() {
-  const [garage, setGarage] = useState<CarSpecs[]>([]);
+  const garage = useGarageStore((state) => state.cars);
   const [fighter1, setFighter1] = useState<CarSpecs | null>(null);
   const [fighter2, setFighter2] = useState<CarSpecs | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [animateVS, setAnimateVS] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    loadGarage();
-  }, []);
-
-  const loadGarage = () => {
-    const saved = localStorage.getItem('dreamGarage');
-    if (saved) {
-      setGarage(JSON.parse(saved));
-    }
-  };
 
   const startBattle = () => {
     if (fighter1 && fighter2) {

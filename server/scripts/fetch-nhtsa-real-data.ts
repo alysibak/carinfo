@@ -1,3 +1,6 @@
+// NOTE: This script writes a flat JSON array, not the `{ cars, lastUpdated }` wrapper
+// that car.service.ts expects — do not use its output as a drop-in DB without wrapping.
+
 /**
  * Comprehensive NHTSA Real Data Fetcher
  * Pulls actual vehicle data from the free NHTSA government API

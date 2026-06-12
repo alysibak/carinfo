@@ -8,11 +8,12 @@ import { useGarageStore } from '../stores/garageStore';
 import TCOCalculator from '../components/TCOCalculator';
 import MarketIntelligence from '../components/MarketIntelligence';
 import { predictZeroToSixty } from '../utils/marketIntelligence';
+import { useAllCars } from '../hooks/useAllCars';
 
 export default function CarDetail() {
   const { id } = useParams<{ id: string }>();
   const [car, setCar] = useState<CarSpecs | null>(null);
-  const [allCars, setAllCars] = useState<CarSpecs[]>([]);
+  const { cars: allCars } = useAllCars();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'specs' | 'history'>('specs');
@@ -23,7 +24,6 @@ export default function CarDetail() {
 
   useEffect(() => {
     loadCar();
-    loadAllCars();
   }, [id]);
 
   const loadCar = async () => {
@@ -88,15 +88,6 @@ export default function CarDetail() {
       console.error('Slug fallback search failed:', e);
       setError('Unable to load this vehicle right now.');
       setCar(null);
-    }
-  };
-
-  const loadAllCars = async () => {
-    try {
-      const results = await api.searchCars({ limit: 15000 });
-      setAllCars(results.results);
-    } catch (error) {
-      console.error('Failed to load all cars:', error);
     }
   };
 
@@ -505,7 +496,8 @@ export default function CarDetail() {
 
         {activeTab === 'history' && (
           <div className="animate-fade-in">
-            <h2 className="text-4xl font-bold text-white mb-12">Vehicle History & Evolution</h2>
+            <h2 className="text-4xl font-bold text-white mb-4">Vehicle History & Evolution</h2>
+            <p className="text-sm text-slate-500 mb-12 italic">Illustrative timeline — not sourced from historical records.</p>
 
             {/* Timeline */}
             <div className="relative">

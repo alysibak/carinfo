@@ -11,9 +11,8 @@ import {
   Cell,
   ZAxis,
 } from 'recharts';
-import * as api from '../services/api';
-import type { CarSpecs } from '../types/car.types';
 import AggregateStats from '../components/AggregateStats';
+import { useAllCars } from '../hooks/useAllCars';
 
 type AxisMode = 'horsepower' | 'mpg' | 'torque';
 
@@ -43,10 +42,8 @@ const BODY_STYLE_COLORS: Record<string, string> = {
 };
 
 export default function ValueMatrix() {
-  const [allCars, setAllCars] = useState<CarSpecs[]>([]);
+  const { cars: allCars, loading, error, refetch } = useAllCars();
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [axisMode, setAxisMode] = useState<AxisMode>('horsepower');
   const [hoveredCar, setHoveredCar] = useState<ChartDataPoint | null>(null);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 150000]);
@@ -54,29 +51,10 @@ export default function ValueMatrix() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadCars();
-  }, []);
-
-  useEffect(() => {
     if (allCars.length > 0) {
       processChartData();
     }
   }, [allCars, axisMode, priceRange, selectedBodyStyles]);
-
-  const loadCars = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const results = await api.searchCars({ limit: 15000 });
-      setAllCars(results.results);
-    } catch (error) {
-      console.error('Failed to load ValueMatrix cars:', error);
-      setAllCars([]);
-      setError('Unable to load value matrix data right now.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const processChartData = () => {
     const data: ChartDataPoint[] = allCars
@@ -209,7 +187,7 @@ export default function ValueMatrix() {
           </p>
           <p className="text-zinc-400 mb-6">{error}</p>
           <button
-            onClick={loadCars}
+            onClick={refetch}
             className="inline-flex items-center px-6 py-3 rounded-lg bg-white text-black text-xs tracking-[0.3em] font-semibold hover:bg-zinc-200 transition"
           >
             RETRY

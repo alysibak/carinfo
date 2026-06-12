@@ -43,6 +43,7 @@ export default function Explore() {
         { id: 'Nissan', name: 'NISSAN' },
         { id: 'Mazda', name: 'MAZDA' },
         { id: 'Subaru', name: 'SUBARU' },
+        { id: 'Land Rover', name: 'LAND ROVER' },
       ];
     } else if (category === 'purpose') {
       categories = [
@@ -116,7 +117,7 @@ export default function Explore() {
       {subcategories.map((subcat, index) => (
         <Link
           key={subcat.id}
-          to={`/vehicles/${category}/${subcat.id}`}
+          to={`/vehicles/${category}/${encodeURIComponent(subcat.id)}`}
           className="block"
           onMouseEnter={() => setHoveredIndex(index)}
           onMouseLeave={() => setHoveredIndex(null)}
