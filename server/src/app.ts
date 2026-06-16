@@ -1,11 +1,26 @@
-import * as carService from '../server/dist/services/car.service.js';
-import { resolveDataFile } from '../server/dist/utils/data-paths.js';
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import carRoutes from './routes/car.routes.js';
+import vinRoutes from './routes/vin.routes.js';
+import * as carService from './services/car.service.js';
+import { resolveDataFile } from './utils/data-paths.js';
 
-export default async function handler(_req: any, res: any) {
+dotenv.config();
+
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+app.use('/api/cars', carRoutes);
+app.use('/api/vin', vinRoutes);
+
+app.get('/api/health', (_req, res) => {
   try {
     const results = carService.searchCars({ limit: 1 });
     const dbPath = resolveDataFile('cars.json');
-    res.status(200).json({
+    res.json({
       status: 'ok',
       message: 'CarInfo API is running',
       carsTotal: results.total,
@@ -20,5 +35,6 @@ export default async function handler(_req: any, res: any) {
       detail: message,
     });
   }
-}
+});
 
+export default app;
