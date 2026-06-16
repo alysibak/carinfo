@@ -1,10 +1,8 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-
-type ExpressApp = (req: VercelRequest, res: VercelResponse) => void;
+type ExpressApp = (req: any, res: any) => void;
 
 let app: ExpressApp | null = null;
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: any, res: any) {
   if (!app) {
     // Dynamic import avoids ESM/CJS load-order crashes in the Vercel bundle.
     const mod = await import('../server/dist/app.js');
