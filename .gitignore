@@ -140,3 +140,5 @@ build
 *.swo
 *~
 .vercel
+
+.vercel

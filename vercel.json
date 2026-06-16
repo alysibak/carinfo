@@ -4,16 +4,15 @@
   "buildCommand": "npm run build --workspace=server && npm run build --workspace=client",
   "outputDirectory": "client/dist",
   "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/api(?:/(.*))?", "dest": "/api/[[...route]]" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
   ],
   "functions": {
-    "api/**/*.ts": {
+    "api/[[...route]].ts": {
       "includeFiles": "{server/data/**,server/dist/**}",
       "maxDuration": 60,
       "memory": 1024
     }
   }
 }
-
