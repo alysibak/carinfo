@@ -1,4 +1,4 @@
-import * as dashboardService from '../../../server/src/services/dashboard.service';
+import * as dashboardService from '../../../server/dist/services/dashboard.service.js';
 
 export default async function handler(req: any, res: any) {
   try {

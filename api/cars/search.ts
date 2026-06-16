@@ -1,5 +1,5 @@
-import * as carService from '../../server/src/services/car.service';
-import { normalizeSearchQuery } from '../../server/src/utils/search-validation';
+import * as carService from '../../server/dist/services/car.service.js';
+import { normalizeSearchQuery } from '../../server/dist/utils/search-validation.js';
 
 function parseJsonBody(body: any): any {
   if (body == null) return {};

@@ -1,5 +1,5 @@
-import * as carService from '../server/src/services/car.service';
-import { resolveDataFile } from '../server/src/utils/data-paths';
+import * as carService from '../server/dist/services/car.service.js';
+import { resolveDataFile } from '../server/dist/utils/data-paths.js';
 
 export default async function handler(_req: any, res: any) {
   try {
