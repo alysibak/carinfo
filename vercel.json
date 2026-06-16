@@ -10,7 +10,7 @@
   ],
   "functions": {
     "api/**/*.ts": {
-      "includeFiles": "server/data/**",
+      "includeFiles": "{server/data/**,server/dist/**}",
       "maxDuration": 60,
       "memory": 1024
     }
