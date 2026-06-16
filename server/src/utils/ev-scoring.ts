@@ -6,7 +6,7 @@ import { inferEffectiveFuelType } from './fuel-type-inference.js';
 export function computeEvScore(car: CarSpecs, valueMidCad?: number): number {
   if (inferEffectiveFuelType(car) !== 'electric') return 0;
 
-  const mpg = car.fuelEconomy.combined ?? 0;
+  const mpg = car.fuelEconomy?.combined ?? 0;
   const range = car.epa?.rangeMiles ?? 0;
   const price = valueMidCad ?? car.price?.msrp ?? 0;
 
