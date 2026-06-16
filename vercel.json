@@ -1,6 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "npm run build --workspace=client",
+  "installCommand": "npm install",
+  "buildCommand": "npm run build --workspace=server && npm run build --workspace=client",
   "outputDirectory": "client/dist",
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/$1" },
@@ -10,7 +11,7 @@
   "functions": {
     "api/**/*.ts": {
       "includeFiles": "server/data/**",
-      "maxDuration": 30,
+      "maxDuration": 60,
       "memory": 1024
     }
   }

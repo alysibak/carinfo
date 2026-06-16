@@ -164,7 +164,9 @@ function buildIndexes(): void {
     addToMapIndex(modelIndex, car.model.toLowerCase(), car);
     addToMapIndex(bodyStyleIndex, car.bodyStyle, car);
     addToMapIndex(fuelTypeIndex, car.engine.fuelType, car);
-    addToMapIndex(transmissionIndex, car.transmission.type, car);
+    if (car.transmission?.type) {
+      addToMapIndex(transmissionIndex, car.transmission.type, car);
+    }
     addToMapIndex(driveTypeIndex, car.driveType, car);
     if (car.countryOfOrigin) {
       addToMapIndex(countryIndex, car.countryOfOrigin, car);
@@ -183,8 +185,11 @@ function buildIndexes(): void {
   cachedStats = null; // will be lazily computed
 }
 
-// Eagerly initialize on module load so the first request is fast.
-initDatabase();
+/** Load the database on first API call instead of at module import (Vercel cold start). */
+function ensureDatabase(): void {
+  if (cachedCars.length > 0) return;
+  initDatabase();
+}
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
@@ -192,6 +197,7 @@ initDatabase();
  * Get all unique makes (cached).
  */
 export function getAllMakes(): string[] {
+  ensureDatabase();
   return cachedMakes;
 }
 
@@ -199,6 +205,7 @@ export function getAllMakes(): string[] {
  * Get models for a specific make using the make index.
  */
 export function getModelsByMake(make: string): string[] {
+  ensureDatabase();
   const cars = makeIndex.get(make.toLowerCase());
   if (!cars) return [];
 
@@ -210,6 +217,7 @@ export function getModelsByMake(make: string): string[] {
  * Get a car by ID – O(1) via Map.
  */
 export function getCarById(id: string): Car | null {
+  ensureDatabase();
   const car = idIndex.get(id);
   return car ? normalizeCarRecord(car) : null;
 }
@@ -228,6 +236,7 @@ export function searchCars(query: SearchQuery): {
   total: number;
   hasMore: boolean;
 } {
+  ensureDatabase();
   const enriched = enrichSearchQuery(query);
   let candidates = getCandidateSet(enriched);
 
@@ -273,6 +282,7 @@ const POPULAR_SUGGESTIONS: SearchSuggestion[] = [
 
 /** Autocomplete suggestions for the search bar. */
 export function getSearchSuggestions(rawQuery: string, limit = 8): SearchSuggestion[] {
+  ensureDatabase();
   const q = rawQuery.trim().toLowerCase();
   if (!q) return POPULAR_SUGGESTIONS.slice(0, limit);
 
@@ -673,7 +683,7 @@ function getSortValue(car: Car, field: string): number | string | null {
     case 'price':
       return car.price?.msrp ?? null;
     case 'fuelEconomy':
-      return car.fuelEconomy.combined ?? null;
+      return car.fuelEconomy?.combined ?? null;
     case 'range':
       return car.epa?.rangeMiles ?? null;
     case 'evScore':
@@ -684,6 +694,7 @@ function getSortValue(car: Car, field: string): number | string | null {
 }
 
 export function getAllCars(): Car[] {
+  ensureDatabase();
   return cachedCars;
 }
 
@@ -691,6 +702,7 @@ export function getAllCars(): Car[] {
  * Get multiple cars by IDs – O(n) via Map instead of O(n*m).
  */
 export function getCarsByIds(ids: string[]): { cars: Car[]; notFound: string[] } {
+  ensureDatabase();
   const cars: Car[] = [];
   const notFound: string[] = [];
   for (const id of ids) {
@@ -705,6 +717,7 @@ export function getCarsByIds(ids: string[]): { cars: Car[]; notFound: string[] }
  * Get statistics about the database (cached after first computation).
  */
 export function getStatistics() {
+  ensureDatabase();
   if (cachedStats) return cachedStats;
   cachedStats = computeStatistics();
   return cachedStats;
@@ -781,6 +794,7 @@ export interface ChartPointsQuery {
 
 /** Lightweight scatter-plot points computed server-side (avoids shipping full DB to browser). */
 export function getChartPoints(query: ChartPointsQuery = {}): ChartPoint[] {
+  ensureDatabase();
   const limit = Math.min(Math.max(query.limit ?? 3000, 1), 5000);
   const priceMin = query.priceMin ?? 0;
   const priceMax = query.priceMax ?? Infinity;
