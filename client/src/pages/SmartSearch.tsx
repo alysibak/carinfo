@@ -4,6 +4,13 @@ import * as api from '../services/api';
 import type { CarSpecs, SearchQuery } from '../types/car.types';
 import { getDealRating, getDealRatingColor, getDealRatingLabel, getSegment, filterCarsByFuelType, calculateReliabilityScore, type FuelTypeFilter } from '../utils/marketIntelligence';
 import AggregateStats from '../components/AggregateStats';
+import {
+  cardStatClass,
+  formatEngineDetailForCard,
+  formatMpgForCard,
+  formatPowerForCard,
+} from '../utils/dataValue';
+import { usesMpge } from '../utils/fuelDisplay';
 
 type SmartSort = 'best-value' | 'bang-for-buck' | 'lowest-tco' | 'daily-driver' | 'weekend' | 'resale' | 'eco' | 'track';
 
@@ -48,23 +55,25 @@ export default function SmartSearch() {
         price: { min: minPrice, max: maxPrice },
       };
 
-      // Persona-based defaults
+      // Persona-based defaults.
+      // NOTE: EPA data has no horsepower, so "performance" intent uses engine
+      // displacement (a real EPA field) as the proxy.
       if (persona === 'commuter') {
         baseFilters.fuelEconomy = { min: 25 };
       } else if (persona === 'gearhead') {
-        baseFilters.horsepower = { min: 250 };
+        baseFilters.displacement = { min: 3.0 };
       } else if (persona === 'family') {
         baseFilters.bodyStyle = ['suv', 'minivan', 'wagon'];
       } else if (persona === 'work') {
         baseFilters.bodyStyle = ['truck'];
-        baseFilters.driveType = ['AWD'];
+        baseFilters.driveType = ['AWD', '4WD'];
       }
 
       // Priority-based overrides (can tighten persona filters)
       if (priority === 'mpg') {
         baseFilters.fuelEconomy = { min: 30 };
       } else if (priority === 'power') {
-        baseFilters.horsepower = { min: 300 };
+        baseFilters.displacement = { min: 3.5 };
       } else if (priority === 'safety') {
         baseFilters.bodyStyle = ['suv', 'minivan', 'wagon', 'sedan'];
       } else if (priority === 'space') {
@@ -79,12 +88,12 @@ export default function SmartSearch() {
       } else if (usage === 'family') {
         baseFilters.bodyStyle = baseFilters.bodyStyle || ['suv', 'minivan', 'wagon'];
       } else if (usage === 'fun') {
-        baseFilters.horsepower = {
-          min: Math.max(baseFilters.horsepower?.min || 0, 300),
+        baseFilters.displacement = {
+          min: Math.max(baseFilters.displacement?.min || 0, 3.0),
         };
       } else if (usage === 'work') {
         baseFilters.bodyStyle = baseFilters.bodyStyle || ['truck', 'van'];
-        baseFilters.driveType = baseFilters.driveType || ['AWD'];
+        baseFilters.driveType = baseFilters.driveType || ['AWD', '4WD'];
       }
 
       const initialQuery: SearchQuery = {
@@ -95,30 +104,27 @@ export default function SmartSearch() {
 
       let results = await api.searchCars(initialQuery);
 
-      // If the persona/priority combo is too strict and returns nothing,
-      // gracefully relax filters so the user never hits a dead-end screen.
-      if (results.total === 0 && (persona || priority)) {
-        const relaxedFilters: SearchQuery['filters'] = {
-          price: {
-            min: Math.max(0, Math.floor(minPrice * 0.8)),
-            max: maxPrice && maxPrice < 999999
-              ? Math.max(maxPrice, minPrice > 0 ? Math.floor(minPrice * 1.5) : maxPrice)
-              : maxPrice,
-          },
-        };
-
-        const relaxedQuery: SearchQuery = {
-          filters: relaxedFilters,
+      // Fallback 1: drop persona constraints but keep the budget.
+      if (results.total === 0 && (persona || priority || usage)) {
+        results = await api.searchCars({
+          filters: { price: { min: minPrice, max: maxPrice } },
           sort: { field: 'year', order: 'desc' },
           limit: 500,
-        };
-
-        console.warn('SmartSearch: relaxing persona/priority filters due to empty results.', {
-          initialFilters: baseFilters,
-          relaxedFilters,
         });
+      }
 
-        results = await api.searchCars(relaxedQuery);
+      // Fallback 2: widen the budget so the user never hits a dead end.
+      if (results.total === 0) {
+        results = await api.searchCars({
+          filters: {
+            price: {
+              min: Math.max(0, Math.floor(minPrice * 0.5)),
+              max: maxPrice < 999999 ? Math.ceil(maxPrice * 1.5) : maxPrice,
+            },
+          },
+          sort: { field: 'year', order: 'desc' },
+          limit: 500,
+        });
       }
 
       setAllCars(results.results);
@@ -133,18 +139,20 @@ export default function SmartSearch() {
 
   const calculateScore = useCallback((car: CarSpecs, algorithm: SmartSort): number => {
     const price = car.price?.msrp || 50000;
-    const hp = car.engine.horsepower;
     const mpg = car.fuelEconomy.combined || 20;
     const safety = car.safetyRating?.overall || 3;
     const reliability = calculateReliabilityScore(car) / 20;
-    const zeroToSixty = car.performance.zeroToSixty || 8;
+    // EPA data has no horsepower; rank "power" by real fields:
+    // measured HP if present, otherwise displacement, with EVs treated as quick.
+    const powerProxy = car.engine.horsepower
+      ?? (car.engine.fuelType === 'electric' ? 250 : (car.engine.displacement ?? 2.0) * 70);
 
     switch (algorithm) {
       case 'best-value':
         return (reliability * mpg * safety) / (price / 10000);
 
       case 'bang-for-buck':
-        return hp / (price / 1000);
+        return powerProxy / (price / 1000);
 
       case 'lowest-tco': {
         const fuelCostPerYear = (15000 / mpg) * 3.5;
@@ -155,17 +163,17 @@ export default function SmartSearch() {
       }
 
       case 'daily-driver':
-        return mpg * reliability * (car.dimensions.length / 100);
+        return mpg * reliability * ((car.dimensions?.length ?? 180) / 100);
 
       case 'weekend': {
         const funFactor = ['coupe', 'convertible'].includes(car.bodyStyle) ? 1.5 : 1;
-        return hp * (10 / zeroToSixty) * funFactor;
+        return powerProxy * funFactor;
       }
 
       case 'resale': {
         const luxuryBrands = ['Mercedes-Benz', 'BMW', 'Audi', 'Lexus', 'Porsche'];
         const prestige = luxuryBrands.includes(car.make) ? 1.5 : 1;
-        const ageFactor = Math.max(0, 10 - (2025 - car.year)) / 10;
+        const ageFactor = Math.max(0, 10 - (new Date().getFullYear() - car.year)) / 10;
         return prestige * ageFactor * reliability * 100;
       }
 
@@ -175,9 +183,9 @@ export default function SmartSearch() {
       }
 
       case 'track': {
-        const weight = car.dimensions.curbWeight;
+        const weight = car.dimensions?.curbWeight ?? 3500;
         const weightFactor = 5000 / weight;
-        return hp * (10 / zeroToSixty) * weightFactor;
+        return powerProxy * weightFactor;
       }
 
       default:
@@ -267,7 +275,7 @@ export default function SmartSearch() {
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block w-16 h-16 border-2 border-zinc-800 border-t-white rounded-full animate-spin mb-4" />
-          <p className="text-xs tracking-[0.3em] text-zinc-700 uppercase">Finding Your Perfect Match</p>
+          <p className="text-xs tracking-[0.3em] text-zinc-300 uppercase">Finding Your Perfect Match</p>
         </div>
       </div>
     );
@@ -277,8 +285,8 @@ export default function SmartSearch() {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center px-6">
-          <div className="inline-block w-16 h-16 border-2 border-zinc-800 border-t-red-500 rounded-full animate-spin mb-4" />
-          <p className="text-sm tracking-[0.3em] text-zinc-600 uppercase mb-4">
+          <div className="inline-block w-16 h-16 border-2 border-zinc-800 border-t-white rounded-full animate-spin mb-4" />
+          <p className="text-sm tracking-[0.3em] text-zinc-400 uppercase mb-4">
             SMART SEARCH UNAVAILABLE
           </p>
           <p className="text-zinc-400 mb-6">{error}</p>
@@ -295,13 +303,13 @@ export default function SmartSearch() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Fixed Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-black border-b border-zinc-900">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-40 bg-black border-b border-zinc-900">
         <div className="px-8 py-6">
           <div className="flex items-center justify-between max-w-7xl mx-auto">
             <Link
               to="/"
-              className="inline-flex items-center gap-3 text-xs tracking-[0.3em] text-zinc-600 hover:text-white transition-colors group"
+              className="inline-flex items-center gap-3 text-xs tracking-[0.3em] text-zinc-400 hover:text-white transition-colors group"
             >
               <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
@@ -313,14 +321,14 @@ export default function SmartSearch() {
               <h1 className="text-2xl md:text-3xl font-black tracking-tighter">
                 {getPersonaTitle()}
               </h1>
-              <p className="text-xs tracking-[0.3em] text-zinc-700 mt-1">
+              <p className="text-xs tracking-[0.3em] text-zinc-300 mt-1">
                 {filteredCars.length} MATCHED
               </p>
             </div>
 
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="text-xs tracking-[0.3em] text-zinc-600 hover:text-white transition-colors"
+              className="text-xs tracking-[0.3em] text-zinc-400 hover:text-white transition-colors"
             >
               {showFilters ? 'HIDE' : 'REFINE'}
             </button>
@@ -328,10 +336,10 @@ export default function SmartSearch() {
 
           {/* Persona Description */}
           <div className="max-w-7xl mx-auto mt-6 pt-6 border-t border-zinc-900 text-center">
-            <p className="text-sm tracking-wider text-zinc-600 uppercase">
+            <p className="text-sm tracking-wider text-zinc-400 uppercase">
               {getPersonaSubtitle()}
             </p>
-            <p className="text-xs tracking-widest text-zinc-700 mt-2">
+            <p className="text-xs tracking-widest text-zinc-300 mt-2">
               Budget: ${minPrice.toLocaleString()} - ${maxPrice.toLocaleString()}
               {priority && ` • Priority: ${priority.toUpperCase()}`}
             </p>
@@ -343,7 +351,7 @@ export default function SmartSearch() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Search */}
                 <div>
-                  <label className="block text-xs tracking-widest text-zinc-700 mb-2">SEARCH</label>
+                  <label className="block text-xs tracking-widest text-zinc-300 mb-2">SEARCH</label>
                   <input
                     type="text"
                     value={searchTerm}
@@ -355,7 +363,7 @@ export default function SmartSearch() {
 
                 {/* Smart Sort */}
                 <div>
-                  <label className="block text-xs tracking-widest text-zinc-700 mb-2">SMART SORT</label>
+                  <label className="block text-xs tracking-widest text-zinc-300 mb-2">SMART SORT</label>
                   <select
                     value={smartSort}
                     onChange={(e) => setSmartSort(e.target.value as SmartSort)}
@@ -371,7 +379,7 @@ export default function SmartSearch() {
 
                 {/* Fuel Type Filter */}
                 <div>
-                  <label className="block text-xs tracking-widest text-zinc-700 mb-2">FUEL TYPE</label>
+                  <label className="block text-xs tracking-widest text-zinc-300 mb-2">FUEL TYPE</label>
                   <select
                     value={fuelTypeFilter}
                     onChange={(e) => setFuelTypeFilter(e.target.value as FuelTypeFilter)}
@@ -388,11 +396,11 @@ export default function SmartSearch() {
 
               {/* Filter Descriptions */}
               <div className="mt-4 p-4 bg-zinc-950 border border-zinc-900 space-y-2">
-                <p className="text-xs tracking-widest text-zinc-600 text-center">
+                <p className="text-xs tracking-widest text-zinc-400 text-center">
                   {smartSortOptions.find(o => o.value === smartSort)?.desc.toUpperCase()}
                 </p>
                 {fuelTypeFilter === 'gasoline' && (
-                  <p className="text-xs text-blue-400 text-center">
+                  <p className="text-xs text-zinc-400 text-center tracking-widest uppercase">
                     💡 EVs excluded from fuel economy filtering (MPGe ≠ MPG)
                   </p>
                 )}
@@ -402,17 +410,16 @@ export default function SmartSearch() {
         </div>
       </div>
 
-      {/* Content with padding for fixed header */}
-      <div className={`${showFilters ? 'pt-96' : 'pt-56'} px-8 pb-16 transition-all duration-300`}>
+      <div className="pt-8 px-8 pb-16">
         {filteredCars.length === 0 ? (
           <div className="text-center py-32">
-            <p className="text-2xl font-light tracking-wider text-zinc-700 uppercase mb-4">
+            <p className="text-2xl font-light tracking-wider text-zinc-300 uppercase mb-4">
               No vehicles matched your criteria
             </p>
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
-                className="text-xs tracking-widest text-zinc-600 hover:text-white transition-colors"
+                className="text-xs tracking-widest text-zinc-400 hover:text-white transition-colors"
               >
                 CLEAR SEARCH
               </button>
@@ -427,7 +434,7 @@ export default function SmartSearch() {
 
             {/* Smart Sort Indicator */}
             <div className="mb-8 text-center">
-              <p className="text-xs tracking-[0.3em] text-zinc-700 uppercase mb-2">
+              <p className="text-xs tracking-[0.3em] text-zinc-300 uppercase mb-2">
                 Sorted by: {smartSortOptions.find(o => o.value === smartSort)?.label}
               </p>
               <div className="h-px w-64 bg-gradient-to-r from-transparent via-zinc-800 to-transparent mx-auto" />
@@ -470,7 +477,7 @@ export default function SmartSearch() {
 
                     {/* Year */}
                     <div className="mb-4">
-                      <p className="text-5xl font-black text-zinc-700 group-hover:text-zinc-600 transition-colors">
+                      <p className="text-5xl font-black text-zinc-300 group-hover:text-zinc-400 transition-colors">
                         {car.year}
                       </p>
                     </div>
@@ -480,7 +487,7 @@ export default function SmartSearch() {
                       <h3 className="text-2xl font-black tracking-tight mb-1 group-hover:tracking-wide transition-all">
                         {car.make.toUpperCase()}
                       </h3>
-                      <p className="text-lg font-light tracking-wider text-zinc-500 group-hover:text-zinc-400 transition-colors">
+                      <p className="text-lg font-light tracking-wider text-zinc-400 group-hover:text-zinc-400 transition-colors">
                         {car.model}
                       </p>
                     </div>
@@ -491,25 +498,33 @@ export default function SmartSearch() {
                     {/* Specs Grid */}
                     <div className="grid grid-cols-2 gap-4 mb-6">
                       <div>
-                        <p className="text-xs tracking-widest text-zinc-700 mb-1 uppercase">Power</p>
-                        <p className="text-lg font-bold">{car.engine.horsepower}<span className="text-xs text-zinc-600 ml-1">HP</span></p>
+                        <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">Power</p>
+                        <p className={cardStatClass(formatPowerForCard(car.engine.horsepower))}>
+                          {formatPowerForCard(car.engine.horsepower)}
+                        </p>
                       </div>
                       <div>
-                        <p className="text-xs tracking-widest text-zinc-700 mb-1 uppercase">MPG</p>
-                        <p className="text-lg font-bold">{car.fuelEconomy.combined || 'N/A'}</p>
+                        <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">
+                          {usesMpge(car.engine.fuelType) ? 'MPGe' : 'MPG'}
+                        </p>
+                        <p className={cardStatClass(formatMpgForCard(car.fuelEconomy.combined))}>
+                          {formatMpgForCard(car.fuelEconomy.combined)}
+                        </p>
                       </div>
                       <div>
-                        <p className="text-xs tracking-widest text-zinc-700 mb-1 uppercase">Safety</p>
-                        <p className="text-lg font-bold">{car.safetyRating?.overall || 'N/A'}/5</p>
+                        <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">Engine</p>
+                        <p className={cardStatClass(formatEngineDetailForCard(car.engine))}>
+                          {formatEngineDetailForCard(car.engine)}
+                        </p>
                       </div>
                       <div>
-                        <p className="text-xs tracking-widest text-zinc-700 mb-1 uppercase">Score</p>
+                        <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">Score</p>
                         <p className="text-lg font-bold">{score.toFixed(0)}</p>
                       </div>
                     </div>
 
                     {/* View Arrow */}
-                    <div className="flex items-center gap-2 text-xs tracking-widest text-zinc-700 group-hover:text-white transition-all">
+                    <div className="flex items-center gap-2 text-xs tracking-widest text-zinc-300 group-hover:text-white transition-all">
                       <span>VIEW</span>
                       <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -525,7 +540,7 @@ export default function SmartSearch() {
               <div className="text-center mt-12">
                 <button
                   onClick={() => setVisibleCount(prev => prev + PAGE_SIZE)}
-                  className="px-8 py-3 border border-zinc-800 text-xs tracking-[0.3em] text-zinc-500 hover:text-white hover:border-zinc-600 transition-all uppercase"
+                  className="px-8 py-3 border border-zinc-800 text-xs tracking-[0.3em] text-zinc-400 hover:text-white hover:border-zinc-600 transition-all uppercase"
                 >
                   Load More ({filteredCars.length - visibleCount} remaining)
                 </button>

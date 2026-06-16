@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import carRoutes from './routes/car.routes.js';
+import vinRoutes from './routes/vin.routes.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
@@ -17,6 +18,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/cars', carRoutes);
+app.use('/api/vin', vinRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

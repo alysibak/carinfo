@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import * as carService from '../services/car.service.js';
-import type { SearchQuery } from '../types/car.types.js';
+import * as dashboardService from '../services/dashboard.service.js';
+import { normalizeSearchQuery } from '../utils/search-validation.js';
 
 /**
  * Get all makes
@@ -32,12 +33,27 @@ export function getModelsByMake(req: Request, res: Response) {
  */
 export function searchCars(req: Request, res: Response) {
   try {
-    const query: SearchQuery = req.body;
+    const query = normalizeSearchQuery(req.body);
     const results = carService.searchCars(query);
     res.json({ success: true, data: results });
   } catch (error) {
     console.error('Search error:', error);
     res.status(500).json({ success: false, error: 'Failed to search cars' });
+  }
+}
+
+/**
+ * Autocomplete suggestions for the search bar
+ */
+export function getSearchSuggestions(req: Request, res: Response) {
+  try {
+    const q = typeof req.query.q === 'string' ? req.query.q : '';
+    const limitRaw = req.query.limit != null ? Number(req.query.limit) : 8;
+    const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 20) : 8;
+    const suggestions = carService.getSearchSuggestions(q, limit);
+    res.json({ success: true, data: suggestions });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to fetch suggestions' });
   }
 }
 
@@ -74,10 +90,43 @@ export function compareCars(req: Request, res: Response) {
       return res.status(400).json({ success: false, error: 'Maximum 5 cars can be compared' });
     }
 
-    const cars = carService.getCarsByIds(ids);
-    res.json({ success: true, data: cars });
+    const { cars, notFound } = carService.getCarsByIds(ids);
+    res.json({ success: true, data: cars, notFound });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to compare cars' });
+  }
+}
+
+/**
+ * Get car dashboard with analytics and provenance
+ */
+export function getCarDashboard(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const dashboard = dashboardService.getCarDashboard(id);
+
+    if (!dashboard) {
+      return res.status(404).json({ success: false, error: 'Car not found' });
+    }
+
+    res.json({ success: true, data: dashboard });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to fetch car dashboard' });
+  }
+}
+
+/**
+ * Get similar / cross-shopped vehicles for a car
+ */
+export function getSimilarCars(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const limitRaw = req.query.limit != null ? Number(req.query.limit) : 6;
+    const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 12) : 6;
+    const cars = dashboardService.getSimilarCars(id, limit);
+    res.json({ success: true, data: cars });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to fetch similar cars' });
   }
 }
 
@@ -90,5 +139,34 @@ export function getStatistics(req: Request, res: Response) {
     res.json({ success: true, data: stats });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to fetch statistics' });
+  }
+}
+
+/**
+ * Chart points for value matrix (server-side sampling)
+ */
+export function getChartPoints(req: Request, res: Response) {
+  try {
+    const priceMin = req.query.priceMin != null ? Number(req.query.priceMin) : undefined;
+    const priceMax = req.query.priceMax != null ? Number(req.query.priceMax) : undefined;
+    const bodyStyles = typeof req.query.bodyStyles === 'string' && req.query.bodyStyles
+      ? req.query.bodyStyles.split(',').map((s) => s.trim()).filter(Boolean)
+      : undefined;
+    const yearMin = req.query.yearMin != null ? Number(req.query.yearMin) : undefined;
+    const yearMax = req.query.yearMax != null ? Number(req.query.yearMax) : undefined;
+    const limit = req.query.limit != null ? Number(req.query.limit) : undefined;
+
+    const points = carService.getChartPoints({
+      priceMin: Number.isFinite(priceMin) ? priceMin : undefined,
+      priceMax: Number.isFinite(priceMax) ? priceMax : undefined,
+      bodyStyles,
+      yearMin: Number.isFinite(yearMin) ? yearMin : undefined,
+      yearMax: Number.isFinite(yearMax) ? yearMax : undefined,
+      limit: Number.isFinite(limit) ? limit : undefined,
+    });
+
+    res.json({ success: true, data: { points, total: points.length } });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to fetch chart points' });
   }
 }

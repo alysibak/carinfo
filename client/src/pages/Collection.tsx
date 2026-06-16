@@ -1,143 +1,78 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import * as api from '../services/api';
-import type { CarSpecs, SearchQuery } from '../types/car.types';
-import { getDealRating, getDealRatingColor, getDealRatingLabel, getSegment, filterCarsByFuelType, type FuelTypeFilter } from '../utils/marketIntelligence';
+import type { CarSpecs } from '../types/car.types';
+import {
+  getDealRating,
+  getDealRatingColor,
+  getDealRatingLabel,
+  getSegment,
+  filterCarsByFuelType,
+  type FuelTypeFilter,
+} from '../utils/marketIntelligence';
+import {
+  calculateCollectionScore,
+  dedupeByModel,
+  type CollectionRankBy,
+} from '../utils/collectionCuration';
 import AggregateStats from '../components/AggregateStats';
-import { useAllCars } from '../hooks/useAllCars';
+import { COLLECTIONS } from '../config/collections';
+import { cardStatClass, formatEngineDetailForCard, formatMpgForCard, formatPowerForCard, formatPriceShort } from '../utils/dataValue';
+import { usesMpge } from '../utils/fuelDisplay';
+import { formatTransmissionLabel, displayListingSubtitle } from '../utils/trimLabel';
 
-interface CollectionConfig {
-  title: string;
-  subtitle: string;
-  description: string;
-  query: SearchQuery;
-}
-
-const collections: Record<string, CollectionConfig> = {
-  'goldilocks': {
-    title: 'THE GOLDILOCKS ZONE',
-    subtitle: 'Just Right for Most People',
-    description: 'Balanced price, efficiency, and safety for everyday drivers',
-    query: {
-      filters: {
-        price: { min: 25000, max: 35000 },
-        fuelEconomy: { min: 30 },
-      },
-      sort: { field: 'year', order: 'desc' },
-      limit: 10000,
-    },
-  },
-  'gas-savers': {
-    title: 'BEST GAS SAVERS',
-    subtitle: 'Fill Up Less, Save More',
-    description: 'Maximum fuel efficiency without breaking the bank',
-    query: {
-      filters: {
-        fuelEconomy: { min: 35 },
-        price: { max: 40000 },
-      },
-      sort: { field: 'fuelEconomy', order: 'desc' },
-      limit: 10000,
-    },
-  },
-  'luxury-less': {
-    title: 'LUXURY FOR LESS',
-    subtitle: 'Premium Badge, Smart Price',
-    description: 'High-end brands at accessible prices',
-    query: {
-      filters: {
-        make: ['Mercedes-Benz', 'BMW', 'Audi', 'Lexus', 'Acura', 'Infiniti', 'Cadillac', 'Lincoln'],
-        price: { max: 50000 },
-        year: { min: 2015 },
-      },
-      sort: { field: 'year', order: 'desc' },
-      limit: 10000,
-    },
-  },
-  'family-fortress': {
-    title: 'FAMILY FORTRESS',
-    subtitle: 'Protect What Matters Most',
-    description: 'Maximum safety, space, and peace of mind',
-    query: {
-      filters: {
-        bodyStyle: ['suv', 'minivan'],
-      },
-      sort: { field: 'year', order: 'desc' },
-      limit: 10000,
-    },
-  },
-  'weekend-warriors': {
-    title: 'WEEKEND WARRIORS',
-    subtitle: 'Live for the Drive',
-    description: 'Pure driving excitement for enthusiasts',
-    query: {
-      filters: {
-        horsepower: { min: 300 },
-        bodyStyle: ['coupe', 'convertible'],
-      },
-      sort: { field: 'horsepower', order: 'desc' },
-      limit: 10000,
-    },
-  },
-  'work-horses': {
-    title: 'WORK HORSES',
-    subtitle: 'Built to Work, Priced to Own',
-    description: 'Serious capability for serious work',
-    query: {
-      filters: {
-        bodyStyle: ['truck'],
-        driveType: ['AWD'],
-      },
-      sort: { field: 'year', order: 'desc' },
-      limit: 10000,
-    },
-  },
-  'future-proof': {
-    title: 'FUTURE-PROOF',
-    subtitle: 'Drive Tomorrow, Today',
-    description: 'Electric and hybrid vehicles leading the way',
-    query: {
-      filters: {
-        fuelType: ['electric', 'hybrid', 'plug-in hybrid'],
-        year: { min: 2018 },
-      },
-      sort: { field: 'year', order: 'desc' },
-      limit: 10000,
-    },
-  },
-};
+type SortBy = 'value' | 'year' | 'name' | 'mpg';
+type ViewMode = 'models' | 'all';
 
 export default function Collection() {
   const { collectionId } = useParams<{ collectionId: string }>();
   const [allCars, setAllCars] = useState<CarSpecs[]>([]);
-  const { cars: allDatabaseCars } = useAllCars();
   const [filteredCars, setFilteredCars] = useState<CarSpecs[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState<'year' | 'horsepower' | 'name' | 'mpg'>('year');
+  const [sortBy, setSortBy] = useState<SortBy>('year');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [fuelTypeFilter, setFuelTypeFilter] = useState<FuelTypeFilter>('gasoline');
+  const [selectedBodyStyles, setSelectedBodyStyles] = useState<string[]>([]);
+  const [viewMode, setViewMode] = useState<ViewMode>('models');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(24);
   const navigate = useNavigate();
 
-  const collection = collectionId ? collections[collectionId] : null;
+  const collection = collectionId ? COLLECTIONS[collectionId] : null;
+  const isCurated = Boolean(collection?.display?.dedupeByModel);
+  const rankBy: CollectionRankBy = collection?.display?.rankBy ?? 'best-value';
 
   useEffect(() => {
     if (collection) {
       loadVehicles();
+      setViewMode(collection.display?.dedupeByModel ? 'models' : 'all');
+      setSortBy(collection.display?.rankBy ? 'value' : 'year');
     }
   }, [collectionId]);
 
   useEffect(() => {
     applyFiltersAndSort();
-  }, [allCars, sortBy, sortOrder, searchTerm, fuelTypeFilter]);
+    setCurrentPage(1);
+  }, [allCars, sortBy, sortOrder, searchTerm, fuelTypeFilter, selectedBodyStyles, viewMode]);
+
+  const bodyStyleOptions = useMemo(
+    () => Array.from(new Set(allCars.map((car) => car.bodyStyle))).sort(),
+    [allCars],
+  );
+
+  const scoreFn = useMemo(
+    () => (car: CarSpecs) => calculateCollectionScore(car, rankBy),
+    [rankBy],
+  );
 
   const loadVehicles = async () => {
     if (!collection) return;
 
     setLoading(true);
     try {
-      const results = await api.searchCars(collection.query);
+      const results = await api.searchAllCars(collection.query);
       setAllCars(results.results);
     } catch (error) {
       console.error('Failed to load collection vehicles:', error);
@@ -150,27 +85,34 @@ export default function Collection() {
   const applyFiltersAndSort = () => {
     let filtered = [...allCars];
 
-    // Apply fuel type filter
     filtered = filterCarsByFuelType(filtered, fuelTypeFilter);
 
-    // Apply search filter
+    if (selectedBodyStyles.length > 0) {
+      const styles = new Set(selectedBodyStyles);
+      filtered = filtered.filter((car) => styles.has(car.bodyStyle));
+    }
+
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(car =>
-        car.make.toLowerCase().includes(term) ||
-        car.model.toLowerCase().includes(term) ||
-        car.year.toString().includes(term)
+      filtered = filtered.filter(
+        (car) =>
+          car.make.toLowerCase().includes(term) ||
+          car.model.toLowerCase().includes(term) ||
+          car.year.toString().includes(term),
       );
     }
 
-    // Apply sorting
+    if (isCurated && viewMode === 'models') {
+      filtered = dedupeByModel(filtered, scoreFn);
+    }
+
     filtered.sort((a, b) => {
       let compareValue = 0;
 
-      if (sortBy === 'year') {
+      if (sortBy === 'value') {
+        compareValue = scoreFn(a) - scoreFn(b);
+      } else if (sortBy === 'year') {
         compareValue = a.year - b.year;
-      } else if (sortBy === 'horsepower') {
-        compareValue = a.engine.horsepower - b.engine.horsepower;
       } else if (sortBy === 'mpg') {
         compareValue = (a.fuelEconomy.combined || 0) - (b.fuelEconomy.combined || 0);
       } else if (sortBy === 'name') {
@@ -183,6 +125,20 @@ export default function Collection() {
     setFilteredCars(filtered);
   };
 
+  const totalPages = Math.max(1, Math.ceil(filteredCars.length / pageSize));
+  const clampedCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = (clampedCurrentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const pageCars = filteredCars.slice(startIndex, endIndex);
+
+  const resultLabel = isCurated && viewMode === 'models'
+    ? `${filteredCars.length} models`
+    : `${filteredCars.length} vehicles`;
+
+  const matchHint = isCurated && viewMode === 'models' && filteredCars.length < allCars.length
+    ? ` from ${allCars.length.toLocaleString()} matching trims`
+    : '';
+
   if (!collection) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -190,7 +146,7 @@ export default function Collection() {
           <h2 className="text-4xl font-black tracking-tighter mb-4 text-white">
             COLLECTION NOT FOUND
           </h2>
-          <Link to="/" className="text-xs tracking-[0.3em] text-zinc-600 hover:text-white transition-colors">
+          <Link to="/" className="text-xs tracking-[0.3em] text-zinc-400 hover:text-white transition-colors">
             BACK TO HOME
           </Link>
         </div>
@@ -203,7 +159,7 @@ export default function Collection() {
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block w-16 h-16 border-2 border-zinc-800 border-t-white rounded-full animate-spin mb-4" />
-          <p className="text-xs tracking-[0.3em] text-zinc-700 uppercase">Loading Collection</p>
+          <p className="text-xs tracking-[0.3em] text-zinc-300 uppercase">Loading Collection</p>
         </div>
       </div>
     );
@@ -211,13 +167,12 @@ export default function Collection() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Fixed Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-black border-b border-zinc-900">
+      <div className="sticky top-0 z-40 bg-black border-b border-zinc-900">
         <div className="px-8 py-6">
           <div className="flex items-center justify-between max-w-7xl mx-auto">
             <Link
               to="/"
-              className="inline-flex items-center gap-3 text-xs tracking-[0.3em] text-zinc-600 hover:text-white transition-colors group"
+              className="inline-flex items-center gap-3 text-xs tracking-[0.3em] text-zinc-400 hover:text-white transition-colors group"
             >
               <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
@@ -229,36 +184,103 @@ export default function Collection() {
               <h1 className="text-2xl md:text-3xl font-black tracking-tighter">
                 {collection.title}
               </h1>
-              <p className="text-xs tracking-[0.3em] text-zinc-700 mt-1">
-                {filteredCars.length} OF {allCars.length}
+              <p className="text-xs tracking-[0.3em] text-zinc-300 mt-1">
+                {resultLabel}{matchHint}
               </p>
             </div>
 
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="text-xs tracking-[0.3em] text-zinc-600 hover:text-white transition-colors"
+              className="text-xs tracking-[0.3em] text-zinc-400 hover:text-white transition-colors"
             >
               {showFilters ? 'HIDE' : 'FILTER'}
             </button>
           </div>
 
-          {/* Collection Description */}
           <div className="max-w-7xl mx-auto mt-6 pt-6 border-t border-zinc-900 text-center">
-            <p className="text-sm tracking-wider text-zinc-600 uppercase">
+            <p className="text-sm tracking-wider text-zinc-400 uppercase">
               {collection.subtitle}
             </p>
-            <p className="text-xs tracking-widest text-zinc-700 mt-2">
+            <p className="text-xs tracking-widest text-zinc-300 mt-2">
               {collection.description}
             </p>
           </div>
 
-          {/* Filter Controls */}
+          {/* Quick body-style filters + view toggle */}
+          <div className="max-w-7xl mx-auto mt-6 pt-6 border-t border-zinc-900">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              {bodyStyleOptions.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {bodyStyleOptions.map((style) => {
+                    const active = selectedBodyStyles.includes(style);
+                    const count = allCars.filter((c) => c.bodyStyle === style).length;
+                    return (
+                      <button
+                        key={style}
+                        type="button"
+                        onClick={() =>
+                          setSelectedBodyStyles((prev) =>
+                            prev.includes(style) ? prev.filter((s) => s !== style) : [...prev, style],
+                          )
+                        }
+                        className={`px-3 py-1.5 text-[11px] uppercase tracking-[0.2em] border rounded-full transition-colors ${
+                          active
+                            ? 'bg-white text-black border-white'
+                            : 'border-zinc-700 text-zinc-400 hover:border-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        {style} ({count})
+                      </button>
+                    );
+                  })}
+                  {selectedBodyStyles.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedBodyStyles([])}
+                      className="px-3 py-1.5 text-[11px] uppercase tracking-[0.2em] text-zinc-500 hover:text-white"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {isCurated && (
+                <div className="flex items-center gap-1 bg-zinc-950 border border-zinc-800 p-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('models')}
+                    className={`px-4 py-1.5 text-[11px] uppercase tracking-[0.2em] transition-colors ${
+                      viewMode === 'models' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    Top models
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('all')}
+                    className={`px-4 py-1.5 text-[11px] uppercase tracking-[0.2em] transition-colors ${
+                      viewMode === 'all' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    All trims
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {isCurated && viewMode === 'models' && (
+              <p className="text-[11px] tracking-[0.2em] text-zinc-500 mt-4 text-center uppercase">
+                One best pick per model, ranked by value · switch to all trims for every year &amp; variant
+              </p>
+            )}
+          </div>
+
           {showFilters && (
             <div className="max-w-7xl mx-auto mt-6 pt-6 border-t border-zinc-900">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {/* Search */}
                 <div>
-                  <label className="block text-xs tracking-widest text-zinc-700 mb-2">SEARCH</label>
+                  <label className="block text-xs tracking-widest text-zinc-300 mb-2">SEARCH</label>
                   <input
                     type="text"
                     value={searchTerm}
@@ -268,24 +290,22 @@ export default function Collection() {
                   />
                 </div>
 
-                {/* Sort By */}
                 <div>
-                  <label className="block text-xs tracking-widest text-zinc-700 mb-2">SORT BY</label>
+                  <label className="block text-xs tracking-widest text-zinc-300 mb-2">SORT BY</label>
                   <select
                     value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as any)}
+                    onChange={(e) => setSortBy(e.target.value as SortBy)}
                     className="w-full bg-zinc-950 border border-zinc-800 px-4 py-2 text-sm focus:outline-none focus:border-zinc-600 transition-colors"
                   >
+                    {isCurated && <option value="value">BEST MATCH</option>}
                     <option value="year">YEAR</option>
-                    <option value="horsepower">POWER</option>
                     <option value="mpg">MPG</option>
                     <option value="name">NAME</option>
                   </select>
                 </div>
 
-                {/* Sort Order */}
                 <div>
-                  <label className="block text-xs tracking-widest text-zinc-700 mb-2">ORDER</label>
+                  <label className="block text-xs tracking-widest text-zinc-300 mb-2">ORDER</label>
                   <select
                     value={sortOrder}
                     onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
@@ -296,9 +316,8 @@ export default function Collection() {
                   </select>
                 </div>
 
-                {/* Fuel Type Filter */}
                 <div>
-                  <label className="block text-xs tracking-widest text-zinc-700 mb-2">FUEL TYPE</label>
+                  <label className="block text-xs tracking-widest text-zinc-300 mb-2">FUEL TYPE</label>
                   <select
                     value={fuelTypeFilter}
                     onChange={(e) => setFuelTypeFilter(e.target.value as FuelTypeFilter)}
@@ -315,8 +334,8 @@ export default function Collection() {
 
               {fuelTypeFilter === 'gasoline' && (
                 <div className="mt-4 p-3 bg-zinc-950 border border-zinc-900">
-                  <p className="text-xs text-blue-400 text-center">
-                    💡 EVs excluded from fuel economy filtering (MPGe ≠ MPG)
+                  <p className="text-xs text-zinc-400 text-center tracking-widest uppercase">
+                    EVs excluded from fuel economy filtering (MPGe ≠ MPG)
                   </p>
                 </div>
               )}
@@ -325,34 +344,80 @@ export default function Collection() {
         </div>
       </div>
 
-      {/* Content with padding for fixed header */}
-      <div className={`${showFilters ? 'pt-80' : 'pt-56'} px-8 pb-16 transition-all duration-300`}>
+      <div className="pt-8 px-8 pb-16">
         {filteredCars.length === 0 ? (
           <div className="text-center py-32">
-            <p className="text-2xl font-light tracking-wider text-zinc-700 uppercase mb-4">
+            <p className="text-2xl font-light tracking-wider text-zinc-300 uppercase mb-4">
               No vehicles found
             </p>
-            {searchTerm && (
+            {(searchTerm || selectedBodyStyles.length > 0) && (
               <button
-                onClick={() => setSearchTerm('')}
-                className="text-xs tracking-widest text-zinc-600 hover:text-white transition-colors"
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedBodyStyles([]);
+                }}
+                className="text-xs tracking-widest text-zinc-400 hover:text-white transition-colors"
               >
-                CLEAR SEARCH
+                CLEAR FILTERS
               </button>
             )}
           </div>
         ) : (
           <div className="max-w-7xl mx-auto">
-            {/* Aggregate Stats */}
             <div className="mb-8">
               <AggregateStats cars={filteredCars} title={collection.title} />
             </div>
 
-            {/* Grid of vehicles */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6 text-[11px] tracking-[0.25em] text-zinc-400">
+              <div>
+                SHOWING {startIndex + 1}–{Math.min(endIndex, filteredCars.length)} OF {filteredCars.length}
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] uppercase">Per page</span>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => {
+                      setPageSize(Number(e.target.value) || 24);
+                      setCurrentPage(1);
+                    }}
+                    className="bg-black border border-zinc-800 px-2 py-1 text-[10px] tracking-[0.25em] focus:outline-none focus:border-zinc-600"
+                  >
+                    <option value={12}>12</option>
+                    <option value={24}>24</option>
+                    <option value={48}>48</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={clampedCurrentPage === 1}
+                    className="px-3 py-1 border border-zinc-800 text-[10px] uppercase tracking-[0.2em] disabled:opacity-40 disabled:cursor-not-allowed hover:border-zinc-600 transition-colors"
+                  >
+                    Prev
+                  </button>
+                  <span className="text-[10px] text-zinc-400">
+                    {clampedCurrentPage} / {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={clampedCurrentPage === totalPages}
+                    className="px-3 py-1 border border-zinc-800 text-[10px] uppercase tracking-[0.2em] disabled:opacity-40 disabled:cursor-not-allowed hover:border-zinc-600 transition-colors"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-zinc-900">
-              {filteredCars.map((car) => {
-                const segment = allDatabaseCars.length > 0 ? getSegment(car, allDatabaseCars) : [];
+              {pageCars.map((car, index) => {
+                const globalIndex = startIndex + index;
+                const segment = allCars.length > 0 ? getSegment(car, allCars) : [];
                 const dealRating = segment.length >= 5 ? getDealRating(car, segment) : null;
+                const showRankBadge = isCurated && sortBy === 'value' && globalIndex < 3;
 
                 return (
                   <div
@@ -360,10 +425,9 @@ export default function Collection() {
                     onClick={() => navigate(`/car/${car.id}`)}
                     className="bg-black p-8 hover:bg-zinc-950 transition-all duration-300 cursor-pointer group border border-zinc-900 hover:border-zinc-700 relative"
                   >
-                    {/* Deal Rating Badge */}
                     {dealRating && (
                       <div
-                        className="absolute top-4 right-4 px-3 py-1.5 text-xs font-black tracking-wider border-2"
+                        className="absolute top-4 left-4 px-3 py-1.5 text-xs font-black tracking-wider border-2"
                         style={{
                           backgroundColor: `${getDealRatingColor(dealRating)}20`,
                           color: getDealRatingColor(dealRating),
@@ -374,54 +438,76 @@ export default function Collection() {
                       </div>
                     )}
 
-                    {/* Year */}
-                    <div className="mb-4">
-                      <p className="text-5xl font-black text-zinc-700 group-hover:text-zinc-600 transition-colors">
+                    {showRankBadge && (
+                      <div className="absolute top-4 right-4">
+                        <div className="bg-white text-black px-3 py-1 text-xs font-black tracking-widest">
+                          #{globalIndex + 1}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="mb-6 pr-20">
+                      <p className="text-[11px] font-medium tracking-[0.3em] text-zinc-500 uppercase mb-2">
                         {car.year}
                       </p>
+                      <h3 className="text-2xl font-black tracking-tight leading-none mb-1 group-hover:tracking-wide transition-all">
+                        {car.make.toUpperCase()}
+                      </h3>
+                      <p className="text-lg font-light tracking-wide text-zinc-300 group-hover:text-white transition-colors">
+                        {car.model}
+                      </p>
+                      {displayListingSubtitle(car) && (
+                        <p className="text-sm text-zinc-400 mt-1">{displayListingSubtitle(car)}</p>
+                      )}
                     </div>
 
-                  {/* Make & Model */}
-                  <div className="mb-6">
-                    <h3 className="text-2xl font-black tracking-tight mb-1 group-hover:tracking-wide transition-all">
-                      {car.make.toUpperCase()}
-                    </h3>
-                    <p className="text-lg font-light tracking-wider text-zinc-500 group-hover:text-zinc-400 transition-colors">
-                      {car.model}
+                    <div className="h-px bg-zinc-900 group-hover:bg-zinc-700 transition-colors mb-6" />
+
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">Power</p>
+                        <p className={cardStatClass(formatPowerForCard(car.engine.horsepower))}>
+                          {formatPowerForCard(car.engine.horsepower)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">
+                          {usesMpge(car.engine.fuelType) ? 'MPGe' : 'MPG'}
+                        </p>
+                        <p className={cardStatClass(formatMpgForCard(car.fuelEconomy.combined))}>
+                          {formatMpgForCard(car.fuelEconomy.combined)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">Engine</p>
+                        <p className={cardStatClass(formatEngineDetailForCard(car.engine))}>
+                          {formatEngineDetailForCard(car.engine)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">Trans</p>
+                        <p className={cardStatClass(
+                          car.transmission?.type
+                            ? formatTransmissionLabel(car.transmission, car.trim)
+                            : '—',
+                        )}>
+                          {car.transmission?.type
+                            ? formatTransmissionLabel(car.transmission, car.trim)
+                            : '—'}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-zinc-500 mb-4">
+                      Est. value {formatPriceShort(car.price?.msrp, car.price?.isEstimated)}
                     </p>
-                  </div>
 
-                  {/* Divider */}
-                  <div className="h-px bg-zinc-900 group-hover:bg-zinc-700 transition-colors mb-6" />
-
-                  {/* Specs Grid */}
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div>
-                      <p className="text-xs tracking-widest text-zinc-700 mb-1 uppercase">Power</p>
-                      <p className="text-lg font-bold">{car.engine.horsepower}<span className="text-xs text-zinc-600 ml-1">HP</span></p>
-                    </div>
-                    <div>
-                      <p className="text-xs tracking-widest text-zinc-700 mb-1 uppercase">MPG</p>
-                      <p className="text-lg font-bold">{car.fuelEconomy.combined || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs tracking-widest text-zinc-700 mb-1 uppercase">Drive</p>
-                      <p className="text-lg font-bold">{car.driveType}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs tracking-widest text-zinc-700 mb-1 uppercase">Type</p>
-                      <p className="text-lg font-bold capitalize">{car.bodyStyle}</p>
+                    <div className="flex items-center gap-2 text-xs tracking-widest text-zinc-300 group-hover:text-white transition-all">
+                      <span>VIEW</span>
+                      <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                      </svg>
                     </div>
                   </div>
-
-                  {/* View Arrow */}
-                  <div className="flex items-center gap-2 text-xs tracking-widest text-zinc-700 group-hover:text-white transition-all">
-                    <span>VIEW</span>
-                    <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
-                  </div>
-                </div>
                 );
               })}
             </div>

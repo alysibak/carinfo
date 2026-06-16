@@ -1,4 +1,7 @@
 /**
+ * @deprecated Synthetic data generator — superseded by build-verified-database.ts (EPA + NHTSA).
+ * Output is not verified and must not be used for production data.
+ *
  * Comprehensive Offline Vehicle Database Generator
  * Generates thousands of realistic vehicles without external API calls
  *

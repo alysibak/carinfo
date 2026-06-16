@@ -1,74 +1,86 @@
 import type { CarSpecs } from '../types/car.types';
+import {
+  annualKmToMiles,
+  getRegionalAssumptions,
+  mpgToLPer100Km,
+  mpgeToKwhPer100Km,
+} from '@carinfo/config/regional-assumptions';
 
-// Energy pricing (default US averages, can be customized)
+const REGION = getRegionalAssumptions();
+
 export interface EnergyPrices {
-  gasPrice: number; // $/gallon
-  electricityPrice: number; // $/kWh
+  gasPriceCadPerL: number;
+  electricityPriceCadPerKwh: number;
 }
 
 const DEFAULT_ENERGY_PRICES: EnergyPrices = {
-  gasPrice: 3.5,
-  electricityPrice: 0.14,
+  gasPriceCadPerL: REGION.gasPriceCadPerL,
+  electricityPriceCadPerKwh: REGION.electricityRateCadPerKwh,
 };
 
-// Calculate cost per mile for any vehicle type
 export interface CostPerMile {
-  costPerMile: number; // Dollars per mile
-  annualCost: number; // Cost for 15,000 miles/year
+  costPerMile: number;
+  costPerKm: number;
+  annualCost: number;
   fuelType: string;
-  efficiencyMetric: string; // "MPG" or "MPGe" or "Blend"
+  efficiencyMetric: string;
 }
 
 export function calculateCostPerMile(car: CarSpecs, customPrices?: EnergyPrices): CostPerMile {
   const prices = customPrices || DEFAULT_ENERGY_PRICES;
   const mpg = car.fuelEconomy.combined || 0;
   const fuelType = car.engine.fuelType;
+  const annualMiles = annualKmToMiles(REGION.annualKm);
 
   if (fuelType === 'electric') {
-    // Electric: kWh/100mi varies, but typical EV: 120 MPGe ≈ 28 kWh/100mi
-    // Formula: 33.7 kWh = 1 gallon gasoline equivalent
-    // So: kWhPer100Mi = 33.7 * 100 / MPGe
-    const mpge = mpg || 100; // If no data, assume 100 MPGe
-    const kWhPer100Mi = (33.7 * 100) / mpge;
-    const kWhPerMile = kWhPer100Mi / 100;
-    const costPerMile = kWhPerMile * prices.electricityPrice;
-
+    const kwhPer100Km =
+      mpg > 0
+        ? mpgeToKwhPer100Km(mpg)
+        : car.epa?.kWhPer100Mi != null && car.epa.kWhPer100Mi >= 15
+          ? car.epa.kWhPer100Mi / 1.609344
+          : 20;
+    const annualCost = Math.round((REGION.annualKm / 100) * kwhPer100Km * prices.electricityPriceCadPerKwh);
+    const costPerMile = annualCost / annualMiles;
     return {
-      costPerMile: Math.round(costPerMile * 1000) / 1000, // Round to 3 decimals
-      annualCost: Math.round(costPerMile * 15000),
+      costPerMile: Math.round(costPerMile * 1000) / 1000,
+      costPerKm: Math.round((annualCost / REGION.annualKm) * 100) / 100,
+      annualCost,
       fuelType: 'Electric',
-      efficiencyMetric: `${mpge} MPGe`,
-    };
-  } else if (fuelType === 'hybrid' || fuelType === 'plug-in hybrid') {
-    // Hybrid: Use MPG directly but assume 70% gas, 30% electric for plug-in
-    const gasFraction = fuelType === 'plug-in hybrid' ? 0.7 : 1.0;
-    const electricFraction = fuelType === 'plug-in hybrid' ? 0.3 : 0.0;
-
-    const gasCostPerMile = mpg > 0 ? (prices.gasPrice / mpg) : 0.15;
-
-    // Estimate electric portion (plug-in hybrids typically get ~25 miles electric)
-    const kWhPerMile = 0.3; // Typical plug-in hybrid electric efficiency
-    const electricCostPerMile = fuelType === 'plug-in hybrid' ? (kWhPerMile * prices.electricityPrice) : 0;
-
-    const costPerMile = (gasFraction * gasCostPerMile) + (electricFraction * electricCostPerMile);
-
-    return {
-      costPerMile: Math.round(costPerMile * 1000) / 1000,
-      annualCost: Math.round(costPerMile * 15000),
-      fuelType: fuelType === 'plug-in hybrid' ? 'Plug-in Hybrid' : 'Hybrid',
-      efficiencyMetric: `${mpg} MPG`,
-    };
-  } else {
-    // Gasoline or Diesel
-    const costPerMile = mpg > 0 ? (prices.gasPrice / mpg) : 0.15;
-
-    return {
-      costPerMile: Math.round(costPerMile * 1000) / 1000,
-      annualCost: Math.round(costPerMile * 15000),
-      fuelType: fuelType === 'diesel' ? 'Diesel' : 'Gasoline',
-      efficiencyMetric: `${mpg} MPG`,
+      efficiencyMetric: `${Math.round(kwhPer100Km * 10) / 10} kWh/100 km`,
     };
   }
+
+  if (fuelType === 'hybrid' || fuelType === 'plug-in hybrid') {
+    const gasAnnual =
+      mpg > 0
+        ? (REGION.annualKm / 100) * mpgToLPer100Km(mpg) * prices.gasPriceCadPerL *
+          (fuelType === 'plug-in hybrid' ? REGION.phev.gasMileFraction : 1)
+        : 0;
+    const elecAnnual =
+      fuelType === 'plug-in hybrid' && mpg > 0
+        ? (REGION.annualKm / 100) * mpgeToKwhPer100Km(mpg) * prices.electricityPriceCadPerKwh * REGION.phev.electricMileFraction
+        : 0;
+    const annualCost = Math.round(gasAnnual + elecAnnual);
+    const costPerMile = annualCost / annualMiles;
+    return {
+      costPerMile: Math.round(costPerMile * 1000) / 1000,
+      costPerKm: Math.round((annualCost / REGION.annualKm) * 100) / 100,
+      annualCost,
+      fuelType: fuelType === 'plug-in hybrid' ? 'Plug-in Hybrid' : 'Hybrid',
+      efficiencyMetric: mpg > 0 ? `${mpg} MPG` : 'est. MPG',
+    };
+  }
+
+  const annualCost =
+    mpg > 0 ? Math.round((REGION.annualKm / 100) * mpgToLPer100Km(mpg) * prices.gasPriceCadPerL) : 0;
+  const costPerMile = annualCost / annualMiles;
+  return {
+    costPerMile: Math.round(costPerMile * 1000) / 1000,
+    costPerKm: Math.round((annualCost / REGION.annualKm) * 100) / 100,
+    annualCost,
+    fuelType: fuelType === 'diesel' ? 'Diesel' : 'Gasoline',
+    efficiencyMetric: `${mpg} MPG`,
+  };
 }
 
 // NEW: Efficiency score normalized across all fuel types
@@ -122,8 +134,10 @@ export function calculateReliabilityScore(car: CarSpecs): number {
   else if (car.engine.fuelType === 'hybrid' || car.engine.fuelType === 'plug-in hybrid') score -= 5;
 
   // Engine stress
-  if (car.engine.displacement > 5.0) score -= 4;
-  else if (car.engine.displacement < 2.0 && car.engine.horsepower > 200) score -= 6; // Turbo stress
+  const disp = car.engine.displacement ?? 0;
+  const hp = car.engine.horsepower ?? 0;
+  if (disp > 5.0) score -= 4;
+  else if (disp > 0 && disp < 2.0 && hp > 200) score -= 6;
 
   return Math.max(40, Math.min(100, score));
 }
@@ -142,10 +156,10 @@ export interface DerivedMetrics {
 }
 
 export function calculateDerivedMetrics(car: CarSpecs): DerivedMetrics {
-  const hp = car.engine.horsepower;
-  const torque = car.engine.torque;
-  const displacement = car.engine.displacement;
-  const weight = car.dimensions.curbWeight;
+  const hp = car.engine.horsepower ?? 0;
+  const torque = car.engine.torque ?? 0;
+  const displacement = car.engine.displacement ?? 0;
+  const weight = car.dimensions?.curbWeight ?? 3500;
   const price = car.price?.msrp || 0;
   const mpg = car.fuelEconomy.combined || 0;
 
@@ -217,7 +231,7 @@ export function calculateMarketPosition(
   }
 
   const prices = segment.map(c => c.price?.msrp || 0).filter(p => p > 0);
-  const hps = segment.map(c => c.engine.horsepower).filter(hp => hp > 0);
+  const hps = segment.map(c => c.engine.horsepower ?? 0).filter(hp => hp > 0);
   const mpgs = segment.map(c => c.fuelEconomy.combined || 0).filter(mpg => mpg > 0);
 
   const avgPrice = mean(prices);
@@ -225,7 +239,7 @@ export function calculateMarketPosition(
   const avgMpg = mean(mpgs);
 
   const carPrice = car.price?.msrp || 0;
-  const carHp = car.engine.horsepower;
+  const carHp = car.engine.horsepower ?? 0;
   const carMpg = car.fuelEconomy.combined || 0;
 
   const pricePercentile = calculatePercentile(carPrice, prices);
@@ -262,44 +276,33 @@ export function calculateMarketPosition(
 // Determine deal rating
 export type DealRating = 'great-deal' | 'good-deal' | 'fair' | 'overpriced';
 
-export function getDealRating(car: CarSpecs, segment: CarSpecs[]): DealRating {
-  if (segment.length < 5) return 'fair';
-
-  const metrics = calculateDerivedMetrics(car);
-  const segmentValueScores = segment.map(c => calculateDerivedMetrics(c).valueScore);
-  const avgValue = mean(segmentValueScores);
-
-  const percentDiff = avgValue > 0 ? ((metrics.valueScore - avgValue) / avgValue) * 100 : 0;
-
-  if (percentDiff > 25) return 'great-deal';
-  if (percentDiff > 10) return 'good-deal';
-  if (percentDiff < -15) return 'overpriced';
-  return 'fair';
+export function getDealRating(_car: CarSpecs, _segment: CarSpecs[]): DealRating | null {
+  return null;
 }
 
 export function getDealRatingColor(rating: DealRating): string {
   switch (rating) {
     case 'great-deal':
-      return '#10b981'; // green
+      return '#fafafa';
     case 'good-deal':
-      return '#3b82f6'; // blue
+      return '#d4d4d8';
     case 'fair':
-      return '#6b7280'; // gray
+      return '#71717a';
     case 'overpriced':
-      return '#ef4444'; // red
+      return '#52525b';
   }
 }
 
 export function getDealRatingLabel(rating: DealRating): string {
   switch (rating) {
     case 'great-deal':
-      return '🔥 GREAT DEAL';
+      return 'STRONG VALUE';
     case 'good-deal':
-      return '✓ GOOD DEAL';
+      return 'GOOD VALUE';
     case 'fair':
-      return 'FAIR PRICE';
+      return 'FAIR';
     case 'overpriced':
-      return '⚠️ OVERPRICED';
+      return 'ABOVE SEGMENT';
   }
 }
 
@@ -416,9 +419,9 @@ export function calculateAggregateStats(cars: CarSpecs[]): AggregateStats {
 
   const prices = cars.map(c => c.price?.msrp || 0).filter(p => p > 0);
   const avgPrice = mean(prices);
-  const avgHorsepower = mean(cars.map(c => c.engine.horsepower));
+  const avgHorsepower = mean(cars.map(c => c.engine.horsepower ?? 0).filter(h => h > 0));
   const avgMpg = mean(cars.map(c => c.fuelEconomy.combined || 0).filter(m => m > 0));
-  const avgTorque = mean(cars.map(c => c.engine.torque));
+  const avgTorque = mean(cars.map(c => c.engine.torque ?? 0).filter(t => t > 0));
 
   // Best value: highest value score
   const bestValue = cars.reduce((best, car) => {
@@ -427,10 +430,13 @@ export function calculateAggregateStats(cars: CarSpecs[]): AggregateStats {
     return currentScore > bestScore ? car : best;
   }, cars[0]);
 
-  // Highest power
-  const highestPower = cars.reduce((max, car) =>
-    car.engine.horsepower > max.engine.horsepower ? car : max
-  , cars[0]);
+  // Highest power — null when no car in the set has horsepower data
+  const carsWithHp = cars.filter((c) => (c.engine.horsepower ?? 0) > 0);
+  const highestPower = carsWithHp.length > 0
+    ? carsWithHp.reduce((max, car) =>
+        (car.engine.horsepower ?? 0) > (max.engine.horsepower ?? 0) ? car : max
+      )
+    : null;
 
   // Best economy
   const bestEconomy = cars.reduce((max, car) => {
@@ -467,7 +473,7 @@ export interface ZeroToSixtyPrediction {
 
 export function predictZeroToSixty(car: CarSpecs): ZeroToSixtyPrediction {
   // If actual value exists, return it
-  if (car.performance.zeroToSixty && car.performance.zeroToSixty > 0) {
+  if (car.performance?.zeroToSixty && car.performance.zeroToSixty > 0) {
     return {
       predicted: car.performance.zeroToSixty,
       confidence: 'high',
@@ -477,7 +483,10 @@ export function predictZeroToSixty(car: CarSpecs): ZeroToSixtyPrediction {
 
   // Calculate power-to-weight ratio (HP per 1000 lbs)
   const hp = car.engine.horsepower;
-  const weight = car.dimensions.curbWeight;
+  const weight = car.dimensions?.curbWeight;
+  if (!hp || !weight) {
+    return { predicted: 0, confidence: 'low', method: 'predicted' };
+  }
   const powerToWeight = (hp / weight) * 1000;
 
   // Drivetrain factor (AWD launches faster, FWD slower)
@@ -711,7 +720,7 @@ export function generateMatchReasons(car: CarSpecs, filters?: {
   }
 
   // Check power
-  if (car.engine.horsepower > 300) {
+  if ((car.engine.horsepower ?? 0) > 300) {
     reasons.push({
       icon: '⚡',
       text: `${car.engine.horsepower} HP`,

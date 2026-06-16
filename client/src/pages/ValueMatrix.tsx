@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   ScatterChart,
@@ -11,436 +11,526 @@ import {
   Cell,
   ZAxis,
 } from 'recharts';
-import AggregateStats from '../components/AggregateStats';
-import { useAllCars } from '../hooks/useAllCars';
+import * as api from '../services/api';
+import type { ChartPoint } from '../services/api';
+import AboutData from '../components/AboutData';
+import { formatMpgForCard } from '../utils/dataValue';
+import { DISPLAY_CURRENCY } from '../utils/currency';
 
-type AxisMode = 'horsepower' | 'mpg' | 'torque';
+type AxisMode = 'mpg' | 'displacement' | 'co2';
+type ViewPhase = 'choose' | 'chart';
 
-interface ChartDataPoint {
-  id: string;
-  make: string;
-  model: string;
-  year: number;
-  price: number;
-  horsepower: number;
-  mpg: number;
-  torque: number;
-  bodyStyle: string;
+interface ChartDataPoint extends ChartPoint {
   color: string;
 }
 
+interface MatrixPreset {
+  id: string;
+  title: string;
+  description: string;
+  priceRange: [number, number];
+  bodyStyles: string[];
+  axisMode: AxisMode;
+  pointLimit: number;
+}
+
+const PRESETS: MatrixPreset[] = [
+  {
+    id: 'commuter',
+    title: 'Daily drivers',
+    description: 'Sedans & SUVs between $10k–$35k — fuel economy vs estimated value.',
+    priceRange: [10000, 35000],
+    bodyStyles: ['sedan', 'suv'],
+    axisMode: 'mpg',
+    pointLimit: 350,
+  },
+  {
+    id: 'budget',
+    title: 'Under $20k',
+    description: 'Affordable options with real EPA mileage data.',
+    priceRange: [2000, 20000],
+    bodyStyles: ['sedan', 'suv', 'coupe', 'wagon'],
+    axisMode: 'mpg',
+    pointLimit: 350,
+  },
+  {
+    id: 'trucks',
+    title: 'Trucks & work',
+    description: 'Pickups and work vehicles — engine size vs value.',
+    priceRange: [15000, 65000],
+    bodyStyles: ['truck'],
+    axisMode: 'displacement',
+    pointLimit: 250,
+  },
+  {
+    id: 'recent',
+    title: '2018 and newer',
+    description: 'Newer model years across all types — efficiency focus.',
+    priceRange: [18000, 80000],
+    bodyStyles: [],
+    axisMode: 'mpg',
+    pointLimit: 400,
+  },
+];
+
 const BODY_STYLE_COLORS: Record<string, string> = {
-  sedan: '#3b82f6', // blue
-  suv: '#ef4444', // red
-  coupe: '#10b981', // green
-  truck: '#f59e0b', // amber
-  convertible: '#8b5cf6', // purple
-  hatchback: '#06b6d4', // cyan
-  wagon: '#ec4899', // pink
-  van: '#6366f1', // indigo
-  minivan: '#14b8a6', // teal
+  sedan: '#fafafa',
+  suv: '#e4e4e7',
+  coupe: '#d4d4d8',
+  truck: '#a1a1aa',
+  van: '#71717a',
+  minivan: '#52525b',
+  wagon: '#d4d4d8',
 };
 
+const KNOWN_BODY_STYLES = ['sedan', 'suv', 'coupe', 'truck', 'van', 'minivan', 'wagon'];
+const POINT_LIMIT_STEPS = [350, 800, 2000] as const;
+
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(t);
+  }, [value, delayMs]);
+  return debounced;
+}
+
 export default function ValueMatrix() {
-  const { cars: allCars, loading, error, refetch } = useAllCars();
+  const [phase, setPhase] = useState<ViewPhase>('choose');
+  const [activePresetId, setActivePresetId] = useState<string | null>(null);
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
-  const [axisMode, setAxisMode] = useState<AxisMode>('horsepower');
-  const [hoveredCar, setHoveredCar] = useState<ChartDataPoint | null>(null);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 150000]);
-  const [selectedBodyStyles, setSelectedBodyStyles] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [axisMode, setAxisMode] = useState<AxisMode>('mpg');
+  const [priceRange, setPriceRange] = useState<[number, number]>([10000, 35000]);
+  const [selectedBodyStyles, setSelectedBodyStyles] = useState<Set<string>>(new Set(['sedan', 'suv']));
+  const [pointLimit, setPointLimit] = useState<number>(POINT_LIMIT_STEPS[0]);
+  const [yearMin, setYearMin] = useState<number | undefined>(undefined);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (allCars.length > 0) {
-      processChartData();
-    }
-  }, [allCars, axisMode, priceRange, selectedBodyStyles]);
+  const debouncedPrice = useDebouncedValue(priceRange, 400);
 
-  const processChartData = () => {
-    const data: ChartDataPoint[] = allCars
-      .filter((car) => {
-        const price = car.price?.msrp || 0;
-        const hasValidPrice = price > 0 && price >= priceRange[0] && price <= priceRange[1];
-        const hasValidMetric =
-          (axisMode === 'horsepower' && car.engine.horsepower > 0) ||
-          (axisMode === 'mpg' && (car.fuelEconomy.combined || 0) > 0) ||
-          (axisMode === 'torque' && car.engine.torque > 0);
-
-        const matchesBodyStyle =
-          selectedBodyStyles.size === 0 || selectedBodyStyles.has(car.bodyStyle);
-
-        return hasValidPrice && hasValidMetric && matchesBodyStyle;
-      })
-      .map((car) => ({
-        id: car.id,
-        make: car.make,
-        model: car.model,
-        year: car.year,
-        price: car.price?.msrp || 0,
-        horsepower: car.engine.horsepower,
-        mpg: car.fuelEconomy.combined || 0,
-        torque: car.engine.torque,
-        bodyStyle: car.bodyStyle,
-        color: BODY_STYLE_COLORS[car.bodyStyle] || '#6b7280',
-      }));
-
-    setChartData(data);
+  const applyPreset = (preset: MatrixPreset) => {
+    setActivePresetId(preset.id);
+    setPriceRange(preset.priceRange);
+    setSelectedBodyStyles(new Set(preset.bodyStyles));
+    setAxisMode(preset.axisMode);
+    setPointLimit(preset.pointLimit);
+    setYearMin(preset.id === 'recent' ? 2018 : undefined);
+    setPhase('chart');
   };
 
-  const toggleBodyStyle = (bodyStyle: string) => {
-    const newSet = new Set(selectedBodyStyles);
-    if (newSet.has(bodyStyle)) {
-      newSet.delete(bodyStyle);
-    } else {
-      newSet.add(bodyStyle);
+  const loadChartData = useCallback(async () => {
+    if (phase !== 'chart') return;
+    setLoading(true);
+    setError(null);
+    try {
+      const { points } = await api.getChartPoints({
+        priceMin: debouncedPrice[0],
+        priceMax: debouncedPrice[1],
+        bodyStyles: selectedBodyStyles.size > 0 ? Array.from(selectedBodyStyles) : undefined,
+        yearMin,
+        limit: pointLimit,
+      });
+
+      let filtered = points.filter((car) => {
+        if (axisMode === 'mpg') return car.mpg > 0;
+        if (axisMode === 'displacement') return car.displacement > 0;
+        return car.co2 > 0;
+      });
+
+      const data: ChartDataPoint[] = filtered.map((car) => ({
+        ...car,
+        color: BODY_STYLE_COLORS[car.bodyStyle] || '#a1a1aa',
+      }));
+
+      setChartData(data);
+    } catch {
+      setError('Unable to load chart data.');
+      setChartData([]);
+    } finally {
+      setLoading(false);
     }
-    setSelectedBodyStyles(newSet);
+  }, [phase, debouncedPrice, selectedBodyStyles, axisMode, pointLimit, yearMin]);
+
+  useEffect(() => {
+    loadChartData();
+  }, [loadChartData]);
+
+  const toggleBodyStyle = (bodyStyle: string) => {
+    setActivePresetId(null);
+    setSelectedBodyStyles((prev) => {
+      const next = new Set(prev);
+      if (next.has(bodyStyle)) next.delete(bodyStyle);
+      else next.add(bodyStyle);
+      return next;
+    });
   };
 
   const getYAxisLabel = () => {
     switch (axisMode) {
-      case 'horsepower':
-        return 'HORSEPOWER';
       case 'mpg':
-        return 'MPG (COMBINED)';
-      case 'torque':
-        return 'TORQUE (LB-FT)';
+        return 'Combined MPG';
+      case 'displacement':
+        return 'Engine (L)';
+      case 'co2':
+        return 'CO₂ (g/mi)';
     }
   };
+
+  const canShowMore = pointLimit < POINT_LIMIT_STEPS[POINT_LIMIT_STEPS.length - 1];
+  const nextLimit = POINT_LIMIT_STEPS.find((s) => s > pointLimit) ?? pointLimit;
+
+  const avgPrice = useMemo(
+    () =>
+      chartData.length > 0
+        ? Math.round(chartData.reduce((s, c) => s + c.price, 0) / chartData.length)
+        : 0,
+    [chartData],
+  );
+  const avgMpg = useMemo(() => {
+    const withMpg = chartData.filter((c) => c.mpg > 0);
+    return withMpg.length > 0
+      ? Math.round(withMpg.reduce((s, c) => s + c.mpg, 0) / withMpg.length)
+      : 0;
+  }, [chartData]);
 
   const CustomTooltip = ({ active, payload }: any) => {
-    if (!active || !payload || !payload[0]) return null;
-
+    if (!active || !payload?.[0]) return null;
     const data = payload[0].payload as ChartDataPoint;
-
     return (
-      <div className="bg-black border-2 border-white p-4 shadow-lg">
-        <h3 className="text-lg font-black tracking-tight mb-1">
-          {data.year} {data.make.toUpperCase()}
-        </h3>
-        <p className="text-sm font-light tracking-wider text-zinc-500 mb-3">{data.model}</p>
-
-        <div className="h-px bg-zinc-800 mb-3" />
-
-        <div className="space-y-1 text-xs">
-          <div className="flex justify-between gap-8">
-            <span className="text-zinc-600 tracking-widest uppercase">Price</span>
-            <span className="font-bold">${(data.price / 1000).toFixed(0)}K</span>
+      <div className="bg-zinc-950 border border-zinc-600 p-4 shadow-xl max-w-xs">
+        <p className="text-base font-black text-white mb-0.5">
+          {data.year} {data.make}
+        </p>
+        <p className="text-sm text-zinc-300 mb-3">{data.model}</p>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between gap-6">
+            <span className="text-zinc-400">Est. value</span>
+            <span className="font-bold text-white">${data.price.toLocaleString()}</span>
           </div>
-          <div className="flex justify-between gap-8">
-            <span className="text-zinc-600 tracking-widest uppercase">Power</span>
-            <span className="font-bold">{data.horsepower} HP</span>
+          <div className="flex justify-between gap-6">
+            <span className="text-zinc-400">MPG</span>
+            <span className="font-bold text-white">{formatMpgForCard(data.mpg)}</span>
           </div>
-          <div className="flex justify-between gap-8">
-            <span className="text-zinc-600 tracking-widest uppercase">Torque</span>
-            <span className="font-bold">{data.torque} LB-FT</span>
-          </div>
-          <div className="flex justify-between gap-8">
-            <span className="text-zinc-600 tracking-widest uppercase">MPG</span>
-            <span className="font-bold">{data.mpg}</span>
-          </div>
-          <div className="flex justify-between gap-8">
-            <span className="text-zinc-600 tracking-widest uppercase">Type</span>
-            <span className="font-bold capitalize">{data.bodyStyle}</span>
+          <div className="flex justify-between gap-6">
+            <span className="text-zinc-400">Type</span>
+            <span className="font-bold text-white capitalize">{data.bodyStyle}</span>
           </div>
         </div>
-
-        <div className="mt-3 pt-3 border-t border-zinc-800">
-          <p className="text-xs tracking-widest text-zinc-700 text-center uppercase">
-            Click to view details
-          </p>
-        </div>
+        <p className="mt-3 pt-3 border-t border-zinc-700 text-xs text-zinc-400 text-center">
+          Click dot for full dossier
+        </p>
       </div>
     );
   };
-
-  const handleDotClick = (data: any) => {
-    if (data && data.id) {
-      navigate(`/car/${data.id}`);
-    }
-  };
-
-  const uniqueBodyStyles = Array.from(
-    new Set(allCars.map((car) => car.bodyStyle))
-  ).sort();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block w-16 h-16 border-2 border-zinc-800 border-t-white rounded-full animate-spin mb-4" />
-          <p className="text-xs tracking-[0.3em] text-zinc-700 uppercase">
-            Loading Market Data
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center px-6">
-          <div className="inline-block w-16 h-16 border-2 border-zinc-800 border-t-red-500 rounded-full animate-spin mb-4" />
-          <p className="text-sm tracking-[0.3em] text-zinc-600 uppercase mb-4">
-            VALUE MATRIX UNAVAILABLE
-          </p>
-          <p className="text-zinc-400 mb-6">{error}</p>
-          <button
-            onClick={refetch}
-            className="inline-flex items-center px-6 py-3 rounded-lg bg-white text-black text-xs tracking-[0.3em] font-semibold hover:bg-zinc-200 transition"
-          >
-            RETRY
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-black border-b border-zinc-900">
-        <div className="px-8 py-6">
-          <div className="flex items-center justify-between max-w-7xl mx-auto">
+      <div className="sticky top-0 z-40 bg-black/95 border-b border-zinc-800 backdrop-blur-sm">
+        <div className="px-4 md:px-8 py-5">
+          <div className="flex items-center justify-between max-w-7xl mx-auto gap-4">
             <Link
               to="/"
-              className="inline-flex items-center gap-3 text-xs tracking-[0.3em] text-zinc-600 hover:text-white transition-colors group"
+              className="inline-flex items-center gap-2 text-xs tracking-[0.2em] text-zinc-400 hover:text-white transition-colors shrink-0"
             >
-              <svg
-                className="w-5 h-5 group-hover:-translate-x-1 transition-transform"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1}
-                  d="M7 16l-4-4m0 0l4-4m-4 4h18"
-                />
-              </svg>
-              <span>HOME</span>
+              ← HOME
             </Link>
-
-            <div className="text-center">
-              <h1 className="text-2xl md:text-3xl font-black tracking-tighter">
-                VALUE MATRIX
-              </h1>
-              <p className="text-xs tracking-[0.3em] text-zinc-700 mt-1">
-                {chartData.length.toLocaleString()} VEHICLES PLOTTED
-              </p>
+            <div className="text-center min-w-0">
+              <h1 className="text-xl md:text-2xl font-black tracking-tight">Value Matrix</h1>
+              {phase === 'chart' && (
+                <p className="text-xs text-zinc-400 mt-0.5 truncate">
+                  {chartData.length.toLocaleString()} vehicles plotted · est. values
+                </p>
+              )}
             </div>
-
-            <div className="w-20" />
+            <AboutData compact />
           </div>
         </div>
       </div>
 
-      <div className="pt-32 pb-16 px-8">
+      <div className="px-4 md:px-8 py-8 pb-16">
         <div className="max-w-7xl mx-auto">
-          {/* Controls */}
-          <div className="mb-8 space-y-6">
-            {/* Axis Mode Toggle */}
-            <div>
-              <label className="block text-xs tracking-widest text-zinc-700 mb-3 uppercase">
-                Y-Axis Metric
-              </label>
-              <div className="flex items-center gap-2">
-                {(['horsepower', 'mpg', 'torque'] as AxisMode[]).map((mode) => (
+          {phase === 'choose' ? (
+            <div className="max-w-3xl mx-auto">
+              <div className="text-center mb-10">
+                <h2 className="text-2xl md:text-3xl font-black tracking-tight mb-3">
+                  What do you want to compare?
+                </h2>
+                <p className="text-base text-zinc-300 leading-relaxed">
+                  Each dot is one vehicle. Pick a starting lens — we show a{' '}
+                  <strong className="text-white font-semibold">focused sample</strong>, not all 28,000
+                  at once. You can widen the view after.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                {PRESETS.map((preset) => (
                   <button
-                    key={mode}
-                    onClick={() => setAxisMode(mode)}
-                    className={`px-6 py-3 text-xs tracking-widest font-bold uppercase transition-all ${
-                      axisMode === mode
-                        ? 'bg-white text-black'
-                        : 'bg-zinc-950 border border-zinc-800 hover:border-zinc-600'
-                    }`}
+                    key={preset.id}
+                    type="button"
+                    onClick={() => applyPreset(preset)}
+                    className="text-left p-6 border border-zinc-700 bg-zinc-950 hover:border-white hover:bg-zinc-900 transition-colors group"
                   >
-                    {mode === 'mpg' ? 'MPG' : mode}
+                    <p className="text-sm font-black tracking-wide text-white mb-2 group-hover:underline underline-offset-4">
+                      {preset.title}
+                    </p>
+                    <p className="text-sm text-zinc-400 leading-relaxed">{preset.description}</p>
+                    <p className="text-xs text-zinc-400 mt-3">
+                      ~{preset.pointLimit} vehicles · ${(preset.priceRange[0] / 1000).toFixed(0)}k–
+                      ${(preset.priceRange[1] / 1000).toFixed(0)}k
+                    </p>
                   </button>
                 ))}
               </div>
-            </div>
 
-            {/* Body Style Filters */}
-            <div>
-              <label className="block text-xs tracking-widest text-zinc-700 mb-3 uppercase">
-                Filter by Body Style
-              </label>
-              <div className="flex items-center gap-2 flex-wrap">
-                {uniqueBodyStyles.map((style) => (
-                  <button
-                    key={style}
-                    onClick={() => toggleBodyStyle(style)}
-                    className={`px-4 py-2 text-xs tracking-widest font-bold uppercase transition-all ${
-                      selectedBodyStyles.size === 0 || selectedBodyStyles.has(style)
-                        ? 'border-2 text-white'
-                        : 'bg-zinc-950 border border-zinc-800 text-zinc-700'
-                    }`}
-                    style={{
-                      borderColor:
-                        selectedBodyStyles.size === 0 || selectedBodyStyles.has(style)
-                          ? BODY_STYLE_COLORS[style]
-                          : undefined,
-                      backgroundColor:
-                        selectedBodyStyles.size === 0 || selectedBodyStyles.has(style)
-                          ? `${BODY_STYLE_COLORS[style]}20`
-                          : undefined,
-                    }}
-                  >
-                    <span
-                      className="inline-block w-3 h-3 mr-2 border border-white"
-                      style={{ backgroundColor: BODY_STYLE_COLORS[style] }}
-                    />
-                    {style}
-                  </button>
-                ))}
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setActivePresetId('custom');
+                  setPhase('chart');
+                }}
+                className="w-full py-4 border border-zinc-600 text-sm text-zinc-300 hover:text-white hover:border-zinc-400 transition-colors"
+              >
+                Custom filters — I&apos;ll choose everything myself
+              </button>
             </div>
-
-            {/* Price Range */}
-            <div>
-              <label className="block text-xs tracking-widest text-zinc-700 mb-3 uppercase">
-                Price Range: ${(priceRange[0] / 1000).toFixed(0)}K - $
-                {(priceRange[1] / 1000).toFixed(0)}K
-              </label>
-              <div className="flex items-center gap-4">
-                <input
-                  type="range"
-                  min="0"
-                  max="150000"
-                  step="5000"
-                  value={priceRange[0]}
-                  onChange={(e) => setPriceRange([parseInt(e.target.value), priceRange[1]])}
-                  className="flex-1"
-                />
-                <input
-                  type="range"
-                  min="0"
-                  max="150000"
-                  step="5000"
-                  value={priceRange[1]}
-                  onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
-                  className="flex-1"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Chart */}
-          <div className="bg-zinc-950 border border-zinc-900 p-8">
-            <ResponsiveContainer width="100%" height={600}>
-              <ScatterChart margin={{ top: 20, right: 20, bottom: 60, left: 60 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-                <XAxis
-                  type="number"
-                  dataKey="price"
-                  name="Price"
-                  stroke="#71717a"
-                  tick={{ fill: '#71717a', fontSize: 12 }}
-                  label={{
-                    value: 'PRICE (USD)',
-                    position: 'bottom',
-                    offset: 40,
-                    style: { fill: '#71717a', fontSize: 12, fontWeight: 'bold' },
-                  }}
-                  tickFormatter={(value) => `$${(value / 1000).toFixed(0)}K`}
-                />
-                <YAxis
-                  type="number"
-                  dataKey={axisMode}
-                  name={getYAxisLabel()}
-                  stroke="#71717a"
-                  tick={{ fill: '#71717a', fontSize: 12 }}
-                  label={{
-                    value: getYAxisLabel(),
-                    angle: -90,
-                    position: 'left',
-                    offset: 40,
-                    style: { fill: '#71717a', fontSize: 12, fontWeight: 'bold' },
-                  }}
-                />
-                <ZAxis range={[50, 50]} />
-                <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }} />
-                <Scatter
-                  data={chartData}
-                  onClick={handleDotClick}
-                  onMouseEnter={(data) => setHoveredCar(data)}
-                  onMouseLeave={() => setHoveredCar(null)}
-                  style={{ cursor: 'pointer' }}
+          ) : (
+            <>
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                <button
+                  type="button"
+                  onClick={() => setPhase('choose')}
+                  className="text-xs tracking-widest text-zinc-400 hover:text-white uppercase border border-zinc-700 px-4 py-2"
                 >
-                  {chartData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={entry.color}
-                      opacity={hoveredCar?.id === entry.id ? 1 : 0.7}
-                    />
-                  ))}
-                </Scatter>
-              </ScatterChart>
-            </ResponsiveContainer>
-          </div>
+                  ← Change focus
+                </button>
+                {activePresetId && (
+                  <span className="text-xs text-zinc-400">
+                    View:{' '}
+                    <span className="text-white font-semibold">
+                      {PRESETS.find((p) => p.id === activePresetId)?.title ?? 'Custom'}
+                    </span>
+                  </span>
+                )}
+              </div>
 
-          {/* Stats, Legend & Insights */}
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Aggregate Stats */}
-            <AggregateStats
-              cars={allCars.filter((car) => {
-                const price = car.price?.msrp || 0;
-                const hasValidPrice = price > 0 && price >= priceRange[0] && price <= priceRange[1];
-                const hasValidMetric =
-                  (axisMode === 'horsepower' && car.engine.horsepower > 0) ||
-                  (axisMode === 'mpg' && (car.fuelEconomy.combined || 0) > 0) ||
-                  (axisMode === 'torque' && car.engine.torque > 0);
-                const matchesBodyStyle =
-                  selectedBodyStyles.size === 0 || selectedBodyStyles.has(car.bodyStyle);
-                return hasValidPrice && hasValidMetric && matchesBodyStyle;
-              })}
-              title="FILTERED RESULTS"
-            />
-
-            {/* Legend */}
-            <div className="bg-zinc-950 border border-zinc-900 p-6">
-              <h2 className="text-lg font-black tracking-tight mb-4 uppercase">Legend</h2>
-              <div className="space-y-2">
-                {uniqueBodyStyles.map((style) => (
-                  <div key={style} className="flex items-center gap-3">
-                    <div
-                      className="w-4 h-4 border border-zinc-700"
-                      style={{ backgroundColor: BODY_STYLE_COLORS[style] }}
-                    />
-                    <span className="text-sm tracking-wider capitalize">{style}</span>
+              {/* Filters — compact, readable labels */}
+              <div className="mb-6 p-5 border border-zinc-800 bg-zinc-950 space-y-5">
+                <div>
+                  <p className="text-xs font-bold tracking-widest text-zinc-300 uppercase mb-3">
+                    Y-axis metric
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {(['mpg', 'displacement', 'co2'] as AxisMode[]).map((mode) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={() => {
+                          setActivePresetId(null);
+                          setAxisMode(mode);
+                        }}
+                        className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wide transition-colors ${
+                          axisMode === mode
+                            ? 'bg-white text-black'
+                            : 'border border-zinc-600 text-zinc-300 hover:border-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        {mode === 'mpg' ? 'Fuel economy' : mode === 'displacement' ? 'Engine size' : 'CO₂'}
+                      </button>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
 
-            {/* Insights */}
-            <div className="bg-zinc-950 border border-zinc-900 p-6">
-              <h2 className="text-lg font-black tracking-tight mb-4 uppercase">
-                How to Read This
-              </h2>
-              <div className="space-y-3 text-sm tracking-wider text-zinc-500">
-                <p>
-                  <span className="text-white font-bold">Bottom Right:</span> High value (low
-                  price, high performance)
-                </p>
-                <p>
-                  <span className="text-white font-bold">Top Left:</span> Premium pricing (high
-                  price, moderate performance)
-                </p>
-                <p>
-                  <span className="text-white font-bold">Outliers:</span> Click dots far from the
-                  trend line for unique deals
-                </p>
-                <p>
-                  <span className="text-white font-bold">Clusters:</span> Groups show market
-                  segments (economy, luxury, performance)
-                </p>
+                <div>
+                  <p className="text-xs font-bold tracking-widest text-zinc-300 uppercase mb-3">
+                    Body style {selectedBodyStyles.size === 0 && '(all types)'}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {KNOWN_BODY_STYLES.map((style) => {
+                      const active =
+                        selectedBodyStyles.size === 0 || selectedBodyStyles.has(style);
+                      return (
+                        <button
+                          key={style}
+                          type="button"
+                          onClick={() => toggleBodyStyle(style)}
+                          className={`px-3 py-2 text-xs uppercase tracking-wide border transition-colors ${
+                            active
+                              ? 'border-zinc-400 bg-zinc-800 text-white'
+                              : 'border-zinc-700 text-zinc-400 line-through'
+                          }`}
+                        >
+                          {style}
+                        </button>
+                      );
+                    })}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActivePresetId(null);
+                        setSelectedBodyStyles(new Set());
+                      }}
+                      className="px-3 py-2 text-xs uppercase tracking-wide border border-zinc-600 text-zinc-400 hover:text-white"
+                    >
+                      All types
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-bold tracking-widest text-zinc-300 uppercase mb-2">
+                    Est. value: ${(priceRange[0] / 1000).toFixed(0)}k – ${(priceRange[1] / 1000).toFixed(0)}k
+                  </p>
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <input
+                      type="range"
+                      min={0}
+                      max={120000}
+                      step={2500}
+                      value={priceRange[0]}
+                      onChange={(e) => {
+                        setActivePresetId(null);
+                        setPriceRange([Math.min(parseInt(e.target.value, 10), priceRange[1] - 2500), priceRange[1]]);
+                      }}
+                      className="flex-1"
+                      aria-label="Minimum price"
+                    />
+                    <input
+                      type="range"
+                      min={0}
+                      max={120000}
+                      step={2500}
+                      value={priceRange[1]}
+                      onChange={(e) => {
+                        setActivePresetId(null);
+                        setPriceRange([priceRange[0], Math.max(parseInt(e.target.value, 10), priceRange[0] + 2500)]);
+                      }}
+                      className="flex-1"
+                      aria-label="Maximum price"
+                    />
+                  </div>
+                </div>
+
+                {canShowMore && (
+                  <button
+                    type="button"
+                    onClick={() => setPointLimit(nextLimit)}
+                    className="text-xs font-bold tracking-wide text-zinc-300 hover:text-white uppercase border border-dashed border-zinc-600 w-full py-3 hover:border-zinc-400 transition-colors"
+                  >
+                    Show more vehicles (up to {nextLimit.toLocaleString()} dots)
+                  </button>
+                )}
               </div>
-            </div>
-          </div>
+
+              {/* Chart */}
+              <div className="relative border border-zinc-700 bg-zinc-950 p-3 md:p-6">
+                {loading && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/70">
+                    <div className="text-center">
+                      <div className="inline-block w-10 h-10 border-2 border-zinc-600 border-t-white rounded-full animate-spin mb-3" />
+                      <p className="text-xs text-zinc-300 uppercase tracking-widest">Updating chart</p>
+                    </div>
+                  </div>
+                )}
+                {error && !loading && chartData.length === 0 ? (
+                  <div className="py-24 text-center">
+                    <p className="text-zinc-300 mb-4">{error}</p>
+                    <button
+                      type="button"
+                      onClick={loadChartData}
+                      className="px-6 py-3 bg-white text-black text-xs font-bold uppercase"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                ) : chartData.length === 0 && !loading ? (
+                  <div className="py-24 text-center px-4">
+                    <p className="text-lg text-zinc-300 mb-2">No vehicles match these filters</p>
+                    <p className="text-sm text-zinc-400 mb-6">Try widening the price range or adding body types.</p>
+                    <button
+                      type="button"
+                      onClick={() => setPhase('choose')}
+                      className="px-6 py-3 border border-zinc-500 text-sm text-white"
+                    >
+                      Pick a different focus
+                    </button>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={480}>
+                    <ScatterChart margin={{ top: 16, right: 24, bottom: 56, left: 56 }}>
+                      <CartesianGrid strokeDasharray="4 4" stroke="#52525b" strokeOpacity={0.6} />
+                      <XAxis
+                        type="number"
+                        dataKey="price"
+                        stroke="#a1a1aa"
+                        tick={{ fill: '#d4d4d8', fontSize: 12 }}
+                        tickLine={{ stroke: '#71717a' }}
+                        label={{
+                          value: `Estimated market value (${DISPLAY_CURRENCY})`,
+                          position: 'bottom',
+                          offset: 36,
+                          style: { fill: '#d4d4d8', fontSize: 12, fontWeight: 600 },
+                        }}
+                        tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+                      />
+                      <YAxis
+                        type="number"
+                        dataKey={axisMode}
+                        stroke="#a1a1aa"
+                        tick={{ fill: '#d4d4d8', fontSize: 12 }}
+                        tickLine={{ stroke: '#71717a' }}
+                        label={{
+                          value: getYAxisLabel(),
+                          angle: -90,
+                          position: 'left',
+                          offset: 44,
+                          style: { fill: '#d4d4d8', fontSize: 12, fontWeight: 600 },
+                        }}
+                      />
+                      <ZAxis type="number" range={[64, 64]} />
+                      <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#a1a1aa', strokeWidth: 1 }} />
+                      <Scatter
+                        data={chartData}
+                        onClick={(d) => d?.id && navigate(`/car/${d.id}`)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        {chartData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={entry.color}
+                            stroke="#09090b"
+                            strokeWidth={1}
+                          />
+                        ))}
+                      </Scatter>
+                    </ScatterChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+
+              <p className="mt-3 text-xs text-zinc-400 text-center">
+                Brighter dots = easier to spot · values are estimates · click any dot for details
+              </p>
+
+              {chartData.length > 0 && (
+                <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-px bg-zinc-800 border border-zinc-800">
+                  <div className="bg-zinc-950 p-5">
+                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Plotted</p>
+                    <p className="text-2xl font-black text-white">{chartData.length.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-zinc-950 p-5">
+                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Avg est. value</p>
+                    <p className="text-2xl font-black text-white">${(avgPrice / 1000).toFixed(0)}k</p>
+                  </div>
+                  <div className="bg-zinc-950 p-5">
+                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Avg MPG</p>
+                    <p className="text-2xl font-black text-white">{formatMpgForCard(avgMpg || null)}</p>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import * as carService from '../../server/src/services/car.service';
-import type { SearchQuery } from '../../server/src/types/car.types';
+import { normalizeSearchQuery } from '../../server/src/utils/search-validation';
 
 function parseJsonBody(body: any): any {
   if (body == null) return {};
@@ -20,7 +20,7 @@ export default async function handler(req: any, res: any) {
       return res.status(405).json({ success: false, error: 'Method not allowed' });
     }
 
-    const query = parseJsonBody(req.body) as SearchQuery;
+    const query = normalizeSearchQuery(parseJsonBody(req.body));
     const results = carService.searchCars(query);
     res.status(200).json({ success: true, data: results });
   } catch (error) {

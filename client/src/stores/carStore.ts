@@ -34,7 +34,7 @@ export const useCarStore = create<CarStore>((set, get) => ({
     query: '',
     filters: {},
     sort: { field: 'year', order: 'desc' },
-    limit: 50,
+    limit: 36,
     offset: 0,
   },
   isSearching: false,

@@ -1,3 +1,6 @@
+# EPA/NHTSA raw ingestion cache
+server/data/raw/
+
 # Logs
 logs
 *.log

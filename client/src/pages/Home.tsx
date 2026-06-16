@@ -1,9 +1,38 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useCarStore } from '../stores/carStore';
 import FilterSidebar from '../components/FilterSidebar';
 import CarCard from '../components/CarCard';
+import SearchBar from '../components/SearchBar';
+import AboutData from '../components/AboutData';
+import {
+  describeActiveFilters,
+  getDefaultPageSize,
+  hasActiveSearch,
+  paramsToSearchQuery,
+  searchQueryToParams,
+} from '../utils/searchParams';
+import {
+  LIFESTYLE_PRESETS,
+  POPULAR_SEARCHES,
+} from '../config/browseTaxonomy';
+import type { CarFilter, SearchQuery } from '../types/car.types';
+
+const QUICK_START: Array<
+  | { label: string; q: string }
+  | { label: string; q: string; filters: CarFilter; sort?: SearchQuery['sort'] }
+> = [
+  ...POPULAR_SEARCHES.map((s) => ({ label: s.label, q: s.query })),
+  ...LIFESTYLE_PRESETS.slice(0, 4).map((p) => ({
+    label: p.label,
+    q: '',
+    filters: p.filters as CarFilter,
+    sort: p.sort,
+  })),
+];
 
 export default function Home() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     searchResults,
     searchQuery,
@@ -13,204 +42,299 @@ export default function Home() {
     searchError,
   } = useCarStore();
 
-  const [searchText, setSearchText] = useState(searchQuery.query || '');
-  const [sortField, setSortField] = useState(searchQuery.sort?.field || 'year');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(searchQuery.sort?.order || 'desc');
+  const [searchText, setSearchText] = useState('');
+  const [hasSearched, setHasSearched] = useState(false);
+  const pageSize = getDefaultPageSize();
+
+  const runSearchFromParams = useCallback(
+    (params: URLSearchParams) => {
+      const { query, page } = paramsToSearchQuery(params);
+      setSearchText(query.query ?? '');
+      setSearchQuery(query);
+      setHasSearched(hasActiveSearch(params));
+      performSearch();
+      return page;
+    },
+    [performSearch, setSearchQuery],
+  );
 
   useEffect(() => {
-    performSearch();
+    if (hasActiveSearch(searchParams)) {
+      runSearchFromParams(searchParams);
+    } else {
+      setHasSearched(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleSearch = () => {
-    setSearchQuery({
+  const currentPage = useMemo(() => {
+    const p = Number(searchParams.get('page'));
+    return Number.isFinite(p) && p > 0 ? p : 1;
+  }, [searchParams]);
+
+  const totalPages = searchResults ? Math.max(1, Math.ceil(searchResults.total / pageSize)) : 1;
+
+  const pushSearch = useCallback(
+    (nextQuery: typeof searchQuery, page = 1) => {
+      const params = searchQueryToParams(nextQuery, page);
+      setSearchParams(params, { replace: page === 1 });
+      setSearchQuery({ ...nextQuery, offset: (page - 1) * pageSize, limit: pageSize });
+      setHasSearched(true);
+      performSearch();
+    },
+    [pageSize, performSearch, setSearchParams, setSearchQuery],
+  );
+
+  const handleTextSearch = (text: string) => {
+    setSearchText(text);
+    pushSearch({
       ...searchQuery,
-      query: searchText,
-      sort: { field: sortField, order: sortOrder },
+      query: text || undefined,
+      sort: text
+        ? { field: 'relevance', order: 'desc' }
+        : searchQuery.sort ?? { field: 'year', order: 'desc' },
       offset: 0,
     });
-    performSearch();
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
   };
 
   const handleSortChange = (field: string) => {
-    const newOrder = field === sortField && sortOrder === 'desc' ? 'asc' : 'desc';
-    setSortField(field);
-    setSortOrder(newOrder);
-    setSearchQuery({
+    const newOrder =
+      field === searchQuery.sort?.field && searchQuery.sort?.order === 'desc' ? 'asc' : 'desc';
+    pushSearch({
       ...searchQuery,
       sort: { field, order: newOrder },
     });
-    performSearch();
   };
 
+  const goToPage = (page: number) => {
+    const clamped = Math.min(Math.max(1, page), totalPages);
+    pushSearch(searchQuery, clamped);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const activeFilterChips = describeActiveFilters(searchQuery.filters);
+  const sortField = searchQuery.sort?.field ?? 'year';
+  const sortOrder = searchQuery.sort?.order ?? 'desc';
+  const fuelFilter = searchQuery.filters?.fuelType ?? [];
+  const isEvBrowse = fuelFilter.includes('electric');
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-950">
-      <div className="container mx-auto px-4 py-8">
-        {/* Hero Section */}
-        <div className="text-center mb-10 animate-fade-in">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-400 via-blue-300 to-cyan-400 bg-clip-text text-transparent mb-4">
-            Compare Every Car Ever Made
-          </h1>
-          <p className="text-slate-400 text-lg mb-8 max-w-3xl mx-auto">
-            Search and compare specifications from thousands of vehicles across all brands, years, and countries
-          </p>
-
-          {/* Search Bar */}
-          <div className="max-w-4xl mx-auto">
-            <div className="flex gap-3">
-              <div className="relative flex-1">
-                <svg
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Search by make, model, or year..."
-                  className="w-full pl-12 pr-4 py-4 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-lg"
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                />
-              </div>
-              <button
-                onClick={handleSearch}
-                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all font-semibold shadow-lg shadow-blue-500/50 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isSearching}
-              >
-                {isSearching ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    <span>Searching...</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <span>Search</span>
-                  </>
-                )}
-              </button>
+    <div className="min-h-screen bg-black text-white pb-12">
+      <div className="sticky top-[53px] z-20 bg-black/90 border-b border-zinc-800 backdrop-blur-md">
+        <div className="page-wrap py-5 space-y-4">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight">Search</h1>
+              <p className="text-sm text-zinc-400 mt-1">
+                Type naturally — e.g. &quot;2024 camry&quot; or &quot;honda civic&quot;
+              </p>
             </div>
+            <AboutData compact />
           </div>
+
+          <SearchBar
+            value={searchText}
+            onChange={setSearchText}
+            onSubmit={handleTextSearch}
+            loading={isSearching}
+            size="default"
+          />
+
+          {activeFilterChips.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {activeFilterChips.map((chip) => (
+                <span
+                  key={chip.key}
+                  className="inline-flex items-center px-3 py-1 text-xs border border-zinc-600 text-zinc-300 bg-zinc-900"
+                >
+                  {chip.label}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
+      </div>
 
+      <div className="page-wrap py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Filters Sidebar */}
           <div className="lg:col-span-1">
-            <FilterSidebar />
+            <FilterSidebar
+              onFiltersApplied={() => {
+                const q = useCarStore.getState().searchQuery;
+                const params = searchQueryToParams(
+                  { ...q, query: searchText || undefined },
+                  1,
+                );
+                setSearchParams(params);
+                setHasSearched(true);
+              }}
+            />
           </div>
 
-          {/* Results */}
           <div className="lg:col-span-3">
-            {/* Sort Controls */}
-            <div className="bg-slate-800 rounded-xl shadow-xl p-5 mb-6 border border-slate-700">
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <div className="text-slate-300">
-                  {searchResults && !searchError && (
-                    <span className="font-semibold text-white flex items-center">
-                      <svg className="w-5 h-5 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      {searchResults.total} cars found
-                    </span>
-                  )}
-                  {searchError && (
-                    <span className="text-sm text-red-400">
-                      {searchError}
-                    </span>
-                  )}
+            {!hasSearched && !isSearching ? (
+              <div className="surface-card p-8 md:p-12 text-center rounded-xl">
+                <h2 className="text-xl font-black mb-3">Start with a search</h2>
+                <p className="text-sm text-zinc-400 max-w-lg mx-auto mb-8 leading-relaxed">
+                  We won&apos;t dump the whole database on you. Search by make, model, year, or
+                  combine with filters on the left for precise results.
+                </p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {QUICK_START.map((item) => (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() => {
+                        if ('filters' in item && item.filters) {
+                          pushSearch({
+                            query: item.q || undefined,
+                            filters: item.filters,
+                            sort: item.sort ?? { field: 'year', order: 'desc' },
+                            limit: pageSize,
+                            offset: 0,
+                          });
+                          setSearchText(item.q ?? '');
+                        } else {
+                          handleTextSearch(item.q);
+                        }
+                      }}
+                      className="px-4 py-2 text-xs border border-zinc-700 text-zinc-300 hover:border-white hover:text-white transition-colors"
+                    >
+                      {item.label}
+                    </button>
+                  ))}
                 </div>
-
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-slate-400">Sort by:</span>
-                  <select
-                    className="bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={sortField}
-                    onChange={(e) => handleSortChange(e.target.value)}
-                  >
-                    <option value="year">Year</option>
-                    <option value="make">Make</option>
-                    <option value="model">Model</option>
-                    <option value="horsepower">Horsepower</option>
-                    <option value="price">Price</option>
-                    <option value="fuelEconomy">Fuel Economy</option>
-                  </select>
-                  <button
-                    onClick={() => handleSortChange(sortField)}
-                    className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg hover:bg-slate-600 transition text-white"
-                    title={`Sort ${sortOrder === 'asc' ? 'descending' : 'ascending'}`}
-                  >
-                    {sortOrder === 'asc' ? (
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                      </svg>
-                    ) : (
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Car Grid */}
-            {isSearching ? (
-              <div className="text-center py-20">
-                <svg className="animate-spin h-12 w-12 text-blue-500 mx-auto mb-4" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                <div className="text-slate-400 text-lg">Loading cars...</div>
-              </div>
-            ) : searchError ? (
-              <div className="text-center py-20 bg-slate-800 rounded-xl shadow-xl border border-slate-700">
-                <svg className="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v4m0 4h.01M4.93 4.93l14.14 14.14M12 2a10 10 0 100 20 10 10 0 000-20z" />
-                </svg>
-                <div className="text-slate-200 text-lg mb-4">
-                  Something went wrong while searching.
-                </div>
-                <button
-                  onClick={performSearch}
-                  className="mt-2 inline-flex items-center px-6 py-3 rounded-lg bg-blue-600 text-white text-sm font-semibold tracking-wide hover:bg-blue-700 transition"
-                >
-                  Try Again
-                </button>
-              </div>
-            ) : searchResults && searchResults.results.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {searchResults.results.map((car) => (
-                  <CarCard key={car.id} car={car} />
-                ))}
               </div>
             ) : (
-              <div className="text-center py-20 bg-slate-800 rounded-xl shadow-xl border border-slate-700">
-                <svg className="w-16 h-16 text-slate-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div className="text-slate-400 text-lg">
-                  No cars found. Try adjusting your filters.
+              <>
+                <div className="surface-card p-5 mb-6 rounded-xl">
+                  <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div>
+                      {searchResults && !searchError && (
+                        <span className="text-xs tracking-[0.2em] text-zinc-400 uppercase">
+                          <span className="text-white font-black">
+                            {searchResults.total.toLocaleString()}
+                          </span>{' '}
+                          {searchResults.total === 1 ? 'vehicle' : 'vehicles'}
+                          {searchResults.total > pageSize && (
+                            <span className="text-zinc-500">
+                              {' '}
+                              · page {currentPage} of {totalPages}
+                            </span>
+                          )}
+                        </span>
+                      )}
+                      {searchError && (
+                        <span className="text-xs tracking-widest text-red-400 uppercase">{searchError}</span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] tracking-[0.2em] text-zinc-400 uppercase">Sort</span>
+                      <select
+                        className="bg-black border border-zinc-700 px-3 py-2 text-xs tracking-widest text-white uppercase focus:outline-none focus:border-zinc-400"
+                        value={sortField}
+                        onChange={(e) => handleSortChange(e.target.value)}
+                      >
+                        {searchText && <option value="relevance">Best match</option>}
+                        {isEvBrowse && <option value="evScore">EV score</option>}
+                        <option value="year">Year</option>
+                        <option value="make">Make</option>
+                        <option value="model">Model</option>
+                        <option value="price">Est. value</option>
+                        {isEvBrowse && <option value="range">EPA range</option>}
+                        <option value="fuelEconomy">{isEvBrowse ? 'MPGe' : 'MPG'}</option>
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => handleSortChange(sortField)}
+                        className="px-3 py-2 border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 transition-colors"
+                        title={`Sort ${sortOrder === 'asc' ? 'descending' : 'ascending'}`}
+                        aria-label="Toggle sort direction"
+                      >
+                        {sortOrder === 'asc' ? '↑' : '↓'}
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
+
+                {isSearching ? (
+                  <div className="text-center py-32">
+                    <div className="inline-block w-12 h-12 border-2 border-zinc-700 border-t-white rounded-full animate-spin mb-4" />
+                    <p className="text-xs tracking-[0.3em] text-zinc-300 uppercase">Searching</p>
+                  </div>
+                ) : searchError ? (
+                  <div className="text-center py-24 bg-zinc-950 border border-zinc-800">
+                    <p className="text-lg font-light text-zinc-300 mb-6">
+                      Something went wrong while searching.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={performSearch}
+                      className="px-8 py-3 bg-white text-black text-xs font-black tracking-[0.3em] uppercase hover:bg-zinc-200"
+                    >
+                      Try again
+                    </button>
+                  </div>
+                ) : searchResults && searchResults.results.length > 0 ? (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                      {searchResults.results.map((car) => (
+                        <CarCard key={car.id} car={car} />
+                      ))}
+                    </div>
+
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-center gap-4 mt-10">
+                        <button
+                          type="button"
+                          disabled={currentPage <= 1}
+                          onClick={() => goToPage(currentPage - 1)}
+                          className="px-5 py-2 border border-zinc-700 text-xs uppercase tracking-widest disabled:opacity-40 hover:border-zinc-400 transition-colors"
+                        >
+                          Previous
+                        </button>
+                        <span className="text-sm text-zinc-400">
+                          {currentPage} / {totalPages}
+                        </span>
+                        <button
+                          type="button"
+                          disabled={currentPage >= totalPages || !searchResults.hasMore}
+                          onClick={() => goToPage(currentPage + 1)}
+                          className="px-5 py-2 border border-zinc-700 text-xs uppercase tracking-widest disabled:opacity-40 hover:border-zinc-400 transition-colors"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-24 bg-zinc-950 border border-zinc-800">
+                    <p className="text-lg font-light text-zinc-300 uppercase mb-2">No vehicles found</p>
+                    <p className="text-sm text-zinc-400 mb-6">
+                      Try a different spelling, fewer filters, or a broader year range.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchText('');
+                        setSearchParams(new URLSearchParams());
+                        setHasSearched(false);
+                        setSearchQuery({
+                          query: '',
+                          filters: {},
+                          sort: { field: 'year', order: 'desc' },
+                          limit: pageSize,
+                          offset: 0,
+                        });
+                      }}
+                      className="text-xs tracking-widest text-zinc-400 hover:text-white underline underline-offset-4"
+                    >
+                      Clear and start over
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

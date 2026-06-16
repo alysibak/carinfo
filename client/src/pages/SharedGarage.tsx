@@ -3,6 +3,7 @@ import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import * as api from '../services/api';
 import type { CarSpecs } from '../types/car.types';
 import { useGarageStore } from '../stores/garageStore';
+import { cardStatClass, formatEngineForCard, formatMpgForCard, formatPriceShort } from '../utils/dataValue';
 
 export default function SharedGarage() {
   const [searchParams] = useSearchParams();
@@ -65,7 +66,7 @@ export default function SharedGarage() {
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block w-16 h-16 border-2 border-zinc-800 border-t-white rounded-full animate-spin mb-4" />
-          <p className="text-xs tracking-[0.3em] text-zinc-700 uppercase">Loading Garage</p>
+          <p className="text-xs tracking-[0.3em] text-zinc-300 uppercase">Loading Garage</p>
         </div>
       </div>
     );
@@ -94,7 +95,7 @@ export default function SharedGarage() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-black border-b border-zinc-900">
+      <div className="sticky top-0 z-40 bg-black border-b border-zinc-900">
         <div className="px-8 py-6">
           <div className="flex items-center justify-between max-w-7xl mx-auto">
             <Link
@@ -111,7 +112,7 @@ export default function SharedGarage() {
               <h1 className="text-2xl md:text-3xl font-black tracking-tighter">
                 SHARED GARAGE
               </h1>
-              <p className="text-xs tracking-[0.3em] text-zinc-700 mt-1">
+              <p className="text-xs tracking-[0.3em] text-zinc-300 mt-1">
                 {cars.length} VEHICLE{cars.length !== 1 ? 'S' : ''}
               </p>
             </div>
@@ -126,7 +127,7 @@ export default function SharedGarage() {
         </div>
       </div>
 
-      <div className="pt-32 pb-16 px-8">
+      <div className="pt-8 pb-16 px-8">
         {cars.length === 0 ? (
           <div className="max-w-4xl mx-auto text-center py-32">
             <h2 className="text-3xl font-black tracking-tighter mb-4">
@@ -152,12 +153,12 @@ export default function SharedGarage() {
                 >
                   {/* Position Badge */}
                   <div className="absolute top-4 left-4 w-10 h-10 bg-zinc-950 border border-zinc-800 flex items-center justify-center">
-                    <span className="text-lg font-black text-zinc-700">#{index + 1}</span>
+                    <span className="text-lg font-black text-zinc-300">#{index + 1}</span>
                   </div>
 
                   {/* Year */}
                   <div className="mb-4 mt-12">
-                    <p className="text-5xl font-black text-zinc-700 group-hover:text-zinc-600 transition-colors">
+                    <p className="text-5xl font-black text-zinc-500 group-hover:text-zinc-300 transition-colors">
                       {car.year}
                     </p>
                   </div>
@@ -178,24 +179,25 @@ export default function SharedGarage() {
                   {/* Specs Grid */}
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     <div>
-                      <p className="text-xs tracking-widest text-zinc-700 mb-1 uppercase">Power</p>
-                      <p className="text-lg font-bold">
-                        {car.engine.horsepower}
-                        <span className="text-xs text-zinc-600 ml-1">HP</span>
+                      <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">Engine</p>
+                      <p className={cardStatClass(formatEngineForCard(car.engine.fuelType, car.engine.displacement))}>
+                        {formatEngineForCard(car.engine.fuelType, car.engine.displacement)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs tracking-widest text-zinc-700 mb-1 uppercase">MPG</p>
-                      <p className="text-lg font-bold">{car.fuelEconomy.combined || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs tracking-widest text-zinc-700 mb-1 uppercase">Price</p>
-                      <p className="text-lg font-bold">
-                        {car.price?.msrp ? `$${(car.price.msrp / 1000).toFixed(0)}K` : '?'}
+                      <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">MPG</p>
+                      <p className={cardStatClass(formatMpgForCard(car.fuelEconomy.combined))}>
+                        {formatMpgForCard(car.fuelEconomy.combined)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs tracking-widest text-zinc-700 mb-1 uppercase">Type</p>
+                      <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">Est. Value</p>
+                      <p className={cardStatClass(formatPriceShort(car.price?.msrp))}>
+                        {formatPriceShort(car.price?.msrp)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">Type</p>
                       <p className="text-lg font-bold capitalize">{car.bodyStyle}</p>
                     </div>
                   </div>
@@ -203,7 +205,7 @@ export default function SharedGarage() {
                   {/* View Button */}
                   <button
                     onClick={() => navigate(`/car/${car.id}`)}
-                    className="w-full flex items-center justify-center gap-2 text-xs tracking-widest text-zinc-700 group-hover:text-white transition-all py-2 border border-zinc-900 group-hover:border-zinc-700"
+                    className="w-full flex items-center justify-center gap-2 text-xs tracking-widest text-zinc-300 group-hover:text-white transition-all py-2 border border-zinc-900 group-hover:border-zinc-700"
                   >
                     <span>VIEW DETAILS</span>
                     <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">

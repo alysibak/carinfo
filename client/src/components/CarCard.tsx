@@ -1,7 +1,19 @@
-import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { CarSpecs } from '../types/car.types';
 import { useCarStore } from '../stores/carStore';
-import { getCarImageUrl } from '../utils/carImages';
+import TrustLabel from './ui';
+import { displayListingSubtitle, formatTransmissionLabel } from '../utils/trimLabel';
+import {
+  formatEngineDetailForCard,
+  formatMpgForCard,
+  formatPowerForCard,
+  formatPriceShort,
+  formatRangeForCard,
+  hasNumericValue,
+  unavailableClass,
+} from '../utils/dataValue';
+import { formatFuelBadge, usesMpge } from '../utils/fuelDisplay';
+import VehiclePlaceholder from './VehiclePlaceholder';
 
 interface CarCardProps {
   car: CarSpecs;
@@ -11,151 +23,142 @@ interface CarCardProps {
 export default function CarCard({ car, showCompare = true }: CarCardProps) {
   const { comparedCars, addCarToComparison, removeCarFromComparison } = useCarStore();
   const isInComparison = comparedCars.some((c) => c.id === car.id);
-  const [imageError, setImageError] = useState(false);
+  const navigate = useNavigate();
+  const isEv = car.engine.fuelType === 'electric';
+  const isHydrogen = car.engine.fuelType === 'hydrogen';
+  const isAltPowertrain = isEv || isHydrogen;
+  const variantLabel = displayListingSubtitle(car);
+  const transmissionLabel = car.transmission?.type
+    ? formatTransmissionLabel(car.transmission, car.trim)
+    : null;
 
-  const toggleComparison = () => {
-    if (isInComparison) {
-      removeCarFromComparison(car.id);
-    } else {
-      addCarToComparison(car);
-    }
+  const toggleComparison = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isInComparison) removeCarFromComparison(car.id);
+    else addCarToComparison(car);
   };
 
-  const imageUrl = getCarImageUrl(car.make, car.model, car.year);
+  const mpgLabel = usesMpge(car.engine.fuelType) ? 'MPGe' : 'MPG';
+  const mpgValue = formatMpgForCard(car.fuelEconomy.combined);
+  const engineValue = formatEngineDetailForCard(car.engine);
+  const powerProvenance = car.provenance?.['engine.horsepower'];
+  const powerValue = formatPowerForCard(car.engine.horsepower, {
+    fuelType: car.engine.fuelType,
+    powerProvenance,
+  });
+  const rangeValue = formatRangeForCard(car.epa?.rangeMiles);
+  const hasPower = hasNumericValue(car.engine.horsepower);
+  const priceValue = formatPriceShort(car.price?.msrp, car.price?.isEstimated);
 
   return (
-    <div className="bg-slate-800 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden border border-slate-700 hover:border-blue-500 animate-fade-in group">
-      {/* Car Image */}
-      <div className="relative h-52 overflow-hidden bg-gradient-to-br from-slate-700 to-slate-900">
-        <img
-          src={imageUrl}
-          alt={`${car.year} ${car.make} ${car.model}`}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-          onError={(e) => {
-            if (!imageError) {
-              setImageError(true);
-              e.currentTarget.src = 'https://via.placeholder.com/400x300/1e293b/94a3b8?text=Car+Image';
-            }
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
-        <div className="absolute bottom-3 left-3 bg-slate-900/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-blue-400 border border-blue-500/50">
-          {car.year}
-        </div>
+    <article
+      onClick={() => navigate(`/car/${car.id}`)}
+      className="surface-card-hover cursor-pointer group flex flex-col h-full overflow-hidden"
+    >
+      <div className="aspect-[16/10] border-b border-zinc-900">
+        <VehiclePlaceholder car={car} compact />
       </div>
-
-      <div className="p-5">
-        {/* Header */}
-        <div className="mb-4">
-          <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
-            {car.make} {car.model}
-          </h3>
-          {car.trim && (
-            <p className="text-sm text-slate-400 mt-1">{car.trim}</p>
+      <div className="p-5 flex flex-col flex-1">
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="min-w-0">
+            <p className="text-[11px] font-medium tracking-[0.15em] text-zinc-500 uppercase mb-1.5">
+              {car.year} {car.make}
+            </p>
+            <h3 className="text-xl font-semibold text-white leading-snug line-clamp-2 group-hover:text-white">
+              {car.model}
+            </h3>
+            {variantLabel && (
+              <p className="text-sm font-medium text-zinc-300 mt-1 truncate">{variantLabel}</p>
+            )}
+          </div>
+          {car.bodyStyle && (
+            <span className="shrink-0 text-xs font-medium capitalize px-2 py-1 rounded-md bg-zinc-800 text-zinc-300">
+              {car.bodyStyle}
+            </span>
           )}
-          <p className="text-xs text-slate-500 mt-1 flex items-center">
-            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-            </svg>
-            {car.countryOfOrigin}
-          </p>
         </div>
 
-        {/* Key Specs */}
-        <div className="space-y-2.5 text-sm">
-          <div className="flex justify-between items-center py-2 border-b border-slate-700">
-            <span className="text-slate-400 flex items-center">
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              Engine
-            </span>
-            <span className="font-semibold text-white">
-              {car.engine.displacement}L {car.engine.configuration || car.engine.fuelType}
-            </span>
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 mb-4 text-sm">
+          <div>
+            <dt className="label-sm">Power</dt>
+            <dd className={unavailableClass(powerValue, hasPower ? 'font-semibold text-white mt-0.5' : undefined)}>
+              {powerValue}
+            </dd>
           </div>
-          <div className="flex justify-between items-center py-2 border-b border-slate-700">
-            <span className="text-slate-400 flex items-center">
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
-              Power
-            </span>
-            <span className="font-semibold text-blue-400">{car.engine.horsepower} HP</span>
+          <div>
+            <dt className="label-sm">{isAltPowertrain ? 'Range' : mpgLabel}</dt>
+            <dd className={unavailableClass(isAltPowertrain ? rangeValue : mpgValue)}>
+              {isAltPowertrain ? rangeValue : mpgValue}
+            </dd>
           </div>
-          <div className="flex justify-between items-center py-2 border-b border-slate-700">
-            <span className="text-slate-400 flex items-center">
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              0-60 mph
-            </span>
-            <span className="font-semibold text-white">
-              {car.performance.zeroToSixty ? `${car.performance.zeroToSixty}s` : 'N/A'}
-            </span>
+          <div>
+            <dt className="label-sm">{isAltPowertrain ? mpgLabel : 'Engine'}</dt>
+            <dd className={unavailableClass(isAltPowertrain ? mpgValue : engineValue)}>
+              {isAltPowertrain ? mpgValue : engineValue}
+            </dd>
           </div>
-          <div className="flex justify-between items-center py-2 border-b border-slate-700">
-            <span className="text-slate-400 flex items-center">
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-              MPG
-            </span>
-            <span className="font-semibold text-green-400">
-              {car.fuelEconomy.combined || 'N/A'} combined
-            </span>
+          <div>
+            <dt className="label-sm">{isAltPowertrain ? 'Engine' : 'Trans'}</dt>
+            <dd className={
+              isAltPowertrain
+                ? unavailableClass(engineValue)
+                : transmissionLabel
+                  ? 'font-semibold text-white mt-0.5'
+                  : unavailableClass('—')
+            }>
+              {isAltPowertrain ? engineValue : transmissionLabel ?? '—'}
+            </dd>
           </div>
-          {car.price?.msrp && (
-            <div className="flex justify-between items-center pt-3">
-              <span className="text-slate-400 font-medium">MSRP</span>
-              <span className="font-bold text-lg text-green-400">
-                ${car.price.msrp.toLocaleString()}
+        </dl>
+
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {car.engine.fuelType && (
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-zinc-900 text-zinc-400 border border-zinc-800 capitalize">
+              {formatFuelBadge(car.engine.fuelType)}
+            </span>
+          )}
+          {car.driveType && (
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-zinc-900 text-zinc-400 border border-zinc-800">
+              {car.driveType}
+            </span>
+          )}
+          {powerProvenance === 'estimated' && hasPower && (
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-zinc-900 text-zinc-500 border border-zinc-800">
+              Mfr. power est.
+            </span>
+          )}
+        </div>
+
+        <div className="mt-auto pt-3 border-t border-zinc-800/80 space-y-3">
+          <div className="flex items-start justify-between gap-2 text-xs">
+            <div className="space-y-1">
+              <span className="text-zinc-500 flex items-center gap-1.5 flex-wrap">
+                Est. value
+                {car.price?.isEstimated && <TrustLabel estimated className="!text-[8px] !px-1" />}
+                <span className={unavailableClass(priceValue, 'font-medium text-zinc-300')}>{priceValue}</span>
               </span>
+            </div>
+            <span className="font-medium text-zinc-500 group-hover:text-white transition-colors shrink-0">
+              View details →
+            </span>
+          </div>
+          {showCompare && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={toggleComparison}
+                className={`text-xs font-medium px-3 py-1.5 rounded-md border transition-colors ${
+                  isInComparison
+                    ? 'border-red-900/80 text-red-400 bg-red-950/30'
+                    : 'border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-white'
+                }`}
+              >
+                {isInComparison ? 'In compare' : 'Compare'}
+              </button>
             </div>
           )}
         </div>
-
-        {/* Badges */}
-        <div className="flex flex-wrap gap-2 mt-4">
-          <span className="px-3 py-1.5 bg-blue-600/20 text-blue-300 text-xs rounded-full border border-blue-500/30 font-medium">
-            {car.bodyStyle}
-          </span>
-          <span className="px-3 py-1.5 bg-green-600/20 text-green-300 text-xs rounded-full border border-green-500/30 font-medium">
-            {car.driveType}
-          </span>
-          <span className="px-3 py-1.5 bg-purple-600/20 text-purple-300 text-xs rounded-full border border-purple-500/30 font-medium">
-            {car.engine.fuelType}
-          </span>
-        </div>
-
-        {/* Compare Button */}
-        {showCompare && (
-          <button
-            onClick={toggleComparison}
-            className={`w-full mt-5 py-3 rounded-lg font-semibold transition-all duration-300 flex items-center justify-center space-x-2 ${
-              isInComparison
-                ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-500/50'
-                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/50'
-            }`}
-          >
-            {isInComparison ? (
-              <>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                <span>Remove from Compare</span>
-              </>
-            ) : (
-              <>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                <span>Add to Compare</span>
-              </>
-            )}
-          </button>
-        )}
       </div>
-    </div>
+    </article>
   );
 }
