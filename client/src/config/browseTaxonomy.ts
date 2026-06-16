@@ -1,4 +1,5 @@
 import type { CarFilter, SearchQuery } from '../types/car.types';
+import { filtersMatchExactly } from '../utils/filterState';
 
 export interface BrowsePreset {
   id: string;
@@ -176,29 +177,10 @@ export function makeFilter(make: string): CarFilter {
   return { make: [make] };
 }
 
-/** Detect if current filters match a lifestyle preset (for UI highlight). */
+/** Detect if current filters exactly match a lifestyle preset (for UI highlight). */
 export function matchingLifestylePreset(filters: CarFilter = {}): string | null {
   for (const preset of LIFESTYLE_PRESETS) {
-    if (filtersMatchPreset(filters, preset.filters)) return preset.id;
+    if (filtersMatchExactly(filters, preset.filters)) return preset.id;
   }
   return null;
-}
-
-function filtersMatchPreset(active: CarFilter, preset: CarFilter): boolean {
-  const keys = new Set([...Object.keys(active), ...Object.keys(preset)]) as Set<keyof CarFilter>;
-  for (const key of keys) {
-    const a = active[key];
-    const p = preset[key];
-    if (p == null) continue;
-    if (a == null) return false;
-    if (Array.isArray(p) && Array.isArray(a)) {
-      if (p.length !== a.length || !p.every((v) => a.includes(v))) return false;
-    } else if (typeof p === 'object' && typeof a === 'object' && !Array.isArray(p)) {
-      const pr = p as { min?: number; max?: number };
-      const ar = a as { min?: number; max?: number };
-      if (pr.min != null && ar.min !== pr.min) return false;
-      if (pr.max != null && ar.max !== pr.max) return false;
-    }
-  }
-  return true;
 }

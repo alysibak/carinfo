@@ -12,6 +12,7 @@ import {
   paramsToSearchQuery,
   searchQueryToParams,
 } from '../utils/searchParams';
+import { isElectricOnlyBrowse } from '../utils/filterState';
 import {
   LIFESTYLE_PRESETS,
   POPULAR_SEARCHES,
@@ -115,8 +116,7 @@ export default function Home() {
   const activeFilterChips = describeActiveFilters(searchQuery.filters);
   const sortField = searchQuery.sort?.field ?? 'year';
   const sortOrder = searchQuery.sort?.order ?? 'desc';
-  const fuelFilter = searchQuery.filters?.fuelType ?? [];
-  const isEvBrowse = fuelFilter.includes('electric');
+  const isEvBrowse = isElectricOnlyBrowse(searchQuery.filters);
 
   return (
     <div className="min-h-screen bg-black text-white pb-12">

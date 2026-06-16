@@ -1,5 +1,6 @@
 import type { CarFilter, SearchQuery } from '../types/car.types';
 import { formatFuelTypeLabel } from './fuelDisplay';
+import { isElectricOnlyBrowse } from './filterState';
 
 const PAGE_SIZE = 36;
 
@@ -29,8 +30,7 @@ export function defaultSortForQuery(
   filters?: CarFilter,
 ): { field: string; order: 'asc' | 'desc' } {
   if (query?.trim()) return { field: 'relevance', order: 'desc' };
-  const fuel = filters?.fuelType;
-  if (fuel?.length === 1 && fuel[0] === 'electric') {
+  if (isElectricOnlyBrowse(filters)) {
     return { field: 'evScore', order: 'desc' };
   }
   return { field: 'year', order: 'desc' };
@@ -160,10 +160,15 @@ export function describeActiveFilters(filters: CarFilter = {}): { key: string; l
   }
   if (filters.price?.min != null || filters.price?.max != null) {
     const { min, max } = filters.price;
-    chips.push({
-      key: 'price',
-      label: `$${((min ?? 0) / 1000).toFixed(0)}k–$${max != null ? (max / 1000).toFixed(0) : '∞'}k`,
-    });
+    let label: string;
+    if (min != null && max != null) {
+      label = `$${(min / 1000).toFixed(0)}k–$${(max / 1000).toFixed(0)}k`;
+    } else if (max != null) {
+      label = `Under $${(max / 1000).toFixed(0)}k`;
+    } else {
+      label = `$${(min! / 1000).toFixed(0)}k+`;
+    }
+    chips.push({ key: 'price', label });
   }
   if (filters.fuelEconomy?.min != null) {
     const unit = filters.fuelEconomy.min >= 100 ? 'MPGe' : 'MPG';

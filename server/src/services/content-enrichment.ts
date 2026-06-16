@@ -1,6 +1,6 @@
-import { existsSync, readFileSync } from 'fs';
-import { join, resolve } from 'path';
+import { readFileSync } from 'fs';
 import type { Car } from '../types/car.types.js';
+import { resolveDataFile } from '../utils/data-paths.js';
 import { estimateEvHorsepower } from '../utils/ev-power-estimates.js';
 import { nhtsaLookupKeys, canonicalizeDisplayModel } from '../utils/vehicle-taxonomy.js';
 
@@ -40,22 +40,14 @@ interface SafetyEntry {
 }
 
 function loadJson<T>(fileName: string): T | null {
-  const candidates = [
-    resolve(process.cwd(), 'server', 'data', fileName),
-    resolve(process.cwd(), 'data', fileName),
-    join(__dirname, '../../data', fileName),
-  ];
-  for (const p of candidates) {
-    if (existsSync(p)) {
-      try {
-        return JSON.parse(readFileSync(p, 'utf-8')) as T;
-      } catch (err) {
-        console.warn(`[content-enrichment] Failed to parse ${p}:`, (err as Error).message);
-        return null;
-      }
-    }
+  const path = resolveDataFile(fileName);
+  if (!path) return null;
+  try {
+    return JSON.parse(readFileSync(path, 'utf-8')) as T;
+  } catch (err) {
+    console.warn(`[content-enrichment] Failed to parse ${path}:`, (err as Error).message);
+    return null;
   }
-  return null;
 }
 
 let epaEnrichment: Record<string, EpaEnrichmentEntry> = {};
