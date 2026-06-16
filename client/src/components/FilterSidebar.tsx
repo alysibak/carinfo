@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useCarStore } from '../stores/carStore';
 import * as api from '../services/api';
 import FilterPills from './FilterPills';
-import type { CarFilter } from '../types/car.types';
+import type { CarFilter, SearchQuery } from '../types/car.types';
 import {
   LIFESTYLE_PRESETS,
   PRICE_BUCKETS,
@@ -13,6 +13,14 @@ import {
   DRIVE_TYPES,
   matchingLifestylePreset,
 } from '../config/browseTaxonomy';
+import {
+  bucketMatches,
+  countActiveFilterFields,
+  mergeFilterFields,
+  sortForFilters,
+  stripFilterFields,
+  toggleRangeBucket,
+} from '../utils/filterState';
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -24,15 +32,41 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function RangeInputs({
   value,
-  onChange,
+  onCommit,
   step = 1,
 }: {
   value?: { min?: number; max?: number };
-  onChange: (range: { min?: number; max?: number }) => void;
+  onCommit: (range: { min?: number; max?: number } | undefined) => void;
   step?: number;
 }) {
+  const [draft, setDraft] = useState(value);
+
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+
   const inputClass =
     'w-full bg-black border border-zinc-700 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 transition-colors';
+
+  const commitDraft = () => {
+    const min = draft?.min;
+    const max = draft?.max;
+    if (min == null && max == null) {
+      onCommit(undefined);
+      return;
+    }
+    onCommit({ min, max });
+  };
+
+  const updateDraft = (side: 'min' | 'max', raw: string) => {
+    const parsed = raw ? parseFloat(raw) : undefined;
+    setDraft((prev) => {
+      const next = { ...prev, [side]: parsed };
+      if (next.min == null && next.max == null) return undefined;
+      return next;
+    });
+  };
+
   return (
     <div className="grid grid-cols-2 gap-2">
       <input
@@ -40,20 +74,20 @@ function RangeInputs({
         step={step}
         placeholder="Min"
         className={inputClass}
-        value={value?.min ?? ''}
-        onChange={(e) =>
-          onChange({ ...value, min: e.target.value ? parseFloat(e.target.value) : undefined })
-        }
+        value={draft?.min ?? ''}
+        onChange={(e) => updateDraft('min', e.target.value)}
+        onBlur={commitDraft}
+        onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
       />
       <input
         type="number"
         step={step}
         placeholder="Max"
         className={inputClass}
-        value={value?.max ?? ''}
-        onChange={(e) =>
-          onChange({ ...value, max: e.target.value ? parseFloat(e.target.value) : undefined })
-        }
+        value={draft?.max ?? ''}
+        onChange={(e) => updateDraft('max', e.target.value)}
+        onBlur={commitDraft}
+        onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
       />
     </div>
   );
@@ -83,14 +117,9 @@ export default function FilterSidebar({ onFiltersApplied }: { onFiltersApplied?:
   }, [loadMakes]);
 
   const commitFilters = useCallback(
-    (next: CarFilter) => {
+    (next: CarFilter, sortOverride?: SearchQuery['sort']) => {
       setFilters(next);
-      const fuel = next.fuelType;
-      const isEvOnly = fuel?.length === 1 && fuel[0] === 'electric';
-      const sort =
-        isEvOnly && !searchQuery.query?.trim()
-          ? { field: 'evScore', order: 'desc' as const }
-          : searchQuery.sort;
+      const sort = sortOverride ?? sortForFilters(next, searchQuery.query, searchQuery.sort);
       setSearchQuery({ ...searchQuery, filters: next, offset: 0, sort });
       performSearch();
       onFiltersApplied?.();
@@ -119,34 +148,30 @@ export default function FilterSidebar({ onFiltersApplied }: { onFiltersApplied?:
     const preset = LIFESTYLE_PRESETS.find((p) => p.id === id);
     if (!preset) return;
     if (activeLifestyle === id) {
-      commitFilters({});
+      commitFilters(stripFilterFields(filters, preset.filters), { field: 'year', order: 'desc' });
     } else {
-      commitFilters(preset.filters);
+      commitFilters(mergeFilterFields(filters, preset.filters), preset.sort);
     }
   };
 
   const togglePriceBucket = (id: string) => {
     const bucket = PRICE_BUCKETS.find((b) => b.id === id);
     if (!bucket) return;
-    const next = { ...filters, price: activePriceBucket === id ? undefined : bucket.filters.price };
-    commitFilters(next);
+    commitFilters(toggleRangeBucket(filters, 'price', bucket.filters.price, activePriceBucket, id));
   };
 
   const toggleYearBucket = (id: string) => {
     const bucket = YEAR_BUCKETS.find((b) => b.id === id);
     if (!bucket) return;
-    const next = { ...filters, year: activeYearBucket === id ? undefined : bucket.filters.year };
-    commitFilters(next);
+    commitFilters(toggleRangeBucket(filters, 'year', bucket.filters.year, activeYearBucket, id));
   };
 
   const toggleMpgBucket = (id: string) => {
     const bucket = MPG_BUCKETS.find((b) => b.id === id);
     if (!bucket) return;
-    const next = {
-      ...filters,
-      fuelEconomy: activeMpgBucket === id ? undefined : bucket.filters.fuelEconomy,
-    };
-    commitFilters(next);
+    commitFilters(
+      toggleRangeBucket(filters, 'fuelEconomy', bucket.filters.fuelEconomy, activeMpgBucket, id),
+    );
   };
 
   const toggleArrayFilter = (key: keyof CarFilter, value: string) => {
@@ -159,7 +184,7 @@ export default function FilterSidebar({ onFiltersApplied }: { onFiltersApplied?:
   };
 
   const clearFilters = () => {
-    commitFilters({});
+    commitFilters({}, { field: 'year', order: 'desc' });
     setMakeSearch('');
   };
 
@@ -167,12 +192,7 @@ export default function FilterSidebar({ onFiltersApplied }: { onFiltersApplied?:
     ? availableMakes.filter((m) => m.toLowerCase().includes(makeSearch.toLowerCase()))
     : availableMakes.slice(0, 40);
 
-  const activeFilterCount = Object.values(filters).filter((v) => {
-    if (v == null) return false;
-    if (Array.isArray(v)) return v.length > 0;
-    if (typeof v === 'object') return (v as { min?: number; max?: number }).min != null || (v as { min?: number; max?: number }).max != null;
-    return true;
-  }).length;
+  const activeFilterCount = countActiveFilterFields(filters);
 
   const bodyPillOptions = BODY_TYPES.map((t) => ({
     id: t.id,
@@ -313,7 +333,7 @@ export default function FilterSidebar({ onFiltersApplied }: { onFiltersApplied?:
             <RangeInputs
               value={filters.price}
               step={1000}
-              onChange={(range) => commitFilters({ ...filters, price: range })}
+              onCommit={(range) => commitFilters({ ...filters, price: range })}
             />
           </div>
 
@@ -332,7 +352,7 @@ export default function FilterSidebar({ onFiltersApplied }: { onFiltersApplied?:
             <RangeInputs
               value={filters.displacement}
               step={0.5}
-              onChange={(range) => commitFilters({ ...filters, displacement: range })}
+              onCommit={(range) => commitFilters({ ...filters, displacement: range })}
             />
             <p className="text-[10px] text-zinc-500 mt-2">Excludes EVs</p>
           </div>
@@ -340,16 +360,4 @@ export default function FilterSidebar({ onFiltersApplied }: { onFiltersApplied?:
       </details>
     </div>
   );
-}
-
-function bucketMatches(
-  active?: { min?: number; max?: number },
-  bucket?: { min?: number; max?: number },
-): boolean {
-  if (!bucket) return false;
-  if (bucket.min != null && active?.min !== bucket.min) return false;
-  if (bucket.max != null && active?.max !== bucket.max) return false;
-  if (bucket.min == null && active?.min != null) return false;
-  if (bucket.max == null && active?.max != null) return false;
-  return bucket.min != null || bucket.max != null;
 }

@@ -9,7 +9,9 @@
   ],
   "functions": {
     "api/**/*.ts": {
-      "includeFiles": "server/data/cars.json"
+      "includeFiles": "server/data/**",
+      "maxDuration": 30,
+      "memory": 1024
     }
   }
 }
