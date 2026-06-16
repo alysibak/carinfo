@@ -11,14 +11,22 @@ router.get('/makes/:make/models', carController.getModelsByMake);
 
 // Search cars with filters
 router.post('/search', carController.searchCars);
-
-// Get car details
-router.get('/:id', carController.getCarById);
+router.get('/search/suggestions', carController.getSearchSuggestions);
 
 // Get comparison data
 router.post('/compare', carController.compareCars);
 
-// Get statistics
+// Get statistics (before /:id to avoid param capture)
 router.get('/stats/overview', carController.getStatistics);
+router.get('/stats/chart-points', carController.getChartPoints);
+
+// Get car dashboard
+router.get('/:id/dashboard', carController.getCarDashboard);
+
+// Get similar / cross-shopped vehicles
+router.get('/:id/similar', carController.getSimilarCars);
+
+// Get car details
+router.get('/:id', carController.getCarById);
 
 export default router;

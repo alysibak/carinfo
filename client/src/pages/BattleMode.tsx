@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { CarSpecs } from '../types/car.types';
 import { useGarageStore } from '../stores/garageStore';
+import { formatMpgForCard, hasNumericValue, UNAVAILABLE_LABEL } from '../utils/dataValue';
 
 export default function BattleMode() {
   const garage = useGarageStore((state) => state.cars);
@@ -42,13 +43,17 @@ export default function BattleMode() {
     let score1 = 0;
     let score2 = 0;
 
-    // Power
-    if (fighter1.engine.horsepower > fighter2.engine.horsepower) score1++;
-    else if (fighter2.engine.horsepower > fighter1.engine.horsepower) score2++;
+    // Power (skip if either lacks data)
+    if (fighter1.engine.horsepower != null && fighter2.engine.horsepower != null) {
+      if (fighter1.engine.horsepower > fighter2.engine.horsepower) score1++;
+      else if (fighter2.engine.horsepower > fighter1.engine.horsepower) score2++;
+    }
 
     // Torque
-    if (fighter1.engine.torque > fighter2.engine.torque) score1++;
-    else if (fighter2.engine.torque > fighter1.engine.torque) score2++;
+    if (fighter1.engine.torque != null && fighter2.engine.torque != null) {
+      if (fighter1.engine.torque > fighter2.engine.torque) score1++;
+      else if (fighter2.engine.torque > fighter1.engine.torque) score2++;
+    }
 
     // MPG
     const mpg1 = fighter1.fuelEconomy.combined || 0;
@@ -56,11 +61,13 @@ export default function BattleMode() {
     if (mpg1 > mpg2) score1++;
     else if (mpg2 > mpg1) score2++;
 
-    // 0-60
-    const zeroToSixty1 = fighter1.performance.zeroToSixty || 999;
-    const zeroToSixty2 = fighter2.performance.zeroToSixty || 999;
-    if (zeroToSixty1 < zeroToSixty2) score1++;
-    else if (zeroToSixty2 < zeroToSixty1) score2++;
+    // 0-60 (skip if both lack data)
+    const zeroToSixty1 = fighter1.performance?.zeroToSixty;
+    const zeroToSixty2 = fighter2.performance?.zeroToSixty;
+    if (zeroToSixty1 != null && zeroToSixty2 != null) {
+      if (zeroToSixty1 < zeroToSixty2) score1++;
+      else if (zeroToSixty2 < zeroToSixty1) score2++;
+    }
 
     // Safety
     const safety1 = fighter1.safetyRating?.overall || 0;
@@ -86,7 +93,7 @@ export default function BattleMode() {
           <h2 className="text-4xl font-black tracking-tighter mb-4">
             BATTLE MODE UNAVAILABLE
           </h2>
-          <p className="text-lg tracking-wider text-zinc-600 mb-8">
+          <p className="text-lg tracking-wider text-zinc-400 mb-8">
             Add at least 2 cars to your garage to start battling
           </p>
           <Link
@@ -103,12 +110,12 @@ export default function BattleMode() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-black border-b border-zinc-900">
+      <div className="sticky top-0 z-40 bg-black border-b border-zinc-900">
         <div className="px-8 py-6">
           <div className="flex items-center justify-between max-w-7xl mx-auto">
             <Link
               to="/garage"
-              className="inline-flex items-center gap-3 text-xs tracking-[0.3em] text-zinc-600 hover:text-white transition-colors group"
+              className="inline-flex items-center gap-3 text-xs tracking-[0.3em] text-zinc-400 hover:text-white transition-colors group"
             >
               <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
@@ -120,14 +127,14 @@ export default function BattleMode() {
               <h1 className="text-2xl md:text-3xl font-black tracking-tighter">
                 BATTLE MODE
               </h1>
-              <p className="text-xs tracking-[0.3em] text-zinc-700 mt-1">
+              <p className="text-xs tracking-[0.3em] text-zinc-300 mt-1">
                 HEAD TO HEAD
               </p>
             </div>
 
             <button
               onClick={resetBattle}
-              className="text-xs tracking-[0.3em] text-zinc-600 hover:text-white transition-colors"
+              className="text-xs tracking-[0.3em] text-zinc-400 hover:text-white transition-colors"
             >
               RESET
             </button>
@@ -135,7 +142,7 @@ export default function BattleMode() {
         </div>
       </div>
 
-      <div className="pt-32 pb-16 px-8">
+      <div className="pt-8 pb-16 px-8">
         {!showResults ? (
           <>
             {/* Selection Phase */}
@@ -148,15 +155,15 @@ export default function BattleMode() {
                   </h2>
 
                   {fighter1 ? (
-                    <div className="bg-zinc-950 border-2 border-red-600 p-8">
-                      <p className="text-xs tracking-widest text-red-600 mb-4">FIGHTER 1</p>
+                    <div className="bg-zinc-950 border-2 border-white p-8">
+                      <p className="text-xs tracking-widest text-white mb-4">FIGHTER 1</p>
                       <h3 className="text-3xl font-black tracking-tight mb-2">
                         {fighter1.make.toUpperCase()}
                       </h3>
                       <p className="text-xl font-light tracking-wider text-zinc-500 mb-4">
                         {fighter1.model}
                       </p>
-                      <p className="text-5xl font-black text-zinc-700 mb-6">
+                      <p className="text-5xl font-black text-zinc-300 mb-6">
                         {fighter1.year}
                       </p>
                       <button
@@ -173,7 +180,7 @@ export default function BattleMode() {
                           key={car.id}
                           onClick={() => setFighter1(car)}
                           disabled={fighter2?.id === car.id}
-                          className={`w-full text-left bg-zinc-950 border border-zinc-900 p-6 hover:border-red-600 transition-all ${
+                          className={`w-full text-left bg-zinc-950 border border-zinc-900 p-6 hover:border-white transition-all ${
                             fighter2?.id === car.id ? 'opacity-30 cursor-not-allowed' : ''
                           }`}
                         >
@@ -186,7 +193,7 @@ export default function BattleMode() {
                                 {car.model}
                               </p>
                             </div>
-                            <p className="text-4xl font-black text-zinc-700">{car.year}</p>
+                            <p className="text-4xl font-black text-zinc-300">{car.year}</p>
                           </div>
                         </button>
                       ))}
@@ -201,15 +208,15 @@ export default function BattleMode() {
                   </h2>
 
                   {fighter2 ? (
-                    <div className="bg-zinc-950 border-2 border-blue-600 p-8">
-                      <p className="text-xs tracking-widest text-blue-600 mb-4">FIGHTER 2</p>
+                    <div className="bg-zinc-950 border-2 border-zinc-600 p-8">
+                      <p className="text-xs tracking-widest text-zinc-400 mb-4">FIGHTER 2</p>
                       <h3 className="text-3xl font-black tracking-tight mb-2">
                         {fighter2.make.toUpperCase()}
                       </h3>
                       <p className="text-xl font-light tracking-wider text-zinc-500 mb-4">
                         {fighter2.model}
                       </p>
-                      <p className="text-5xl font-black text-zinc-700 mb-6">
+                      <p className="text-5xl font-black text-zinc-300 mb-6">
                         {fighter2.year}
                       </p>
                       <button
@@ -226,7 +233,7 @@ export default function BattleMode() {
                           key={car.id}
                           onClick={() => setFighter2(car)}
                           disabled={fighter1?.id === car.id}
-                          className={`w-full text-left bg-zinc-950 border border-zinc-900 p-6 hover:border-blue-600 transition-all ${
+                          className={`w-full text-left bg-zinc-950 border border-zinc-900 p-6 hover:border-zinc-600 transition-all ${
                             fighter1?.id === car.id ? 'opacity-30 cursor-not-allowed' : ''
                           }`}
                         >
@@ -239,7 +246,7 @@ export default function BattleMode() {
                                 {car.model}
                               </p>
                             </div>
-                            <p className="text-4xl font-black text-zinc-700">{car.year}</p>
+                            <p className="text-4xl font-black text-zinc-300">{car.year}</p>
                           </div>
                         </button>
                       ))}
@@ -266,7 +273,7 @@ export default function BattleMode() {
                   <div className="text-center">
                     <div className="grid grid-cols-3 items-center gap-16">
                       <div className="text-right animate-slide-in-left">
-                        <h3 className="text-4xl font-black tracking-tight text-red-600 mb-2">
+                        <h3 className="text-4xl font-black tracking-tight text-white mb-2">
                           {fighter1.make}
                         </h3>
                         <p className="text-2xl font-light tracking-wider text-zinc-500">
@@ -279,7 +286,7 @@ export default function BattleMode() {
                       </div>
 
                       <div className="text-left animate-slide-in-right">
-                        <h3 className="text-4xl font-black tracking-tight text-blue-600 mb-2">
+                        <h3 className="text-4xl font-black tracking-tight text-zinc-400 mb-2">
                           {fighter2.make}
                         </h3>
                         <p className="text-2xl font-light tracking-wider text-zinc-500">
@@ -324,7 +331,7 @@ export default function BattleMode() {
                   <thead>
                     <tr className="border-b border-zinc-900">
                       <th className="p-6 text-left">
-                        <div className="text-red-600">
+                        <div className="text-white">
                           <p className="text-xs tracking-widest mb-2">FIGHTER 1</p>
                           <h3 className="text-2xl font-black tracking-tight">
                             {fighter1!.make} {fighter1!.model}
@@ -334,11 +341,11 @@ export default function BattleMode() {
                           </p>
                         </div>
                       </th>
-                      <th className="p-6 text-center text-xs tracking-[0.3em] text-zinc-700">
+                      <th className="p-6 text-center text-xs tracking-[0.3em] text-zinc-300">
                         CATEGORY
                       </th>
                       <th className="p-6 text-right">
-                        <div className="text-blue-600">
+                        <div className="text-zinc-400">
                           <p className="text-xs tracking-widest mb-2">FIGHTER 2</p>
                           <h3 className="text-2xl font-black tracking-tight">
                             {fighter2!.make} {fighter2!.model}
@@ -351,57 +358,59 @@ export default function BattleMode() {
                     </tr>
                   </thead>
                   <tbody>
-                    {/* Horsepower */}
-                    {(() => {
+                    {/* Horsepower — only when both fighters have data */}
+                    {fighter1!.engine.horsepower != null && fighter2!.engine.horsepower != null && (() => {
                       const result = compareSpec(fighter1!.engine.horsepower, fighter2!.engine.horsepower);
                       return (
                         <tr className="border-b border-zinc-900">
-                          <td className={`p-6 text-2xl font-black ${result === 'winner1' ? 'text-green-500' : result === 'winner2' ? 'text-red-500' : ''}`}>
+                          <td className={`p-6 text-2xl font-black ${result === 'winner1' ? 'text-white' : result === 'winner2' ? 'text-zinc-400' : ''}`}>
                             {fighter1!.engine.horsepower} HP
                           </td>
-                          <td className="p-6 text-center text-xs tracking-widest text-zinc-700">
+                          <td className="p-6 text-center text-xs tracking-widest text-zinc-300">
                             HORSEPOWER
                           </td>
-                          <td className={`p-6 text-right text-2xl font-black ${result === 'winner2' ? 'text-green-500' : result === 'winner1' ? 'text-red-500' : ''}`}>
+                          <td className={`p-6 text-right text-2xl font-black ${result === 'winner2' ? 'text-white' : result === 'winner1' ? 'text-zinc-400' : ''}`}>
                             {fighter2!.engine.horsepower} HP
                           </td>
                         </tr>
                       );
                     })()}
 
-                    {/* Torque */}
+                    {/* Engine size — always available for non-EVs */}
                     {(() => {
-                      const result = compareSpec(fighter1!.engine.torque, fighter2!.engine.torque);
+                      const d1 = fighter1!.engine.displacement ?? 0;
+                      const d2 = fighter2!.engine.displacement ?? 0;
+                      const result = d1 > 0 && d2 > 0 ? compareSpec(d1, d2) : 'tie';
                       return (
                         <tr className="border-b border-zinc-900">
-                          <td className={`p-6 text-2xl font-black ${result === 'winner1' ? 'text-green-500' : result === 'winner2' ? 'text-red-500' : ''}`}>
-                            {fighter1!.engine.torque} LB-FT
+                          <td className={`p-6 text-2xl font-black ${result === 'winner1' ? 'text-white' : result === 'winner2' ? 'text-zinc-400' : ''}`}>
+                            {d1 > 0 ? `${d1}L` : 'EV'}
                           </td>
-                          <td className="p-6 text-center text-xs tracking-widest text-zinc-700">
-                            TORQUE
+                          <td className="p-6 text-center text-xs tracking-widest text-zinc-300">
+                            ENGINE
                           </td>
-                          <td className={`p-6 text-right text-2xl font-black ${result === 'winner2' ? 'text-green-500' : result === 'winner1' ? 'text-red-500' : ''}`}>
-                            {fighter2!.engine.torque} LB-FT
+                          <td className={`p-6 text-right text-2xl font-black ${result === 'winner2' ? 'text-white' : result === 'winner1' ? 'text-zinc-400' : ''}`}>
+                            {d2 > 0 ? `${d2}L` : 'EV'}
                           </td>
                         </tr>
                       );
                     })()}
 
-                    {/* 0-60 */}
-                    {(() => {
-                      const val1 = fighter1!.performance.zeroToSixty || 0;
-                      const val2 = fighter2!.performance.zeroToSixty || 0;
-                      const result = val1 && val2 ? compareSpec(val1, val2, false) : 'tie';
+                    {/* 0-60 — only when both fighters have data */}
+                    {fighter1!.performance?.zeroToSixty != null && fighter2!.performance?.zeroToSixty != null && (() => {
+                      const val1 = fighter1!.performance!.zeroToSixty!;
+                      const val2 = fighter2!.performance!.zeroToSixty!;
+                      const result = compareSpec(val1, val2, false);
                       return (
                         <tr className="border-b border-zinc-900">
-                          <td className={`p-6 text-2xl font-black ${result === 'winner1' ? 'text-green-500' : result === 'winner2' ? 'text-red-500' : ''}`}>
-                            {val1 || 'N/A'}s
+                          <td className={`p-6 text-2xl font-black ${result === 'winner1' ? 'text-white' : result === 'winner2' ? 'text-zinc-400' : ''}`}>
+                            {val1}s
                           </td>
-                          <td className="p-6 text-center text-xs tracking-widest text-zinc-700">
+                          <td className="p-6 text-center text-xs tracking-widest text-zinc-300">
                             0-60 MPH
                           </td>
-                          <td className={`p-6 text-right text-2xl font-black ${result === 'winner2' ? 'text-green-500' : result === 'winner1' ? 'text-red-500' : ''}`}>
-                            {val2 || 'N/A'}s
+                          <td className={`p-6 text-right text-2xl font-black ${result === 'winner2' ? 'text-white' : result === 'winner1' ? 'text-zinc-400' : ''}`}>
+                            {val2}s
                           </td>
                         </tr>
                       );
@@ -409,39 +418,49 @@ export default function BattleMode() {
 
                     {/* MPG */}
                     {(() => {
-                      const val1 = fighter1!.fuelEconomy.combined || 0;
-                      const val2 = fighter2!.fuelEconomy.combined || 0;
-                      const result = compareSpec(val1, val2);
+                      const val1 = fighter1!.fuelEconomy.combined;
+                      const val2 = fighter2!.fuelEconomy.combined;
+                      const display1 = formatMpgForCard(val1);
+                      const display2 = formatMpgForCard(val2);
+                      const result =
+                        hasNumericValue(val1) && hasNumericValue(val2)
+                          ? compareSpec(val1!, val2!)
+                          : 'tie';
                       return (
                         <tr className="border-b border-zinc-900">
-                          <td className={`p-6 text-2xl font-black ${result === 'winner1' ? 'text-green-500' : result === 'winner2' ? 'text-red-500' : ''}`}>
-                            {val1 || 'N/A'} MPG
+                          <td className={`p-6 text-2xl font-black ${result === 'winner1' ? 'text-white' : result === 'winner2' ? 'text-zinc-400' : ''}`}>
+                            {display1} MPG
                           </td>
-                          <td className="p-6 text-center text-xs tracking-widest text-zinc-700">
+                          <td className="p-6 text-center text-xs tracking-widest text-zinc-300">
                             FUEL ECONOMY
                           </td>
-                          <td className={`p-6 text-right text-2xl font-black ${result === 'winner2' ? 'text-green-500' : result === 'winner1' ? 'text-red-500' : ''}`}>
-                            {val2 || 'N/A'} MPG
+                          <td className={`p-6 text-right text-2xl font-black ${result === 'winner2' ? 'text-white' : result === 'winner1' ? 'text-zinc-400' : ''}`}>
+                            {display2} MPG
                           </td>
                         </tr>
                       );
                     })()}
 
-                    {/* Safety */}
-                    {(() => {
-                      const val1 = fighter1!.safetyRating?.overall || 0;
-                      const val2 = fighter2!.safetyRating?.overall || 0;
-                      const result = compareSpec(val1, val2);
+                    {/* Safety — only when at least one fighter is NHTSA-rated */}
+                    {(fighter1!.safetyRating?.overall || fighter2!.safetyRating?.overall) && (() => {
+                      const val1 = fighter1!.safetyRating?.overall;
+                      const val2 = fighter2!.safetyRating?.overall;
+                      const display1 = hasNumericValue(val1) ? `${val1}/5` : UNAVAILABLE_LABEL;
+                      const display2 = hasNumericValue(val2) ? `${val2}/5` : UNAVAILABLE_LABEL;
+                      const result =
+                        hasNumericValue(val1) && hasNumericValue(val2)
+                          ? compareSpec(val1!, val2!)
+                          : 'tie';
                       return (
                         <tr className="border-b border-zinc-900">
-                          <td className={`p-6 text-2xl font-black ${result === 'winner1' ? 'text-green-500' : result === 'winner2' ? 'text-red-500' : ''}`}>
-                            {val1 || 'N/A'}/5
+                          <td className={`p-6 text-2xl font-black ${result === 'winner1' ? 'text-white' : result === 'winner2' ? 'text-zinc-400' : ''}`}>
+                            {display1}
                           </td>
-                          <td className="p-6 text-center text-xs tracking-widest text-zinc-700">
+                          <td className="p-6 text-center text-xs tracking-widest text-zinc-300">
                             SAFETY RATING
                           </td>
-                          <td className={`p-6 text-right text-2xl font-black ${result === 'winner2' ? 'text-green-500' : result === 'winner1' ? 'text-red-500' : ''}`}>
-                            {val2 || 'N/A'}/5
+                          <td className={`p-6 text-right text-2xl font-black ${result === 'winner2' ? 'text-white' : result === 'winner1' ? 'text-zinc-400' : ''}`}>
+                            {display2}
                           </td>
                         </tr>
                       );
@@ -454,13 +473,13 @@ export default function BattleMode() {
                       const result = compareSpec(val1, val2, false);
                       return (
                         <tr>
-                          <td className={`p-6 text-2xl font-black ${result === 'winner1' ? 'text-green-500' : result === 'winner2' ? 'text-red-500' : ''}`}>
+                          <td className={`p-6 text-2xl font-black ${result === 'winner1' ? 'text-white' : result === 'winner2' ? 'text-zinc-400' : ''}`}>
                             ${(val1 / 1000).toFixed(0)}K
                           </td>
-                          <td className="p-6 text-center text-xs tracking-widest text-zinc-700">
-                            MSRP
+                          <td className="p-6 text-center text-xs tracking-widest text-zinc-300">
+                            EST. VALUE
                           </td>
-                          <td className={`p-6 text-right text-2xl font-black ${result === 'winner2' ? 'text-green-500' : result === 'winner1' ? 'text-red-500' : ''}`}>
+                          <td className={`p-6 text-right text-2xl font-black ${result === 'winner2' ? 'text-white' : result === 'winner1' ? 'text-zinc-400' : ''}`}>
                             ${(val2 / 1000).toFixed(0)}K
                           </td>
                         </tr>

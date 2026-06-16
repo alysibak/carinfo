@@ -1,23 +1,71 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import PersonaQuiz, { PersonaResult } from '../components/PersonaQuiz';
+import AboutData from '../components/AboutData';
+import SearchBar from '../components/SearchBar';
+import VehiclePlaceholder from '../components/VehiclePlaceholder';
 import * as api from '../services/api';
+import type { CarFilter, CarSpecs, SearchQuery } from '../types/car.types';
+import { COLLECTIONS } from '../config/collections';
+import {
+  LIFESTYLE_PRESETS,
+  presetToSearchQuery,
+  filtersToSearchQuery,
+} from '../config/browseTaxonomy';
+import { searchQueryToParams } from '../utils/searchParams';
+import { formatPriceShort, formatEngineDetailForCard, formatMpgForCard, formatPowerForCard } from '../utils/dataValue';
+import { formatFuelBadge, usesMpge } from '../utils/fuelDisplay';
+
+interface QuickChip {
+  label: string;
+  filters: CarFilter;
+  sort?: SearchQuery['sort'];
+}
+
+const QUICK_CHIPS: QuickChip[] = [
+  {
+    label: 'Electric & hybrid',
+    filters: { fuelType: ['electric', 'hybrid', 'plug-in hybrid'] },
+    sort: { field: 'year', order: 'desc' },
+  },
+  { label: 'SUVs', filters: { bodyStyle: ['suv'] } },
+  {
+    label: 'Under $20k',
+    filters: { price: { max: 20000 } },
+    sort: { field: 'price', order: 'asc' },
+  },
+  {
+    label: '40+ MPG',
+    filters: { fuelEconomy: { min: 40 } },
+    sort: { field: 'fuelEconomy', order: 'desc' },
+  },
+  { label: 'Trucks', filters: { bodyStyle: ['truck'] } },
+];
 
 export default function Landing() {
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [showQuiz, setShowQuiz] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const [stats, setStats] = useState<{
     totalCars: number;
     totalMakes: number;
     yearRange: { min: number; max: number };
   } | null>(null);
-  const [statsError, setStatsError] = useState<string | null>(null);
+  const [collectionCounts, setCollectionCounts] = useState<Record<string, number>>({});
+  const [heroQuery, setHeroQuery] = useState('');
+  const [featured, setFeatured] = useState<CarSpecs | null>(null);
   const navigate = useNavigate();
+
+  const handleHeroSearch = (q: string) => {
+    const params = new URLSearchParams();
+    if (q.trim()) {
+      params.set('q', q.trim());
+      params.set('sort', 'relevance');
+    }
+    navigate(`/home?${params.toString()}`);
+  };
 
   const handleQuizComplete = (persona: PersonaResult) => {
     setShowQuiz(false);
-
-    // Navigate to smart search with persona filters applied
     const params = new URLSearchParams({
       persona: persona.type,
       minPrice: persona.budget.min.toString(),
@@ -25,324 +73,484 @@ export default function Landing() {
       priority: persona.priority,
       usage: persona.usage,
     });
-
     navigate(`/smart-search?${params.toString()}`);
   };
 
   useEffect(() => {
-    const loadStats = async () => {
-      try {
-        const data = await api.getStatistics();
-        if (data && typeof data.totalCars === 'number') {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    api
+      .getStatistics()
+      .then((data) => {
+        if (data?.totalCars) {
           setStats({
             totalCars: data.totalCars,
             totalMakes: data.totalMakes,
             yearRange: data.yearRange,
           });
         }
-      } catch (e) {
-        console.error('Failed to load landing stats:', e);
-        setStatsError('Live stats unavailable');
-      }
-    };
-    loadStats();
+      })
+      .catch(() => {});
+
+    api
+      .searchCars({
+        filters: { bodyStyle: ['suv'], fuelEconomy: { min: 26 }, year: { min: 2021 } },
+        sort: { field: 'fuelEconomy', order: 'desc' },
+        limit: 30,
+        offset: 0,
+      })
+      .then((res) => {
+        const populated = res.results.filter(
+          (c) => (c.price?.msrp ?? 0) > 0 && (c.fuelEconomy?.combined ?? 0) > 0,
+        );
+        const pool = (populated.length ? populated : res.results).slice(0, 10);
+        if (pool.length) setFeatured(pool[Math.floor(Math.random() * pool.length)]);
+      })
+      .catch(() => {});
+
+    Promise.all(
+      Object.values(COLLECTIONS).map(async (c) => {
+        try {
+          const res = await api.searchCars({ ...c.query, limit: 1, offset: 0 });
+          return [c.id, res.total] as const;
+        } catch {
+          return [c.id, -1] as const;
+        }
+      }),
+    ).then((entries) => {
+      setCollectionCounts(Object.fromEntries(entries.filter(([, n]) => n >= 0)));
+    });
   }, []);
 
-  const smartCollections = [
-    {
-      id: 'goldilocks',
-      title: 'THE GOLDILOCKS ZONE',
-      subtitle: 'Just Right for Most People',
-      count: '~800',
-      filters: 'price=25000-35000&mpg=30&safety=4',
-    },
-    {
-      id: 'gas-savers',
-      title: 'BEST GAS SAVERS',
-      subtitle: 'Fill Up Less, Save More',
-      count: '~500',
-      filters: 'mpg=35&price=0-40000',
-    },
-    {
-      id: 'luxury-less',
-      title: 'LUXURY FOR LESS',
-      subtitle: 'Premium Badge, Smart Price',
-      count: '~400',
-      filters: 'brands=luxury&price=0-50000&year=2015',
-    },
-    {
-      id: 'family-fortress',
-      title: 'FAMILY FORTRESS',
-      subtitle: 'Protect What Matters Most',
-      count: '~300',
-      filters: 'safety=5&seats=6&type=suv,minivan',
-    },
-    {
-      id: 'weekend-warriors',
-      title: 'WEEKEND WARRIORS',
-      subtitle: 'Live for the Drive',
-      count: '~350',
-      filters: 'hp=300&type=coupe,convertible&zeroToSixty=6',
-    },
-    {
-      id: 'work-horses',
-      title: 'WORK HORSES',
-      subtitle: 'Built to Work, Priced to Own',
-      count: '~250',
-      filters: 'type=truck&drivetrain=4WD,AWD',
-    },
-    {
-      id: 'future-proof',
-      title: 'FUTURE-PROOF',
-      subtitle: 'Drive Tomorrow, Today',
-      count: '~100',
-      filters: 'fuel=electric,hybrid&year=2018',
-    },
+  const browseCards = [
+    { to: '/explore/purpose', title: 'By need', desc: 'Daily driver, family, commute, work', icon: <IconCompass /> },
+    { to: '/explore/body-style', title: 'By type', desc: 'Sedan, SUV, truck, coupe…', icon: <IconCar /> },
+    { to: '/explore/budget', title: 'By budget', desc: 'Under $15k through $60k+', icon: <IconTag /> },
+    { to: '/explore/era', title: 'By era', desc: '2020s, 2010s, classics', icon: <IconCalendar /> },
   ];
 
-  const categories = [
-    {
-      id: 'body-style',
-      title: 'BY TYPE',
-      subtitle: 'Choose Your Form',
-      description: 'SEDAN • SUV • COUPE • TRUCK',
-    },
-    {
-      id: 'brand',
-      title: 'BY MAKE',
-      subtitle: 'Select Your Legacy',
-      description: 'FERRARI • PORSCHE • LAMBORGHINI • MERCEDES',
-    },
-    {
-      id: 'purpose',
-      title: 'BY PURPOSE',
-      subtitle: 'Define Your Drive',
-      description: 'PERFORMANCE • LUXURY • DAILY • OFF-ROAD',
-    },
-    {
-      id: 'era',
-      title: 'BY ERA',
-      subtitle: 'Select Your Decade',
-      description: '1990s • 2000s • 2010s • 2020s',
-    },
-  ];
+  const vehicles = stats ? stats.totalCars.toLocaleString() : '28,000+';
+  const makes = stats ? String(stats.totalMakes) : '89';
+  const years = stats ? `${stats.yearRange.min}–${stats.yearRange.max}` : '1995–2026';
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Persona Quiz Modal */}
       {showQuiz && <PersonaQuiz onComplete={handleQuizComplete} />}
 
-      {/* Hero Section - Full Screen */}
-      <section className="h-screen flex flex-col items-center justify-center relative overflow-hidden border-b border-zinc-800">
-        <div className="absolute inset-0 bg-gradient-to-b from-black via-zinc-900 to-black opacity-50" />
+      {/* Top nav */}
+      <header
+        className={`sticky top-0 z-40 transition-colors duration-300 ${
+          scrolled
+            ? 'border-b border-zinc-800/80 bg-black/70 backdrop-blur-xl'
+            : 'border-b border-transparent'
+        }`}
+      >
+        <div className="page-wrap py-4 flex items-center justify-between gap-4">
+          <Link to="/" className="flex items-center gap-2.5">
+            <span className="grid place-items-center w-8 h-8 rounded-lg bg-white text-black">
+              <IconGauge />
+            </span>
+            <span className="text-lg font-semibold tracking-tight">CarInfo</span>
+          </Link>
+          <nav className="hidden sm:flex items-center gap-1 text-sm">
+            <Link className="px-3 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors" to="/browse">Browse</Link>
+            <Link className="px-3 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors" to="/home">Search</Link>
+            <Link className="px-3 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors" to="/value-matrix">Matrix</Link>
+            <Link className="px-3 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors" to="/garage">Garage</Link>
+          </nav>
+          <button type="button" onClick={() => setShowQuiz(true)} className="btn-primary !py-2">
+            Find my car
+          </button>
+        </div>
+      </header>
 
-        <div className="relative z-10 text-center px-8 max-w-6xl">
-          <div className="mb-8 overflow-hidden">
-            <h1 className="text-8xl md:text-9xl font-black tracking-tighter mb-4 animate-fade-in">
-              CARINFO
-            </h1>
-          </div>
-
-          <div className="overflow-hidden">
-            <p className="text-xl md:text-2xl font-light tracking-[0.3em] text-zinc-400 mb-12 animate-slide-up uppercase">
-              {stats
-                ? `${stats.totalCars.toLocaleString()} Vehicles • ${stats.totalMakes} Manufacturers • ${stats.yearRange.min}-${stats.yearRange.max}`
-                : 'Thousands of Vehicles • Multiple Manufacturers • 1990s–2020s'}
-            </p>
-            {statsError && (
-              <p className="text-xs tracking-[0.3em] text-zinc-600 mb-4 uppercase">
-                {statsError}
+      {/* Hero */}
+      <section className="relative mesh-hero border-b border-zinc-800/80 overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 hero-grid" aria-hidden />
+        <div className="relative page-wrap py-16 md:py-24">
+          <div className="grid lg:grid-cols-2 gap-12 xl:gap-16 items-center">
+            {/* Left column */}
+            <div>
+              <p className="eyebrow-pill animate-slide-up" style={{ animationDelay: '40ms' }}>
+                <span className="inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-white" aria-hidden />
+                EPA-verified specs · honest price estimates
               </p>
-            )}
-          </div>
 
-          <div className="h-px w-64 bg-gradient-to-r from-transparent via-white to-transparent mx-auto mb-12 animate-scale-in" />
-
-          <div className="overflow-hidden mb-12">
-            <p className="text-sm md:text-base font-light tracking-widest text-zinc-500 animate-slide-up-delay uppercase">
-              An Exclusive Automotive Archive
-            </p>
-          </div>
-
-          {/* Quick Action Buttons */}
-          <div className="flex items-center justify-center gap-4 flex-wrap">
-            <button
-              onClick={() => setShowQuiz(true)}
-              className="group relative inline-flex items-center gap-4 px-12 py-6 border border-white hover:bg-white hover:text-black transition-all duration-300 animate-fade-in"
-            >
-              <span className="text-sm tracking-[0.3em] font-bold">FIND MY PERFECT CAR</span>
-              <svg className="w-6 h-6 group-hover:translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </button>
-
-            <Link
-              to="/value-matrix"
-              className="group relative inline-flex items-center gap-4 px-12 py-6 border border-zinc-700 hover:border-white hover:bg-zinc-900 transition-all duration-300 animate-fade-in"
-            >
-              <span className="text-sm tracking-[0.3em] font-bold">📊 VALUE MATRIX</span>
-            </Link>
-
-            <Link
-              to="/garage"
-              className="group relative inline-flex items-center gap-4 px-12 py-6 border border-zinc-700 hover:border-white hover:bg-zinc-900 transition-all duration-300 animate-fade-in"
-            >
-              <span className="text-sm tracking-[0.3em] font-bold">🏁 MY GARAGE</span>
-            </Link>
-          </div>
-        </div>
-
-        {/* Scroll Indicator */}
-        <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 animate-bounce">
-          <div className="w-px h-16 bg-gradient-to-b from-white to-transparent" />
-        </div>
-      </section>
-
-      {/* Smart Collections Section */}
-      <section className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden border-b border-zinc-800 py-24">
-        <div className="relative z-10 w-full max-w-7xl px-8">
-          {/* Section Header */}
-          <div className="text-center mb-16">
-            <h2 className="text-5xl md:text-6xl font-black tracking-tighter mb-4">
-              CURATED COLLECTIONS
-            </h2>
-            <p className="text-sm tracking-[0.3em] text-zinc-600 uppercase">
-              Hand-picked selections for every need
-            </p>
-          </div>
-
-          {/* Collections Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-px bg-zinc-900">
-            {smartCollections.map((collection, index) => (
-              <Link
-                key={collection.id}
-                to={`/collection/${collection.id}`}
-                className="group bg-black p-8 hover:bg-zinc-950 transition-all duration-300 border border-zinc-900 hover:border-zinc-700"
-                onMouseEnter={() => setHoveredIndex(100 + index)}
-                onMouseLeave={() => setHoveredIndex(null)}
+              <h1
+                className="font-display text-5xl md:text-6xl xl:text-7xl text-white leading-[1.04] tracking-tight mt-6 mb-6 animate-slide-up"
+                style={{ animationDelay: '90ms' }}
               >
-                {/* Count Badge */}
-                <div className="mb-6">
-                  <span className="text-xs tracking-[0.3em] text-zinc-700 group-hover:text-zinc-500 transition-colors">
-                    {collection.count} VEHICLES
-                  </span>
+                Find the right car,{' '}
+                <span className="text-gradient italic">backed by real data</span>
+              </h1>
+
+              <p
+                className="text-lg text-zinc-400 leading-relaxed mb-8 max-w-xl animate-slide-up"
+                style={{ animationDelay: '150ms' }}
+              >
+                Search {vehicles} vehicles from {years}. Compare fuel economy, estimated value,
+                and safety — without the noise.
+              </p>
+
+              <div className="max-w-xl animate-slide-up" style={{ animationDelay: '200ms' }}>
+                <SearchBar
+                  value={heroQuery}
+                  onChange={setHeroQuery}
+                  onSubmit={handleHeroSearch}
+                  size="large"
+                />
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-zinc-500 mr-1">Popular:</span>
+                  {QUICK_CHIPS.map((chip) => (
+                    <Link
+                      key={chip.label}
+                      to={`/home?${searchQueryToParams(
+                        filtersToSearchQuery(chip.filters, chip.sort),
+                        1,
+                      ).toString()}`}
+                      className="chip"
+                    >
+                      {chip.label}
+                    </Link>
+                  ))}
                 </div>
+              </div>
 
-                {/* Title */}
-                <h3 className="text-xl font-black tracking-tight mb-3 group-hover:tracking-wide transition-all">
-                  {collection.title}
-                </h3>
+              <div
+                className="flex flex-wrap gap-3 mt-8 animate-slide-up"
+                style={{ animationDelay: '260ms' }}
+              >
+                <button type="button" onClick={() => setShowQuiz(true)} className="btn-primary">
+                  <IconSparkle /> Find my car
+                </button>
+                <Link to="/browse" className="btn-secondary">Browse categories</Link>
+                <Link to="/value-matrix" className="btn-secondary">Value matrix</Link>
+              </div>
 
-                {/* Subtitle */}
-                <p className="text-sm tracking-wider text-zinc-500 group-hover:text-zinc-400 transition-colors mb-6">
-                  {collection.subtitle}
-                </p>
+              {/* Stat band */}
+              <div
+                className="mt-10 flex items-center gap-4 sm:gap-6 border-t border-zinc-800/70 pt-6 animate-slide-up"
+                style={{ animationDelay: '320ms' }}
+              >
+                <Stat value={vehicles} label="Vehicles" />
+                <span className="h-10 w-px bg-zinc-800" />
+                <Stat value={makes} label="Makes" />
+                <span className="h-10 w-px bg-zinc-800" />
+                <Stat value={years} label="Model years" />
+              </div>
+            </div>
 
-                {/* Divider */}
-                <div className="h-px bg-zinc-900 group-hover:bg-zinc-700 transition-colors mb-6" />
-
-                {/* View Arrow */}
-                <div className="flex items-center gap-2 text-xs tracking-widest text-zinc-700 group-hover:text-white transition-all">
-                  <span>EXPLORE</span>
-                  <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
+            {/* Right column — featured spotlight */}
+            <div className="relative hidden lg:block">
+              {featured ? (
+                <FeaturedCard car={featured} />
+              ) : (
+                <div className="relative surface-card-glass overflow-hidden animate-pulse">
+                  <div className="aspect-[16/10] bg-zinc-900/60" />
+                  <div className="p-6 space-y-4">
+                    <div className="h-6 w-2/3 rounded bg-zinc-900" />
+                    <div className="h-4 w-1/2 rounded bg-zinc-900" />
+                    <div className="grid grid-cols-2 gap-4 pt-2">
+                      <div className="h-12 rounded bg-zinc-900" />
+                      <div className="h-12 rounded bg-zinc-900" />
+                    </div>
+                  </div>
                 </div>
-              </Link>
-            ))}
+              )}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Category Selection - Full Screen Sections */}
-      {categories.map((category, index) => (
+      {/* About the data */}
+      <section className="page-wrap pt-12">
+        <AboutData />
+      </section>
+
+      {/* Shop by need */}
+      <section className="page-wrap py-16 border-b border-zinc-900">
+        <SectionHeader
+          kicker="Start here"
+          title="Start with how you'll use it"
+          subtitle="One tap opens a filtered search you can refine."
+        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {LIFESTYLE_PRESETS.map((preset) => (
+            <Link
+              key={preset.id}
+              to={`/home?${searchQueryToParams(presetToSearchQuery(preset), 1).toString()}`}
+              className="surface-card-hover hover-lift p-5 group flex flex-col"
+            >
+              <p className="font-semibold text-white">{preset.label}</p>
+              <p className="text-xs text-zinc-500 mt-1.5 leading-relaxed flex-1">{preset.description}</p>
+              <span className="mt-4 inline-flex items-center gap-1 text-xs text-zinc-600 group-hover:text-white transition-colors">
+                Explore <span className="transition-transform group-hover:translate-x-0.5">→</span>
+              </span>
+            </Link>
+          ))}
+        </div>
         <Link
-          key={category.id}
-          to={`/explore/${category.id}`}
-          className="block"
-          onMouseEnter={() => setHoveredIndex(index)}
-          onMouseLeave={() => setHoveredIndex(null)}
+          to="/browse"
+          className="inline-block mt-6 text-sm text-zinc-400 hover:text-white transition-colors"
         >
-          <section className="h-screen flex items-center justify-center relative overflow-hidden border-b border-zinc-800 group cursor-pointer transition-all duration-700">
-            {/* Background Effect */}
-            <div
-              className={`absolute inset-0 bg-white transition-opacity duration-700 ${
-                hoveredIndex === index ? 'opacity-5' : 'opacity-0'
-              }`}
-            />
-
-            {/* Grid Pattern Background */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute inset-0" style={{
-                backgroundImage: 'linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px)',
-                backgroundSize: '100px 100px'
-              }} />
-            </div>
-
-            {/* Content */}
-            <div className="relative z-10 text-center px-8 max-w-6xl">
-              {/* Index Number */}
-              <div className="mb-6 overflow-hidden">
-                <p className="text-9xl md:text-[12rem] font-black text-zinc-900 group-hover:text-zinc-800 transition-colors duration-700 leading-none">
-                  {String(index + 1).padStart(2, '0')}
-                </p>
-              </div>
-
-              {/* Title */}
-              <div className="overflow-hidden mb-4">
-                <h2 className="text-6xl md:text-8xl font-black tracking-tighter group-hover:tracking-wider transition-all duration-700">
-                  {category.title}
-                </h2>
-              </div>
-
-              {/* Subtitle */}
-              <div className="overflow-hidden mb-8">
-                <p className="text-2xl md:text-3xl font-light tracking-[0.2em] text-zinc-400 group-hover:text-white transition-colors duration-700 uppercase">
-                  {category.subtitle}
-                </p>
-              </div>
-
-              {/* Divider */}
-              <div className={`h-px w-96 mx-auto mb-8 transition-all duration-700 ${
-                hoveredIndex === index
-                  ? 'bg-gradient-to-r from-transparent via-white to-transparent'
-                  : 'bg-gradient-to-r from-transparent via-zinc-700 to-transparent'
-              }`} />
-
-              {/* Description */}
-              <div className="overflow-hidden">
-                <p className="text-sm md:text-base font-light tracking-[0.3em] text-zinc-600 group-hover:text-zinc-400 transition-colors duration-700 uppercase">
-                  {category.description}
-                </p>
-              </div>
-
-              {/* Enter Arrow */}
-              <div className="mt-12">
-                <div className={`inline-flex items-center gap-4 text-xs tracking-[0.3em] transition-all duration-700 ${
-                  hoveredIndex === index ? 'text-white translate-x-4' : 'text-zinc-700 translate-x-0'
-                }`}>
-                  <span>ENTER</span>
-                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </section>
+          See all browse options →
         </Link>
-      ))}
+      </section>
 
-      {/* Footer Section */}
-      <section className="h-screen flex items-center justify-center bg-black">
-        <div className="text-center px-8">
-          <p className="text-xs tracking-[0.5em] text-zinc-700 mb-4 uppercase">
-            Built with precision
-          </p>
-          <p className="text-2xl font-light text-zinc-800">
-            © 2025 CARINFO
-          </p>
+      {/* Browse grid */}
+      <section className="page-wrap py-16 border-b border-zinc-900">
+        <SectionHeader kicker="Explore" title="Browse the archive" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {browseCards.map((card) => (
+            <Link key={card.to} to={card.to} className="surface-card-hover hover-lift p-6 group">
+              <div className="w-10 h-10 rounded-xl border border-zinc-800 bg-zinc-900/60 flex items-center justify-center text-zinc-300 group-hover:text-white group-hover:border-zinc-600 transition-colors mb-4">
+                {card.icon}
+              </div>
+              <p className="font-semibold text-white mb-1 flex items-center justify-between">
+                {card.title}
+                <span className="text-zinc-600 group-hover:text-white transition-all group-hover:translate-x-0.5">→</span>
+              </p>
+              <p className="text-sm text-zinc-500">{card.desc}</p>
+            </Link>
+          ))}
         </div>
       </section>
+
+      {/* Collections */}
+      <section className="page-wrap py-16">
+        <SectionHeader
+          kicker="Hand-picked"
+          title="Curated collections"
+          subtitle="Hand-picked filters for common goals."
+        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {Object.values(COLLECTIONS).map((c) => (
+            <Link
+              key={c.id}
+              to={`/collection/${c.id}`}
+              className="surface-card-hover hover-lift p-5 group flex flex-col"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[11px] px-2 py-1 rounded-full border border-zinc-800 text-zinc-400">
+                  {collectionCounts[c.id] != null
+                    ? `${collectionCounts[c.id].toLocaleString()} vehicles`
+                    : 'Curated set'}
+                </span>
+                <span className="text-zinc-600 group-hover:text-white transition-all group-hover:translate-x-0.5">→</span>
+              </div>
+              <p className="font-semibold text-white">{c.title}</p>
+              <p className="text-sm text-zinc-500 mt-1">{c.subtitle}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <footer className="border-t border-zinc-900">
+        <div className="page-wrap py-12 flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-sm text-zinc-500">
+          <div className="flex items-center gap-2.5">
+            <span className="grid place-items-center w-7 h-7 rounded-md bg-white text-black">
+              <IconGauge />
+            </span>
+            <span className="font-semibold text-zinc-300">CarInfo</span>
+          </div>
+          <p className="text-center">
+            © {new Date().getFullYear()} CarInfo · EPA fuel economy · NHTSA safety · estimated market values
+          </p>
+        </div>
+      </footer>
     </div>
+  );
+}
+
+function FeaturedCard({ car }: { car: CarSpecs }) {
+  const mpgLabel = usesMpge(car.engine.fuelType) ? 'MPGe' : 'MPG';
+  const combined = car.fuelEconomy?.combined ?? 0;
+  const mpgValue = formatMpgForCard(car.fuelEconomy?.combined);
+  const mpgPct = Math.max(6, Math.min(100, (combined / 60) * 100));
+  const priceValue = formatPriceShort(car.price?.msrp, car.price?.isEstimated);
+  const engineValue = formatEngineDetailForCard(car.engine);
+  const powerValue = formatPowerForCard(car.engine.horsepower);
+  const overall = car.safetyRating?.overall;
+
+  return (
+    <div className="relative animate-fade-in">
+      <Link
+        to={`/car/${car.id}`}
+        className="relative block surface-card-glass overflow-hidden group hover-lift"
+      >
+        <div className="relative aspect-[16/10] border-b border-zinc-800/80">
+          <VehiclePlaceholder car={car} />
+          <span className="absolute left-4 top-4 z-10 text-[10px] tracking-[0.2em] uppercase text-white/90 border border-white/20 bg-black/40 backdrop-blur px-2.5 py-1 rounded-full">
+            Spotlight
+          </span>
+        </div>
+        <div className="p-6">
+          <p className="font-display text-3xl text-zinc-300 leading-none">{car.year}</p>
+          <h3 className="text-xl font-semibold text-white mt-1.5">
+            {car.make} {car.model}
+          </h3>
+          <div className="flex flex-wrap gap-1.5 mt-3">
+            <Tag>{car.bodyStyle}</Tag>
+            <Tag>{formatFuelBadge(car.engine.fuelType)}</Tag>
+            <Tag>{car.driveType}</Tag>
+          </div>
+
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-4 mt-6">
+            <div>
+              <dt className="kicker">Horsepower</dt>
+              <dd className="mt-1 text-2xl font-display text-white">{powerValue}</dd>
+              <p className="text-[11px] text-zinc-500 mt-1">EPA rated, when on file</p>
+            </div>
+            <div>
+              <dt className="kicker">Combined</dt>
+              <dd className="mt-1 flex items-baseline gap-1">
+                <span className="text-2xl font-display text-white">{mpgValue}</span>
+                <span className="text-xs text-zinc-500">{mpgLabel}</span>
+              </dd>
+              <div className="meter-track mt-2">
+                <div className="meter-fill animate-grow-x" style={{ width: `${mpgPct}%` }} />
+              </div>
+            </div>
+            <div>
+              <dt className="kicker">Drivetrain</dt>
+              <dd className="mt-1 text-sm font-semibold text-white">
+                {car.driveType} · {engineValue}
+              </dd>
+            </div>
+            <div>
+              <dt className="kicker">Safety</dt>
+              <dd className="mt-1">
+                {overall ? (
+                  <Stars rating={overall} />
+                ) : (
+                  <span className="text-xs text-zinc-500 italic">Not rated</span>
+                )}
+              </dd>
+            </div>
+          </dl>
+          <p className="mt-4 text-xs text-zinc-500">
+            Est. value {priceValue} · Ontario baseline
+          </p>
+
+          <span className="mt-6 inline-flex items-center gap-1 text-sm font-medium text-zinc-400 group-hover:text-white transition-colors">
+            View full breakdown
+            <span className="transition-transform group-hover:translate-x-0.5">→</span>
+          </span>
+        </div>
+      </Link>
+    </div>
+  );
+}
+
+function SectionHeader({
+  kicker,
+  title,
+  subtitle,
+}: {
+  kicker: string;
+  title: string;
+  subtitle?: string;
+}) {
+  return (
+    <div className="mb-8 flex flex-col gap-2">
+      <span className="kicker">{kicker}</span>
+      <h2 className="section-title">{title}</h2>
+      {subtitle && <p className="text-sm text-zinc-400 max-w-xl">{subtitle}</p>}
+    </div>
+  );
+}
+
+function Stat({ value, label }: { value: string; label: string }) {
+  return (
+    <div>
+      <p className="text-2xl md:text-3xl font-display text-white leading-none">{value}</p>
+      <p className="kicker !text-[10px] mt-2">{label}</p>
+    </div>
+  );
+}
+
+function Tag({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-zinc-900 text-zinc-400 border border-zinc-800 capitalize">
+      {children}
+    </span>
+  );
+}
+
+function Stars({ rating }: { rating: number }) {
+  return (
+    <span className="inline-flex gap-0.5" aria-label={`${Math.round(rating)} out of 5 stars`}>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <svg
+          key={i}
+          viewBox="0 0 20 20"
+          className={`w-3.5 h-3.5 ${i <= Math.round(rating) ? 'text-white' : 'text-zinc-700'}`}
+          fill="currentColor"
+          aria-hidden
+        >
+          <path d="M10 1.6l2.5 5.2 5.7.8-4.1 4 1 5.7L10 14.9 4.9 17.3l1-5.7-4.1-4 5.7-.8z" />
+        </svg>
+      ))}
+    </span>
+  );
+}
+
+function IconGauge() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
+      <path strokeLinecap="round" d="M4 18a8 8 0 1 1 16 0" />
+      <path strokeLinecap="round" d="M12 14l3.5-3.5" />
+    </svg>
+  );
+}
+
+function IconSparkle() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor" aria-hidden>
+      <path d="M12 2l1.8 5.6L19 9l-5.2 1.4L12 16l-1.8-5.6L5 9l5.2-1.4z" />
+    </svg>
+  );
+}
+
+function IconCompass() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinejoin="round" aria-hidden>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M15.5 8.5l-2 5-5 2 2-5z" />
+    </svg>
+  );
+}
+
+function IconCar() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M4 17v-3l1.8-4.2A2 2 0 0 1 7.6 8.6h8.8a2 2 0 0 1 1.8 1.2L20 14v3" />
+      <path d="M3 17h18" />
+      <circle cx="7.5" cy="17" r="1.6" />
+      <circle cx="16.5" cy="17" r="1.6" />
+    </svg>
+  );
+}
+
+function IconTag() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M3.5 11.5l8-8 8.5 1 1 8.5-8 8z" />
+      <circle cx="15" cy="9" r="1.4" />
+    </svg>
+  );
+}
+
+function IconCalendar() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
+      <path d="M3.5 9.5h17M8 3.5v3M16 3.5v3" />
+    </svg>
   );
 }

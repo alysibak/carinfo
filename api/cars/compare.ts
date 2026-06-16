@@ -29,8 +29,8 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ success: false, error: 'Maximum 5 cars can be compared' });
     }
 
-    const cars = carService.getCarsByIds(ids);
-    res.status(200).json({ success: true, data: cars });
+    const { cars, notFound } = carService.getCarsByIds(ids);
+    res.status(200).json({ success: true, data: cars, notFound });
   } catch (error) {
     console.error('Compare error:', error);
     res.status(500).json({ success: false, error: 'Failed to compare cars' });

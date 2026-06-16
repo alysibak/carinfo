@@ -1,554 +1,624 @@
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import * as api from '../services/api';
-import type { CarSpecs, SearchQuery } from '../types/car.types';
-import { getCarImageUrl } from '../utils/carImages';
+import type { CarDashboard, CarSpecs } from '../types/car.types';
+import { displayListingSubtitle } from '../utils/trimLabel';
+import {
+  formatCurrency,
+  formatCurrencyRange,
+  hasNumericValue,
+  NHTSA_CHIP_UNAVAILABLE,
+  SAFETY_UNAVAILABLE_NOTE,
+} from '../utils/dataValue';
+import { CURRENCY_SECTION_NOTE } from '../utils/currency';
 import { useCarStore } from '../stores/carStore';
 import { useGarageStore } from '../stores/garageStore';
 import TCOCalculator from '../components/TCOCalculator';
-import MarketIntelligence from '../components/MarketIntelligence';
-import { predictZeroToSixty } from '../utils/marketIntelligence';
-import { useAllCars } from '../hooks/useAllCars';
+import { ExpandableSection, InfoTip } from '../components/ui';
+import ValuationLinks from '../components/ValuationLinks';
+import VehiclePlaceholder from '../components/VehiclePlaceholder';
+import GlanceRow from '../components/GlanceRow';
+import KeySpecs from '../components/KeySpecs';
+import SimilarCars from '../components/SimilarCars';
+import { DataRow } from '../components/DataValue';
+import { efficiencyUnit } from '../utils/fuelLabels';
+import { formatFuelBadge, formatPowertrainLabel } from '../utils/fuelDisplay';
+import { efficiencySecondaryLine, formatKwhPer100KmFromMi } from '../utils/fuelEconomyUnits';
+import { ghgFraming, phevModes, tailpipeEmissionsNote, type PhevModes } from '../utils/epaContent';
+
+function Subheading({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[10px] tracking-[0.25em] text-zinc-500 uppercase pt-4 pb-2 border-b border-zinc-900">
+      {children}
+    </p>
+  );
+}
+
+function FuelBar({
+  label,
+  value,
+  max,
+  secondary,
+}: {
+  label: string;
+  value: number | undefined;
+  max: number;
+  secondary?: string;
+}) {
+  if (!hasNumericValue(value)) return null;
+  const pct = Math.min(100, (value! / max) * 100);
+  return (
+    <div className="py-3 border-b border-zinc-900 last:border-b-0">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[10px] tracking-[0.25em] text-zinc-400 uppercase">{label}</span>
+        <div className="text-right">
+          <span className="text-sm font-bold text-white">{Math.round(value!)}</span>
+          {secondary && <p className="text-[10px] text-zinc-500 mt-0.5">{secondary}</p>}
+        </div>
+      </div>
+      <div className="w-full bg-zinc-900 h-1">
+        <div className="bg-white h-1 transition-all duration-700" style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function SafetyRow({ label, score }: { label: string; score: number | undefined }) {
+  if (!hasNumericValue(score, { allowZero: false })) return null;
+  return (
+    <div className="flex items-center justify-between py-3 border-b border-zinc-900 last:border-b-0">
+      <span className="text-[10px] tracking-[0.25em] text-zinc-400 uppercase">{label}</span>
+      <div className="flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <span key={star} className={`w-2 h-2 ${star <= score! ? 'bg-white' : 'bg-zinc-800'}`} />
+        ))}
+        <span className="ml-2 text-sm font-bold text-white">{score}/5</span>
+      </div>
+    </div>
+  );
+}
+
+/** Row pairing a technical figure with a plain-language line (+ optional "?" tooltip). */
+function InsightRow({
+  label,
+  value,
+  plain,
+  tip,
+}: {
+  label: string;
+  value: string;
+  plain?: string;
+  tip?: React.ReactNode;
+}) {
+  return (
+    <div className="py-3 border-b border-zinc-900 last:border-b-0">
+      <div className="flex items-baseline justify-between gap-4">
+        <span className="text-[10px] tracking-[0.25em] text-zinc-400 uppercase">
+          {tip ? <InfoTip label={label}>{tip}</InfoTip> : label}
+        </span>
+        <span className="text-sm font-bold text-white text-right">{value}</span>
+      </div>
+      {plain && <p className="text-[11px] text-zinc-500 leading-relaxed mt-1">{plain}</p>}
+    </div>
+  );
+}
+
+/** Plug-in hybrids run in two modes — show both rather than a confusing blended figure. */
+function PhevDualModeBlock({ modes }: { modes: PhevModes }) {
+  return (
+    <div className="py-3 space-y-4">
+      {hasNumericValue(modes.electricMpge) && (
+        <div>
+          <div className="flex items-baseline justify-between gap-4">
+            <span className="text-[10px] tracking-[0.25em] text-zinc-300 uppercase">Electric mode</span>
+            <span className="text-sm font-bold text-white">
+              {modes.electricMpge} MPGe
+              {hasNumericValue(modes.electricRangeMi) ? ` · ${modes.electricRangeMi} mi` : ''}
+            </span>
+          </div>
+          <p className="text-[11px] text-zinc-500 leading-relaxed mt-1">
+            Drives on battery power
+            {hasNumericValue(modes.electricRangeMi) ? ` for about ${modes.electricRangeMi} miles` : ''} after a full
+            charge — like an EV — then switches to gas automatically.
+          </p>
+        </div>
+      )}
+      {hasNumericValue(modes.gasMpg) && (
+        <div>
+          <div className="flex items-baseline justify-between gap-4">
+            <span className="text-[10px] tracking-[0.25em] text-zinc-300 uppercase">Gas mode</span>
+            <span className="text-sm font-bold text-white">{modes.gasMpg} MPG</span>
+          </div>
+          <p className="text-[11px] text-zinc-500 leading-relaxed mt-1">
+            Once the battery is used up it runs like a regular hybrid on gasoline — no plugging in required.
+          </p>
+        </div>
+      )}
+      {hasNumericValue(modes.chargeL2Hours) && (
+        <p className="text-[11px] text-zinc-500 leading-relaxed">
+          Recharges in about {modes.chargeL2Hours} h on a 240V Level 2 charger.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function hasFuelEconomyData(car: CarSpecs): boolean {
+  return (
+    hasNumericValue(car.fuelEconomy.city) ||
+    hasNumericValue(car.fuelEconomy.highway) ||
+    hasNumericValue(car.fuelEconomy.combined)
+  );
+}
 
 export default function CarDetail() {
   const { id } = useParams<{ id: string }>();
-  const [car, setCar] = useState<CarSpecs | null>(null);
-  const { cars: allCars } = useAllCars();
+  const [dashboard, setDashboard] = useState<CarDashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'specs' | 'history'>('specs');
   const [showTCO, setShowTCO] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
   const { addCarToComparison, comparedCars } = useCarStore();
   const addToGarage = useGarageStore((s) => s.add);
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadCar();
+    if (!id) return;
+    setDashboard(null);
+    setError(null);
+    setLoading(true);
+    api
+      .getCarDashboard(id)
+      .then(setDashboard)
+      .catch(() => setError('Unable to load vehicle dashboard.'))
+      .finally(() => setLoading(false));
   }, [id]);
 
-  const loadCar = async () => {
-    if (!id) return;
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await api.getCarById(id);
-      setCar(data);
-    } catch (error) {
-      console.error('Failed to load car by id:', error);
-      // If direct lookup by ID fails (e.g. slug like toyota-camry-1999-base),
-      // fall back to a best-effort slug-based search.
-      await tryLoadCarBySlug(id);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const tryLoadCarBySlug = async (slug: string) => {
-    const parts = slug.split('-').filter(Boolean);
-    const yearIndex = parts.findIndex((p) => /^\d{4}$/.test(p));
-    if (yearIndex === -1) {
-      setError('Unable to load this vehicle right now.');
-      setCar(null);
-      return;
-    }
-
-    const year = parseInt(parts[yearIndex], 10);
-    const makePart = parts[0] || '';
-    const modelParts = parts.slice(1, yearIndex);
-
-    const toTitle = (s: string) =>
-      s
-        .split(' ')
-        .map((w) => (w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : ''))
-        .join(' ')
-        .trim();
-
-    const make = toTitle(makePart.replace(/_/g, ' '));
-    const model = toTitle(modelParts.join(' ').replace(/_/g, ' '));
-
-    const filters: SearchQuery['filters'] = {
-      year: { min: year, max: year },
-    };
-    if (make) filters.make = [make];
-    if (model) filters.model = [model];
-
-    try {
-      const results = await api.searchCars({
-        filters,
-        limit: 10,
-      });
-      if (results.results.length > 0) {
-        setCar(results.results[0]);
-        setError(null);
-      } else {
-        setError('We could not find a matching vehicle in the database.');
-        setCar(null);
-      }
-    } catch (e) {
-      console.error('Slug fallback search failed:', e);
-      setError('Unable to load this vehicle right now.');
-      setCar(null);
-    }
-  };
-
-  const handleAddToComparison = () => {
-    if (car) {
-      addCarToComparison(car);
-      navigate('/compare');
-    }
-  };
-
-  const handleAddToGarage = () => {
-    if (!car) return;
-    const res = addToGarage(car);
-    if (!res.ok && res.reason === 'duplicate') {
-      alert('This car is already in your garage!');
-      return;
-    }
-    alert('Added to your Dream Garage!');
-  };
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 2500);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <svg className="animate-spin h-16 w-16 text-blue-500 mx-auto mb-4" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-          </svg>
-          <div className="text-slate-400 text-xl">Loading vehicle...</div>
+          <div className="inline-block w-12 h-12 border-2 border-zinc-800 border-t-white animate-spin mb-4" />
+          <p className="text-xs tracking-[0.3em] text-zinc-300 uppercase">Loading dossier</p>
         </div>
       </div>
     );
   }
 
-  if (!car) {
+  if (!dashboard) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 flex items-center justify-center">
-        <div className="text-center px-4">
-          <div className="text-4xl mb-4">😕</div>
-          <div className="text-slate-200 text-2xl mb-2">We couldn&apos;t find that vehicle.</div>
-          {error && <div className="text-slate-500 mb-4">{error}</div>}
-          <button
-            onClick={() => window.history.back()}
-            className="inline-flex items-center px-6 py-3 rounded-lg bg-slate-800 text-white hover:bg-slate-700 transition"
+      <div className="min-h-screen bg-black flex items-center justify-center text-center px-4">
+        <div>
+          <p className="text-2xl font-black tracking-tighter text-white mb-4 uppercase">Not found</p>
+          {error && <p className="text-xs tracking-widest text-zinc-400 mb-6 uppercase">{error}</p>}
+          <Link
+            to="/home"
+            className="inline-block px-8 py-3 bg-white text-black text-xs font-black tracking-[0.3em] uppercase hover:bg-zinc-200 transition-colors"
           >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Go Back
-          </button>
+            Search archive
+          </Link>
         </div>
       </div>
     );
   }
 
-  // Generate timeline based on year
-  const timeline = [];
-  const baseYear = car.productionYears?.start || car.year - 5;
-  for (let year = baseYear; year <= car.year; year += 3) {
-    timeline.push({
-      year,
-      event: year === car.year ? 'Current Model Year' : year === baseYear ? 'Generation Launch' : 'Mid-Cycle Refresh',
-      description: year === car.year ? 'Latest technology and features' : year === baseYear ? 'All-new design and platform' : 'Updated styling and tech',
-    });
-  }
+  const { car, ownership, evCharge } = dashboard;
+  const { marketValue, annualCost, resaleImpact, derivedComparison, assumptions, warnings, practicalityNote } =
+    ownership;
+  const isEv = car.engine.fuelType === 'electric';
+  const isHydrogen = car.engine.fuelType === 'hydrogen';
+  const efficiencyLabel = efficiencyUnit(car);
+  const fuelMax = Math.max(
+    car.fuelEconomy.city ?? 0,
+    car.fuelEconomy.highway ?? 0,
+    car.fuelEconomy.combined ?? 0,
+    1,
+  );
+  const isInCompare = comparedCars.some((c) => c.id === car.id);
+  const trimLabel = displayListingSubtitle(car);
+  const hasSafety = hasNumericValue(car.safetyRating?.overall, { allowZero: false });
+  const isPhev = car.engine.fuelType === 'plug-in hybrid';
+  const phev = phevModes(car);
+  const ghg = ghgFraming(car);
+  const hasFuelData = hasFuelEconomyData(car);
+  const hasEconomics = annualCost.total != null;
+  const safetyScores = hasSafety
+    ? [car.safetyRating!.overall, car.safetyRating!.frontal, car.safetyRating!.side, car.safetyRating!.rollover].filter(
+        (s) => hasNumericValue(s, { allowZero: false }),
+      )
+    : [];
+
+  const fuelSummary = hasFuelData
+    ? `Combined ${Math.round(car.fuelEconomy.combined ?? 0)} · expand for breakdown`
+    : 'EPA fuel economy not on file';
+
+  const valueSummary =
+    annualCost.total != null
+      ? `${formatCurrencyRange(annualCost.totalLow, annualCost.totalHigh)}/yr · expand for breakdown`
+      : 'Ownership estimates limited for this configuration';
+
+  const handleAddToComparison = () => {
+    addCarToComparison(car);
+    setToast('Added to compare');
+  };
+
+  const handleAddToGarage = () => {
+    const res = addToGarage(car);
+    if (!res.ok && res.reason === 'duplicate') {
+      setToast('Already in garage');
+      return;
+    }
+    setToast('Added to garage');
+  };
+
+  const scrollToSimilar = () => {
+    document.getElementById('similar')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900">
-      {/* Hero Section */}
-      <div className="relative h-screen">
-        {/* Massive Hero Image */}
-        <div className="absolute inset-0">
-          <img
-            src={getCarImageUrl(car.make, car.model, car.year)}
-            alt={`${car.year} ${car.make} ${car.model}`}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-950/50 to-slate-950"></div>
+    <div className="min-h-screen bg-black text-white">
+      {toast && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-white text-black text-xs font-black tracking-[0.25em] uppercase">
+          {toast}
         </div>
+      )}
 
-        {/* Content Overlay */}
-        <div className="relative h-full flex flex-col">
-          {/* Back Button */}
-          <div className="container mx-auto px-4 pt-8">
+      <div className="sticky top-0 z-40 bg-black border-b border-zinc-900">
+        <div className="max-w-7xl mx-auto px-6 md:px-8 py-5 flex items-center justify-between gap-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-3 text-xs tracking-[0.3em] text-zinc-400 hover:text-white transition-colors group"
+          >
+            <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
+            </svg>
+            BACK
+          </button>
+          <div className="text-center min-w-0">
+            <p className="text-[10px] tracking-[0.3em] text-zinc-300 uppercase">Vehicle dossier</p>
+            <p className="text-sm font-black tracking-tight truncate">
+              {car.year} {car.make} {car.model}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => window.history.back()}
-              className="inline-flex items-center text-white/80 hover:text-white transition group bg-slate-900/50 backdrop-blur-sm px-4 py-2 rounded-lg"
+              onClick={handleAddToGarage}
+              className="hidden sm:block px-4 py-2 text-[10px] font-black tracking-[0.2em] uppercase border border-zinc-700 hover:border-white hover:text-white text-zinc-400 transition-colors"
             >
-              <svg className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back
+              + Garage
+            </button>
+            <button
+              onClick={handleAddToComparison}
+              className={`px-4 py-2 text-[10px] font-black tracking-[0.2em] uppercase border transition-colors ${
+                isInCompare
+                  ? 'border-white text-white bg-zinc-900'
+                  : 'bg-white text-black border-white hover:bg-zinc-200'
+              }`}
+            >
+              {isInCompare ? 'In compare ✓' : '+ Compare'}
             </button>
           </div>
+        </div>
+      </div>
 
-          {/* Hero Content */}
-          <div className="flex-1 flex items-end">
-            <div className="container mx-auto px-4 pb-20">
-              <div className="animate-slide-up">
-                <div className="flex items-center space-x-3 mb-4">
-                  <span className="bg-blue-600 px-4 py-2 rounded-full text-white font-bold text-lg">
-                    {car.year}
+      {isHydrogen && (
+        <div className="border-b border-amber-900/50 bg-amber-950/20">
+          <div className="page-wrap py-4 text-sm text-amber-200/90 leading-relaxed">
+            <strong className="text-amber-100">Hydrogen fuel cell (FCEV).</strong> MPGe is from EPA tests — not
+            gasoline MPG. Fuel costs here do not reflect Ontario H₂ availability.
+          </div>
+        </div>
+      )}
+
+      <div className="border-b border-zinc-900">
+        <div className="max-w-7xl mx-auto px-6 md:px-8 py-10 md:py-12">
+          <div className="grid grid-cols-1 md:grid-cols-[minmax(0,340px)_1fr] gap-8 md:gap-12 items-start">
+            <div className="aspect-[4/3] border border-zinc-900 overflow-hidden">
+              <VehiclePlaceholder car={car} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-6xl md:text-7xl font-black text-zinc-800 leading-none mb-3">{car.year}</p>
+              <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-1">{car.make.toUpperCase()}</h1>
+              <p className="text-xl md:text-2xl font-light tracking-wider text-zinc-400 mb-4">{car.model}</p>
+              {trimLabel && (
+                <p className="text-xs tracking-[0.25em] text-zinc-300 uppercase mb-4">{trimLabel}</p>
+              )}
+              <div className="flex flex-wrap gap-2 mb-6">
+                {car.bodyStyle && (
+                  <span className="px-3 py-1 border border-zinc-800 text-[10px] tracking-[0.2em] text-zinc-400 uppercase">
+                    {car.bodyStyle}
                   </span>
-                  <span className="bg-slate-800/80 backdrop-blur-sm px-4 py-2 rounded-full text-white">
+                )}
+                {car.driveType && (
+                  <span className="px-3 py-1 border border-zinc-800 text-[10px] tracking-[0.2em] text-zinc-400 uppercase">
+                    {car.driveType}
+                  </span>
+                )}
+                {car.engine.fuelType && (
+                  <span className="px-3 py-1 border border-zinc-800 text-[10px] tracking-[0.2em] text-zinc-400 uppercase">
+                    {formatFuelBadge(car.engine.fuelType)}
+                  </span>
+                )}
+                {formatPowertrainLabel(car.engine.fuelType) && (
+                  <span className="px-3 py-1 border border-zinc-700 text-[10px] tracking-[0.2em] text-zinc-300 uppercase">
+                    {formatPowertrainLabel(car.engine.fuelType)}
+                  </span>
+                )}
+                {hasNumericValue(car.engine.horsepower) && (
+                  <span className="px-3 py-1 border border-zinc-700 text-[10px] tracking-[0.2em] text-zinc-200 uppercase">
+                    {Math.round(car.engine.horsepower!)} hp
+                  </span>
+                )}
+                {ghg && (
+                  <span
+                    className="px-3 py-1 border border-zinc-700 text-[10px] tracking-[0.2em] text-zinc-300 uppercase"
+                    title={`EPA greenhouse-gas score ${ghg.score}/10 — ${ghg.plain.toLowerCase()}`}
+                  >
+                    Emissions {ghg.score}/10
+                  </span>
+                )}
+                {hasSafety ? (
+                  <span className="px-3 py-1 border border-zinc-700 text-[10px] tracking-[0.2em] text-zinc-300 uppercase">
+                    NHTSA {car.safetyRating!.overall}/5
+                  </span>
+                ) : (
+                  <span className="px-3 py-1 border border-dashed border-zinc-800 text-[10px] tracking-[0.2em] text-zinc-600 uppercase">
+                    {NHTSA_CHIP_UNAVAILABLE}
+                  </span>
+                )}
+                {car.countryOfOrigin && (
+                  <span className="px-3 py-1 border border-zinc-800 text-[10px] tracking-[0.2em] text-zinc-500 uppercase">
                     {car.countryOfOrigin}
                   </span>
-                </div>
-
-                <h1 className="text-7xl font-bold text-white mb-6">
-                  {car.make} {car.model}
-                </h1>
-
-                {car.trim && (
-                  <p className="text-3xl text-slate-300 mb-8">{car.trim}</p>
                 )}
-
-                {/* Quick Stats */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl">
-                  <div className="bg-slate-900/80 backdrop-blur-sm p-6 rounded-xl border border-slate-700">
-                    <div className="text-4xl font-bold text-blue-400 mb-1">{car.engine.horsepower}</div>
-                    <div className="text-slate-400">Horsepower</div>
+              </div>
+              {car.ownershipProfile && (
+                <div className="mb-6 p-4 border border-zinc-800 bg-zinc-950/60 rounded-lg">
+                  <p className="text-[10px] tracking-[0.25em] text-zinc-500 uppercase mb-2">Ownership profile</p>
+                  <p className="text-lg font-semibold text-white mb-3">{car.ownershipProfile.label}</p>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {car.ownershipProfile.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-2.5 py-1 text-[10px] tracking-wide text-zinc-300 bg-zinc-900 border border-zinc-800 rounded-full"
+                      >
+                        {tag}
+                      </span>
+                    ))}
                   </div>
-                  <div className="bg-slate-900/80 backdrop-blur-sm p-6 rounded-xl border border-slate-700">
-                    <div className="text-4xl font-bold text-purple-400 mb-1">
-                      {(() => {
-                        const prediction = predictZeroToSixty(car);
-                        return prediction.predicted;
-                      })()}
-                    </div>
-                    <div className="text-slate-400 flex items-center gap-2">
-                      <span>0-60 mph (s)</span>
-                      {(() => {
-                        const prediction = predictZeroToSixty(car);
-                        if (prediction.method === 'predicted') {
-                          return (
-                            <span
-                              className="text-xs px-2 py-0.5 rounded border"
-                              style={{
-                                borderColor: prediction.confidence === 'high' ? '#10b981' : prediction.confidence === 'medium' ? '#f59e0b' : '#ef4444',
-                                color: prediction.confidence === 'high' ? '#10b981' : prediction.confidence === 'medium' ? '#f59e0b' : '#ef4444',
-                              }}
-                            >
-                              EST
-                            </span>
-                          );
-                        }
-                        return null;
-                      })()}
-                    </div>
-                  </div>
-                  <div className="bg-slate-900/80 backdrop-blur-sm p-6 rounded-xl border border-slate-700">
-                    <div className="text-4xl font-bold text-green-400 mb-1">
-                      {car.fuelEconomy.combined || 'N/A'}
-                    </div>
-                    <div className="text-slate-400">MPG Combined</div>
-                  </div>
-                  <div className="bg-slate-900/80 backdrop-blur-sm p-6 rounded-xl border border-slate-700">
-                    <div className="text-4xl font-bold text-cyan-400 mb-1">
-                      {car.price?.msrp ? `$${(car.price.msrp / 1000).toFixed(0)}k` : 'N/A'}
-                    </div>
-                    <div className="text-slate-400">MSRP</div>
-                  </div>
+                  <p className="text-[10px] tracking-[0.2em] text-zinc-500 uppercase mb-2">Best for</p>
+                  <ul className="text-sm text-zinc-400 space-y-1">
+                    {car.ownershipProfile.bestFor.map((item) => (
+                      <li key={item}>• {item}</li>
+                    ))}
+                  </ul>
                 </div>
-
-                {/* CTA Buttons */}
-                <div className="flex items-center space-x-4 mt-8 flex-wrap gap-4">
-                  <button
-                    onClick={handleAddToGarage}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all transform hover:scale-105 shadow-lg shadow-purple-500/50"
-                  >
-                    🏁 Add to Garage
-                  </button>
-                  <button
-                    onClick={handleAddToComparison}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all transform hover:scale-105 shadow-lg shadow-blue-500/50"
-                  >
-                    Add to Comparison
-                  </button>
-                  <button
-                    onClick={() => setShowTCO(true)}
-                    className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all transform hover:scale-105 shadow-lg shadow-green-500/50"
-                  >
-                    Calculate TCO
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('specs')}
-                    className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all border border-slate-700"
-                  >
-                    View Full Specs
-                  </button>
-                </div>
+              )}
+              <ValuationLinks
+                compact
+                assumptions={assumptions}
+                derivedComparison={derivedComparison}
+                warnings={warnings}
+                practicalityNote={practicalityNote}
+              />
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <button
+                  onClick={handleAddToComparison}
+                  className={`px-6 py-3 text-[10px] font-black tracking-[0.25em] uppercase transition-colors ${
+                    isInCompare
+                      ? 'border border-white text-white bg-zinc-900'
+                      : 'bg-white text-black hover:bg-zinc-200'
+                  }`}
+                >
+                  {isInCompare ? 'In compare ✓' : 'Add to compare'}
+                </button>
+                <button
+                  onClick={scrollToSimilar}
+                  className="px-4 py-3 text-[10px] font-black tracking-[0.25em] uppercase text-zinc-400 hover:text-white transition-colors"
+                >
+                  See similar ↓
+                </button>
               </div>
             </div>
           </div>
-
-          {/* Scroll Indicator */}
-          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-            <svg className="w-8 h-8 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-            </svg>
-          </div>
         </div>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-sm border-b border-slate-700">
-        <div className="container mx-auto px-4">
-          <div className="flex space-x-8">
-            {[
-              { id: 'specs', label: 'Specifications', icon: '📊' },
-              { id: 'history', label: 'Vehicle History', icon: '📅' },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`px-6 py-4 font-semibold transition-all border-b-4 ${
-                  activeTab === tab.id
-                    ? 'text-blue-400 border-blue-400'
-                    : 'text-slate-400 border-transparent hover:text-white'
-                }`}
-              >
-                <span className="mr-2">{tab.icon}</span>
-                {tab.label}
-              </button>
+      <GlanceRow dashboard={dashboard} />
+
+      <KeySpecs dashboard={dashboard} />
+
+      <div className="sm:hidden border-b border-zinc-900 px-6 py-4 flex gap-2">
+        <button
+          onClick={handleAddToGarage}
+          className="flex-1 py-3 bg-white text-black text-[10px] font-black tracking-[0.2em] uppercase"
+        >
+          + Garage
+        </button>
+        <button
+          onClick={() => setShowTCO(true)}
+          className="flex-1 py-3 border border-zinc-700 text-[10px] font-black tracking-[0.2em] uppercase text-zinc-400"
+        >
+          TCO calc
+        </button>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 md:px-8 py-10">
+        <div className="space-y-px">
+          <ExpandableSection
+            title="Fuel economy & safety"
+            summary={`EPA test cycle · ${fuelSummary}`}
+            defaultOpen
+          >
+            {hasFuelData ? (
+              <>
+                {isPhev && phev ? (
+                  <>
+                    <Subheading>Plug-in hybrid — two ways to drive</Subheading>
+                    <PhevDualModeBlock modes={phev} />
+                  </>
+                ) : (
+                  <>
+                    <FuelBar
+                      label={`City (${efficiencyLabel})`}
+                      value={car.fuelEconomy.city}
+                      max={fuelMax}
+                      secondary={efficiencySecondaryLine(car.fuelEconomy.city, efficiencyLabel)}
+                    />
+                    <FuelBar
+                      label={`Highway (${efficiencyLabel})`}
+                      value={car.fuelEconomy.highway}
+                      max={fuelMax}
+                      secondary={efficiencySecondaryLine(car.fuelEconomy.highway, efficiencyLabel)}
+                    />
+                    <FuelBar
+                      label={`Combined (${efficiencyLabel})`}
+                      value={car.fuelEconomy.combined}
+                      max={fuelMax}
+                      secondary={efficiencySecondaryLine(car.fuelEconomy.combined, efficiencyLabel)}
+                    />
+                  </>
+                )}
+                {car.epa?.co2 != null && (
+                  <DataRow label="CO₂ emissions" value={`${car.epa.co2} g/mi`} allowZero />
+                )}
+                {tailpipeEmissionsNote(car) && (
+                  <p className="text-xs text-zinc-400 leading-relaxed py-2">{tailpipeEmissionsNote(car)}</p>
+                )}
+                {ghg && (
+                  <InsightRow
+                    label="Emissions score"
+                    value={`${ghg.score}/10`}
+                    plain={`${ghg.plain} (higher is cleaner).`}
+                    tip="EPA’s greenhouse-gas score, 1–10. Higher means lower CO₂ per mile — a quick read on how clean the tailpipe is."
+                  />
+                )}
+                {isEv && evCharge && (
+                  <>
+                    {hasNumericValue(evCharge.rangeMiles) && (
+                      <DataRow label="EPA range" value={`${Math.round(evCharge.rangeMiles!)} mi`} />
+                    )}
+                    {hasNumericValue(evCharge.kWhPer100Mi) && (
+                      <DataRow
+                        label="Consumption"
+                        value={`${evCharge.kWhPer100Mi} kWh/100mi · ${formatKwhPer100KmFromMi(evCharge.kWhPer100Mi!)}`}
+                      />
+                    )}
+                    {hasNumericValue(evCharge.charge240Hours) && (
+                      <InsightRow
+                        label="Home charge (240V)"
+                        value={`~${evCharge.charge240Hours} h`}
+                        plain={`About ${evCharge.charge240Hours} hours to recharge from low on a 240V Level 2 home charger. Public DC fast chargers, where supported, are much quicker.`}
+                      />
+                    )}
+                  </>
+                )}
+              </>
+            ) : (
+              <p className="text-xs text-zinc-500 leading-relaxed py-4">
+                EPA fuel economy figures are not on file for this configuration.
+              </p>
+            )}
+            {hasSafety && safetyScores.length > 0 ? (
+              <>
+                <Subheading>NHTSA crash tests</Subheading>
+                <SafetyRow label="Overall" score={car.safetyRating!.overall} />
+                <SafetyRow label="Frontal" score={car.safetyRating!.frontal} />
+                <SafetyRow label="Side" score={car.safetyRating!.side} />
+                <SafetyRow label="Rollover" score={car.safetyRating!.rollover} />
+              </>
+            ) : (
+              <>
+                <Subheading>Safety</Subheading>
+                <p className="text-xs text-zinc-500 leading-relaxed py-2">{SAFETY_UNAVAILABLE_NOTE}</p>
+              </>
+            )}
+          </ExpandableSection>
+
+          <ExpandableSection title="Value & ownership cost" summary={valueSummary}>
+            <p className="text-[10px] text-zinc-600 leading-relaxed pb-3">{CURRENCY_SECTION_NOTE}</p>
+            <Subheading>Current market value</Subheading>
+            <DataRow label="Est. value range" value={formatCurrencyRange(marketValue.low, marketValue.high)} />
+            {marketValue.batteryHealth && (
+              <>
+                <DataRow label="Battery health (est.)" value={marketValue.batteryHealth.label} />
+                <DataRow label="Pack note" value={marketValue.batteryHealth.chemistryNote} />
+              </>
+            )}
+            {marketValue.conditionBands?.map((band) => (
+              <DataRow key={band.label} label={band.label} value={formatCurrencyRange(band.low, band.high)} />
             ))}
-          </div>
-        </div>
-      </div>
 
-      {/* Tab Content */}
-      <div className="container mx-auto px-4 py-16">
-        {activeTab === 'specs' && (
-          <div className="animate-fade-in">
-            <h2 className="text-4xl font-bold text-white mb-12">Complete Specifications</h2>
+            {hasEconomics ? (
+              <>
+                <Subheading>Annual running cost</Subheading>
+                {annualCost.energy != null && (
+                  <DataRow label="Fuel / energy" value={formatCurrency(annualCost.energy, true)} />
+                )}
+                <DataRow label="Insurance" value={formatCurrency(annualCost.insurance, true)} />
+                <DataRow label="Maintenance" value={formatCurrency(annualCost.maintenance, true)} />
+                <DataRow label="Tires" value={formatCurrency(annualCost.tires, true)} />
+                <DataRow label="Registration" value={formatCurrency(annualCost.registration, true)} />
+                <DataRow
+                  label="Total per year"
+                  value={formatCurrencyRange(annualCost.totalLow, annualCost.totalHigh)}
+                />
 
-            {/* Market Intelligence */}
-            {allCars.length > 0 && (
-              <MarketIntelligence car={car} allCars={allCars} />
+                <Subheading>Resale projection</Subheading>
+                <p className="text-xs text-zinc-500 leading-relaxed py-2">{resaleImpact.note}</p>
+                <DataRow
+                  label="Projected resale (5 yr)"
+                  value={formatCurrencyRange(
+                    resaleImpact.projectedResale5Year.low,
+                    resaleImpact.projectedResale5Year.high,
+                  )}
+                />
+                <DataRow
+                  label="Est. value loss (5 yr)"
+                  value={formatCurrencyRange(
+                    resaleImpact.estimatedLoss5Year.low,
+                    resaleImpact.estimatedLoss5Year.high,
+                  )}
+                />
+
+                {ownership.tco5Year && (
+                  <>
+                    <Subheading>5-year lifecycle</Subheading>
+                    <p className="text-xs text-zinc-500 leading-relaxed py-2">{ownership.tco5Year.disclaimer}</p>
+                    <DataRow
+                      label={ownership.tco5Year.mode === 'operating' ? 'Annual running cost' : '5-year total'}
+                      value={formatCurrencyRange(ownership.tco5Year.low, ownership.tco5Year.high)}
+                    />
+                  </>
+                )}
+              </>
+            ) : (
+              <p className="text-xs text-zinc-500 leading-relaxed py-4 border-t border-zinc-900 mt-4">
+                Full ownership cost estimates are not available for this configuration
+                {isHydrogen ? ' (hydrogen fuel costs vary too widely to model reliably)' : ''}.
+                Market value range above is still shown where the model can anchor it.
+              </p>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Engine */}
-              <div className="bg-slate-800 rounded-xl p-8 border border-slate-700">
-                <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
-                  <svg className="w-8 h-8 mr-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                  Engine & Performance
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between py-3 border-b border-slate-700">
-                    <span className="text-slate-400">Configuration</span>
-                    <span className="text-white font-semibold">{car.engine.configuration}</span>
-                  </div>
-                  <div className="flex justify-between py-3 border-b border-slate-700">
-                    <span className="text-slate-400">Displacement</span>
-                    <span className="text-white font-semibold">{car.engine.displacement}L</span>
-                  </div>
-                  <div className="flex justify-between py-3 border-b border-slate-700">
-                    <span className="text-slate-400">Horsepower</span>
-                    <span className="text-white font-semibold">{car.engine.horsepower} HP</span>
-                  </div>
-                  <div className="flex justify-between py-3 border-b border-slate-700">
-                    <span className="text-slate-400">Torque</span>
-                    <span className="text-white font-semibold">{car.engine.torque} lb-ft</span>
-                  </div>
-                  <div className="flex justify-between py-3 border-b border-slate-700">
-                    <span className="text-slate-400">Fuel Type</span>
-                    <span className="text-white font-semibold capitalize">{car.engine.fuelType}</span>
-                  </div>
-                  <div className="flex justify-between py-3 border-b border-slate-700">
-                    <span className="text-slate-400">0-60 mph</span>
-                    <span className="text-white font-semibold flex items-center gap-2">
-                      {(() => {
-                        const prediction = predictZeroToSixty(car);
-                        return (
-                          <>
-                            {prediction.predicted}s
-                            {prediction.method === 'predicted' && (
-                              <span
-                                className="text-xs px-2 py-0.5 rounded border font-bold"
-                                style={{
-                                  borderColor: prediction.confidence === 'high' ? '#10b981' : prediction.confidence === 'medium' ? '#f59e0b' : '#ef4444',
-                                  color: prediction.confidence === 'high' ? '#10b981' : prediction.confidence === 'medium' ? '#f59e0b' : '#ef4444',
-                                }}
-                                title={`Estimated based on power-to-weight ratio (${prediction.confidence} confidence)`}
-                              >
-                                EST
-                              </span>
-                            )}
-                          </>
-                        );
-                      })()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-3 border-b border-slate-700">
-                    <span className="text-slate-400">Top Speed</span>
-                    <span className="text-white font-semibold">{car.performance.topSpeed || 'N/A'} mph</span>
-                  </div>
-                  <div className="flex justify-between py-3">
-                    <span className="text-slate-400">Quarter Mile</span>
-                    <span className="text-white font-semibold">{car.performance.quarterMile || 'N/A'}s</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Drivetrain */}
-              <div className="bg-slate-800 rounded-xl p-8 border border-slate-700">
-                <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
-                  <svg className="w-8 h-8 mr-3 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  Drivetrain & Efficiency
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between py-3 border-b border-slate-700">
-                    <span className="text-slate-400">Transmission</span>
-                    <span className="text-white font-semibold capitalize">{car.transmission.speeds}-speed {car.transmission.type}</span>
-                  </div>
-                  <div className="flex justify-between py-3 border-b border-slate-700">
-                    <span className="text-slate-400">Drive Type</span>
-                    <span className="text-white font-semibold">{car.driveType}</span>
-                  </div>
-                  <div className="flex justify-between py-3 border-b border-slate-700">
-                    <span className="text-slate-400">MPG City</span>
-                    <span className="text-white font-semibold">{car.fuelEconomy.city || 'N/A'}</span>
-                  </div>
-                  <div className="flex justify-between py-3 border-b border-slate-700">
-                    <span className="text-slate-400">MPG Highway</span>
-                    <span className="text-white font-semibold">{car.fuelEconomy.highway || 'N/A'}</span>
-                  </div>
-                  <div className="flex justify-between py-3">
-                    <span className="text-slate-400">MPG Combined</span>
-                    <span className="text-white font-semibold">{car.fuelEconomy.combined || 'N/A'}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Dimensions */}
-              <div className="bg-slate-800 rounded-xl p-8 border border-slate-700">
-                <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
-                  <svg className="w-8 h-8 mr-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                  </svg>
-                  Dimensions & Weight
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between py-3 border-b border-slate-700">
-                    <span className="text-slate-400">Length</span>
-                    <span className="text-white font-semibold">{car.dimensions.length}"</span>
-                  </div>
-                  <div className="flex justify-between py-3 border-b border-slate-700">
-                    <span className="text-slate-400">Width</span>
-                    <span className="text-white font-semibold">{car.dimensions.width}"</span>
-                  </div>
-                  <div className="flex justify-between py-3 border-b border-slate-700">
-                    <span className="text-slate-400">Height</span>
-                    <span className="text-white font-semibold">{car.dimensions.height}"</span>
-                  </div>
-                  <div className="flex justify-between py-3 border-b border-slate-700">
-                    <span className="text-slate-400">Wheelbase</span>
-                    <span className="text-white font-semibold">{car.dimensions.wheelbase}"</span>
-                  </div>
-                  <div className="flex justify-between py-3">
-                    <span className="text-slate-400">Curb Weight</span>
-                    <span className="text-white font-semibold">{car.dimensions.curbWeight.toLocaleString()} lbs</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Safety & Pricing */}
-              <div className="bg-slate-800 rounded-xl p-8 border border-slate-700">
-                <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
-                  <svg className="w-8 h-8 mr-3 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  Safety & Value
-                </h3>
-                <div className="space-y-4">
-                  {car.safetyRating && (
-                    <>
-                      <div className="flex justify-between py-3 border-b border-slate-700">
-                        <span className="text-slate-400">Overall Safety</span>
-                        <span className="text-yellow-400 text-xl">{'⭐'.repeat(car.safetyRating.overall || 0)}</span>
-                      </div>
-                      {car.safetyRating.frontal && (
-                        <div className="flex justify-between py-3 border-b border-slate-700">
-                          <span className="text-slate-400">Frontal Crash</span>
-                          <span className="text-yellow-400 text-xl">{'⭐'.repeat(car.safetyRating.frontal)}</span>
-                        </div>
-                      )}
-                    </>
-                  )}
-                  {car.price?.msrp && (
-                    <div className="flex justify-between py-3 pt-6 border-t-2 border-slate-600">
-                      <span className="text-slate-400 text-lg">MSRP</span>
-                      <span className="text-green-400 font-bold text-2xl">${car.price.msrp.toLocaleString()}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'history' && (
-          <div className="animate-fade-in">
-            <h2 className="text-4xl font-bold text-white mb-4">Vehicle History & Evolution</h2>
-            <p className="text-sm text-slate-500 mb-12 italic">Illustrative timeline — not sourced from historical records.</p>
-
-            {/* Timeline */}
-            <div className="relative">
-              {/* Timeline Line */}
-              <div className="absolute left-8 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-600 via-purple-600 to-pink-600"></div>
-
-              {/* Timeline Items */}
-              <div className="space-y-12 pl-24">
-                {timeline.map((item, index) => (
-                  <div key={index} className="relative animate-slide-up" style={{ animationDelay: `${index * 100}ms` }}>
-                    {/* Timeline Dot */}
-                    <div className="absolute -left-[4.5rem] top-0 w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center border-4 border-slate-900 shadow-lg">
-                      <span className="text-white font-bold">{item.year}</span>
-                    </div>
-
-                    {/* Content */}
-                    <div className="bg-slate-800 rounded-xl p-8 border border-slate-700 hover:border-blue-500 transition-all">
-                      <h3 className="text-2xl font-bold text-white mb-3">{item.event}</h3>
-                      <p className="text-slate-400 text-lg">{item.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
+            <button
+              onClick={() => setShowTCO(true)}
+              className="mt-6 w-full py-3 border border-zinc-700 text-[10px] font-black tracking-[0.25em] uppercase text-zinc-400 hover:border-white hover:text-white transition-colors"
+            >
+              Open TCO calculator
+            </button>
+          </ExpandableSection>
+        </div>
       </div>
 
-      {/* Floating Comparison Bar */}
-      {comparedCars.length > 0 && (
-        <div className="fixed bottom-8 right-8 bg-slate-900 border-2 border-blue-500 rounded-xl p-4 shadow-2xl shadow-blue-500/50 animate-scale-in">
-          <div className="flex items-center space-x-4">
-            <div className="text-white">
-              <div className="font-bold">{comparedCars.length} cars selected</div>
-              <div className="text-sm text-slate-400">Ready to compare</div>
-            </div>
-            <Link
-              to="/compare"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-all"
-            >
-              Compare Now →
-            </Link>
-          </div>
-        </div>
-      )}
+      <SimilarCars carId={car.id} />
 
-      {/* TCO Calculator Modal */}
-      {showTCO && car && (
-        <TCOCalculator car={car} onClose={() => setShowTCO(false)} />
-      )}
+      {showTCO && <TCOCalculator car={car} onClose={() => setShowTCO(false)} />}
     </div>
   );
 }

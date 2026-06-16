@@ -4,48 +4,158 @@
 
 :root {
   color-scheme: dark;
+  --text-primary: #fafafa;
+  --text-secondary: #d4d4d8;
+  --text-muted: #a1a1aa;
+  --border-default: #3f3f46;
+  --border-subtle: #27272a;
+  --surface: #09090b;
+  --surface-raised: #18181b;
+  --accent: #fafafa;
 }
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #0f172a;
-  color: #e2e8f0;
+  background-color: #000000;
+  color: var(--text-primary);
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: ui-monospace, 'Cascadia Code', Menlo, monospace;
 }
 
 * {
   box-sizing: border-box;
 }
 
-/* Custom scrollbar for dark theme */
+@layer components {
+  .font-display {
+    font-family: 'Instrument Serif', Georgia, serif;
+  }
+
+  .page-wrap {
+    @apply max-w-7xl mx-auto px-4 md:px-8;
+  }
+
+  .surface-card {
+    @apply bg-zinc-950 border border-zinc-800 rounded-xl;
+  }
+
+  .surface-card-hover {
+    @apply surface-card transition-all duration-200 hover:border-zinc-600 hover:bg-zinc-900/80;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-semibold text-sm rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30;
+  }
+
+  .btn-primary {
+    @apply btn px-5 py-2.5 bg-white text-black hover:bg-zinc-200;
+  }
+
+  .btn-secondary {
+    @apply btn px-5 py-2.5 border border-zinc-600 text-zinc-200 hover:border-zinc-400 hover:text-white bg-transparent;
+  }
+
+  .btn-ghost {
+    @apply btn px-3 py-2 text-zinc-400 hover:text-white;
+  }
+
+  .label-sm {
+    @apply text-xs font-medium text-zinc-400;
+  }
+
+  .section-heading {
+    @apply text-lg font-semibold text-white tracking-tight;
+  }
+
+  .section-title {
+    @apply text-2xl md:text-3xl font-display text-white tracking-tight;
+  }
+
+  .kicker {
+    @apply text-[11px] font-semibold tracking-[0.25em] text-zinc-500 uppercase;
+  }
+
+  .surface-card-glass {
+    @apply border border-zinc-800/80 bg-zinc-950/60 backdrop-blur-xl rounded-2xl;
+  }
+
+  .hover-lift {
+    @apply transition-all duration-300 hover:-translate-y-1;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-zinc-800 bg-zinc-950/60 text-sm text-zinc-300 transition-all duration-200 hover:border-zinc-500 hover:text-white hover:bg-zinc-900;
+  }
+
+  .eyebrow-pill {
+    @apply inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-950/70 px-3.5 py-1.5 text-xs font-medium text-zinc-300 backdrop-blur;
+  }
+
+  .mesh-hero {
+    background:
+      radial-gradient(ellipse 70% 60% at 15% -10%, rgba(255, 255, 255, 0.10), transparent 60%),
+      radial-gradient(ellipse 50% 50% at 100% 0%, rgba(113, 113, 122, 0.18), transparent 55%),
+      radial-gradient(ellipse 60% 50% at 90% 90%, rgba(82, 82, 91, 0.12), transparent 60%),
+      #000;
+  }
+
+  .hero-grid {
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    background-size: 56px 56px;
+    -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 0%, #000 30%, transparent 75%);
+    mask-image: radial-gradient(ellipse 70% 70% at 50% 0%, #000 30%, transparent 75%);
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(120deg, #ffffff 0%, #d4d4d8 40%, #71717a 100%);
+  }
+
+  .meter-track {
+    @apply relative h-1.5 w-full overflow-hidden rounded-full bg-zinc-800;
+  }
+
+  .meter-fill {
+    @apply absolute inset-y-0 left-0 origin-left rounded-full bg-gradient-to-r from-zinc-300 to-white;
+  }
+}
+
+input[type='range'] {
+  accent-color: #fafafa;
+  height: 6px;
+}
+
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #1e293b;
+  background: #09090b;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #475569;
-  border-radius: 5px;
+  background: #52525b;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: #71717a;
 }
 
-/* Smooth transitions */
-* {
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -1,179 +1,163 @@
-import { useParams, Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import * as api from '../services/api';
+import {
+  BODY_TYPES,
+  FUEL_TYPES,
+  LIFESTYLE_PRESETS,
+  PRICE_BUCKETS,
+  TOP_MAKES,
+  YEAR_BUCKETS,
+  presetToSearchQuery,
+  bodyTypeFilter,
+  fuelTypeFilter,
+  makeFilter,
+} from '../config/browseTaxonomy';
+import BodyTypeIllustration from '../components/BodyTypeIllustration';
+import { searchQueryToParams } from '../utils/searchParams';
 
-interface Category {
-  id: string;
-  name: string;
-  count?: number;
+function homeLink(query: ReturnType<typeof presetToSearchQuery>) {
+  return `/home?${searchQueryToParams(query, 1).toString()}`;
+}
+
+function filterLink(filters: Parameters<typeof presetToSearchQuery>[0]['filters']) {
+  return homeLink(presetToSearchQuery({ id: '', label: '', description: '', filters }));
 }
 
 export default function Explore() {
   const { category } = useParams<{ category: string }>();
-  const [subcategories, setSubcategories] = useState<Category[]>([]);
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [stats, setStats] = useState<{ bodyStyles?: Record<string, number>; fuelTypes?: Record<string, number> }>({});
 
   useEffect(() => {
-    let categories: Category[] = [];
+    api.getStatistics().then(setStats).catch(() => {});
+  }, []);
 
-    if (category === 'body-style') {
-      categories = [
-        { id: 'sedan', name: 'SEDAN' },
-        { id: 'suv', name: 'SUV' },
-        { id: 'truck', name: 'TRUCK' },
-        { id: 'coupe', name: 'COUPE' },
-        { id: 'hatchback', name: 'HATCHBACK' },
-        { id: 'wagon', name: 'WAGON' },
-        { id: 'convertible', name: 'CONVERTIBLE' },
-        { id: 'minivan', name: 'MINIVAN' },
-      ];
-    } else if (category === 'brand') {
-      categories = [
-        { id: 'Toyota', name: 'TOYOTA' },
-        { id: 'Honda', name: 'HONDA' },
-        { id: 'Ford', name: 'FORD' },
-        { id: 'Chevrolet', name: 'CHEVROLET' },
-        { id: 'BMW', name: 'BMW' },
-        { id: 'Mercedes-Benz', name: 'MERCEDES-BENZ' },
-        { id: 'Audi', name: 'AUDI' },
-        { id: 'Porsche', name: 'PORSCHE' },
-        { id: 'Tesla', name: 'TESLA' },
-        { id: 'Ferrari', name: 'FERRARI' },
-        { id: 'Lamborghini', name: 'LAMBORGHINI' },
-        { id: 'Lexus', name: 'LEXUS' },
-        { id: 'Nissan', name: 'NISSAN' },
-        { id: 'Mazda', name: 'MAZDA' },
-        { id: 'Subaru', name: 'SUBARU' },
-        { id: 'Land Rover', name: 'LAND ROVER' },
-      ];
-    } else if (category === 'purpose') {
-      categories = [
-        { id: 'daily-commute', name: 'DAILY COMMUTE' },
-        { id: 'family', name: 'FAMILY' },
-        { id: 'performance', name: 'PERFORMANCE' },
-        { id: 'luxury', name: 'LUXURY' },
-        { id: 'off-road', name: 'OFF-ROAD' },
-        { id: 'eco-friendly', name: 'ECO-FRIENDLY' },
-      ];
-    } else if (category === 'era') {
-      categories = [
-        { id: '1990s', name: '1990s CLASSICS' },
-        { id: '2000s', name: '2000s MILLENNIUM' },
-        { id: '2010s', name: '2010s MODERN' },
-        { id: '2020s', name: '2020s FUTURE' },
-      ];
-    }
-
-    setSubcategories(categories);
-  }, [category]);
-
-  const getCategoryTitle = () => {
+  const title = (() => {
     switch (category) {
-      case 'body-style': return 'SELECT TYPE';
-      case 'brand': return 'SELECT MAKE';
-      case 'purpose': return 'SELECT PURPOSE';
-      case 'era': return 'SELECT ERA';
-      default: return 'SELECT';
+      case 'body-style': return 'Browse by type';
+      case 'brand': return 'Browse by make';
+      case 'purpose': return 'Browse by need';
+      case 'era': return 'Browse by era';
+      default: return 'Browse';
     }
-  };
+  })();
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Header Section */}
-      <section className="h-screen flex flex-col items-center justify-center relative overflow-hidden border-b border-zinc-800">
-        <div className="absolute inset-0 bg-gradient-to-b from-black via-zinc-900 to-black opacity-50" />
-
-        <div className="relative z-10 text-center px-8 max-w-6xl">
-          {/* Back Link */}
-          <Link
-            to="/"
-            className="inline-flex items-center gap-3 text-xs tracking-[0.3em] text-zinc-600 hover:text-white transition-colors mb-12 group"
-          >
-            <svg className="w-6 h-6 group-hover:-translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
-            </svg>
-            <span>BACK</span>
-          </Link>
-
-          <div className="overflow-hidden mb-8">
-            <h1 className="text-7xl md:text-8xl font-black tracking-tighter">
-              {getCategoryTitle()}
-            </h1>
-          </div>
-
-          <div className="h-px w-48 bg-gradient-to-r from-transparent via-zinc-700 to-transparent mx-auto mb-8" />
-
-          <p className="text-sm tracking-[0.3em] text-zinc-600 uppercase">
-            {subcategories.length} Options Available
-          </p>
-        </div>
-
-        {/* Scroll Indicator */}
-        <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 animate-bounce">
-          <div className="w-px h-16 bg-gradient-to-b from-white to-transparent" />
-        </div>
-      </section>
-
-      {/* Subcategories Grid - Full Screen Sections */}
-      {subcategories.map((subcat, index) => (
-        <Link
-          key={subcat.id}
-          to={`/vehicles/${category}/${encodeURIComponent(subcat.id)}`}
-          className="block"
-          onMouseEnter={() => setHoveredIndex(index)}
-          onMouseLeave={() => setHoveredIndex(null)}
-        >
-          <section className="h-screen flex items-center justify-center relative overflow-hidden border-b border-zinc-800 group cursor-pointer">
-            {/* Background Effect */}
-            <div
-              className={`absolute inset-0 bg-white transition-opacity duration-700 ${
-                hoveredIndex === index ? 'opacity-5' : 'opacity-0'
-              }`}
-            />
-
-            {/* Grid Pattern */}
-            <div className="absolute inset-0 opacity-5">
-              <div className="absolute inset-0" style={{
-                backgroundImage: 'linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px)',
-                backgroundSize: '50px 50px'
-              }} />
-            </div>
-
-            {/* Content */}
-            <div className="relative z-10 text-center px-8">
-              {/* Index */}
-              <div className="mb-8">
-                <p className="text-8xl md:text-9xl font-black text-zinc-900 group-hover:text-zinc-800 transition-colors duration-700">
-                  {String(index + 1).padStart(2, '0')}
-                </p>
-              </div>
-
-              {/* Name */}
-              <div className="mb-8">
-                <h2 className="text-5xl md:text-7xl font-black tracking-tighter group-hover:tracking-wider transition-all duration-700">
-                  {subcat.name}
-                </h2>
-              </div>
-
-              {/* Divider */}
-              <div className={`h-px w-64 mx-auto mb-8 transition-all duration-700 ${
-                hoveredIndex === index
-                  ? 'bg-gradient-to-r from-transparent via-white to-transparent'
-                  : 'bg-gradient-to-r from-transparent via-zinc-800 to-transparent'
-              }`} />
-
-              {/* Enter Arrow */}
-              <div className={`inline-flex items-center gap-4 text-xs tracking-[0.3em] transition-all duration-700 ${
-                hoveredIndex === index ? 'text-white translate-x-4' : 'text-zinc-700 translate-x-0'
-              }`}>
-                <span>ENTER</span>
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </div>
-            </div>
-          </section>
+      <div className="max-w-5xl mx-auto px-4 md:px-8 py-10">
+        <Link to="/browse" className="text-xs tracking-widest text-zinc-400 hover:text-white uppercase mb-6 inline-block">
+          ← All categories
         </Link>
-      ))}
+        <h1 className="text-3xl font-black tracking-tight mb-2">{title}</h1>
+        <p className="text-sm text-zinc-400 mb-8">
+          Tap a category to open a filtered search — refine from there.
+        </p>
+
+        {category === 'body-style' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {BODY_TYPES.map((type) => (
+              <Link
+                key={type.id}
+                to={filterLink(bodyTypeFilter(type.id))}
+                className="flex items-center justify-between gap-4 p-5 border border-zinc-800 hover:border-zinc-500 transition-colors"
+              >
+                <BodyTypeIllustration bodyType={type.id} className="h-12 w-24 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold capitalize">{type.label}</p>
+                  <p className="text-xs text-zinc-400">{type.description}</p>
+                </div>
+                {stats.bodyStyles?.[type.id] != null && (
+                  <span className="text-xs text-zinc-500">{stats.bodyStyles[type.id].toLocaleString()}</span>
+                )}
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {category === 'brand' && (
+          <div className="flex flex-wrap gap-2">
+            {TOP_MAKES.map((make) => (
+              <Link
+                key={make}
+                to={filterLink(makeFilter(make))}
+                className="px-4 py-2 border border-zinc-800 text-sm text-zinc-300 hover:border-white hover:text-white transition-colors"
+              >
+                {make}
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {category === 'purpose' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {LIFESTYLE_PRESETS.map((preset) => (
+              <Link
+                key={preset.id}
+                to={homeLink(presetToSearchQuery(preset))}
+                className="p-5 border border-zinc-800 hover:border-zinc-500 transition-colors"
+              >
+                <p className="font-bold mb-1">{preset.label}</p>
+                <p className="text-xs text-zinc-400">{preset.description}</p>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {category === 'era' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {YEAR_BUCKETS.map((bucket) => (
+              <Link
+                key={bucket.id}
+                to={filterLink(bucket.filters)}
+                className="p-5 border border-zinc-800 hover:border-zinc-500 transition-colors"
+              >
+                <p className="font-bold">{bucket.label}</p>
+                {bucket.description && <p className="text-xs text-zinc-400">{bucket.description}</p>}
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {category === 'fuel' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {FUEL_TYPES.map((fuel) => (
+              <Link
+                key={fuel.id}
+                to={filterLink(fuelTypeFilter(fuel.id))}
+                className="p-5 border border-zinc-800 hover:border-zinc-500 transition-colors"
+              >
+                <p className="font-bold capitalize">{fuel.label}</p>
+                <p className="text-xs text-zinc-400">
+                  {stats.fuelTypes?.[fuel.id] != null
+                    ? `${stats.fuelTypes[fuel.id].toLocaleString()} vehicles`
+                    : fuel.description}
+                </p>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {category === 'budget' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {PRICE_BUCKETS.map((bucket) => (
+              <Link
+                key={bucket.id}
+                to={filterLink(bucket.filters)}
+                className="p-5 border border-zinc-800 hover:border-zinc-500 transition-colors"
+              >
+                <p className="font-bold">{bucket.label}</p>
+                {bucket.description && <p className="text-xs text-zinc-400">{bucket.description}</p>}
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {!['body-style', 'brand', 'purpose', 'era', 'fuel', 'budget'].includes(category ?? '') && (
+          <Link to="/browse" className="text-sm text-zinc-400 hover:text-white underline underline-offset-4">
+            View all browse categories
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

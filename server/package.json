@@ -9,19 +9,25 @@
     "start": "node dist/index.js",
     "fetch-nhtsa": "tsx scripts/fetch-nhtsa-real-data.ts",
     "generate-db": "tsx scripts/generate-massive-database.ts",
-    "generate-portfolio-db": "tsx scripts/generate-portfolio-database.ts"
+    "generate-portfolio-db": "tsx scripts/generate-portfolio-database.ts",
+    "build-verified-db": "tsx scripts/build-verified-database.ts",
+    "build-verified-db:fast": "tsx scripts/build-verified-database.ts --skip-nhtsa",
+    "build-enrichment": "tsx scripts/build-content-enrichment.ts",
+    "build-horsepower": "tsx scripts/build-horsepower-enrichment.ts"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
     "axios": "^1.6.2",
-    "dotenv": "^16.3.1"
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2"
   },
   "devDependencies": {
-    "@types/express": "^4.17.21",
     "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
     "@types/node": "^20.10.5",
+    "csv-parse": "^5.6.0",
     "tsx": "^4.7.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "xlsx": "^0.18.5"
   }
 }

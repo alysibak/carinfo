@@ -24,31 +24,35 @@ export default function AggregateStats({ cars, title = 'MARKET OVERVIEW' }: Aggr
       {/* Key Stats */}
       <div className="space-y-4 mb-6">
         <div className="flex justify-between items-center py-2 border-b border-zinc-900">
-          <span className="text-xs tracking-widest text-zinc-700 uppercase">Vehicles</span>
+          <span className="text-xs tracking-widest text-zinc-300 uppercase">Vehicles</span>
           <span className="text-xl font-black text-white">{stats.count.toLocaleString()}</span>
         </div>
 
         <div className="flex justify-between items-center py-2 border-b border-zinc-900">
-          <span className="text-xs tracking-widest text-zinc-700 uppercase">Avg Price</span>
+          <span className="text-xs tracking-widest text-zinc-300 uppercase">Avg Price</span>
           <span className="text-xl font-black text-white">
             ${(stats.avgPrice / 1000).toFixed(0)}K
           </span>
         </div>
 
-        <div className="flex justify-between items-center py-2 border-b border-zinc-900">
-          <span className="text-xs tracking-widest text-zinc-700 uppercase">Avg Power</span>
-          <span className="text-xl font-black text-white">{stats.avgHorsepower} HP</span>
-        </div>
+        {stats.avgHorsepower > 0 && (
+          <div className="flex justify-between items-center py-2 border-b border-zinc-900">
+            <span className="text-xs tracking-widest text-zinc-300 uppercase">Avg Power</span>
+            <span className="text-xl font-black text-white">{stats.avgHorsepower} HP</span>
+          </div>
+        )}
 
         <div className="flex justify-between items-center py-2 border-b border-zinc-900">
-          <span className="text-xs tracking-widest text-zinc-700 uppercase">Avg MPG</span>
+          <span className="text-xs tracking-widest text-zinc-300 uppercase">Avg MPG</span>
           <span className="text-xl font-black text-white">{stats.avgMpg}</span>
         </div>
 
-        <div className="flex justify-between items-center py-2">
-          <span className="text-xs tracking-widest text-zinc-700 uppercase">Avg Torque</span>
-          <span className="text-xl font-black text-white">{stats.avgTorque} LB-FT</span>
-        </div>
+        {stats.avgTorque > 0 && (
+          <div className="flex justify-between items-center py-2">
+            <span className="text-xs tracking-widest text-zinc-300 uppercase">Avg Torque</span>
+            <span className="text-xl font-black text-white">{stats.avgTorque} LB-FT</span>
+          </div>
+        )}
       </div>
 
       {/* Standout Vehicles */}
@@ -61,14 +65,14 @@ export default function AggregateStats({ cars, title = 'MARKET OVERVIEW' }: Aggr
         {stats.bestValue && (
           <button
             onClick={() => navigate(`/car/${stats.bestValue!.id}`)}
-            className="w-full text-left p-3 bg-black border border-zinc-900 hover:border-green-600 transition-all group"
+            className="w-full text-left p-3 bg-black border border-zinc-900 hover:border-white transition-all group"
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs tracking-widest text-green-600 uppercase font-black">
-                🏆 Best Value
+              <span className="text-xs tracking-widest text-zinc-400 uppercase font-black">
+                Best Value
               </span>
               <svg
-                className="w-4 h-4 text-zinc-700 group-hover:text-white group-hover:translate-x-1 transition-all"
+                className="w-4 h-4 text-zinc-300 group-hover:text-white group-hover:translate-x-1 transition-all"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -92,14 +96,14 @@ export default function AggregateStats({ cars, title = 'MARKET OVERVIEW' }: Aggr
         {stats.highestPower && (
           <button
             onClick={() => navigate(`/car/${stats.highestPower!.id}`)}
-            className="w-full text-left p-3 bg-black border border-zinc-900 hover:border-red-600 transition-all group"
+            className="w-full text-left p-3 bg-black border border-zinc-900 hover:border-white transition-all group"
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs tracking-widest text-red-600 uppercase font-black">
-                ⚡ Highest Power
+              <span className="text-xs tracking-widest text-zinc-400 uppercase font-black">
+                Highest Power
               </span>
               <svg
-                className="w-4 h-4 text-zinc-700 group-hover:text-white group-hover:translate-x-1 transition-all"
+                className="w-4 h-4 text-zinc-300 group-hover:text-white group-hover:translate-x-1 transition-all"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -125,14 +129,14 @@ export default function AggregateStats({ cars, title = 'MARKET OVERVIEW' }: Aggr
         {stats.bestEconomy && stats.bestEconomy.fuelEconomy.combined && (
           <button
             onClick={() => navigate(`/car/${stats.bestEconomy!.id}`)}
-            className="w-full text-left p-3 bg-black border border-zinc-900 hover:border-blue-600 transition-all group"
+            className="w-full text-left p-3 bg-black border border-zinc-900 hover:border-white transition-all group"
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs tracking-widest text-blue-600 uppercase font-black">
-                🌱 Best Economy
+              <span className="text-xs tracking-widest text-zinc-400 uppercase font-black">
+                Best Economy
               </span>
               <svg
-                className="w-4 h-4 text-zinc-700 group-hover:text-white group-hover:translate-x-1 transition-all"
+                className="w-4 h-4 text-zinc-300 group-hover:text-white group-hover:translate-x-1 transition-all"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"

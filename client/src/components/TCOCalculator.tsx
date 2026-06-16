@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import type { CarSpecs } from '../types/car.types';
 import { calculateCostPerMile } from '../utils/marketIntelligence';
+import { getRegionalAssumptions } from '@carinfo/config/regional-assumptions';
+import { DISPLAY_CURRENCY } from '../utils/currency';
+import { usesMpge } from '../utils/fuelDisplay';
+
+const REGION = getRegionalAssumptions();
 
 interface TCOCalculatorProps {
   car: CarSpecs;
@@ -9,27 +14,29 @@ interface TCOCalculatorProps {
 
 export default function TCOCalculator({ car, onClose }: TCOCalculatorProps) {
   const [yearsOwned, setYearsOwned] = useState(5);
-  const [milesPerYear, setMilesPerYear] = useState(15000);
-  const [gasPrice, setGasPrice] = useState(3.5);
-  const [electricityPrice, setElectricityPrice] = useState(0.14);
+  const [kmPerYear, setKmPerYear] = useState(REGION.annualKm);
+  const [gasPrice, setGasPrice] = useState(REGION.gasPriceCadPerL);
+  const [electricityPrice, setElectricityPrice] = useState(REGION.electricityRateCadPerKwh);
   const [insuranceRate, setInsuranceRate] = useState(0.01);
-  const [maintenancePerYear, setMaintenancePerYear] = useState(1000);
+  const [maintenancePerYear, setMaintenancePerYear] = useState(REGION.maintenance.base);
   const [downPayment, setDownPayment] = useState(0);
   const [loanRate, setLoanRate] = useState(0.05);
 
   const fuelType = car.engine.fuelType;
   const isElectric = fuelType === 'electric';
+  const isHydrogen = fuelType === 'hydrogen';
   const isPlugInHybrid = fuelType === 'plug-in hybrid';
   const showElectricityInput = isElectric || isPlugInHybrid;
-  const showGasInput = !isElectric;
+  const showGasInput = !isElectric && !isHydrogen;
 
   const msrp = car.price?.msrp || 35000;
   const mpg = car.fuelEconomy.combined || 25;
 
-  const costPerMile = calculateCostPerMile(car, {
-    gasPrice,
-    electricityPrice,
-  }).costPerMile;
+  const costResult = calculateCostPerMile(car, {
+    gasPriceCadPerL: gasPrice,
+    electricityPriceCadPerKwh: electricityPrice,
+  });
+  const costPerKm = costResult.costPerKm;
 
   // Calculate TCO components
   const purchasePrice = msrp;
@@ -39,7 +46,7 @@ export default function TCOCalculator({ car, onClose }: TCOCalculatorProps) {
   const totalLoanPayments = monthlyPayment * yearsOwned * 12;
   const totalInterestPaid = totalLoanPayments - loanAmount;
 
-  const fuelCostPerYear = costPerMile * milesPerYear;
+  const fuelCostPerYear = costPerKm * kmPerYear;
   const totalFuelCost = fuelCostPerYear * yearsOwned;
 
   const insuranceCostPerYear = purchasePrice * insuranceRate;
@@ -69,7 +76,7 @@ export default function TCOCalculator({ car, onClose }: TCOCalculatorProps) {
       ? 'Fuel & Energy'
       : 'Fuel';
 
-  const efficiencyLabel = isElectric ? 'MPGe' : 'MPG';
+  const efficiencyLabel = usesMpge(fuelType) ? 'MPGe' : 'MPG';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center p-8 overflow-y-auto">
@@ -104,7 +111,7 @@ export default function TCOCalculator({ car, onClose }: TCOCalculatorProps) {
             <div className="space-y-6">
               {/* Years Owned */}
               <div>
-                <label className="block text-xs tracking-widest text-zinc-700 mb-2">
+                <label className="block text-xs tracking-widest text-zinc-300 mb-2">
                   YEARS OWNED
                 </label>
                 <input
@@ -117,46 +124,43 @@ export default function TCOCalculator({ car, onClose }: TCOCalculatorProps) {
                 />
               </div>
 
-              {/* Miles Per Year */}
               <div>
-                <label className="block text-xs tracking-widest text-zinc-700 mb-2">
-                  MILES PER YEAR
+                <label className="block text-xs tracking-widest text-zinc-300 mb-2">
+                  KM PER YEAR
                 </label>
                 <input
                   type="number"
-                  value={milesPerYear}
-                  onChange={(e) => setMilesPerYear(parseInt(e.target.value) || 15000)}
+                  value={kmPerYear}
+                  onChange={(e) => setKmPerYear(parseInt(e.target.value) || REGION.annualKm)}
                   step="1000"
                   className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-lg font-bold focus:outline-none focus:border-zinc-600 transition-colors"
                 />
               </div>
 
-              {/* Gas Price */}
               {showGasInput && (
                 <div>
-                  <label className="block text-xs tracking-widest text-zinc-700 mb-2">
-                    GAS PRICE ($/GALLON)
+                  <label className="block text-xs tracking-widest text-zinc-300 mb-2">
+                    GAS PRICE ($/L {DISPLAY_CURRENCY})
                   </label>
                   <input
                     type="number"
                     value={gasPrice}
-                    onChange={(e) => setGasPrice(parseFloat(e.target.value) || 3.5)}
-                    step="0.1"
+                    onChange={(e) => setGasPrice(parseFloat(e.target.value) || REGION.gasPriceCadPerL)}
+                    step="0.01"
                     className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-lg font-bold focus:outline-none focus:border-zinc-600 transition-colors"
                   />
                 </div>
               )}
 
-              {/* Electricity Price */}
               {showElectricityInput && (
                 <div>
-                  <label className="block text-xs tracking-widest text-zinc-700 mb-2">
-                    ELECTRICITY PRICE ($/KWH)
+                  <label className="block text-xs tracking-widest text-zinc-300 mb-2">
+                    ELECTRICITY PRICE ($/KWH {DISPLAY_CURRENCY})
                   </label>
                   <input
                     type="number"
                     value={electricityPrice}
-                    onChange={(e) => setElectricityPrice(parseFloat(e.target.value) || 0.14)}
+                    onChange={(e) => setElectricityPrice(parseFloat(e.target.value) || REGION.electricityRateCadPerKwh)}
                     step="0.01"
                     className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-lg font-bold focus:outline-none focus:border-zinc-600 transition-colors"
                   />
@@ -165,7 +169,7 @@ export default function TCOCalculator({ car, onClose }: TCOCalculatorProps) {
 
               {/* Down Payment */}
               <div>
-                <label className="block text-xs tracking-widest text-zinc-700 mb-2">
+                <label className="block text-xs tracking-widest text-zinc-300 mb-2">
                   DOWN PAYMENT ($)
                 </label>
                 <input
@@ -179,7 +183,7 @@ export default function TCOCalculator({ car, onClose }: TCOCalculatorProps) {
 
               {/* Loan Rate */}
               <div>
-                <label className="block text-xs tracking-widest text-zinc-700 mb-2">
+                <label className="block text-xs tracking-widest text-zinc-300 mb-2">
                   LOAN INTEREST RATE (%)
                 </label>
                 <input
@@ -193,7 +197,7 @@ export default function TCOCalculator({ car, onClose }: TCOCalculatorProps) {
 
               {/* Insurance Rate */}
               <div>
-                <label className="block text-xs tracking-widest text-zinc-700 mb-2">
+                <label className="block text-xs tracking-widest text-zinc-300 mb-2">
                   INSURANCE (% OF PRICE)
                 </label>
                 <input
@@ -207,7 +211,7 @@ export default function TCOCalculator({ car, onClose }: TCOCalculatorProps) {
 
               {/* Maintenance */}
               <div>
-                <label className="block text-xs tracking-widest text-zinc-700 mb-2">
+                <label className="block text-xs tracking-widest text-zinc-300 mb-2">
                   MAINTENANCE ($/YEAR)
                 </label>
                 <input
@@ -244,33 +248,33 @@ export default function TCOCalculator({ car, onClose }: TCOCalculatorProps) {
             {/* Breakdown */}
             <div className="space-y-4 text-sm">
               <div className="flex justify-between items-center pb-3 border-b border-zinc-900">
-                <span className="tracking-widest text-zinc-700 uppercase">Purchase Price</span>
+                <span className="tracking-widest text-zinc-300 uppercase">Purchase Price</span>
                 <span className="text-lg font-bold">${Math.round(purchasePrice).toLocaleString()}</span>
               </div>
 
               {loanAmount > 0 && (
                 <div className="flex justify-between items-center pb-3 border-b border-zinc-900">
-                  <span className="tracking-widest text-zinc-700 uppercase">Loan Interest</span>
+                  <span className="tracking-widest text-zinc-300 uppercase">Loan Interest</span>
                   <span className="text-lg font-bold">${Math.round(totalInterestPaid).toLocaleString()}</span>
                 </div>
               )}
 
               <div className="flex justify-between items-center pb-3 border-b border-zinc-900">
-                <span className="tracking-widest text-zinc-700 uppercase">{fuelLabel} ({yearsOwned} years)</span>
+                <span className="tracking-widest text-zinc-300 uppercase">{fuelLabel} ({yearsOwned} years)</span>
                 <span className="text-lg font-bold">${Math.round(totalFuelCost).toLocaleString()}</span>
               </div>
 
               <div className="flex justify-between items-center pb-3 border-b border-zinc-900">
-                <span className="tracking-widest text-zinc-700 uppercase">Insurance ({yearsOwned} years)</span>
+                <span className="tracking-widest text-zinc-300 uppercase">Insurance ({yearsOwned} years)</span>
                 <span className="text-lg font-bold">${Math.round(totalInsuranceCost).toLocaleString()}</span>
               </div>
 
               <div className="flex justify-between items-center pb-3 border-b border-zinc-900">
-                <span className="tracking-widest text-zinc-700 uppercase">Maintenance ({yearsOwned} years)</span>
+                <span className="tracking-widest text-zinc-300 uppercase">Maintenance ({yearsOwned} years)</span>
                 <span className="text-lg font-bold">${Math.round(totalMaintenanceCost).toLocaleString()}</span>
               </div>
 
-              <div className="flex justify-between items-center pb-3 border-b border-zinc-900 text-green-500">
+              <div className="flex justify-between items-center pb-3 border-b border-zinc-900 text-white">
                 <span className="tracking-widest uppercase">Resale Value</span>
                 <span className="text-lg font-bold">-${Math.round(estimatedResaleValue).toLocaleString()}</span>
               </div>
@@ -278,22 +282,22 @@ export default function TCOCalculator({ car, onClose }: TCOCalculatorProps) {
 
             {/* Key Metrics */}
             <div className="mt-8 pt-8 border-t border-zinc-900">
-              <h4 className="text-xs tracking-[0.3em] text-zinc-700 mb-4 uppercase">Key Metrics</h4>
+              <h4 className="text-xs tracking-[0.3em] text-zinc-300 mb-4 uppercase">Key Metrics</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-zinc-950 border border-zinc-900 p-4">
-                  <p className="text-xs tracking-widest text-zinc-700 mb-2">ENERGY COST/YR</p>
+                  <p className="text-xs tracking-widest text-zinc-300 mb-2">ENERGY COST/YR</p>
                   <p className="text-2xl font-black">${Math.round(fuelCostPerYear).toLocaleString()}</p>
                 </div>
                 <div className="bg-zinc-950 border border-zinc-900 p-4">
-                  <p className="text-xs tracking-widest text-zinc-700 mb-2">{efficiencyLabel}</p>
+                  <p className="text-xs tracking-widest text-zinc-300 mb-2">{efficiencyLabel}</p>
                   <p className="text-2xl font-black">{mpg}</p>
                 </div>
                 <div className="bg-zinc-950 border border-zinc-900 p-4">
-                  <p className="text-xs tracking-widest text-zinc-700 mb-2">DEPRECIATION</p>
+                  <p className="text-xs tracking-widest text-zinc-300 mb-2">DEPRECIATION</p>
                   <p className="text-2xl font-black">${Math.round(totalDepreciation / 1000)}K</p>
                 </div>
                 <div className="bg-zinc-950 border border-zinc-900 p-4">
-                  <p className="text-xs tracking-widest text-zinc-700 mb-2">MONTHLY</p>
+                  <p className="text-xs tracking-widest text-zinc-300 mb-2">MONTHLY</p>
                   <p className="text-2xl font-black">${Math.round(monthlyTCO).toLocaleString()}</p>
                 </div>
               </div>
