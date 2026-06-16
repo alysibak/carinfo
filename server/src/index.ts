@@ -1,14 +1,11 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
-import app from './app.js';
+import app from './app';
 
 const PORT = process.env.PORT || 5000;
 
 // Serve the built frontend for `npm start` (single-origin local production).
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const clientDistPath = path.resolve(__dirname, '../../client/dist');
 
 if (fs.existsSync(clientDistPath)) {

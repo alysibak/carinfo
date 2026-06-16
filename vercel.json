@@ -12,7 +12,8 @@
     "api/[[...route]].ts": {
       "includeFiles": "{server/data/**,server/dist/**}",
       "maxDuration": 60,
-      "memory": 1024
+      "memory": 1024,
+      "runtime": "nodejs20.x"
     }
   }
 }
