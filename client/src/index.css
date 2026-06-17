@@ -53,11 +53,11 @@ code {
   }
 
   .surface-card {
-    @apply bg-obsidian border border-[var(--border-subtle)] rounded-sm;
+    @apply bg-obsidian border border-luxury-subtle rounded-sm;
   }
 
   .surface-card-hover {
-    @apply surface-card transition-colors duration-300 hover:border-[var(--border-default)] hover:bg-[#0f0e0c];
+    @apply bg-obsidian border border-luxury-subtle rounded-sm transition-colors duration-300 hover:border-luxury-default hover:bg-[#0f0e0c];
   }
 
   .btn {
@@ -65,15 +65,15 @@ code {
   }
 
   .btn-primary {
-    @apply btn px-7 py-3 bg-champagne text-obsidian hover:bg-ivory font-medium tracking-wide;
+    @apply inline-flex items-center justify-center gap-2 text-sm transition-all duration-300 focus:outline-none focus-visible:ring-1 focus-visible:ring-champagne/40 px-7 py-3 bg-champagne text-obsidian hover:bg-ivory font-medium tracking-wide;
   }
 
   .btn-secondary {
-    @apply btn px-6 py-3 border border-[var(--border-default)] text-stone hover:text-ivory hover:border-champagne/50 bg-transparent font-medium tracking-wide;
+    @apply inline-flex items-center justify-center gap-2 text-sm transition-all duration-300 focus:outline-none focus-visible:ring-1 focus-visible:ring-champagne/40 px-6 py-3 border border-luxury-default text-stone hover:text-ivory hover:border-champagne/50 bg-transparent font-medium tracking-wide;
   }
 
   .btn-ghost {
-    @apply btn px-3 py-2 text-stone hover:text-ivory;
+    @apply inline-flex items-center justify-center gap-2 text-sm transition-all duration-300 focus:outline-none focus-visible:ring-1 focus-visible:ring-champagne/40 px-3 py-2 text-stone hover:text-ivory;
   }
 
   .label-sm {
@@ -85,7 +85,10 @@ code {
   }
 
   .section-title {
-    @apply text-3xl md:text-4xl font-display text-ivory leading-tight;
+    @apply text-3xl md:text-4xl text-ivory leading-tight;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 500;
+    letter-spacing: -0.01em;
   }
 
   .kicker {
@@ -94,7 +97,7 @@ code {
   }
 
   .surface-card-glass {
-    @apply border border-[var(--border-subtle)] bg-[#0c0b09]/90 rounded-sm;
+    @apply border border-luxury-subtle bg-[#0c0b09]/90 rounded-sm;
   }
 
   .chip {
@@ -102,7 +105,8 @@ code {
   }
 
   .eyebrow-pill {
-    @apply kicker;
+    @apply text-[11px] font-medium text-champagne uppercase;
+    letter-spacing: 0.22em;
   }
 
   .mesh-hero {
@@ -133,7 +137,7 @@ code {
   }
 
   .exclusive-row {
-    @apply group flex items-center justify-between gap-6 py-5 border-b border-[var(--border-subtle)] transition-colors duration-300 hover:border-[var(--border-default)];
+    @apply flex items-center justify-between gap-6 py-5 border-b border-luxury-subtle transition-colors duration-300 hover:border-luxury-default;
   }
 
   .text-gradient {
@@ -141,7 +145,7 @@ code {
   }
 
   .meter-track {
-    @apply relative h-px w-full overflow-hidden bg-[var(--border-subtle)];
+    @apply relative h-px w-full overflow-hidden bg-luxury-subtle;
   }
 
   .meter-fill {
