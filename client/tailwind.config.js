@@ -8,18 +8,24 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Manrope', 'system-ui', 'sans-serif'],
-        serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
-        display: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+        sans: [
+          '-apple-system',
+          'BlinkMacSystemFont',
+          '"Helvetica Neue"',
+          'Helvetica',
+          'Arial',
+          'sans-serif',
+        ],
+        display: [
+          '-apple-system',
+          'BlinkMacSystemFont',
+          '"Helvetica Neue"',
+          'Helvetica',
+          'Arial',
+          'sans-serif',
+        ],
       },
       colors: {
-        ivory: '#f0ebe3',
-        champagne: '#c4a574',
-        'champagne-dim': '#8a7350',
-        obsidian: '#080807',
-        stone: '#8a8478',
-        'luxury-subtle': 'rgba(196, 165, 116, 0.1)',
-        'luxury-default': 'rgba(196, 165, 116, 0.22)',
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',
