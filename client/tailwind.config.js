@@ -18,6 +18,8 @@ export default {
         'champagne-dim': '#8a7350',
         obsidian: '#080807',
         stone: '#8a8478',
+        'luxury-subtle': 'rgba(196, 165, 116, 0.1)',
+        'luxury-default': 'rgba(196, 165, 116, 0.22)',
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',

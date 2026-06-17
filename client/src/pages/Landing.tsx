@@ -236,7 +236,7 @@ export default function Landing() {
             <Link
               key={preset.id}
               to={`/home?${searchQueryToParams(presetToSearchQuery(preset), 1).toString()}`}
-              className="exclusive-row"
+              className="exclusive-row group"
             >
               <div className="flex items-baseline gap-6 min-w-0">
                 <span className="text-xs text-champagne/50 font-tabular w-6 shrink-0">
@@ -294,7 +294,7 @@ export default function Landing() {
             <Link
               key={c.id}
               to={`/collection/${c.id}`}
-              className="exclusive-row"
+              className="exclusive-row group"
             >
               <div className="min-w-0">
                 <p className="font-display text-xl md:text-2xl text-ivory group-hover:text-champagne transition-colors duration-300">
