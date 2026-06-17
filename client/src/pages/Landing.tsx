@@ -152,12 +152,12 @@ export default function Landing() {
       >
         <div className="page-wrap py-4 flex items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-2.5">
-            <span className="grid place-items-center w-8 h-8 rounded-lg bg-white text-black">
+            <span className="grid place-items-center w-8 h-8 rounded-md border border-zinc-700 text-zinc-300">
               <IconGauge />
             </span>
-            <span className="text-lg font-semibold tracking-tight">CarInfo</span>
+            <span className="text-base font-semibold tracking-tight text-white">CarInfo</span>
           </Link>
-          <nav className="hidden sm:flex items-center gap-1 text-sm">
+          <nav className="hidden sm:flex items-center gap-1 text-sm font-medium">
             <Link className="px-3 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors" to="/browse">Browse</Link>
             <Link className="px-3 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors" to="/home">Search</Link>
             <Link className="px-3 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors" to="/value-matrix">Matrix</Link>
@@ -170,34 +170,25 @@ export default function Landing() {
       </header>
 
       {/* Hero */}
-      <section className="relative mesh-hero border-b border-zinc-800/80 overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 hero-grid" aria-hidden />
-        <div className="relative page-wrap py-16 md:py-24">
+      <section className="relative mesh-hero border-b border-zinc-900 overflow-hidden">
+        <div className="relative page-wrap py-14 md:py-20">
           <div className="grid lg:grid-cols-2 gap-12 xl:gap-16 items-center">
             {/* Left column */}
             <div>
-              <p className="eyebrow-pill animate-slide-up" style={{ animationDelay: '40ms' }}>
-                <span className="inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-white" aria-hidden />
-                EPA-verified specs · honest price estimates
+              <p className="eyebrow-pill">
+                EPA-verified specs · Ontario price estimates in CAD
               </p>
 
-              <h1
-                className="font-display text-5xl md:text-6xl xl:text-7xl text-white leading-[1.04] tracking-tight mt-6 mb-6 animate-slide-up"
-                style={{ animationDelay: '90ms' }}
-              >
-                Find the right car,{' '}
-                <span className="text-gradient italic">backed by real data</span>
+              <h1 className="font-display text-[2.5rem] md:text-[3.25rem] xl:text-[3.75rem] text-white leading-[1.08] mt-5 mb-5 max-w-[16ch]">
+                Compare cars with data you can trust
               </h1>
 
-              <p
-                className="text-lg text-zinc-400 leading-relaxed mb-8 max-w-xl animate-slide-up"
-                style={{ animationDelay: '150ms' }}
-              >
-                Search {vehicles} vehicles from {years}. Compare fuel economy, estimated value,
-                and safety — without the noise.
+              <p className="text-base md:text-[1.0625rem] text-zinc-400 leading-relaxed mb-8 max-w-lg">
+                Search {vehicles} vehicles from {years}. Fuel economy, safety ratings, and
+                estimated value — sourced from EPA and NHTSA where available.
               </p>
 
-              <div className="max-w-xl animate-slide-up" style={{ animationDelay: '200ms' }}>
+              <div className="max-w-xl">
                 <SearchBar
                   value={heroQuery}
                   onChange={setHeroQuery}
@@ -205,7 +196,7 @@ export default function Landing() {
                   size="large"
                 />
                 <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <span className="text-xs text-zinc-500 mr-1">Popular:</span>
+                  <span className="text-xs text-zinc-600 mr-1">Try:</span>
                   {QUICK_CHIPS.map((chip) => (
                     <Link
                       key={chip.label}
@@ -221,22 +212,16 @@ export default function Landing() {
                 </div>
               </div>
 
-              <div
-                className="flex flex-wrap gap-3 mt-8 animate-slide-up"
-                style={{ animationDelay: '260ms' }}
-              >
+              <div className="flex flex-wrap gap-3 mt-8">
                 <button type="button" onClick={() => setShowQuiz(true)} className="btn-primary">
-                  <IconSparkle /> Find my car
+                  Find my car
                 </button>
                 <Link to="/browse" className="btn-secondary">Browse categories</Link>
                 <Link to="/value-matrix" className="btn-secondary">Value matrix</Link>
               </div>
 
               {/* Stat band */}
-              <div
-                className="mt-10 flex items-center gap-4 sm:gap-6 border-t border-zinc-800/70 pt-6 animate-slide-up"
-                style={{ animationDelay: '320ms' }}
-              >
+              <div className="mt-10 flex items-center gap-4 sm:gap-8 border-t border-zinc-900 pt-6">
                 <Stat value={vehicles} label="Vehicles" />
                 <span className="h-10 w-px bg-zinc-800" />
                 <Stat value={makes} label="Makes" />
@@ -284,7 +269,7 @@ export default function Landing() {
             <Link
               key={preset.id}
               to={`/home?${searchQueryToParams(presetToSearchQuery(preset), 1).toString()}`}
-              className="surface-card-hover hover-lift p-5 group flex flex-col"
+              className="surface-card-hover p-5 group flex flex-col rounded-lg"
             >
               <p className="font-semibold text-white">{preset.label}</p>
               <p className="text-xs text-zinc-500 mt-1.5 leading-relaxed flex-1">{preset.description}</p>
@@ -307,7 +292,7 @@ export default function Landing() {
         <SectionHeader kicker="Explore" title="Browse the archive" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {browseCards.map((card) => (
-            <Link key={card.to} to={card.to} className="surface-card-hover hover-lift p-6 group">
+            <Link key={card.to} to={card.to} className="surface-card-hover p-6 group rounded-lg">
               <div className="w-10 h-10 rounded-xl border border-zinc-800 bg-zinc-900/60 flex items-center justify-center text-zinc-300 group-hover:text-white group-hover:border-zinc-600 transition-colors mb-4">
                 {card.icon}
               </div>
@@ -333,7 +318,7 @@ export default function Landing() {
             <Link
               key={c.id}
               to={`/collection/${c.id}`}
-              className="surface-card-hover hover-lift p-5 group flex flex-col"
+              className="surface-card-hover p-5 group flex flex-col rounded-lg"
             >
               <div className="flex items-center justify-between mb-3">
                 <span className="text-[11px] px-2 py-1 rounded-full border border-zinc-800 text-zinc-400">
@@ -353,7 +338,7 @@ export default function Landing() {
       <footer className="border-t border-zinc-900">
         <div className="page-wrap py-12 flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-sm text-zinc-500">
           <div className="flex items-center gap-2.5">
-            <span className="grid place-items-center w-7 h-7 rounded-md bg-white text-black">
+            <span className="grid place-items-center w-7 h-7 rounded-md border border-zinc-700 text-zinc-400">
               <IconGauge />
             </span>
             <span className="font-semibold text-zinc-300">CarInfo</span>
@@ -381,17 +366,17 @@ function FeaturedCard({ car }: { car: CarSpecs }) {
     <div className="relative animate-fade-in">
       <Link
         to={`/car/${car.id}`}
-        className="relative block surface-card-glass overflow-hidden group hover-lift"
+        className="relative block surface-card-glass overflow-hidden group rounded-xl border-zinc-800"
       >
         <div className="relative aspect-[16/10] border-b border-zinc-800/80">
           <VehiclePlaceholder car={car} />
-          <span className="absolute left-4 top-4 z-10 text-[10px] tracking-[0.2em] uppercase text-white/90 border border-white/20 bg-black/40 backdrop-blur px-2.5 py-1 rounded-full">
-            Spotlight
+          <span className="absolute left-4 top-4 z-10 text-xs font-medium text-zinc-300 border border-zinc-700 bg-black/70 px-2 py-0.5 rounded">
+            Example vehicle
           </span>
         </div>
         <div className="p-6">
-          <p className="font-display text-3xl text-zinc-300 leading-none">{car.year}</p>
-          <h3 className="text-xl font-semibold text-white mt-1.5">
+          <p className="text-sm font-medium text-zinc-500">{car.year}</p>
+          <h3 className="text-xl font-semibold text-white mt-0.5 tracking-tight">
             {car.make} {car.model}
           </h3>
           <div className="flex flex-wrap gap-1.5 mt-3">
@@ -403,13 +388,13 @@ function FeaturedCard({ car }: { car: CarSpecs }) {
           <dl className="grid grid-cols-2 gap-x-6 gap-y-4 mt-6">
             <div>
               <dt className="kicker">Horsepower</dt>
-              <dd className="mt-1 text-2xl font-display text-white">{powerValue}</dd>
+              <dd className="mt-1 text-xl font-semibold font-tabular text-white">{powerValue}</dd>
               <p className="text-[11px] text-zinc-500 mt-1">EPA rated, when on file</p>
             </div>
             <div>
               <dt className="kicker">Combined</dt>
               <dd className="mt-1 flex items-baseline gap-1">
-                <span className="text-2xl font-display text-white">{mpgValue}</span>
+                <span className="text-xl font-semibold font-tabular text-white">{mpgValue}</span>
                 <span className="text-xs text-zinc-500">{mpgLabel}</span>
               </dd>
               <div className="meter-track mt-2">
@@ -468,15 +453,17 @@ function SectionHeader({
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div>
-      <p className="text-2xl md:text-3xl font-display text-white leading-none">{value}</p>
-      <p className="kicker !text-[10px] mt-2">{label}</p>
+      <p className="text-2xl md:text-[1.75rem] font-semibold font-tabular text-white leading-none tracking-tight">
+        {value}
+      </p>
+      <p className="text-xs text-zinc-500 mt-1.5">{label}</p>
     </div>
   );
 }
 
 function Tag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-zinc-900 text-zinc-400 border border-zinc-800 capitalize">
+    <span className="text-xs px-2 py-0.5 rounded border border-zinc-800 text-zinc-400 capitalize">
       {children}
     </span>
   );
@@ -505,14 +492,6 @@ function IconGauge() {
     <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
       <path strokeLinecap="round" d="M4 18a8 8 0 1 1 16 0" />
       <path strokeLinecap="round" d="M12 14l3.5-3.5" />
-    </svg>
-  );
-}
-
-function IconSparkle() {
-  return (
-    <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor" aria-hidden>
-      <path d="M12 2l1.8 5.6L19 9l-5.2 1.4L12 16l-1.8-5.6L5 9l5.2-1.4z" />
     </svg>
   );
 }
