@@ -16,11 +16,14 @@
 
 body {
   margin: 0;
-  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-feature-settings: 'ss01' on;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #000000;
   color: var(--text-primary);
+  line-height: 1.55;
+  letter-spacing: -0.01em;
 }
 
 code {
@@ -33,7 +36,12 @@ code {
 
 @layer components {
   .font-display {
-    font-family: 'Instrument Serif', Georgia, serif;
+    font-family: 'IBM Plex Serif', Georgia, serif;
+    letter-spacing: -0.02em;
+  }
+
+  .font-tabular {
+    font-variant-numeric: tabular-nums;
   }
 
   .page-wrap {
@@ -53,11 +61,11 @@ code {
   }
 
   .btn-primary {
-    @apply btn px-5 py-2.5 bg-white text-black hover:bg-zinc-200;
+    @apply btn px-5 py-2.5 bg-zinc-100 text-zinc-950 hover:bg-white font-medium;
   }
 
   .btn-secondary {
-    @apply btn px-5 py-2.5 border border-zinc-600 text-zinc-200 hover:border-zinc-400 hover:text-white bg-transparent;
+    @apply btn px-5 py-2.5 border border-zinc-700 text-zinc-300 hover:border-zinc-500 hover:text-white bg-transparent font-medium;
   }
 
   .btn-ghost {
@@ -73,11 +81,13 @@ code {
   }
 
   .section-title {
-    @apply text-2xl md:text-3xl font-display text-white tracking-tight;
+    @apply text-2xl md:text-[1.75rem] font-semibold text-white tracking-tight leading-snug;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
   }
 
   .kicker {
-    @apply text-[11px] font-semibold tracking-[0.25em] text-zinc-500 uppercase;
+    @apply text-xs font-medium tracking-wide text-zinc-500 uppercase;
+    letter-spacing: 0.08em;
   }
 
   .surface-card-glass {
@@ -89,33 +99,25 @@ code {
   }
 
   .chip {
-    @apply inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-zinc-800 bg-zinc-950/60 text-sm text-zinc-300 transition-all duration-200 hover:border-zinc-500 hover:text-white hover:bg-zinc-900;
+    @apply inline-flex items-center px-3 py-1.5 rounded-md border border-zinc-800 bg-transparent text-sm text-zinc-400 transition-colors duration-150 hover:border-zinc-600 hover:text-zinc-200;
   }
 
   .eyebrow-pill {
-    @apply inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-950/70 px-3.5 py-1.5 text-xs font-medium text-zinc-300 backdrop-blur;
+    @apply text-sm font-medium text-zinc-400;
   }
 
   .mesh-hero {
     background:
-      radial-gradient(ellipse 70% 60% at 15% -10%, rgba(255, 255, 255, 0.10), transparent 60%),
-      radial-gradient(ellipse 50% 50% at 100% 0%, rgba(113, 113, 122, 0.18), transparent 55%),
-      radial-gradient(ellipse 60% 50% at 90% 90%, rgba(82, 82, 91, 0.12), transparent 60%),
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255, 255, 255, 0.06), transparent 55%),
       #000;
   }
 
   .hero-grid {
-    background-image:
-      linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
-    background-size: 56px 56px;
-    -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 0%, #000 30%, transparent 75%);
-    mask-image: radial-gradient(ellipse 70% 70% at 50% 0%, #000 30%, transparent 75%);
+    display: none;
   }
 
   .text-gradient {
-    @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(120deg, #ffffff 0%, #d4d4d8 40%, #71717a 100%);
+    @apply text-zinc-200;
   }
 
   .meter-track {
