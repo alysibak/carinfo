@@ -24,11 +24,11 @@ interface QuickChip {
 
 const QUICK_CHIPS: QuickChip[] = [
   {
-    label: 'Electric & hybrid',
+    label: 'Electric',
     filters: { fuelType: ['electric', 'hybrid', 'plug-in hybrid'] },
     sort: { field: 'year', order: 'desc' },
   },
-  { label: 'SUVs', filters: { bodyStyle: ['suv'] } },
+  { label: 'SUV', filters: { bodyStyle: ['suv'] } },
   {
     label: 'Under $20k',
     filters: { price: { max: 20000 } },
@@ -39,7 +39,6 @@ const QUICK_CHIPS: QuickChip[] = [
     filters: { fuelEconomy: { min: 40 } },
     sort: { field: 'fuelEconomy', order: 'desc' },
   },
-  { label: 'Trucks', filters: { bodyStyle: ['truck'] } },
 ];
 
 export default function Landing() {
@@ -127,224 +126,204 @@ export default function Landing() {
     });
   }, []);
 
-  const browseCards = [
-    { to: '/explore/purpose', title: 'By need', desc: 'Daily driver, family, commute, work', icon: <IconCompass /> },
-    { to: '/explore/body-style', title: 'By type', desc: 'Sedan, SUV, truck, coupe…', icon: <IconCar /> },
-    { to: '/explore/budget', title: 'By budget', desc: 'Under $15k through $60k+', icon: <IconTag /> },
-    { to: '/explore/era', title: 'By era', desc: '2020s, 2010s, classics', icon: <IconCalendar /> },
-  ];
-
   const vehicles = stats ? stats.totalCars.toLocaleString() : '28,000+';
   const makes = stats ? String(stats.totalMakes) : '89';
   const years = stats ? `${stats.yearRange.min}–${stats.yearRange.max}` : '1995–2026';
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-obsidian text-ivory selection:bg-champagne/20">
       {showQuiz && <PersonaQuiz onComplete={handleQuizComplete} />}
 
-      {/* Top nav */}
       <header
-        className={`sticky top-0 z-40 transition-colors duration-300 ${
+        className={`sticky top-0 z-40 transition-all duration-500 ${
           scrolled
-            ? 'border-b border-zinc-800/80 bg-black/70 backdrop-blur-xl'
-            : 'border-b border-transparent'
+            ? 'border-b border-[var(--border-subtle)] bg-obsidian/90 backdrop-blur-md'
+            : 'border-b border-transparent bg-transparent'
         }`}
       >
-        <div className="page-wrap py-4 flex items-center justify-between gap-4">
-          <Link to="/" className="flex items-center gap-2.5">
-            <span className="grid place-items-center w-8 h-8 rounded-md border border-zinc-700 text-zinc-300">
-              <IconGauge />
+        <div className="page-wrap py-5 flex items-center justify-between gap-6">
+          <Link to="/" className="group flex items-baseline gap-3">
+            <span className="kicker !text-[10px] !tracking-[0.35em] text-champagne group-hover:text-ivory transition-colors">
+              CarInfo
             </span>
-            <span className="text-base font-semibold tracking-tight text-white">CarInfo</span>
           </Link>
-          <nav className="hidden sm:flex items-center gap-1 text-sm font-medium">
-            <Link className="px-3 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors" to="/browse">Browse</Link>
-            <Link className="px-3 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors" to="/home">Search</Link>
-            <Link className="px-3 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors" to="/value-matrix">Matrix</Link>
-            <Link className="px-3 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors" to="/garage">Garage</Link>
+          <nav className="hidden md:flex items-center gap-8">
+            <Link className="nav-link" to="/browse">Browse</Link>
+            <Link className="nav-link" to="/home">Search</Link>
+            <Link className="nav-link" to="/value-matrix">Matrix</Link>
+            <Link className="nav-link" to="/garage">Garage</Link>
           </nav>
-          <button type="button" onClick={() => setShowQuiz(true)} className="btn-primary !py-2">
-            Find my car
+          <button type="button" onClick={() => setShowQuiz(true)} className="btn-primary !py-2.5 !px-5 !text-xs">
+            Concierge
           </button>
         </div>
       </header>
 
       {/* Hero */}
-      <section className="relative mesh-hero border-b border-zinc-900 overflow-hidden">
-        <div className="relative page-wrap py-14 md:py-20">
-          <div className="grid lg:grid-cols-2 gap-12 xl:gap-16 items-center">
-            {/* Left column */}
-            <div>
-              <p className="eyebrow-pill">
-                EPA-verified specs · Ontario price estimates in CAD
-              </p>
+      <section className="relative mesh-hero overflow-hidden">
+        <div className="page-wrap pt-16 pb-20 md:pt-24 md:pb-28">
+          <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-16 xl:gap-24 items-end">
+            <div className="max-w-xl">
+              <div className="rule-gold-short mb-8" />
+              <p className="kicker">EPA & NHTSA archive</p>
 
-              <h1 className="font-display text-[2.5rem] md:text-[3.25rem] xl:text-[3.75rem] text-white leading-[1.08] mt-5 mb-5 max-w-[16ch]">
-                Compare cars with data you can trust
+              <h1 className="font-display text-[2.75rem] md:text-[3.5rem] xl:text-[4.25rem] text-ivory leading-[1.02] mt-5 mb-6">
+                The reference for serious buyers
               </h1>
 
-              <p className="text-base md:text-[1.0625rem] text-zinc-400 leading-relaxed mb-8 max-w-lg">
-                Search {vehicles} vehicles from {years}. Fuel economy, safety ratings, and
-                estimated value — sourced from EPA and NHTSA where available.
+              <p className="text-base md:text-lg text-stone leading-relaxed font-light max-w-md">
+                {vehicles} vehicles across {makes} marques, {years}. Verified specifications
+                and discreet market estimates — composed for comparison, not sales pressure.
               </p>
 
-              <div className="max-w-xl">
+              <div className="mt-12 max-w-lg">
                 <SearchBar
                   value={heroQuery}
                   onChange={setHeroQuery}
                   onSubmit={handleHeroSearch}
                   size="large"
+                  variant="luxury"
+                  placeholder="Marque, model, or year"
                 />
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <span className="text-xs text-zinc-600 mr-1">Try:</span>
-                  {QUICK_CHIPS.map((chip) => (
-                    <Link
-                      key={chip.label}
-                      to={`/home?${searchQueryToParams(
-                        filtersToSearchQuery(chip.filters, chip.sort),
-                        1,
-                      ).toString()}`}
-                      className="chip"
-                    >
-                      {chip.label}
-                    </Link>
+                <div className="mt-6 flex flex-wrap items-center gap-x-1 gap-y-2">
+                  {QUICK_CHIPS.map((chip, i) => (
+                    <span key={chip.label} className="flex items-center">
+                      {i > 0 && <span className="text-champagne/30 mx-2 select-none">·</span>}
+                      <Link
+                        to={`/home?${searchQueryToParams(
+                          filtersToSearchQuery(chip.filters, chip.sort),
+                          1,
+                        ).toString()}`}
+                        className="chip"
+                      >
+                        {chip.label}
+                      </Link>
+                    </span>
                   ))}
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-3 mt-8">
-                <button type="button" onClick={() => setShowQuiz(true)} className="btn-primary">
-                  Find my car
-                </button>
-                <Link to="/browse" className="btn-secondary">Browse categories</Link>
-                <Link to="/value-matrix" className="btn-secondary">Value matrix</Link>
-              </div>
-
-              {/* Stat band */}
-              <div className="mt-10 flex items-center gap-4 sm:gap-8 border-t border-zinc-900 pt-6">
-                <Stat value={vehicles} label="Vehicles" />
-                <span className="h-10 w-px bg-zinc-800" />
-                <Stat value={makes} label="Makes" />
-                <span className="h-10 w-px bg-zinc-800" />
-                <Stat value={years} label="Model years" />
+              <div className="mt-14 grid grid-cols-3 gap-6 border-t border-[var(--border-subtle)] pt-8">
+                <Stat value={vehicles} label="In archive" />
+                <Stat value={makes} label="Marques" />
+                <Stat value={years} label="Span" />
               </div>
             </div>
 
-            {/* Right column — featured spotlight */}
-            <div className="relative hidden lg:block">
+            <div className="relative hidden lg:block pb-2">
               {featured ? (
                 <FeaturedCard car={featured} />
               ) : (
-                <div className="relative surface-card-glass overflow-hidden animate-pulse">
-                  <div className="aspect-[16/10] bg-zinc-900/60" />
-                  <div className="p-6 space-y-4">
-                    <div className="h-6 w-2/3 rounded bg-zinc-900" />
-                    <div className="h-4 w-1/2 rounded bg-zinc-900" />
-                    <div className="grid grid-cols-2 gap-4 pt-2">
-                      <div className="h-12 rounded bg-zinc-900" />
-                      <div className="h-12 rounded bg-zinc-900" />
-                    </div>
-                  </div>
+                <div className="luxury-frame animate-pulse">
+                  <div className="luxury-frame-inner aspect-[4/5] bg-[#0f0e0c]" />
                 </div>
               )}
             </div>
           </div>
         </div>
+        <div className="rule-gold" />
       </section>
 
-      {/* About the data */}
-      <section className="page-wrap pt-12">
+      <section className="page-wrap py-16 md:py-20">
         <AboutData />
       </section>
 
-      {/* Shop by need */}
-      <section className="page-wrap py-16 border-b border-zinc-900">
-        <SectionHeader
-          kicker="Start here"
-          title="Start with how you'll use it"
-          subtitle="One tap opens a filtered search you can refine."
-        />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {LIFESTYLE_PRESETS.map((preset) => (
+      {/* By intention */}
+      <section className="page-wrap py-16 md:py-24 border-t border-[var(--border-subtle)]">
+        <SectionHeader index="01" title="By intention" subtitle="Begin with purpose. Refine at leisure." />
+        <div className="divide-y divide-[var(--border-subtle)] border-y border-[var(--border-subtle)]">
+          {LIFESTYLE_PRESETS.map((preset, i) => (
             <Link
               key={preset.id}
               to={`/home?${searchQueryToParams(presetToSearchQuery(preset), 1).toString()}`}
-              className="surface-card-hover p-5 group flex flex-col rounded-lg"
+              className="exclusive-row"
             >
-              <p className="font-semibold text-white">{preset.label}</p>
-              <p className="text-xs text-zinc-500 mt-1.5 leading-relaxed flex-1">{preset.description}</p>
-              <span className="mt-4 inline-flex items-center gap-1 text-xs text-zinc-600 group-hover:text-white transition-colors">
-                Explore <span className="transition-transform group-hover:translate-x-0.5">→</span>
-              </span>
+              <div className="flex items-baseline gap-6 min-w-0">
+                <span className="text-xs text-champagne/50 font-tabular w-6 shrink-0">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <div className="min-w-0">
+                  <p className="font-display text-2xl text-ivory group-hover:text-champagne transition-colors duration-300">
+                    {preset.label}
+                  </p>
+                  <p className="text-sm text-stone mt-1 font-light">{preset.description}</p>
+                </div>
+              </div>
+              <span className="text-champagne/40 group-hover:text-champagne transition-colors text-lg shrink-0">→</span>
             </Link>
           ))}
         </div>
-        <Link
-          to="/browse"
-          className="inline-block mt-6 text-sm text-zinc-400 hover:text-white transition-colors"
-        >
-          See all browse options →
+        <Link to="/browse" className="inline-block mt-10 text-xs uppercase tracking-[0.2em] text-stone hover:text-champagne transition-colors">
+          Full catalogue →
         </Link>
       </section>
 
-      {/* Browse grid */}
-      <section className="page-wrap py-16 border-b border-zinc-900">
-        <SectionHeader kicker="Explore" title="Browse the archive" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {browseCards.map((card) => (
-            <Link key={card.to} to={card.to} className="surface-card-hover p-6 group rounded-lg">
-              <div className="w-10 h-10 rounded-xl border border-zinc-800 bg-zinc-900/60 flex items-center justify-center text-zinc-300 group-hover:text-white group-hover:border-zinc-600 transition-colors mb-4">
-                {card.icon}
-              </div>
-              <p className="font-semibold text-white mb-1 flex items-center justify-between">
+      {/* Browse */}
+      <section className="page-wrap py-16 md:py-24 border-t border-[var(--border-subtle)]">
+        <SectionHeader index="02" title="The catalogue" />
+        <div className="grid sm:grid-cols-2 gap-px bg-[var(--border-subtle)] border border-[var(--border-subtle)]">
+          {[
+            { to: '/explore/purpose', title: 'By need', desc: 'Commute, family, work' },
+            { to: '/explore/body-style', title: 'By silhouette', desc: 'Sedan, SUV, coupe' },
+            { to: '/explore/budget', title: 'By investment', desc: '$15k through $60k+' },
+            { to: '/explore/era', title: 'By era', desc: '2020s to classics' },
+          ].map((card) => (
+            <Link
+              key={card.to}
+              to={card.to}
+              className="group bg-obsidian p-8 md:p-10 transition-colors duration-300 hover:bg-[#0f0e0c]"
+            >
+              <p className="kicker !text-[10px] mb-4">{card.desc}</p>
+              <p className="font-display text-3xl text-ivory group-hover:text-champagne transition-colors duration-300">
                 {card.title}
-                <span className="text-zinc-600 group-hover:text-white transition-all group-hover:translate-x-0.5">→</span>
               </p>
-              <p className="text-sm text-zinc-500">{card.desc}</p>
             </Link>
           ))}
         </div>
       </section>
 
       {/* Collections */}
-      <section className="page-wrap py-16">
+      <section className="page-wrap py-16 md:py-24 border-t border-[var(--border-subtle)]">
         <SectionHeader
-          kicker="Hand-picked"
-          title="Curated collections"
-          subtitle="Hand-picked filters for common goals."
+          index="03"
+          title="Curated selections"
+          subtitle="Editorial shortlists for distinct pursuits."
         />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="space-y-0">
           {Object.values(COLLECTIONS).map((c) => (
             <Link
               key={c.id}
               to={`/collection/${c.id}`}
-              className="surface-card-hover p-5 group flex flex-col rounded-lg"
+              className="exclusive-row"
             >
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[11px] px-2 py-1 rounded-full border border-zinc-800 text-zinc-400">
+              <div className="min-w-0">
+                <p className="font-display text-xl md:text-2xl text-ivory group-hover:text-champagne transition-colors duration-300">
+                  {c.title}
+                </p>
+                <p className="text-sm text-stone mt-1 font-light">{c.subtitle}</p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-xs uppercase tracking-[0.15em] text-champagne/60">
                   {collectionCounts[c.id] != null
                     ? `${collectionCounts[c.id].toLocaleString()} vehicles`
-                    : 'Curated set'}
-                </span>
-                <span className="text-zinc-600 group-hover:text-white transition-all group-hover:translate-x-0.5">→</span>
+                    : 'Curated'}
+                </p>
               </div>
-              <p className="font-semibold text-white">{c.title}</p>
-              <p className="text-sm text-zinc-500 mt-1">{c.subtitle}</p>
             </Link>
           ))}
         </div>
       </section>
 
-      <footer className="border-t border-zinc-900">
-        <div className="page-wrap py-12 flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-sm text-zinc-500">
-          <div className="flex items-center gap-2.5">
-            <span className="grid place-items-center w-7 h-7 rounded-md border border-zinc-700 text-zinc-400">
-              <IconGauge />
-            </span>
-            <span className="font-semibold text-zinc-300">CarInfo</span>
+      <footer className="border-t border-[var(--border-subtle)] mt-8">
+        <div className="page-wrap py-14 flex flex-col md:flex-row md:items-end md:justify-between gap-8">
+          <div>
+            <p className="kicker !text-[10px] !tracking-[0.35em]">CarInfo</p>
+            <p className="text-sm text-stone mt-3 max-w-xs font-light leading-relaxed">
+              A private reference. EPA fuel economy, NHTSA safety, estimated values in CAD.
+            </p>
           </div>
-          <p className="text-center">
-            © {new Date().getFullYear()} CarInfo · EPA fuel economy · NHTSA safety · estimated market values
+          <p className="text-xs text-stone/70 uppercase tracking-[0.12em]">
+            © {new Date().getFullYear()} CarInfo
           </p>
         </div>
       </footer>
@@ -363,69 +342,43 @@ function FeaturedCard({ car }: { car: CarSpecs }) {
   const overall = car.safetyRating?.overall;
 
   return (
-    <div className="relative animate-fade-in">
-      <Link
-        to={`/car/${car.id}`}
-        className="relative block surface-card-glass overflow-hidden group rounded-xl border-zinc-800"
-      >
-        <div className="relative aspect-[16/10] border-b border-zinc-800/80">
+    <div className="luxury-frame animate-fade-in">
+      <Link to={`/car/${car.id}`} className="luxury-frame-inner block group overflow-hidden">
+        <div className="relative aspect-[4/5] max-h-[520px]">
           <VehiclePlaceholder car={car} />
-          <span className="absolute left-4 top-4 z-10 text-xs font-medium text-zinc-300 border border-zinc-700 bg-black/70 px-2 py-0.5 rounded">
-            Example vehicle
-          </span>
-        </div>
-        <div className="p-6">
-          <p className="text-sm font-medium text-zinc-500">{car.year}</p>
-          <h3 className="text-xl font-semibold text-white mt-0.5 tracking-tight">
-            {car.make} {car.model}
-          </h3>
-          <div className="flex flex-wrap gap-1.5 mt-3">
-            <Tag>{car.bodyStyle}</Tag>
-            <Tag>{formatFuelBadge(car.engine.fuelType)}</Tag>
-            <Tag>{car.driveType}</Tag>
+          <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/20 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-8">
+            <p className="kicker !text-[10px] mb-3">Selection</p>
+            <p className="font-display text-4xl text-ivory leading-none">{car.year}</p>
+            <h3 className="font-display text-2xl text-champagne mt-2">
+              {car.make} {car.model}
+            </h3>
+            <div className="flex flex-wrap gap-3 mt-4 text-[11px] uppercase tracking-[0.12em] text-stone">
+              <span>{car.bodyStyle}</span>
+              <span className="text-champagne/40">·</span>
+              <span>{formatFuelBadge(car.engine.fuelType)}</span>
+            </div>
           </div>
-
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-4 mt-6">
-            <div>
-              <dt className="kicker">Horsepower</dt>
-              <dd className="mt-1 text-xl font-semibold font-tabular text-white">{powerValue}</dd>
-              <p className="text-[11px] text-zinc-500 mt-1">EPA rated, when on file</p>
+        </div>
+        <div className="p-8 border-t border-[var(--border-subtle)] grid grid-cols-2 gap-6">
+          <div>
+            <dt className="kicker !text-[10px]">Power</dt>
+            <dd className="mt-2 font-display text-2xl text-ivory">{powerValue}</dd>
+          </div>
+          <div>
+            <dt className="kicker !text-[10px]">{mpgLabel}</dt>
+            <dd className="mt-2 font-display text-2xl text-ivory">{mpgValue}</dd>
+            <div className="meter-track mt-3 h-px">
+              <div className="meter-fill h-px" style={{ width: `${mpgPct}%` }} />
             </div>
-            <div>
-              <dt className="kicker">Combined</dt>
-              <dd className="mt-1 flex items-baseline gap-1">
-                <span className="text-xl font-semibold font-tabular text-white">{mpgValue}</span>
-                <span className="text-xs text-zinc-500">{mpgLabel}</span>
-              </dd>
-              <div className="meter-track mt-2">
-                <div className="meter-fill animate-grow-x" style={{ width: `${mpgPct}%` }} />
-              </div>
-            </div>
-            <div>
-              <dt className="kicker">Drivetrain</dt>
-              <dd className="mt-1 text-sm font-semibold text-white">
-                {car.driveType} · {engineValue}
-              </dd>
-            </div>
-            <div>
-              <dt className="kicker">Safety</dt>
-              <dd className="mt-1">
-                {overall ? (
-                  <Stars rating={overall} />
-                ) : (
-                  <span className="text-xs text-zinc-500 italic">Not rated</span>
-                )}
-              </dd>
-            </div>
-          </dl>
-          <p className="mt-4 text-xs text-zinc-500">
-            Est. value {priceValue} · Ontario baseline
+          </div>
+          <div className="col-span-2 pt-2 flex items-center justify-between text-xs text-stone font-light border-t border-[var(--border-subtle)]">
+            <span>{car.driveType} · {engineValue}</span>
+            <span>{overall ? `${overall}/5 NHTSA` : 'Safety unrated'}</span>
+          </div>
+          <p className="col-span-2 text-xs text-stone/80 font-light">
+            Est. {priceValue} CAD
           </p>
-
-          <span className="mt-6 inline-flex items-center gap-1 text-sm font-medium text-zinc-400 group-hover:text-white transition-colors">
-            View full breakdown
-            <span className="transition-transform group-hover:translate-x-0.5">→</span>
-          </span>
         </div>
       </Link>
     </div>
@@ -433,19 +386,19 @@ function FeaturedCard({ car }: { car: CarSpecs }) {
 }
 
 function SectionHeader({
-  kicker,
+  index,
   title,
   subtitle,
 }: {
-  kicker: string;
+  index: string;
   title: string;
   subtitle?: string;
 }) {
   return (
-    <div className="mb-8 flex flex-col gap-2">
-      <span className="kicker">{kicker}</span>
+    <div className="mb-10 md:mb-14 flex flex-col gap-3">
+      <span className="kicker">{index}</span>
       <h2 className="section-title">{title}</h2>
-      {subtitle && <p className="text-sm text-zinc-400 max-w-xl">{subtitle}</p>}
+      {subtitle && <p className="text-sm text-stone font-light max-w-md">{subtitle}</p>}
     </div>
   );
 }
@@ -453,83 +406,8 @@ function SectionHeader({
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div>
-      <p className="text-2xl md:text-[1.75rem] font-semibold font-tabular text-white leading-none tracking-tight">
-        {value}
-      </p>
-      <p className="text-xs text-zinc-500 mt-1.5">{label}</p>
+      <p className="font-display text-3xl md:text-4xl text-ivory leading-none">{value}</p>
+      <p className="text-[10px] uppercase tracking-[0.18em] text-stone mt-2">{label}</p>
     </div>
-  );
-}
-
-function Tag({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="text-xs px-2 py-0.5 rounded border border-zinc-800 text-zinc-400 capitalize">
-      {children}
-    </span>
-  );
-}
-
-function Stars({ rating }: { rating: number }) {
-  return (
-    <span className="inline-flex gap-0.5" aria-label={`${Math.round(rating)} out of 5 stars`}>
-      {[1, 2, 3, 4, 5].map((i) => (
-        <svg
-          key={i}
-          viewBox="0 0 20 20"
-          className={`w-3.5 h-3.5 ${i <= Math.round(rating) ? 'text-white' : 'text-zinc-700'}`}
-          fill="currentColor"
-          aria-hidden
-        >
-          <path d="M10 1.6l2.5 5.2 5.7.8-4.1 4 1 5.7L10 14.9 4.9 17.3l1-5.7-4.1-4 5.7-.8z" />
-        </svg>
-      ))}
-    </span>
-  );
-}
-
-function IconGauge() {
-  return (
-    <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-      <path strokeLinecap="round" d="M4 18a8 8 0 1 1 16 0" />
-      <path strokeLinecap="round" d="M12 14l3.5-3.5" />
-    </svg>
-  );
-}
-
-function IconCompass() {
-  return (
-    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinejoin="round" aria-hidden>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M15.5 8.5l-2 5-5 2 2-5z" />
-    </svg>
-  );
-}
-
-function IconCar() {
-  return (
-    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M4 17v-3l1.8-4.2A2 2 0 0 1 7.6 8.6h8.8a2 2 0 0 1 1.8 1.2L20 14v3" />
-      <path d="M3 17h18" />
-      <circle cx="7.5" cy="17" r="1.6" />
-      <circle cx="16.5" cy="17" r="1.6" />
-    </svg>
-  );
-}
-
-function IconTag() {
-  return (
-    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M3.5 11.5l8-8 8.5 1 1 8.5-8 8z" />
-      <circle cx="15" cy="9" r="1.4" />
-    </svg>
-  );
-}
-
-function IconCalendar() {
-  return (
-    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
-      <path d="M3.5 9.5h17M8 3.5v3M16 3.5v3" />
-    </svg>
   );
 }

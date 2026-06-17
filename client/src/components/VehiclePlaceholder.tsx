@@ -36,8 +36,8 @@ export default function VehiclePlaceholder({ car, compact = false, className = '
           src={bodyTypeImg}
           alt=""
           aria-hidden
-          className={`relative w-[98%] max-w-none object-contain invert drop-shadow-2xl ${
-            compact ? 'opacity-85 scale-105' : 'opacity-95 scale-110'
+          className={`absolute left-0 right-0 mx-auto w-full max-w-[92%] object-contain pointer-events-none ${
+            compact ? 'top-[6%] h-[58%]' : 'top-[8%] h-[62%]'
           }`}
         />
       ) : (

@@ -9,6 +9,7 @@ interface SearchBarProps {
   placeholder?: string;
   autoFocus?: boolean;
   size?: 'default' | 'large';
+  variant?: 'default' | 'luxury';
   showButton?: boolean;
   loading?: boolean;
 }
@@ -20,6 +21,7 @@ export default function SearchBar({
   placeholder = 'Search make, model, or year — e.g. 2024 Camry',
   autoFocus = false,
   size = 'default',
+  variant = 'default',
   showButton = true,
   loading = false,
 }: SearchBarProps) {
@@ -91,13 +93,21 @@ export default function SearchBar({
     }
   };
 
-  const inputClass =
-    size === 'large'
+  const isLuxury = variant === 'luxury';
+
+  const inputClass = isLuxury
+    ? size === 'large'
+      ? 'w-full pl-12 pr-4 py-4 bg-transparent border-b border-[rgba(196,165,116,0.25)] text-ivory text-base placeholder-stone focus:outline-none focus:border-champagne/60 transition-colors font-light'
+      : 'w-full pl-11 pr-4 py-3 bg-transparent border-b border-[rgba(196,165,116,0.25)] text-ivory text-sm placeholder-stone focus:outline-none focus:border-champagne/60 transition-colors'
+    : size === 'large'
       ? 'w-full pl-12 pr-4 py-4 bg-zinc-950 border border-zinc-700 text-white text-base placeholder-zinc-500 focus:outline-none focus:border-zinc-400 rounded-xl transition-colors'
       : 'w-full pl-11 pr-4 py-3 bg-zinc-950 border border-zinc-700 text-white text-sm placeholder-zinc-500 focus:outline-none focus:border-zinc-400 rounded-xl transition-colors';
 
-  const buttonClass =
-    size === 'large'
+  const buttonClass = isLuxury
+    ? size === 'large'
+      ? 'px-8 py-4 border border-champagne/50 text-champagne text-xs font-medium uppercase tracking-[0.2em] hover:bg-champagne/10 transition-colors disabled:opacity-50'
+      : 'px-6 py-3 border border-champagne/50 text-champagne text-xs font-medium uppercase tracking-[0.2em] hover:bg-champagne/10 transition-colors disabled:opacity-50'
+    : size === 'large'
       ? 'px-8 py-4 bg-white text-black text-sm font-semibold rounded-xl hover:bg-zinc-200 transition-colors disabled:opacity-50'
       : 'px-6 py-3 bg-white text-black text-sm font-semibold rounded-xl hover:bg-zinc-200 transition-colors disabled:opacity-50';
 
@@ -106,7 +116,7 @@ export default function SearchBar({
       <div className={`flex gap-3 ${showButton ? '' : ''}`}>
         <div className="relative flex-1">
           <svg
-            className={`absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 ${size === 'large' ? 'w-5 h-5' : 'w-4 h-4'}`}
+            className={`absolute left-4 top-1/2 -translate-y-1/2 ${isLuxury ? 'text-champagne/60' : 'text-zinc-400'} ${size === 'large' ? 'w-5 h-5' : 'w-4 h-4'}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -143,7 +153,7 @@ export default function SearchBar({
             disabled={loading}
             className={buttonClass}
           >
-            {loading ? '…' : 'Search'}
+            {loading ? '…' : isLuxury ? 'Search' : 'Search'}
           </button>
         )}
       </div>
