@@ -4,25 +4,24 @@
 
 :root {
   color-scheme: dark;
-  --text-primary: #f0ebe3;
-  --text-secondary: #b8b0a4;
-  --text-muted: #8a8478;
-  --border-default: rgba(196, 165, 116, 0.22);
-  --border-subtle: rgba(196, 165, 116, 0.1);
-  --surface: #080807;
-  --surface-raised: #11100e;
-  --accent: #c4a574;
+  --text-primary: #fafafa;
+  --text-secondary: #d4d4d8;
+  --text-muted: #a1a1aa;
+  --border-default: #3f3f46;
+  --border-subtle: #27272a;
+  --surface: #000000;
+  --surface-raised: #09090b;
 }
 
 body {
   margin: 0;
-  font-family: Manrope, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--surface);
   color: var(--text-primary);
-  line-height: 1.6;
-  letter-spacing: 0.01em;
+  line-height: 1.5;
+  letter-spacing: -0.011em;
 }
 
 code {
@@ -35,9 +34,9 @@ code {
 
 @layer components {
   .font-display {
-    font-family: 'Cormorant Garamond', Georgia, serif;
-    font-weight: 500;
-    letter-spacing: -0.01em;
+    font-family: inherit;
+    font-weight: 600;
+    letter-spacing: -0.025em;
   }
 
   .font-tabular {
@@ -53,103 +52,80 @@ code {
   }
 
   .surface-card {
-    @apply bg-obsidian border border-luxury-subtle rounded-sm;
+    @apply bg-black border border-zinc-800 rounded-lg;
   }
 
   .surface-card-hover {
-    @apply bg-obsidian border border-luxury-subtle rounded-sm transition-colors duration-300 hover:border-luxury-default hover:bg-[#0f0e0c];
+    @apply bg-black border border-zinc-800 rounded-lg transition-colors duration-200 hover:border-zinc-600 hover:bg-zinc-950;
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 text-sm transition-all duration-300 focus:outline-none focus-visible:ring-1 focus-visible:ring-champagne/40;
+    @apply inline-flex items-center justify-center gap-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25;
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 text-sm transition-all duration-300 focus:outline-none focus-visible:ring-1 focus-visible:ring-champagne/40 px-7 py-3 bg-champagne text-obsidian hover:bg-ivory font-medium tracking-wide;
+    @apply inline-flex items-center justify-center gap-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 px-5 py-2.5 bg-white text-black hover:bg-zinc-200 rounded-lg;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 text-sm transition-all duration-300 focus:outline-none focus-visible:ring-1 focus-visible:ring-champagne/40 px-6 py-3 border border-luxury-default text-stone hover:text-ivory hover:border-champagne/50 bg-transparent font-medium tracking-wide;
+    @apply inline-flex items-center justify-center gap-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 px-5 py-2.5 border border-zinc-600 text-zinc-300 hover:border-zinc-400 hover:text-white bg-transparent rounded-lg;
   }
 
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 text-sm transition-all duration-300 focus:outline-none focus-visible:ring-1 focus-visible:ring-champagne/40 px-3 py-2 text-stone hover:text-ivory;
+    @apply inline-flex items-center justify-center gap-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 px-3 py-2 text-zinc-400 hover:text-white;
   }
 
   .label-sm {
-    @apply text-xs font-medium text-stone;
+    @apply text-xs font-medium text-zinc-400;
   }
 
   .section-heading {
-    @apply text-lg font-semibold text-ivory tracking-tight;
+    @apply text-lg font-semibold text-white tracking-tight;
   }
 
   .section-title {
-    @apply text-3xl md:text-4xl text-ivory leading-tight;
-    font-family: 'Cormorant Garamond', Georgia, serif;
-    font-weight: 500;
-    letter-spacing: -0.01em;
+    @apply text-2xl md:text-3xl font-semibold text-white tracking-tight leading-tight;
   }
 
   .kicker {
-    @apply text-[11px] font-medium text-champagne uppercase;
-    letter-spacing: 0.22em;
+    @apply text-[11px] font-medium text-zinc-500 uppercase;
+    letter-spacing: 0.1em;
   }
 
   .surface-card-glass {
-    @apply border border-luxury-subtle bg-[#0c0b09]/90 rounded-sm;
+    @apply border border-zinc-800 bg-zinc-950/80 rounded-lg;
   }
 
   .chip {
-    @apply inline-flex items-center px-3 py-1 text-xs text-stone border-b border-transparent transition-colors duration-300 hover:text-champagne hover:border-champagne/40;
+    @apply inline-flex items-center px-3 py-1 text-xs text-zinc-400 border border-zinc-800 rounded-md transition-colors duration-150 hover:text-white hover:border-zinc-600;
   }
 
   .eyebrow-pill {
-    @apply text-[11px] font-medium text-champagne uppercase;
-    letter-spacing: 0.22em;
+    @apply text-xs font-medium text-zinc-500;
   }
 
   .mesh-hero {
-    background:
-      radial-gradient(ellipse 90% 70% at 80% 10%, rgba(196, 165, 116, 0.07), transparent 50%),
-      radial-gradient(ellipse 60% 50% at 10% 80%, rgba(196, 165, 116, 0.04), transparent 45%),
-      var(--surface);
-  }
-
-  .rule-gold {
-    @apply h-px w-full bg-gradient-to-r from-transparent via-champagne/35 to-transparent;
-  }
-
-  .rule-gold-short {
-    @apply h-px w-12 bg-champagne/50;
-  }
-
-  .luxury-frame {
-    @apply p-px bg-gradient-to-br from-champagne/40 via-champagne/10 to-transparent;
-  }
-
-  .luxury-frame-inner {
-    @apply bg-obsidian;
+    @apply bg-black;
   }
 
   .nav-link {
-    @apply text-[11px] font-medium uppercase tracking-[0.18em] text-stone transition-colors duration-300 hover:text-ivory;
+    @apply text-sm font-medium text-zinc-400 transition-colors duration-150 hover:text-white;
   }
 
-  .exclusive-row {
-    @apply flex items-center justify-between gap-6 py-5 border-b border-luxury-subtle transition-colors duration-300 hover:border-luxury-default;
+  .list-row {
+    @apply flex items-center justify-between gap-6 py-5 border-b border-zinc-900 transition-colors duration-150 hover:border-zinc-700;
   }
 
   .text-gradient {
-    @apply text-ivory;
+    @apply text-white;
   }
 
   .meter-track {
-    @apply relative h-px w-full overflow-hidden bg-luxury-subtle;
+    @apply relative h-1 w-full overflow-hidden rounded-full bg-zinc-800;
   }
 
   .meter-fill {
-    @apply absolute inset-y-0 left-0 origin-left bg-champagne/70;
+    @apply absolute inset-y-0 left-0 origin-left rounded-full bg-white;
   }
 }
 
