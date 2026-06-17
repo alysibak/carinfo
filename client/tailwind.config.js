@@ -8,11 +8,16 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
-        serif: ['"IBM Plex Serif"', 'Georgia', 'serif'],
-        display: ['"IBM Plex Serif"', 'Georgia', 'serif'],
+        sans: ['Manrope', 'system-ui', 'sans-serif'],
+        serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+        display: ['"Cormorant Garamond"', 'Georgia', 'serif'],
       },
       colors: {
+        ivory: '#f0ebe3',
+        champagne: '#c4a574',
+        'champagne-dim': '#8a7350',
+        obsidian: '#080807',
+        stone: '#8a8478',
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',

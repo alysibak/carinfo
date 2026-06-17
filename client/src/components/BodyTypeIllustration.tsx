@@ -5,7 +5,7 @@ interface BodyTypeIllustrationProps {
   className?: string;
 }
 
-/** Body-type silhouette from the browse taxonomy artwork (inverted for dark UI). */
+/** Body-type silhouette from the browse taxonomy artwork. */
 export default function BodyTypeIllustration({ bodyType, className = '' }: BodyTypeIllustrationProps) {
   const src = getBodyTypeImage(bodyType);
   if (!src) return null;
@@ -15,7 +15,7 @@ export default function BodyTypeIllustration({ bodyType, className = '' }: BodyT
       src={src}
       alt=""
       aria-hidden
-      className={`object-contain object-center invert opacity-90 ${className}`}
+      className={`object-contain object-center ${className}`}
     />
   );
 }
