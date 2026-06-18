@@ -110,7 +110,7 @@ export default function BattleMode() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-black border-b border-zinc-900">
+      <div className="bg-black border-b border-zinc-900">
         <div className="px-8 py-6">
           <div className="flex items-center justify-between max-w-7xl mx-auto">
             <Link
@@ -271,21 +271,21 @@ export default function BattleMode() {
               {animateVS && !showResults && fighter1 && fighter2 && (
                 <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
                   <div className="text-center">
-                    <div className="grid grid-cols-3 items-center gap-16">
-                      <div className="text-right animate-slide-in-left">
-                        <h3 className="text-4xl font-black tracking-tight text-white mb-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 items-center gap-6 sm:gap-16 px-4">
+                      <div className="text-center sm:text-right animate-slide-in-left">
+                        <h3 className="text-2xl sm:text-4xl font-black tracking-tight text-white mb-2">
                           {fighter1.make}
                         </h3>
-                        <p className="text-2xl font-light tracking-wider text-zinc-500">
+                        <p className="text-lg sm:text-2xl font-light tracking-wider text-zinc-500">
                           {fighter1.model}
                         </p>
                       </div>
 
-                      <div className="text-9xl font-black tracking-tighter animate-pulse">
+                      <div className="text-6xl sm:text-9xl font-black tracking-tighter animate-pulse text-center">
                         VS
                       </div>
 
-                      <div className="text-left animate-slide-in-right">
+                      <div className="text-center sm:text-left animate-slide-in-right">
                         <h3 className="text-4xl font-black tracking-tight text-zinc-400 mb-2">
                           {fighter2.make}
                         </h3>

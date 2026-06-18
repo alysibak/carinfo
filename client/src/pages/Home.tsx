@@ -45,6 +45,7 @@ export default function Home() {
 
   const [searchText, setSearchText] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const pageSize = getDefaultPageSize();
 
   const runSearchFromParams = useCallback(
@@ -120,8 +121,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black text-white pb-12">
-      <div className="sticky top-[53px] z-20 bg-black/90 border-b border-zinc-800 backdrop-blur-md">
-        <div className="page-wrap py-5 space-y-4">
+      <div className="sticky top-[var(--header-height)] z-20 bg-black/90 border-b border-zinc-800 backdrop-blur-md">
+        <div className="page-wrap py-4 sm:py-5 space-y-4">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">Search</h1>
@@ -155,20 +156,31 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="page-wrap py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div className="page-wrap py-6 sm:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
           <div className="lg:col-span-1">
-            <FilterSidebar
-              onFiltersApplied={() => {
-                const q = useCarStore.getState().searchQuery;
-                const params = searchQueryToParams(
-                  { ...q, query: searchText || undefined },
-                  1,
-                );
-                setSearchParams(params);
-                setHasSearched(true);
-              }}
-            />
+            <button
+              type="button"
+              onClick={() => setFiltersOpen((o) => !o)}
+              className="lg:hidden w-full mb-4 flex items-center justify-between px-4 py-3 border border-zinc-700 rounded-lg text-sm font-medium text-white hover:border-zinc-500 transition-colors"
+            >
+              <span>Filters</span>
+              <span className="text-zinc-400">{filtersOpen ? '−' : '+'}</span>
+            </button>
+            <div className={filtersOpen ? 'block' : 'hidden lg:block'}>
+              <FilterSidebar
+                onFiltersApplied={() => {
+                  const q = useCarStore.getState().searchQuery;
+                  const params = searchQueryToParams(
+                    { ...q, query: searchText || undefined },
+                    1,
+                  );
+                  setSearchParams(params);
+                  setHasSearched(true);
+                  setFiltersOpen(false);
+                }}
+              />
+            </div>
           </div>
 
           <div className="lg:col-span-3">

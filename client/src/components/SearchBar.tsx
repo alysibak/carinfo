@@ -103,7 +103,7 @@ export default function SearchBar({
 
   return (
     <div ref={rootRef} className="relative w-full">
-      <div className={`flex gap-3 ${showButton ? '' : ''}`}>
+      <div className={`flex gap-3 ${showButton ? 'flex-col sm:flex-row' : ''}`}>
         <div className="relative flex-1">
           <svg
             className={`absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 ${size === 'large' ? 'w-5 h-5' : 'w-4 h-4'}`}
@@ -141,7 +141,7 @@ export default function SearchBar({
             type="button"
             onClick={handleSubmit}
             disabled={loading}
-            className={buttonClass}
+            className={`${buttonClass} w-full sm:w-auto shrink-0`}
           >
             {loading ? '…' : 'Search'}
           </button>

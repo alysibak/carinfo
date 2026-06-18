@@ -170,7 +170,7 @@ export default function VehicleGrid() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Sticky Header */}
-      <div className="sticky top-0 z-40 bg-black border-b border-zinc-900">
+      <div className="bg-black border-b border-zinc-900">
         <div className="px-8 py-6">
           <div className="flex items-center justify-between max-w-7xl mx-auto">
             <Link

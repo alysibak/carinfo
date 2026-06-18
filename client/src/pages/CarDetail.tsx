@@ -269,7 +269,7 @@ export default function CarDetail() {
         </div>
       )}
 
-      <div className="sticky top-0 z-40 bg-black border-b border-zinc-900">
+      <div className="bg-black border-b border-zinc-900">
         <div className="max-w-7xl mx-auto px-6 md:px-8 py-5 flex items-center justify-between gap-4">
           <button
             onClick={() => navigate(-1)}

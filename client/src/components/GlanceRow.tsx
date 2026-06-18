@@ -94,9 +94,9 @@ export default function GlanceRow({ dashboard }: { dashboard: CarDashboard }) {
     cellCount === 1
       ? 'grid-cols-1 max-w-xl mx-auto'
       : cellCount === 2
-        ? 'grid-cols-2'
+        ? 'grid-cols-1 sm:grid-cols-2'
         : cellCount === 3
-          ? 'grid-cols-3'
+          ? 'grid-cols-1 sm:grid-cols-3'
           : 'grid-cols-2 lg:grid-cols-4';
 
   return (
