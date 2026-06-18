@@ -24,7 +24,7 @@ export default function ValuationLinks({
     return (
       <>
         <p className="text-xs text-zinc-500 leading-relaxed">
-          Market values are Ontario-baseline model estimates in CAD — not live listing quotes.{' '}
+          Market values are Ontario-baseline model estimates in CAD, not live listing quotes.{' '}
           <button
             type="button"
             onClick={() => setOpen(true)}
@@ -122,7 +122,7 @@ function MethodologyBody({
   return (
     <div className="text-xs text-zinc-400 leading-relaxed space-y-4">
       <p>
-        {CURRENCY_METHODOLOGY_NOTE} Individual condition, mileage, and local demand still move real prices — check
+        {CURRENCY_METHODOLOGY_NOTE} Individual condition, mileage, and local demand still move real prices. Check
         marketplaces when you are ready to buy or sell.
       </p>
       {practicalityNote && (

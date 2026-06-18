@@ -55,7 +55,7 @@ export default function Browse() {
               <Link
                 key={preset.id}
                 to={homeLink(presetToSearchQuery(preset))}
-                className="surface-card-hover p-5 group rounded-xl"
+                className="surface-card-hover p-5 group rounded-none"
               >
                 <p className="font-black text-white mb-1 group-hover:underline underline-offset-4">
                   {preset.label}

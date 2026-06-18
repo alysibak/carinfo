@@ -111,7 +111,12 @@ function mapDrive(drive: string): DriveType {
 function mapTransmission(trany: string): { type: Car['transmission']['type']; speeds?: number; description: string } {
   const t = trany.toLowerCase();
   const speedMatch = trany.match(/(\d+)[-\s]?spd/i);
-  const speeds = speedMatch ? parseInt(speedMatch[1], 10) : undefined;
+  const avMatch = trany.match(/(?:AV|AM)-S(\d+)/i);
+  const parenS = trany.match(/\(S(\d+)\)/i);
+  let speeds = speedMatch ? parseInt(speedMatch[1], 10) : undefined;
+  if (!speeds && avMatch) speeds = parseInt(avMatch[1], 10);
+  if (!speeds && parenS) speeds = parseInt(parenS[1], 10);
+  if (speeds != null && (speeds < 1 || speeds > 12)) speeds = undefined;
   if (t.includes('manual')) return { type: 'manual', speeds, description: trany };
   if (t.includes('variable gear') || t.includes('cvt')) return { type: 'cvt', speeds, description: trany };
   if (t.includes('dual') || t.includes('dct')) return { type: 'dual-clutch', speeds, description: trany };

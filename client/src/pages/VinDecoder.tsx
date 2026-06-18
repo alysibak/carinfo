@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { decodeVin, type VinDecodeResult } from '../services/api';
 import TrustLabel, { InfoTip } from '../components/ui';
 
@@ -6,11 +7,11 @@ const SAMPLE_VIN = '1HGCM82633A004352'; // 2003 Honda Accord EX-V6 — decodes w
 
 /** Plain-language read on a real HP figure (interpretation only — no invented numbers). */
 function hpPlain(hp: number): string {
-  if (hp < 120) return 'Modest power — tuned for efficiency and easy city driving.';
-  if (hp < 180) return 'Everyday power — fine for commuting and highway merging.';
-  if (hp < 260) return 'Healthy power — confident passing, quick enough for most drivers.';
-  if (hp < 400) return 'Strong power — noticeably quick acceleration.';
-  return 'High performance — seriously fast.';
+  if (hp < 120) return 'Modest power, tuned for efficiency and easy city driving.';
+  if (hp < 180) return 'Everyday power, fine for commuting and highway merging.';
+  if (hp < 260) return 'Healthy power, confident passing, quick enough for most drivers.';
+  if (hp < 400) return 'Strong power, noticeably quick acceleration.';
+  return 'High performance, seriously fast.';
 }
 
 function Subheading({ children, source }: { children: React.ReactNode; source?: 'nhtsa' }) {
@@ -33,6 +34,7 @@ function Row({ label, value }: { label: string; value: string | number | undefin
 }
 
 export default function VinDecoder() {
+  const [searchParams] = useSearchParams();
   const [vin, setVin] = useState('');
   const [result, setResult] = useState<VinDecodeResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -48,11 +50,20 @@ export default function VinDecoder() {
       const data = await decodeVin(v);
       setResult(data);
     } catch (e: any) {
-      setError(e?.response?.data?.error ?? 'Could not decode that VIN. Please check it and try again.');
+      setError(e?.response?.data?.error ?? 'VIN not found in NHTSA records. Check the 17-character code and try again.');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const fromUrl = searchParams.get('vin')?.trim().toUpperCase();
+    if (fromUrl && fromUrl.length >= 11) {
+      setVin(fromUrl.slice(0, 17));
+      run(fromUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once when ?vin= is present
+  }, []);
 
   const eng = result?.engine;
   const fuelLabel = eng?.electrification && /bev|phev|hev/i.test(eng.electrification)
@@ -70,36 +81,40 @@ export default function VinDecoder() {
         <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-3">VIN Decoder</h1>
         <p className="text-sm text-zinc-400 leading-relaxed max-w-2xl mb-2">
           Paste a vehicle’s 17-character VIN to pull its official specs straight from{' '}
-          <span className="text-zinc-200">NHTSA’s free U.S. government database</span> — including{' '}
+          <span className="text-zinc-200">NHTSA’s free U.S. government database</span>, including{' '}
           <span className="text-zinc-200">horsepower</span> when NHTSA has it on record. Unlike the catalog
           (which uses EPA fuel-economy data, with no engine power), a VIN can unlock real per-vehicle power figures.
         </p>
         <p className="text-xs text-zinc-600 leading-relaxed max-w-2xl mb-6">
-          Heads up: NHTSA doesn’t list horsepower for every vehicle — many EVs and some models simply don’t carry it
+          Heads up: NHTSA doesn’t list horsepower for every vehicle. Many EVs and some models simply don’t carry it
           in the VIN record. We show it honestly when it’s there.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-3 max-w-2xl">
+        <div className="flex border border-zinc-700 rounded-none max-w-2xl">
           <input
             value={vin}
             onChange={(e) => setVin(e.target.value.toUpperCase().slice(0, 17))}
             onKeyDown={(e) => e.key === 'Enter' && run(vin)}
             placeholder="e.g. 1HGCM82633A004352"
             spellCheck={false}
-            className="flex-1 bg-zinc-950 border border-zinc-800 px-4 py-3 text-sm font-mono tracking-widest text-white placeholder:text-zinc-700 focus:border-zinc-500 focus:outline-none uppercase"
+            className="flex-1 h-14 bg-zinc-950 border-0 px-4 text-base font-mono tracking-widest text-white placeholder:text-zinc-600 focus:outline-none uppercase rounded-none"
           />
           <button
             onClick={() => run(vin)}
             disabled={loading || vin.trim().length < 11}
-            className="px-8 py-3 bg-white text-black text-xs font-black tracking-[0.25em] uppercase hover:bg-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="h-14 px-8 bg-white text-black text-xs font-semibold uppercase tracking-widest hover:bg-zinc-200 disabled:opacity-40 border-l border-zinc-700 rounded-none transition-colors"
           >
-            {loading ? 'Decoding…' : 'Decode'}
+            {loading ? '…' : 'Decode'}
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-[11px] text-zinc-600">
-          <button onClick={() => { setVin(SAMPLE_VIN); run(SAMPLE_VIN); }} className="text-zinc-500 hover:text-white underline underline-offset-2">
-            Try a sample VIN
+        <div className="flex flex-wrap items-center gap-2 mt-3 text-[11px] text-zinc-600">
+          <button
+            type="button"
+            onClick={() => { setVin(SAMPLE_VIN); run(SAMPLE_VIN); }}
+            className="chip"
+          >
+            Sample VIN
           </button>
           <span>Find your VIN on the dashboard by the windshield, the driver’s door jamb, or your registration.</span>
         </div>
@@ -129,8 +144,8 @@ export default function VinDecoder() {
 
                 {!result.decodedClean && (
                   <p className="text-[11px] text-amber-300/80 leading-relaxed py-3">
-                    NHTSA flagged a checksum issue on this VIN ({result.errorText}). The decode below may be partial —
-                    double-check the VIN for typos.
+                    NHTSA flagged a checksum issue on this VIN ({result.errorText}). The decode below may be partial.
+                    Double-check the VIN for typos.
                   </p>
                 )}
 
@@ -155,7 +170,7 @@ export default function VinDecoder() {
                   </div>
                 ) : (
                   <p className="text-sm text-zinc-500 leading-relaxed py-4">
-                    NHTSA doesn’t list horsepower for this VIN. That’s common — many vehicles (especially EVs) don’t
+                    NHTSA doesn’t list horsepower for this VIN. That’s common. Many vehicles (especially EVs) don’t
                     carry an engine-power value in the VIN record. It usually means “not on file,” not zero power.
                   </p>
                 )}

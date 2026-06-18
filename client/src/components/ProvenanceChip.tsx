@@ -7,12 +7,11 @@ const LABELS: Record<ProvenanceSource, string> = {
   curated: 'Curated',
 };
 
-/** Monochrome palette — no blue/green accents; fits the archive theme everywhere. */
 const STYLES: Record<ProvenanceSource, string> = {
-  epa: 'bg-zinc-900 text-zinc-300 border-zinc-700',
-  nhtsa: 'bg-zinc-900 text-zinc-400 border-zinc-700',
-  estimated: 'bg-zinc-950 text-zinc-500 border-zinc-800 border-dashed',
-  curated: 'bg-zinc-900 text-zinc-400 border-zinc-700',
+  epa: 'bg-transparent text-zinc-300 border-zinc-600',
+  nhtsa: 'bg-transparent text-zinc-400 border-zinc-600',
+  estimated: 'bg-transparent text-zinc-500 border-zinc-700 border-dashed',
+  curated: 'bg-transparent text-zinc-400 border-zinc-600',
 };
 
 interface ProvenanceChipProps {
@@ -24,7 +23,7 @@ export default function ProvenanceChip({ source, className = '' }: ProvenanceChi
   if (!source) return null;
   return (
     <span
-      className={`inline-block text-[9px] uppercase tracking-[0.15em] px-1.5 py-0.5 border ${STYLES[source]} ${className}`}
+      className={`inline-block text-[9px] uppercase tracking-widest px-1.5 py-0.5 border rounded-none ${STYLES[source]} ${className}`}
       title={
         source === 'epa'
           ? 'EPA verified via FuelEconomy.gov'
@@ -32,7 +31,9 @@ export default function ProvenanceChip({ source, className = '' }: ProvenanceChi
             ? 'NHTSA verified'
             : source === 'estimated'
               ? 'Estimated value'
-              : 'Curated data'
+              : source === 'curated'
+                ? 'EPA test-car rated horsepower (separate from FuelEconomy.gov)'
+                : 'Curated data'
       }
     >
       {LABELS[source]}

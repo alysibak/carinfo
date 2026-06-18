@@ -1,4 +1,5 @@
 import type { CarSpecs } from '../types/car.types';
+import { hasNumericValue } from './dataValue';
 import {
   annualKmToMiles,
   getRegionalAssumptions,
@@ -719,11 +720,11 @@ export function generateMatchReasons(car: CarSpecs, filters?: {
     });
   }
 
-  // Check power
-  if ((car.engine.horsepower ?? 0) > 300) {
+  // Check power — only when horsepower is on file
+  if (hasNumericValue(car.engine.horsepower)) {
     reasons.push({
       icon: '⚡',
-      text: `${car.engine.horsepower} HP`,
+      text: `${Math.round(car.engine.horsepower!)} HP`,
       type: 'highlight',
     });
   }

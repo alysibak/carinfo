@@ -9,19 +9,23 @@ export default {
     extend: {
       fontFamily: {
         sans: [
+          '"IBM Plex Sans"',
           '-apple-system',
           'BlinkMacSystemFont',
-          '"Helvetica Neue"',
-          'Helvetica',
-          'Arial',
+          '"Segoe UI"',
           'sans-serif',
         ],
+        mono: [
+          '"IBM Plex Mono"',
+          'ui-monospace',
+          'Menlo',
+          'monospace',
+        ],
         display: [
+          '"IBM Plex Sans"',
           '-apple-system',
           'BlinkMacSystemFont',
-          '"Helvetica Neue"',
-          'Helvetica',
-          'Arial',
+          '"Segoe UI"',
           'sans-serif',
         ],
       },
@@ -49,6 +53,7 @@ export default {
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
+        'hero-rise': 'heroRise 0.4s ease-out both',
         'slide-up': 'slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both',
         'scale-in': 'scaleIn 0.3s ease-out',
         'float': 'float 7s ease-in-out infinite',
@@ -60,6 +65,10 @@ export default {
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
+        },
+        heroRise: {
+          '0%': { opacity: '0', transform: 'translateY(8px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         slideUp: {
           '0%': { transform: 'translateY(20px)', opacity: '0' },

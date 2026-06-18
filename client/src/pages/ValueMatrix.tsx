@@ -40,7 +40,7 @@ const PRESETS: MatrixPreset[] = [
   {
     id: 'commuter',
     title: 'Daily drivers',
-    description: 'Sedans & SUVs between $10k–$35k — fuel economy vs estimated value.',
+    description: 'Sedans & SUVs between $10k–$35k. Fuel economy vs estimated value.',
     priceRange: [10000, 35000],
     bodyStyles: ['sedan', 'suv'],
     axisMode: 'mpg',
@@ -58,7 +58,7 @@ const PRESETS: MatrixPreset[] = [
   {
     id: 'trucks',
     title: 'Trucks & work',
-    description: 'Pickups and work vehicles — engine size vs value.',
+    description: 'Pickups and work vehicles. Engine size vs value.',
     priceRange: [15000, 65000],
     bodyStyles: ['truck'],
     axisMode: 'displacement',
@@ -67,7 +67,7 @@ const PRESETS: MatrixPreset[] = [
   {
     id: 'recent',
     title: '2018 and newer',
-    description: 'Newer model years across all types — efficiency focus.',
+    description: 'Newer model years across all types. Efficiency focus.',
     priceRange: [18000, 80000],
     bodyStyles: [],
     axisMode: 'mpg',
@@ -272,7 +272,7 @@ export default function ValueMatrix() {
     if (!active || !payload?.[0]) return null;
     const data = payload[0].payload;
     return (
-      <div className="bg-zinc-950 border border-zinc-600 p-4 shadow-xl max-w-xs">
+      <div className="bg-zinc-950 border border-zinc-600 p-4 max-w-xs">
         <p className="text-base font-black text-white mb-0.5">
           {data.year} {data.make}
         </p>
@@ -323,7 +323,7 @@ export default function ValueMatrix() {
                   What do you want to compare?
                 </h2>
                 <p className="text-base text-zinc-300 leading-relaxed">
-                  Each dot is one vehicle. Pick a starting lens — we show a{' '}
+                  Each dot is one vehicle. Pick a starting lens and we show a{' '}
                   <strong className="text-white font-semibold">focused sample</strong>, not all 28,000
                   at once. You can widen the view after.
                 </p>
@@ -357,7 +357,7 @@ export default function ValueMatrix() {
                 }}
                 className="w-full py-4 border border-zinc-600 text-sm text-zinc-300 hover:text-white hover:border-zinc-400 transition-colors"
               >
-                Custom filters — I&apos;ll choose everything myself
+                Custom filters: I&apos;ll choose everything myself
               </button>
             </div>
           ) : (
@@ -497,7 +497,7 @@ export default function ValueMatrix() {
 
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <MatrixLegend />
-                <div className="flex rounded-lg border border-zinc-700 overflow-hidden shrink-0">
+                <div className="flex rounded-none border border-zinc-700 overflow-hidden shrink-0">
                   <button
                     type="button"
                     onClick={() => setViewMode('chart')}
@@ -520,7 +520,7 @@ export default function ValueMatrix() {
               </div>
 
               {hovered && viewMode === 'chart' && (
-                <div className="sm:hidden mb-4 p-4 border border-zinc-700 bg-zinc-950 rounded-lg">
+                <div className="sm:hidden mb-4 p-4 border border-zinc-700 bg-zinc-950 rounded-none">
                   <p className="font-semibold text-white">
                     {hovered.year} {hovered.make} {hovered.model}
                   </p>
@@ -542,7 +542,7 @@ export default function ValueMatrix() {
                 {loading && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/70">
                     <div className="text-center">
-                      <div className="inline-block w-10 h-10 border-2 border-zinc-600 border-t-white rounded-full animate-spin mb-3" />
+                      <div className="inline-block w-10 h-10 border-2 border-zinc-600 border-t-zinc-400 mb-3 opacity-50" />
                       <p className="text-xs text-zinc-300 uppercase tracking-widest">Updating chart</p>
                     </div>
                   </div>
@@ -662,7 +662,7 @@ export default function ValueMatrix() {
               </p>
 
               {hovered && viewMode === 'chart' && (
-                <div className="hidden sm:block mt-4 p-4 border border-zinc-800 bg-zinc-950 rounded-lg">
+                <div className="hidden sm:block mt-4 p-4 border border-zinc-800 bg-zinc-950 rounded-none">
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <p className="font-semibold text-white">

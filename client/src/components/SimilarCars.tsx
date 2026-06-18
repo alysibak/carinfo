@@ -29,13 +29,13 @@ export default function SimilarCars({ carId }: { carId: string }) {
   return (
     <section id="similar" className="border-t border-zinc-900 scroll-mt-24">
       <div className="max-w-7xl mx-auto px-6 md:px-8 py-12">
-        <p className="text-[10px] tracking-[0.3em] text-zinc-500 uppercase mb-2">Keep exploring</p>
+        <p className="kicker mb-2">Keep exploring</p>
         <h2 className="text-xl md:text-2xl font-black tracking-tight mb-6">Cross-shopped alternatives</h2>
 
         {cars == null ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="surface-card aspect-[16/10] animate-pulse" />
+              <div key={i} className="surface-card aspect-[16/10] opacity-50" />
             ))}
           </div>
         ) : (

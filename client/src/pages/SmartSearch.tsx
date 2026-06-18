@@ -274,7 +274,7 @@ export default function SmartSearch() {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block w-16 h-16 border-2 border-zinc-800 border-t-white rounded-full animate-spin mb-4" />
+          <div className="inline-block w-16 h-16 border-2 border-zinc-800 border-t-zinc-500 mb-4 opacity-50" />
           <p className="text-xs tracking-[0.3em] text-zinc-300 uppercase">Finding Your Perfect Match</p>
         </div>
       </div>
@@ -285,14 +285,14 @@ export default function SmartSearch() {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center px-6">
-          <div className="inline-block w-16 h-16 border-2 border-zinc-800 border-t-white rounded-full animate-spin mb-4" />
+          <div className="inline-block w-16 h-16 border-2 border-zinc-800 border-t-zinc-500 mb-4 opacity-50" />
           <p className="text-sm tracking-[0.3em] text-zinc-400 uppercase mb-4">
             SMART SEARCH UNAVAILABLE
           </p>
           <p className="text-zinc-400 mb-6">{error}</p>
           <button
             onClick={loadVehicles}
-            className="inline-flex items-center px-6 py-3 rounded-lg bg-white text-black text-xs tracking-[0.3em] font-semibold hover:bg-zinc-200 transition"
+            className="inline-flex items-center px-6 py-3 rounded-none bg-white text-black text-xs tracking-[0.3em] font-semibold hover:bg-zinc-200 transition"
           >
             RETRY
           </button>
@@ -371,7 +371,7 @@ export default function SmartSearch() {
                   >
                     {smartSortOptions.map(option => (
                       <option key={option.value} value={option.value}>
-                        {option.label} — {option.desc}
+                        {option.label}: {option.desc}
                       </option>
                     ))}
                   </select>
@@ -412,9 +412,12 @@ export default function SmartSearch() {
 
       <div className="pt-8 px-8 pb-16">
         {filteredCars.length === 0 ? (
-          <div className="text-center py-32">
-            <p className="text-2xl font-light tracking-wider text-zinc-300 uppercase mb-4">
-              No vehicles matched your criteria
+          <div className="text-center py-24 border border-zinc-800 px-6">
+            <p className="text-base text-zinc-300 mb-2">
+              No vehicles match this persona and budget.
+            </p>
+            <p className="text-sm text-zinc-500 mb-6">
+              Try adjusting the budget range above.
             </p>
             {searchTerm && (
               <button
@@ -469,9 +472,9 @@ export default function SmartSearch() {
                     {/* Top 3 Badge (Top-Right) */}
                     {index < 3 && (
                       <div className="absolute top-4 right-4">
-                        <div className="bg-white text-black px-3 py-1 text-xs font-black tracking-widest">
+                        <span className="spec-chip border-zinc-600 text-white tabular-nums">
                           #{index + 1}
-                        </div>
+                        </span>
                       </div>
                     )}
 

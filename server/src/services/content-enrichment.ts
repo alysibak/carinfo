@@ -121,12 +121,11 @@ export function enrichCar(car: Car): Car {
     next.provenance = { ...car.provenance, safetyRating: 'nhtsa' };
   }
 
-  // Real EPA "Rated Horsepower" matched per engine config. cars.json carries no HP
-  // (EPA fuel-economy data omits it), so only set it when absent and never clobber a
-  // value already stored on the record.
+  // EPA Test Car List "Rated Horsepower" — a separate EPA dataset from FuelEconomy.gov.
+  // Provenance 'curated' keeps the FuelEconomy.gov "EPA" badge off this field (see ProvenanceChip).
   if (hp != null && car.engine.horsepower == null) {
     next.engine = { ...next.engine, horsepower: hp };
-    next.provenance = { ...next.provenance, 'engine.horsepower': 'epa' };
+    next.provenance = { ...next.provenance, 'engine.horsepower': 'curated' };
   }
 
   const evHp = estimateEvHorsepower(next);

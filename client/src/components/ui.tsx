@@ -15,7 +15,7 @@ export default function TrustLabel({
   if (estimated) {
     return (
       <span
-        className={`text-[9px] tracking-[0.15em] text-zinc-600 uppercase border border-dashed border-zinc-800 px-1.5 py-0.5 ${className}`}
+        className={`text-[9px] tracking-widest text-zinc-600 uppercase border border-dashed border-zinc-700 px-1.5 py-0.5 rounded-none ${className}`}
       >
         Est.
       </span>
@@ -58,19 +58,20 @@ export function ExpandableSection({
 }) {
   return (
     <details
-      className="border border-zinc-900 bg-black group"
+      className="border border-zinc-800 bg-black group rounded-none"
       open={defaultOpen}
     >
-      <summary className="cursor-pointer list-none px-6 py-4 flex items-center justify-between gap-4 hover:bg-zinc-950 transition-colors">
+      <summary className="cursor-pointer list-none px-4 py-3 flex items-center justify-between gap-4 hover:bg-zinc-950 transition-colors duration-150 border-b border-transparent group-open:border-zinc-800">
         <div>
-          <span className="text-xs font-black tracking-[0.2em] text-white uppercase">{title}</span>
+          <span className="text-xs font-bold tracking-widest text-white uppercase">{title}</span>
           {summary && (
-            <p className="text-[10px] tracking-widest text-zinc-600 uppercase mt-1">{summary}</p>
+            <p className="text-[10px] tracking-widest text-zinc-500 uppercase mt-1">{summary}</p>
           )}
         </div>
-        <span className="text-zinc-600 group-open:rotate-180 transition-transform text-sm">▼</span>
+        <span className="text-zinc-500 text-sm font-mono tabular-nums w-4 text-center group-open:hidden">+</span>
+        <span className="text-zinc-500 text-sm font-mono tabular-nums w-4 text-center hidden group-open:inline">−</span>
       </summary>
-      <div className="px-6 pb-6 border-t border-zinc-900">{children}</div>
+      <div className="px-4 pb-4 border-t border-zinc-800">{children}</div>
     </details>
   );
 }

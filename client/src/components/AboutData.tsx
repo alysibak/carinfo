@@ -60,7 +60,7 @@ export default function AboutData({ compact = false }: { compact?: boolean }) {
             <p className="text-sm text-zinc-400 leading-relaxed">
               Fuel economy and specs from <strong className="text-zinc-200 font-medium">EPA</strong>.
               Safety from <strong className="text-zinc-200 font-medium">NHTSA</strong> when available.
-              Prices and ownership costs are <strong className="text-zinc-200 font-medium">Ontario-baseline estimates in CAD</strong> —
+              Prices and ownership costs are <strong className="text-zinc-200 font-medium">Ontario-baseline estimates in CAD</strong>,
               built for comparison and planning, not live dealer listing quotes.
             </p>
           </div>
@@ -104,23 +104,23 @@ function AboutDataModal({ onClose }: { onClose: () => void }) {
         </h2>
         <div className="space-y-4 text-sm text-zinc-400 leading-relaxed">
           <p>
-            <span className="text-white font-bold">Sourced (EPA)</span> — MPG/MPGe, engine size, fuel
+            <span className="text-white font-bold">Sourced (EPA)</span>: MPG/MPGe, engine size, fuel
             type, drive, transmission, CO₂, annual fuel cost, and EV range/charge times from
             FuelEconomy.gov bulk data.
           </p>
           <p>
-            <span className="text-white font-bold">Sourced (NHTSA)</span> — Crash-test star ratings when
+            <span className="text-white font-bold">Sourced (NHTSA)</span>: Crash-test star ratings when
             NHTSA has tested that make/model/year. Many vehicles have no rating on file.
           </p>
           <p>
-            <span className="text-white font-bold">Estimated (Ontario CAD)</span> — Market value uses a
+            <span className="text-white font-bold">Estimated (Ontario CAD)</span>: Market value uses a
             depreciation model with USD MSRP anchors converted to CAD and adjusted for the Canadian
             used market. Running costs use Ontario gas, electricity, insurance, and registration
             baselines at ~15,000 km/yr. Percentiles compare a vehicle to similar body styles and
             model years in our database.
           </p>
           <p>
-            <span className="text-white font-semibold">Not included</span> — Live dealer listing prices,
+            <span className="text-white font-semibold">Not included</span>: Live dealer listing prices,
             verified horsepower, 0–60 times, dimensions, or photos. Values are model estimates, not
             pulled from AutoTrader, CarGurus, or other listing feeds. We omit or label uncertain fields
             rather than invent them.

@@ -127,7 +127,7 @@ export default function Home() {
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">Search</h1>
               <p className="text-sm text-zinc-400 mt-1">
-                Type naturally — e.g. &quot;2024 camry&quot; or &quot;honda civic&quot;
+                Type naturally, e.g. &quot;2024 camry&quot; or &quot;honda civic&quot;
               </p>
             </div>
             <AboutData compact />
@@ -162,7 +162,7 @@ export default function Home() {
             <button
               type="button"
               onClick={() => setFiltersOpen((o) => !o)}
-              className="lg:hidden w-full mb-4 flex items-center justify-between px-4 py-3 border border-zinc-700 rounded-lg text-sm font-medium text-white hover:border-zinc-500 transition-colors"
+              className="lg:hidden w-full mb-4 flex items-center justify-between px-4 py-3 border border-zinc-700 rounded-none text-sm font-medium text-white hover:border-zinc-500 transition-colors"
             >
               <span>Filters</span>
               <span className="text-zinc-400">{filtersOpen ? '−' : '+'}</span>
@@ -185,7 +185,7 @@ export default function Home() {
 
           <div className="lg:col-span-3">
             {!hasSearched && !isSearching ? (
-              <div className="surface-card p-8 md:p-12 text-center rounded-xl">
+              <div className="surface-card p-8 md:p-12 text-center rounded-none">
                 <h2 className="text-xl font-black mb-3">Start with a search</h2>
                 <p className="text-sm text-zinc-400 max-w-lg mx-auto mb-8 leading-relaxed">
                   We won&apos;t dump the whole database on you. Search by make, model, year, or
@@ -219,7 +219,7 @@ export default function Home() {
               </div>
             ) : (
               <>
-                <div className="surface-card p-5 mb-6 rounded-xl">
+                <div className="surface-card p-5 mb-6 rounded-none">
                   <div className="flex items-center justify-between flex-wrap gap-4">
                     <div>
                       {searchResults && !searchError && (
@@ -271,9 +271,10 @@ export default function Home() {
                 </div>
 
                 {isSearching ? (
-                  <div className="text-center py-32">
-                    <div className="inline-block w-12 h-12 border-2 border-zinc-700 border-t-white rounded-full animate-spin mb-4" />
-                    <p className="text-xs tracking-[0.3em] text-zinc-300 uppercase">Searching</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 opacity-50 pointer-events-none">
+                    {[0, 1, 2, 3, 4, 5].map((i) => (
+                      <div key={i} className="surface-card aspect-[16/10] min-h-[280px]" />
+                    ))}
                   </div>
                 ) : searchError ? (
                   <div className="text-center py-24 bg-zinc-950 border border-zinc-800">
@@ -321,10 +322,12 @@ export default function Home() {
                     )}
                   </>
                 ) : (
-                  <div className="text-center py-24 bg-zinc-950 border border-zinc-800">
-                    <p className="text-lg font-light text-zinc-300 uppercase mb-2">No vehicles found</p>
-                    <p className="text-sm text-zinc-400 mb-6">
-                      Try a different spelling, fewer filters, or a broader year range.
+                  <div className="text-center py-24 border border-zinc-800 bg-zinc-950 p-8">
+                    <p className="text-base text-zinc-300 mb-2">
+                      No vehicles matched these filters.
+                    </p>
+                    <p className="text-sm text-zinc-500 mb-6">
+                      Try widening the year range or removing a filter.
                     </p>
                     <button
                       type="button"

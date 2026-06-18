@@ -4,23 +4,45 @@ import PersonaQuiz, { PersonaResult } from '../components/PersonaQuiz';
 import AboutData from '../components/AboutData';
 import SearchBar from '../components/SearchBar';
 import SiteHeader from '../components/SiteHeader';
+import HeroDossierPreview from '../components/HeroDossierPreview';
 import VehiclePlaceholder from '../components/VehiclePlaceholder';
 import * as api from '../services/api';
-import type { CarFilter, CarSpecs, SearchQuery } from '../types/car.types';
+import type { CarDashboard, CarFilter, CarSpecs, SearchQuery } from '../types/car.types';
 import { COLLECTIONS } from '../config/collections';
 import {
-  LIFESTYLE_PRESETS,
-  presetToSearchQuery,
   filtersToSearchQuery,
+  fuelTypeFilter,
+  bodyTypeFilter,
 } from '../config/browseTaxonomy';
 import { searchQueryToParams } from '../utils/searchParams';
-import { formatPriceShort, formatEngineDetailForCard, formatMpgForCard, formatPowerForCard } from '../utils/dataValue';
+import {
+  formatCurrencyRangeOrFallback,
+  formatPriceShort,
+} from '../utils/dataValue';
 import { formatFuelBadge, usesMpge } from '../utils/fuelDisplay';
+import { displayModelLabel, displayListingSubtitle } from '../utils/trimLabel';
+import { formatLPer100KmFromMpg, formatKwhPer100KmFromMpge } from '../utils/fuelEconomyUnits';
+import {
+  DOSSIER_EXAMPLE_QUERIES,
+  HERO_PREVIEW_QUERY,
+  OWNERSHIP_SHOWCASE_QUERY,
+  pickHeroPreviewCar,
+  pickFirstEligible,
+  rankOwnershipCandidates,
+  SHOWCASE_QUERIES,
+  isOwnershipShowcaseCandidate,
+  type ShowcaseQuery,
+} from '../utils/landingShowcase';
+
+const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/i;
+
+type ChipCountKey = 'electric' | 'suv' | 'under20k' | 'bestMpg';
 
 interface QuickChip {
   label: string;
   filters: CarFilter;
   sort?: SearchQuery['sort'];
+  countKey?: ChipCountKey;
 }
 
 const QUICK_CHIPS: QuickChip[] = [
@@ -28,68 +50,42 @@ const QUICK_CHIPS: QuickChip[] = [
     label: 'Electric',
     filters: { fuelType: ['electric', 'hybrid', 'plug-in hybrid'] },
     sort: { field: 'year', order: 'desc' },
+    countKey: 'electric',
   },
-  { label: 'SUV', filters: { bodyStyle: ['suv'] } },
+  { label: 'SUV', filters: { bodyStyle: ['suv'] }, countKey: 'suv' },
   {
     label: 'Under $20k',
     filters: { price: { max: 20000 } },
     sort: { field: 'price', order: 'asc' },
+    countKey: 'under20k',
   },
   {
-    label: '40+ MPG',
-    filters: { fuelEconomy: { min: 40 } },
+    label: 'Best fuel economy',
+    filters: { fuelEconomy: { min: 35 } },
     sort: { field: 'fuelEconomy', order: 'desc' },
+    countKey: 'bestMpg',
   },
 ];
 
-const TOOLS = [
-  {
-    to: '/home',
-    title: 'Search',
-    desc: '28k+ vehicles with filters',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-      </svg>
-    ),
-  },
-  {
-    to: '/value-matrix',
-    title: 'Value Matrix',
-    desc: 'Plot price vs efficiency',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 19h16M4 15l4-6 4 3 4-7 4 10" />
-      </svg>
-    ),
-  },
-  {
-    to: '/vin',
-    title: 'VIN Decoder',
-    desc: 'Decode any 17-digit VIN',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-    ),
-  },
-  {
-    to: '/compare',
-    title: 'Compare',
-    desc: 'Side-by-side spec sheets',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7" />
-      </svg>
-    ),
-  },
-];
+interface ShowcaseItem {
+  car: CarSpecs;
+  insight: ShowcaseQuery['insight'];
+  annualRunningCost?: { low: number; high: number; mid: number };
+}
 
-const STEPS = [
-  { n: '1', title: 'Search or browse', desc: 'Find by make, model, year, budget, or body style.' },
-  { n: '2', title: 'Compare specs', desc: 'Fuel economy, safety, power, and estimated value in CAD.' },
-  { n: '3', title: 'Save to garage', desc: 'Build a shortlist and share it with a link.' },
-];
+interface DossierExample {
+  question: string;
+  car: CarSpecs;
+}
+
+const BROWSE_TILES = [
+  { label: 'Sedans', bodyStyle: 'sedan' },
+  { label: 'SUVs', bodyStyle: 'suv' },
+  { label: 'Electric', fuelType: 'electric' },
+  { label: 'Hybrids', fuelType: 'hybrid' },
+] as const;
+
+const DOSSIER_QUESTIONS = DOSSIER_EXAMPLE_QUERIES.map((q) => q.question);
 
 export default function Landing() {
   const [showQuiz, setShowQuiz] = useState(false);
@@ -97,19 +93,36 @@ export default function Landing() {
     totalCars: number;
     totalMakes: number;
     yearRange: { min: number; max: number };
+    bodyStyles?: Record<string, number>;
+    fuelTypes?: Record<string, number>;
   } | null>(null);
   const [collectionCounts, setCollectionCounts] = useState<Record<string, number>>({});
+  const [chipCounts, setChipCounts] = useState<Partial<Record<ChipCountKey, number>>>({});
   const [heroQuery, setHeroQuery] = useState('');
-  const [featured, setFeatured] = useState<CarSpecs | null>(null);
+  const [heroDashboard, setHeroDashboard] = useState<CarDashboard | null>(null);
+  const [showcase, setShowcase] = useState<ShowcaseItem[]>([]);
+  const [dossierExamples, setDossierExamples] = useState<DossierExample[]>([]);
+  const [vinInput, setVinInput] = useState('');
   const navigate = useNavigate();
 
   const handleHeroSearch = (q: string) => {
+    const trimmed = q.trim();
+    if (VIN_PATTERN.test(trimmed)) {
+      navigate(`/vin?vin=${encodeURIComponent(trimmed.toUpperCase())}`);
+      return;
+    }
     const params = new URLSearchParams();
-    if (q.trim()) {
-      params.set('q', q.trim());
+    if (trimmed) {
+      params.set('q', trimmed);
       params.set('sort', 'relevance');
     }
     navigate(`/home?${params.toString()}`);
+  };
+
+  const handleVinSubmit = () => {
+    const v = vinInput.trim().toUpperCase();
+    if (!v) return;
+    navigate(`/vin?vin=${encodeURIComponent(v)}`);
   };
 
   const handleQuizComplete = (persona: PersonaResult) => {
@@ -133,24 +146,92 @@ export default function Landing() {
             totalCars: data.totalCars,
             totalMakes: data.totalMakes,
             yearRange: data.yearRange,
+            bodyStyles: data.bodyStyles,
+            fuelTypes: data.fuelTypes,
           });
+          const ft = data.fuelTypes ?? {};
+          const electricSum =
+            (ft.electric ?? 0) + (ft.hybrid ?? 0) + (ft['plug-in hybrid'] ?? 0);
+          setChipCounts((prev) => ({
+            ...prev,
+            electric: electricSum,
+            suv: data.bodyStyles?.suv,
+          }));
         }
       })
       .catch(() => {});
 
     api
-      .searchCars({
-        filters: { bodyStyle: ['suv'], fuelEconomy: { min: 26 }, year: { min: 2021 } },
-        sort: { field: 'fuelEconomy', order: 'desc' },
-        limit: 30,
-        offset: 0,
+      .searchCars(HERO_PREVIEW_QUERY)
+      .then(async (res) => {
+        const car = pickHeroPreviewCar(res.results);
+        if (!car) return;
+        const dashboard = await api.getCarDashboard(car.id);
+        setHeroDashboard(dashboard);
       })
-      .then((res) => {
-        const populated = res.results.filter(
-          (c) => (c.price?.msrp ?? 0) > 0 && (c.fuelEconomy?.combined ?? 0) > 0,
-        );
-        const pool = (populated.length ? populated : res.results).slice(0, 10);
-        if (pool.length) setFeatured(pool[Math.floor(Math.random() * pool.length)]);
+      .catch(() => {});
+
+    const used = new Set<string>();
+    (async () => {
+      const items: ShowcaseItem[] = [];
+
+      await Promise.all(
+        SHOWCASE_QUERIES.map(async ({ insight, query }) => {
+          try {
+            const res = await api.searchCars(query);
+            const car = pickFirstEligible(res.results, insight, used);
+            if (car) items.push({ car, insight });
+          } catch {
+            /* skip */
+          }
+        }),
+      );
+
+      try {
+        const res = await api.searchCars(OWNERSHIP_SHOWCASE_QUERY);
+        for (const car of rankOwnershipCandidates(res.results)) {
+          if (!isOwnershipShowcaseCandidate(car) || used.has(car.id)) continue;
+          try {
+            const dash = await api.getCarDashboard(car.id);
+            const mid = dash.annualRunningCost?.mid;
+            if (mid != null && mid >= 5000 && mid <= 9000) {
+              used.add(car.id);
+              items.splice(1, 0, {
+                car: dash.car,
+                insight: 'ownership',
+                annualRunningCost: dash.annualRunningCost!,
+              });
+              break;
+            }
+          } catch {
+            /* try next candidate */
+          }
+        }
+      } catch {
+        /* skip ownership card */
+      }
+
+      setShowcase(items);
+    })();
+
+    Promise.all([
+      api.searchCars({
+        filters: { price: { max: 20000 } },
+        limit: 1,
+        offset: 0,
+      }),
+      api.searchCars({
+        filters: { fuelEconomy: { min: 35 } },
+        limit: 1,
+        offset: 0,
+      }),
+    ])
+      .then(([under20, bestMpg]) => {
+        setChipCounts((prev) => ({
+          ...prev,
+          under20k: under20.total,
+          bestMpg: bestMpg.total,
+        }));
       })
       .catch(() => {});
 
@@ -168,51 +249,117 @@ export default function Landing() {
     });
   }, []);
 
+  useEffect(() => {
+    if (showcase.length === 0 && !heroDashboard) return;
+    const exampleCars: CarSpecs[] = [];
+    if (heroDashboard?.car) exampleCars.push(heroDashboard.car);
+    for (const item of showcase) {
+      if (!exampleCars.some((c) => c.id === item.car.id)) exampleCars.push(item.car);
+    }
+    if (exampleCars.length === 0) return;
+    setDossierExamples(
+      DOSSIER_QUESTIONS.slice(0, exampleCars.length).map((question, i) => ({
+        question,
+        car: exampleCars[i],
+      })),
+    );
+  }, [heroDashboard, showcase]);
+
   const vehicles = stats ? stats.totalCars.toLocaleString() : '28,000+';
   const makes = stats ? String(stats.totalMakes) : '89';
   const years = stats ? `${stats.yearRange.min}–${stats.yearRange.max}` : '1995–2026';
+
+  const browseCount = (tile: (typeof BROWSE_TILES)[number]) => {
+    if ('bodyStyle' in tile && tile.bodyStyle) {
+      return stats?.bodyStyles?.[tile.bodyStyle];
+    }
+    if ('fuelType' in tile && tile.fuelType) {
+      return stats?.fuelTypes?.[tile.fuelType];
+    }
+    return undefined;
+  };
+
+  const browseLink = (tile: (typeof BROWSE_TILES)[number]) => {
+    if ('bodyStyle' in tile && tile.bodyStyle) {
+      return `/home?${searchQueryToParams(filtersToSearchQuery(bodyTypeFilter(tile.bodyStyle)), 1).toString()}`;
+    }
+    return `/home?${searchQueryToParams(filtersToSearchQuery(fuelTypeFilter(tile.fuelType!)), 1).toString()}`;
+  };
+
+  const chipLabel = (chip: QuickChip) => {
+    const count = chip.countKey ? chipCounts[chip.countKey] : undefined;
+    if (count == null) return chip.label;
+    return (
+      <>
+        {chip.label}{' '}
+        <span className="text-zinc-500 font-tabular">({count.toLocaleString()})</span>
+      </>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-black text-white selection:bg-white/20">
       {showQuiz && <PersonaQuiz onComplete={handleQuizComplete} />}
 
-      <SiteHeader
-        transparentUntilScroll
-        trailing={
-          <button
-            type="button"
-            onClick={() => setShowQuiz(true)}
-            className="btn-primary !py-2 !px-3 sm:!px-4 !text-sm"
-          >
-            <span className="hidden sm:inline">Find my car</span>
-            <span className="sm:hidden">Quiz</span>
-          </button>
-        }
-      />
+      <SiteHeader transparentUntilScroll />
 
+      {/* ── Hero + showcase (tight vertical rhythm) ── */}
       <section className="relative mesh-hero overflow-hidden">
-        <div className="page-wrap pt-8 pb-12 md:pt-14 md:pb-20">
-          <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-10 xl:gap-16 items-end">
-            <div className="max-w-xl">
-              <p className="kicker">EPA & NHTSA data</p>
+        <div className="page-wrap pt-8 pb-12 md:pt-12 md:pb-14">
+          <div className="lg:grid lg:grid-cols-[1.05fr_0.95fr] xl:grid-cols-[1.1fr_0.9fr] gap-10 xl:gap-14 items-start">
+            <div className="min-w-0">
+              <div className="flex flex-wrap gap-2 mb-5 animate-hero-rise">
+                <span className="spec-chip border-zinc-600 text-zinc-300">EPA fuel economy data</span>
+                <span className="spec-chip border-zinc-600 text-zinc-300">NHTSA safety ratings</span>
+                <span className="spec-chip border-zinc-600 text-zinc-300">Ontario · CAD estimates</span>
+              </div>
 
-              <h1 className="text-3xl sm:text-4xl md:text-5xl xl:text-6xl font-semibold text-white tracking-tight leading-[1.05] mt-3 mb-4">
-                Search and compare cars
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white tracking-tight leading-[1.08] mb-3 animate-hero-rise [animation-delay:50ms]">
+                Know what a car will
+                <br />
+                actually cost you.
               </h1>
-
-              <p className="text-base md:text-lg text-zinc-400 leading-relaxed max-w-md">
-                {vehicles} vehicles from {makes} brands, {years}. Specs, fuel economy, safety
-                ratings, and estimated prices in one place.
+              <p className="text-sm sm:text-base uppercase tracking-widest text-zinc-500 mb-5 animate-hero-rise [animation-delay:75ms]">
+                Fuel economy · Safety · Ontario cost estimates
               </p>
 
-              <div className="mt-8 max-w-lg">
+              <p className="text-base md:text-lg text-zinc-400 leading-relaxed max-w-[32rem] animate-hero-rise [animation-delay:100ms]">
+                EPA-tested fuel economy, NHTSA crash ratings where filed, and CAD ownership costs
+                for Ontario. A planning tool, not a dealership.
+              </p>
+
+              <div className="mt-8 grid grid-cols-3 divide-x divide-zinc-800 border-y border-zinc-800 animate-hero-rise [animation-delay:200ms]">
+                <Stat value={vehicles} label="Vehicles" />
+                <Stat value={makes} label="Brands" />
+                <Stat value={years} label="Model years" />
+              </div>
+
+              <div className="mt-10 w-full max-w-none animate-hero-rise [animation-delay:250ms]">
                 <SearchBar
                   value={heroQuery}
                   onChange={setHeroQuery}
                   onSubmit={handleHeroSearch}
-                  size="large"
-                  placeholder="Make, model, or year"
+                  size="hero"
+                  placeholder="Make, model, year, or VIN"
                 />
+
+                <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowQuiz(true)}
+                    className="text-sm text-zinc-300 hover:text-white transition-colors text-left"
+                  >
+                    Not sure what you want?{' '}
+                    <span className="text-white font-medium">Answer 3 questions →</span>
+                  </button>
+                  <Link
+                    to="/vin"
+                    className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors shrink-0"
+                  >
+                    Have a VIN? Look it up directly →
+                  </Link>
+                </div>
+
                 <div className="mt-4 flex flex-wrap gap-2">
                   {QUICK_CHIPS.map((chip) => (
                     <Link
@@ -223,119 +370,176 @@ export default function Landing() {
                       ).toString()}`}
                       className="chip"
                     >
-                      {chip.label}
+                      {chipLabel(chip)}
                     </Link>
                   ))}
                 </div>
               </div>
-
-              <div className="mt-10 grid grid-cols-3 gap-4 sm:gap-6 border-t border-zinc-900 pt-6 sm:pt-8">
-                <Stat value={vehicles} label="Vehicles" />
-                <Stat value={makes} label="Brands" />
-                <Stat value={years} label="Years" />
-              </div>
             </div>
 
-            <div className="relative pb-2">
-              {featured ? (
-                <FeaturedCard car={featured} />
-              ) : (
-                <div className="surface-card animate-pulse">
-                  <div className="aspect-[16/10] lg:aspect-[4/5] bg-zinc-950" />
-                </div>
-              )}
+            {heroDashboard && (
+              <div className="hidden lg:block lg:sticky lg:top-24 animate-fade-in">
+                <HeroDossierPreview dashboard={heroDashboard} />
+              </div>
+            )}
+          </div>
+
+          {showcase.length > 0 && (
+            <div className="mt-12 md:mt-14 pt-12 border-t border-zinc-900">
+              <SectionHeader
+                kicker="Explore"
+                title="See what's in the database"
+                subtitle="Real EPA fuel data, Ontario value estimates, and NHTSA safety on every vehicle page."
+              />
+              <div className="grid sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-zinc-800 border border-zinc-800">
+                {showcase.map(({ car, insight, annualRunningCost }, index) => (
+                  <ShowcaseCard
+                    key={`${car.id}-${insight}`}
+                    car={car}
+                    insight={insight}
+                    annualRunningCost={annualRunningCost}
+                    style={{ animationDelay: `${index * 80}ms` }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {dossierExamples.length > 0 && (
+        <section className="page-wrap py-12 md:py-16 border-t border-zinc-900">
+          <SectionHeader
+            kicker="Dossier"
+            title="What CarInfo tells you about a car"
+            subtitle="Every vehicle page answers questions like these, with sourced data, not marketing copy."
+          />
+          <div className="grid sm:grid-cols-2 gap-4">
+            {dossierExamples.map(({ question, car }) => (
+              <Link
+                key={question}
+                to={`/car/${car.id}`}
+                className="group p-4 border border-zinc-800 rounded-none hover:border-zinc-600 transition-colors"
+              >
+                <p className="text-sm text-zinc-300 leading-relaxed group-hover:text-white transition-colors">
+                  {question}
+                </p>
+                <p className="mt-3 text-xs text-zinc-500">
+                  See on {car.year} {car.make} {displayModelLabel(car)} →
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="page-wrap py-12 md:py-16 border-t border-zinc-900">
+        <SectionHeader
+          kicker="Browse"
+          title="Browse by category"
+          subtitle="Explore the full database. No search term required."
+        />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          {BROWSE_TILES.map((tile) => {
+            const count = browseCount(tile);
+            return (
+              <Link
+                key={tile.label}
+                to={browseLink(tile)}
+                className="group p-4 border border-zinc-800 rounded-none hover:border-zinc-600 transition-colors min-h-[100px] flex flex-col justify-center"
+              >
+                <p className="text-lg font-semibold text-white group-hover:text-zinc-200 transition-colors">
+                  {tile.label}
+                </p>
+                {count != null && (
+                  <p className="text-sm text-zinc-500 mt-1.5 font-tabular">
+                    {count.toLocaleString()} vehicles
+                  </p>
+                )}
+              </Link>
+            );
+          })}
+        </div>
+        <Link
+          to="/browse"
+          className="inline-block mt-6 text-sm text-zinc-500 hover:text-white transition-colors"
+        >
+          All browse categories →
+        </Link>
+      </section>
+
+      <section className="page-wrap py-12 md:py-16 border-t border-zinc-900">
+        <div className="border border-zinc-800 rounded-none bg-zinc-950/50 p-5 md:p-8">
+          <div className="lg:grid lg:grid-cols-[1fr_1.1fr] gap-6 lg:gap-10 lg:items-center">
+            <SectionHeader
+              kicker="VIN lookup"
+              title="Already own a car?"
+              subtitle="Enter your VIN to see fuel economy, emissions, and estimated value for that exact vehicle, not a generic make/model average."
+            />
+            <div className="flex border border-zinc-700 rounded-none">
+              <input
+                value={vinInput}
+                onChange={(e) => setVinInput(e.target.value.toUpperCase().slice(0, 17))}
+                onKeyDown={(e) => e.key === 'Enter' && handleVinSubmit()}
+                placeholder="17-character VIN"
+                spellCheck={false}
+                className="flex-1 h-14 lg:h-16 bg-zinc-950 border-0 px-4 text-base font-mono tracking-widest text-white placeholder:text-zinc-600 focus:outline-none rounded-none uppercase"
+              />
+              <button
+                type="button"
+                onClick={handleVinSubmit}
+                disabled={vinInput.trim().length < 11}
+                className="h-14 lg:h-16 px-8 bg-white text-black text-sm font-semibold uppercase tracking-widest rounded-none hover:bg-zinc-200 transition-colors shrink-0 disabled:opacity-40 border-l border-zinc-700"
+              >
+                Search by VIN
+              </button>
             </div>
           </div>
         </div>
       </section>
 
       <section className="page-wrap py-12 md:py-16 border-t border-zinc-900">
-        <SectionHeader title="Tools" subtitle="Everything you need to research a purchase." />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-          {TOOLS.map((tool) => (
-            <Link key={tool.to} to={tool.to} className="tool-card group">
-              <span className="text-zinc-500 group-hover:text-white transition-colors">{tool.icon}</span>
-              <p className="text-base font-semibold text-white tracking-tight">{tool.title}</p>
-              <p className="text-xs text-zinc-500 leading-relaxed">{tool.desc}</p>
-            </Link>
-          ))}
+        <SectionHeader kicker="Sources" title="How the data works" />
+        <div className="grid sm:grid-cols-3 gap-8">
+          <div>
+            <p className="text-4xl font-bold text-zinc-700 mb-3 leading-none" aria-hidden>
+              E
+            </p>
+            <p className="text-base font-semibold text-white mb-2">EPA verified</p>
+            <p className="text-sm text-zinc-500 leading-relaxed">
+              Fuel economy, emissions, and powertrain specs from EPA laboratory testing. The same
+              figures on window stickers.
+            </p>
+          </div>
+          <div>
+            <p className="text-4xl font-bold text-zinc-700 mb-3 leading-none" aria-hidden>
+              N
+            </p>
+            <p className="text-base font-semibold text-white mb-2">NHTSA when available</p>
+            <p className="text-sm text-zinc-500 leading-relaxed">
+              Crash-test safety ratings from NHTSA where they match this EPA configuration.
+              Many vehicles share ratings across trims.
+            </p>
+          </div>
+          <div>
+            <p className="text-4xl font-bold text-zinc-700 mb-3 leading-none" aria-hidden>
+              ON
+            </p>
+            <p className="text-base font-semibold text-white mb-2">Ontario estimates modeled</p>
+            <p className="text-sm text-zinc-500 leading-relaxed">
+              Value and ownership cost figures are Ontario-baseline estimates in CAD, built for
+              comparison and planning, not live dealer quotes.
+            </p>
+          </div>
         </div>
-      </section>
-
-      <section className="page-wrap py-12 md:py-16 border-t border-zinc-900">
-        <SectionHeader title="How it works" />
-        <div className="grid sm:grid-cols-3 gap-4">
-          {STEPS.map((step) => (
-            <div key={step.n} className="step-card">
-              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-zinc-700 text-xs font-semibold text-zinc-400 mb-3">
-                {step.n}
-              </span>
-              <p className="text-base font-semibold text-white tracking-tight">{step.title}</p>
-              <p className="text-sm text-zinc-500 mt-1.5 leading-relaxed">{step.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="page-wrap py-12 md:py-16 border-t border-zinc-900">
-        <AboutData />
-      </section>
-
-      <section className="page-wrap py-12 md:py-16 border-t border-zinc-900">
-        <SectionHeader index="01" title="Shop by use" subtitle="Start with how you'll drive it." />
-        <div className="border-y border-zinc-900">
-          {LIFESTYLE_PRESETS.map((preset, i) => (
-            <Link
-              key={preset.id}
-              to={`/home?${searchQueryToParams(presetToSearchQuery(preset), 1).toString()}`}
-              className="list-row group"
-            >
-              <div className="flex items-baseline gap-4 sm:gap-5 min-w-0">
-                <span className="text-xs text-zinc-600 font-tabular w-6 shrink-0">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <div className="min-w-0">
-                  <p className="text-lg sm:text-xl font-semibold text-white tracking-tight group-hover:text-zinc-300 transition-colors">
-                    {preset.label}
-                  </p>
-                  <p className="text-sm text-zinc-500 mt-0.5 sm:mt-1 line-clamp-2">{preset.description}</p>
-                </div>
-              </div>
-              <span className="text-zinc-600 group-hover:text-white transition-colors shrink-0">→</span>
-            </Link>
-          ))}
-        </div>
-        <Link to="/browse" className="inline-block mt-6 text-sm text-zinc-500 hover:text-white transition-colors">
-          Browse all →
-        </Link>
-      </section>
-
-      <section className="page-wrap py-12 md:py-16 border-t border-zinc-900">
-        <SectionHeader index="02" title="Browse" />
-        <div className="grid sm:grid-cols-2 gap-px bg-zinc-900 border border-zinc-900">
-          {[
-            { to: '/explore/purpose', title: 'By need', desc: 'Commute, family, work' },
-            { to: '/explore/body-style', title: 'By body style', desc: 'Sedan, SUV, coupe' },
-            { to: '/explore/budget', title: 'By budget', desc: '$15k through $60k+' },
-            { to: '/explore/era', title: 'By year', desc: '2020s to classics' },
-          ].map((card) => (
-            <Link
-              key={card.to}
-              to={card.to}
-              className="group bg-black p-6 sm:p-8 md:p-10 transition-colors hover:bg-zinc-950"
-            >
-              <p className="kicker mb-2 sm:mb-3">{card.desc}</p>
-              <p className="text-xl sm:text-2xl font-semibold text-white tracking-tight group-hover:text-zinc-300 transition-colors">
-                {card.title}
-              </p>
-            </Link>
-          ))}
+        <div className="mt-6">
+          <AboutData compact />
         </div>
       </section>
 
       <section className="page-wrap py-12 md:py-16 border-t border-zinc-900">
         <SectionHeader
-          index="03"
+          kicker="Curated"
           title="Collections"
           subtitle="Hand-picked lists for common searches."
         />
@@ -347,7 +551,7 @@ export default function Landing() {
               className="list-row group"
             >
               <div className="min-w-0 pr-4">
-                <p className="text-base sm:text-lg md:text-xl font-semibold text-white tracking-tight group-hover:text-zinc-300 transition-colors">
+                <p className="text-base sm:text-lg font-semibold text-white tracking-tight group-hover:text-zinc-300 transition-colors">
                   {c.title}
                 </p>
                 <p className="text-sm text-zinc-500 mt-0.5 sm:mt-1 line-clamp-2">{c.subtitle}</p>
@@ -369,7 +573,7 @@ export default function Landing() {
           <div>
             <p className="text-sm font-semibold text-white">CarInfo</p>
             <p className="text-sm text-zinc-500 mt-2 max-w-xs leading-relaxed">
-              EPA fuel economy, NHTSA safety data, and estimated values in CAD.
+              EPA fuel economy, NHTSA safety data, and Ontario value estimates in CAD.
             </p>
           </div>
           <p className="text-xs text-zinc-600">
@@ -381,83 +585,152 @@ export default function Landing() {
   );
 }
 
-function FeaturedCard({ car }: { car: CarSpecs }) {
+function ShowcaseCard({
+  car,
+  insight,
+  annualRunningCost,
+  style,
+}: {
+  car: CarSpecs;
+  insight: ShowcaseQuery['insight'];
+  annualRunningCost?: { low: number; high: number; mid: number };
+  style?: React.CSSProperties;
+}) {
   const mpgLabel = usesMpge(car.engine.fuelType) ? 'MPGe' : 'MPG';
   const combined = car.fuelEconomy?.combined ?? 0;
-  const mpgValue = formatMpgForCard(car.fuelEconomy?.combined);
-  const mpgPct = Math.max(6, Math.min(100, (combined / 60) * 100));
-  const priceValue = formatPriceShort(car.price?.msrp, car.price?.isEstimated);
-  const engineValue = formatEngineDetailForCard(car.engine);
-  const powerValue = formatPowerForCard(car.engine.horsepower);
-  const overall = car.safetyRating?.overall;
+  const safety = car.safetyRating?.overall;
+  const subtitle = displayListingSubtitle(car);
+  const estValue = formatPriceShort(car.price?.msrp, car.price?.isEstimated);
+
+  const theme =
+    insight === 'fuel'
+      ? 'Fuel efficiency'
+      : insight === 'ownership'
+        ? 'Ownership cost'
+        : safety
+          ? 'Safety record'
+          : 'Efficiency';
+
+  const secondaryLine = (() => {
+    if (insight === 'fuel') {
+      return usesMpge(car.engine.fuelType)
+        ? formatKwhPer100KmFromMpge(combined)
+        : formatLPer100KmFromMpg(combined);
+    }
+    if (insight === 'ownership' && annualRunningCost) {
+      return 'Fuel, insurance, maintenance & registration';
+    }
+    if (safety) {
+      return `${car.year} ${displayModelLabel(car)}`;
+    }
+    return formatLPer100KmFromMpg(combined) || formatFuelBadge(car.engine.fuelType);
+  })();
+
+  const primaryMetric = (() => {
+    if (insight === 'fuel') {
+      return { value: String(Math.round(combined)), unit: mpgLabel };
+    }
+    if (insight === 'ownership' && annualRunningCost) {
+      return {
+        value: formatCurrencyRangeOrFallback(
+          annualRunningCost.low,
+          annualRunningCost.high,
+          true,
+        ),
+        unit: null,
+      };
+    }
+    if (safety) {
+      return {
+        value: '★'.repeat(safety) + '☆'.repeat(5 - safety),
+        unit: 'NHTSA',
+      };
+    }
+    return { value: String(Math.round(combined)), unit: mpgLabel };
+  })();
+
+  const tertiary =
+    insight === 'fuel'
+      ? `${car.year} ${car.make} ${displayModelLabel(car)}`
+      : insight === 'ownership'
+        ? `Est. value ${estValue} · ${combined} ${mpgLabel} combined`
+        : safety
+          ? `${safety}/5 overall`
+          : `${combined} ${mpgLabel}`;
 
   return (
-    <div className="surface-card animate-fade-in overflow-hidden">
-      <Link to={`/car/${car.id}`} className="block group">
-        <div className="relative aspect-[16/10] lg:aspect-[4/5] lg:max-h-[520px]">
-          <VehiclePlaceholder car={car} />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
-            <p className="kicker mb-1 sm:mb-2">Featured</p>
-            <p className="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-none">{car.year}</p>
-            <h3 className="text-lg sm:text-xl font-semibold text-white mt-1 tracking-tight">
-              {car.make} {car.model}
-            </h3>
-            <div className="flex flex-wrap gap-2 mt-2 sm:mt-3 text-xs text-zinc-400">
-              <span>{car.bodyStyle}</span>
-              <span className="text-zinc-700">·</span>
-              <span>{formatFuelBadge(car.engine.fuelType)}</span>
-            </div>
-          </div>
-        </div>
-        <div className="p-4 sm:p-6 border-t border-zinc-900 grid grid-cols-2 gap-4 sm:gap-5">
-          <div>
-            <dt className="kicker">Power</dt>
-            <dd className="mt-1 text-lg sm:text-xl font-semibold text-white tracking-tight">{powerValue}</dd>
-          </div>
-          <div>
-            <dt className="kicker">{mpgLabel}</dt>
-            <dd className="mt-1 text-lg sm:text-xl font-semibold text-white tracking-tight">{mpgValue}</dd>
-            <div className="meter-track mt-2">
-              <div className="meter-fill" style={{ width: `${mpgPct}%` }} />
-            </div>
-          </div>
-          <div className="col-span-2 pt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-xs text-zinc-500 border-t border-zinc-900">
-            <span>{car.driveType} · {engineValue}</span>
-            <span>{overall ? `${overall}/5 NHTSA` : 'Safety unrated'}</span>
-          </div>
-          <p className="col-span-2 text-xs text-zinc-500">
-            Est. {priceValue} CAD
+    <Link
+      to={`/car/${car.id}`}
+      className="group bg-zinc-950 border-0 overflow-hidden flex flex-col animate-fade-in opacity-0 [animation-fill-mode:forwards] hover:bg-black transition-colors"
+      style={style}
+    >
+      <p className="text-[10px] uppercase tracking-widest text-zinc-500 border-b border-zinc-800 px-4 py-2">
+        {theme}
+      </p>
+      <div className="relative h-24 overflow-hidden border-b border-zinc-800">
+        <VehiclePlaceholder car={car} compact className="!absolute inset-0" />
+      </div>
+      <div className="p-4 flex flex-col flex-1 gap-3">
+        <div className="border-t border-zinc-800 pt-3">
+          <p className="text-xs text-zinc-500">
+            {car.year} {car.make}
           </p>
+          <h3 className="text-base font-medium text-white tracking-tight group-hover:text-zinc-200 transition-colors">
+            {displayModelLabel(car)}
+          </h3>
+          {subtitle && <p className="text-xs text-zinc-500 mt-0.5 truncate">{subtitle}</p>}
         </div>
-      </Link>
-    </div>
+
+        <div className="mt-auto">
+          {primaryMetric.unit ? (
+            <div className="flex items-baseline gap-2">
+              <span className="text-5xl sm:text-6xl font-bold text-white leading-none tabular-nums">
+                {primaryMetric.value}
+              </span>
+              <span className="text-sm uppercase text-zinc-400 tracking-wider">{primaryMetric.unit}</span>
+            </div>
+          ) : (
+            <p className="text-2xl sm:text-3xl font-bold text-white leading-tight tabular-nums">
+              {primaryMetric.value}
+            </p>
+          )}
+          {secondaryLine && (
+            <p className="text-xs text-zinc-500 mt-2">{secondaryLine}</p>
+          )}
+          <p className="text-xs text-zinc-600 mt-1">{tertiary}</p>
+        </div>
+      </div>
+    </Link>
   );
 }
 
 function SectionHeader({
-  index,
+  kicker,
   title,
   subtitle,
 }: {
-  index?: string;
+  kicker?: string;
   title: string;
   subtitle?: string;
 }) {
   return (
-    <div className="mb-6 sm:mb-8 md:mb-10 flex flex-col gap-1.5 sm:gap-2">
-      {index && <span className="kicker">{index}</span>}
-      <h2 className="section-title">{title}</h2>
-      {subtitle && <p className="text-sm text-zinc-500 max-w-md">{subtitle}</p>}
+    <div className="mb-5 sm:mb-6 flex flex-col gap-1 sm:gap-1.5 border-t border-zinc-800 pt-4">
+      {kicker && <span className="kicker">{kicker}</span>}
+      <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight leading-tight">
+        {title}
+      </h2>
+      {subtitle && <p className="text-sm text-zinc-400 max-w-2xl leading-relaxed">{subtitle}</p>}
     </div>
   );
 }
 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
-    <div>
-      <p className="text-xl sm:text-2xl md:text-3xl font-semibold text-white tracking-tight leading-none">{value}</p>
-      <p className="text-xs text-zinc-500 mt-1.5 sm:mt-2">{label}</p>
+    <div className="min-w-0 px-2 sm:px-4 py-4 text-center overflow-hidden">
+      <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-none tabular-nums whitespace-nowrap">
+        {value}
+      </p>
+      <p className="text-[10px] sm:text-xs uppercase tracking-widest text-zinc-500 mt-2">{label}</p>
     </div>
   );
 }

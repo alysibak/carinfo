@@ -31,16 +31,27 @@ export function DataRow({
   value,
   allowZero,
   suffix,
+  total,
 }: {
   label: string;
   value: number | string | null | undefined;
   allowZero?: boolean;
   suffix?: string;
+  total?: boolean;
 }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 py-3 border-b border-zinc-900 last:border-b-0">
-      <span className="text-[10px] tracking-[0.25em] text-zinc-400 uppercase shrink-0">{label}</span>
-      <DataValue value={value} suffix={suffix} allowZero={allowZero} className="text-sm font-bold text-white text-right" />
+    <div
+      className={`flex items-baseline justify-between gap-4 py-2 border-b border-zinc-900 last:border-b-0 ${
+        total ? 'border-t border-zinc-700 mt-1 pt-3' : ''
+      }`}
+    >
+      <span className="text-xs tracking-widest text-zinc-400 uppercase shrink-0">{label}</span>
+      <DataValue
+        value={value}
+        suffix={suffix}
+        allowZero={allowZero}
+        className="text-sm font-medium tabular-nums text-white text-right"
+      />
     </div>
   );
 }

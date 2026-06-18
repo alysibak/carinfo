@@ -6,6 +6,7 @@ import { displayListingSubtitle } from '../utils/trimLabel';
 import {
   formatCurrency,
   formatCurrencyRange,
+  formatPowerForCard,
   hasNumericValue,
   NHTSA_CHIP_UNAVAILABLE,
   SAFETY_UNAVAILABLE_NOTE,
@@ -28,7 +29,7 @@ import { ghgFraming, phevModes, tailpipeEmissionsNote, type PhevModes } from '..
 
 function Subheading({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[10px] tracking-[0.25em] text-zinc-500 uppercase pt-4 pb-2 border-b border-zinc-900">
+    <p className="text-[10px] tracking-widest text-zinc-500 uppercase pt-4 pb-1">
       {children}
     </p>
   );
@@ -48,16 +49,16 @@ function FuelBar({
   if (!hasNumericValue(value)) return null;
   const pct = Math.min(100, (value! / max) * 100);
   return (
-    <div className="py-3 border-b border-zinc-900 last:border-b-0">
+    <div className="py-2 border-b border-zinc-900 last:border-b-0">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] tracking-[0.25em] text-zinc-400 uppercase">{label}</span>
+        <span className="text-xs tracking-widest text-zinc-500 uppercase">{label}</span>
         <div className="text-right">
-          <span className="text-sm font-bold text-white">{Math.round(value!)}</span>
-          {secondary && <p className="text-[10px] text-zinc-500 mt-0.5">{secondary}</p>}
+          <span className="text-2xl font-bold tabular-nums text-white">{Math.round(value!)}</span>
+          {secondary && <p className="text-xs text-zinc-500 mt-0.5">{secondary}</p>}
         </div>
       </div>
-      <div className="w-full bg-zinc-900 h-1">
-        <div className="bg-white h-1 transition-all duration-700" style={{ width: `${pct}%` }} />
+      <div className="meter-track">
+        <div className="meter-fill" style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
@@ -119,7 +120,7 @@ function PhevDualModeBlock({ modes }: { modes: PhevModes }) {
           <p className="text-[11px] text-zinc-500 leading-relaxed mt-1">
             Drives on battery power
             {hasNumericValue(modes.electricRangeMi) ? ` for about ${modes.electricRangeMi} miles` : ''} after a full
-            charge — like an EV — then switches to gas automatically.
+            charge, like an EV, then switches to gas automatically.
           </p>
         </div>
       )}
@@ -130,7 +131,7 @@ function PhevDualModeBlock({ modes }: { modes: PhevModes }) {
             <span className="text-sm font-bold text-white">{modes.gasMpg} MPG</span>
           </div>
           <p className="text-[11px] text-zinc-500 leading-relaxed mt-1">
-            Once the battery is used up it runs like a regular hybrid on gasoline — no plugging in required.
+            Once the battery is used up it runs like a regular hybrid on gasoline. No plugging in required.
           </p>
         </div>
       )}
@@ -182,10 +183,10 @@ export default function CarDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center opacity-50">
         <div className="text-center">
-          <div className="inline-block w-12 h-12 border-2 border-zinc-800 border-t-white animate-spin mb-4" />
-          <p className="text-xs tracking-[0.3em] text-zinc-300 uppercase">Loading dossier</p>
+          <div className="inline-block w-12 h-12 border-2 border-zinc-800 border-t-zinc-500 mb-4" />
+          <p className="text-xs tracking-widest text-zinc-300 uppercase">Loading dossier</p>
         </div>
       </div>
     );
@@ -310,7 +311,7 @@ export default function CarDetail() {
       {isHydrogen && (
         <div className="border-b border-amber-900/50 bg-amber-950/20">
           <div className="page-wrap py-4 text-sm text-amber-200/90 leading-relaxed">
-            <strong className="text-amber-100">Hydrogen fuel cell (FCEV).</strong> MPGe is from EPA tests — not
+            <strong className="text-amber-100">Hydrogen fuel cell (FCEV).</strong> MPGe is from EPA tests, not
             gasoline MPG. Fuel costs here do not reflect Ontario H₂ availability.
           </div>
         </div>
@@ -323,76 +324,66 @@ export default function CarDetail() {
               <VehiclePlaceholder car={car} />
             </div>
             <div className="min-w-0">
-              <p className="text-6xl md:text-7xl font-black text-zinc-800 leading-none mb-3">{car.year}</p>
-              <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-1">{car.make.toUpperCase()}</h1>
-              <p className="text-xl md:text-2xl font-light tracking-wider text-zinc-400 mb-4">{car.model}</p>
+              <p className="text-6xl md:text-7xl font-black text-zinc-800 leading-none mb-3 tracking-tight">{car.year}</p>
+              <h1 className="text-3xl font-black uppercase tracking-tight mb-1">{car.make}</h1>
+              <p className="text-xl font-medium text-zinc-300 mb-1">{car.model}</p>
               {trimLabel && (
-                <p className="text-xs tracking-[0.25em] text-zinc-300 uppercase mb-4">{trimLabel}</p>
+                <p className="text-xs tracking-widest text-zinc-500 uppercase mb-4">{trimLabel}</p>
               )}
-              <div className="flex flex-wrap gap-2 mb-6">
+              <div className="flex flex-wrap gap-1.5 mb-5">
                 {car.bodyStyle && (
-                  <span className="px-3 py-1 border border-zinc-800 text-[10px] tracking-[0.2em] text-zinc-400 uppercase">
-                    {car.bodyStyle}
-                  </span>
+                  <span className="spec-chip">{car.bodyStyle}</span>
                 )}
                 {car.driveType && (
-                  <span className="px-3 py-1 border border-zinc-800 text-[10px] tracking-[0.2em] text-zinc-400 uppercase">
-                    {car.driveType}
-                  </span>
+                  <span className="spec-chip">{car.driveType}</span>
                 )}
                 {car.engine.fuelType && (
-                  <span className="px-3 py-1 border border-zinc-800 text-[10px] tracking-[0.2em] text-zinc-400 uppercase">
-                    {formatFuelBadge(car.engine.fuelType)}
-                  </span>
+                  <span className="spec-chip">{formatFuelBadge(car.engine.fuelType)}</span>
                 )}
                 {formatPowertrainLabel(car.engine.fuelType) && (
-                  <span className="px-3 py-1 border border-zinc-700 text-[10px] tracking-[0.2em] text-zinc-300 uppercase">
-                    {formatPowertrainLabel(car.engine.fuelType)}
-                  </span>
+                  <span className="spec-chip">{formatPowertrainLabel(car.engine.fuelType)}</span>
                 )}
                 {hasNumericValue(car.engine.horsepower) && (
-                  <span className="px-3 py-1 border border-zinc-700 text-[10px] tracking-[0.2em] text-zinc-200 uppercase">
-                    {Math.round(car.engine.horsepower!)} hp
+                  <span className="spec-chip">
+                    {formatPowerForCard(car.engine.horsepower, {
+                      fuelType: car.engine.fuelType,
+                      powerProvenance: car.provenance?.['engine.horsepower'],
+                    })}
                   </span>
                 )}
                 {ghg && (
                   <span
-                    className="px-3 py-1 border border-zinc-700 text-[10px] tracking-[0.2em] text-zinc-300 uppercase"
-                    title={`EPA greenhouse-gas score ${ghg.score}/10 — ${ghg.plain.toLowerCase()}`}
+                    className="spec-chip"
+                    title={`EPA greenhouse-gas score ${ghg.score}/10: ${ghg.plain.toLowerCase()}`}
                   >
                     Emissions {ghg.score}/10
                   </span>
                 )}
                 {hasSafety ? (
-                  <span className="px-3 py-1 border border-zinc-700 text-[10px] tracking-[0.2em] text-zinc-300 uppercase">
+                  <span className="spec-chip border-zinc-600">
                     NHTSA {car.safetyRating!.overall}/5
                   </span>
                 ) : (
-                  <span className="px-3 py-1 border border-dashed border-zinc-800 text-[10px] tracking-[0.2em] text-zinc-600 uppercase">
+                  <span className="spec-chip border-dashed border-zinc-700 text-zinc-600">
                     {NHTSA_CHIP_UNAVAILABLE}
                   </span>
                 )}
                 {car.countryOfOrigin && (
-                  <span className="px-3 py-1 border border-zinc-800 text-[10px] tracking-[0.2em] text-zinc-500 uppercase">
-                    {car.countryOfOrigin}
-                  </span>
+                  <span className="spec-chip">{car.countryOfOrigin}</span>
                 )}
               </div>
               {car.ownershipProfile && (
-                <div className="mb-6 p-4 border border-zinc-800 bg-zinc-950/60 rounded-lg">
-                  <p className="text-[10px] tracking-[0.25em] text-zinc-500 uppercase mb-2">Ownership profile</p>
-                  <p className="text-lg font-semibold text-white mb-3">{car.ownershipProfile.label}</p>
-                  <div className="flex flex-wrap gap-2 mb-3">
+                <div className="mb-5 p-4 border border-zinc-800 bg-zinc-950 rounded-none">
+                  <p className="text-[10px] tracking-widest text-zinc-500 uppercase mb-2">Ownership profile</p>
+                  <p className="text-base font-semibold text-white mb-3">{car.ownershipProfile.label}</p>
+                  <div className="flex flex-wrap gap-1.5 mb-3">
                     {car.ownershipProfile.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="px-2.5 py-1 text-[10px] tracking-wide text-zinc-300 bg-zinc-900 border border-zinc-800 rounded-full"
-                      >
+                      <span key={tag} className="spec-chip">
                         {tag}
                       </span>
                     ))}
                   </div>
-                  <p className="text-[10px] tracking-[0.2em] text-zinc-500 uppercase mb-2">Best for</p>
+                  <p className="text-[10px] tracking-widest text-zinc-500 uppercase mb-2">Best for</p>
                   <ul className="text-sm text-zinc-400 space-y-1">
                     {car.ownershipProfile.bestFor.map((item) => (
                       <li key={item}>• {item}</li>
@@ -460,7 +451,7 @@ export default function CarDetail() {
               <>
                 {isPhev && phev ? (
                   <>
-                    <Subheading>Plug-in hybrid — two ways to drive</Subheading>
+                    <Subheading>Plug-in hybrid: two ways to drive</Subheading>
                     <PhevDualModeBlock modes={phev} />
                   </>
                 ) : (
@@ -483,6 +474,15 @@ export default function CarDetail() {
                       max={fuelMax}
                       secondary={efficiencySecondaryLine(car.fuelEconomy.combined, efficiencyLabel)}
                     />
+                    {hasNumericValue(car.fuelEconomy.combined) &&
+                      car.fuelEconomy.city === car.fuelEconomy.highway &&
+                      car.fuelEconomy.city === car.fuelEconomy.combined && (
+                        <p className="text-xs text-zinc-500 py-2 leading-relaxed">
+                          EPA reports identical city, highway, and combined figures for this
+                          configuration. Some hybrid EPA test entries publish a single combined
+                          rating only.
+                        </p>
+                      )}
                   </>
                 )}
                 {car.epa?.co2 != null && (
@@ -496,7 +496,7 @@ export default function CarDetail() {
                     label="Emissions score"
                     value={`${ghg.score}/10`}
                     plain={`${ghg.plain} (higher is cleaner).`}
-                    tip="EPA’s greenhouse-gas score, 1–10. Higher means lower CO₂ per mile — a quick read on how clean the tailpipe is."
+                    tip="EPA’s greenhouse-gas score, 1–10. Higher means lower CO₂ per mile: a quick read on how clean the tailpipe is."
                   />
                 )}
                 {isEv && evCharge && (
@@ -568,6 +568,7 @@ export default function CarDetail() {
                 <DataRow
                   label="Total per year"
                   value={formatCurrencyRange(annualCost.totalLow, annualCost.totalHigh)}
+                  total
                 />
 
                 <Subheading>Resale projection</Subheading>
