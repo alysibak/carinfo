@@ -73,41 +73,62 @@ const TRANSMISSION_TYPE_LABELS: Record<TransmissionInfo['type'], string> = {
   'dual-clutch': 'Dual-clutch',
 };
 
-function parseSpeedsFromTrim(trim?: string): number | undefined {
-  if (!trim) return undefined;
-  const lower = trim.toLowerCase();
-  const match = lower.match(/(?:^|-)(\d+)spd(?:-|$)|(?:^|-)s(\d+)(?:-|$)/);
-  if (!match) return undefined;
-  return Number(match[1] || match[2]);
+function isPlausibleSpeedCount(n: number): boolean {
+  return Number.isFinite(n) && n >= 1 && n <= 12;
 }
 
-function parseSpeedsFromDescription(description?: string): number | undefined {
+function parseEpaTransmissionSpeeds(
+  speeds?: number | null,
+  description?: string,
+): number | undefined {
+  if (speeds != null && isPlausibleSpeedCount(speeds)) return speeds;
+
   if (!description) return undefined;
-  const match = description.match(/\(?S(\d+)\)?/i) ?? description.match(/(\d+)[- ]?spd/i);
-  if (!match) return undefined;
-  return Number(match[1]);
+  const d = description.trim();
+
+  const avMatch = d.match(/(?:AV|AM)-S(\d+)/i);
+  if (avMatch && isPlausibleSpeedCount(Number(avMatch[1]))) return Number(avMatch[1]);
+
+  const parenS = d.match(/\(S(\d+)\)/i);
+  if (parenS && isPlausibleSpeedCount(Number(parenS[1]))) return Number(parenS[1]);
+
+  const spdMatch = d.match(/(\d+)[- ]?spd/i);
+  if (spdMatch && isPlausibleSpeedCount(Number(spdMatch[1]))) return Number(spdMatch[1]);
+
+  return undefined;
+}
+
+function isCvtDescription(description?: string, type?: TransmissionInfo['type']): boolean {
+  if (type === 'cvt') return true;
+  if (!description) return false;
+  const d = description.toLowerCase();
+  if (d.includes('cvt')) return true;
+  if (d.includes('variable') && !/(?:av|am)-s\d+/i.test(description)) return true;
+  if (d.includes('variable gear')) return true;
+  return false;
 }
 
 export function formatTransmissionLabel(
   trans: Pick<TransmissionInfo, 'type' | 'speeds' | 'description'>,
-  trim?: string,
+  _trim?: string,
 ): string {
-  const type = TRANSMISSION_TYPE_LABELS[trans.type] ?? trans.type;
-  const speeds =
-    trans.speeds ??
-    parseSpeedsFromTrim(trim) ??
-    parseSpeedsFromDescription(trans.description);
+  if (isCvtDescription(trans.description, trans.type)) return 'CVT';
+
+  const type = TRANSMISSION_TYPE_LABELS[trans.type] ?? 'Automatic';
+  const speeds = parseEpaTransmissionSpeeds(trans.speeds, trans.description);
 
   if (speeds && trans.type !== 'cvt') return `${speeds}-Speed ${type}`;
   return type;
 }
+
+export const displayTransmissionLabel = formatTransmissionLabel;
 
 export function displayListingSubtitle(car: ListingCar): string | null {
   const trim = displayTrimLabel(car);
   if (trim) return trim;
 
   if (car.transmission?.type) {
-    return formatTransmissionLabel(car.transmission, car.trim);
+    return formatTransmissionLabel(car.transmission);
   }
 
   return null;

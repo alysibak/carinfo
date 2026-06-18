@@ -50,7 +50,7 @@ export default function Explore() {
         </Link>
         <h1 className="text-3xl font-black tracking-tight mb-2">{title}</h1>
         <p className="text-sm text-zinc-400 mb-8">
-          Tap a category to open a filtered search — refine from there.
+          Tap a category to open a filtered search, then refine from there.
         </p>
 
         {category === 'body-style' && (

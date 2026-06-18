@@ -12,25 +12,23 @@ interface NavLinkItem {
 const NAV_LINKS: NavLinkItem[] = [
   { to: '/browse', label: 'Browse' },
   { to: '/home', label: 'Search' },
-  { to: '/value-matrix', label: 'Matrix' },
-  { to: '/vin', label: 'VIN' },
-  { to: '/garage', label: 'Garage' },
   { to: '/compare', label: 'Compare' },
+  { to: '/value-matrix', label: 'Value Chart' },
+  { to: '/vin', label: 'VIN Lookup' },
+  { to: '/garage', label: 'Garage' },
 ];
 
 function Badge({ count }: { count: number }) {
   if (count <= 0) return null;
   return (
-    <span className="ml-1.5 text-[10px] font-semibold bg-white text-black px-1.5 py-0.5 rounded-full">
+    <span className="ml-1.5 text-[10px] font-semibold tabular-nums text-zinc-300 border border-zinc-700 px-1.5 py-0.5 rounded-none">
       {count}
     </span>
   );
 }
 
 interface SiteHeaderProps {
-  /** Extra content on the right (e.g. CTA button) — shown beside menu on mobile */
   trailing?: React.ReactNode;
-  /** Landing uses transparent header until scroll */
   transparentUntilScroll?: boolean;
 }
 
@@ -65,7 +63,7 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-colors duration-200 ${
+      className={`sticky top-0 z-50 transition-colors duration-150 ${
         showBorder
           ? 'border-b border-zinc-900 bg-black/90 backdrop-blur-md'
           : 'border-b border-transparent bg-transparent'
@@ -74,20 +72,22 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
       <div className="page-wrap py-3.5 flex items-center justify-between gap-3">
         <Link
           to="/"
-          className="text-sm font-semibold tracking-tight text-white hover:text-zinc-300 transition-colors shrink-0"
+          className="text-sm font-bold uppercase tracking-widest text-white hover:text-zinc-300 transition-colors shrink-0"
           onClick={() => setMenuOpen(false)}
         >
           CarInfo
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-1">
+        <nav className="hidden lg:flex items-center gap-0">
           {NAV_LINKS.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `text-sm font-medium px-2.5 py-1.5 rounded-md transition-colors ${
-                  isActive ? 'text-white bg-zinc-800' : 'text-zinc-400 hover:text-white'
+                `text-xs uppercase tracking-widest px-3 py-2 transition-colors border-b-2 ${
+                  isActive
+                    ? 'text-white border-white'
+                    : 'text-zinc-500 border-transparent hover:text-zinc-300'
                 }`
               }
             >
@@ -121,15 +121,15 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
 
       {menuOpen && (
         <div className="lg:hidden fixed inset-0 top-[52px] z-40 bg-black/95 backdrop-blur-sm">
-          <nav className="page-wrap py-6 flex flex-col gap-1">
+          <nav className="page-wrap py-4 flex flex-col divide-y divide-zinc-800 border-t border-zinc-800">
             {NAV_LINKS.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 onClick={() => setMenuOpen(false)}
                 className={({ isActive }) =>
-                  `flex items-center justify-between px-4 py-3.5 rounded-lg text-base font-medium transition-colors ${
-                    isActive ? 'bg-zinc-900 text-white' : 'text-zinc-300 hover:bg-zinc-950 hover:text-white'
+                  `flex items-center justify-between py-3.5 text-xs uppercase tracking-widest transition-colors ${
+                    isActive ? 'text-white' : 'text-zinc-400 hover:text-white'
                   }`
                 }
               >

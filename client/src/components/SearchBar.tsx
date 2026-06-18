@@ -8,7 +8,7 @@ interface SearchBarProps {
   onSubmit: (value: string) => void;
   placeholder?: string;
   autoFocus?: boolean;
-  size?: 'default' | 'large';
+  size?: 'default' | 'large' | 'hero';
   showButton?: boolean;
   loading?: boolean;
 }
@@ -17,7 +17,7 @@ export default function SearchBar({
   value,
   onChange,
   onSubmit,
-  placeholder = 'Search make, model, or year — e.g. 2024 Camry',
+  placeholder = 'Search make, model, or year, e.g. 2024 Camry',
   autoFocus = false,
   size = 'default',
   showButton = true,
@@ -92,70 +92,89 @@ export default function SearchBar({
   };
 
   const inputClass =
-    size === 'large'
-      ? 'w-full pl-12 pr-4 py-4 bg-zinc-950 border border-zinc-700 text-white text-base placeholder-zinc-500 focus:outline-none focus:border-zinc-400 rounded-lg transition-colors'
-      : 'w-full pl-11 pr-4 py-3 bg-zinc-950 border border-zinc-700 text-white text-sm placeholder-zinc-500 focus:outline-none focus:border-zinc-400 rounded-lg transition-colors';
+    size === 'hero'
+      ? 'w-full h-14 lg:h-16 pl-12 pr-4 bg-zinc-950 border-0 text-white text-base placeholder-zinc-500 focus:outline-none rounded-none'
+      : size === 'large'
+        ? 'w-full pl-12 pr-4 py-4 bg-zinc-950 border border-zinc-700 text-white text-base placeholder-zinc-500 focus:outline-none focus:border-zinc-400 rounded-none transition-colors'
+        : 'w-full pl-11 pr-4 py-3 bg-zinc-950 border border-zinc-700 text-white text-sm placeholder-zinc-500 focus:outline-none focus:border-zinc-400 rounded-none transition-colors';
 
   const buttonClass =
-    size === 'large'
-      ? 'px-8 py-4 bg-white text-black text-sm font-semibold rounded-lg hover:bg-zinc-200 transition-colors disabled:opacity-50'
-      : 'px-6 py-3 bg-white text-black text-sm font-semibold rounded-lg hover:bg-zinc-200 transition-colors disabled:opacity-50';
+    size === 'hero'
+      ? 'h-14 lg:h-16 px-8 lg:px-10 bg-white text-black text-sm font-semibold uppercase tracking-widest rounded-none hover:bg-zinc-200 transition-colors disabled:opacity-50 border-0'
+      : size === 'large'
+        ? 'px-8 py-4 bg-white text-black text-sm font-semibold uppercase tracking-wider rounded-none hover:bg-zinc-200 transition-colors disabled:opacity-50'
+        : 'px-6 py-3 bg-white text-black text-sm font-semibold uppercase tracking-wider rounded-none hover:bg-zinc-200 transition-colors disabled:opacity-50';
+
+  const iconSize = size === 'default' ? 'w-4 h-4' : 'w-5 h-5';
+
+  const inputEl = (
+    <div className="relative flex-1 min-w-0">
+      <svg
+        className={`absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 ${iconSize}`}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      <input
+        ref={inputRef}
+        type="search"
+        role="combobox"
+        aria-expanded={open}
+        aria-controls={listId}
+        aria-autocomplete="list"
+        autoFocus={autoFocus}
+        placeholder={placeholder}
+        className={inputClass}
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => {
+          setOpen(true);
+          if (suggestions.length === 0) loadSuggestions(value);
+        }}
+        onKeyDown={handleKeyDown}
+      />
+    </div>
+  );
+
+  const buttonEl = showButton && (
+    <button
+      type="button"
+      onClick={handleSubmit}
+      disabled={loading}
+      className={`${buttonClass} ${size === 'hero' ? '' : 'w-full sm:w-auto shrink-0'}`}
+    >
+      {loading ? '…' : 'Search'}
+    </button>
+  );
 
   return (
     <div ref={rootRef} className="relative w-full">
-      <div className={`flex gap-3 ${showButton ? 'flex-col sm:flex-row' : ''}`}>
-        <div className="relative flex-1">
-          <svg
-            className={`absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 ${size === 'large' ? 'w-5 h-5' : 'w-4 h-4'}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            ref={inputRef}
-            type="search"
-            role="combobox"
-            aria-expanded={open}
-            aria-controls={listId}
-            aria-autocomplete="list"
-            autoFocus={autoFocus}
-            placeholder={placeholder}
-            className={inputClass}
-            value={value}
-            onChange={(e) => {
-              onChange(e.target.value);
-              setOpen(true);
-            }}
-            onFocus={() => {
-              setOpen(true);
-              if (suggestions.length === 0) loadSuggestions(value);
-            }}
-            onKeyDown={handleKeyDown}
-          />
+      {size === 'hero' && showButton ? (
+        <div className="flex border border-zinc-700 rounded-none">
+          {inputEl}
+          <div className="border-l border-zinc-700 shrink-0">{buttonEl}</div>
         </div>
-        {showButton && (
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={loading}
-            className={`${buttonClass} w-full sm:w-auto shrink-0`}
-          >
-            {loading ? '…' : 'Search'}
-          </button>
-        )}
-      </div>
+      ) : (
+        <div className={`flex gap-3 ${showButton ? 'flex-col sm:flex-row' : ''}`}>
+          {inputEl}
+          {buttonEl}
+        </div>
+      )}
 
       {open && (suggestions.length > 0 || fetching) && (
         <ul
           id={listId}
           role="listbox"
-          className="absolute z-50 left-0 right-0 mt-2 border border-zinc-700 bg-zinc-950 shadow-2xl max-h-80 overflow-y-auto rounded-xl"
+          className="absolute z-50 left-0 right-0 mt-2 border border-zinc-700 bg-zinc-950 max-h-80 overflow-y-auto rounded-none"
         >
           {fetching && suggestions.length === 0 && (
-            <li className="px-4 py-3 text-sm text-zinc-400">Loading suggestions…</li>
+            <li className="px-4 py-3 text-sm text-zinc-400 opacity-50">Loading suggestions…</li>
           )}
           {suggestions.map((s, index) => (
             <li key={s.id} role="option" aria-selected={index === activeIndex}>

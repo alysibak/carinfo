@@ -260,7 +260,7 @@ export default function BattleMode() {
                 <div className="text-center">
                   <button
                     onClick={startBattle}
-                    className="bg-white text-black px-16 py-6 font-black tracking-widest text-xl hover:bg-zinc-300 transition-all transform hover:scale-105"
+                    className="bg-white text-black px-16 py-6 font-black tracking-widest text-xl hover:bg-zinc-300 transition-colors"
                   >
                     START BATTLE
                   </button>
@@ -281,7 +281,7 @@ export default function BattleMode() {
                         </p>
                       </div>
 
-                      <div className="text-6xl sm:text-9xl font-black tracking-tighter animate-pulse text-center">
+                      <div className="text-6xl sm:text-9xl font-black tracking-tighter text-center opacity-50">
                         VS
                       </div>
 

@@ -88,59 +88,48 @@ export default function DreamGarage() {
               />
             </svg>
 
-            <h2 className="text-4xl font-black tracking-tighter mb-4">
-              YOUR GARAGE IS EMPTY
+            <h2 className="text-2xl font-bold tracking-tight mb-3 uppercase">
+              No vehicles saved yet
             </h2>
-            <p className="text-lg tracking-wider text-zinc-400 mb-8">
-              Start adding cars to build your dream collection
+            <p className="text-sm text-zinc-400 mb-8 max-w-md mx-auto leading-relaxed">
+              Browse or search to build your garage. Save up to compare, share, or battle head to head.
             </p>
-            <Link
-              to="/"
-              className="inline-block bg-white text-black px-8 py-4 font-black tracking-widest text-sm hover:bg-zinc-300 transition-all"
-            >
-              BROWSE CARS
+            <Link to="/home" className="btn-primary text-xs">
+              Browse vehicles
             </Link>
           </div>
         ) : (
           <div className="max-w-7xl mx-auto">
             {/* Garage Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
-              <div className="bg-zinc-950 border border-zinc-900 p-6">
-                <p className="text-xs tracking-widest text-zinc-300 mb-2">EST. TOTAL VALUE</p>
-                <p className="text-3xl font-black">{formattedValue}</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-zinc-800 border border-zinc-800 mb-12">
+              <div className="bg-zinc-950 p-4">
+                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-2">Est. total value</p>
+                <p className="text-3xl font-bold tabular-nums text-white">{formattedValue}</p>
               </div>
-              <div className="bg-zinc-950 border border-zinc-900 p-6">
-                <p className="text-xs tracking-widest text-zinc-300 mb-2">MAKES</p>
-                <p className="text-3xl font-black">{uniqueMakes}</p>
+              <div className="bg-zinc-950 p-4">
+                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-2">Makes</p>
+                <p className="text-3xl font-bold tabular-nums text-white">{uniqueMakes}</p>
               </div>
-              <div className="bg-zinc-950 border border-zinc-900 p-6">
-                <p className="text-xs tracking-widest text-zinc-300 mb-2">AVG MPG</p>
-                <p className="text-3xl font-black">{avgMPG}</p>
+              <div className="bg-zinc-950 p-4">
+                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-2">Avg MPG</p>
+                <p className="text-3xl font-bold tabular-nums text-white">{avgMPG}</p>
               </div>
-              <div className="bg-zinc-950 border border-zinc-900 p-6">
-                <p className="text-xs tracking-widest text-zinc-300 mb-2">VEHICLES</p>
-                <p className="text-3xl font-black">{garage.length}</p>
+              <div className="bg-zinc-950 p-4">
+                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-2">Vehicles</p>
+                <p className="text-3xl font-bold tabular-nums text-white">{garage.length}</p>
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center justify-center gap-4 mb-12">
+            <div className="flex items-center justify-center gap-3 mb-12">
               <button
                 onClick={() => navigate('/battle')}
                 disabled={garage.length < 2}
-                className={`px-8 py-4 font-black tracking-widest text-sm transition-all ${
-                  garage.length >= 2
-                    ? 'bg-white text-black hover:bg-zinc-200'
-                    : 'bg-zinc-900 text-zinc-300 cursor-not-allowed'
-                }`}
+                className={`btn-primary text-xs ${garage.length < 2 ? 'opacity-40 cursor-not-allowed' : ''}`}
               >
-                ⚔️ BATTLE MODE
+                Battle mode
               </button>
-              <button
-                onClick={generateShareLink}
-                className="bg-white text-black hover:bg-zinc-200 px-8 py-4 font-black tracking-widest text-sm transition-all"
-              >
-                📤 SHARE GARAGE
+              <button onClick={generateShareLink} className="btn-secondary text-xs">
+                Share garage
               </button>
             </div>
 

@@ -64,7 +64,7 @@ export function annualFuelCostDetail(car: CarSpecs): string | undefined {
     if (cost != null && cost > 0) {
       return `$${cost.toLocaleString()} ${DISPLAY_CURRENCY}/yr fuel (est.)`;
     }
-    return 'H₂ cost not rated by EPA — varies by station';
+    return 'H₂ cost not rated by EPA; varies by station';
   }
 
   const cost = estimatedAnnualFuelCostCad(car);

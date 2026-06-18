@@ -3,6 +3,7 @@ import { useCarStore } from '../stores/carStore';
 import type { CarSpecs } from '../types/car.types';
 import { formatEngineForDetail, UNAVAILABLE_LABEL } from '../utils/dataValue';
 import { formatFuelTypeLabel, usesMpge } from '../utils/fuelDisplay';
+import { formatTransmissionLabel } from '../utils/trimLabel';
 
 export default function Compare() {
   const { comparedCars, removeCarFromComparison, clearComparison } = useCarStore();
@@ -21,12 +22,15 @@ export default function Compare() {
             <span>BACK</span>
           </Link>
 
-          <h2 className="text-4xl font-black tracking-tighter mb-4">
-            NO VEHICLES SELECTED
+          <h2 className="text-2xl font-bold tracking-tight mb-3 uppercase">
+            No vehicles selected
           </h2>
-          <p className="text-sm tracking-[0.3em] text-zinc-400 uppercase">
-            Add vehicles to compare
+          <p className="text-sm text-zinc-400 mb-8 max-w-md mx-auto leading-relaxed">
+            Add up to 5 vehicles from search or browse to compare specs side by side.
           </p>
+          <Link to="/home" className="btn-primary text-xs">
+            Search vehicles
+          </Link>
         </div>
       </div>
     );
@@ -53,7 +57,7 @@ export default function Compare() {
     { key: 'horsepower', label: 'POWER', getValue: (car) => car.engine.horsepower != null ? `${car.engine.horsepower} HP` : UNAVAILABLE_LABEL, getNumeric: (car) => car.engine.horsepower ?? null, higherIsBetter: true },
     { key: 'torque', label: 'TORQUE', getValue: (car) => car.engine.torque != null ? `${car.engine.torque} LB-FT` : UNAVAILABLE_LABEL, getNumeric: (car) => car.engine.torque ?? null, higherIsBetter: true },
     { key: 'fuelType', label: 'FUEL', getValue: (car) => formatFuelTypeLabel(car.engine.fuelType).toUpperCase() },
-    { key: 'transmission', label: 'TRANS', getValue: (car) => car.transmission.speeds ? `${car.transmission.speeds}-SPD ${car.transmission.type.toUpperCase()}` : car.transmission.type.toUpperCase() },
+    { key: 'transmission', label: 'TRANS', getValue: (car) => formatTransmissionLabel(car.transmission).toUpperCase() },
     { key: 'driveType', label: 'DRIVE', getValue: (car) => car.driveType },
     { key: 'zeroToSixty', label: '0-60', getValue: (car) => car.performance?.zeroToSixty ? `${car.performance.zeroToSixty.toFixed(1)}S` : UNAVAILABLE_LABEL, getNumeric: (car) => car.performance?.zeroToSixty ?? null, higherIsBetter: false },
     { key: 'topSpeed', label: 'TOP SPEED', getValue: (car) => car.performance?.topSpeed ? `${Math.round(car.performance.topSpeed)} MPH` : UNAVAILABLE_LABEL, getNumeric: (car) => car.performance?.topSpeed ?? null, higherIsBetter: true },
@@ -109,41 +113,28 @@ export default function Compare() {
           <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
             <table className="w-full border-collapse min-w-[320px]">
               <thead>
-                <tr className="border-b border-zinc-900">
-                  <th className="px-3 sm:px-6 py-6 text-left sticky left-0 bg-black z-10 min-w-[100px]">
-                    <span className="text-xs text-zinc-400">Spec</span>
+                <tr className="border-b border-zinc-700">
+                  <th className="px-3 sm:px-4 py-4 text-left sticky left-0 bg-black z-10 min-w-[100px]">
+                    <span className="text-xs uppercase tracking-widest text-zinc-500">Spec</span>
                   </th>
                   {comparedCars.map((car) => (
-                    <th key={car.id} className="px-3 sm:px-6 py-6 min-w-[180px] sm:min-w-[220px] border-l border-zinc-900">
+                    <th key={car.id} className="px-3 sm:px-4 py-4 min-w-[180px] sm:min-w-[220px] border-l border-zinc-800">
                       <div className="text-center">
-                        {/* Year */}
-                        <div className="mb-4">
-                          <p className="text-4xl font-black text-zinc-300">
-                            {car.year}
-                          </p>
+                        <div className="mb-3">
+                          <p className="text-4xl font-black text-zinc-300 tabular-nums">{car.year}</p>
                         </div>
-
-                        {/* Make & Model */}
-                        <div className="mb-6">
-                          <h3 className="text-xl font-black tracking-tight">
-                            {car.make.toUpperCase()}
-                          </h3>
-                          <p className="text-base font-light tracking-wider text-zinc-400">
-                            {car.model}
-                          </p>
+                        <div className="mb-4">
+                          <h3 className="text-lg font-black tracking-tight uppercase">{car.make}</h3>
+                          <p className="text-sm font-medium text-zinc-400">{car.model}</p>
                           {car.trim && (
-                            <p className="text-xs tracking-widest text-zinc-300 mt-2">
-                              {car.trim.toUpperCase()}
-                            </p>
+                            <p className="text-xs tracking-widest text-zinc-500 mt-1 uppercase">{car.trim}</p>
                           )}
                         </div>
-
-                        {/* Remove button */}
                         <button
                           onClick={() => removeCarFromComparison(car.id)}
-                          className="text-xs tracking-widest text-zinc-300 hover:text-red-500 transition-colors"
+                          className="text-[10px] tracking-widest text-zinc-500 hover:text-red-500 transition-colors uppercase"
                         >
-                          REMOVE
+                          Remove
                         </button>
                       </div>
                     </th>
@@ -151,26 +142,29 @@ export default function Compare() {
                 </tr>
               </thead>
               <tbody>
-                {specs.map((spec, index) => (
-                  <tr
-                    key={spec.key}
-                    className={`border-b border-zinc-950 ${index % 2 === 0 ? 'bg-black' : 'bg-zinc-950'}`}
-                  >
-                    <td className="px-6 py-6 sticky left-0 z-10 border-r border-zinc-900" style={{
-                      backgroundColor: index % 2 === 0 ? '#000000' : 'rgb(9, 9, 11)'
-                    }}>
-                      <span className="text-xs tracking-widest text-zinc-400 font-semibold">
-                        {spec.label}
-                      </span>
+                {specs.map((spec) => (
+                  <tr key={spec.key} className="border-b border-zinc-900">
+                    <td className="px-4 py-3 sticky left-0 z-10 bg-black border-r border-zinc-800">
+                      <span className="text-xs tracking-widest text-zinc-500 uppercase">{spec.label}</span>
                     </td>
                     {comparedCars.map((car) => {
                       const best = bestByRow.get(spec.key);
                       const isBest = best != null && spec.getNumeric?.(car) === best;
+                      const raw = spec.getValue(car);
+                      const isNumeric = spec.getNumeric?.(car) != null;
                       return (
-                        <td key={car.id} className="px-6 py-6 text-center border-l border-zinc-900">
-                          <span className={`text-sm font-bold tracking-wide ${isBest ? 'text-white underline decoration-zinc-600 underline-offset-4' : 'text-zinc-400'}`}>
-                            {spec.getValue(car)}
-                            {isBest && <span className="ml-1.5 text-[10px] tracking-widest text-zinc-400 align-middle">BEST</span>}
+                        <td key={car.id} className="px-4 py-3 text-center border-l border-zinc-800">
+                          <span
+                            className={`text-sm ${
+                              isBest
+                                ? 'font-black text-white tabular-nums'
+                                : isNumeric
+                                  ? 'font-medium tabular-nums text-white'
+                                  : 'text-zinc-300'
+                            }`}
+                          >
+                            {raw}
+                            {isBest && <span className="ml-1 text-[10px] text-zinc-400 align-middle">▲</span>}
                           </span>
                         </td>
                       );

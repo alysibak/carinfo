@@ -109,7 +109,22 @@ export function canonicalizeDisplayModel(car: CarSpecs): string {
   if (make === 'Mini' && /\bcooper s\b/.test(h)) return 'Cooper S';
   if (make === 'Subaru' && /\bwrx\b|\bsti\b/.test(h)) return car.model.match(/WRX|STI/i)?.[0] ?? car.model;
 
-  return car.model.trim();
+  return stripEpaModelNoise(car.model.trim());
+}
+
+const EPA_MODEL_PAREN =
+  /\s*\([^)]*(?:energy\s+capacity|(?:\d+\s*)?ah\b|ffv|flex[- ]?fuel|ethanol|gas\s+guzzler|tier\s*\d|bin\s*\d|\d+\s*dr\b)[^)]*\)/gi;
+
+const TECHNICAL_PAREN = /\s*\([^)]*\d+\s*(?:ah|kw|kwh|mi|mpg|cc|hp|lb)[^)]*\)/gi;
+
+function stripEpaModelNoise(model: string): string {
+  let cleaned = model.trim();
+  let prev = '';
+  while (prev !== cleaned) {
+    prev = cleaned;
+    cleaned = cleaned.replace(EPA_MODEL_PAREN, '').replace(TECHNICAL_PAREN, '').trim();
+  }
+  return cleaned.replace(/\s*\(FFV\)/gi, '').replace(/\s{2,}/g, ' ').trim() || model.trim();
 }
 
 export function inferBodyStyle(car: CarSpecs, displayModel?: string): BodyStyle {

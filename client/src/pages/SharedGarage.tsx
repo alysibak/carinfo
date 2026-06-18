@@ -65,7 +65,7 @@ export default function SharedGarage() {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block w-16 h-16 border-2 border-zinc-800 border-t-white rounded-full animate-spin mb-4" />
+          <div className="inline-block w-16 h-16 border-2 border-zinc-800 border-t-zinc-500 mb-4 opacity-50" />
           <p className="text-xs tracking-[0.3em] text-zinc-300 uppercase">Loading Garage</p>
         </div>
       </div>

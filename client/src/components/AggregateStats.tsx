@@ -16,35 +16,32 @@ export default function AggregateStats({ cars, title = 'MARKET OVERVIEW' }: Aggr
   }
 
   return (
-    <div className="bg-zinc-950 border border-zinc-900 p-6">
-      <h2 className="text-lg font-black tracking-tight mb-6 uppercase text-white">
-        {title}
-      </h2>
+    <div className="bg-zinc-950 border border-zinc-800 p-4 rounded-none">
+      <h2 className="kicker mb-4">{title}</h2>
 
-      {/* Key Stats */}
-      <div className="space-y-4 mb-6">
-        <div className="flex justify-between items-center py-2 border-b border-zinc-900">
-          <span className="text-xs tracking-widest text-zinc-300 uppercase">Vehicles</span>
-          <span className="text-xl font-black text-white">{stats.count.toLocaleString()}</span>
+      <div className="space-y-3 mb-6 divide-y divide-zinc-900">
+        <div className="flex justify-between items-baseline py-2">
+          <span className="text-xs tracking-widest text-zinc-500 uppercase">Vehicles</span>
+          <span className="text-2xl font-bold tabular-nums text-white">{stats.count.toLocaleString()}</span>
         </div>
 
-        <div className="flex justify-between items-center py-2 border-b border-zinc-900">
-          <span className="text-xs tracking-widest text-zinc-300 uppercase">Avg Price</span>
-          <span className="text-xl font-black text-white">
-            ${(stats.avgPrice / 1000).toFixed(0)}K
+        <div className="flex justify-between items-baseline py-2">
+          <span className="text-xs tracking-widest text-zinc-500 uppercase">Avg price</span>
+          <span className="text-2xl font-bold tabular-nums text-white">
+            ${(stats.avgPrice / 1000).toFixed(0)}k
           </span>
         </div>
 
         {stats.avgHorsepower > 0 && (
-          <div className="flex justify-between items-center py-2 border-b border-zinc-900">
-            <span className="text-xs tracking-widest text-zinc-300 uppercase">Avg Power</span>
-            <span className="text-xl font-black text-white">{stats.avgHorsepower} HP</span>
+          <div className="flex justify-between items-baseline py-2">
+            <span className="text-xs tracking-widest text-zinc-500 uppercase">Avg power</span>
+            <span className="text-2xl font-bold tabular-nums text-white">{stats.avgHorsepower} HP</span>
           </div>
         )}
 
-        <div className="flex justify-between items-center py-2 border-b border-zinc-900">
-          <span className="text-xs tracking-widest text-zinc-300 uppercase">Avg MPG</span>
-          <span className="text-xl font-black text-white">{stats.avgMpg}</span>
+        <div className="flex justify-between items-baseline py-2">
+          <span className="text-xs tracking-widest text-zinc-500 uppercase">Avg MPG</span>
+          <span className="text-2xl font-bold tabular-nums text-white">{stats.avgMpg}</span>
         </div>
 
         {stats.avgTorque > 0 && (
@@ -65,7 +62,7 @@ export default function AggregateStats({ cars, title = 'MARKET OVERVIEW' }: Aggr
         {stats.bestValue && (
           <button
             onClick={() => navigate(`/car/${stats.bestValue!.id}`)}
-            className="w-full text-left p-3 bg-black border border-zinc-900 hover:border-white transition-all group"
+            className="w-full text-left p-3 bg-black border border-zinc-800 hover:border-zinc-600 transition-colors rounded-none group"
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs tracking-widest text-zinc-400 uppercase font-black">
@@ -96,7 +93,7 @@ export default function AggregateStats({ cars, title = 'MARKET OVERVIEW' }: Aggr
         {stats.highestPower && (
           <button
             onClick={() => navigate(`/car/${stats.highestPower!.id}`)}
-            className="w-full text-left p-3 bg-black border border-zinc-900 hover:border-white transition-all group"
+            className="w-full text-left p-3 bg-black border border-zinc-800 hover:border-zinc-600 transition-colors rounded-none group"
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs tracking-widest text-zinc-400 uppercase font-black">
@@ -129,7 +126,7 @@ export default function AggregateStats({ cars, title = 'MARKET OVERVIEW' }: Aggr
         {stats.bestEconomy && stats.bestEconomy.fuelEconomy.combined && (
           <button
             onClick={() => navigate(`/car/${stats.bestEconomy!.id}`)}
-            className="w-full text-left p-3 bg-black border border-zinc-900 hover:border-white transition-all group"
+            className="w-full text-left p-3 bg-black border border-zinc-800 hover:border-zinc-600 transition-colors rounded-none group"
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs tracking-widest text-zinc-400 uppercase font-black">

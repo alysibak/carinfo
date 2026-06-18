@@ -171,13 +171,12 @@ export function formatEngineForDetail(engine: {
 
 export function formatPowerForCard(
   horsepower?: number | null,
-  options?: { fuelType?: string; powerProvenance?: string },
+  _options?: { fuelType?: string; powerProvenance?: string },
 ): string {
   if (hasNumericValue(horsepower)) {
-    const est = options?.powerProvenance === 'estimated';
-    return `${Math.round(horsepower!)} hp${est ? ' (est.)' : ''}`;
+    return `${Math.round(horsepower!)} HP`;
   }
-  if (options?.fuelType && usesMpge(options.fuelType)) {
+  if (_options?.fuelType && usesMpge(_options.fuelType)) {
     return 'Not in EPA dataset';
   }
   return UNAVAILABLE_LABEL;

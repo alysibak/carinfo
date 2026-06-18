@@ -16,19 +16,26 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--surface);
   color: var(--text-primary);
   line-height: 1.5;
-  letter-spacing: -0.011em;
+  letter-spacing: -0.01em;
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
 }
 
 code {
-  font-family: ui-monospace, 'Cascadia Code', Menlo, monospace;
+  font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+}
+
+@layer utilities {
+  .tabular-nums {
+    font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 * {
@@ -43,6 +50,7 @@ code {
   }
 
   .font-tabular {
+    font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
     font-variant-numeric: tabular-nums;
   }
 
@@ -55,11 +63,11 @@ code {
   }
 
   .surface-card {
-    @apply bg-black border border-zinc-800 rounded-lg;
+    @apply bg-black border border-zinc-800 rounded-none;
   }
 
   .surface-card-hover {
-    @apply bg-black border border-zinc-800 rounded-lg transition-colors duration-200 hover:border-zinc-600 hover:bg-zinc-950;
+    @apply bg-black border border-zinc-800 rounded-none transition-colors duration-150 hover:border-zinc-600 hover:bg-zinc-950;
   }
 
   .btn {
@@ -67,11 +75,11 @@ code {
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 px-5 py-2.5 bg-white text-black hover:bg-zinc-200 rounded-lg;
+    @apply inline-flex items-center justify-center gap-2 text-sm font-medium uppercase tracking-widest transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 px-5 py-2.5 bg-white text-black hover:bg-zinc-200 rounded-none;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 px-5 py-2.5 border border-zinc-600 text-zinc-300 hover:border-zinc-400 hover:text-white bg-transparent rounded-lg;
+    @apply inline-flex items-center justify-center gap-2 text-sm font-medium uppercase tracking-wider transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 px-5 py-2.5 border border-zinc-600 text-zinc-300 hover:border-zinc-400 hover:text-white bg-transparent rounded-none;
   }
 
   .btn-ghost {
@@ -79,32 +87,35 @@ code {
   }
 
   .label-sm {
-    @apply text-xs font-medium text-zinc-400;
+    @apply text-[10px] uppercase tracking-widest text-zinc-500;
   }
 
   .section-heading {
-    @apply text-lg font-semibold text-white tracking-tight;
+    @apply text-lg font-semibold text-white tracking-tight uppercase;
   }
 
   .section-title {
-    @apply text-2xl md:text-3xl font-semibold text-white tracking-tight leading-tight;
+    @apply text-2xl md:text-3xl font-bold text-white tracking-tight leading-tight;
   }
 
   .kicker {
-    @apply text-[11px] font-medium text-zinc-500 uppercase;
-    letter-spacing: 0.1em;
+    @apply text-[10px] font-medium text-zinc-500 uppercase tracking-widest;
   }
 
   .surface-card-glass {
-    @apply border border-zinc-800 bg-zinc-950/80 rounded-lg;
+    @apply border border-zinc-800 bg-zinc-950/80 rounded-none;
   }
 
   .chip {
-    @apply inline-flex items-center px-3 py-1 text-xs text-zinc-400 border border-zinc-800 rounded-md transition-colors duration-150 hover:text-white hover:border-zinc-600;
+    @apply inline-flex items-center px-2 py-0.5 text-xs uppercase tracking-widest text-zinc-400 border border-zinc-800 rounded-none transition-colors duration-150 hover:text-white hover:border-zinc-600 bg-transparent;
+  }
+
+  .spec-chip {
+    @apply inline-flex items-center px-2 py-0.5 text-[10px] uppercase tracking-widest text-zinc-400 border border-zinc-700 bg-transparent;
   }
 
   .eyebrow-pill {
-    @apply text-xs font-medium text-zinc-500;
+    @apply text-xs font-medium text-zinc-500 uppercase tracking-widest;
   }
 
   .mesh-hero {
@@ -117,19 +128,19 @@ code {
   }
 
   .tool-card {
-    @apply surface-card-hover p-5 flex flex-col gap-2 min-h-[120px];
+    @apply surface-card-hover p-4 flex flex-col gap-2 min-h-[100px];
   }
 
   .step-card {
-    @apply border border-zinc-900 bg-zinc-950 p-6 rounded-lg;
+    @apply border border-zinc-800 bg-zinc-950 p-4 rounded-none;
   }
 
   .nav-link {
-    @apply text-sm font-medium text-zinc-400 transition-colors duration-150 hover:text-white;
+    @apply text-xs uppercase tracking-widest text-zinc-400 transition-colors duration-150 hover:text-white;
   }
 
   .list-row {
-    @apply flex items-center justify-between gap-6 py-5 border-b border-zinc-900 transition-colors duration-150 hover:border-zinc-700;
+    @apply flex items-center justify-between gap-4 py-4 border-b border-zinc-800 transition-colors duration-150 hover:border-zinc-600;
   }
 
   .text-gradient {
@@ -137,11 +148,11 @@ code {
   }
 
   .meter-track {
-    @apply relative h-1 w-full overflow-hidden rounded-full bg-zinc-800;
+    @apply relative h-1 w-full overflow-hidden bg-zinc-900;
   }
 
   .meter-fill {
-    @apply absolute inset-y-0 left-0 origin-left rounded-full bg-white;
+    @apply absolute inset-y-0 left-0 origin-left bg-white;
   }
 }
 
@@ -161,7 +172,7 @@ input[type='range'] {
 
 ::-webkit-scrollbar-thumb {
   background: #52525b;
-  border-radius: 4px;
+  border-radius: 0;
 }
 
 ::-webkit-scrollbar-thumb:hover {

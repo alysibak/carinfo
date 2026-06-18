@@ -19,6 +19,8 @@ export interface GlanceMetric {
   detail?: string;
   verified?: boolean;
   estimated?: boolean;
+  /** Trust chip source — when set, overrides the legacy `verified` → EPA mapping. */
+  trustSource?: 'epa' | 'nhtsa' | 'estimated' | 'curated';
   /** True when the metric slot is shown but data is absent from the dataset. */
   unavailable?: boolean;
 }
@@ -89,7 +91,7 @@ function buildMpgMetric(car: CarSpecs): GlanceMetric | null {
       label: 'Gas-mode MPG',
       value: formatOrFallback(car.fuelEconomy.combined),
       detail,
-      verified: true,
+      trustSource: 'epa',
     };
   }
 
@@ -98,7 +100,7 @@ function buildMpgMetric(car: CarSpecs): GlanceMetric | null {
     label: `Combined ${efficiencyUnit(car)}`,
     value: formatOrFallback(car.fuelEconomy.combined),
     detail: annualFuelCostDetail(car) || undefined,
-    verified: true,
+    trustSource: 'epa',
   };
 }
 
@@ -136,17 +138,23 @@ export function buildGlanceMetrics(dashboard: CarDashboard): { cells: GlanceMetr
       label: 'Engine',
       value: engine,
       detail: car.driveType ? `${car.driveType} drivetrain` : undefined,
-      verified: true,
+      trustSource: 'epa',
     };
   }
 
   if (hasNumericValue(car.engine.horsepower)) {
+    const hpProv = car.provenance?.['engine.horsepower'];
     candidates.power = {
       id: 'power',
       label: 'Horsepower',
       value: `${car.engine.horsepower} hp`,
-      detail: engine ?? (car.driveType ? `${car.driveType} drivetrain` : undefined),
-      verified: true,
+      detail:
+        hpProv === 'estimated'
+          ? 'Manufacturer-rated motor output'
+          : hpProv === 'curated'
+            ? 'EPA test-car rated hp'
+            : engine ?? (car.driveType ? `${car.driveType} drivetrain` : undefined),
+      trustSource: hpProv === 'estimated' ? 'estimated' : hpProv === 'curated' ? 'curated' : undefined,
     };
   }
 
@@ -170,7 +178,7 @@ export function buildGlanceMetrics(dashboard: CarDashboard): { cells: GlanceMetr
       label: 'EPA range',
       value: `${Math.round(rangeMi!)} mi`,
       detail: 'on a full charge',
-      verified: true,
+      trustSource: 'epa',
     };
   }
 
@@ -190,7 +198,7 @@ export function buildGlanceMetrics(dashboard: CarDashboard): { cells: GlanceMetr
       label: 'Safety',
       value: `${car.safetyRating!.overall}/5 stars`,
       detail: 'NHTSA crash test',
-      verified: true,
+      trustSource: 'nhtsa',
     };
   }
 

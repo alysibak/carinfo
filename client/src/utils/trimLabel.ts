@@ -2,6 +2,61 @@ import type { CarSpecs } from '../types/car.types';
 
 type TransmissionInfo = CarSpecs['transmission'];
 type ListingCar = Pick<CarSpecs, 'trim' | 'model' | 'transmission'>;
+type ModelCar = Pick<CarSpecs, 'make' | 'model' | 'trim' | 'engine'>;
+
+/** EPA parenthetical annotations that are not consumer-facing model names. */
+const EPA_MODEL_PAREN =
+  /\s*\([^)]*(?:energy\s+capacity|(?:\d+\s*)?ah\b|ffv|flex[- ]?fuel|ethanol|gas\s+guzzler|tier\s*\d|bin\s*\d|\d+\s*dr\b)[^)]*\)/gi;
+
+/** Technical parentheticals with measured units (kW, kWh, mi, etc.). */
+const TECHNICAL_PAREN = /\s*\([^)]*\d+\s*(?:ah|kw|kwh|mi|mpg|cc|hp|lb)[^)]*\)/gi;
+
+const EPA_MODEL_SUFFIX = /\s+(?:FFV|4WD|AWD|FWD|RWD|2WD|4\s*Dr|2\s*Dr|5\s*Dr)\s*$/i;
+
+function stripEpaModelNoise(model: string): string {
+  let cleaned = model.trim();
+  let prev = '';
+  while (prev !== cleaned) {
+    prev = cleaned;
+    cleaned = cleaned.replace(EPA_MODEL_PAREN, '').replace(TECHNICAL_PAREN, '').trim();
+  }
+  cleaned = cleaned.replace(/\s*\(FFV\)/gi, '').replace(EPA_MODEL_SUFFIX, '').trim();
+  return cleaned.replace(/\s{2,}/g, ' ');
+}
+
+/** Lightweight client mirror of server canonicalizeDisplayModel for common disambiguations. */
+function clientCanonicalizeModel(car: ModelCar): string {
+  const h = `${car.make} ${car.model} ${car.trim ?? ''}`.toLowerCase();
+  const disp = car.engine?.displacement ?? 0;
+
+  if (car.make === 'Volkswagen') {
+    if (/sportwagen|sport wagen/.test(h)) return 'Golf SportWagen';
+    if (/e-golf|e golf/.test(h)) return 'e-Golf';
+    if (/golf r|\bgolf-r\b/.test(h)) return 'Golf R';
+    if (/\bgti\b|golf-gti/.test(h)) return disp >= 1.95 ? 'Golf GTI' : 'Golf';
+  }
+  if (car.make === 'Honda') {
+    if (/civic.*type r|type r.*civic/.test(h)) return 'Civic Type R';
+    if (/civic.*si|\bsi\b/.test(h) && /civic/.test(h)) return 'Civic Si';
+    if (/civic.*hatch|hatch.*civic/.test(h)) return 'Civic Hatchback';
+  }
+  if (car.make === 'Mini' && /\bcooper s\b/.test(h)) return 'Cooper S';
+  if (car.make === 'Subaru' && /\bwrx\b|\bsti\b/.test(h)) {
+    return car.model.match(/WRX|STI/i)?.[0] ?? car.model;
+  }
+
+  return car.model.trim();
+}
+
+/**
+ * Canonical human-readable model name — strips EPA technical annotations
+ * (e.g. "bZ (energy capacity 200 Ah)" → "bZ") and applies common disambiguation.
+ */
+export function displayModelLabel(car: ModelCar): string {
+  const base = clientCanonicalizeModel(car);
+  const cleaned = stripEpaModelNoise(base);
+  return cleaned || base || car.model.trim();
+}
 
 /** EPA / slug tokens that are not consumer-facing trim names. */
 const TRIM_NOISE = new Set([
@@ -70,35 +125,62 @@ const TRANSMISSION_TYPE_LABELS: Record<TransmissionInfo['type'], string> = {
   'dual-clutch': 'Dual-clutch',
 };
 
-function parseSpeedsFromTrim(trim?: string): number | undefined {
-  if (!trim) return undefined;
-  const lower = trim.toLowerCase();
-  const match = lower.match(/(?:^|-)(\d+)spd(?:-|$)|(?:^|-)s(\d+)(?:-|$)/);
-  if (!match) return undefined;
-  return Number(match[1] || match[2]);
+/** Valid passenger-car gear counts only — never parse model names like S90. */
+function isPlausibleSpeedCount(n: number): boolean {
+  return Number.isFinite(n) && n >= 1 && n <= 12;
 }
 
-function parseSpeedsFromDescription(description?: string): number | undefined {
+/**
+ * Speed count from transmission.speeds or EPA description codes (AV-S6, S8, 6-spd).
+ * Never from trim slugs — avoids "S90" → 90-Speed Automatic.
+ */
+function parseEpaTransmissionSpeeds(
+  speeds?: number | null,
+  description?: string,
+): number | undefined {
+  if (speeds != null && isPlausibleSpeedCount(speeds)) return speeds;
+
   if (!description) return undefined;
-  const match = description.match(/\(?S(\d+)\)?/i) ?? description.match(/(\d+)[- ]?spd/i);
-  if (!match) return undefined;
-  return Number(match[1]);
+  const d = description.trim();
+
+  const avMatch = d.match(/(?:AV|AM)-S(\d+)/i);
+  if (avMatch && isPlausibleSpeedCount(Number(avMatch[1]))) return Number(avMatch[1]);
+
+  const parenS = d.match(/\(S(\d+)\)/i);
+  if (parenS && isPlausibleSpeedCount(Number(parenS[1]))) return Number(parenS[1]);
+
+  const spdMatch = d.match(/(\d+)[- ]?spd/i);
+  if (spdMatch && isPlausibleSpeedCount(Number(spdMatch[1]))) return Number(spdMatch[1]);
+
+  return undefined;
 }
 
-/** Human-readable transmission — e.g. "6-Speed Manual". */
+function isCvtDescription(description?: string, type?: TransmissionInfo['type']): boolean {
+  if (type === 'cvt') return true;
+  if (!description) return false;
+  const d = description.toLowerCase();
+  if (d.includes('cvt')) return true;
+  if (d.includes('variable') && !/(?:av|am)-s\d+/i.test(description)) return true;
+  if (d.includes('variable gear')) return true;
+  return false;
+}
+
+/** Human-readable transmission — e.g. "6-Speed Automatic", "CVT". */
 export function formatTransmissionLabel(
   trans: Pick<TransmissionInfo, 'type' | 'speeds' | 'description'>,
-  trim?: string,
+  _trim?: string,
 ): string {
-  const type = TRANSMISSION_TYPE_LABELS[trans.type] ?? trans.type;
-  const speeds =
-    trans.speeds ??
-    parseSpeedsFromTrim(trim) ??
-    parseSpeedsFromDescription(trans.description);
+  if (isCvtDescription(trans.description, trans.type)) return 'CVT';
+
+  const type = TRANSMISSION_TYPE_LABELS[trans.type] ?? 'Automatic';
+  const speeds = parseEpaTransmissionSpeeds(trans.speeds, trans.description);
 
   if (speeds && trans.type !== 'cvt') return `${speeds}-Speed ${type}`;
   return type;
 }
+
+/** Alias used across the UI — single normalization entry point. */
+export const displayTransmissionLabel = formatTransmissionLabel;
 
 /**
  * Line under the model name in lists/cards. Uses trim when readable; otherwise
@@ -109,7 +191,7 @@ export function displayListingSubtitle(car: ListingCar): string | null {
   if (trim) return trim;
 
   if (car.transmission?.type) {
-    return formatTransmissionLabel(car.transmission, car.trim);
+    return formatTransmissionLabel(car.transmission);
   }
 
   return null;
