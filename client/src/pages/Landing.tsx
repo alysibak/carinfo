@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import PersonaQuiz, { PersonaResult } from '../components/PersonaQuiz';
 import AboutData from '../components/AboutData';
 import SearchBar from '../components/SearchBar';
+import SiteHeader from '../components/SiteHeader';
 import VehiclePlaceholder from '../components/VehiclePlaceholder';
 import * as api from '../services/api';
 import type { CarFilter, CarSpecs, SearchQuery } from '../types/car.types';
@@ -41,9 +42,57 @@ const QUICK_CHIPS: QuickChip[] = [
   },
 ];
 
+const TOOLS = [
+  {
+    to: '/home',
+    title: 'Search',
+    desc: '28k+ vehicles with filters',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+    ),
+  },
+  {
+    to: '/value-matrix',
+    title: 'Value Matrix',
+    desc: 'Plot price vs efficiency',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 19h16M4 15l4-6 4 3 4-7 4 10" />
+      </svg>
+    ),
+  },
+  {
+    to: '/vin',
+    title: 'VIN Decoder',
+    desc: 'Decode any 17-digit VIN',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    ),
+  },
+  {
+    to: '/compare',
+    title: 'Compare',
+    desc: 'Side-by-side spec sheets',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7" />
+      </svg>
+    ),
+  },
+];
+
+const STEPS = [
+  { n: '1', title: 'Search or browse', desc: 'Find by make, model, year, budget, or body style.' },
+  { n: '2', title: 'Compare specs', desc: 'Fuel economy, safety, power, and estimated value in CAD.' },
+  { n: '3', title: 'Save to garage', desc: 'Build a shortlist and share it with a link.' },
+];
+
 export default function Landing() {
   const [showQuiz, setShowQuiz] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const [stats, setStats] = useState<{
     totalCars: number;
     totalMakes: number;
@@ -74,13 +123,6 @@ export default function Landing() {
     });
     navigate(`/smart-search?${params.toString()}`);
   };
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
 
   useEffect(() => {
     api
@@ -131,150 +173,159 @@ export default function Landing() {
   const years = stats ? `${stats.yearRange.min}–${stats.yearRange.max}` : '1995–2026';
 
   return (
-    <div className="min-h-screen bg-obsidian text-ivory selection:bg-champagne/20">
+    <div className="min-h-screen bg-black text-white selection:bg-white/20">
       {showQuiz && <PersonaQuiz onComplete={handleQuizComplete} />}
 
-      <header
-        className={`sticky top-0 z-40 transition-all duration-500 ${
-          scrolled
-            ? 'border-b border-[var(--border-subtle)] bg-obsidian/90 backdrop-blur-md'
-            : 'border-b border-transparent bg-transparent'
-        }`}
-      >
-        <div className="page-wrap py-5 flex items-center justify-between gap-6">
-          <Link to="/" className="group flex items-baseline gap-3">
-            <span className="kicker !text-[10px] !tracking-[0.35em] text-champagne group-hover:text-ivory transition-colors">
-              CarInfo
-            </span>
-          </Link>
-          <nav className="hidden md:flex items-center gap-8">
-            <Link className="nav-link" to="/browse">Browse</Link>
-            <Link className="nav-link" to="/home">Search</Link>
-            <Link className="nav-link" to="/value-matrix">Matrix</Link>
-            <Link className="nav-link" to="/garage">Garage</Link>
-          </nav>
-          <button type="button" onClick={() => setShowQuiz(true)} className="btn-primary !py-2.5 !px-5 !text-xs">
-            Concierge
+      <SiteHeader
+        transparentUntilScroll
+        trailing={
+          <button
+            type="button"
+            onClick={() => setShowQuiz(true)}
+            className="btn-primary !py-2 !px-3 sm:!px-4 !text-sm"
+          >
+            <span className="hidden sm:inline">Find my car</span>
+            <span className="sm:hidden">Quiz</span>
           </button>
-        </div>
-      </header>
+        }
+      />
 
-      {/* Hero */}
       <section className="relative mesh-hero overflow-hidden">
-        <div className="page-wrap pt-16 pb-20 md:pt-24 md:pb-28">
-          <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-16 xl:gap-24 items-end">
+        <div className="page-wrap pt-8 pb-12 md:pt-14 md:pb-20">
+          <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-10 xl:gap-16 items-end">
             <div className="max-w-xl">
-              <div className="rule-gold-short mb-8" />
-              <p className="kicker">EPA & NHTSA archive</p>
+              <p className="kicker">EPA & NHTSA data</p>
 
-              <h1 className="font-display text-[2.75rem] md:text-[3.5rem] xl:text-[4.25rem] text-ivory leading-[1.02] mt-5 mb-6">
-                The reference for serious buyers
+              <h1 className="text-3xl sm:text-4xl md:text-5xl xl:text-6xl font-semibold text-white tracking-tight leading-[1.05] mt-3 mb-4">
+                Search and compare cars
               </h1>
 
-              <p className="text-base md:text-lg text-stone leading-relaxed font-light max-w-md">
-                {vehicles} vehicles across {makes} marques, {years}. Verified specifications
-                and discreet market estimates — composed for comparison, not sales pressure.
+              <p className="text-base md:text-lg text-zinc-400 leading-relaxed max-w-md">
+                {vehicles} vehicles from {makes} brands, {years}. Specs, fuel economy, safety
+                ratings, and estimated prices in one place.
               </p>
 
-              <div className="mt-12 max-w-lg">
+              <div className="mt-8 max-w-lg">
                 <SearchBar
                   value={heroQuery}
                   onChange={setHeroQuery}
                   onSubmit={handleHeroSearch}
                   size="large"
-                  variant="luxury"
-                  placeholder="Marque, model, or year"
+                  placeholder="Make, model, or year"
                 />
-                <div className="mt-6 flex flex-wrap items-center gap-x-1 gap-y-2">
-                  {QUICK_CHIPS.map((chip, i) => (
-                    <span key={chip.label} className="flex items-center">
-                      {i > 0 && <span className="text-champagne/30 mx-2 select-none">·</span>}
-                      <Link
-                        to={`/home?${searchQueryToParams(
-                          filtersToSearchQuery(chip.filters, chip.sort),
-                          1,
-                        ).toString()}`}
-                        className="chip"
-                      >
-                        {chip.label}
-                      </Link>
-                    </span>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {QUICK_CHIPS.map((chip) => (
+                    <Link
+                      key={chip.label}
+                      to={`/home?${searchQueryToParams(
+                        filtersToSearchQuery(chip.filters, chip.sort),
+                        1,
+                      ).toString()}`}
+                      className="chip"
+                    >
+                      {chip.label}
+                    </Link>
                   ))}
                 </div>
               </div>
 
-              <div className="mt-14 grid grid-cols-3 gap-6 border-t border-[var(--border-subtle)] pt-8">
-                <Stat value={vehicles} label="In archive" />
-                <Stat value={makes} label="Marques" />
-                <Stat value={years} label="Span" />
+              <div className="mt-10 grid grid-cols-3 gap-4 sm:gap-6 border-t border-zinc-900 pt-6 sm:pt-8">
+                <Stat value={vehicles} label="Vehicles" />
+                <Stat value={makes} label="Brands" />
+                <Stat value={years} label="Years" />
               </div>
             </div>
 
-            <div className="relative hidden lg:block pb-2">
+            <div className="relative pb-2">
               {featured ? (
                 <FeaturedCard car={featured} />
               ) : (
-                <div className="luxury-frame animate-pulse">
-                  <div className="luxury-frame-inner aspect-[4/5] bg-[#0f0e0c]" />
+                <div className="surface-card animate-pulse">
+                  <div className="aspect-[16/10] lg:aspect-[4/5] bg-zinc-950" />
                 </div>
               )}
             </div>
           </div>
         </div>
-        <div className="rule-gold" />
       </section>
 
-      <section className="page-wrap py-16 md:py-20">
+      <section className="page-wrap py-12 md:py-16 border-t border-zinc-900">
+        <SectionHeader title="Tools" subtitle="Everything you need to research a purchase." />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          {TOOLS.map((tool) => (
+            <Link key={tool.to} to={tool.to} className="tool-card group">
+              <span className="text-zinc-500 group-hover:text-white transition-colors">{tool.icon}</span>
+              <p className="text-base font-semibold text-white tracking-tight">{tool.title}</p>
+              <p className="text-xs text-zinc-500 leading-relaxed">{tool.desc}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="page-wrap py-12 md:py-16 border-t border-zinc-900">
+        <SectionHeader title="How it works" />
+        <div className="grid sm:grid-cols-3 gap-4">
+          {STEPS.map((step) => (
+            <div key={step.n} className="step-card">
+              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-zinc-700 text-xs font-semibold text-zinc-400 mb-3">
+                {step.n}
+              </span>
+              <p className="text-base font-semibold text-white tracking-tight">{step.title}</p>
+              <p className="text-sm text-zinc-500 mt-1.5 leading-relaxed">{step.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="page-wrap py-12 md:py-16 border-t border-zinc-900">
         <AboutData />
       </section>
 
-      {/* By intention */}
-      <section className="page-wrap py-16 md:py-24 border-t border-[var(--border-subtle)]">
-        <SectionHeader index="01" title="By intention" subtitle="Begin with purpose. Refine at leisure." />
-        <div className="divide-y divide-[var(--border-subtle)] border-y border-[var(--border-subtle)]">
+      <section className="page-wrap py-12 md:py-16 border-t border-zinc-900">
+        <SectionHeader index="01" title="Shop by use" subtitle="Start with how you'll drive it." />
+        <div className="border-y border-zinc-900">
           {LIFESTYLE_PRESETS.map((preset, i) => (
             <Link
               key={preset.id}
               to={`/home?${searchQueryToParams(presetToSearchQuery(preset), 1).toString()}`}
-              className="exclusive-row group"
+              className="list-row group"
             >
-              <div className="flex items-baseline gap-6 min-w-0">
-                <span className="text-xs text-champagne/50 font-tabular w-6 shrink-0">
+              <div className="flex items-baseline gap-4 sm:gap-5 min-w-0">
+                <span className="text-xs text-zinc-600 font-tabular w-6 shrink-0">
                   {String(i + 1).padStart(2, '0')}
                 </span>
                 <div className="min-w-0">
-                  <p className="font-display text-2xl text-ivory group-hover:text-champagne transition-colors duration-300">
+                  <p className="text-lg sm:text-xl font-semibold text-white tracking-tight group-hover:text-zinc-300 transition-colors">
                     {preset.label}
                   </p>
-                  <p className="text-sm text-stone mt-1 font-light">{preset.description}</p>
+                  <p className="text-sm text-zinc-500 mt-0.5 sm:mt-1 line-clamp-2">{preset.description}</p>
                 </div>
               </div>
-              <span className="text-champagne/40 group-hover:text-champagne transition-colors text-lg shrink-0">→</span>
+              <span className="text-zinc-600 group-hover:text-white transition-colors shrink-0">→</span>
             </Link>
           ))}
         </div>
-        <Link to="/browse" className="inline-block mt-10 text-xs uppercase tracking-[0.2em] text-stone hover:text-champagne transition-colors">
-          Full catalogue →
+        <Link to="/browse" className="inline-block mt-6 text-sm text-zinc-500 hover:text-white transition-colors">
+          Browse all →
         </Link>
       </section>
 
-      {/* Browse */}
-      <section className="page-wrap py-16 md:py-24 border-t border-[var(--border-subtle)]">
-        <SectionHeader index="02" title="The catalogue" />
-        <div className="grid sm:grid-cols-2 gap-px bg-[var(--border-subtle)] border border-[var(--border-subtle)]">
+      <section className="page-wrap py-12 md:py-16 border-t border-zinc-900">
+        <SectionHeader index="02" title="Browse" />
+        <div className="grid sm:grid-cols-2 gap-px bg-zinc-900 border border-zinc-900">
           {[
             { to: '/explore/purpose', title: 'By need', desc: 'Commute, family, work' },
-            { to: '/explore/body-style', title: 'By silhouette', desc: 'Sedan, SUV, coupe' },
-            { to: '/explore/budget', title: 'By investment', desc: '$15k through $60k+' },
-            { to: '/explore/era', title: 'By era', desc: '2020s to classics' },
+            { to: '/explore/body-style', title: 'By body style', desc: 'Sedan, SUV, coupe' },
+            { to: '/explore/budget', title: 'By budget', desc: '$15k through $60k+' },
+            { to: '/explore/era', title: 'By year', desc: '2020s to classics' },
           ].map((card) => (
             <Link
               key={card.to}
               to={card.to}
-              className="group bg-obsidian p-8 md:p-10 transition-colors duration-300 hover:bg-[#0f0e0c]"
+              className="group bg-black p-6 sm:p-8 md:p-10 transition-colors hover:bg-zinc-950"
             >
-              <p className="kicker !text-[10px] mb-4">{card.desc}</p>
-              <p className="font-display text-3xl text-ivory group-hover:text-champagne transition-colors duration-300">
+              <p className="kicker mb-2 sm:mb-3">{card.desc}</p>
+              <p className="text-xl sm:text-2xl font-semibold text-white tracking-tight group-hover:text-zinc-300 transition-colors">
                 {card.title}
               </p>
             </Link>
@@ -282,31 +333,30 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Collections */}
-      <section className="page-wrap py-16 md:py-24 border-t border-[var(--border-subtle)]">
+      <section className="page-wrap py-12 md:py-16 border-t border-zinc-900">
         <SectionHeader
           index="03"
-          title="Curated selections"
-          subtitle="Editorial shortlists for distinct pursuits."
+          title="Collections"
+          subtitle="Hand-picked lists for common searches."
         />
-        <div className="space-y-0">
+        <div>
           {Object.values(COLLECTIONS).map((c) => (
             <Link
               key={c.id}
               to={`/collection/${c.id}`}
-              className="exclusive-row group"
+              className="list-row group"
             >
-              <div className="min-w-0">
-                <p className="font-display text-xl md:text-2xl text-ivory group-hover:text-champagne transition-colors duration-300">
+              <div className="min-w-0 pr-4">
+                <p className="text-base sm:text-lg md:text-xl font-semibold text-white tracking-tight group-hover:text-zinc-300 transition-colors">
                   {c.title}
                 </p>
-                <p className="text-sm text-stone mt-1 font-light">{c.subtitle}</p>
+                <p className="text-sm text-zinc-500 mt-0.5 sm:mt-1 line-clamp-2">{c.subtitle}</p>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-xs uppercase tracking-[0.15em] text-champagne/60">
+                <p className="text-xs text-zinc-500 whitespace-nowrap">
                   {collectionCounts[c.id] != null
                     ? `${collectionCounts[c.id].toLocaleString()} vehicles`
-                    : 'Curated'}
+                    : 'View'}
                 </p>
               </div>
             </Link>
@@ -314,15 +364,15 @@ export default function Landing() {
         </div>
       </section>
 
-      <footer className="border-t border-[var(--border-subtle)] mt-8">
-        <div className="page-wrap py-14 flex flex-col md:flex-row md:items-end md:justify-between gap-8">
+      <footer className="border-t border-zinc-900">
+        <div className="page-wrap py-10 sm:py-12 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
           <div>
-            <p className="kicker !text-[10px] !tracking-[0.35em]">CarInfo</p>
-            <p className="text-sm text-stone mt-3 max-w-xs font-light leading-relaxed">
-              A private reference. EPA fuel economy, NHTSA safety, estimated values in CAD.
+            <p className="text-sm font-semibold text-white">CarInfo</p>
+            <p className="text-sm text-zinc-500 mt-2 max-w-xs leading-relaxed">
+              EPA fuel economy, NHTSA safety data, and estimated values in CAD.
             </p>
           </div>
-          <p className="text-xs text-stone/70 uppercase tracking-[0.12em]">
+          <p className="text-xs text-zinc-600">
             © {new Date().getFullYear()} CarInfo
           </p>
         </div>
@@ -342,41 +392,41 @@ function FeaturedCard({ car }: { car: CarSpecs }) {
   const overall = car.safetyRating?.overall;
 
   return (
-    <div className="luxury-frame animate-fade-in">
-      <Link to={`/car/${car.id}`} className="luxury-frame-inner block group overflow-hidden">
-        <div className="relative aspect-[4/5] max-h-[520px]">
+    <div className="surface-card animate-fade-in overflow-hidden">
+      <Link to={`/car/${car.id}`} className="block group">
+        <div className="relative aspect-[16/10] lg:aspect-[4/5] lg:max-h-[520px]">
           <VehiclePlaceholder car={car} />
-          <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/20 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-8">
-            <p className="kicker !text-[10px] mb-3">Selection</p>
-            <p className="font-display text-4xl text-ivory leading-none">{car.year}</p>
-            <h3 className="font-display text-2xl text-champagne mt-2">
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
+            <p className="kicker mb-1 sm:mb-2">Featured</p>
+            <p className="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-none">{car.year}</p>
+            <h3 className="text-lg sm:text-xl font-semibold text-white mt-1 tracking-tight">
               {car.make} {car.model}
             </h3>
-            <div className="flex flex-wrap gap-3 mt-4 text-[11px] uppercase tracking-[0.12em] text-stone">
+            <div className="flex flex-wrap gap-2 mt-2 sm:mt-3 text-xs text-zinc-400">
               <span>{car.bodyStyle}</span>
-              <span className="text-champagne/40">·</span>
+              <span className="text-zinc-700">·</span>
               <span>{formatFuelBadge(car.engine.fuelType)}</span>
             </div>
           </div>
         </div>
-        <div className="p-8 border-t border-[var(--border-subtle)] grid grid-cols-2 gap-6">
+        <div className="p-4 sm:p-6 border-t border-zinc-900 grid grid-cols-2 gap-4 sm:gap-5">
           <div>
-            <dt className="kicker !text-[10px]">Power</dt>
-            <dd className="mt-2 font-display text-2xl text-ivory">{powerValue}</dd>
+            <dt className="kicker">Power</dt>
+            <dd className="mt-1 text-lg sm:text-xl font-semibold text-white tracking-tight">{powerValue}</dd>
           </div>
           <div>
-            <dt className="kicker !text-[10px]">{mpgLabel}</dt>
-            <dd className="mt-2 font-display text-2xl text-ivory">{mpgValue}</dd>
-            <div className="meter-track mt-3 h-px">
-              <div className="meter-fill h-px" style={{ width: `${mpgPct}%` }} />
+            <dt className="kicker">{mpgLabel}</dt>
+            <dd className="mt-1 text-lg sm:text-xl font-semibold text-white tracking-tight">{mpgValue}</dd>
+            <div className="meter-track mt-2">
+              <div className="meter-fill" style={{ width: `${mpgPct}%` }} />
             </div>
           </div>
-          <div className="col-span-2 pt-2 flex items-center justify-between text-xs text-stone font-light border-t border-[var(--border-subtle)]">
+          <div className="col-span-2 pt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-xs text-zinc-500 border-t border-zinc-900">
             <span>{car.driveType} · {engineValue}</span>
             <span>{overall ? `${overall}/5 NHTSA` : 'Safety unrated'}</span>
           </div>
-          <p className="col-span-2 text-xs text-stone/80 font-light">
+          <p className="col-span-2 text-xs text-zinc-500">
             Est. {priceValue} CAD
           </p>
         </div>
@@ -390,15 +440,15 @@ function SectionHeader({
   title,
   subtitle,
 }: {
-  index: string;
+  index?: string;
   title: string;
   subtitle?: string;
 }) {
   return (
-    <div className="mb-10 md:mb-14 flex flex-col gap-3">
-      <span className="kicker">{index}</span>
+    <div className="mb-6 sm:mb-8 md:mb-10 flex flex-col gap-1.5 sm:gap-2">
+      {index && <span className="kicker">{index}</span>}
       <h2 className="section-title">{title}</h2>
-      {subtitle && <p className="text-sm text-stone font-light max-w-md">{subtitle}</p>}
+      {subtitle && <p className="text-sm text-zinc-500 max-w-md">{subtitle}</p>}
     </div>
   );
 }
@@ -406,8 +456,8 @@ function SectionHeader({
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div>
-      <p className="font-display text-3xl md:text-4xl text-ivory leading-none">{value}</p>
-      <p className="text-[10px] uppercase tracking-[0.18em] text-stone mt-2">{label}</p>
+      <p className="text-xl sm:text-2xl md:text-3xl font-semibold text-white tracking-tight leading-none">{value}</p>
+      <p className="text-xs text-zinc-500 mt-1.5 sm:mt-2">{label}</p>
     </div>
   );
 }

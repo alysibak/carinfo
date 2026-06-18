@@ -85,51 +85,36 @@ export default function Compare() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="sticky top-0 z-40 bg-black border-b border-zinc-900">
-        <div className="px-8 py-6">
-          <div className="flex items-center justify-between max-w-7xl mx-auto">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-3 text-xs tracking-[0.3em] text-zinc-400 hover:text-white transition-colors group"
-            >
-              <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
-              </svg>
-              <span>BACK</span>
-            </Link>
-
-            <div className="text-center">
-              <h1 className="text-2xl md:text-3xl font-black tracking-tighter">
-                COMPARE
-              </h1>
-              <p className="text-xs tracking-[0.3em] text-zinc-300 mt-1">
-                {comparedCars.length} SELECTED
+      <div className="border-b border-zinc-900">
+        <div className="page-wrap py-5 sm:py-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Compare</h1>
+              <p className="text-xs sm:text-sm text-zinc-400 mt-0.5">
+                {comparedCars.length} vehicle{comparedCars.length !== 1 ? 's' : ''} selected
               </p>
             </div>
-
             <button
               onClick={clearComparison}
-              className="text-xs tracking-[0.3em] text-zinc-400 hover:text-red-500 transition-colors"
+              className="text-xs sm:text-sm text-zinc-400 hover:text-red-400 transition-colors shrink-0"
             >
-              CLEAR
+              Clear all
             </button>
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="pt-8 px-8 pb-16">
+      <div className="page-wrap py-6 sm:py-8 pb-16">
         <div className="max-w-7xl mx-auto">
-          {/* Comparison Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <table className="w-full border-collapse min-w-[320px]">
               <thead>
                 <tr className="border-b border-zinc-900">
-                  <th className="px-6 py-8 text-left sticky left-0 bg-black z-10">
-                    <span className="text-xs tracking-[0.3em] text-zinc-300">SPEC</span>
+                  <th className="px-3 sm:px-6 py-6 text-left sticky left-0 bg-black z-10 min-w-[100px]">
+                    <span className="text-xs text-zinc-400">Spec</span>
                   </th>
                   {comparedCars.map((car) => (
-                    <th key={car.id} className="px-6 py-8 min-w-[280px] border-l border-zinc-900">
+                    <th key={car.id} className="px-3 sm:px-6 py-6 min-w-[180px] sm:min-w-[220px] border-l border-zinc-900">
                       <div className="text-center">
                         {/* Year */}
                         <div className="mb-4">

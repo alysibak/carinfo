@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   ScatterChart,
   Scatter,
@@ -22,6 +22,8 @@ type ViewPhase = 'choose' | 'chart';
 
 interface ChartDataPoint extends ChartPoint {
   color: string;
+  stroke: string;
+  dotSize: number;
 }
 
 interface MatrixPreset {
@@ -74,13 +76,33 @@ const PRESETS: MatrixPreset[] = [
 ];
 
 const BODY_STYLE_COLORS: Record<string, string> = {
-  sedan: '#fafafa',
-  suv: '#e4e4e7',
-  coupe: '#d4d4d8',
-  truck: '#a1a1aa',
-  van: '#71717a',
-  minivan: '#52525b',
-  wagon: '#d4d4d8',
+  sedan: '#ffffff',
+  suv: '#93c5fd',
+  coupe: '#fda4af',
+  truck: '#fdba74',
+  van: '#c4b5fd',
+  minivan: '#86efac',
+  wagon: '#e2e8f0',
+};
+
+const BODY_STYLE_STROKES: Record<string, string> = {
+  sedan: '#ffffff',
+  suv: '#38bdf8',
+  coupe: '#fb7185',
+  truck: '#fb923c',
+  van: '#a78bfa',
+  minivan: '#4ade80',
+  wagon: '#94a3b8',
+};
+
+const BODY_STYLE_SIZES: Record<string, number> = {
+  sedan: 52,
+  suv: 68,
+  coupe: 56,
+  truck: 76,
+  van: 60,
+  minivan: 64,
+  wagon: 54,
 };
 
 const KNOWN_BODY_STYLES = ['sedan', 'suv', 'coupe', 'truck', 'van', 'minivan', 'wagon'];
@@ -95,6 +117,46 @@ function useDebouncedValue<T>(value: T, delayMs: number): T {
   return debounced;
 }
 
+function useChartHeight() {
+  const [height, setHeight] = useState(400);
+  useEffect(() => {
+    const update = () => {
+      setHeight(window.innerWidth < 640 ? 300 : window.innerWidth < 1024 ? 380 : 480);
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+  return height;
+}
+
+function MatrixLegend() {
+  return (
+    <div className="flex flex-wrap gap-x-4 gap-y-2 justify-center sm:justify-start">
+      {KNOWN_BODY_STYLES.map((style) => (
+        <div key={style} className="flex items-center gap-2 text-xs text-zinc-400 capitalize">
+          <span
+            className="inline-block w-3 h-3 rounded-full border-2 shrink-0"
+            style={{
+              backgroundColor: BODY_STYLE_COLORS[style],
+              borderColor: BODY_STYLE_STROKES[style],
+            }}
+          />
+          {style}
+        </div>
+      ))}
+      <div className="flex items-center gap-2 text-xs text-zinc-500 w-full sm:w-auto sm:ml-2">
+        <span className="inline-flex items-center gap-1">
+          <span className="w-2 h-2 rounded-full bg-white" />
+          <span className="w-3 h-3 rounded-full bg-white" />
+          <span className="w-4 h-4 rounded-full bg-white" />
+        </span>
+        Larger dot = newer year
+      </div>
+    </div>
+  );
+}
+
 export default function ValueMatrix() {
   const [phase, setPhase] = useState<ViewPhase>('choose');
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
@@ -106,7 +168,10 @@ export default function ValueMatrix() {
   const [selectedBodyStyles, setSelectedBodyStyles] = useState<Set<string>>(new Set(['sedan', 'suv']));
   const [pointLimit, setPointLimit] = useState<number>(POINT_LIMIT_STEPS[0]);
   const [yearMin, setYearMin] = useState<number | undefined>(undefined);
+  const [hovered, setHovered] = useState<ChartDataPoint | null>(null);
+  const [viewMode, setViewMode] = useState<'chart' | 'list'>('chart');
   const navigate = useNavigate();
+  const chartHeight = useChartHeight();
 
   const debouncedPrice = useDebouncedValue(priceRange, 400);
 
@@ -142,6 +207,8 @@ export default function ValueMatrix() {
       const data: ChartDataPoint[] = filtered.map((car) => ({
         ...car,
         color: BODY_STYLE_COLORS[car.bodyStyle] || '#a1a1aa',
+        stroke: BODY_STYLE_STROKES[car.bodyStyle] || '#d4d4d8',
+        dotSize: BODY_STYLE_SIZES[car.bodyStyle] || 56,
       }));
 
       setChartData(data);
@@ -195,9 +262,15 @@ export default function ValueMatrix() {
       : 0;
   }, [chartData]);
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({
+    active,
+    payload,
+  }: {
+    active?: boolean;
+    payload?: Array<{ payload: ChartDataPoint }>;
+  }) => {
     if (!active || !payload?.[0]) return null;
-    const data = payload[0].payload as ChartDataPoint;
+    const data = payload[0].payload;
     return (
       <div className="bg-zinc-950 border border-zinc-600 p-4 shadow-xl max-w-xs">
         <p className="text-base font-black text-white mb-0.5">
@@ -226,30 +299,22 @@ export default function ValueMatrix() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="sticky top-0 z-40 bg-black/95 border-b border-zinc-800 backdrop-blur-sm">
-        <div className="px-4 md:px-8 py-5">
-          <div className="flex items-center justify-between max-w-7xl mx-auto gap-4">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 text-xs tracking-[0.2em] text-zinc-400 hover:text-white transition-colors shrink-0"
-            >
-              ← HOME
-            </Link>
-            <div className="text-center min-w-0">
-              <h1 className="text-xl md:text-2xl font-black tracking-tight">Value Matrix</h1>
-              {phase === 'chart' && (
-                <p className="text-xs text-zinc-400 mt-0.5 truncate">
-                  {chartData.length.toLocaleString()} vehicles plotted · est. values
-                </p>
-              )}
-            </div>
-            <AboutData compact />
+    <div className="min-h-screen bg-black text-white pb-16">
+      <div className="page-wrap py-6 sm:py-8 border-b border-zinc-900">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Value Matrix</h1>
+            <p className="text-sm text-zinc-400 mt-1">
+              {phase === 'chart' && chartData.length > 0
+                ? `${chartData.length.toLocaleString()} vehicles plotted · estimated values`
+                : 'Plot price against fuel economy, engine size, or emissions'}
+            </p>
           </div>
+          <AboutData compact />
         </div>
       </div>
 
-      <div className="px-4 md:px-8 py-8 pb-16">
+      <div className="page-wrap py-6 sm:py-8">
         <div className="max-w-7xl mx-auto">
           {phase === 'choose' ? (
             <div className="max-w-3xl mx-auto">
@@ -355,12 +420,19 @@ export default function ValueMatrix() {
                           key={style}
                           type="button"
                           onClick={() => toggleBodyStyle(style)}
-                          className={`px-3 py-2 text-xs uppercase tracking-wide border transition-colors ${
+                          className={`inline-flex items-center gap-2 px-3 py-2 text-xs uppercase tracking-wide border transition-colors ${
                             active
                               ? 'border-zinc-400 bg-zinc-800 text-white'
                               : 'border-zinc-700 text-zinc-400 line-through'
                           }`}
                         >
+                          <span
+                            className="w-2.5 h-2.5 rounded-full border shrink-0"
+                            style={{
+                              backgroundColor: BODY_STYLE_COLORS[style],
+                              borderColor: BODY_STYLE_STROKES[style],
+                            }}
+                          />
                           {style}
                         </button>
                       );
@@ -423,8 +495,50 @@ export default function ValueMatrix() {
                 )}
               </div>
 
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <MatrixLegend />
+                <div className="flex rounded-lg border border-zinc-700 overflow-hidden shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('chart')}
+                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                      viewMode === 'chart' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    Chart
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('list')}
+                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                      viewMode === 'list' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    List
+                  </button>
+                </div>
+              </div>
+
+              {hovered && viewMode === 'chart' && (
+                <div className="sm:hidden mb-4 p-4 border border-zinc-700 bg-zinc-950 rounded-lg">
+                  <p className="font-semibold text-white">
+                    {hovered.year} {hovered.make} {hovered.model}
+                  </p>
+                  <p className="text-sm text-zinc-400 mt-1 capitalize">
+                    {hovered.bodyStyle} · ${hovered.price.toLocaleString()} · {formatMpgForCard(hovered.mpg)} MPG
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/car/${hovered.id}`)}
+                    className="mt-3 text-xs text-white underline"
+                  >
+                    View details →
+                  </button>
+                </div>
+              )}
+
               {/* Chart */}
-              <div className="relative border border-zinc-700 bg-zinc-950 p-3 md:p-6">
+              <div className="relative border border-zinc-700 bg-zinc-950 p-2 sm:p-4 md:p-6">
                 {loading && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/70">
                     <div className="text-center">
@@ -456,62 +570,118 @@ export default function ValueMatrix() {
                       Pick a different focus
                     </button>
                   </div>
+                ) : viewMode === 'list' ? (
+                  <div className="max-h-[480px] overflow-y-auto divide-y divide-zinc-900">
+                    {[...chartData]
+                      .sort((a, b) => a.price - b.price)
+                      .map((car) => (
+                        <button
+                          key={car.id}
+                          type="button"
+                          onClick={() => navigate(`/car/${car.id}`)}
+                          className="w-full flex items-center gap-3 px-3 py-3 text-left hover:bg-zinc-900 transition-colors"
+                        >
+                          <span
+                            className="w-3 h-3 rounded-full border-2 shrink-0"
+                            style={{ backgroundColor: car.color, borderColor: car.stroke }}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-white truncate">
+                              {car.year} {car.make} {car.model}
+                            </p>
+                            <p className="text-xs text-zinc-500 capitalize">{car.bodyStyle}</p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="text-sm font-medium text-white">${(car.price / 1000).toFixed(0)}k</p>
+                            <p className="text-xs text-zinc-500">{formatMpgForCard(car.mpg)} MPG</p>
+                          </div>
+                        </button>
+                      ))}
+                  </div>
                 ) : (
-                  <ResponsiveContainer width="100%" height={480}>
-                    <ScatterChart margin={{ top: 16, right: 24, bottom: 56, left: 56 }}>
-                      <CartesianGrid strokeDasharray="4 4" stroke="#52525b" strokeOpacity={0.6} />
+                  <ResponsiveContainer width="100%" height={chartHeight}>
+                    <ScatterChart margin={{ top: 12, right: 12, bottom: 48, left: 44 }}>
+                      <CartesianGrid strokeDasharray="4 4" stroke="#3f3f46" strokeOpacity={0.8} />
                       <XAxis
                         type="number"
                         dataKey="price"
-                        stroke="#a1a1aa"
-                        tick={{ fill: '#d4d4d8', fontSize: 12 }}
-                        tickLine={{ stroke: '#71717a' }}
+                        stroke="#71717a"
+                        tick={{ fill: '#a1a1aa', fontSize: 11 }}
+                        tickLine={{ stroke: '#52525b' }}
                         label={{
-                          value: `Estimated market value (${DISPLAY_CURRENCY})`,
+                          value: `Est. value (${DISPLAY_CURRENCY})`,
                           position: 'bottom',
-                          offset: 36,
-                          style: { fill: '#d4d4d8', fontSize: 12, fontWeight: 600 },
+                          offset: 28,
+                          style: { fill: '#a1a1aa', fontSize: 11, fontWeight: 500 },
                         }}
                         tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
                       />
                       <YAxis
                         type="number"
                         dataKey={axisMode}
-                        stroke="#a1a1aa"
-                        tick={{ fill: '#d4d4d8', fontSize: 12 }}
-                        tickLine={{ stroke: '#71717a' }}
+                        stroke="#71717a"
+                        tick={{ fill: '#a1a1aa', fontSize: 11 }}
+                        tickLine={{ stroke: '#52525b' }}
                         label={{
                           value: getYAxisLabel(),
                           angle: -90,
                           position: 'left',
-                          offset: 44,
-                          style: { fill: '#d4d4d8', fontSize: 12, fontWeight: 600 },
+                          offset: 32,
+                          style: { fill: '#a1a1aa', fontSize: 11, fontWeight: 500 },
                         }}
                       />
-                      <ZAxis type="number" range={[64, 64]} />
-                      <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#a1a1aa', strokeWidth: 1 }} />
+                      <ZAxis type="number" dataKey="year" range={[36, 110]} />
+                      <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#71717a', strokeWidth: 1 }} />
                       <Scatter
                         data={chartData}
                         onClick={(d) => d?.id && navigate(`/car/${d.id}`)}
+                        onMouseEnter={(d) => d && setHovered(d as ChartDataPoint)}
+                        onMouseLeave={() => setHovered(null)}
                         style={{ cursor: 'pointer' }}
                       >
-                        {chartData.map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={entry.color}
-                            stroke="#09090b"
-                            strokeWidth={1}
-                          />
-                        ))}
+                        {chartData.map((entry, index) => {
+                          const isHovered = hovered?.id === entry.id;
+                          return (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={entry.color}
+                              stroke={entry.stroke}
+                              strokeWidth={isHovered ? 3 : 2}
+                              fillOpacity={hovered && !isHovered ? 0.35 : 0.9}
+                            />
+                          );
+                        })}
                       </Scatter>
                     </ScatterChart>
                   </ResponsiveContainer>
                 )}
               </div>
 
-              <p className="mt-3 text-xs text-zinc-400 text-center">
-                Brighter dots = easier to spot · values are estimates · click any dot for details
+              <p className="mt-3 text-xs text-zinc-500 text-center sm:text-left">
+                Color = body style · size = model year · tap or click a dot for details
               </p>
+
+              {hovered && viewMode === 'chart' && (
+                <div className="hidden sm:block mt-4 p-4 border border-zinc-800 bg-zinc-950 rounded-lg">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-semibold text-white">
+                        {hovered.year} {hovered.make} {hovered.model}
+                      </p>
+                      <p className="text-sm text-zinc-400 mt-0.5 capitalize">
+                        {hovered.bodyStyle} · ${hovered.price.toLocaleString()} · {formatMpgForCard(hovered.mpg)} MPG
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/car/${hovered.id}`)}
+                      className="btn-secondary !py-2 !px-4 !text-xs shrink-0"
+                    >
+                      View car
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {chartData.length > 0 && (
                 <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-px bg-zinc-800 border border-zinc-800">
