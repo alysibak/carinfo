@@ -20,6 +20,7 @@ interface CarDatabase {
 // pre-built indexes so searches are O(matching-cars) instead of O(all-cars).
 
 let cachedCars: Car[] = [];
+let rawIdIndex: Map<string, Car> = new Map();
 let lastUpdated = '';
 let dbSources: string[] = ['epa'];
 
@@ -108,6 +109,7 @@ function initDatabase(): void {
         `[car.service] Missing database file. Tried: ${dataFileCandidates('cars.json').join(', ')}. Using fallback dataset.`,
       );
       cachedCars = FALLBACK_CARS;
+      rawIdIndex = new Map(FALLBACK_CARS.map((car) => [car.id, car]));
       lastUpdated = new Date().toISOString();
       buildIndexes();
       return;
@@ -122,6 +124,7 @@ function initDatabase(): void {
     // filtering by "plug-in hybrid" matches nothing. Enrich first so range/PHEV
     // EPA fields the inference relies on are present.
     cachedCars = db.cars.map(enrichCar).map(normalizeCarRecord);
+    rawIdIndex = new Map(db.cars.map((car) => [car.id, car]));
     lastUpdated = db.lastUpdated;
     dbSources = db.sources?.length ? db.sources : ['epa'];
 
@@ -220,6 +223,20 @@ export function getCarById(id: string): Car | null {
   ensureDatabase();
   const car = idIndex.get(id);
   return car ? normalizeCarRecord(car) : null;
+}
+
+/** Debug: raw cars.json record plus enrichment and normalization stages. */
+export function getCarPipelineDebug(id: string): {
+  raw: Car;
+  enriched: Car;
+  normalized: Car;
+} | null {
+  ensureDatabase();
+  const raw = rawIdIndex.get(id);
+  if (!raw) return null;
+  const enriched = enrichCar(raw);
+  const normalized = normalizeCarRecord(enriched);
+  return { raw, enriched, normalized };
 }
 
 /**
@@ -781,6 +798,10 @@ export interface ChartPoint {
   displacement: number;
   co2: number;
   bodyStyle: string;
+  /** Y-axis value is always EPA-verified when present */
+  ySource: 'epa' | 'estimated';
+  /** X-axis (price) is always model-estimated in this app */
+  priceIsEstimated: boolean;
 }
 
 export interface ChartPointsQuery {
@@ -820,6 +841,8 @@ export function getChartPoints(query: ChartPointsQuery = {}): ChartPoint[] {
       displacement: car.engine.displacement ?? 0,
       co2: car.epa?.co2 ?? 0,
       bodyStyle: car.bodyStyle,
+      ySource: 'epa',
+      priceIsEstimated: car.price?.isEstimated !== false,
     });
   }
 

@@ -3,8 +3,6 @@ import {
   formatCurrencyRangeOrFallback,
   formatOrFallback,
   hasNumericValue,
-  NHTSA_UNAVAILABLE_DETAIL,
-  NHTSA_UNAVAILABLE_VALUE,
 } from './dataValue';
 import { annualFuelCostDetail, efficiencyUnit } from './fuelLabels';
 import { formatEngineForDetail } from './dataValue';
@@ -24,16 +22,6 @@ export interface GlanceMetric {
   /** True when the metric slot is shown but data is absent from the dataset. */
   unavailable?: boolean;
 }
-
-const METRIC_LABELS: Record<GlanceMetricId, string> = {
-  power: 'horsepower',
-  engine: 'engine',
-  value: 'market value',
-  mpg: 'efficiency',
-  range: 'range',
-  running: 'running cost',
-  safety: 'safety',
-};
 
 type Profile = 'ev' | 'performance' | 'efficient' | 'standard';
 
@@ -102,23 +90,6 @@ function buildMpgMetric(car: CarSpecs): GlanceMetric | null {
     detail: annualFuelCostDetail(car) || undefined,
     trustSource: 'epa',
   };
-}
-
-function demotedSafety(): GlanceMetric {
-  return {
-    id: 'safety',
-    label: 'Safety',
-    value: NHTSA_UNAVAILABLE_VALUE,
-    detail: NHTSA_UNAVAILABLE_DETAIL,
-    unavailable: true,
-  };
-}
-
-function buildNote(missing: GlanceMetricId[]): string {
-  const names = missing.map((id) => METRIC_LABELS[id]);
-  if (names.length === 1) return `${names[0]} not on file for this configuration.`;
-  if (names.length === 2) return `${names[0]} and ${names[1]} not on file for this configuration.`;
-  return `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]} not on file for this configuration.`;
 }
 
 /**
@@ -212,9 +183,6 @@ export function buildGlanceMetrics(dashboard: CarDashboard): { cells: GlanceMetr
     if (candidates[id]) {
       cells.push(candidates[id]!);
       used.add(id);
-    } else if (id === 'safety') {
-      cells.push(demotedSafety());
-      used.add(id);
     }
   };
 
@@ -223,10 +191,5 @@ export function buildGlanceMetrics(dashboard: CarDashboard): { cells: GlanceMetr
     for (const id of FILL_ORDER) pushIf(id);
   }
 
-  // Note only flags the universally-expected gaps (value / efficiency); safety has
-  // its own honest "Not rated" cell, so it never reads as a generic data miss.
-  const missing = order.filter((id) => id !== 'safety' && (id === 'value' || id === 'mpg') && !candidates[id]);
-  const note = missing.length ? buildNote(missing) : null;
-
-  return { cells, note };
+  return { cells, note: null };
 }

@@ -23,7 +23,6 @@ function parseInstrument(metric: GlanceMetric): { number: string; unit?: string 
 
 interface GlanceMetricCellProps {
   metric: GlanceMetric;
-  /** compact = landing preview panel; default = detail glance row */
   size?: 'default' | 'compact';
 }
 

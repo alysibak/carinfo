@@ -77,6 +77,7 @@ export interface PhevModes {
   electricMpge?: number;
   electricRangeMi?: number;
   chargeL2Hours?: number;
+  blendedMpge?: number;
 }
 
 /** PHEV dual-mode economy, present only for plug-in hybrids with EPA mode data. */
@@ -89,5 +90,6 @@ export function phevModes(car: CarSpecs): PhevModes | null {
     electricMpge: p.electricMpge,
     electricRangeMi: p.electricRangeMi,
     chargeL2Hours: p.chargeL2Hours,
+    blendedMpge: p.blendedMpge,
   };
 }

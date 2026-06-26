@@ -1,11 +1,24 @@
 import type { CarDashboard, CarSpecs } from '../types/car.types';
-import { formatEngineForDetail, hasNumericValue } from '../utils/dataValue';
+import { formatEngineForDetail, formatCurrency, hasNumericValue } from '../utils/dataValue';
 import { formatFuelTypeLabel } from '../utils/fuelDisplay';
-import { formatTransmissionLabel } from '../utils/trimLabel';
+import { displayTrimLabel, formatTransmissionLabel } from '../utils/trimLabel';
+import { efficiencyUnit } from '../utils/fuelLabels';
+import { fiveYearFuelSavings, fuelSavingsShort, phevModes } from '../utils/epaContent';
+import type { SpecGlossaryKey } from '../utils/specGlossary';
+import { SpecLabel } from './SpecExplain';
 import DataValue from './DataValue';
 
-const SPEC_GAP_NOTE =
-  'Horsepower from the EPA Test Car List when available — a supplemental EPA dataset of rated engine outputs, separate from the main fuel economy file. Torque and 0–60 times are not in EPA records and are left off rather than estimated.';
+interface SpecRow {
+  key: string;
+  label: string;
+  value: string | number | null | undefined;
+  glossary?: SpecGlossaryKey;
+}
+
+interface SpecGroup {
+  title: string;
+  rows: SpecRow[];
+}
 
 function engineCharacter(car: CarSpecs): string | null {
   const label = formatEngineForDetail(car.engine);
@@ -21,71 +34,403 @@ function titleCase(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-interface Spec {
-  label: string;
-  value: string | number | null | undefined;
+function segmentLabel(segment: string): string {
+  return segment
+    .split('-')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 }
 
-export default function KeySpecs({ dashboard }: { dashboard: CarDashboard }) {
+function pushIf(rows: SpecRow[], row: SpecRow | null) {
+  if (row && row.value != null && row.value !== '' && row.value !== 'Not on file') rows.push(row);
+}
+
+function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   const { car, zeroToSixty, evCharge } = dashboard;
   const isEv = car.engine.fuelType === 'electric';
   const isFcev = car.engine.fuelType === 'hydrogen';
+  const isPhev = car.engine.fuelType === 'plug-in hybrid';
+  const phev = phevModes(car);
+  const effLabel = efficiencyUnit(car);
 
-  const specs: Spec[] = [{ label: 'Engine', value: engineCharacter(car) }];
-
-  if (hasNumericValue(car.engine.horsepower)) {
-    specs.push({ label: 'Horsepower', value: `${car.engine.horsepower} hp` });
+  const powertrain: SpecRow[] = [];
+  pushIf(powertrain, {
+    key: 'engine',
+    label: 'Engine',
+    value: engineCharacter(car),
+    glossary: 'engine',
+  });
+  if (!isEv && !isFcev && hasNumericValue(car.engine.displacement)) {
+    pushIf(powertrain, {
+      key: 'displacement',
+      label: 'Displacement',
+      value: `${car.engine.displacement}L`,
+      glossary: 'displacement',
+    });
+  }
+  if (!isEv && !isFcev && car.engine.configuration) {
+    pushIf(powertrain, {
+      key: 'configuration',
+      label: 'Layout',
+      value: car.engine.configuration,
+      glossary: 'configuration',
+    });
   }
   if (!isEv && !isFcev && hasNumericValue(car.engine.cylinders)) {
-    specs.push({ label: 'Cylinders', value: car.engine.cylinders });
+    pushIf(powertrain, {
+      key: 'cylinders',
+      label: 'Cylinders',
+      value: car.engine.cylinders,
+      glossary: 'cylinders',
+    });
   }
-  specs.push({ label: 'Drivetrain', value: car.driveType });
-  specs.push({ label: 'Transmission', value: transmissionLabel(car) });
-  if (!isEv) specs.push({ label: 'Fuel', value: formatFuelTypeLabel(car.engine.fuelType) });
-  if (car.bodyStyle) specs.push({ label: 'Body', value: titleCase(car.bodyStyle) });
-  if (car.vehicleCategory) specs.push({ label: 'Category', value: titleCase(car.vehicleCategory) });
-  if (car.epa?.vClass) specs.push({ label: 'EPA class', value: car.epa.vClass });
-  if (isEv && hasNumericValue(evCharge?.rangeMiles)) {
-    specs.push({ label: 'EPA range', value: `${Math.round(evCharge!.rangeMiles!)} mi` });
+  if (hasNumericValue(car.engine.horsepower)) {
+    pushIf(powertrain, {
+      key: 'horsepower',
+      label: 'Horsepower',
+      value: `${car.engine.horsepower} hp`,
+      glossary: 'horsepower',
+    });
   }
-  if (zeroToSixty) {
-    specs.push({
-      label: '0–60 mph',
-      value: `~${zeroToSixty.value}s${zeroToSixty.method === 'predicted' ? ' (est.)' : ''}`,
+  if (hasNumericValue(car.engine.torque)) {
+    pushIf(powertrain, {
+      key: 'torque',
+      label: 'Torque',
+      value: `${car.engine.torque} lb-ft`,
+      glossary: 'torque',
+    });
+  }
+  pushIf(powertrain, {
+    key: 'drivetrain',
+    label: 'Drivetrain',
+    value: car.driveType,
+    glossary: 'drivetrain',
+  });
+  pushIf(powertrain, {
+    key: 'transmission',
+    label: 'Transmission',
+    value: transmissionLabel(car),
+    glossary: 'transmission',
+  });
+  if (!isEv) {
+    pushIf(powertrain, {
+      key: 'fuel',
+      label: 'Fuel',
+      value: formatFuelTypeLabel(car.engine.fuelType),
+      glossary: 'fuel',
     });
   }
 
-  const midpoint = Math.ceil(specs.length / 2);
-  const leftCol = specs.slice(0, midpoint);
-  const rightCol = specs.slice(midpoint);
+  const vehicle: SpecRow[] = [];
+  const trim = displayTrimLabel(car);
+  if (trim) {
+    pushIf(vehicle, {
+      key: 'trim',
+      label: 'Trim',
+      value: trim,
+      glossary: 'trim',
+    });
+  }
+  if (car.bodyStyle) {
+    pushIf(vehicle, {
+      key: 'body',
+      label: 'Body',
+      value: titleCase(car.bodyStyle),
+      glossary: 'body',
+    });
+  }
+  if (car.vehicleCategory) {
+    pushIf(vehicle, {
+      key: 'category',
+      label: 'Category',
+      value: titleCase(car.vehicleCategory),
+      glossary: 'category',
+    });
+  }
+  if (car.epa?.vClass) {
+    pushIf(vehicle, {
+      key: 'epaClass',
+      label: 'EPA class',
+      value: car.epa.vClass,
+      glossary: 'epaClass',
+    });
+  }
+  if (car.countryOfOrigin) {
+    pushIf(vehicle, {
+      key: 'origin',
+      label: 'Origin',
+      value: car.countryOfOrigin,
+      glossary: 'countryOfOrigin',
+    });
+  }
+  if (car.shoppingSegment) {
+    pushIf(vehicle, {
+      key: 'segment',
+      label: 'Segment',
+      value: segmentLabel(car.shoppingSegment),
+      glossary: 'shoppingSegment',
+    });
+  }
+
+  const market: SpecRow[] = [];
+  if (hasNumericValue(car.price?.msrp)) {
+    const priceLabel = car.price?.isEstimated ? 'Est. MSRP' : 'MSRP';
+    pushIf(market, {
+      key: 'msrp',
+      label: priceLabel,
+      value: formatCurrency(car.price!.msrp!, car.price?.isEstimated),
+      glossary: 'msrp',
+    });
+  }
+  if (car.price?.confidenceLabel) {
+    pushIf(market, {
+      key: 'valueConfidence',
+      label: 'Value confidence',
+      value: car.price.confidenceLabel,
+    });
+  }
+
+  const fuel: SpecRow[] = [];
+  if (hasNumericValue(car.fuelEconomy.city) && !isEv) {
+    pushIf(fuel, {
+      key: 'mpgCity',
+      label: `City ${effLabel}`,
+      value: car.fuelEconomy.city,
+      glossary: 'mpgCity',
+    });
+  }
+  if (hasNumericValue(car.fuelEconomy.highway) && !isEv) {
+    pushIf(fuel, {
+      key: 'mpgHighway',
+      label: `Highway ${effLabel}`,
+      value: car.fuelEconomy.highway,
+      glossary: 'mpgHighway',
+    });
+  }
+  if (hasNumericValue(car.fuelEconomy.combined)) {
+    pushIf(fuel, {
+      key: 'mpgCombined',
+      label: `Combined ${effLabel}`,
+      value: car.fuelEconomy.combined,
+      glossary: isEv || isFcev ? 'mpge' : 'mpgCombined',
+    });
+  }
+  if (isPhev && phev) {
+    if (hasNumericValue(phev.electricMpge)) {
+      pushIf(fuel, {
+        key: 'phevElectricMpge',
+        label: 'Electric-mode MPGe',
+        value: phev.electricMpge,
+        glossary: 'phevElectricMpge',
+      });
+    }
+    if (hasNumericValue(phev.electricRangeMi)) {
+      pushIf(fuel, {
+        key: 'phevRange',
+        label: 'Electric range',
+        value: `${Math.round(phev.electricRangeMi!)} mi`,
+        glossary: 'phevElectricRange',
+      });
+    }
+    if (hasNumericValue(phev.gasMpg)) {
+      pushIf(fuel, {
+        key: 'phevGas',
+        label: 'Gas-mode MPG',
+        value: phev.gasMpg,
+        glossary: 'phevGasMpg',
+      });
+    }
+    if (hasNumericValue(phev.blendedMpge)) {
+      pushIf(fuel, {
+        key: 'phevBlended',
+        label: 'Blended MPGe',
+        value: phev.blendedMpge,
+        glossary: 'phevBlendedMpge',
+      });
+    }
+    if (hasNumericValue(phev.chargeL2Hours)) {
+      pushIf(fuel, {
+        key: 'phevCharge',
+        label: 'Level 2 charge',
+        value: `~${phev.chargeL2Hours} h`,
+        glossary: 'charge240',
+      });
+    }
+  }
+  const rangeMi = evCharge?.rangeMiles ?? car.epa?.rangeMiles;
+  if ((isEv || isFcev) && hasNumericValue(rangeMi)) {
+    pushIf(fuel, {
+      key: 'epaRange',
+      label: 'EPA range',
+      value: `${Math.round(rangeMi!)} mi`,
+      glossary: 'epaRange',
+    });
+  }
+  if (hasNumericValue(evCharge?.kWhPer100Mi)) {
+    pushIf(fuel, {
+      key: 'kwh',
+      label: 'Consumption',
+      value: `${evCharge!.kWhPer100Mi} kWh/100mi`,
+      glossary: 'kwhPer100mi',
+    });
+  }
+  if (hasNumericValue(evCharge?.charge240Hours)) {
+    pushIf(fuel, {
+      key: 'charge240',
+      label: 'Home charge (240V)',
+      value: `~${evCharge!.charge240Hours} h`,
+      glossary: 'charge240',
+    });
+  }
+  if (hasNumericValue(evCharge?.charge120Hours ?? car.epa?.charge120Hours)) {
+    const hrs = evCharge?.charge120Hours ?? car.epa!.charge120Hours!;
+    pushIf(fuel, {
+      key: 'charge120',
+      label: 'Home charge (120V)',
+      value: `~${hrs} h`,
+      glossary: 'charge120',
+    });
+  }
+  if (hasNumericValue(car.epa?.annualFuelCost)) {
+    pushIf(fuel, {
+      key: 'annualFuel',
+      label: 'EPA annual fuel cost',
+      value: `$${car.epa!.annualFuelCost!.toLocaleString()} USD/yr`,
+      glossary: 'annualFuelCost',
+    });
+  }
+
+  const environment: SpecRow[] = [];
+  if (car.epa?.co2 != null) {
+    pushIf(environment, {
+      key: 'co2',
+      label: 'CO₂ emissions',
+      value: `${car.epa.co2} g/mi`,
+      glossary: 'co2',
+    });
+  }
+  if (hasNumericValue(car.epa?.ghgScore)) {
+    pushIf(environment, {
+      key: 'ghg',
+      label: 'Emissions score',
+      value: `${car.epa!.ghgScore}/10`,
+      glossary: 'ghgScore',
+    });
+  }
+  if (hasNumericValue(car.epa?.barrelsPerYear)) {
+    pushIf(environment, {
+      key: 'barrels',
+      label: 'Oil use',
+      value: `${car.epa!.barrelsPerYear} barrels/yr`,
+      glossary: 'barrelsPerYear',
+    });
+  }
+  const fuelSav = fiveYearFuelSavings(car);
+  if (fuelSav) {
+    pushIf(environment, {
+      key: 'fuelSav5',
+      label: '5-yr fuel vs. average',
+      value: `${fuelSavingsShort(fuelSav)} over 5 yr`,
+      glossary: 'fuelSavings5yr',
+    });
+  }
+
+  const performance: SpecRow[] = [];
+  if (zeroToSixty) {
+    pushIf(performance, {
+      key: 'zero60',
+      label: '0–60 mph',
+      value: `~${zeroToSixty.value}s${zeroToSixty.method === 'predicted' ? ' (est.)' : ''}`,
+      glossary: 'zeroToSixty',
+    });
+  }
+
+  const safety: SpecRow[] = [];
+  const sr = car.safetyRating;
+  if (hasNumericValue(sr?.overall, { allowZero: false })) {
+    pushIf(safety, {
+      key: 'safetyOverall',
+      label: 'NHTSA overall',
+      value: `${sr!.overall}/5 stars`,
+      glossary: 'safetyOverall',
+    });
+    if (hasNumericValue(sr?.frontal, { allowZero: false })) {
+      pushIf(safety, {
+        key: 'safetyFrontal',
+        label: 'Frontal crash',
+        value: `${sr!.frontal}/5`,
+        glossary: 'safetyFrontal',
+      });
+    }
+    if (hasNumericValue(sr?.side, { allowZero: false })) {
+      pushIf(safety, {
+        key: 'safetySide',
+        label: 'Side crash',
+        value: `${sr!.side}/5`,
+        glossary: 'safetySide',
+      });
+    }
+    if (hasNumericValue(sr?.rollover, { allowZero: false })) {
+      pushIf(safety, {
+        key: 'safetyRollover',
+        label: 'Rollover',
+        value: `${sr!.rollover}/5`,
+        glossary: 'safetyRollover',
+      });
+    }
+  }
+
+  return [
+    { title: 'Powertrain', rows: powertrain },
+    { title: 'Vehicle', rows: vehicle },
+    { title: 'Market', rows: market },
+    { title: 'Fuel economy', rows: fuel },
+    { title: 'Crash safety', rows: safety },
+    { title: 'Performance', rows: performance },
+    { title: 'Emissions', rows: environment },
+  ].filter((g) => g.rows.length > 0);
+}
+
+function SpecGroupBlock({ group }: { group: SpecGroup }) {
+  return (
+    <div className="border border-zinc-800 min-w-0">
+      <p className="px-3 py-2 text-[10px] tracking-widest text-zinc-500 uppercase bg-zinc-950/80 border-b border-zinc-800">
+        {group.title}
+      </p>
+      {group.rows.map((spec) => (
+        <div
+          key={spec.key}
+          className="flex items-baseline justify-between gap-4 py-2.5 px-3 border-b border-zinc-900 last:border-b-0"
+        >
+          <p className="text-[10px] tracking-widest text-zinc-500 uppercase shrink-0">
+            <SpecLabel label={spec.label} glossaryKey={spec.glossary} />
+          </p>
+          <DataValue
+            value={spec.value}
+            className="text-sm font-medium text-white text-right tabular-nums"
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function KeySpecs({ dashboard }: { dashboard: CarDashboard }) {
+  const groups = buildSpecGroups(dashboard);
 
   return (
     <section className="border-b border-zinc-800">
       <div className="max-w-7xl mx-auto px-5 md:px-8 py-6">
         <p className="text-[10px] tracking-widest text-zinc-500 uppercase mb-4 border-t border-zinc-800 pt-4">
-          Full specifications
+          Specifications
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-zinc-800 border border-zinc-800">
-          {[leftCol, rightCol].map((col, colIdx) => (
-            <div key={colIdx} className="min-w-0">
-              {col.map((spec) => (
-                <div
-                  key={spec.label}
-                  className="flex items-baseline justify-between gap-4 py-2 px-3 border-b border-zinc-900 last:border-b-0"
-                >
-                  <p className="text-[10px] tracking-widest text-zinc-500 uppercase shrink-0">
-                    {spec.label}
-                  </p>
-                  <DataValue
-                    value={spec.value}
-                    className="text-sm font-medium text-white text-right tabular-nums"
-                  />
-                </div>
-              ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-px bg-zinc-800 border border-zinc-800">
+          {groups.map((group) => (
+            <div key={group.title} className="bg-black min-w-0">
+              <SpecGroupBlock group={group} />
             </div>
           ))}
         </div>
-        <p className="text-xs text-zinc-600 leading-relaxed mt-3 max-w-3xl">{SPEC_GAP_NOTE}</p>
       </div>
     </section>
   );

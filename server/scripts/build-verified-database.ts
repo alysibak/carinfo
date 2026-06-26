@@ -12,6 +12,7 @@ import { fileURLToPath } from 'url';
 import { parse } from 'csv-parse';
 import type { BodyStyle, Car, DriveType, FuelType, Provenance, ProvenanceSource } from '../src/types/car.types.js';
 import { estimatePriceMsrp } from '../src/utils/ownership-economics.js';
+import { canonicalizeDisplayModel, resolveNhtsaSafety } from '../src/utils/vehicle-taxonomy.js';
 
 const EPA_CSV_URL = 'https://fueleconomy.gov/feg/epadata/vehicles.csv';
 const EPA_ZIP_URL = 'https://fueleconomy.gov/feg/epadata/vehicles.csv.zip';
@@ -430,6 +431,8 @@ async function enrichWithNhtsa(cars: Car[]): Promise<void> {
   const uniqueKeys = new Set<string>();
   for (const car of cars) {
     if (car.year < nhtsaFromYear) continue;
+    const displayModel = canonicalizeDisplayModel(car);
+    uniqueKeys.add(`${car.make}|${displayModel}|${car.year}`);
     uniqueKeys.add(`${car.make}|${car.model}|${car.year}`);
   }
 
@@ -467,13 +470,18 @@ async function enrichWithNhtsa(cars: Car[]): Promise<void> {
 
   saveNhtsaCache(cache);
 
-  for (const car of cars) {
-    const key = `${car.make}|${car.model}|${car.year}`;
-    const entry = cache[key];
-    if (!entry) continue;
+  const safetyIndex: Record<string, { overall: number; frontal?: number; side?: number; rollover?: number }> =
+    {};
+  for (const [key, entry] of Object.entries(cache)) {
+    if (entry.safetyRating?.overall) {
+      safetyIndex[key] = entry.safetyRating as { overall: number };
+    }
+  }
 
-    if (entry.safetyRating) {
-      car.safetyRating = entry.safetyRating;
+  for (const car of cars) {
+    const resolved = resolveNhtsaSafety(car, safetyIndex, canonicalizeDisplayModel(car));
+    if (resolved) {
+      car.safetyRating = resolved;
       setProv(car.provenance, 'safetyRating', 'nhtsa');
     }
   }

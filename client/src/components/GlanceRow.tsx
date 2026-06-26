@@ -1,6 +1,23 @@
 import type { CarDashboard } from '../types/car.types';
 import { buildGlanceMetrics } from '../utils/glanceMetrics';
+import type { TrustFilter } from '../utils/dataTrust';
 import GlanceMetricCell from './GlanceMetricCell';
+
+function passesTrustFilter(
+  metric: ReturnType<typeof buildGlanceMetrics>['cells'][number],
+  filter: TrustFilter,
+): boolean {
+  if (filter === 'all') return true;
+  const isEstimated = metric.estimated === true || metric.trustSource === 'estimated';
+  if (filter === 'estimated') return isEstimated;
+  return (
+    !isEstimated &&
+    (metric.trustSource === 'epa' ||
+      metric.trustSource === 'nhtsa' ||
+      metric.trustSource === 'curated' ||
+      metric.verified === true)
+  );
+}
 
 function CategoricalFallback({ car }: { car: CarDashboard['car'] }) {
   const chips = [
@@ -23,15 +40,22 @@ function CategoricalFallback({ car }: { car: CarDashboard['car'] }) {
           </span>
         ))}
       </div>
-      <p className="text-xs text-zinc-500 max-w-md mx-auto leading-relaxed">
-        Detailed efficiency, value, and safety estimates are not available for this configuration.
+      <p className="text-xs text-zinc-600 max-w-md mx-auto leading-relaxed">
+        Open the dossier for the full specification breakdown.
       </p>
     </div>
   );
 }
 
-export default function GlanceRow({ dashboard }: { dashboard: CarDashboard }) {
-  const { cells, note } = buildGlanceMetrics(dashboard);
+export default function GlanceRow({
+  dashboard,
+  trustFilter = 'all',
+}: {
+  dashboard: CarDashboard;
+  trustFilter?: TrustFilter;
+}) {
+  const { cells: allCells, note } = buildGlanceMetrics(dashboard);
+  const cells = allCells.filter((c) => passesTrustFilter(c, trustFilter));
 
   if (cells.length === 0) {
     return (

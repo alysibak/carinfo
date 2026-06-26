@@ -25,7 +25,9 @@ export function pickFirstEligible(
   const sorted =
     insight === 'safety'
       ? [...results].sort((a, b) => (b.safetyRating?.overall ?? 0) - (a.safetyRating?.overall ?? 0))
-      : results;
+      : insight === 'power'
+        ? [...results].sort((a, b) => (b.engine.horsepower ?? 0) - (a.engine.horsepower ?? 0))
+        : results;
 
   for (const car of sorted) {
     if (exclude.has(car.id)) continue;
@@ -33,6 +35,7 @@ export function pickFirstEligible(
     if (insight === 'safety' && !(car.safetyRating?.overall ?? 0)) continue;
     if (insight === 'safety' && car.provenance?.safetyRating !== 'nhtsa') continue;
     if (insight === 'safety' && car.year > 2024) continue;
+    if (insight === 'power' && !hasNumericValue(car.engine.horsepower)) continue;
     exclude.add(car.id);
     return car;
   }
@@ -40,7 +43,7 @@ export function pickFirstEligible(
 }
 
 export interface ShowcaseQuery {
-  insight: 'fuel' | 'ownership' | 'safety';
+  insight: 'fuel' | 'power' | 'safety';
   query: SearchQuery;
 }
 
@@ -133,6 +136,15 @@ export const SHOWCASE_QUERIES: ShowcaseQuery[] = [
     },
   },
   {
+    insight: 'power',
+    query: {
+      filters: { year: { min: 2018 }, horsepower: { min: 250 } },
+      sort: { field: 'horsepower', order: 'desc' },
+      limit: 40,
+      offset: 0,
+    },
+  },
+  {
     insight: 'safety',
     query: {
       filters: { year: { min: 2018, max: 2024 }, bodyStyle: ['sedan', 'suv'] },
@@ -145,25 +157,25 @@ export const SHOWCASE_QUERIES: ShowcaseQuery[] = [
 
 export const DOSSIER_EXAMPLE_QUERIES: { question: string; query: SearchQuery }[] = [
   {
-    question: 'How much will this car cost me to fuel in Ontario this year?',
+    question: 'Engine & displacement',
     query: {
-      filters: { make: ['Toyota'], model: ['Camry'], year: { min: 2022 } },
+      filters: { make: ['Honda'], model: ['Civic'], year: { min: 2020 } },
       sort: { field: 'year', order: 'desc' },
       limit: 5,
       offset: 0,
     },
   },
   {
-    question: "Is this vehicle's EPA fuel economy good for its class?",
+    question: 'Horsepower & acceleration',
     query: {
-      filters: { make: ['Honda'], model: ['Civic'], fuelEconomy: { min: 30 } },
-      sort: { field: 'fuelEconomy', order: 'desc' },
+      filters: { make: ['Toyota'], model: ['Camry'], year: { min: 2020 } },
+      sort: { field: 'year', order: 'desc' },
       limit: 5,
       offset: 0,
     },
   },
   {
-    question: "What did NHTSA say about this car's safety?",
+    question: 'NHTSA crash safety',
     query: {
       filters: { make: ['Subaru'], model: ['Outback'], year: { min: 2020 } },
       sort: { field: 'year', order: 'desc' },
@@ -172,10 +184,10 @@ export const DOSSIER_EXAMPLE_QUERIES: { question: string; query: SearchQuery }[]
     },
   },
   {
-    question: 'What is this car worth in Ontario today?',
+    question: 'Fuel economy (MPG)',
     query: {
-      filters: { make: ['Ford'], model: ['F-150'], year: { min: 2019 } },
-      sort: { field: 'year', order: 'desc' },
+      filters: { make: ['Mazda'], model: ['Mazda3'], fuelEconomy: { min: 30 } },
+      sort: { field: 'fuelEconomy', order: 'desc' },
       limit: 5,
       offset: 0,
     },

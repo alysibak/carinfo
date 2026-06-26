@@ -4,6 +4,8 @@ import {
   isUnavailableFormatted,
   type FormatOptions,
 } from '../utils/dataValue';
+import type { SpecGlossaryKey } from '../utils/specGlossary';
+import { SpecLabel } from './SpecExplain';
 
 interface DataValueProps extends FormatOptions {
   value: number | string | null | undefined;
@@ -32,20 +34,24 @@ export function DataRow({
   allowZero,
   suffix,
   total,
+  glossaryKey,
 }: {
   label: string;
   value: number | string | null | undefined;
   allowZero?: boolean;
   suffix?: string;
   total?: boolean;
+  glossaryKey?: SpecGlossaryKey;
 }) {
   return (
     <div
-      className={`flex items-baseline justify-between gap-4 py-2 border-b border-zinc-900 last:border-b-0 ${
+      className={`flex items-baseline justify-between gap-4 py-2.5 border-b border-zinc-900 last:border-b-0 ${
         total ? 'border-t border-zinc-700 mt-1 pt-3' : ''
       }`}
     >
-      <span className="text-xs tracking-widest text-zinc-400 uppercase shrink-0">{label}</span>
+      <span className="text-[10px] tracking-widest text-zinc-500 uppercase shrink-0">
+        {glossaryKey ? <SpecLabel label={label} glossaryKey={glossaryKey} /> : label}
+      </span>
       <DataValue
         value={value}
         suffix={suffix}

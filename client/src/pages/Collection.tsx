@@ -3,10 +3,6 @@ import { useEffect, useMemo, useState } from 'react';
 import * as api from '../services/api';
 import type { CarSpecs } from '../types/car.types';
 import {
-  getDealRating,
-  getDealRatingColor,
-  getDealRatingLabel,
-  getSegment,
   filterCarsByFuelType,
   type FuelTypeFilter,
 } from '../utils/marketIntelligence';
@@ -415,8 +411,6 @@ export default function Collection() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-zinc-900">
               {pageCars.map((car, index) => {
                 const globalIndex = startIndex + index;
-                const segment = allCars.length > 0 ? getSegment(car, allCars) : [];
-                const dealRating = segment.length >= 5 ? getDealRating(car, segment) : null;
                 const showRankBadge = isCurated && sortBy === 'value' && globalIndex < 3;
 
                 return (
@@ -425,19 +419,6 @@ export default function Collection() {
                     onClick={() => navigate(`/car/${car.id}`)}
                     className="bg-black p-8 hover:bg-zinc-950 transition-all duration-300 cursor-pointer group border border-zinc-900 hover:border-zinc-700 relative"
                   >
-                    {dealRating && (
-                      <div
-                        className="absolute top-4 left-4 px-3 py-1.5 text-xs font-black tracking-wider border-2"
-                        style={{
-                          backgroundColor: `${getDealRatingColor(dealRating)}20`,
-                          color: getDealRatingColor(dealRating),
-                          borderColor: getDealRatingColor(dealRating),
-                        }}
-                      >
-                        {getDealRatingLabel(dealRating)}
-                      </div>
-                    )}
-
                     {showRankBadge && (
                       <div className="absolute top-4 right-4">
                         <div className="bg-white text-black px-3 py-1 text-xs font-black tracking-widest">

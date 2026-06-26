@@ -15,24 +15,18 @@ import {
   bodyTypeFilter,
 } from '../config/browseTaxonomy';
 import { searchQueryToParams } from '../utils/searchParams';
-import {
-  formatCurrencyRangeOrFallback,
-  formatPriceShort,
-} from '../utils/dataValue';
 import { formatFuelBadge, usesMpge } from '../utils/fuelDisplay';
 import { displayModelLabel, displayListingSubtitle } from '../utils/trimLabel';
 import { formatLPer100KmFromMpg, formatKwhPer100KmFromMpge } from '../utils/fuelEconomyUnits';
 import {
   DOSSIER_EXAMPLE_QUERIES,
   HERO_PREVIEW_QUERY,
-  OWNERSHIP_SHOWCASE_QUERY,
   pickHeroPreviewCar,
   pickFirstEligible,
-  rankOwnershipCandidates,
   SHOWCASE_QUERIES,
-  isOwnershipShowcaseCandidate,
   type ShowcaseQuery,
 } from '../utils/landingShowcase';
+import { usePageMeta } from '../utils/pageMeta';
 
 const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/i;
 
@@ -70,7 +64,6 @@ const QUICK_CHIPS: QuickChip[] = [
 interface ShowcaseItem {
   car: CarSpecs;
   insight: ShowcaseQuery['insight'];
-  annualRunningCost?: { low: number; high: number; mid: number };
 }
 
 interface DossierExample {
@@ -88,6 +81,10 @@ const BROWSE_TILES = [
 const DOSSIER_QUESTIONS = DOSSIER_EXAMPLE_QUERIES.map((q) => q.question);
 
 export default function Landing() {
+  usePageMeta(
+    'Car reference with verified specs',
+    'Browse 28,000+ vehicles with EPA fuel economy, NHTSA safety when on file, and labeled Ontario/CAD market estimates.',
+  );
   const [showQuiz, setShowQuiz] = useState(false);
   const [stats, setStats] = useState<{
     totalCars: number;
@@ -187,30 +184,6 @@ export default function Landing() {
         }),
       );
 
-      try {
-        const res = await api.searchCars(OWNERSHIP_SHOWCASE_QUERY);
-        for (const car of rankOwnershipCandidates(res.results)) {
-          if (!isOwnershipShowcaseCandidate(car) || used.has(car.id)) continue;
-          try {
-            const dash = await api.getCarDashboard(car.id);
-            const mid = dash.annualRunningCost?.mid;
-            if (mid != null && mid >= 5000 && mid <= 9000) {
-              used.add(car.id);
-              items.splice(1, 0, {
-                car: dash.car,
-                insight: 'ownership',
-                annualRunningCost: dash.annualRunningCost!,
-              });
-              break;
-            }
-          } catch {
-            /* try next candidate */
-          }
-        }
-      } catch {
-        /* skip ownership card */
-      }
-
       setShowcase(items);
     })();
 
@@ -308,33 +281,21 @@ export default function Landing() {
         <div className="page-wrap pt-8 pb-12 md:pt-12 md:pb-14">
           <div className="lg:grid lg:grid-cols-[1.05fr_0.95fr] xl:grid-cols-[1.1fr_0.9fr] gap-10 xl:gap-14 items-start">
             <div className="min-w-0">
-              <div className="flex flex-wrap gap-2 mb-5 animate-hero-rise">
-                <span className="spec-chip border-zinc-600 text-zinc-300">EPA fuel economy data</span>
-                <span className="spec-chip border-zinc-600 text-zinc-300">NHTSA safety ratings</span>
-                <span className="spec-chip border-zinc-600 text-zinc-300">Ontario · CAD estimates</span>
-              </div>
-
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white tracking-tight leading-[1.08] mb-3 animate-hero-rise [animation-delay:50ms]">
-                Know what a car will
-                <br />
-                actually cost you.
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white tracking-tight leading-[1.1] mb-4 animate-hero-rise">
+                Car specs, explained
               </h1>
-              <p className="text-sm sm:text-base uppercase tracking-widest text-zinc-500 mb-5 animate-hero-rise [animation-delay:75ms]">
-                Fuel economy · Safety · Ontario cost estimates
+              <p className="text-base md:text-lg text-zinc-400 leading-relaxed max-w-lg mb-8 animate-hero-rise [animation-delay:50ms]">
+                EPA fuel economy, engine and drivetrain details, and NHTSA safety ratings — with
+                plain-English notes on every vehicle page.
               </p>
 
-              <p className="text-base md:text-lg text-zinc-400 leading-relaxed max-w-[32rem] animate-hero-rise [animation-delay:100ms]">
-                EPA-tested fuel economy, NHTSA crash ratings where filed, and CAD ownership costs
-                for Ontario. A planning tool, not a dealership.
-              </p>
-
-              <div className="mt-8 grid grid-cols-3 divide-x divide-zinc-800 border-y border-zinc-800 animate-hero-rise [animation-delay:200ms]">
+              <div className="grid grid-cols-3 divide-x divide-zinc-800 border-y border-zinc-800 mb-8 animate-hero-rise [animation-delay:100ms]">
                 <Stat value={vehicles} label="Vehicles" />
                 <Stat value={makes} label="Brands" />
                 <Stat value={years} label="Model years" />
               </div>
 
-              <div className="mt-10 w-full max-w-none animate-hero-rise [animation-delay:250ms]">
+              <div className="w-full max-w-none animate-hero-rise [animation-delay:150ms]">
                 <SearchBar
                   value={heroQuery}
                   onChange={setHeroQuery}
@@ -389,15 +350,14 @@ export default function Landing() {
               <SectionHeader
                 kicker="Explore"
                 title="See what's in the database"
-                subtitle="Real EPA fuel data, Ontario value estimates, and NHTSA safety on every vehicle page."
+                subtitle="Fuel economy, powertrain specs, and crash-test ratings from EPA and NHTSA."
               />
               <div className="grid sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-zinc-800 border border-zinc-800">
-                {showcase.map(({ car, insight, annualRunningCost }, index) => (
+                {showcase.map(({ car, insight }, index) => (
                   <ShowcaseCard
                     key={`${car.id}-${insight}`}
                     car={car}
                     insight={insight}
-                    annualRunningCost={annualRunningCost}
                     style={{ animationDelay: `${index * 80}ms` }}
                   />
                 ))}
@@ -411,8 +371,8 @@ export default function Landing() {
         <section className="page-wrap py-12 md:py-16 border-t border-zinc-900">
           <SectionHeader
             kicker="Dossier"
-            title="What CarInfo tells you about a car"
-            subtitle="Every vehicle page answers questions like these, with sourced data, not marketing copy."
+            title="On every vehicle page"
+            subtitle="Full specs with short explanations — engine, MPG, drivetrain, safety, and more."
           />
           <div className="grid sm:grid-cols-2 gap-4">
             {dossierExamples.map(({ question, car }) => (
@@ -421,10 +381,10 @@ export default function Landing() {
                 to={`/car/${car.id}`}
                 className="group p-4 border border-zinc-800 rounded-none hover:border-zinc-600 transition-colors"
               >
-                <p className="text-sm text-zinc-300 leading-relaxed group-hover:text-white transition-colors">
+                <p className="text-sm font-medium text-white group-hover:text-zinc-200 transition-colors">
                   {question}
                 </p>
-                <p className="mt-3 text-xs text-zinc-500">
+                <p className="mt-2 text-xs text-zinc-500 leading-relaxed">
                   See on {car.year} {car.make} {displayModelLabel(car)} →
                 </p>
               </Link>
@@ -474,7 +434,7 @@ export default function Landing() {
             <SectionHeader
               kicker="VIN lookup"
               title="Already own a car?"
-              subtitle="Enter your VIN to see fuel economy, emissions, and estimated value for that exact vehicle, not a generic make/model average."
+              subtitle="Enter your VIN to see fuel economy, specs, and estimated value for that exact vehicle."
             />
             <div className="flex border border-zinc-700 rounded-none">
               <input
@@ -507,7 +467,7 @@ export default function Landing() {
             </p>
             <p className="text-base font-semibold text-white mb-2">EPA verified</p>
             <p className="text-sm text-zinc-500 leading-relaxed">
-              Fuel economy, emissions, and powertrain specs from EPA laboratory testing. The same
+              Fuel economy and powertrain specs from EPA laboratory testing — the same figures on window stickers.
               figures on window stickers.
             </p>
           </div>
@@ -573,7 +533,7 @@ export default function Landing() {
           <div>
             <p className="text-sm font-semibold text-white">CarInfo</p>
             <p className="text-sm text-zinc-500 mt-2 max-w-xs leading-relaxed">
-              EPA fuel economy, NHTSA safety data, and Ontario value estimates in CAD.
+              EPA specs, NHTSA safety, and plain-English explanations on every vehicle page.
             </p>
           </div>
           <p className="text-xs text-zinc-600">
@@ -588,25 +548,23 @@ export default function Landing() {
 function ShowcaseCard({
   car,
   insight,
-  annualRunningCost,
   style,
 }: {
   car: CarSpecs;
   insight: ShowcaseQuery['insight'];
-  annualRunningCost?: { low: number; high: number; mid: number };
   style?: React.CSSProperties;
 }) {
   const mpgLabel = usesMpge(car.engine.fuelType) ? 'MPGe' : 'MPG';
   const combined = car.fuelEconomy?.combined ?? 0;
   const safety = car.safetyRating?.overall;
   const subtitle = displayListingSubtitle(car);
-  const estValue = formatPriceShort(car.price?.msrp, car.price?.isEstimated);
+  const hp = car.engine.horsepower;
 
   const theme =
     insight === 'fuel'
       ? 'Fuel efficiency'
-      : insight === 'ownership'
-        ? 'Ownership cost'
+      : insight === 'power'
+        ? 'Powertrain'
         : safety
           ? 'Safety record'
           : 'Efficiency';
@@ -617,8 +575,8 @@ function ShowcaseCard({
         ? formatKwhPer100KmFromMpge(combined)
         : formatLPer100KmFromMpg(combined);
     }
-    if (insight === 'ownership' && annualRunningCost) {
-      return 'Fuel, insurance, maintenance & registration';
+    if (insight === 'power' && hp) {
+      return `${car.driveType} · ${formatFuelBadge(car.engine.fuelType)}`;
     }
     if (safety) {
       return `${car.year} ${displayModelLabel(car)}`;
@@ -630,15 +588,8 @@ function ShowcaseCard({
     if (insight === 'fuel') {
       return { value: String(Math.round(combined)), unit: mpgLabel };
     }
-    if (insight === 'ownership' && annualRunningCost) {
-      return {
-        value: formatCurrencyRangeOrFallback(
-          annualRunningCost.low,
-          annualRunningCost.high,
-          true,
-        ),
-        unit: null,
-      };
+    if (insight === 'power' && hp) {
+      return { value: String(Math.round(hp)), unit: 'HP' };
     }
     if (safety) {
       return {
@@ -652,8 +603,8 @@ function ShowcaseCard({
   const tertiary =
     insight === 'fuel'
       ? `${car.year} ${car.make} ${displayModelLabel(car)}`
-      : insight === 'ownership'
-        ? `Est. value ${estValue} · ${combined} ${mpgLabel} combined`
+      : insight === 'power'
+        ? `${car.year} ${car.make} ${displayModelLabel(car)}`
         : safety
           ? `${safety}/5 overall`
           : `${combined} ${mpgLabel}`;

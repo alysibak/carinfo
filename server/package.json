@@ -13,7 +13,9 @@
     "build-verified-db": "tsx scripts/build-verified-database.ts",
     "build-verified-db:fast": "tsx scripts/build-verified-database.ts --skip-nhtsa",
     "build-enrichment": "tsx scripts/build-content-enrichment.ts",
-    "build-horsepower": "tsx scripts/build-horsepower-enrichment.ts"
+    "build-nhtsa-backfill": "tsx scripts/build-nhtsa-backfill.ts --",
+    "build-horsepower": "tsx scripts/build-horsepower-enrichment.ts",
+    "test": "vitest run --config vitest.config.ts"
   },
   "dependencies": {
     "axios": "^1.6.2",

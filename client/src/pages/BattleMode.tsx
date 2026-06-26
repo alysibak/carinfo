@@ -1,13 +1,48 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import type { CarSpecs } from '../types/car.types';
+import type { CarSpecs, CarDashboard, ProvenanceSource } from '../types/car.types';
 import { useGarageStore } from '../stores/garageStore';
+import * as api from '../services/api';
+import ProvenanceChip from '../components/ProvenanceChip';
+import { fieldProvenanceSource } from '../utils/dataTrust';
 import { formatMpgForCard, hasNumericValue, UNAVAILABLE_LABEL } from '../utils/dataValue';
+import { usePageMeta } from '../utils/pageMeta';
+
+function BattleValueCell({
+  value,
+  align,
+  source,
+  confidence,
+  highlight,
+}: {
+  value: string;
+  align: 'left' | 'right';
+  source?: ProvenanceSource | null;
+  confidence?: string;
+  highlight?: boolean;
+}) {
+  return (
+    <td className={`p-6 ${align === 'right' ? 'text-right' : ''}`}>
+      <p className={`text-2xl font-black ${highlight ? 'text-white' : 'text-zinc-400'}`}>{value}</p>
+      {source && (
+        <div className={`mt-2 flex flex-wrap gap-1 ${align === 'right' ? 'justify-end' : ''}`}>
+          <ProvenanceChip source={source} />
+          {confidence && (
+            <span className="text-[9px] text-zinc-500 uppercase tracking-wider self-center">{confidence}</span>
+          )}
+        </div>
+      )}
+    </td>
+  );
+}
 
 export default function BattleMode() {
+  usePageMeta('Battle Mode', 'Head-to-head comparison with provenance-aware stat duels.');
   const garage = useGarageStore((state) => state.cars);
   const [fighter1, setFighter1] = useState<CarSpecs | null>(null);
   const [fighter2, setFighter2] = useState<CarSpecs | null>(null);
+  const [dash1, setDash1] = useState<CarDashboard | null>(null);
+  const [dash2, setDash2] = useState<CarDashboard | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [animateVS, setAnimateVS] = useState(false);
   const navigate = useNavigate();
@@ -24,9 +59,36 @@ export default function BattleMode() {
   const resetBattle = () => {
     setFighter1(null);
     setFighter2(null);
+    setDash1(null);
+    setDash2(null);
     setShowResults(false);
     setAnimateVS(false);
   };
+
+  useEffect(() => {
+    if (!showResults || !fighter1 || !fighter2) {
+      setDash1(null);
+      setDash2(null);
+      return;
+    }
+    let cancelled = false;
+    Promise.all([api.getCarDashboard(fighter1.id), api.getCarDashboard(fighter2.id)])
+      .then(([a, b]) => {
+        if (!cancelled) {
+          setDash1(a);
+          setDash2(b);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setDash1(null);
+          setDash2(null);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showResults, fighter1, fighter2]);
 
   const compareSpec = (value1: number, value2: number, higherIsBetter: boolean = true) => {
     if (value1 === value2) return 'tie';
@@ -327,6 +389,24 @@ export default function BattleMode() {
 
               {/* Spec Comparison Table */}
               <div className="bg-zinc-950 border border-zinc-900 overflow-hidden">
+                {dash1 && dash2 && (() => {
+                  const hp1s = fieldProvenanceSource(dash1, 'engine.horsepower');
+                  const hp2s = fieldProvenanceSource(dash2, 'engine.horsepower');
+                  const mpg1s = fieldProvenanceSource(dash1, 'fuelEconomy.combined');
+                  const mpg2s = fieldProvenanceSource(dash2, 'fuelEconomy.combined');
+                  if (
+                    (hp1s && hp2s && hp1s !== hp2s) ||
+                    (mpg1s && mpg2s && mpg1s !== mpg2s)
+                  ) {
+                    return (
+                      <p className="px-6 py-3 text-xs text-amber-200/90 border-b border-zinc-900 bg-amber-950/20">
+                        Source mismatch on this duel: EPA-verified fields are not directly comparable to
+                        estimated ones. Chips under each stat show which is which.
+                      </p>
+                    );
+                  }
+                  return null;
+                })()}
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-zinc-900">
@@ -361,17 +441,25 @@ export default function BattleMode() {
                     {/* Horsepower — only when both fighters have data */}
                     {fighter1!.engine.horsepower != null && fighter2!.engine.horsepower != null && (() => {
                       const result = compareSpec(fighter1!.engine.horsepower, fighter2!.engine.horsepower);
+                      const src1 = dash1 ? fieldProvenanceSource(dash1, 'engine.horsepower') : null;
+                      const src2 = dash2 ? fieldProvenanceSource(dash2, 'engine.horsepower') : null;
                       return (
                         <tr className="border-b border-zinc-900">
-                          <td className={`p-6 text-2xl font-black ${result === 'winner1' ? 'text-white' : result === 'winner2' ? 'text-zinc-400' : ''}`}>
-                            {fighter1!.engine.horsepower} HP
-                          </td>
+                          <BattleValueCell
+                            value={`${fighter1!.engine.horsepower} HP`}
+                            align="left"
+                            source={src1}
+                            highlight={result === 'winner1'}
+                          />
                           <td className="p-6 text-center text-xs tracking-widest text-zinc-300">
                             HORSEPOWER
                           </td>
-                          <td className={`p-6 text-right text-2xl font-black ${result === 'winner2' ? 'text-white' : result === 'winner1' ? 'text-zinc-400' : ''}`}>
-                            {fighter2!.engine.horsepower} HP
-                          </td>
+                          <BattleValueCell
+                            value={`${fighter2!.engine.horsepower} HP`}
+                            align="right"
+                            source={src2}
+                            highlight={result === 'winner2'}
+                          />
                         </tr>
                       );
                     })()}
@@ -426,17 +514,25 @@ export default function BattleMode() {
                         hasNumericValue(val1) && hasNumericValue(val2)
                           ? compareSpec(val1!, val2!)
                           : 'tie';
+                      const src1 = dash1 ? fieldProvenanceSource(dash1, 'fuelEconomy.combined') : null;
+                      const src2 = dash2 ? fieldProvenanceSource(dash2, 'fuelEconomy.combined') : null;
                       return (
                         <tr className="border-b border-zinc-900">
-                          <td className={`p-6 text-2xl font-black ${result === 'winner1' ? 'text-white' : result === 'winner2' ? 'text-zinc-400' : ''}`}>
-                            {display1} MPG
-                          </td>
+                          <BattleValueCell
+                            value={`${display1} MPG`}
+                            align="left"
+                            source={src1}
+                            highlight={result === 'winner1'}
+                          />
                           <td className="p-6 text-center text-xs tracking-widest text-zinc-300">
                             FUEL ECONOMY
                           </td>
-                          <td className={`p-6 text-right text-2xl font-black ${result === 'winner2' ? 'text-white' : result === 'winner1' ? 'text-zinc-400' : ''}`}>
-                            {display2} MPG
-                          </td>
+                          <BattleValueCell
+                            value={`${display2} MPG`}
+                            align="right"
+                            source={src2}
+                            highlight={result === 'winner2'}
+                          />
                         </tr>
                       );
                     })()}
@@ -471,17 +567,33 @@ export default function BattleMode() {
                       const val1 = fighter1!.price?.msrp || 0;
                       const val2 = fighter2!.price?.msrp || 0;
                       const result = compareSpec(val1, val2, false);
+                      const src1 = dash1?.ownership?.marketValue?.confidenceLabel
+                        ? ('estimated' as ProvenanceSource)
+                        : null;
+                      const src2 = dash2?.ownership?.marketValue?.confidenceLabel
+                        ? ('estimated' as ProvenanceSource)
+                        : null;
+                      const conf1 = dash1?.ownership?.marketValue?.confidenceLabel;
+                      const conf2 = dash2?.ownership?.marketValue?.confidenceLabel;
                       return (
                         <tr>
-                          <td className={`p-6 text-2xl font-black ${result === 'winner1' ? 'text-white' : result === 'winner2' ? 'text-zinc-400' : ''}`}>
-                            ${(val1 / 1000).toFixed(0)}K
-                          </td>
+                          <BattleValueCell
+                            value={`$${(val1 / 1000).toFixed(0)}K`}
+                            align="left"
+                            source={src1}
+                            confidence={conf1}
+                            highlight={result === 'winner1'}
+                          />
                           <td className="p-6 text-center text-xs tracking-widest text-zinc-300">
                             EST. VALUE
                           </td>
-                          <td className={`p-6 text-right text-2xl font-black ${result === 'winner2' ? 'text-white' : result === 'winner1' ? 'text-zinc-400' : ''}`}>
-                            ${(val2 / 1000).toFixed(0)}K
-                          </td>
+                          <BattleValueCell
+                            value={`$${(val2 / 1000).toFixed(0)}K`}
+                            align="right"
+                            source={src2}
+                            confidence={conf2}
+                            highlight={result === 'winner2'}
+                          />
                         </tr>
                       );
                     })()}

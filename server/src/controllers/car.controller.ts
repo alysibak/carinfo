@@ -58,6 +58,22 @@ export function getSearchSuggestions(req: Request, res: Response) {
 }
 
 /**
+ * Debug pipeline dump: raw cars.json, after enrichment, after normalization.
+ */
+export function getCarRawDebug(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const pipeline = carService.getCarPipelineDebug(id);
+    if (!pipeline) {
+      return res.status(404).json({ success: false, error: 'Car not found' });
+    }
+    res.json({ success: true, data: pipeline });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to fetch raw car debug' });
+  }
+}
+
+/**
  * Get car by ID
  */
 export function getCarById(req: Request, res: Response) {

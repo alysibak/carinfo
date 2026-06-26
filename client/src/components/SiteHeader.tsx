@@ -15,6 +15,7 @@ const NAV_LINKS: NavLinkItem[] = [
   { to: '/compare', label: 'Compare' },
   { to: '/value-matrix', label: 'Value Chart' },
   { to: '/vin', label: 'VIN Lookup' },
+  { to: '/methodology', label: 'Methodology' },
   { to: '/garage', label: 'Garage' },
 ];
 

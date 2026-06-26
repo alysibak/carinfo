@@ -18,6 +18,7 @@ import {
   POPULAR_SEARCHES,
 } from '../config/browseTaxonomy';
 import type { CarFilter, SearchQuery } from '../types/car.types';
+import { usePageMeta } from '../utils/pageMeta';
 
 const QUICK_START: Array<
   | { label: string; q: string }
@@ -33,6 +34,7 @@ const QUICK_START: Array<
 ];
 
 export default function Home() {
+  usePageMeta('Search', 'Filter and search 28,000+ vehicles by make, fuel type, body style, and price.');
   const [searchParams, setSearchParams] = useSearchParams();
   const {
     searchResults,

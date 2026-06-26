@@ -8,24 +8,26 @@ import {
   formatCurrencyRange,
   formatPowerForCard,
   hasNumericValue,
-  NHTSA_CHIP_UNAVAILABLE,
-  SAFETY_UNAVAILABLE_NOTE,
 } from '../utils/dataValue';
 import { CURRENCY_SECTION_NOTE } from '../utils/currency';
 import { useCarStore } from '../stores/carStore';
 import { useGarageStore } from '../stores/garageStore';
 import TCOCalculator from '../components/TCOCalculator';
-import { ExpandableSection, InfoTip } from '../components/ui';
+import { ExpandableSection } from '../components/ui';
 import ValuationLinks from '../components/ValuationLinks';
 import VehiclePlaceholder from '../components/VehiclePlaceholder';
 import GlanceRow from '../components/GlanceRow';
 import KeySpecs from '../components/KeySpecs';
 import SimilarCars from '../components/SimilarCars';
+import DataTrustPanel from '../components/DataTrustPanel';
 import { DataRow } from '../components/DataValue';
 import { efficiencyUnit } from '../utils/fuelLabels';
 import { formatFuelBadge, formatPowertrainLabel } from '../utils/fuelDisplay';
 import { efficiencySecondaryLine, formatKwhPer100KmFromMi } from '../utils/fuelEconomyUnits';
-import { ghgFraming, phevModes, tailpipeEmissionsNote, type PhevModes } from '../utils/epaContent';
+import { ghgFraming, phevModes, fiveYearFuelSavings, fuelSavingsSentence, type PhevModes } from '../utils/epaContent';
+import { SpecLabel } from '../components/SpecExplain';
+import type { TrustFilter } from '../utils/dataTrust';
+import { usePageMeta } from '../utils/pageMeta';
 
 function Subheading({ children }: { children: React.ReactNode }) {
   return (
@@ -49,9 +51,9 @@ function FuelBar({
   if (!hasNumericValue(value)) return null;
   const pct = Math.min(100, (value! / max) * 100);
   return (
-    <div className="py-2 border-b border-zinc-900 last:border-b-0">
+    <div className="py-3 border-b border-zinc-900 last:border-b-0">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs tracking-widest text-zinc-500 uppercase">{label}</span>
+        <span className="text-[10px] tracking-widest text-zinc-500 uppercase">{label}</span>
         <div className="text-right">
           <span className="text-2xl font-bold tabular-nums text-white">{Math.round(value!)}</span>
           {secondary && <p className="text-xs text-zinc-500 mt-0.5">{secondary}</p>}
@@ -60,46 +62,6 @@ function FuelBar({
       <div className="meter-track">
         <div className="meter-fill" style={{ width: `${pct}%` }} />
       </div>
-    </div>
-  );
-}
-
-function SafetyRow({ label, score }: { label: string; score: number | undefined }) {
-  if (!hasNumericValue(score, { allowZero: false })) return null;
-  return (
-    <div className="flex items-center justify-between py-3 border-b border-zinc-900 last:border-b-0">
-      <span className="text-[10px] tracking-[0.25em] text-zinc-400 uppercase">{label}</span>
-      <div className="flex items-center gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <span key={star} className={`w-2 h-2 ${star <= score! ? 'bg-white' : 'bg-zinc-800'}`} />
-        ))}
-        <span className="ml-2 text-sm font-bold text-white">{score}/5</span>
-      </div>
-    </div>
-  );
-}
-
-/** Row pairing a technical figure with a plain-language line (+ optional "?" tooltip). */
-function InsightRow({
-  label,
-  value,
-  plain,
-  tip,
-}: {
-  label: string;
-  value: string;
-  plain?: string;
-  tip?: React.ReactNode;
-}) {
-  return (
-    <div className="py-3 border-b border-zinc-900 last:border-b-0">
-      <div className="flex items-baseline justify-between gap-4">
-        <span className="text-[10px] tracking-[0.25em] text-zinc-400 uppercase">
-          {tip ? <InfoTip label={label}>{tip}</InfoTip> : label}
-        </span>
-        <span className="text-sm font-bold text-white text-right">{value}</span>
-      </div>
-      {plain && <p className="text-[11px] text-zinc-500 leading-relaxed mt-1">{plain}</p>}
     </div>
   );
 }
@@ -159,6 +121,7 @@ export default function CarDetail() {
   const [error, setError] = useState<string | null>(null);
   const [showTCO, setShowTCO] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [trustFilter, setTrustFilter] = useState<TrustFilter>('all');
   const { addCarToComparison, comparedCars } = useCarStore();
   const addToGarage = useGarageStore((s) => s.add);
   const navigate = useNavigate();
@@ -180,6 +143,13 @@ export default function CarDetail() {
     const t = setTimeout(() => setToast(null), 2500);
     return () => clearTimeout(t);
   }, [toast]);
+
+  usePageMeta(
+    dashboard ? `${dashboard.car.year} ${dashboard.car.make} ${dashboard.car.model}` : undefined,
+    dashboard
+      ? `EPA-verified specs, safety when available, and Ontario/CAD estimates for the ${dashboard.car.year} ${dashboard.car.make} ${dashboard.car.model}.`
+      : undefined,
+  );
 
   if (loading) {
     return (
@@ -223,26 +193,40 @@ export default function CarDetail() {
   );
   const isInCompare = comparedCars.some((c) => c.id === car.id);
   const trimLabel = displayListingSubtitle(car);
-  const hasSafety = hasNumericValue(car.safetyRating?.overall, { allowZero: false });
   const isPhev = car.engine.fuelType === 'plug-in hybrid';
   const phev = phevModes(car);
   const ghg = ghgFraming(car);
   const hasFuelData = hasFuelEconomyData(car);
   const hasEconomics = annualCost.total != null;
-  const safetyScores = hasSafety
-    ? [car.safetyRating!.overall, car.safetyRating!.frontal, car.safetyRating!.side, car.safetyRating!.rollover].filter(
-        (s) => hasNumericValue(s, { allowZero: false }),
-      )
-    : [];
+  const hasSafety = hasNumericValue(car.safetyRating?.overall, { allowZero: false });
+  const hasMarketValue =
+    hasNumericValue(marketValue.low) && hasNumericValue(marketValue.high);
 
   const fuelSummary = hasFuelData
-    ? `Combined ${Math.round(car.fuelEconomy.combined ?? 0)} · expand for breakdown`
-    : 'EPA fuel economy not on file';
+    ? `${Math.round(car.fuelEconomy.combined ?? 0)} ${efficiencyLabel} combined`
+    : 'Expand for details';
 
-  const valueSummary =
-    annualCost.total != null
-      ? `${formatCurrencyRange(annualCost.totalLow, annualCost.totalHigh)}/yr · expand for breakdown`
-      : 'Ownership estimates limited for this configuration';
+  const hasEmissionsData =
+    car.epa?.co2 != null ||
+    hasNumericValue(car.epa?.ghgScore) ||
+    hasNumericValue(car.epa?.barrelsPerYear) ||
+    fiveYearFuelSavings(car) != null;
+
+  const emissionsSummary = ghg
+    ? `Emissions score ${ghg.score}/10`
+    : car.epa?.co2 != null
+      ? `${car.epa.co2} g/mi CO₂`
+      : 'EPA emissions data';
+
+  const safetySummary = hasSafety
+    ? `NHTSA ${car.safetyRating!.overall}/5 stars`
+    : '';
+
+  const valueSummary = hasEconomics
+    ? `${formatCurrencyRange(annualCost.totalLow, annualCost.totalHigh)}/yr · expand for breakdown`
+    : hasMarketValue
+      ? `${formatCurrencyRange(marketValue.low, marketValue.high)} est. value`
+      : '';
 
   const handleAddToComparison = () => {
     addCarToComparison(car);
@@ -351,21 +335,9 @@ export default function CarDetail() {
                     })}
                   </span>
                 )}
-                {ghg && (
-                  <span
-                    className="spec-chip"
-                    title={`EPA greenhouse-gas score ${ghg.score}/10: ${ghg.plain.toLowerCase()}`}
-                  >
-                    Emissions {ghg.score}/10
-                  </span>
-                )}
-                {hasSafety ? (
+                {hasSafety && (
                   <span className="spec-chip border-zinc-600">
                     NHTSA {car.safetyRating!.overall}/5
-                  </span>
-                ) : (
-                  <span className="spec-chip border-dashed border-zinc-700 text-zinc-600">
-                    {NHTSA_CHIP_UNAVAILABLE}
                   </span>
                 )}
                 {car.countryOfOrigin && (
@@ -421,7 +393,13 @@ export default function CarDetail() {
         </div>
       </div>
 
-      <GlanceRow dashboard={dashboard} />
+      <GlanceRow dashboard={dashboard} trustFilter={trustFilter} />
+
+      <DataTrustPanel
+        dashboard={dashboard}
+        filter={trustFilter}
+        onFilterChange={setTrustFilter}
+      />
 
       <KeySpecs dashboard={dashboard} />
 
@@ -441,108 +419,112 @@ export default function CarDetail() {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 md:px-8 py-10">
-        <div className="space-y-px">
-          <ExpandableSection
-            title="Fuel economy & safety"
-            summary={`EPA test cycle · ${fuelSummary}`}
-            defaultOpen
-          >
-            {hasFuelData ? (
-              <>
-                {isPhev && phev ? (
-                  <>
-                    <Subheading>Plug-in hybrid: two ways to drive</Subheading>
-                    <PhevDualModeBlock modes={phev} />
-                  </>
-                ) : (
-                  <>
-                    <FuelBar
-                      label={`City (${efficiencyLabel})`}
-                      value={car.fuelEconomy.city}
-                      max={fuelMax}
-                      secondary={efficiencySecondaryLine(car.fuelEconomy.city, efficiencyLabel)}
-                    />
-                    <FuelBar
-                      label={`Highway (${efficiencyLabel})`}
-                      value={car.fuelEconomy.highway}
-                      max={fuelMax}
-                      secondary={efficiencySecondaryLine(car.fuelEconomy.highway, efficiencyLabel)}
-                    />
-                    <FuelBar
-                      label={`Combined (${efficiencyLabel})`}
-                      value={car.fuelEconomy.combined}
-                      max={fuelMax}
-                      secondary={efficiencySecondaryLine(car.fuelEconomy.combined, efficiencyLabel)}
-                    />
-                    {hasNumericValue(car.fuelEconomy.combined) &&
-                      car.fuelEconomy.city === car.fuelEconomy.highway &&
-                      car.fuelEconomy.city === car.fuelEconomy.combined && (
-                        <p className="text-xs text-zinc-500 py-2 leading-relaxed">
-                          EPA reports identical city, highway, and combined figures for this
-                          configuration. Some hybrid EPA test entries publish a single combined
-                          rating only.
-                        </p>
-                      )}
-                  </>
-                )}
-                {car.epa?.co2 != null && (
-                  <DataRow label="CO₂ emissions" value={`${car.epa.co2} g/mi`} allowZero />
-                )}
-                {tailpipeEmissionsNote(car) && (
-                  <p className="text-xs text-zinc-400 leading-relaxed py-2">{tailpipeEmissionsNote(car)}</p>
-                )}
-                {ghg && (
-                  <InsightRow
-                    label="Emissions score"
-                    value={`${ghg.score}/10`}
-                    plain={`${ghg.plain} (higher is cleaner).`}
-                    tip="EPA’s greenhouse-gas score, 1–10. Higher means lower CO₂ per mile: a quick read on how clean the tailpipe is."
-                  />
-                )}
-                {isEv && evCharge && (
-                  <>
-                    {hasNumericValue(evCharge.rangeMiles) && (
-                      <DataRow label="EPA range" value={`${Math.round(evCharge.rangeMiles!)} mi`} />
-                    )}
-                    {hasNumericValue(evCharge.kWhPer100Mi) && (
-                      <DataRow
-                        label="Consumption"
-                        value={`${evCharge.kWhPer100Mi} kWh/100mi · ${formatKwhPer100KmFromMi(evCharge.kWhPer100Mi!)}`}
-                      />
-                    )}
-                    {hasNumericValue(evCharge.charge240Hours) && (
-                      <InsightRow
-                        label="Home charge (240V)"
-                        value={`~${evCharge.charge240Hours} h`}
-                        plain={`About ${evCharge.charge240Hours} hours to recharge from low on a 240V Level 2 home charger. Public DC fast chargers, where supported, are much quicker.`}
-                      />
-                    )}
-                  </>
-                )}
-              </>
-            ) : (
-              <p className="text-xs text-zinc-500 leading-relaxed py-4">
-                EPA fuel economy figures are not on file for this configuration.
+        <div className="space-y-3">
+          {hasFuelData && (
+            <ExpandableSection title="Fuel economy" summary={fuelSummary}>
+              <p className="text-xs text-zinc-500 leading-relaxed pb-2">
+                EPA test-cycle figures.{' '}
+                <SpecLabel label="What is MPG?" glossaryKey="mpgCombined" />
               </p>
-            )}
-            {hasSafety && safetyScores.length > 0 ? (
-              <>
-                <Subheading>NHTSA crash tests</Subheading>
-                <SafetyRow label="Overall" score={car.safetyRating!.overall} />
-                <SafetyRow label="Frontal" score={car.safetyRating!.frontal} />
-                <SafetyRow label="Side" score={car.safetyRating!.side} />
-                <SafetyRow label="Rollover" score={car.safetyRating!.rollover} />
-              </>
-            ) : (
-              <>
-                <Subheading>Safety</Subheading>
-                <p className="text-xs text-zinc-500 leading-relaxed py-2">{SAFETY_UNAVAILABLE_NOTE}</p>
-              </>
-            )}
-          </ExpandableSection>
+              {isPhev && phev ? (
+                <>
+                  <Subheading>Plug-in hybrid modes</Subheading>
+                  <PhevDualModeBlock modes={phev} />
+                </>
+              ) : (
+                <>
+                  <FuelBar
+                    label={`City ${efficiencyLabel}`}
+                    value={car.fuelEconomy.city}
+                    max={fuelMax}
+                    secondary={efficiencySecondaryLine(car.fuelEconomy.city, efficiencyLabel)}
+                  />
+                  <FuelBar
+                    label={`Highway ${efficiencyLabel}`}
+                    value={car.fuelEconomy.highway}
+                    max={fuelMax}
+                    secondary={efficiencySecondaryLine(car.fuelEconomy.highway, efficiencyLabel)}
+                  />
+                  <FuelBar
+                    label={`Combined ${efficiencyLabel}`}
+                    value={car.fuelEconomy.combined}
+                    max={fuelMax}
+                    secondary={efficiencySecondaryLine(car.fuelEconomy.combined, efficiencyLabel)}
+                  />
+                </>
+              )}
+              {isEv && evCharge && (
+                <>
+                  <Subheading>Electric driving</Subheading>
+                  {hasNumericValue(evCharge.rangeMiles) && (
+                    <DataRow
+                      label="EPA range"
+                      value={`${Math.round(evCharge.rangeMiles!)} mi`}
+                      glossaryKey="epaRange"
+                    />
+                  )}
+                  {hasNumericValue(evCharge.kWhPer100Mi) && (
+                    <DataRow
+                      label="Consumption"
+                      value={`${evCharge.kWhPer100Mi} kWh/100mi · ${formatKwhPer100KmFromMi(evCharge.kWhPer100Mi!)}`}
+                      glossaryKey="kwhPer100mi"
+                    />
+                  )}
+                  {hasNumericValue(evCharge.charge240Hours) && (
+                    <DataRow
+                      label="Home charge (240V)"
+                      value={`~${evCharge.charge240Hours} h`}
+                      glossaryKey="charge240"
+                    />
+                  )}
+                </>
+              )}
+            </ExpandableSection>
+          )}
 
+          {hasSafety && (
+            <ExpandableSection title="Crash safety" summary={safetySummary}>
+              <p className="text-xs text-zinc-500 leading-relaxed pb-2">
+                NHTSA star ratings for this make, model, and year.{' '}
+                <SpecLabel label="What are NHTSA stars?" glossaryKey="safetyOverall" />
+              </p>
+              <DataRow
+                label="Overall"
+                value={`${car.safetyRating!.overall}/5 stars`}
+                glossaryKey="safetyOverall"
+              />
+              {hasNumericValue(car.safetyRating?.frontal, { allowZero: false }) && (
+                <DataRow
+                  label="Frontal crash"
+                  value={`${car.safetyRating!.frontal}/5`}
+                  glossaryKey="safetyFrontal"
+                />
+              )}
+              {hasNumericValue(car.safetyRating?.side, { allowZero: false }) && (
+                <DataRow
+                  label="Side crash"
+                  value={`${car.safetyRating!.side}/5`}
+                  glossaryKey="safetySide"
+                />
+              )}
+              {hasNumericValue(car.safetyRating?.rollover, { allowZero: false }) && (
+                <DataRow
+                  label="Rollover"
+                  value={`${car.safetyRating!.rollover}/5`}
+                  glossaryKey="safetyRollover"
+                />
+              )}
+            </ExpandableSection>
+          )}
+
+          {(hasEconomics || hasMarketValue) && (
           <ExpandableSection title="Value & ownership cost" summary={valueSummary}>
             <p className="text-[10px] text-zinc-600 leading-relaxed pb-3">{CURRENCY_SECTION_NOTE}</p>
+            {marketValue.confidenceLabel && (
+              <p className="text-xs text-zinc-500 pb-2">
+                Value confidence: <span className="text-zinc-300">{marketValue.confidenceLabel}</span>
+              </p>
+            )}
             <Subheading>Current market value</Subheading>
             <DataRow label="Est. value range" value={formatCurrencyRange(marketValue.low, marketValue.high)} />
             {marketValue.batteryHealth && (
@@ -601,9 +583,8 @@ export default function CarDetail() {
               </>
             ) : (
               <p className="text-xs text-zinc-500 leading-relaxed py-4 border-t border-zinc-900 mt-4">
-                Full ownership cost estimates are not available for this configuration
-                {isHydrogen ? ' (hydrogen fuel costs vary too widely to model reliably)' : ''}.
-                Market value range above is still shown where the model can anchor it.
+                Running-cost breakdown is not modeled for this configuration
+                {isHydrogen ? ' (hydrogen fuel costs vary too widely)' : ''}.
               </p>
             )}
 
@@ -614,6 +595,44 @@ export default function CarDetail() {
               Open TCO calculator
             </button>
           </ExpandableSection>
+          )}
+
+          {hasEmissionsData && (
+            <ExpandableSection title="Emissions" summary={emissionsSummary}>
+              {car.epa?.co2 != null && (
+                <DataRow
+                  label="CO₂"
+                  value={`${car.epa.co2} g/mi`}
+                  allowZero
+                  glossaryKey="co2"
+                />
+              )}
+              {ghg && (
+                <DataRow
+                  label="Emissions score"
+                  value={`${ghg.score}/10`}
+                  glossaryKey="ghgScore"
+                />
+              )}
+              {hasNumericValue(car.epa?.barrelsPerYear) && (
+                <DataRow
+                  label="Oil use"
+                  value={`${car.epa!.barrelsPerYear} barrels/yr`}
+                  glossaryKey="barrelsPerYear"
+                />
+              )}
+              {(() => {
+                const fuelSav = fiveYearFuelSavings(car);
+                return fuelSav ? (
+                  <DataRow
+                    label="5-yr fuel vs. average"
+                    value={fuelSavingsSentence(fuelSav)}
+                    glossaryKey="fuelSavings5yr"
+                  />
+                ) : null;
+              })()}
+            </ExpandableSection>
+          )}
         </div>
       </div>
 

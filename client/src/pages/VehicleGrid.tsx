@@ -2,7 +2,6 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import * as api from '../services/api';
 import type { CarSpecs, SearchQuery } from '../types/car.types';
-import { getDealRating, getDealRatingColor, getDealRatingLabel, getSegment } from '../utils/marketIntelligence';
 import AggregateStats from '../components/AggregateStats';
 import { cardStatClass, formatEngineDetailForCard, formatMpgForCard, formatPowerForCard } from '../utils/dataValue';
 import { usesMpge } from '../utils/fuelDisplay';
@@ -443,30 +442,12 @@ export default function VehicleGrid() {
 
               {/* Grid of vehicles */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-zinc-900">
-                {pageCars.map((car) => {
-                const segment = allCars.length > 0 ? getSegment(car, allCars) : [];
-                const dealRating = segment.length >= 5 ? getDealRating(car, segment) : null;
-
-                return (
+                {pageCars.map((car) => (
                   <div
                     key={car.id}
                     onClick={() => navigate(`/car/${car.id}`)}
                     className="bg-black p-8 hover:bg-zinc-950 transition-all duration-300 cursor-pointer group border border-zinc-900 hover:border-zinc-700 relative"
                   >
-                    {/* Deal Rating Badge */}
-                    {dealRating && (
-                      <div
-                        className="absolute top-4 right-4 px-3 py-1.5 text-xs font-black tracking-wider border-2"
-                        style={{
-                          backgroundColor: `${getDealRatingColor(dealRating)}20`,
-                          color: getDealRatingColor(dealRating),
-                          borderColor: getDealRatingColor(dealRating),
-                        }}
-                      >
-                        {getDealRatingLabel(dealRating)}
-                      </div>
-                    )}
-
                   {/* Identity — model-forward, year demoted to a label */}
                   <div className="mb-6 pr-20">
                     <p className="text-[11px] font-medium tracking-[0.3em] text-zinc-500 uppercase mb-2">
@@ -527,8 +508,7 @@ export default function VehicleGrid() {
                     </svg>
                   </div>
                   </div>
-                  );
-                })}
+                ))}
               </div>
             </div>
         )}
