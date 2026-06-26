@@ -274,9 +274,10 @@ export function calculateMarketPosition(
   };
 }
 
-// Determine deal rating
+// Deal rating is intentionally disabled (returns null). Helpers kept for dormant API surface.
 export type DealRating = 'great-deal' | 'good-deal' | 'fair' | 'overpriced';
 
+/** Disabled: always null until a trustworthy, provenance-backed model exists. */
 export function getDealRating(_car: CarSpecs, _segment: CarSpecs[]): DealRating | null {
   return null;
 }

@@ -14,8 +14,10 @@ import {
 import * as api from '../services/api';
 import type { ChartPoint } from '../services/api';
 import AboutData from '../components/AboutData';
+import ProvenanceChip from '../components/ProvenanceChip';
 import { formatMpgForCard } from '../utils/dataValue';
 import { DISPLAY_CURRENCY } from '../utils/currency';
+import { usePageMeta } from '../utils/pageMeta';
 
 type AxisMode = 'mpg' | 'displacement' | 'co2';
 type ViewPhase = 'choose' | 'chart';
@@ -132,7 +134,17 @@ function useChartHeight() {
 
 function MatrixLegend() {
   return (
-    <div className="flex flex-wrap gap-x-4 gap-y-2 justify-center sm:justify-start">
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500">
+        <span className="text-[10px] tracking-widest uppercase text-zinc-600">Axes</span>
+        <span className="flex items-center gap-1.5">
+          X: Est. value <ProvenanceChip source="estimated" />
+        </span>
+        <span className="flex items-center gap-1.5">
+          Y: EPA pipeline <ProvenanceChip source="epa" />
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-x-4 gap-y-2 justify-center sm:justify-start">
       {KNOWN_BODY_STYLES.map((style) => (
         <div key={style} className="flex items-center gap-2 text-xs text-zinc-400 capitalize">
           <span
@@ -154,10 +166,15 @@ function MatrixLegend() {
         Larger dot = newer year
       </div>
     </div>
+    </div>
   );
 }
 
 export default function ValueMatrix() {
+  usePageMeta(
+    'Value Matrix',
+    'Scatter plot of Ontario/CAD estimates against EPA fuel economy, engine size, or emissions with source labels.',
+  );
   const [phase, setPhase] = useState<ViewPhase>('choose');
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
@@ -278,13 +295,27 @@ export default function ValueMatrix() {
         </p>
         <p className="text-sm text-zinc-300 mb-3">{data.model}</p>
         <div className="space-y-2 text-sm">
-          <div className="flex justify-between gap-6">
+          <div className="flex justify-between gap-6 items-center">
             <span className="text-zinc-400">Est. value</span>
-            <span className="font-bold text-white">${data.price.toLocaleString()}</span>
+            <span className="flex items-center gap-2">
+              <span className="font-bold text-white">${data.price.toLocaleString()}</span>
+              {data.priceIsEstimated && <ProvenanceChip source="estimated" />}
+            </span>
           </div>
-          <div className="flex justify-between gap-6">
-            <span className="text-zinc-400">MPG</span>
-            <span className="font-bold text-white">{formatMpgForCard(data.mpg)}</span>
+          <div className="flex justify-between gap-6 items-center">
+            <span className="text-zinc-400">
+              {axisMode === 'mpg' ? 'MPG' : axisMode === 'co2' ? 'CO₂' : 'Engine'}
+            </span>
+            <span className="flex items-center gap-2">
+              <span className="font-bold text-white">
+                {axisMode === 'mpg'
+                  ? formatMpgForCard(data.mpg)
+                  : axisMode === 'co2'
+                    ? data.co2
+                    : `${data.displacement}L`}
+              </span>
+              <ProvenanceChip source={data.ySource === 'epa' ? 'epa' : 'estimated'} />
+            </span>
           </div>
           <div className="flex justify-between gap-6">
             <span className="text-zinc-400">Type</span>
@@ -306,8 +337,8 @@ export default function ValueMatrix() {
             <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Value Matrix</h1>
             <p className="text-sm text-zinc-400 mt-1">
               {phase === 'chart' && chartData.length > 0
-                ? `${chartData.length.toLocaleString()} vehicles plotted · estimated values`
-                : 'Plot price against fuel economy, engine size, or emissions'}
+                ? `${chartData.length.toLocaleString()} vehicles · X: Ontario/CAD estimates · Y: EPA ${axisMode === 'mpg' ? 'MPG' : axisMode === 'co2' ? 'CO₂' : 'engine size'}`
+                : 'Plot labeled estimates against EPA fuel economy, engine size, or emissions'}
             </p>
           </div>
           <AboutData compact />

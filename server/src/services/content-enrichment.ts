@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import type { Car } from '../types/car.types.js';
 import { resolveDataFile } from '../utils/data-paths.js';
 import { estimateEvHorsepower } from '../utils/ev-power-estimates.js';
-import { nhtsaLookupKeys, canonicalizeDisplayModel } from '../utils/vehicle-taxonomy.js';
+import { canonicalizeDisplayModel, resolveNhtsaSafety } from '../utils/vehicle-taxonomy.js';
 
 /**
  * Load-time enrichment from offline companion files (no network calls):
@@ -30,6 +30,8 @@ interface EpaEnrichmentEntry {
   };
   economy?: { combined?: number; city?: number; highway?: number };
   ev?: { kwhPer100Mi?: number; rangeMi?: number };
+  charge120Hours?: number;
+  charge240Hours?: number;
 }
 
 interface SafetyEntry {
@@ -52,6 +54,7 @@ function loadJson<T>(fileName: string): T | null {
 
 let epaEnrichment: Record<string, EpaEnrichmentEntry> = {};
 let nhtsaSafety: Record<string, SafetyEntry> = {};
+let nhtsaByCarId: Record<string, SafetyEntry> = {};
 let horsepower: Record<string, number> = {};
 let loaded = false;
 
@@ -59,10 +62,11 @@ function ensureLoaded(): void {
   if (loaded) return;
   epaEnrichment = loadJson<Record<string, EpaEnrichmentEntry>>('epa-enrichment.json') ?? {};
   nhtsaSafety = loadJson<Record<string, SafetyEntry>>('nhtsa-safety.json') ?? {};
+  nhtsaByCarId = loadJson<Record<string, SafetyEntry>>('nhtsa-by-car-id.json') ?? {};
   horsepower = loadJson<Record<string, number>>('horsepower-enrichment.json') ?? {};
   loaded = true;
   console.log(
-    `[content-enrichment] Loaded ${Object.keys(epaEnrichment).length} EPA + ${Object.keys(nhtsaSafety).length} NHTSA-safety + ${Object.keys(horsepower).length} horsepower entries.`,
+    `[content-enrichment] Loaded ${Object.keys(epaEnrichment).length} EPA + ${Object.keys(nhtsaSafety).length} NHTSA combos + ${Object.keys(nhtsaByCarId).length} per-car NHTSA + ${Object.keys(horsepower).length} horsepower entries.`,
   );
 }
 
@@ -72,9 +76,8 @@ export function enrichCar(car: Car): Car {
 
   const epaEntry = car.epaId != null ? epaEnrichment[String(car.epaId)] : undefined;
   const displayModel = canonicalizeDisplayModel(car);
-  const safety = nhtsaLookupKeys(car, displayModel)
-    .map((key) => nhtsaSafety[key])
-    .find(Boolean);
+  const safety =
+    nhtsaByCarId[car.id] ?? resolveNhtsaSafety(car, nhtsaSafety, displayModel);
   const hp = car.epaId != null ? horsepower[String(car.epaId)] : undefined;
   const evHpCandidate = estimateEvHorsepower(car);
 
@@ -107,6 +110,12 @@ export function enrichCar(car: Car): Car {
         ...(epaEntry.ev.kwhPer100Mi != null ? { kWhPer100Mi: epaEntry.ev.kwhPer100Mi } : {}),
         ...(epaEntry.ev.rangeMi != null ? { rangeMiles: epaEntry.ev.rangeMi } : {}),
       };
+    }
+    if (epaEntry.charge120Hours != null) {
+      next.epa = { ...next.epa, charge120Hours: epaEntry.charge120Hours };
+    }
+    if (epaEntry.charge240Hours != null) {
+      next.epa = { ...next.epa, charge240Hours: epaEntry.charge240Hours };
     }
   }
 

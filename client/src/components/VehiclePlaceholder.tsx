@@ -62,6 +62,7 @@ export default function VehiclePlaceholder({
           <p className="text-sm font-bold text-white truncate">
             {car.make} {displayModelLabel(car)}
           </p>
+          <p className="text-[9px] tracking-wider text-zinc-600 mt-1 uppercase">Body-type illustration</p>
         </div>
       )}
     </div>

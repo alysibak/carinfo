@@ -26,6 +26,9 @@ router.get('/:id/dashboard', carController.getCarDashboard);
 // Get similar / cross-shopped vehicles
 router.get('/:id/similar', carController.getSimilarCars);
 
+// Debug pipeline dump (before /:id)
+router.get('/:id/raw', carController.getCarRawDebug);
+
 // Get car details
 router.get('/:id', carController.getCarById);
 

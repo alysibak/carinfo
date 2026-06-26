@@ -13,6 +13,7 @@ import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { parse } from 'csv-parse/sync';
 import type { Car } from '../src/types/car.types.js';
+import { canonicalizeDisplayModel, resolveNhtsaSafety } from '../src/utils/vehicle-taxonomy.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = resolve(__dirname, '..', 'data');
@@ -21,6 +22,7 @@ const CACHE_PATH = join(DATA_DIR, 'raw', 'nhtsa-enrichment-cache.json');
 const CARS_PATH = join(DATA_DIR, 'cars.json');
 const EPA_OUT = join(DATA_DIR, 'epa-enrichment.json');
 const NHTSA_OUT = join(DATA_DIR, 'nhtsa-safety.json');
+const NHTSA_CAR_OUT = join(DATA_DIR, 'nhtsa-by-car-id.json');
 
 export interface PhevDualMode {
   gasMpg?: number;
@@ -51,6 +53,8 @@ export interface EpaEnrichmentEntry {
   economy?: EconomyOverride;
   /** Battery-electric extras (true kWh/100mi consumption + total range). */
   ev?: { kwhPer100Mi?: number; rangeMi?: number };
+  charge120Hours?: number;
+  charge240Hours?: number;
 }
 
 /** Parse a non-negative numeric EPA cell. Empty / -1 / 0 → undefined. */
@@ -144,6 +148,10 @@ function buildEpaEnrichment(usedEpaIds: Set<number>): Record<string, EpaEnrichme
       const range = pos(row.range);
       if (range) ev.rangeMi = Math.round(range);
       if (Object.keys(ev).length > 0) entry.ev = ev;
+      const charge120 = pos(row.charge120);
+      const charge240 = pos(row.charge240);
+      if (charge120) entry.charge120Hours = round1(charge120);
+      if (charge240) entry.charge240Hours = round1(charge240);
     }
 
     if (Object.keys(entry).length > 0) out[String(id)] = entry;
@@ -184,6 +192,22 @@ function buildNhtsaSafety(): Record<string, SafetyEntry> {
   return out;
 }
 
+/** Pre-resolve NHTSA ratings per vehicle id (fuzzy make/model/year matching). */
+function buildNhtsaCarIndex(
+  cars: Car[],
+  safetyIndex: Record<string, SafetyEntry>,
+): Record<string, SafetyEntry> {
+  const out: Record<string, SafetyEntry> = {};
+  for (const car of cars) {
+    const resolved = resolveNhtsaSafety(car, safetyIndex, canonicalizeDisplayModel(car));
+    if (resolved?.overall) out[car.id] = resolved;
+  }
+  console.log(
+    `NHTSA per-car index: ${Object.keys(out).length}/${cars.length} vehicles (${((Object.keys(out).length / cars.length) * 100).toFixed(1)}%)`,
+  );
+  return out;
+}
+
 function main(): void {
   const db = JSON.parse(readFileSync(CARS_PATH, 'utf8')) as { cars: Car[] };
   const usedEpaIds = new Set<number>();
@@ -191,11 +215,14 @@ function main(): void {
 
   const epa = buildEpaEnrichment(usedEpaIds);
   const safety = buildNhtsaSafety();
+  const nhtsaByCar = buildNhtsaCarIndex(db.cars, safety);
 
   writeFileSync(EPA_OUT, JSON.stringify(epa));
   writeFileSync(NHTSA_OUT, JSON.stringify(safety));
+  writeFileSync(NHTSA_CAR_OUT, JSON.stringify(nhtsaByCar));
   console.log(`\nWrote ${EPA_OUT}`);
   console.log(`Wrote ${NHTSA_OUT}`);
+  console.log(`Wrote ${NHTSA_CAR_OUT}`);
 }
 
 main();

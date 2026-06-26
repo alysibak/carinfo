@@ -114,6 +114,10 @@ export interface ChartPoint {
   displacement: number;
   co2: number;
   bodyStyle: string;
+  /** Plotted efficiency/emissions/engine fields come from EPA pipeline */
+  ySource: 'epa' | 'estimated';
+  /** X-axis price is always Ontario/CAD model estimate */
+  priceIsEstimated: boolean;
 }
 
 export interface VinDecodeResult {

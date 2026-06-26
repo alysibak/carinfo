@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useModalFocus } from '../hooks/useModalFocus';
 import type { DerivedComparisonMetric, OwnershipAssumptions } from '../types/car.types';
 import { formatCostPerKm } from '../utils/dataValue';
 import { CURRENCY_METHODOLOGY_NOTE } from '../utils/currency';
@@ -72,6 +73,8 @@ function MethodologyModal({
   warnings?: string[];
   practicalityNote?: string;
 }) {
+  const containerRef = useModalFocus(true, onClose);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/80"
@@ -81,6 +84,7 @@ function MethodologyModal({
       onClick={onClose}
     >
       <div
+        ref={containerRef}
         className="w-full max-w-lg max-h-[85vh] overflow-y-auto bg-zinc-950 border border-zinc-800 p-6"
         onClick={(e) => e.stopPropagation()}
       >

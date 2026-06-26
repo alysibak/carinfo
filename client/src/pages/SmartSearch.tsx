@@ -2,7 +2,7 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import * as api from '../services/api';
 import type { CarSpecs, SearchQuery } from '../types/car.types';
-import { getDealRating, getDealRatingColor, getDealRatingLabel, getSegment, filterCarsByFuelType, calculateReliabilityScore, type FuelTypeFilter } from '../utils/marketIntelligence';
+import { filterCarsByFuelType, calculateReliabilityScore, type FuelTypeFilter } from '../utils/marketIntelligence';
 import AggregateStats from '../components/AggregateStats';
 import {
   cardStatClass,
@@ -228,18 +228,6 @@ export default function SmartSearch() {
     return map;
   }, [filteredCars, smartSort, calculateScore]);
 
-  // Compute deal ratings only for the visible page of cars, using the filtered
-  // results as the segment pool (avoids loading the entire database).
-  const dealRatingMap = useMemo(() => {
-    const map = new Map<string, ReturnType<typeof getDealRating> | null>();
-    const visible = filteredCars.slice(0, visibleCount);
-    for (const car of visible) {
-      const segment = getSegment(car, filteredCars);
-      map.set(car.id, segment.length >= 5 ? getDealRating(car, segment) : null);
-    }
-    return map;
-  }, [filteredCars, visibleCount]);
-
   const visibleCars = useMemo(
     () => filteredCars.slice(0, visibleCount),
     [filteredCars, visibleCount],
@@ -447,7 +435,6 @@ export default function SmartSearch() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-zinc-900">
               {visibleCars.map((car, index) => {
                 const score = scoreMap.get(car.id) ?? 0;
-                const dealRating = dealRatingMap.get(car.id) ?? null;
 
                 return (
                   <div
@@ -455,21 +442,6 @@ export default function SmartSearch() {
                     onClick={() => navigate(`/car/${car.id}`)}
                     className="bg-black p-8 hover:bg-zinc-950 transition-all duration-300 cursor-pointer group border border-zinc-900 hover:border-zinc-700 relative"
                   >
-                    {/* Deal Rating Badge (Top-Left) */}
-                    {dealRating && (
-                      <div
-                        className="absolute top-4 left-4 px-3 py-1.5 text-xs font-black tracking-wider border-2"
-                        style={{
-                          backgroundColor: `${getDealRatingColor(dealRating)}20`,
-                          color: getDealRatingColor(dealRating),
-                          borderColor: getDealRatingColor(dealRating),
-                        }}
-                      >
-                        {getDealRatingLabel(dealRating)}
-                      </div>
-                    )}
-
-                    {/* Top 3 Badge (Top-Right) */}
                     {index < 3 && (
                       <div className="absolute top-4 right-4">
                         <span className="spec-chip border-zinc-600 text-white tabular-nums">

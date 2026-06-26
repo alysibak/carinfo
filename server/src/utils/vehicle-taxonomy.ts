@@ -234,23 +234,90 @@ export function isHotHatch(car: CarSpecs, taxonomy?: VehicleTaxonomy): boolean {
 export function nhtsaLookupKeys(car: CarSpecs, displayModel?: string): string[] {
   const model = displayModel ?? canonicalizeDisplayModel(car);
   const keys = new Set<string>();
-  keys.add(`${car.make}|${car.model}|${car.year}`);
-  keys.add(`${car.make}|${model}|${car.year}`);
+
+  const add = (m: string, y: number) => {
+    if (m && y >= 1990) keys.add(`${car.make}|${m}|${y}`);
+  };
+
+  for (const y of [car.year, car.year - 1, car.year + 1, car.year - 2, car.year + 2]) {
+    add(car.model, y);
+    add(model, y);
+    const firstModel = model.split(/[\s-/]/)[0];
+    const firstRaw = car.model.split(/[\s-/]/)[0];
+    if (firstModel && firstModel.length >= 2) {
+      add(firstModel, y);
+      add(firstModel.charAt(0).toUpperCase() + firstModel.slice(1).toLowerCase(), y);
+    }
+    if (firstRaw && firstRaw !== firstModel) add(firstRaw, y);
+  }
 
   if (car.make === 'Volkswagen') {
     if (/gti|golf/i.test(model)) {
-      keys.add(`${car.make}|Golf|${car.year}`);
-      keys.add(`${car.make}|Golf|${car.year + 1}`);
-      keys.add(`${car.make}|Golf|${car.year - 1}`);
-      keys.add(`${car.make}|GTI|${car.year}`);
+      for (const y of [car.year, car.year - 1, car.year + 1]) {
+        add('Golf', y);
+        add('GTI', y);
+      }
     }
     if (/jetta|passat|cc|eos|beetle/i.test(model)) {
-      keys.add(`${car.make}|${model.split(' ')[0]}|${car.year}`);
+      add(model.split(' ')[0], car.year);
     }
   }
 
-  if (/civic/i.test(model)) keys.add(`${car.make}|Civic|${car.year}`);
-  if (/cooper/i.test(model)) keys.add(`${car.make}|Cooper|${car.year}`);
+  if (/civic/i.test(model)) add('Civic', car.year);
+  if (/cooper/i.test(model)) add('Cooper', car.year);
 
   return Array.from(keys);
+}
+
+export interface NhtsaSafetyRating {
+  overall: number;
+  frontal?: number;
+  side?: number;
+  rollover?: number;
+}
+
+function normalizeNhtsaModel(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+/** True when an EPA model label plausibly matches an NHTSA model name. */
+function nhtsaModelsMatch(epaModel: string, cacheModel: string): boolean {
+  const a = normalizeNhtsaModel(epaModel);
+  const b = normalizeNhtsaModel(cacheModel);
+  if (!a || !b) return false;
+  if (a === b || a.includes(b) || b.includes(a)) return true;
+  const af = a.match(/^[a-z0-9]+/)?.[0] ?? '';
+  const bf = b.match(/^[a-z0-9]+/)?.[0] ?? '';
+  return af.length >= 3 && af === bf;
+}
+
+/**
+ * Resolve NHTSA star ratings for an EPA configuration by trying exact keys,
+ * nearby model years, and fuzzy model-name matches against the safety index.
+ */
+export function resolveNhtsaSafety(
+  car: CarSpecs,
+  safetyIndex: Record<string, NhtsaSafetyRating>,
+  displayModel?: string,
+): NhtsaSafetyRating | undefined {
+  for (const key of nhtsaLookupKeys(car, displayModel)) {
+    const hit = safetyIndex[key];
+    if (hit?.overall) return hit;
+  }
+
+  const model = displayModel ?? canonicalizeDisplayModel(car);
+  for (const year of [car.year, car.year - 1, car.year + 1, car.year - 2, car.year + 2]) {
+    const prefix = `${car.make}|`;
+    const suffix = `|${year}`;
+    for (const [key, rating] of Object.entries(safetyIndex)) {
+      if (!rating.overall) continue;
+      if (!key.startsWith(prefix) || !key.endsWith(suffix)) continue;
+      const cacheModel = key.slice(prefix.length, key.length - suffix.length);
+      if (nhtsaModelsMatch(model, cacheModel) || nhtsaModelsMatch(car.model, cacheModel)) {
+        return rating;
+      }
+    }
+  }
+
+  return undefined;
 }
