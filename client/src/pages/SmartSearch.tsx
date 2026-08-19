@@ -1,4 +1,4 @@
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import * as api from '../services/api';
 import type { CarSpecs, SearchQuery } from '../types/car.types';
@@ -27,7 +27,6 @@ export default function SmartSearch() {
   const [showFilters, setShowFilters] = useState(false);
   const [fuelTypeFilter, setFuelTypeFilter] = useState<FuelTypeFilter>('gasoline');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const navigate = useNavigate();
 
   // Get persona from URL params
   const persona = searchParams.get('persona') as 'commuter' | 'gearhead' | 'family' | 'work' | null;
@@ -316,7 +315,7 @@ export default function SmartSearch() {
 
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="text-xs tracking-[0.3em] text-zinc-400 hover:text-white transition-colors"
+              className="min-h-[44px] px-2 -mr-2 text-xs tracking-[0.3em] text-zinc-400 hover:text-white transition-colors"
             >
               {showFilters ? 'HIDE' : 'REFINE'}
             </button>
@@ -404,7 +403,7 @@ export default function SmartSearch() {
             <p className="text-base text-zinc-300 mb-2">
               No vehicles match this persona and budget.
             </p>
-            <p className="text-sm text-zinc-500 mb-6">
+            <p className="text-sm text-zinc-400 mb-6">
               Try adjusting the budget range above.
             </p>
             {searchTerm && (
@@ -439,8 +438,7 @@ export default function SmartSearch() {
                 return (
                   <div
                     key={car.id}
-                    onClick={() => navigate(`/car/${car.id}`)}
-                    className="bg-black p-8 hover:bg-zinc-950 transition-all duration-300 cursor-pointer group border border-zinc-900 hover:border-zinc-700 relative"
+                    className="bg-black p-8 hover:bg-zinc-950 transition-all duration-300 group border border-zinc-900 hover:border-zinc-700 focus-within:border-zinc-600 relative"
                   >
                     {index < 3 && (
                       <div className="absolute top-4 right-4">
@@ -460,7 +458,12 @@ export default function SmartSearch() {
                     {/* Make & Model */}
                     <div className="mb-6">
                       <h3 className="text-2xl font-black tracking-tight mb-1 group-hover:tracking-wide transition-all">
-                        {car.make.toUpperCase()}
+                        <Link
+                          to={`/car/${car.id}`}
+                          className="after:absolute after:inset-0 focus:outline-none"
+                        >
+                          {car.make.toUpperCase()}
+                        </Link>
                       </h3>
                       <p className="text-lg font-light tracking-wider text-zinc-400 group-hover:text-zinc-400 transition-colors">
                         {car.model}

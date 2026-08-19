@@ -169,7 +169,9 @@ export default function Home() {
               <span>Filters</span>
               <span className="text-zinc-400">{filtersOpen ? '−' : '+'}</span>
             </button>
-            <div className={filtersOpen ? 'block' : 'hidden lg:block'}>
+            <div
+              className={`${filtersOpen ? 'block' : 'hidden lg:block'} lg:sticky lg:top-[calc(var(--header-height)+1rem)]`}
+            >
               <FilterSidebar
                 onFiltersApplied={() => {
                   const q = useCarStore.getState().searchQuery;
@@ -231,7 +233,7 @@ export default function Home() {
                           </span>{' '}
                           {searchResults.total === 1 ? 'vehicle' : 'vehicles'}
                           {searchResults.total > pageSize && (
-                            <span className="text-zinc-500">
+                            <span className="text-zinc-400">
                               {' '}
                               · page {currentPage} of {totalPages}
                             </span>
@@ -328,7 +330,7 @@ export default function Home() {
                     <p className="text-base text-zinc-300 mb-2">
                       No vehicles matched these filters.
                     </p>
-                    <p className="text-sm text-zinc-500 mb-6">
+                    <p className="text-sm text-zinc-400 mb-6">
                       Try widening the year range or removing a filter.
                     </p>
                     <button

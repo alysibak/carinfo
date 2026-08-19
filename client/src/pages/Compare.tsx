@@ -5,7 +5,11 @@ import type { CarDashboard, CarSpecs } from '../types/car.types';
 import * as api from '../services/api';
 import { formatEngineForDetail, UNAVAILABLE_LABEL } from '../utils/dataValue';
 import { formatFuelTypeLabel, usesMpge } from '../utils/fuelDisplay';
-import { formatTransmissionLabel } from '../utils/trimLabel';
+import {
+  displayListingSubtitle,
+  displayModelLabel,
+  formatTransmissionLabel,
+} from '../utils/trimLabel';
 import {
   fieldConfidence,
   fieldProvenanceSource,
@@ -200,7 +204,7 @@ export default function Compare() {
             </svg>
             <span>BACK</span>
           </Link>
-          <h2 className="text-2xl font-bold tracking-tight mb-3 uppercase">No vehicles selected</h2>
+          <h1 className="text-2xl font-bold tracking-tight mb-3 uppercase">No vehicles selected</h1>
           <p className="text-sm text-zinc-400 mb-8 max-w-md mx-auto leading-relaxed">
             Add up to 5 vehicles from search or browse to compare specs side by side.
           </p>
@@ -278,7 +282,7 @@ export default function Compare() {
                     className={`px-2 py-1 text-[10px] tracking-widest uppercase border transition-colors ${
                       trustFilter === f.id
                         ? 'border-white text-white'
-                        : 'border-zinc-700 text-zinc-500 hover:text-zinc-300'
+                        : 'border-zinc-700 text-zinc-400 hover:text-zinc-300'
                     }`}
                   >
                     {f.label}
@@ -294,7 +298,7 @@ export default function Compare() {
             </div>
           </div>
           {loadError && <p className="text-xs text-amber-300/90 mt-3">{loadError}</p>}
-          <p className="text-[10px] text-zinc-500 mt-3">
+          <p className="text-[10px] text-zinc-400 mt-3">
             Rows with no data across all vehicles are hidden.{' '}
             <Link to="/methodology" className="underline underline-offset-2 hover:text-zinc-300">
               Methodology
@@ -307,7 +311,7 @@ export default function Compare() {
         {loading ? (
           <div className="text-center py-16">
             <div className="inline-block w-10 h-10 border-2 border-zinc-800 border-t-zinc-500 mb-3" />
-            <p className="text-[10px] tracking-widest text-zinc-500 uppercase">Loading comparison data</p>
+            <p className="text-[10px] tracking-widest text-zinc-400 uppercase">Loading comparison data</p>
           </div>
         ) : (
           <div className="max-w-7xl mx-auto">
@@ -316,22 +320,21 @@ export default function Compare() {
                 <thead>
                   <tr className="border-b border-zinc-700">
                     <th className="px-3 sm:px-4 py-4 text-left sticky left-0 bg-black z-10 min-w-[100px]">
-                      <span className="text-xs uppercase tracking-widest text-zinc-500">Spec</span>
+                      <span className="text-xs uppercase tracking-widest text-zinc-400">Spec</span>
                     </th>
-                    {pairs.map(({ car, dashboard }) => (
+                    {pairs.map(({ car }) => (
                       <th key={car.id} className="px-3 sm:px-4 py-4 min-w-[180px] sm:min-w-[220px] border-l border-zinc-800">
                         <div className="text-center">
                           <p className="text-4xl font-black text-zinc-300 tabular-nums">{car.year}</p>
                           <h3 className="text-lg font-black tracking-tight uppercase mt-3">{car.make}</h3>
-                          <p className="text-sm font-medium text-zinc-400">{car.model}</p>
-                          {dashboard && (
-                            <p className="text-[10px] text-zinc-500 mt-2 uppercase tracking-wider">
-                              Value confidence: {dashboard.ownership.marketValue.confidenceLabel}
-                            </p>
+                          <p className="text-sm font-medium text-zinc-400">{displayModelLabel(car)}</p>
+                          {/* Two columns can otherwise read identically — this is what separates them. */}
+                          {displayListingSubtitle(car) && (
+                            <p className="text-xs text-zinc-400 mt-1">{displayListingSubtitle(car)}</p>
                           )}
                           <button
                             onClick={() => removeCarFromComparison(car.id)}
-                            className="mt-4 text-[10px] tracking-widest text-zinc-500 hover:text-red-500 transition-colors uppercase"
+                            className="mt-4 px-2 py-2 text-[10px] tracking-widest text-zinc-400 hover:text-red-500 transition-colors uppercase"
                           >
                             Remove
                           </button>
@@ -344,13 +347,13 @@ export default function Compare() {
                   {specs.map((spec) => (
                     <tr key={spec.key} className="border-b border-zinc-900">
                       <td className="px-4 py-3 sticky left-0 z-10 bg-black border-r border-zinc-800">
-                        <span className="text-xs tracking-widest text-zinc-500 uppercase block">{spec.label}</span>
+                        <span className="text-xs tracking-widest text-zinc-400 uppercase block">{spec.label}</span>
                         {spec.isEstimatedRow && <ProvenanceChip source="estimated" className="mt-1" />}
                       </td>
                       {pairs.map(({ car, dashboard }) => {
                         if (!dashboard) {
                           return (
-                            <td key={car.id} className="px-4 py-3 text-center border-l border-zinc-800 text-zinc-600 text-xs">
+                            <td key={car.id} className="px-4 py-3 text-center border-l border-zinc-800 text-zinc-400 text-xs">
                               …
                             </td>
                           );
@@ -369,7 +372,7 @@ export default function Compare() {
                             <span
                               className={`text-sm inline-flex flex-col items-center gap-1 ${
                                 missing
-                                  ? 'text-zinc-500 text-xs italic'
+                                  ? 'text-zinc-400 text-xs italic'
                                   : isBest
                                     ? 'font-black text-white tabular-nums'
                                     : numeric != null
@@ -389,7 +392,7 @@ export default function Compare() {
                                 <span className="flex items-center gap-1">
                                   <ProvenanceChip source={prov} />
                                   {confidence && (
-                                    <span className="text-[9px] text-zinc-500 uppercase tracking-wider">
+                                    <span className="text-[9px] text-zinc-400 uppercase tracking-wider">
                                       {confidence}
                                     </span>
                                   )}

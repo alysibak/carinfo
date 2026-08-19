@@ -85,7 +85,7 @@ export default function PersonaQuiz({ onComplete }: PersonaQuizProps) {
             <h2 className="text-5xl md:text-6xl font-black tracking-tighter mb-6">
               WHAT'S YOUR BUDGET?
             </h2>
-            <p className="text-lg tracking-wider text-zinc-500 mb-12">
+            <p className="text-lg tracking-wider text-zinc-400 mb-12">
               Select your price range
             </p>
 
@@ -118,7 +118,7 @@ export default function PersonaQuiz({ onComplete }: PersonaQuizProps) {
             <h2 className="text-5xl md:text-6xl font-black tracking-tighter mb-6">
               WHAT MATTERS MOST?
             </h2>
-            <p className="text-lg tracking-wider text-zinc-500 mb-12">
+            <p className="text-lg tracking-wider text-zinc-400 mb-12">
               Choose your top priority
             </p>
 
@@ -137,7 +137,7 @@ export default function PersonaQuiz({ onComplete }: PersonaQuizProps) {
                   <p className="text-3xl font-black tracking-tight group-hover:tracking-wide transition-all mb-2">
                     {option.label}
                   </p>
-                  <p className="text-sm tracking-wider text-zinc-600 group-hover:text-zinc-400 transition-colors">
+                  <p className="text-sm tracking-wider text-zinc-400 group-hover:text-zinc-400 transition-colors">
                     {option.desc}
                   </p>
                 </button>
@@ -152,7 +152,7 @@ export default function PersonaQuiz({ onComplete }: PersonaQuizProps) {
             <h2 className="text-5xl md:text-6xl font-black tracking-tighter mb-6">
               HOW WILL YOU USE IT?
             </h2>
-            <p className="text-lg tracking-wider text-zinc-500 mb-12">
+            <p className="text-lg tracking-wider text-zinc-400 mb-12">
               Primary use case
             </p>
 
@@ -171,7 +171,7 @@ export default function PersonaQuiz({ onComplete }: PersonaQuizProps) {
                   <p className="text-3xl font-black tracking-tight group-hover:tracking-wide transition-all mb-2">
                     {option.label}
                   </p>
-                  <p className="text-sm tracking-wider text-zinc-600 group-hover:text-zinc-400 transition-colors">
+                  <p className="text-sm tracking-wider text-zinc-400 group-hover:text-zinc-400 transition-colors">
                     {option.desc}
                   </p>
                 </button>

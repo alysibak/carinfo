@@ -29,7 +29,7 @@ export default function AboutData({ compact = false }: { compact?: boolean }) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="text-[10px] tracking-[0.25em] text-zinc-400 hover:text-white uppercase transition-colors underline underline-offset-4"
+          className="inline-flex min-h-[36px] items-center text-[10px] tracking-[0.25em] text-zinc-400 hover:text-white uppercase transition-colors underline underline-offset-4"
         >
           About the data
         </button>
@@ -44,7 +44,7 @@ export default function AboutData({ compact = false }: { compact?: boolean }) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="text-[10px] tracking-[0.25em] text-zinc-400 hover:text-zinc-400 uppercase transition-colors"
+          className="text-[10px] tracking-[0.25em] text-zinc-400 hover:text-white uppercase transition-colors"
         >
           About the data
         </button>
