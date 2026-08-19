@@ -121,7 +121,7 @@ export default function Browse() {
                 <p className="font-bold text-white capitalize mb-0.5">{type.label}</p>
                 <p className="text-xs text-zinc-400 mb-2">{type.description}</p>
                 {stats?.bodyStyles?.[type.id] != null && (
-                  <p className="text-[10px] tracking-widest text-zinc-500 uppercase">
+                  <p className="text-[10px] tracking-widest text-zinc-400 uppercase">
                     {stats.bodyStyles[type.id].toLocaleString()} vehicles
                   </p>
                 )}
@@ -143,7 +143,7 @@ export default function Browse() {
                 className="px-4 py-3 border border-zinc-800 bg-zinc-950 hover:border-zinc-500 transition-colors min-w-[140px]"
               >
                 <p className="text-sm font-semibold capitalize">{fuel.label}</p>
-                <p className="text-[10px] text-zinc-500 mt-0.5">
+                <p className="text-[10px] text-zinc-400 mt-0.5">
                   {stats?.fuelTypes?.[fuel.id] != null
                     ? `${stats.fuelTypes[fuel.id].toLocaleString()} in archive`
                     : fuel.description}

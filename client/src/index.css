@@ -11,7 +11,8 @@
   --border-subtle: #27272a;
   --surface: #000000;
   --surface-raised: #09090b;
-  --header-height: 52px;
+  /* Fallback for first paint only — SiteHeader measures and overwrites this. */
+  --header-height: 69px;
 }
 
 body {
@@ -25,6 +26,12 @@ body {
   letter-spacing: -0.01em;
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --header-height: 63px;
+  }
 }
 
 code {
@@ -91,7 +98,7 @@ code {
   }
 
   .label-sm {
-    @apply text-[10px] uppercase tracking-widest text-zinc-500;
+    @apply text-[10px] uppercase tracking-widest text-zinc-400;
   }
 
   .section-heading {
@@ -103,7 +110,7 @@ code {
   }
 
   .kicker {
-    @apply text-[10px] font-medium text-zinc-500 uppercase tracking-widest;
+    @apply text-[10px] font-medium text-zinc-400 uppercase tracking-widest;
   }
 
   .surface-card-glass {
@@ -111,7 +118,7 @@ code {
   }
 
   .chip {
-    @apply inline-flex items-center px-2 py-0.5 text-xs uppercase tracking-widest text-zinc-400 border border-zinc-800 rounded-none transition-colors duration-150 hover:text-white hover:border-zinc-600 bg-transparent;
+    @apply inline-flex items-center min-h-[36px] px-3 py-1.5 text-xs uppercase tracking-widest text-zinc-400 border border-zinc-800 rounded-none transition-colors duration-150 hover:text-white hover:border-zinc-600 bg-transparent;
   }
 
   .spec-chip {
@@ -119,7 +126,7 @@ code {
   }
 
   .eyebrow-pill {
-    @apply text-xs font-medium text-zinc-500 uppercase tracking-widest;
+    @apply text-xs font-medium text-zinc-400 uppercase tracking-widest;
   }
 
   .mesh-hero {
@@ -149,6 +156,21 @@ code {
 
   .text-gradient {
     @apply text-white;
+  }
+
+  /*
+   * Hero stats: three fixed columns whose width depends on the breakpoint AND
+   * on the two-column hero layout, so a viewport-based font size cannot fit
+   * "1995–2026" (9 monospace characters ≈ 5.4em) in every case. Size the value
+   * against its own column instead, capped at the display size we want.
+   */
+  .stat-cell {
+    container-type: inline-size;
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
+    font-size: clamp(0.85rem, 17cqi, 3rem);
   }
 
   .meter-track {

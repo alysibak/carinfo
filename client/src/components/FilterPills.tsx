@@ -31,7 +31,7 @@ export default function FilterPills({
           >
             <span className="font-semibold tracking-wide">{opt.label}</span>
             {opt.count != null && (
-              <span className={`ml-1.5 ${active ? 'text-zinc-600' : 'text-zinc-500'}`}>
+              <span className={`ml-1.5 ${active ? 'text-zinc-600' : 'text-zinc-400'}`}>
                 ({opt.count.toLocaleString()})
               </span>
             )}

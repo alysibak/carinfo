@@ -1,6 +1,6 @@
 import type { CarDashboard, CarSpecs } from '../types/car.types';
 import { formatEngineForDetail, formatCurrency, hasNumericValue } from '../utils/dataValue';
-import { formatFuelTypeLabel } from '../utils/fuelDisplay';
+import { engineLayoutLabel, formatFuelTypeLabel } from '../utils/fuelDisplay';
 import { displayTrimLabel, formatTransmissionLabel } from '../utils/trimLabel';
 import { efficiencyUnit } from '../utils/fuelLabels';
 import { fiveYearFuelSavings, fuelSavingsShort, phevModes } from '../utils/epaContent';
@@ -68,11 +68,16 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
       glossary: 'displacement',
     });
   }
-  if (!isEv && !isFcev && car.engine.configuration) {
+  const knownLayout =
+    car.engine.configuration &&
+    engineLayoutLabel(car.engine.configuration, car.engine.cylinders) === car.engine.configuration
+      ? car.engine.configuration
+      : null;
+  if (!isEv && !isFcev && knownLayout) {
     pushIf(powertrain, {
       key: 'configuration',
       label: 'Layout',
-      value: car.engine.configuration,
+      value: knownLayout,
       glossary: 'configuration',
     });
   }
@@ -394,7 +399,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
 function SpecGroupBlock({ group }: { group: SpecGroup }) {
   return (
     <div className="border border-zinc-800 min-w-0">
-      <p className="px-3 py-2 text-[10px] tracking-widest text-zinc-500 uppercase bg-zinc-950/80 border-b border-zinc-800">
+      <p className="px-3 py-2 text-[10px] tracking-widest text-zinc-400 uppercase bg-zinc-950/80 border-b border-zinc-800">
         {group.title}
       </p>
       {group.rows.map((spec) => (
@@ -402,7 +407,7 @@ function SpecGroupBlock({ group }: { group: SpecGroup }) {
           key={spec.key}
           className="flex items-baseline justify-between gap-4 py-2.5 px-3 border-b border-zinc-900 last:border-b-0"
         >
-          <p className="text-[10px] tracking-widest text-zinc-500 uppercase shrink-0">
+          <p className="text-[10px] tracking-widest text-zinc-400 uppercase shrink-0">
             <SpecLabel label={spec.label} glossaryKey={spec.glossary} />
           </p>
           <DataValue
@@ -421,7 +426,7 @@ export default function KeySpecs({ dashboard }: { dashboard: CarDashboard }) {
   return (
     <section className="border-b border-zinc-800">
       <div className="max-w-7xl mx-auto px-5 md:px-8 py-6">
-        <p className="text-[10px] tracking-widest text-zinc-500 uppercase mb-4 border-t border-zinc-800 pt-4">
+        <p className="text-[10px] tracking-widest text-zinc-400 uppercase mb-4 border-t border-zinc-800 pt-4">
           Specifications
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-px bg-zinc-800 border border-zinc-800">

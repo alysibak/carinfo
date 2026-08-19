@@ -19,7 +19,7 @@ export default function DataValue({
   suffix,
   allowZero,
   className = 'text-sm font-bold text-white',
-  missingClassName = 'text-sm font-normal text-zinc-600 italic',
+  missingClassName = 'text-sm font-normal text-zinc-400 italic',
 }: DataValueProps) {
   const text = formatOrFallback(value, { suffix, allowZero });
   if (isUnavailableFormatted(text)) {
@@ -49,7 +49,7 @@ export function DataRow({
         total ? 'border-t border-zinc-700 mt-1 pt-3' : ''
       }`}
     >
-      <span className="text-[10px] tracking-widest text-zinc-500 uppercase shrink-0">
+      <span className="text-[10px] tracking-widest text-zinc-400 uppercase shrink-0">
         {glossaryKey ? <SpecLabel label={label} glossaryKey={glossaryKey} /> : label}
       </span>
       <DataValue
