@@ -1,5 +1,5 @@
 import { DISPLAY_CURRENCY } from './currency';
-import { formatEngineSystem, usesMpge } from './fuelDisplay';
+import { engineLayoutLabel, formatEngineSystem, usesMpge } from './fuelDisplay';
 
 /** Single label for missing / invalid field values across the app. */
 export const UNAVAILABLE_LABEL = 'Not on file';
@@ -126,7 +126,7 @@ export function formatCurrencyRange(
 /** Muted styling when a formatted value is unavailable. */
 export function unavailableClass(value: string, base = 'font-semibold mt-0.5'): string {
   return isUnavailableFormatted(value)
-    ? `${base} text-zinc-600 italic font-normal text-xs`
+    ? `${base} text-zinc-400 italic font-normal text-xs`
     : `${base} text-white`;
 }
 
@@ -149,8 +149,8 @@ export function formatEngineDetailForCard(engine: {
   }
   const parts: string[] = [];
   if (hasNumericValue(engine.displacement)) parts.push(`${engine.displacement}L`);
-  if (engine.configuration) parts.push(engine.configuration);
-  else if (hasNumericValue(engine.cylinders)) parts.push(`${engine.cylinders}-cyl`);
+  const layout = engineLayoutLabel(engine.configuration, engine.cylinders);
+  if (layout) parts.push(layout);
   return parts.length ? parts.join(' ') : formatEngineForCard(engine.fuelType, engine.displacement);
 }
 
@@ -204,6 +204,6 @@ export function formatPriceShort(msrp?: number | null, isEstimated = false): str
 
 export function cardStatClass(value: string): string {
   return isUnavailableFormatted(value)
-    ? 'text-lg font-bold text-zinc-600 italic text-sm'
+    ? 'text-lg font-bold text-zinc-400 italic text-sm'
     : 'text-lg font-bold';
 }

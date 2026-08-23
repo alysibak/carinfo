@@ -265,7 +265,7 @@ export default function Landing() {
     return (
       <>
         {chip.label}{' '}
-        <span className="text-zinc-500 font-tabular">({count.toLocaleString()})</span>
+        <span className="text-zinc-400 font-tabular">({count.toLocaleString()})</span>
       </>
     );
   };
@@ -315,7 +315,7 @@ export default function Landing() {
                   </button>
                   <Link
                     to="/vin"
-                    className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors shrink-0"
+                    className="text-sm text-zinc-400 hover:text-zinc-300 transition-colors shrink-0"
                   >
                     Have a VIN? Look it up directly →
                   </Link>
@@ -384,7 +384,7 @@ export default function Landing() {
                 <p className="text-sm font-medium text-white group-hover:text-zinc-200 transition-colors">
                   {question}
                 </p>
-                <p className="mt-2 text-xs text-zinc-500 leading-relaxed">
+                <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
                   See on {car.year} {car.make} {displayModelLabel(car)} →
                 </p>
               </Link>
@@ -412,7 +412,7 @@ export default function Landing() {
                   {tile.label}
                 </p>
                 {count != null && (
-                  <p className="text-sm text-zinc-500 mt-1.5 font-tabular">
+                  <p className="text-sm text-zinc-400 mt-1.5 font-tabular">
                     {count.toLocaleString()} vehicles
                   </p>
                 )}
@@ -422,7 +422,7 @@ export default function Landing() {
         </div>
         <Link
           to="/browse"
-          className="inline-block mt-6 text-sm text-zinc-500 hover:text-white transition-colors"
+          className="inline-block mt-6 text-sm text-zinc-400 hover:text-white transition-colors"
         >
           All browse categories →
         </Link>
@@ -436,20 +436,20 @@ export default function Landing() {
               title="Already own a car?"
               subtitle="Enter your VIN to see fuel economy, specs, and estimated value for that exact vehicle."
             />
-            <div className="flex border border-zinc-700 rounded-none">
+            <div className="flex flex-col sm:flex-row border border-zinc-700 rounded-none">
               <input
                 value={vinInput}
                 onChange={(e) => setVinInput(e.target.value.toUpperCase().slice(0, 17))}
                 onKeyDown={(e) => e.key === 'Enter' && handleVinSubmit()}
                 placeholder="17-character VIN"
                 spellCheck={false}
-                className="flex-1 h-14 lg:h-16 bg-zinc-950 border-0 px-4 text-base font-mono tracking-widest text-white placeholder:text-zinc-600 focus:outline-none rounded-none uppercase"
+                className="min-w-0 flex-1 h-14 lg:h-16 bg-zinc-950 border-0 px-4 text-base font-mono tracking-widest text-white placeholder:text-zinc-400 focus:outline-none rounded-none uppercase"
               />
               <button
                 type="button"
                 onClick={handleVinSubmit}
                 disabled={vinInput.trim().length < 11}
-                className="h-14 lg:h-16 px-8 bg-white text-black text-sm font-semibold uppercase tracking-widest rounded-none hover:bg-zinc-200 transition-colors shrink-0 disabled:opacity-40 border-l border-zinc-700"
+                className="h-14 lg:h-16 px-6 lg:px-8 bg-white text-black text-sm font-semibold uppercase tracking-widest rounded-none hover:bg-zinc-200 transition-colors shrink-0 disabled:opacity-40 border-t border-zinc-700 sm:border-t-0 sm:border-l"
               >
                 Search by VIN
               </button>
@@ -466,7 +466,7 @@ export default function Landing() {
               E
             </p>
             <p className="text-base font-semibold text-white mb-2">EPA verified</p>
-            <p className="text-sm text-zinc-500 leading-relaxed">
+            <p className="text-sm text-zinc-400 leading-relaxed">
               Fuel economy and powertrain specs from EPA laboratory testing, the same figures on window stickers.
               figures on window stickers.
             </p>
@@ -476,7 +476,7 @@ export default function Landing() {
               N
             </p>
             <p className="text-base font-semibold text-white mb-2">NHTSA when available</p>
-            <p className="text-sm text-zinc-500 leading-relaxed">
+            <p className="text-sm text-zinc-400 leading-relaxed">
               Crash-test safety ratings from NHTSA where they match this EPA configuration.
               Many vehicles share ratings across trims.
             </p>
@@ -486,7 +486,7 @@ export default function Landing() {
               ON
             </p>
             <p className="text-base font-semibold text-white mb-2">Ontario estimates modeled</p>
-            <p className="text-sm text-zinc-500 leading-relaxed">
+            <p className="text-sm text-zinc-400 leading-relaxed">
               Value and ownership cost figures are Ontario-baseline estimates in CAD, built for
               comparison and planning, not live dealer quotes.
             </p>
@@ -514,10 +514,10 @@ export default function Landing() {
                 <p className="text-base sm:text-lg font-semibold text-white tracking-tight group-hover:text-zinc-300 transition-colors">
                   {c.title}
                 </p>
-                <p className="text-sm text-zinc-500 mt-0.5 sm:mt-1 line-clamp-2">{c.subtitle}</p>
+                <p className="text-sm text-zinc-400 mt-0.5 sm:mt-1 line-clamp-2">{c.subtitle}</p>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-xs text-zinc-500 whitespace-nowrap">
+                <p className="text-xs text-zinc-400 whitespace-nowrap">
                   {collectionCounts[c.id] != null
                     ? `${collectionCounts[c.id].toLocaleString()} vehicles`
                     : 'View'}
@@ -532,11 +532,11 @@ export default function Landing() {
         <div className="page-wrap py-10 sm:py-12 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
           <div>
             <p className="text-sm font-semibold text-white">CarInfo</p>
-            <p className="text-sm text-zinc-500 mt-2 max-w-xs leading-relaxed">
+            <p className="text-sm text-zinc-400 mt-2 max-w-xs leading-relaxed">
               EPA specs, NHTSA safety, and plain-English explanations on every vehicle page.
             </p>
           </div>
-          <p className="text-xs text-zinc-600">
+          <p className="text-xs text-zinc-400">
             © {new Date().getFullYear()} CarInfo
           </p>
         </div>
@@ -615,7 +615,7 @@ function ShowcaseCard({
       className="group bg-zinc-950 border-0 overflow-hidden flex flex-col animate-fade-in opacity-0 [animation-fill-mode:forwards] hover:bg-black transition-colors"
       style={style}
     >
-      <p className="text-[10px] uppercase tracking-widest text-zinc-500 border-b border-zinc-800 px-4 py-2">
+      <p className="text-[10px] uppercase tracking-widest text-zinc-400 border-b border-zinc-800 px-4 py-2">
         {theme}
       </p>
       <div className="relative h-24 overflow-hidden border-b border-zinc-800">
@@ -623,13 +623,13 @@ function ShowcaseCard({
       </div>
       <div className="p-4 flex flex-col flex-1 gap-3">
         <div className="border-t border-zinc-800 pt-3">
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-zinc-400">
             {car.year} {car.make}
           </p>
           <h3 className="text-base font-medium text-white tracking-tight group-hover:text-zinc-200 transition-colors">
             {displayModelLabel(car)}
           </h3>
-          {subtitle && <p className="text-xs text-zinc-500 mt-0.5 truncate">{subtitle}</p>}
+          {subtitle && <p className="text-xs text-zinc-400 mt-0.5 truncate">{subtitle}</p>}
         </div>
 
         <div className="mt-auto">
@@ -646,9 +646,9 @@ function ShowcaseCard({
             </p>
           )}
           {secondaryLine && (
-            <p className="text-xs text-zinc-500 mt-2">{secondaryLine}</p>
+            <p className="text-xs text-zinc-400 mt-2">{secondaryLine}</p>
           )}
-          <p className="text-xs text-zinc-600 mt-1">{tertiary}</p>
+          <p className="text-xs text-zinc-400 mt-1">{tertiary}</p>
         </div>
       </div>
     </Link>
@@ -689,7 +689,7 @@ function Stat({ value, label }: { value: string; label: string }) {
       >
         {value}
       </p>
-      <p className="text-[10px] sm:text-xs uppercase tracking-widest text-zinc-500 mt-2">{label}</p>
+      <p className="text-[10px] sm:text-xs uppercase tracking-widest text-zinc-400 mt-2">{label}</p>
     </div>
   );
 }

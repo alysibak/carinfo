@@ -114,13 +114,13 @@ function ProvenanceRow({ entry }: { entry: ProvenanceEntry }) {
 
       </span>
 
-      <span className="flex items-center gap-1.5 shrink-0">
+      <span className="flex min-w-0 items-center justify-end gap-1.5 text-right">
 
         <ProvenanceChip source={entry.source} />
 
         {entry.confidence && (
 
-          <span className="text-[9px] tracking-wider text-zinc-600 uppercase">
+          <span className="min-w-0 truncate text-[9px] tracking-wider text-zinc-400 uppercase">
 
             {entry.confidence}
 
@@ -180,9 +180,9 @@ export default function DataTrustPanel({ dashboard, filter, onFilterChange }: Da
 
           <div>
 
-            <p className="text-[10px] tracking-widest text-zinc-500 uppercase">Data sources</p>
+            <p className="text-[10px] tracking-widest text-zinc-400 uppercase">Data sources</p>
 
-            <p className="text-xs text-zinc-500 mt-1">
+            <p className="text-xs text-zinc-400 mt-1">
 
               Where key values come from and how confident we are.{' '}
 
@@ -208,13 +208,13 @@ export default function DataTrustPanel({ dashboard, filter, onFilterChange }: Da
 
                 onClick={() => onFilterChange(f.id)}
 
-                className={`px-2.5 py-1 text-[10px] tracking-widest uppercase border transition-colors ${
+                className={`min-h-[36px] px-3 py-2 text-[10px] tracking-widest uppercase border transition-colors ${
 
                   filter === f.id
 
                     ? 'border-white text-white bg-zinc-900'
 
-                    : 'border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:border-zinc-600'
+                    : 'border-zinc-700 text-zinc-400 hover:text-zinc-300 hover:border-zinc-600'
 
                 }`}
 

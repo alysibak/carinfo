@@ -16,7 +16,7 @@ function hpPlain(hp: number): string {
 
 function Subheading({ children, source }: { children: React.ReactNode; source?: 'nhtsa' }) {
   return (
-    <p className="text-[10px] tracking-[0.25em] text-zinc-500 uppercase pt-5 pb-2 border-b border-zinc-900 flex items-center gap-2">
+    <p className="text-[10px] tracking-[0.25em] text-zinc-400 uppercase pt-5 pb-2 border-b border-zinc-900 flex items-center gap-2">
       {children}
       {source && <TrustLabel source={source} />}
     </p>
@@ -77,15 +77,15 @@ export default function VinDecoder() {
   return (
     <div className="min-h-screen bg-black text-white">
       <div className="page-wrap py-10 md:py-14">
-        <p className="text-[10px] tracking-[0.3em] text-zinc-500 uppercase mb-3">Tools</p>
-        <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-3">VIN Decoder</h1>
+        <p className="text-[10px] tracking-[0.3em] text-zinc-400 uppercase mb-3">Tools</p>
+        <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-3">VIN Lookup</h1>
         <p className="text-sm text-zinc-400 leading-relaxed max-w-2xl mb-2">
           Paste a vehicle’s 17-character VIN to pull its official specs straight from{' '}
           <span className="text-zinc-200">NHTSA’s free U.S. government database</span>, including{' '}
           <span className="text-zinc-200">horsepower</span> when NHTSA has it on record. Unlike the catalog
           (which uses EPA fuel-economy data, with no engine power), a VIN can unlock real per-vehicle power figures.
         </p>
-        <p className="text-xs text-zinc-600 leading-relaxed max-w-2xl mb-6">
+        <p className="text-xs text-zinc-400 leading-relaxed max-w-2xl mb-6">
           Heads up: NHTSA doesn’t list horsepower for every vehicle. Many EVs and some models simply don’t carry it
           in the VIN record. We show it honestly when it’s there.
         </p>
@@ -97,7 +97,7 @@ export default function VinDecoder() {
             onKeyDown={(e) => e.key === 'Enter' && run(vin)}
             placeholder="e.g. 1HGCM82633A004352"
             spellCheck={false}
-            className="flex-1 h-14 bg-zinc-950 border-0 px-4 text-base font-mono tracking-widest text-white placeholder:text-zinc-600 focus:outline-none uppercase rounded-none"
+            className="flex-1 h-14 bg-zinc-950 border-0 px-4 text-base font-mono tracking-widest text-white placeholder:text-zinc-400 focus:outline-none uppercase rounded-none"
           />
           <button
             onClick={() => run(vin)}
@@ -108,7 +108,7 @@ export default function VinDecoder() {
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 mt-3 text-[11px] text-zinc-600">
+        <div className="flex flex-wrap items-center gap-2 mt-3 text-[11px] text-zinc-400">
           <button
             type="button"
             onClick={() => { setVin(SAMPLE_VIN); run(SAMPLE_VIN); }}
@@ -130,7 +130,7 @@ export default function VinDecoder() {
             {result.make ? (
               <>
                 <div className="border-b border-zinc-900 pb-5 mb-1">
-                  <p className="text-[10px] tracking-[0.3em] text-zinc-600 uppercase mb-1">Decoded vehicle</p>
+                  <p className="text-[10px] tracking-[0.3em] text-zinc-400 uppercase mb-1">Decoded vehicle</p>
                   <h2 className="text-2xl md:text-3xl font-black tracking-tight">
                     {result.year} {result.make} {result.model}
                   </h2>
@@ -139,7 +139,7 @@ export default function VinDecoder() {
                       {[result.trim || result.series, result.bodyClass].filter(Boolean).join(' · ')}
                     </p>
                   )}
-                  <p className="font-mono text-[11px] tracking-widest text-zinc-600 mt-2">{result.vin}</p>
+                  <p className="font-mono text-[11px] tracking-widest text-zinc-400 mt-2">{result.vin}</p>
                 </div>
 
                 {!result.decodedClean && (
@@ -161,15 +161,15 @@ export default function VinDecoder() {
                     <div className="flex items-baseline gap-3">
                       <span className="text-5xl font-black tracking-tighter text-white">{eng.hp}</span>
                       <span className="text-lg font-bold text-zinc-400">hp</span>
-                      {eng.kw != null && <span className="text-xs text-zinc-600">({eng.kw} kW)</span>}
+                      {eng.kw != null && <span className="text-xs text-zinc-400">({eng.kw} kW)</span>}
                     </div>
-                    <p className="text-[12px] text-zinc-500 leading-relaxed mt-2">{hpPlain(eng.hp)}</p>
+                    <p className="text-[12px] text-zinc-400 leading-relaxed mt-2">{hpPlain(eng.hp)}</p>
                     {eng.hpFromKw && (
-                      <p className="text-[10px] text-zinc-600 mt-1">Converted from NHTSA’s kilowatt figure.</p>
+                      <p className="text-[10px] text-zinc-400 mt-1">Converted from NHTSA’s kilowatt figure.</p>
                     )}
                   </div>
                 ) : (
-                  <p className="text-sm text-zinc-500 leading-relaxed py-4">
+                  <p className="text-sm text-zinc-400 leading-relaxed py-4">
                     NHTSA doesn’t list horsepower for this VIN. That’s common. Many vehicles (especially EVs) don’t
                     carry an engine-power value in the VIN record. It usually means “not on file,” not zero power.
                   </p>
@@ -198,7 +198,7 @@ export default function VinDecoder() {
                   value={[result.plantCity, result.plantCountry].filter(Boolean).join(', ') || undefined}
                 />
 
-                <p className="text-[10px] text-zinc-600 leading-relaxed pt-5 mt-2 border-t border-zinc-900">
+                <p className="text-[10px] text-zinc-400 leading-relaxed pt-5 mt-2 border-t border-zinc-900">
                   Source: NHTSA vPIC (vpic.nhtsa.dot.gov), decoded live from the VIN. Horsepower and other fields are
                   shown only where NHTSA has them on record.
                 </p>

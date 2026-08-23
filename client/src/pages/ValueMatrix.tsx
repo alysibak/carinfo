@@ -136,8 +136,8 @@ function useChartHeight() {
 function MatrixLegend() {
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500">
-        <span className="text-[10px] tracking-widest uppercase text-zinc-600">Axes</span>
+      <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-400">
+        <span className="text-[10px] tracking-widest uppercase text-zinc-400">Axes</span>
         <span className="flex items-center gap-1.5">
           X: Est. value <ProvenanceChip source="estimated" />
         </span>
@@ -158,7 +158,7 @@ function MatrixLegend() {
           {style}
         </div>
       ))}
-      <div className="flex items-center gap-2 text-xs text-zinc-500 w-full sm:w-auto sm:ml-2">
+      <div className="flex items-center gap-2 text-xs text-zinc-400 w-full sm:w-auto sm:ml-2">
         <span className="inline-flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-white" />
           <span className="w-3 h-3 rounded-full bg-white" />
@@ -173,7 +173,7 @@ function MatrixLegend() {
 
 export default function ValueMatrix() {
   usePageMeta(
-    'Value Matrix',
+    'Value Chart',
     'Scatter plot of Ontario/CAD estimates against EPA fuel economy, engine size, or emissions with source labels.',
   );
   const [phase, setPhase] = useState<ViewPhase>('choose');
@@ -346,7 +346,7 @@ export default function ValueMatrix() {
       <div className="page-wrap py-6 sm:py-8 border-b border-zinc-900">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Value Matrix</h1>
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Value Chart</h1>
             <p className="text-sm text-zinc-400 mt-1">
               {phase === 'chart' && totalMatched > 0
                 ? `${totalMatched.toLocaleString()} vehicles match · Market map shows the full fleet · Sample dots for drill-down`
@@ -378,15 +378,14 @@ export default function ValueMatrix() {
                     key={preset.id}
                     type="button"
                     onClick={() => applyPreset(preset)}
-                    className="text-left p-6 border border-zinc-700 bg-zinc-950 hover:border-white hover:bg-zinc-900 transition-colors group"
+                    className="flex flex-col items-start text-left p-6 border border-zinc-700 bg-zinc-950 hover:border-white hover:bg-zinc-900 transition-colors group"
                   >
                     <p className="text-sm font-black tracking-wide text-white mb-2 group-hover:underline underline-offset-4">
                       {preset.title}
                     </p>
                     <p className="text-sm text-zinc-400 leading-relaxed">{preset.description}</p>
                     <p className="text-xs text-zinc-400 mt-3">
-                      ~{preset.pointLimit} vehicles · ${(preset.priceRange[0] / 1000).toFixed(0)}k-
-                      ${(preset.priceRange[1] / 1000).toFixed(0)}k
+                      {`~${preset.pointLimit} vehicles · $${(preset.priceRange[0] / 1000).toFixed(0)}k-$${(preset.priceRange[1] / 1000).toFixed(0)}k`}
                     </p>
                   </button>
                 ))}
@@ -541,7 +540,7 @@ export default function ValueMatrix() {
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                 {viewMode !== 'market' && <MatrixLegend />}
                 {viewMode === 'market' && (
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-zinc-400">
                     Cell tint follows the most common body style in that band
                   </p>
                 )}
@@ -653,11 +652,11 @@ export default function ValueMatrix() {
                             <p className="text-sm font-medium text-white truncate">
                               {car.year} {car.make} {car.model}
                             </p>
-                            <p className="text-xs text-zinc-500 capitalize">{car.bodyStyle}</p>
+                            <p className="text-xs text-zinc-400 capitalize">{car.bodyStyle}</p>
                           </div>
                           <div className="text-right shrink-0">
                             <p className="text-sm font-medium text-white">${(car.price / 1000).toFixed(0)}k</p>
-                            <p className="text-xs text-zinc-500">{formatMpgForCard(car.mpg)} MPG</p>
+                            <p className="text-xs text-zinc-400">{formatMpgForCard(car.mpg)} MPG</p>
                           </div>
                         </button>
                       ))}
@@ -721,7 +720,7 @@ export default function ValueMatrix() {
                 )}
               </div>
 
-              <p className="mt-3 text-xs text-zinc-500 text-center sm:text-left">
+              <p className="mt-3 text-xs text-zinc-400 text-center sm:text-left">
                 {viewMode === 'market'
                   ? 'Brightness = vehicle count in that price/efficiency band · click a cell to drill down'
                   : 'Color = body style · size = model year · tap or click a dot for details'}

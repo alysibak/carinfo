@@ -68,7 +68,7 @@ export default function DreamGarage() {
 
             <button
               onClick={confirmAndClear}
-              className="text-xs tracking-[0.3em] text-zinc-400 hover:text-red-500 transition-colors"
+              className="min-h-[44px] px-2 -mr-2 text-xs tracking-[0.3em] text-zinc-400 hover:text-red-500 transition-colors"
             >
               CLEAR
             </button>
@@ -127,19 +127,19 @@ export default function DreamGarage() {
             {/* Garage Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-zinc-800 border border-zinc-800 mb-12">
               <div className="bg-zinc-950 p-4">
-                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-2">Est. total value</p>
+                <p className="text-[10px] uppercase tracking-widest text-zinc-400 mb-2">Est. total value</p>
                 <p className="text-3xl font-bold tabular-nums text-white">{formattedValue}</p>
               </div>
               <div className="bg-zinc-950 p-4">
-                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-2">Makes</p>
+                <p className="text-[10px] uppercase tracking-widest text-zinc-400 mb-2">Makes</p>
                 <p className="text-3xl font-bold tabular-nums text-white">{uniqueMakes}</p>
               </div>
               <div className="bg-zinc-950 p-4">
-                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-2">Avg MPG</p>
+                <p className="text-[10px] uppercase tracking-widest text-zinc-400 mb-2">Avg MPG</p>
                 <p className="text-3xl font-bold tabular-nums text-white">{avgMPG}</p>
               </div>
               <div className="bg-zinc-950 p-4">
-                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-2">Vehicles</p>
+                <p className="text-[10px] uppercase tracking-widest text-zinc-400 mb-2">Vehicles</p>
                 <p className="text-3xl font-bold tabular-nums text-white">{garage.length}</p>
               </div>
             </div>

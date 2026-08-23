@@ -20,7 +20,7 @@ export default function DataValue({
   suffix,
   allowZero,
   className = 'text-sm font-bold text-white',
-  missingClassName = 'text-sm font-normal text-zinc-600 italic',
+  missingClassName = 'text-sm font-normal text-zinc-400 italic',
 }: DataValueProps) {
   const text = formatOrFallback(value, { suffix, allowZero });
   if (isUnavailableFormatted(text)) {
@@ -76,7 +76,7 @@ export function DataRow({
         suffix={suffix}
         allowZero={allowZero}
         className={`${valueClass}${isPrimaryPair ? '' : ' text-right'}`}
-        missingClassName="text-xs font-normal text-zinc-600 italic"
+        missingClassName="text-xs font-normal text-zinc-400 italic"
       />
     </div>
   );

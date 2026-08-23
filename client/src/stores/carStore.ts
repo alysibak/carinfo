@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { CarSpecs, SearchQuery, SearchResults } from '../types/car.types';
 import * as api from '../services/api';
 
@@ -27,76 +28,86 @@ interface CarStore {
   loadModels: (make: string) => Promise<void>;
 }
 
-export const useCarStore = create<CarStore>((set, get) => ({
-  // Initial state
-  searchResults: null,
-  searchQuery: {
-    query: '',
-    filters: {},
-    sort: { field: 'year', order: 'desc' },
-    limit: 36,
-    offset: 0,
-  },
-  isSearching: false,
-  searchError: null,
-  comparedCars: [],
-  maxCompared: 5,
-  availableMakes: [],
-  availableModels: [],
+export const useCarStore = create<CarStore>()(
+  persist(
+    (set, get) => ({
+      // Initial state
+      searchResults: null,
+      searchQuery: {
+        query: '',
+        filters: {},
+        sort: { field: 'year', order: 'desc' },
+        limit: 36,
+        offset: 0,
+      },
+      isSearching: false,
+      searchError: null,
+      comparedCars: [],
+      maxCompared: 5,
+      availableMakes: [],
+      availableModels: [],
 
-  // Actions
-  setSearchQuery: (query) => {
-    set({ searchQuery: query });
-  },
+      // Actions
+      setSearchQuery: (query) => {
+        set({ searchQuery: query });
+      },
 
-  performSearch: async () => {
-    set({ isSearching: true, searchError: null });
-    try {
-      const results = await api.searchCars(get().searchQuery);
-      set({ searchResults: results, isSearching: false, searchError: null });
-    } catch (error) {
-      console.error('Search failed:', error);
-      set({ isSearching: false, searchError: 'Search failed. Please try again.' });
-    }
-  },
+      performSearch: async () => {
+        set({ isSearching: true, searchError: null });
+        try {
+          const results = await api.searchCars(get().searchQuery);
+          set({ searchResults: results, isSearching: false, searchError: null });
+        } catch (error) {
+          console.error('Search failed:', error);
+          set({ isSearching: false, searchError: 'Search failed. Please try again.' });
+        }
+      },
 
-  addCarToComparison: (car) => {
-    const { comparedCars, maxCompared } = get();
-    if (comparedCars.length >= maxCompared) {
-      alert(`You can only compare up to ${maxCompared} cars at once`);
-      return;
-    }
-    if (comparedCars.some((c) => c.id === car.id)) {
-      return; // Already in comparison
-    }
-    set({ comparedCars: [...comparedCars, car] });
-  },
+      addCarToComparison: (car) => {
+        const { comparedCars, maxCompared } = get();
+        if (comparedCars.length >= maxCompared) {
+          alert(`You can only compare up to ${maxCompared} cars at once`);
+          return;
+        }
+        if (comparedCars.some((c) => c.id === car.id)) {
+          return; // Already in comparison
+        }
+        set({ comparedCars: [...comparedCars, car] });
+      },
 
-  removeCarFromComparison: (carId) => {
-    set({
-      comparedCars: get().comparedCars.filter((car) => car.id !== carId),
-    });
-  },
+      removeCarFromComparison: (carId) => {
+        set({
+          comparedCars: get().comparedCars.filter((car) => car.id !== carId),
+        });
+      },
 
-  clearComparison: () => {
-    set({ comparedCars: [] });
-  },
+      clearComparison: () => {
+        set({ comparedCars: [] });
+      },
 
-  loadMakes: async () => {
-    try {
-      const makes = await api.getMakes();
-      set({ availableMakes: makes });
-    } catch (error) {
-      console.error('Failed to load makes:', error);
-    }
-  },
+      loadMakes: async () => {
+        try {
+          const makes = await api.getMakes();
+          set({ availableMakes: makes });
+        } catch (error) {
+          console.error('Failed to load makes:', error);
+        }
+      },
 
-  loadModels: async (make) => {
-    try {
-      const models = await api.getModelsByMake(make);
-      set({ availableModels: models });
-    } catch (error) {
-      console.error('Failed to load models:', error);
-    }
-  },
-}));
+      loadModels: async (make) => {
+        try {
+          const models = await api.getModelsByMake(make);
+          set({ availableModels: models });
+        } catch (error) {
+          console.error('Failed to load models:', error);
+        }
+      },
+    }),
+    {
+      name: 'carinfo-compare',
+      // Only the comparison survives a reload — search results and filters are
+      // re-fetched from the URL on every visit.
+      partialize: (state) => ({ comparedCars: state.comparedCars }),
+    },
+  ),
+);

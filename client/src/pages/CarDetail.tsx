@@ -33,7 +33,7 @@ import { usePageMeta } from '../utils/pageMeta';
 
 function Subheading({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[10px] tracking-widest text-zinc-500 uppercase pt-4 pb-1">
+    <p className="text-[10px] tracking-widest text-zinc-400 uppercase pt-4 pb-1">
       {children}
     </p>
   );
@@ -108,10 +108,10 @@ function FuelBar({
   return (
     <div className="py-3 border-b border-zinc-900 last:border-b-0">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] tracking-widest text-zinc-500 uppercase">{label}</span>
+        <span className="text-[10px] tracking-widest text-zinc-400 uppercase">{label}</span>
         <div className="text-right">
           <span className="text-2xl font-bold tabular-nums text-white">{Math.round(value!)}</span>
-          {secondary && <p className="text-xs text-zinc-500 mt-0.5">{secondary}</p>}
+          {secondary && <p className="text-xs text-zinc-400 mt-0.5">{secondary}</p>}
         </div>
       </div>
       <div className="meter-track">
@@ -134,7 +134,7 @@ function PhevDualModeBlock({ modes }: { modes: PhevModes }) {
               {hasNumericValue(modes.electricRangeMi) ? ` · ${modes.electricRangeMi} mi` : ''}
             </span>
           </div>
-          <p className="text-[11px] text-zinc-500 leading-relaxed mt-1">
+          <p className="text-[11px] text-zinc-400 leading-relaxed mt-1">
             Drives on battery power
             {hasNumericValue(modes.electricRangeMi) ? ` for about ${modes.electricRangeMi} miles` : ''} after a full
             charge, like an EV, then switches to gas automatically.
@@ -147,13 +147,13 @@ function PhevDualModeBlock({ modes }: { modes: PhevModes }) {
             <span className="text-[10px] tracking-[0.25em] text-zinc-300 uppercase">Gas mode</span>
             <span className="text-sm font-bold text-white">{modes.gasMpg} MPG</span>
           </div>
-          <p className="text-[11px] text-zinc-500 leading-relaxed mt-1">
+          <p className="text-[11px] text-zinc-400 leading-relaxed mt-1">
             Once the battery is used up it runs like a regular hybrid on gasoline. No plugging in required.
           </p>
         </div>
       )}
       {hasNumericValue(modes.chargeL2Hours) && (
-        <p className="text-[11px] text-zinc-500 leading-relaxed">
+        <p className="text-[11px] text-zinc-400 leading-relaxed">
           Recharges in about {modes.chargeL2Hours} h on a 240V Level 2 charger.
         </p>
       )}
@@ -364,11 +364,12 @@ export default function CarDetail() {
               <VehiclePlaceholder car={car} />
             </div>
             <div className="min-w-0">
-              <p className="text-6xl md:text-7xl font-black text-zinc-800 leading-none mb-3 tracking-tight">{car.year}</p>
+              {/* Deliberately recessed, but zinc-800 left the year invisible (1.4:1). */}
+              <p className="text-6xl md:text-7xl font-black text-zinc-500 leading-none mb-3 tracking-tight">{car.year}</p>
               <h1 className="text-3xl font-black uppercase tracking-tight mb-1">{car.make}</h1>
               <p className="text-xl font-medium text-zinc-300 mb-1">{car.model}</p>
               {trimLabel && (
-                <p className="text-xs tracking-widest text-zinc-500 uppercase mb-4">{trimLabel}</p>
+                <p className="text-xs tracking-widest text-zinc-400 uppercase mb-4">{trimLabel}</p>
               )}
               <div className="flex flex-wrap gap-1.5 mb-5">
                 {car.bodyStyle && (
@@ -402,7 +403,7 @@ export default function CarDetail() {
               </div>
               {car.ownershipProfile && (
                 <div className="mb-5 p-4 border border-zinc-800 bg-zinc-950 rounded-none">
-                  <p className="text-[10px] tracking-widest text-zinc-500 uppercase mb-2">Ownership profile</p>
+                  <p className="text-[10px] tracking-widest text-zinc-400 uppercase mb-2">Ownership profile</p>
                   <p className="text-base font-semibold text-white mb-3">{car.ownershipProfile.label}</p>
                   <div className="flex flex-wrap gap-1.5 mb-3">
                     {car.ownershipProfile.tags.map((tag) => (
@@ -411,7 +412,7 @@ export default function CarDetail() {
                       </span>
                     ))}
                   </div>
-                  <p className="text-[10px] tracking-widest text-zinc-500 uppercase mb-2">Best for</p>
+                  <p className="text-[10px] tracking-widest text-zinc-400 uppercase mb-2">Best for</p>
                   <ul className="text-sm text-zinc-400 space-y-1">
                     {car.ownershipProfile.bestFor.map((item) => (
                       <li key={item}>• {item}</li>
@@ -478,7 +479,7 @@ export default function CarDetail() {
         <div className="space-y-3">
           {hasFuelData && (
             <ExpandableSection title="Fuel economy" summary={fuelSummary}>
-              <p className="text-xs text-zinc-500 leading-relaxed pb-2">
+              <p className="text-xs text-zinc-400 leading-relaxed pb-2">
                 EPA test-cycle figures.{' '}
                 <SpecLabel label="What is MPG?" glossaryKey="mpgCombined" />
               </p>
@@ -540,7 +541,7 @@ export default function CarDetail() {
 
           {hasSafety && (
             <ExpandableSection title="Crash safety" summary={safetySummary}>
-              <p className="text-xs text-zinc-500 leading-relaxed pb-2">
+              <p className="text-xs text-zinc-400 leading-relaxed pb-2">
                 NHTSA star ratings for this make, model, and year.{' '}
                 <SpecLabel label="What are NHTSA stars?" glossaryKey="safetyOverall" />
               </p>
@@ -575,9 +576,9 @@ export default function CarDetail() {
 
           {(hasEconomics || hasMarketValue) && (
           <ExpandableSection title="Value & ownership cost" summary={valueSummary}>
-            <p className="text-[10px] text-zinc-600 leading-relaxed pb-3">{CURRENCY_SECTION_NOTE}</p>
+            <p className="text-[10px] text-zinc-400 leading-relaxed pb-3">{CURRENCY_SECTION_NOTE}</p>
             {marketValue.confidenceLabel && (
-              <p className="text-xs text-zinc-500 pb-2">
+              <p className="text-xs text-zinc-400 pb-2">
                 Value confidence: <span className="text-zinc-300">{marketValue.confidenceLabel}</span>
               </p>
             )}
@@ -659,7 +660,7 @@ export default function CarDetail() {
                 <AnnualCostStackBar annualCost={annualCost} />
 
                 <Subheading>Resale projection</Subheading>
-                <p className="text-xs text-zinc-500 leading-relaxed py-2">{resaleImpact.note}</p>
+                <p className="text-xs text-zinc-400 leading-relaxed py-2">{resaleImpact.note}</p>
                 <DataRow
                   label="Projected resale (5 yr)"
                   value={formatCurrencyRange(
@@ -682,7 +683,7 @@ export default function CarDetail() {
                 {ownership.tco5Year && (
                   <>
                     <Subheading>5-year lifecycle</Subheading>
-                    <p className="text-xs text-zinc-500 leading-relaxed py-2">{ownership.tco5Year.disclaimer}</p>
+                    <p className="text-xs text-zinc-400 leading-relaxed py-2">{ownership.tco5Year.disclaimer}</p>
                     <DataRow
                       label={ownership.tco5Year.mode === 'operating' ? 'Annual running cost' : '5-year total'}
                       value={formatCurrencyRange(ownership.tco5Year.low, ownership.tco5Year.high)}
@@ -693,7 +694,7 @@ export default function CarDetail() {
                 )}
               </>
             ) : (
-              <p className="text-xs text-zinc-500 leading-relaxed py-4 border-t border-zinc-900 mt-4">
+              <p className="text-xs text-zinc-400 leading-relaxed py-4 border-t border-zinc-900 mt-4">
                 Running-cost breakdown is not modeled for this configuration
                 {isHydrogen ? ' (hydrogen fuel costs vary too widely)' : ''}.
               </p>

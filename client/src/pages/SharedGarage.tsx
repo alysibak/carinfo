@@ -77,7 +77,7 @@ export default function SharedGarage() {
       <div className="min-h-screen bg-black flex items-center justify-center text-white">
         <div className="text-center px-6">
           <h2 className="text-3xl font-black tracking-tighter mb-3">SHARED GARAGE UNAVAILABLE</h2>
-          <p className="text-sm tracking-widest text-zinc-600 mb-6">{error}</p>
+          <p className="text-sm tracking-widest text-zinc-400 mb-6">{error}</p>
           <Link
             to="/"
             className="inline-flex items-center gap-2 text-xs tracking-[0.3em] text-zinc-400 hover:text-white transition-colors"
@@ -100,7 +100,7 @@ export default function SharedGarage() {
           <div className="flex items-center justify-between max-w-7xl mx-auto">
             <Link
               to="/"
-              className="inline-flex items-center gap-3 text-xs tracking-[0.3em] text-zinc-600 hover:text-white transition-colors group"
+              className="inline-flex items-center gap-3 text-xs tracking-[0.3em] text-zinc-400 hover:text-white transition-colors group"
             >
               <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
@@ -119,7 +119,7 @@ export default function SharedGarage() {
 
             <button
               onClick={saveAllToLocalGarage}
-              className="text-xs tracking-[0.3em] text-zinc-600 hover:text-white transition-colors"
+              className="text-xs tracking-[0.3em] text-zinc-400 hover:text-white transition-colors"
             >
               SAVE TO MY GARAGE
             </button>
@@ -133,7 +133,7 @@ export default function SharedGarage() {
             <h2 className="text-3xl font-black tracking-tighter mb-4">
               NO VEHICLES IN THIS GARAGE
             </h2>
-            <p className="text-lg tracking-wider text-zinc-600 mb-8">
+            <p className="text-lg tracking-wider text-zinc-400 mb-8">
               This shared garage link does not contain any vehicles.
             </p>
             <Link
@@ -158,7 +158,7 @@ export default function SharedGarage() {
 
                   {/* Year */}
                   <div className="mb-4 mt-12">
-                    <p className="text-5xl font-black text-zinc-500 group-hover:text-zinc-300 transition-colors">
+                    <p className="text-5xl font-black text-zinc-400 group-hover:text-zinc-300 transition-colors">
                       {car.year}
                     </p>
                   </div>
@@ -168,7 +168,7 @@ export default function SharedGarage() {
                     <h3 className="text-2xl font-black tracking-tight mb-1 group-hover:tracking-wide transition-all">
                       {car.make.toUpperCase()}
                     </h3>
-                    <p className="text-lg font-light tracking-wider text-zinc-500 group-hover:text-zinc-400 transition-colors">
+                    <p className="text-lg font-light tracking-wider text-zinc-400 group-hover:text-zinc-400 transition-colors">
                       {car.model}
                     </p>
                   </div>

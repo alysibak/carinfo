@@ -25,7 +25,7 @@ function RouteFallback() {
     <div className="min-h-[50vh] bg-black flex items-center justify-center">
       <div className="text-center">
         <div className="inline-block w-10 h-10 border-2 border-zinc-800 border-t-zinc-500 mb-3" />
-        <p className="text-[10px] tracking-widest text-zinc-500 uppercase">Loading</p>
+        <p className="text-[10px] tracking-widest text-zinc-400 uppercase">Loading</p>
       </div>
     </div>
   );

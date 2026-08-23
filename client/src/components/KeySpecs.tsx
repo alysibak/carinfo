@@ -1,7 +1,7 @@
 import type { CarDashboard, CarSpecs, ProvenanceSource } from '../types/car.types';
 import { formatEngineForDetail, formatCurrency, hasNumericValue } from '../utils/dataValue';
 import { displayProvenanceSource } from '../utils/dataTrust';
-import { formatFuelTypeLabel } from '../utils/fuelDisplay';
+import { engineLayoutLabel, formatFuelTypeLabel } from '../utils/fuelDisplay';
 import { displayTrimLabel, formatTransmissionLabel } from '../utils/trimLabel';
 import { efficiencyUnit } from '../utils/fuelLabels';
 import { fiveYearFuelSavings, fuelSavingsShort, phevModes } from '../utils/epaContent';
@@ -73,11 +73,16 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
       glossary: 'displacement',
     });
   }
-  if (!isEv && !isFcev && car.engine.configuration) {
+  const knownLayout =
+    car.engine.configuration &&
+    engineLayoutLabel(car.engine.configuration, car.engine.cylinders) === car.engine.configuration
+      ? car.engine.configuration
+      : null;
+  if (!isEv && !isFcev && knownLayout) {
     pushIf(powertrain, {
       key: 'configuration',
       label: 'Layout',
-      value: car.engine.configuration,
+      value: knownLayout,
       glossary: 'configuration',
     });
   }
@@ -444,7 +449,7 @@ export default function KeySpecs({ dashboard }: { dashboard: CarDashboard }) {
   return (
     <section className="border-b border-zinc-800">
       <div className="max-w-7xl mx-auto px-5 md:px-8 py-6">
-        <p className="text-[10px] tracking-widest text-zinc-500 uppercase mb-4 border-t border-zinc-800 pt-4">
+        <p className="text-[10px] tracking-widest text-zinc-400 uppercase mb-4 border-t border-zinc-800 pt-4">
           Specifications
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6">

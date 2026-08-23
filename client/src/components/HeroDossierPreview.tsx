@@ -36,12 +36,12 @@ function PreviewFuelBar({ dashboard }: { dashboard: CarDashboard }) {
   return (
     <div className="px-4 py-3 border-t border-zinc-800">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] uppercase tracking-widest text-zinc-500">
+        <span className="text-[10px] uppercase tracking-widest text-zinc-400">
           Combined {label}
         </span>
         <div className="text-right">
           <span className="text-2xl font-bold tabular-nums text-white">{Math.round(combined!)}</span>
-          {secondary && <p className="text-xs text-zinc-500 mt-0.5">{secondary}</p>}
+          {secondary && <p className="text-xs text-zinc-400 mt-0.5">{secondary}</p>}
         </div>
       </div>
       <div className="meter-track">
@@ -66,15 +66,15 @@ export default function HeroDossierPreview({ dashboard }: { dashboard: CarDashbo
     >
       <div className="relative">
         <div className="p-4 border-b border-zinc-800">
-          <p className="text-[10px] tracking-widest text-zinc-500 uppercase mb-2">Vehicle dossier</p>
-          <p className="text-xs text-zinc-500 uppercase tracking-wider mb-0.5">
+          <p className="text-[10px] tracking-widest text-zinc-400 uppercase mb-2">Vehicle dossier</p>
+          <p className="text-xs text-zinc-400 uppercase tracking-wider mb-0.5">
             {car.year} {car.make}
           </p>
           <h3 className="text-xl font-bold text-white tracking-tight leading-tight group-hover:text-zinc-200 transition-colors">
             {displayModelLabel(car)}
           </h3>
           {subtitle && (
-            <p className="text-[10px] uppercase tracking-widest text-zinc-500 mt-1">{subtitle}</p>
+            <p className="text-[10px] uppercase tracking-widest text-zinc-400 mt-1">{subtitle}</p>
           )}
           <div className="flex flex-wrap gap-1.5 mt-3">
             {car.bodyStyle && <span className="spec-chip">{car.bodyStyle}</span>}

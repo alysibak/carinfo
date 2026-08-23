@@ -52,10 +52,10 @@ export function SpecExplain({ glossaryKey }: { glossaryKey: SpecGlossaryKey }) {
         onClick={toggle}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
-        className={`w-4 h-4 border text-[10px] shrink-0 transition-colors ${
+        className={`relative w-4 h-4 border text-[10px] shrink-0 transition-colors before:absolute before:-inset-2 before:content-[''] ${
           open
             ? 'border-zinc-400 text-white bg-zinc-800'
-            : 'border-zinc-700 text-zinc-600 hover:text-white hover:border-zinc-500'
+            : 'border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500'
         }`}
         aria-label="Explain this spec"
       >
@@ -70,7 +70,7 @@ export function SpecExplain({ glossaryKey }: { glossaryKey: SpecGlossaryKey }) {
             style={{ top: coords.top, left: coords.left }}
           >
             <p className="text-zinc-300">{what}</p>
-            {why && <p className="text-zinc-500 mt-1.5">{why}</p>}
+            {why && <p className="text-zinc-400 mt-1.5">{why}</p>}
           </div>,
           document.body,
         )}

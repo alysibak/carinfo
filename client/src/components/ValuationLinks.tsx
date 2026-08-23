@@ -24,7 +24,7 @@ export default function ValuationLinks({
   if (compact) {
     return (
       <>
-        <p className="text-xs text-zinc-500 leading-relaxed">
+        <p className="text-xs text-zinc-400 leading-relaxed">
           Market values are Ontario-baseline model estimates in CAD, not live listing quotes.{' '}
           <button
             type="button"
@@ -95,7 +95,7 @@ function MethodologyModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-zinc-500 hover:text-white text-lg leading-none"
+            className="text-zinc-400 hover:text-white text-lg leading-none"
             aria-label="Close"
           >
             ×
@@ -130,11 +130,11 @@ function MethodologyBody({
         marketplaces when you are ready to buy or sell.
       </p>
       {practicalityNote && (
-        <p className="text-zinc-500 border-l-2 border-zinc-800 pl-3">{practicalityNote}</p>
+        <p className="text-zinc-400 border-l-2 border-zinc-800 pl-3">{practicalityNote}</p>
       )}
       {assumptions && (
         <div className="space-y-2">
-          <p className="text-[10px] tracking-[0.2em] text-zinc-500 uppercase">Assumptions</p>
+          <p className="text-[10px] tracking-[0.2em] text-zinc-400 uppercase">Assumptions</p>
           <ul className="space-y-1 list-none">
             <li>Annual driving: {assumptions.annualKm}</li>
             <li>Energy / fuel: {assumptions.energyPriceNote}</li>
@@ -146,8 +146,8 @@ function MethodologyBody({
       )}
       {derivedComparison && (
         <div className="space-y-2">
-          <p className="text-[10px] tracking-[0.2em] text-zinc-500 uppercase">Derived comparison only</p>
-          <p className="text-zinc-500">{derivedComparison.disclaimer}</p>
+          <p className="text-[10px] tracking-[0.2em] text-zinc-400 uppercase">Derived comparison only</p>
+          <p className="text-zinc-400">{derivedComparison.disclaimer}</p>
           {derivedComparison.fuelCostPerMile != null && (
             <p>Fuel / energy per km: {formatCostPerKm(derivedComparison.fuelCostPerMile)}</p>
           )}
