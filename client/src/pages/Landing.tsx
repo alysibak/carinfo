@@ -468,7 +468,6 @@ export default function Landing() {
             <p className="text-base font-semibold text-white mb-2">EPA verified</p>
             <p className="text-sm text-zinc-400 leading-relaxed">
               Fuel economy and powertrain specs from EPA laboratory testing, the same figures on window stickers.
-              figures on window stickers.
             </p>
           </div>
           <div>
