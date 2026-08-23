@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useCarStore } from '../stores/carStore';
 import { useGarageStore } from '../stores/garageStore';
+import AuthHeaderSlot from './AuthHeaderSlot';
 
 interface NavLinkItem {
   to: string;
@@ -34,7 +35,6 @@ interface SiteHeaderProps {
 }
 
 export default function SiteHeader({ trailing, transparentUntilScroll = false }: SiteHeaderProps) {
-  const headerRef = useRef<HTMLElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const comparedCount = useCarStore((s) => s.comparedCars.length);
@@ -45,23 +45,6 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
     if (to === '/compare') return comparedCount;
     return 0;
   };
-
-  useEffect(() => {
-    const el = headerRef.current;
-    if (!el) return;
-    const apply = () => {
-      const h = Math.round(el.getBoundingClientRect().height);
-      if (h > 0) document.documentElement.style.setProperty('--header-height', `${h}px`);
-    };
-    apply();
-    if (typeof ResizeObserver === 'undefined') {
-      window.addEventListener('resize', apply);
-      return () => window.removeEventListener('resize', apply);
-    }
-    const observer = new ResizeObserver(apply);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
 
   useEffect(() => {
     if (!transparentUntilScroll) return;
@@ -82,7 +65,6 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
 
   return (
     <header
-      ref={headerRef}
       className={`sticky top-0 z-50 transition-colors duration-150 ${
         showBorder
           ? 'border-b border-zinc-900 bg-black/90 backdrop-blur-md'
@@ -107,7 +89,7 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
                 `text-xs uppercase tracking-widest px-3 py-2 transition-colors border-b-2 ${
                   isActive
                     ? 'text-white border-white'
-                    : 'text-zinc-400 border-transparent hover:text-zinc-300'
+                    : 'text-zinc-500 border-transparent hover:text-zinc-300'
                 }`
               }
             >
@@ -119,6 +101,9 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
 
         <div className="flex items-center gap-2 shrink-0">
           {trailing}
+          <div className="hidden sm:block">
+            <AuthHeaderSlot />
+          </div>
           <button
             type="button"
             className="lg:hidden p-2 -mr-2 text-zinc-400 hover:text-white transition-colors"
@@ -140,7 +125,7 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
       </div>
 
       {menuOpen && (
-        <div className="lg:hidden fixed inset-0 top-[var(--header-height)] z-40 bg-black/95 backdrop-blur-sm">
+        <div className="lg:hidden fixed inset-0 top-[52px] z-40 bg-black/95 backdrop-blur-sm">
           <nav className="page-wrap py-4 flex flex-col divide-y divide-zinc-800 border-t border-zinc-800">
             {NAV_LINKS.map((item) => (
               <NavLink
@@ -157,6 +142,9 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
                 <Badge count={badgeFor(item.to)} />
               </NavLink>
             ))}
+            <div className="py-4">
+              <AuthHeaderSlot onNavigate={() => setMenuOpen(false)} />
+            </div>
           </nav>
         </div>
       )}

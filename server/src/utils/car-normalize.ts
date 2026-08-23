@@ -80,7 +80,7 @@ export function formatAnnualFuelCost(car: Car): { text: string; isReliable: bool
       return { text: `$${cost.toLocaleString()}/yr (EPA est.)`, isReliable: true };
     }
     return {
-      text: 'Not rated — hydrogen price varies by station & region',
+      text: 'Not rated. Hydrogen price varies by station and region',
       isReliable: false,
     };
   }

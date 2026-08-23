@@ -226,19 +226,19 @@ export function estimateBatteryHealth(car: CarSpecs): BatteryHealthEstimate | un
   let chemistryNote = 'Modern lithium-ion pack (estimated)';
 
   if (key.includes('leaf') && car.year <= 2016) {
-    chemistryNote = 'Early Leaf — air-cooled pack, higher degradation risk';
+    chemistryNote = 'Early Leaf. Air-cooled pack, higher degradation risk';
     factor = age <= 3 ? 0.82 : age <= 6 ? 0.68 : age <= 10 ? 0.55 : 0.42;
   } else if (key.includes('leaf')) {
-    chemistryNote = 'Leaf — moderate battery aging expected with age';
+    chemistryNote = 'Leaf. Moderate battery aging expected with age';
     factor = age <= 3 ? 0.9 : age <= 6 ? 0.78 : age <= 10 ? 0.65 : 0.5;
   } else if (key.includes('500e') || key.includes('i-miev') || key.includes('focus electric')) {
-    chemistryNote = 'Compliance-era EV — limited range and aging chemistry';
+    chemistryNote = 'Compliance-era EV. Limited range and aging chemistry';
     factor = age <= 4 ? 0.75 : age <= 8 ? 0.58 : 0.4;
   } else if (car.make === 'Tesla') {
-    chemistryNote = 'Tesla pack — relatively strong retention vs early EVs';
+    chemistryNote = 'Tesla pack. Relatively strong retention vs early EVs';
     factor = age <= 3 ? 0.96 : age <= 6 ? 0.88 : age <= 10 ? 0.78 : 0.68;
   } else if (range > 0 && range < 100) {
-    chemistryNote = 'Short-range pack — degradation weighs heavily on value';
+    chemistryNote = 'Short-range pack. Degradation weighs heavily on value';
     factor = age <= 4 ? 0.72 : age <= 8 ? 0.58 : 0.45;
   } else {
     factor = age <= 3 ? 0.95 : age <= 6 ? 0.85 : age <= 10 ? 0.72 : 0.58;
@@ -250,10 +250,10 @@ export function estimateBatteryHealth(car: CarSpecs): BatteryHealthEstimate | un
 
   factor = Math.max(0.35, Math.min(1, factor));
 
-  let label = '90–100% (excellent)';
+  let label = '90-100% (excellent)';
   if (factor < 0.6) label = 'Below 60% (poor)';
-  else if (factor < 0.75) label = '60–74% (fair)';
-  else if (factor < 0.9) label = '75–89% (good)';
+  else if (factor < 0.75) label = '60-74% (fair)';
+  else if (factor < 0.9) label = '75-89% (good)';
 
   return { factor, label, chemistryNote };
 }
@@ -321,6 +321,91 @@ function roundMoney(n: number): number {
   return Math.round(n / 500) * 500;
 }
 
+export { roundMoney };
+
+export type MsrpAnchorSource = 'model-rule' | 'curated-price' | 'segment-inferred';
+
+/** How the MSRP anchor was derived — drives valuation confidence (not the dollar value). */
+export function assessMsrpAnchor(car: CarSpecs): { source: MsrpAnchorSource; confidence: Confidence } {
+  if (MODEL_MSRP_RULES.some((r) => r.test(car))) {
+    return { source: 'model-rule', confidence: 'high' };
+  }
+  if (car.price?.msrp != null && car.price.isEstimated === false) {
+    return { source: 'curated-price', confidence: 'high' };
+  }
+  const hasBrandCalibration =
+    LUXURY_MAKES.has(car.make) ||
+    EXOTIC_MAKES.has(car.make) ||
+    BRAND_RETENTION[car.make] != null;
+  if (!hasBrandCalibration) {
+    return { source: 'segment-inferred', confidence: 'low' };
+  }
+  return { source: 'segment-inferred', confidence: 'medium' };
+}
+
+export const LOW_VOLUME_CONFIDENCE_LABEL =
+  'Limited comparable data for low-volume vehicles. Estimate is approximate.';
+
+/** True when projected resale is physically implausible relative to current value. */
+export function isImplausibleResaleProjection(
+  market: MarketValueEstimate,
+  projectedResale: { low: number; mid: number; high: number },
+): boolean {
+  const currentMid = market.mid;
+  if (currentMid <= 0) return false;
+  const { mid: resaleMid, high: resaleHigh } = projectedResale;
+  if (resaleMid / currentMid < 0.05) return true;
+  if (currentMid >= 10_000 && resaleHigh < 500) return true;
+  return false;
+}
+
+/** Widen bands and de-rate confidence when resale projection fails plausibility checks. */
+export function applyValuationReliabilityGuard(
+  market: MarketValueEstimate,
+  resale: {
+    currentValue: { low: number; high: number; mid: number };
+    projectedResale5Year: { low: number; mid: number; high: number };
+    estimatedLoss5Year: { low: number; mid: number; high: number };
+    note: string;
+  },
+): {
+  market: MarketValueEstimate;
+  resale: typeof resale;
+} {
+  if (!isImplausibleResaleProjection(market, resale.projectedResale5Year)) {
+    return { market, resale };
+  }
+
+  const halfSpan = Math.max(market.mid * 0.35, 4_000);
+  const adjustedMarket: MarketValueEstimate = {
+    ...market,
+    confidence: 'low',
+    confidenceLabel: LOW_VOLUME_CONFIDENCE_LABEL,
+    low: roundMoney(Math.max(0, market.mid - halfSpan)),
+    high: roundMoney(market.mid + halfSpan),
+    conditionBands: undefined,
+  };
+
+  const resaleLow = Math.max(0, Math.round(adjustedMarket.low * 0.12));
+  const resaleHigh = Math.round(adjustedMarket.high * 0.72);
+  const resaleMid = Math.round((resaleLow + resaleHigh) / 2);
+
+  return {
+    market: adjustedMarket,
+    resale: {
+      ...resale,
+      currentValue: {
+        low: adjustedMarket.low,
+        high: adjustedMarket.high,
+        mid: adjustedMarket.mid,
+      },
+      projectedResale5Year: { low: resaleLow, mid: resaleMid, high: resaleHigh },
+      note:
+        'Depreciation is realized when you sell, not a per-mile driving expense. Resale projection assumes typical condition. High uncertainty for this vehicle; resale band is illustrative only.',
+    },
+  };
+}
+
 function conditionMultiplier(bhf: number): { poor: number; average: number; excellent: number } {
   return {
     poor: Math.max(0.55, bhf - 0.18),
@@ -371,20 +456,28 @@ export function estimateMarketValue(car: CarSpecs): MarketValueEstimate {
   if (mid > high) mid = roundMoney((low + high) / 2);
 
   let confidence: Confidence = 'medium';
-  let confidenceLabel = 'Ontario-baseline model estimate — not a live listing quote';
+  let confidenceLabel = 'Ontario-baseline model estimate, not a live listing quote';
 
-  if (MODEL_MSRP_RULES.some((r) => r.test(car))) {
+  const anchor = assessMsrpAnchor(car);
+  if (anchor.confidence === 'low') {
+    confidence = 'low';
+    confidenceLabel = LOW_VOLUME_CONFIDENCE_LABEL;
+  } else if (anchor.confidence === 'high' && anchor.source === 'model-rule') {
+    confidence = 'high';
+    confidenceLabel = 'Model-anchored CAD value with age and condition curve';
+  } else if (anchor.source === 'curated-price') {
     confidence = 'high';
     confidenceLabel = 'Model-anchored CAD value with age and condition curve';
   } else if (fuelType === 'electric' && age > 10) {
-    confidenceLabel = 'Model estimate — older EV values vary by battery health';
+    confidenceLabel = 'Model estimate. Older EV values vary by battery health';
   } else if (fuelType === 'hydrogen') {
     confidence = 'low';
-    confidenceLabel = 'Rare FCEV — thin market, infrastructure risk, high value uncertainty';
+    confidenceLabel = 'Rare FCEV. Thin market, infrastructure risk, high value uncertainty';
   } else if (segment === 'exotic') {
-    confidenceLabel = 'Thin-market vehicle — estimate uses segment baseline';
+    confidence = 'low';
+    confidenceLabel = 'Thin-market vehicle. Estimate uses segment baseline';
   } else if (age > 15) {
-    confidenceLabel = 'Aged vehicle — condition affects value more than age curve';
+    confidenceLabel = 'Aged vehicle. Condition affects value more than age curve';
   }
 
   return {

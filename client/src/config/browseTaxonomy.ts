@@ -91,9 +91,9 @@ export const LIFESTYLE_PRESETS: BrowsePreset[] = [
 
 export const PRICE_BUCKETS: BucketOption[] = [
   { id: 'under-15', label: 'Under $15k', description: 'Budget picks', filters: { price: { max: 15000 } } },
-  { id: '15-25', label: '$15k–$25k', filters: { price: { min: 15000, max: 25000 } } },
-  { id: '25-40', label: '$25k–$40k', filters: { price: { min: 25000, max: 40000 } } },
-  { id: '40-60', label: '$40k–$60k', filters: { price: { min: 40000, max: 60000 } } },
+  { id: '15-25', label: '$15k-$25k', filters: { price: { min: 15000, max: 25000 } } },
+  { id: '25-40', label: '$25k-$40k', filters: { price: { min: 25000, max: 40000 } } },
+  { id: '40-60', label: '$40k-$60k', filters: { price: { min: 40000, max: 60000 } } },
   { id: '60-plus', label: '$60k+', filters: { price: { min: 60000 } } },
 ];
 
@@ -101,9 +101,9 @@ export const YEAR_BUCKETS: BucketOption[] = [
   { id: '2024', label: '2024', filters: { year: { min: 2024, max: 2024 } } },
   { id: '2020s', label: '2020+', description: 'Current gen', filters: { year: { min: 2020 } } },
   { id: '2015s', label: '2015+', filters: { year: { min: 2015 } } },
-  { id: '2010s', label: '2010–2019', filters: { year: { min: 2010, max: 2019 } } },
-  { id: '2000s', label: '2000–2009', filters: { year: { min: 2000, max: 2009 } } },
-  { id: 'classic', label: '1995–1999', description: 'Classic era', filters: { year: { min: 1995, max: 1999 } } },
+  { id: '2010s', label: '2010-2019', filters: { year: { min: 2010, max: 2019 } } },
+  { id: '2000s', label: '2000-2009', filters: { year: { min: 2000, max: 2009 } } },
+  { id: 'classic', label: '1995-1999', description: 'Classic era', filters: { year: { min: 1995, max: 1999 } } },
 ];
 
 export const MPG_BUCKETS: BucketOption[] = [

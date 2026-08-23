@@ -59,17 +59,17 @@ function estimatedAnnualFuelCostCad(car: CarSpecs): number | null {
 }
 
 export function annualFuelCostDetail(car: CarSpecs): string | undefined {
+  const formatted = formatAnnualFuelCostCadDisplay(car);
+  if (formatted) return formatted;
   if (car.engine.fuelType === 'hydrogen') {
-    const cost = estimatedAnnualFuelCostCad(car);
-    if (cost != null && cost > 0) {
-      return `$${cost.toLocaleString()} ${DISPLAY_CURRENCY}/yr fuel (est.)`;
-    }
     return 'H₂ cost not rated by EPA; varies by station';
   }
-
-  const cost = estimatedAnnualFuelCostCad(car);
-  if (cost != null && cost > 0) {
-    return `$${cost.toLocaleString()} ${DISPLAY_CURRENCY}/yr fuel (est.)`;
-  }
   return undefined;
+}
+
+/** Ontario/CAD annual fuel or energy cost for UI display (matches ownership energy model). */
+export function formatAnnualFuelCostCadDisplay(car: CarSpecs): string | null {
+  const cost = estimatedAnnualFuelCostCad(car);
+  if (cost == null || cost <= 0) return null;
+  return `$${cost.toLocaleString()} ${DISPLAY_CURRENCY}/yr (est.)`;
 }

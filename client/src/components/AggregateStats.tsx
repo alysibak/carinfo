@@ -21,12 +21,12 @@ export default function AggregateStats({ cars, title = 'MARKET OVERVIEW' }: Aggr
 
       <div className="space-y-3 mb-6 divide-y divide-zinc-900">
         <div className="flex justify-between items-baseline py-2">
-          <span className="text-xs tracking-widest text-zinc-400 uppercase">Vehicles</span>
+          <span className="text-xs tracking-widest text-zinc-500 uppercase">Vehicles</span>
           <span className="text-2xl font-bold tabular-nums text-white">{stats.count.toLocaleString()}</span>
         </div>
 
         <div className="flex justify-between items-baseline py-2">
-          <span className="text-xs tracking-widest text-zinc-400 uppercase">Avg price</span>
+          <span className="text-xs tracking-widest text-zinc-500 uppercase">Avg price</span>
           <span className="text-2xl font-bold tabular-nums text-white">
             ${(stats.avgPrice / 1000).toFixed(0)}k
           </span>
@@ -34,13 +34,13 @@ export default function AggregateStats({ cars, title = 'MARKET OVERVIEW' }: Aggr
 
         {stats.avgHorsepower > 0 && (
           <div className="flex justify-between items-baseline py-2">
-            <span className="text-xs tracking-widest text-zinc-400 uppercase">Avg power</span>
+            <span className="text-xs tracking-widest text-zinc-500 uppercase">Avg power</span>
             <span className="text-2xl font-bold tabular-nums text-white">{stats.avgHorsepower} HP</span>
           </div>
         )}
 
         <div className="flex justify-between items-baseline py-2">
-          <span className="text-xs tracking-widest text-zinc-400 uppercase">Avg MPG</span>
+          <span className="text-xs tracking-widest text-zinc-500 uppercase">Avg MPG</span>
           <span className="text-2xl font-bold tabular-nums text-white">{stats.avgMpg}</span>
         </div>
 
@@ -54,7 +54,7 @@ export default function AggregateStats({ cars, title = 'MARKET OVERVIEW' }: Aggr
 
       {/* Standout Vehicles */}
       <div className="space-y-4 pt-6 border-t border-zinc-900">
-        <h3 className="text-sm font-black tracking-wider uppercase text-zinc-400 mb-4">
+        <h3 className="text-sm font-black tracking-wider uppercase text-zinc-600 mb-4">
           Standout Vehicles
         </h3>
 
@@ -85,7 +85,7 @@ export default function AggregateStats({ cars, title = 'MARKET OVERVIEW' }: Aggr
             <p className="text-sm font-bold text-white">
               {stats.bestValue.year} {stats.bestValue.make}
             </p>
-            <p className="text-xs text-zinc-400">{stats.bestValue.model}</p>
+            <p className="text-xs text-zinc-500">{stats.bestValue.model}</p>
           </button>
         )}
 
@@ -116,7 +116,7 @@ export default function AggregateStats({ cars, title = 'MARKET OVERVIEW' }: Aggr
             <p className="text-sm font-bold text-white">
               {stats.highestPower.year} {stats.highestPower.make}
             </p>
-            <p className="text-xs text-zinc-400">
+            <p className="text-xs text-zinc-500">
               {stats.highestPower.model} • {stats.highestPower.engine.horsepower} HP
             </p>
           </button>
@@ -149,7 +149,7 @@ export default function AggregateStats({ cars, title = 'MARKET OVERVIEW' }: Aggr
             <p className="text-sm font-bold text-white">
               {stats.bestEconomy.year} {stats.bestEconomy.make}
             </p>
-            <p className="text-xs text-zinc-400">
+            <p className="text-xs text-zinc-500">
               {stats.bestEconomy.model} • {stats.bestEconomy.fuelEconomy.combined} MPG
             </p>
           </button>
@@ -159,7 +159,7 @@ export default function AggregateStats({ cars, title = 'MARKET OVERVIEW' }: Aggr
       {/* Body Style Breakdown */}
       {Object.keys(stats.bodyStyleBreakdown).length > 0 && (
         <div className="pt-6 mt-6 border-t border-zinc-900">
-          <h3 className="text-sm font-black tracking-wider uppercase text-zinc-400 mb-4">
+          <h3 className="text-sm font-black tracking-wider uppercase text-zinc-600 mb-4">
             Body Style Mix
           </h3>
           <div className="space-y-2">
@@ -171,7 +171,7 @@ export default function AggregateStats({ cars, title = 'MARKET OVERVIEW' }: Aggr
                 return (
                   <div key={style}>
                     <div className="flex justify-between items-center mb-1">
-                      <span className="text-xs tracking-wider text-zinc-400 capitalize">
+                      <span className="text-xs tracking-wider text-zinc-500 capitalize">
                         {style}
                       </span>
                       <span className="text-xs font-bold text-white">

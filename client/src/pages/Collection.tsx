@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import * as api from '../services/api';
 import type { CarSpecs } from '../types/car.types';
@@ -34,6 +34,7 @@ export default function Collection() {
   const [viewMode, setViewMode] = useState<ViewMode>('models');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(24);
+  const navigate = useNavigate();
 
   const collection = collectionId ? COLLECTIONS[collectionId] : null;
   const isCurated = Boolean(collection?.display?.dedupeByModel);
@@ -232,7 +233,7 @@ export default function Collection() {
                     <button
                       type="button"
                       onClick={() => setSelectedBodyStyles([])}
-                      className="px-3 py-1.5 text-[11px] uppercase tracking-[0.2em] text-zinc-400 hover:text-white"
+                      className="px-3 py-1.5 text-[11px] uppercase tracking-[0.2em] text-zinc-500 hover:text-white"
                     >
                       Clear
                     </button>
@@ -265,7 +266,7 @@ export default function Collection() {
             </div>
 
             {isCurated && viewMode === 'models' && (
-              <p className="text-[11px] tracking-[0.2em] text-zinc-400 mt-4 text-center uppercase">
+              <p className="text-[11px] tracking-[0.2em] text-zinc-500 mt-4 text-center uppercase">
                 One best pick per model, ranked by value · switch to all trims for every year &amp; variant
               </p>
             )}
@@ -365,7 +366,7 @@ export default function Collection() {
 
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6 text-[11px] tracking-[0.25em] text-zinc-400">
               <div>
-                SHOWING {startIndex + 1}–{Math.min(endIndex, filteredCars.length)} OF {filteredCars.length}
+                SHOWING {startIndex + 1}-{Math.min(endIndex, filteredCars.length)} OF {filteredCars.length}
               </div>
 
               <div className="flex items-center gap-4">
@@ -415,7 +416,8 @@ export default function Collection() {
                 return (
                   <div
                     key={car.id}
-                    className="bg-black p-8 hover:bg-zinc-950 transition-all duration-300 group border border-zinc-900 hover:border-zinc-700 focus-within:border-zinc-600 relative"
+                    onClick={() => navigate(`/car/${car.id}`)}
+                    className="bg-black p-8 hover:bg-zinc-950 transition-all duration-300 cursor-pointer group border border-zinc-900 hover:border-zinc-700 relative"
                   >
                     {showRankBadge && (
                       <div className="absolute top-4 right-4">
@@ -426,16 +428,11 @@ export default function Collection() {
                     )}
 
                     <div className="mb-6 pr-20">
-                      <p className="text-[11px] font-medium tracking-[0.3em] text-zinc-400 uppercase mb-2">
+                      <p className="text-[11px] font-medium tracking-[0.3em] text-zinc-500 uppercase mb-2">
                         {car.year}
                       </p>
                       <h3 className="text-2xl font-black tracking-tight leading-none mb-1 group-hover:tracking-wide transition-all">
-                        <Link
-                          to={`/car/${car.id}`}
-                          className="after:absolute after:inset-0 focus:outline-none"
-                        >
-                          {car.make.toUpperCase()}
-                        </Link>
+                        {car.make.toUpperCase()}
                       </h3>
                       <p className="text-lg font-light tracking-wide text-zinc-300 group-hover:text-white transition-colors">
                         {car.model}
@@ -481,7 +478,7 @@ export default function Collection() {
                         </p>
                       </div>
                     </div>
-                    <p className="text-[11px] text-zinc-400 mb-4">
+                    <p className="text-[11px] text-zinc-500 mb-4">
                       Est. value {formatPriceShort(car.price?.msrp, car.price?.isEstimated)}
                     </p>
 

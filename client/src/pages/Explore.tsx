@@ -67,7 +67,7 @@ export default function Explore() {
                   <p className="text-xs text-zinc-400">{type.description}</p>
                 </div>
                 {stats.bodyStyles?.[type.id] != null && (
-                  <span className="text-xs text-zinc-400">{stats.bodyStyles[type.id].toLocaleString()}</span>
+                  <span className="text-xs text-zinc-500">{stats.bodyStyles[type.id].toLocaleString()}</span>
                 )}
               </Link>
             ))}

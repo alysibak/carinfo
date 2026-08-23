@@ -58,11 +58,11 @@ export default function VehiclePlaceholder({
       )}
       {!hideCaption && !compact && (
         <div className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-black via-black/75 to-transparent">
-          <p className="text-[10px] tracking-widest text-zinc-400 uppercase">{car.year}</p>
+          <p className="text-[10px] tracking-widest text-zinc-500 uppercase">{car.year}</p>
           <p className="text-sm font-bold text-white truncate">
             {car.make} {displayModelLabel(car)}
           </p>
-          <p className="text-[9px] tracking-wider text-zinc-400 mt-1 uppercase">Body-type illustration</p>
+          <p className="text-[9px] tracking-wider text-zinc-600 mt-1 uppercase">Body-type illustration</p>
         </div>
       )}
     </div>

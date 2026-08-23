@@ -18,7 +18,7 @@ describe('DataTrustPanel', () => {
     renderPanel({ dashboard: trustDashboard, filter: 'all', onFilterChange: vi.fn() });
 
     expect(screen.getByText('Data sources')).toBeInTheDocument();
-    expect(screen.getByText('Fuel economy')).toBeInTheDocument();
+    expect(screen.getByText('Combined fuel economy')).toBeInTheDocument();
     expect(screen.getByText('Horsepower')).toBeInTheDocument();
     expect(screen.getAllByText('EPA').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Est.').length).toBeGreaterThan(0);

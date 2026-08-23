@@ -3,9 +3,11 @@ import type { CarDashboard, CarSpecs, SearchQuery, SearchResults } from '../type
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api';
 
+const API_TIMEOUT_MS = Number(import.meta.env.VITE_API_TIMEOUT_MS) || 60_000;
+
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  timeout: API_TIMEOUT_MS,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -167,7 +169,7 @@ export async function getChartPoints(params: {
   yearMin?: number;
   yearMax?: number;
   limit?: number;
-}): Promise<{ points: ChartPoint[]; total: number }> {
+}): Promise<{ points: ChartPoint[]; total: number; returned: number }> {
   const query = new URLSearchParams();
   if (params.priceMin != null) query.set('priceMin', String(params.priceMin));
   if (params.priceMax != null) query.set('priceMax', String(params.priceMax));
@@ -176,6 +178,46 @@ export async function getChartPoints(params: {
   if (params.yearMax != null) query.set('yearMax', String(params.yearMax));
   if (params.limit != null) query.set('limit', String(params.limit));
   const response = await api.get(`/cars/stats/chart-points?${query.toString()}`);
+  return response.data.data;
+}
+
+export interface ChartDensityCell {
+  priceMin: number;
+  priceMax: number;
+  yMin: number;
+  yMax: number;
+  count: number;
+  dominantBodyStyle: string;
+}
+
+export interface ChartDensityResult {
+  total: number;
+  metric: 'mpg' | 'displacement' | 'co2';
+  priceMin: number;
+  priceMax: number;
+  yMin: number;
+  yMax: number;
+  priceBins: number;
+  yBins: number;
+  cells: ChartDensityCell[];
+}
+
+export async function getChartDensity(params: {
+  priceMin?: number;
+  priceMax?: number;
+  bodyStyles?: string[];
+  yearMin?: number;
+  yearMax?: number;
+  metric?: 'mpg' | 'displacement' | 'co2';
+}): Promise<ChartDensityResult> {
+  const query = new URLSearchParams();
+  if (params.priceMin != null) query.set('priceMin', String(params.priceMin));
+  if (params.priceMax != null) query.set('priceMax', String(params.priceMax));
+  if (params.bodyStyles?.length) query.set('bodyStyles', params.bodyStyles.join(','));
+  if (params.yearMin != null) query.set('yearMin', String(params.yearMin));
+  if (params.yearMax != null) query.set('yearMax', String(params.yearMax));
+  if (params.metric) query.set('metric', params.metric);
+  const response = await api.get(`/cars/stats/chart-density?${query.toString()}`);
   return response.data.data;
 }
 

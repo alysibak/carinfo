@@ -61,29 +61,9 @@ export function displayModelLabel(car: ModelCar): string {
 /** EPA / slug tokens that are not consumer-facing trim names. */
 const TRIM_NOISE = new Set([
   'automatic', 'manual', 'auto', 'cvt', 'spd', 'mode', 'clkup', 'av', 'at', 'mt',
-  's6', 's7', 's8', 's10', 'pm', 'sil', 'ems', 'dct', 'pdk', 'tiptronic',
+  's6', 's7', 's8', 's10', 'am', 'pm', 'sil', 'ems', 'dct', 'pdk', 'tiptronic',
   '4wd', '2wd', 'awd', 'fwd', 'rwd', '4x4', '2x4',
-  'cmode', 'vmode', 'lkup', 'variable', 'gear', 'ratios', 'lockup', 'creeper',
 ]);
-
-/**
- * EPA transmission codes that survive tokenization: lock-up/shift-mode markers
- * ("2mode", "3mode", "2lkup") and automated-manual gear counts ("am6", "am7").
- */
-const TRIM_NOISE_PATTERNS = [/^[a-z]{0,2}\d*(?:mode|lkup)$/, /^am\d+$/, /^s\d+$/, /^\d+spd$/];
-
-/**
- * Model-family and body words. As a trim they either repeat the model name
- * ("Golf" on a Golf GTI, "3 Series" on a 318i) or duplicate the body style
- * already shown beside the label, so they carry nothing on their own.
- */
-const GENERIC_MODEL_WORDS = new Set([
-  'series', 'class', 'pickup', 'golf', 'wagon', 'sedan', 'coupe', 'van',
-  'truck', 'convertible', 'hatchback', 'roadster',
-]);
-
-/** Short tokens that are ordinary words, not model codes — "John", not "JOHN". */
-const TITLE_CASE_WORDS = new Set(['john', 'am', 'can']);
 
 const MEANINGFUL_SHORT = new Set([
   'gti', 'gt', 'rs', 'se', 'le', 'ex', 'lx', 'si', 'xse', 'xle', 'sr', 'trd', 'gr',
@@ -92,9 +72,6 @@ const MEANINGFUL_SHORT = new Set([
 
 function titleToken(token: string): string {
   const lower = token.toLowerCase();
-  if (TITLE_CASE_WORDS.has(lower)) {
-    return lower.charAt(0).toUpperCase() + lower.slice(1);
-  }
   if (MEANINGFUL_SHORT.has(lower)) {
     if (lower.length === 1) return lower.toUpperCase();
     return lower.toUpperCase();
@@ -126,17 +103,12 @@ export function displayTrimLabel(car: Pick<CarSpecs, 'trim' | 'model'>): string 
 
   const modelTokens = new Set(model.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean));
   const tokens = rest.split('-').filter(Boolean);
-  const meaningful = tokens.filter((t, i) => {
+  const meaningful = tokens.filter((t) => {
     const lower = t.toLowerCase();
-    // EPA automated-manual code reads "automatic-am-s7"; a bare "am" anywhere
-    // else is part of a real name (Trans Am, Grand Am, Can-Am).
-    if (lower === 'am') return tokens[i - 1]?.toLowerCase() !== 'automatic';
     if (TRIM_NOISE.has(lower)) return false;
-    if (TRIM_NOISE_PATTERNS.some((re) => re.test(lower))) return false;
-    if (GENERIC_MODEL_WORDS.has(lower)) return false;
+    if (/^s\d+$/.test(lower)) return false;
+    if (/^\d+spd$/.test(lower)) return false;
     if (modelTokens.has(lower)) return false;
-    // "M" against model "M3", "SL" against "SL320" — the model already says it.
-    if (lower.length <= 2 && [...modelTokens].some((mt) => mt.startsWith(lower))) return false;
     if (lower.length <= 2 && !MEANINGFUL_SHORT.has(lower)) return false;
     return true;
   });

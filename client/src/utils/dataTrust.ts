@@ -1,4 +1,7 @@
 import type { CarDashboard, CarSpecs, Provenance, ProvenanceSource } from '../types/car.types';
+import type { SpecGlossaryKey } from './specGlossary';
+import { hasNumericValue, hasTextValue } from './dataValue';
+import { formatAnnualFuelCostCadDisplay } from './fuelLabels';
 
 export type TrustFilter = 'all' | 'verified' | 'estimated';
 
@@ -6,16 +9,136 @@ export function isVerifiedSource(source: ProvenanceSource): boolean {
   return source === 'epa' || source === 'nhtsa' || source === 'curated';
 }
 
-const FIELD_LABELS: Record<string, string> = {
-  'price.msrp': 'Market value',
-  'analytics.annualCost': 'Annual running cost',
-  'analytics.tco5Year': '5-year total cost',
+/** Single map from provenance field key to human label for Data Sources and related trust UI. */
+export const PROVENANCE_FIELD_LABELS: Record<string, string> = {
+  bodyStyle: 'Body style',
+  'engine.cylinders': 'Cylinders',
+  'engine.displacement': 'Engine displacement',
   'engine.horsepower': 'Horsepower',
   'engine.fuelType': 'Fuel type',
-  'fuelEconomy.combined': 'Fuel economy',
-  'safetyRating': 'Crash safety',
-  'engine.displacement': 'Engine displacement',
+  fuelType: 'Fuel type',
+  'epa.annualFuelCost': 'Annual fuel cost',
+  'epa.charge120Hours': '120V charge time',
+  'epa.charge240Hours': '240V charge time',
+  'epa.co2': 'CO₂ emissions',
+  'epa.rangeMiles': 'EPA range',
+  'epa.kWhPer100Mi': 'Energy consumption',
+  'fuelEconomy.city': 'City fuel economy',
+  'fuelEconomy.highway': 'Highway fuel economy',
+  'fuelEconomy.combined': 'Combined fuel economy',
+  driveType: 'Drivetrain',
+  transmission: 'Transmission',
+  make: 'Make',
+  model: 'Model',
+  year: 'Year',
+  countryOfOrigin: 'Origin',
+  safetyRating: 'Crash safety',
+  'price.msrp': 'Est. current value',
+  'analytics.annualCost': 'Annual running cost',
+  'analytics.tco5Year': '5-year total cost',
+  'performance.zeroToSixty': '0-60 mph',
 };
+
+export function provenanceFieldLabel(key: string): string | null {
+  return PROVENANCE_FIELD_LABELS[key] ?? null;
+}
+
+/** Glossary keys for Data Sources rows that have explainer copy. */
+export const PROVENANCE_GLOSSARY_KEYS: Partial<Record<string, SpecGlossaryKey>> = {
+  bodyStyle: 'body',
+  'engine.cylinders': 'cylinders',
+  'engine.displacement': 'displacement',
+  'engine.horsepower': 'horsepower',
+  'engine.fuelType': 'fuel',
+  fuelType: 'fuel',
+  'epa.annualFuelCost': 'annualFuelCost',
+  'epa.charge120Hours': 'charge120',
+  'epa.charge240Hours': 'charge240',
+  'epa.co2': 'co2',
+  'epa.rangeMiles': 'epaRange',
+  'epa.kWhPer100Mi': 'kwhPer100mi',
+  'fuelEconomy.city': 'mpgCity',
+  'fuelEconomy.highway': 'mpgHighway',
+  'fuelEconomy.combined': 'mpgCombined',
+  driveType: 'drivetrain',
+  transmission: 'transmission',
+  countryOfOrigin: 'countryOfOrigin',
+  safetyRating: 'safetyOverall',
+  'price.msrp': 'msrp',
+  'performance.zeroToSixty': 'zeroToSixty',
+};
+
+export function provenanceGlossaryKey(fieldKey: string): SpecGlossaryKey | undefined {
+  return PROVENANCE_GLOSSARY_KEYS[fieldKey];
+}
+
+/** How a provenance field should read in trust UI (display may differ from raw stored source). */
+export function displayProvenanceSource(key: string, source: ProvenanceSource): ProvenanceSource {
+  if (key === 'epa.annualFuelCost') return 'estimated';
+  return source;
+}
+
+function provenanceFieldHasValue(dashboard: CarDashboard, key: string): boolean {
+  const { car, ownership, evCharge, zeroToSixty } = dashboard;
+
+  switch (key) {
+    case 'make':
+      return hasTextValue(car.make);
+    case 'model':
+      return hasTextValue(car.model);
+    case 'year':
+      return hasNumericValue(car.year);
+    case 'bodyStyle':
+      return hasTextValue(car.bodyStyle);
+    case 'driveType':
+      return hasTextValue(car.driveType);
+    case 'transmission':
+      return hasTextValue(car.transmission?.type);
+    case 'engine.cylinders':
+      return hasNumericValue(car.engine.cylinders);
+    case 'engine.displacement':
+      return hasNumericValue(car.engine.displacement);
+    case 'engine.horsepower':
+      return hasNumericValue(car.engine.horsepower);
+    case 'engine.fuelType':
+    case 'fuelType':
+      return hasTextValue(car.engine.fuelType);
+    case 'fuelEconomy.city':
+      return hasNumericValue(car.fuelEconomy.city);
+    case 'fuelEconomy.highway':
+      return hasNumericValue(car.fuelEconomy.highway);
+    case 'fuelEconomy.combined':
+      return hasNumericValue(car.fuelEconomy.combined);
+    case 'epa.annualFuelCost':
+      return (
+        formatAnnualFuelCostCadDisplay(car) != null || hasNumericValue(car.epa?.annualFuelCost)
+      );
+    case 'epa.charge120Hours':
+      return hasNumericValue(evCharge?.charge120Hours ?? car.epa?.charge120Hours);
+    case 'epa.charge240Hours':
+      return hasNumericValue(evCharge?.charge240Hours ?? car.epa?.charge240Hours);
+    case 'epa.co2':
+      return car.epa?.co2 != null;
+    case 'epa.rangeMiles':
+      return hasNumericValue(evCharge?.rangeMiles ?? car.epa?.rangeMiles);
+    case 'epa.kWhPer100Mi':
+      return hasNumericValue(evCharge?.kWhPer100Mi ?? car.epa?.kWhPer100Mi);
+    case 'countryOfOrigin':
+      return hasTextValue(car.countryOfOrigin);
+    case 'safetyRating':
+      return hasNumericValue(car.safetyRating?.overall, { allowZero: false });
+    case 'price.msrp':
+      return hasNumericValue(car.price?.msrp) || hasNumericValue(ownership.marketValue.mid);
+    case 'analytics.annualCost':
+      return ownership.annualCost.total != null || ownership.annualCost.energy != null;
+    case 'analytics.tco5Year':
+      return ownership.tco5Year != null;
+    case 'performance.zeroToSixty':
+      return zeroToSixty != null && hasNumericValue(zeroToSixty.value);
+    default:
+      return false;
+  }
+}
 
 export interface ProvenanceEntry {
   key: string;
@@ -25,22 +148,29 @@ export interface ProvenanceEntry {
 }
 
 export function buildProvenanceEntries(dashboard: CarDashboard): ProvenanceEntry[] {
-  const { car, fieldProvenance, zeroToSixty, ownership } = dashboard;
+  const { car, fieldProvenance, zeroToSixty } = dashboard;
   const merged: Provenance = { ...(car.provenance ?? {}), ...fieldProvenance };
   const entries: ProvenanceEntry[] = [];
 
   for (const [key, source] of Object.entries(merged)) {
     if (!source) continue;
-    const label = FIELD_LABELS[key] ?? key;
-    const confidence =
-      key === 'price.msrp' ? ownership.marketValue.confidenceLabel : undefined;
-    entries.push({ key, label, source, confidence });
+    if (!provenanceFieldHasValue(dashboard, key)) continue;
+    const label = provenanceFieldLabel(key);
+    if (!label) {
+      console.warn(`[dataTrust] Unmapped provenance field key skipped: ${key}`);
+      continue;
+    }
+    entries.push({
+      key,
+      label,
+      source: displayProvenanceSource(key, source),
+    });
   }
 
-  if (zeroToSixty) {
+  if (zeroToSixty && provenanceFieldHasValue(dashboard, 'performance.zeroToSixty')) {
     entries.push({
       key: 'performance.zeroToSixty',
-      label: '0–60 mph',
+      label: provenanceFieldLabel('performance.zeroToSixty')!,
       source: zeroToSixty.method === 'actual' ? 'curated' : 'estimated',
       confidence: zeroToSixty.confidence,
     });

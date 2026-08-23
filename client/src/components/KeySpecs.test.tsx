@@ -11,7 +11,7 @@ describe('KeySpecs omit-when-empty', () => {
     expect(screen.queryByText(UNAVAILABLE_LABEL)).not.toBeInTheDocument();
     expect(screen.queryByText('Crash safety')).not.toBeInTheDocument();
     expect(screen.queryByText('Torque')).not.toBeInTheDocument();
-    expect(screen.queryByText('0–60 mph')).not.toBeInTheDocument();
+    expect(screen.queryByText('0-60 mph')).not.toBeInTheDocument();
     expect(screen.queryByText('Emissions score')).not.toBeInTheDocument();
     expect(screen.queryByText('Est. MSRP')).not.toBeInTheDocument();
   });

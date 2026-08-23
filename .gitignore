@@ -142,3 +142,10 @@ build
 .vercel
 
 .vercel
+
+# Pre-built at deploy time (npm run build-runtime-db)
+server/data/cars-ready.json
+
+# Playwright
+test-results/
+

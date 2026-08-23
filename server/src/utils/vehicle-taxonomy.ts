@@ -321,3 +321,20 @@ export function resolveNhtsaSafety(
 
   return undefined;
 }
+
+/**
+ * Resolve country of origin from the NHTSA enrichment cache when a make|model|year
+ * entry carries countryOfOrigin (same key scheme as safety ratings).
+ * Direct key lookup only — fuzzy scan over the full index is too slow at load time.
+ */
+export function resolveNhtsaCountry(
+  car: CarSpecs,
+  countryIndex: Record<string, string>,
+  displayModel?: string,
+): string | undefined {
+  for (const key of nhtsaLookupKeys(car, displayModel)) {
+    const hit = countryIndex[key];
+    if (hit) return hit;
+  }
+  return undefined;
+}

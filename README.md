@@ -950,8 +950,20 @@ npm run start    # Express on :5000 serves API + client/dist
 |----------|---------|---------|
 | `PORT` | `5000` | Server port |
 | `VITE_API_BASE_URL` | `/api` | Client API base URL |
+| `VITE_CLERK_PUBLISHABLE_KEY` | — | Clerk publishable key (enables Sign in UI) |
+| `CLERK_SECRET_KEY` | — | Clerk secret (verifies session JWTs on `/api/me/*`) |
+| `DATABASE_URL` | — | Postgres connection string for users + garage_items |
+| `DATABASE_SSL` | (on) | Set `false` for local Postgres without SSL |
+| `STRIPE_SECRET_KEY` | — | Stripe secret key |
+| `STRIPE_WEBHOOK_SECRET` | — | Stripe webhook signing secret |
+| `STRIPE_PRICE_ID` | — | Recurring Price ID for CarInfo Pro |
+| `APP_ORIGIN` | request host | Public origin for Checkout / portal return URLs |
 
-No `.env` required for local development.
+See [`.env.example`](.env.example). Core browse/dossier works without these; account sync and billing need Clerk + Postgres (+ Stripe for Pro).
+
+**Accounts API:** `GET /api/me/status`, `GET/PUT /api/me/garage`, `POST /api/billing/checkout`, `POST /api/billing/portal`, `POST /api/billing/webhook`.
+
+No `.env` required for local development of the public catalog.
 
 ---
 

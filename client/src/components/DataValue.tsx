@@ -5,6 +5,7 @@ import {
   type FormatOptions,
 } from '../utils/dataValue';
 import type { SpecGlossaryKey } from '../utils/specGlossary';
+import { TIER1_EXPANDABLE, TIER2_VALUE, TIER3_LABEL } from '../utils/visualTiers';
 import { SpecLabel } from './SpecExplain';
 
 interface DataValueProps extends FormatOptions {
@@ -19,7 +20,7 @@ export default function DataValue({
   suffix,
   allowZero,
   className = 'text-sm font-bold text-white',
-  missingClassName = 'text-sm font-normal text-zinc-400 italic',
+  missingClassName = 'text-sm font-normal text-zinc-600 italic',
 }: DataValueProps) {
   const text = formatOrFallback(value, { suffix, allowZero });
   if (isUnavailableFormatted(text)) {
@@ -35,6 +36,8 @@ export function DataRow({
   suffix,
   total,
   glossaryKey,
+  valueTier,
+  pairLayout = false,
 }: {
   label: string;
   value: number | string | null | undefined;
@@ -42,24 +45,47 @@ export function DataRow({
   suffix?: string;
   total?: boolean;
   glossaryKey?: SpecGlossaryKey;
+  /** 1 = decision-critical, 2 = supporting. Omit for legacy dossier row styling. */
+  valueTier?: 1 | 2;
+  /** Constrain label/value pair width for ownership rows. */
+  pairLayout?: boolean;
 }) {
-  return (
+  const labelClass = valueTier != null ? TIER3_LABEL : 'text-xs text-zinc-400';
+  const valueClass =
+    valueTier === 1
+      ? TIER1_EXPANDABLE
+      : valueTier === 2
+        ? TIER2_VALUE
+        : 'text-sm font-bold text-white';
+
+  const isPrimaryPair = pairLayout && valueTier === 1;
+
+  const row = (
     <div
-      className={`flex items-baseline justify-between gap-4 py-2.5 border-b border-zinc-900 last:border-b-0 ${
-        total ? 'border-t border-zinc-700 mt-1 pt-3' : ''
-      }`}
+      className={`flex py-2 border-b border-zinc-900 last:border-b-0 ${
+        isPrimaryPair
+          ? 'flex-col gap-0.5 items-start'
+          : 'items-baseline justify-between gap-3'
+      } ${total ? 'border-t border-zinc-700 mt-2 pt-3' : ''}`}
     >
-      <span className="text-[10px] tracking-widest text-zinc-400 uppercase shrink-0">
+      <span className={`${labelClass} shrink-0`}>
         {glossaryKey ? <SpecLabel label={label} glossaryKey={glossaryKey} /> : label}
       </span>
       <DataValue
         value={value}
         suffix={suffix}
         allowZero={allowZero}
-        className="text-sm font-medium tabular-nums text-white text-right"
+        className={`${valueClass}${isPrimaryPair ? '' : ' text-right'}`}
+        missingClassName="text-xs font-normal text-zinc-600 italic"
       />
     </div>
   );
+
+  if (pairLayout) {
+    return <div className={isPrimaryPair ? 'max-w-sm' : 'max-w-md'}>{row}</div>;
+  }
+
+  return row;
 }
 
 export { UNAVAILABLE_LABEL };

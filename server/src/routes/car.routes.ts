@@ -18,6 +18,7 @@ router.post('/compare', carController.compareCars);
 
 // Get statistics (before /:id to avoid param capture)
 router.get('/stats/overview', carController.getStatistics);
+router.get('/stats/chart-density', carController.getChartDensity);
 router.get('/stats/chart-points', carController.getChartPoints);
 
 // Get car dashboard

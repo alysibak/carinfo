@@ -15,7 +15,7 @@ export default function TrustLabel({
   if (estimated) {
     return (
       <span
-        className={`text-[9px] tracking-widest text-zinc-400 uppercase border border-dashed border-zinc-700 px-1.5 py-0.5 rounded-none ${className}`}
+        className={`text-[9px] tracking-widest text-zinc-600 uppercase border border-dashed border-zinc-700 px-1.5 py-0.5 rounded-none ${className}`}
       >
         Est.
       </span>
@@ -38,7 +38,7 @@ export function InfoTip({
       <span>{label}</span>
       <button
         type="button"
-        className="w-4 h-4 border border-zinc-700 text-[10px] text-zinc-400 hover:text-white hover:border-zinc-500 transition-colors shrink-0"
+        className="w-4 h-4 border border-zinc-700 text-[10px] text-zinc-600 hover:text-white hover:border-zinc-500 transition-colors shrink-0"
         aria-label={`What is ${label}?`}
       >
         ?
@@ -71,11 +71,11 @@ export function ExpandableSection({
         <div>
           <span className="text-xs font-bold tracking-widest text-white uppercase">{title}</span>
           {summary && (
-            <p className="text-[10px] tracking-widest text-zinc-400 uppercase mt-1">{summary}</p>
+            <p className="text-[10px] tracking-widest text-zinc-500 uppercase mt-1">{summary}</p>
           )}
         </div>
-        <span className="text-zinc-400 text-sm font-mono tabular-nums w-4 text-center group-open:hidden">+</span>
-        <span className="text-zinc-400 text-sm font-mono tabular-nums w-4 text-center hidden group-open:inline">−</span>
+        <span className="text-zinc-500 text-sm font-mono tabular-nums w-4 text-center group-open:hidden">+</span>
+        <span className="text-zinc-500 text-sm font-mono tabular-nums w-4 text-center hidden group-open:inline">−</span>
       </summary>
       <div className="px-4 pb-4 pt-3 border-t border-zinc-800 space-y-1">{children}</div>
     </details>

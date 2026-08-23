@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import type { Car } from '../types/car.types.js';
 import { resolveDataFile } from '../utils/data-paths.js';
 import { estimateEvHorsepower } from '../utils/ev-power-estimates.js';
-import { canonicalizeDisplayModel, resolveNhtsaSafety } from '../utils/vehicle-taxonomy.js';
+import { canonicalizeDisplayModel, resolveNhtsaCountry, resolveNhtsaSafety } from '../utils/vehicle-taxonomy.js';
 
 /**
  * Load-time enrichment from offline companion files (no network calls):
@@ -52,21 +52,38 @@ function loadJson<T>(fileName: string): T | null {
   }
 }
 
+interface NhtsaCacheEntry {
+  countryOfOrigin?: string;
+  safetyRating?: SafetyEntry;
+}
+
 let epaEnrichment: Record<string, EpaEnrichmentEntry> = {};
 let nhtsaSafety: Record<string, SafetyEntry> = {};
 let nhtsaByCarId: Record<string, SafetyEntry> = {};
+let nhtsaCountryIndex: Record<string, string> = {};
 let horsepower: Record<string, number> = {};
 let loaded = false;
+
+function buildNhtsaCountryIndex(cache: Record<string, NhtsaCacheEntry>): Record<string, string> {
+  const index: Record<string, string> = {};
+  for (const [key, entry] of Object.entries(cache)) {
+    if (entry.countryOfOrigin) index[key] = entry.countryOfOrigin;
+  }
+  return index;
+}
 
 function ensureLoaded(): void {
   if (loaded) return;
   epaEnrichment = loadJson<Record<string, EpaEnrichmentEntry>>('epa-enrichment.json') ?? {};
   nhtsaSafety = loadJson<Record<string, SafetyEntry>>('nhtsa-safety.json') ?? {};
   nhtsaByCarId = loadJson<Record<string, SafetyEntry>>('nhtsa-by-car-id.json') ?? {};
+  const nhtsaCache =
+    loadJson<Record<string, NhtsaCacheEntry>>('raw/nhtsa-enrichment-cache.json') ?? {};
+  nhtsaCountryIndex = buildNhtsaCountryIndex(nhtsaCache);
   horsepower = loadJson<Record<string, number>>('horsepower-enrichment.json') ?? {};
   loaded = true;
   console.log(
-    `[content-enrichment] Loaded ${Object.keys(epaEnrichment).length} EPA + ${Object.keys(nhtsaSafety).length} NHTSA combos + ${Object.keys(nhtsaByCarId).length} per-car NHTSA + ${Object.keys(horsepower).length} horsepower entries.`,
+    `[content-enrichment] Loaded ${Object.keys(epaEnrichment).length} EPA + ${Object.keys(nhtsaSafety).length} NHTSA combos + ${Object.keys(nhtsaByCarId).length} per-car NHTSA + ${Object.keys(nhtsaCountryIndex).length} NHTSA country entries + ${Object.keys(horsepower).length} horsepower entries.`,
   );
 }
 
@@ -80,8 +97,11 @@ export function enrichCar(car: Car): Car {
     nhtsaByCarId[car.id] ?? resolveNhtsaSafety(car, nhtsaSafety, displayModel);
   const hp = car.epaId != null ? horsepower[String(car.epaId)] : undefined;
   const evHpCandidate = estimateEvHorsepower(car);
+  const nhtsaCountry = car.countryOfOrigin
+    ? resolveNhtsaCountry(car, nhtsaCountryIndex, displayModel)
+    : undefined;
 
-  if (!epaEntry && !safety && hp == null && evHpCandidate == null) return car;
+  if (!epaEntry && !safety && hp == null && evHpCandidate == null && !nhtsaCountry) return car;
 
   const next: Car = { ...car };
 
@@ -141,6 +161,10 @@ export function enrichCar(car: Car): Car {
   if (evHp != null && next.engine.horsepower == null) {
     next.engine = { ...next.engine, horsepower: evHp };
     next.provenance = { ...next.provenance, 'engine.horsepower': 'estimated' };
+  }
+
+  if (nhtsaCountry) {
+    next.provenance = { ...next.provenance, countryOfOrigin: 'nhtsa' };
   }
 
   return next;

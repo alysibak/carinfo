@@ -1,18 +1,23 @@
-import type { CarDashboard, CarSpecs } from '../types/car.types';
+import type { CarDashboard, CarSpecs, ProvenanceSource } from '../types/car.types';
 import { formatEngineForDetail, formatCurrency, hasNumericValue } from '../utils/dataValue';
-import { engineLayoutLabel, formatFuelTypeLabel } from '../utils/fuelDisplay';
+import { displayProvenanceSource } from '../utils/dataTrust';
+import { formatFuelTypeLabel } from '../utils/fuelDisplay';
 import { displayTrimLabel, formatTransmissionLabel } from '../utils/trimLabel';
 import { efficiencyUnit } from '../utils/fuelLabels';
 import { fiveYearFuelSavings, fuelSavingsShort, phevModes } from '../utils/epaContent';
+import { formatAnnualFuelCostCadDisplay } from '../utils/fuelLabels';
 import type { SpecGlossaryKey } from '../utils/specGlossary';
+import { TIER1_SPEC_EMPHASIS, TIER2_VALUE, TIER3_LABEL } from '../utils/visualTiers';
 import { SpecLabel } from './SpecExplain';
 import DataValue from './DataValue';
+import ProvenanceChip from './ProvenanceChip';
 
 interface SpecRow {
   key: string;
   label: string;
   value: string | number | null | undefined;
   glossary?: SpecGlossaryKey;
+  provenanceSource?: ProvenanceSource | null;
 }
 
 interface SpecGroup {
@@ -68,16 +73,11 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
       glossary: 'displacement',
     });
   }
-  const knownLayout =
-    car.engine.configuration &&
-    engineLayoutLabel(car.engine.configuration, car.engine.cylinders) === car.engine.configuration
-      ? car.engine.configuration
-      : null;
-  if (!isEv && !isFcev && knownLayout) {
+  if (!isEv && !isFcev && car.engine.configuration) {
     pushIf(powertrain, {
       key: 'configuration',
       label: 'Layout',
-      value: knownLayout,
+      value: car.engine.configuration,
       glossary: 'configuration',
     });
   }
@@ -161,11 +161,13 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
     });
   }
   if (car.countryOfOrigin) {
+    const raw = car.provenance?.countryOfOrigin;
     pushIf(vehicle, {
       key: 'origin',
       label: 'Origin',
       value: car.countryOfOrigin,
       glossary: 'countryOfOrigin',
+      provenanceSource: raw ? displayProvenanceSource('countryOfOrigin', raw) : null,
     });
   }
   if (car.shoppingSegment) {
@@ -179,7 +181,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
 
   const market: SpecRow[] = [];
   if (hasNumericValue(car.price?.msrp)) {
-    const priceLabel = car.price?.isEstimated ? 'Est. MSRP' : 'MSRP';
+    const priceLabel = car.price?.isEstimated ? 'Est. current value' : 'Current value';
     pushIf(market, {
       key: 'msrp',
       label: priceLabel,
@@ -296,11 +298,12 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
       glossary: 'charge120',
     });
   }
-  if (hasNumericValue(car.epa?.annualFuelCost)) {
+  const annualFuelCad = formatAnnualFuelCostCadDisplay(car);
+  if (annualFuelCad) {
     pushIf(fuel, {
       key: 'annualFuel',
-      label: 'EPA annual fuel cost',
-      value: `$${car.epa!.annualFuelCost!.toLocaleString()} USD/yr`,
+      label: 'Annual fuel cost',
+      value: annualFuelCad,
       glossary: 'annualFuelCost',
     });
   }
@@ -344,7 +347,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (zeroToSixty) {
     pushIf(performance, {
       key: 'zero60',
-      label: '0–60 mph',
+      label: '0-60 mph',
       value: `~${zeroToSixty.value}s${zeroToSixty.method === 'predicted' ? ' (est.)' : ''}`,
       glossary: 'zeroToSixty',
     });
@@ -399,23 +402,38 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
 function SpecGroupBlock({ group }: { group: SpecGroup }) {
   return (
     <div className="border border-zinc-800 min-w-0">
-      <p className="px-3 py-2 text-[10px] tracking-widest text-zinc-400 uppercase bg-zinc-950/80 border-b border-zinc-800">
+      <p className={`px-3 py-2 border-b border-zinc-800 bg-zinc-950/80 ${TIER3_LABEL}`}>
         {group.title}
       </p>
-      {group.rows.map((spec) => (
-        <div
-          key={spec.key}
-          className="flex items-baseline justify-between gap-4 py-2.5 px-3 border-b border-zinc-900 last:border-b-0"
-        >
-          <p className="text-[10px] tracking-widest text-zinc-400 uppercase shrink-0">
-            <SpecLabel label={spec.label} glossaryKey={spec.glossary} />
-          </p>
-          <DataValue
-            value={spec.value}
-            className="text-sm font-medium text-white text-right tabular-nums"
-          />
-        </div>
-      ))}
+      <div className="flex flex-col">
+        {group.rows.map((spec) => (
+          <div
+            key={spec.key}
+            className={`py-1 px-3 border-b border-zinc-900 last:border-b-0 min-w-0 ${
+              spec.key === 'msrp'
+                ? 'flex flex-col gap-0.5'
+                : 'flex items-baseline justify-between gap-4'
+            }`}
+          >
+            <p className={`${TIER3_LABEL} min-w-0`}>
+              <SpecLabel label={spec.label} glossaryKey={spec.glossary} />
+            </p>
+            <div
+              className={`flex items-center gap-1.5 min-w-0 ${
+                spec.key === 'msrp' ? 'flex-wrap' : 'justify-end shrink-0'
+              }`}
+            >
+              <DataValue
+                value={spec.value}
+                className={`${
+                  spec.key === 'msrp' ? TIER1_SPEC_EMPHASIS : TIER2_VALUE
+                } break-words max-w-full ${spec.key === 'msrp' ? '' : 'text-right'}`}
+              />
+              {spec.provenanceSource && <ProvenanceChip source={spec.provenanceSource} />}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -426,14 +444,12 @@ export default function KeySpecs({ dashboard }: { dashboard: CarDashboard }) {
   return (
     <section className="border-b border-zinc-800">
       <div className="max-w-7xl mx-auto px-5 md:px-8 py-6">
-        <p className="text-[10px] tracking-widest text-zinc-400 uppercase mb-4 border-t border-zinc-800 pt-4">
+        <p className="text-[10px] tracking-widest text-zinc-500 uppercase mb-4 border-t border-zinc-800 pt-4">
           Specifications
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-px bg-zinc-800 border border-zinc-800">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6">
           {groups.map((group) => (
-            <div key={group.title} className="bg-black min-w-0">
-              <SpecGroupBlock group={group} />
-            </div>
+            <SpecGroupBlock key={group.title} group={group} />
           ))}
         </div>
       </div>

@@ -58,18 +58,18 @@ export interface SpecGlossaryEntry {
 export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
   engine: {
     plain: 'The motor that powers the car',
-    what: 'The full engine description — size, layout, and fuel type.',
+    what: 'The full engine description: size, layout, and fuel type.',
     why: 'Tells you what you’re actually buying under the hood.',
   },
   displacement: {
-    plain: 'Engine size — not the only measure of power',
+    plain: 'Engine size, not the only measure of power',
     what: 'Liters (L) of air+fuel the engine moves per full cycle. A 1.6L engine is smaller than a 3.5L.',
     why: 'Bigger often means more power, but turbos let small engines punch above their weight.',
   },
   configuration: {
     plain: 'How the cylinders are laid out',
     what: 'I4 = four cylinders in a line. V6/V8 = cylinders in a V shape. H4 = flat/boxer.',
-    why: 'Layout affects smoothness, packaging, and sometimes repair cost — I4 is the everyday default.',
+    why: 'Layout affects smoothness, packaging, and sometimes repair cost. I4 is the everyday default.',
   },
   cylinders: {
     plain: 'More cylinders can feel smoother',
@@ -78,12 +78,12 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
   },
   horsepower: {
     plain: 'Higher = quicker acceleration',
-    what: 'Peak power the engine can put out — like the engine’s top strength.',
+    what: 'Peak power the engine can put out, like the engine’s top strength.',
     why: 'Helps with highway passing and loaded acceleration. Weight and gearing matter too.',
   },
   torque: {
     plain: 'Pulling power from a standstill',
-    what: 'Twisting force in lb-ft — what you feel when you hit the gas from a stop.',
+    what: 'Twisting force in lb-ft, what you feel when you hit the gas from a stop.',
     why: 'High torque makes towing and hill starts easier, even before you’re going fast.',
   },
   drivetrain: {
@@ -139,7 +139,7 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
   epaRange: {
     plain: 'EPA-tested distance on a full charge',
     what: 'How far this EV can drive on a full battery in EPA testing.',
-    why: 'Real range varies with cold weather, speed, and hills — use it to compare models.',
+    why: 'Real range varies with cold weather, speed, and hills. Use it to compare models.',
   },
   co2: {
     plain: 'Tailpipe emissions per mile',
@@ -154,7 +154,7 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
   annualFuelCost: {
     plain: 'EPA’s yearly fuel bill estimate',
     what: 'Estimated annual fuel spend at EPA assumptions (15,000 mi/yr, US avg prices).',
-    why: 'Good for comparing two cars — not your exact local bill.',
+    why: 'Good for comparing two cars, not your exact local bill.',
   },
   barrelsPerYear: {
     plain: 'How much oil this car would use',
@@ -218,7 +218,7 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
   },
   countryOfOrigin: {
     plain: 'Where the brand is rooted',
-    what: 'Country associated with the make — not always where your VIN was built.',
+    what: 'Country associated with the make, not always where your VIN was built.',
   },
   trim: {
     plain: 'This EPA configuration',
@@ -227,7 +227,7 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
   },
   shoppingSegment: {
     plain: 'What kind of buyer it targets',
-    what: 'How we classify the car for comparisons — sporty, luxury, utility, and so on.',
+    what: 'How we classify the car for comparisons: sporty, luxury, utility, and so on.',
     why: 'Helps line it up against rivals you would actually cross-shop.',
   },
   msrp: {
@@ -238,12 +238,12 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
   charge120: {
     plain: 'Slow home charging',
     what: 'Rough hours to fully charge on a standard 120V household outlet.',
-    why: 'Level 1 is slow — most EV owners use 240V when they can.',
+    why: 'Level 1 is slow. Most EV owners use 240V when they can.',
   },
   phevBlendedMpge: {
     plain: 'Blended plug-in efficiency',
     what: 'EPA combined MPGe when electric and gas modes are averaged together.',
-    why: 'A single headline for mixed driving — see gas and electric modes for detail.',
+    why: 'A single headline for mixed driving. See gas and electric modes for detail.',
   },
   power: {
     plain: 'Higher = stronger acceleration',
@@ -258,7 +258,7 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
   range: {
     plain: 'Distance on a full charge',
     what: 'EPA-rated electric driving range.',
-    why: 'Check it against your longest regular trip — with buffer for weather.',
+    why: 'Check it against your longest regular trip, with buffer for weather.',
   },
 };
 
@@ -268,6 +268,8 @@ export const GLANCE_GLOSSARY: Partial<Record<string, SpecGlossaryKey>> = {
   mpg: 'efficiency',
   range: 'range',
   safety: 'safetyOverall',
+  value: 'msrp',
+  running: 'annualFuelCost',
 };
 
 export function getSpecEntry(key: SpecGlossaryKey): SpecGlossaryEntry {

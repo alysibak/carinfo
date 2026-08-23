@@ -1,10 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import type { Car } from '../types/car.types.js';
 import {
+  applyValuationReliabilityGuard,
+  assessMsrpAnchor,
+  estimateMarketValue,
+  isImplausibleResaleProjection,
+  LOW_VOLUME_CONFIDENCE_LABEL,
+} from './vehicle-valuation.js';
+import {
   calculateResaleImpact,
   computeOwnershipEconomics,
-  estimateMarketValue,
-} from '../utils/ownership-economics.js';
+} from './ownership-economics.js';
+import { inferEffectiveFuelType } from './fuel-type-inference.js';
 import { normalizeCarRecord } from '../utils/car-normalize.js';
 import { findCar, loadRawCars } from '../__tests__/helpers/loadCars.js';
 
@@ -91,11 +98,76 @@ describe('vehicle-valuation (Ontario/CAD)', () => {
     let degenerate = 0;
     for (const raw of cars) {
       const car = normalizeCarRecord(raw);
-      const mv = estimateMarketValue(car);
-      const resale = calculateResaleImpact(car, mv);
-      const { low, high, mid } = resale.projectedResale5Year;
+      const econ = computeOwnershipEconomics(car, []);
+      const { low, high, mid } = econ.resaleImpact.projectedResale5Year;
       if (high - low < 100 && mid < 5_000) degenerate++;
     }
     expect(degenerate).toBe(0);
+  });
+
+  it('flags low-volume Karma GS-6 with honest low confidence and plausible resale band', () => {
+    const raw = findCar(
+      (c) => c.make === 'Karma' && c.model.includes('GS-6') && c.year === 2021,
+    );
+    expect(raw).toBeDefined();
+    const car = normalized(
+      (c) => c.make === 'Karma' && c.model.includes('GS-6') && c.year === 2021,
+    );
+
+    const bevSim: Car = {
+      ...raw!,
+      engine: {
+        fuelType: 'electric',
+        configuration: raw!.engine.configuration,
+      },
+    };
+    const beforeMarket = estimateMarketValue(bevSim);
+    const beforeResale = calculateResaleImpact(bevSim, beforeMarket);
+    expect(beforeMarket.mid).toBeLessThan(15_000);
+    expect(isImplausibleResaleProjection(beforeMarket, beforeResale.projectedResale5Year)).toBe(true);
+    expect(beforeResale.projectedResale5Year.high).toBeLessThan(1_000);
+    expect(inferEffectiveFuelType(car)).toBe('plug-in hybrid');
+
+    const anchor = assessMsrpAnchor(car);
+    expect(anchor.confidence).toBe('low');
+
+    const econ = computeOwnershipEconomics(car, []);
+    expect(econ.marketValue.confidence).toBe('low');
+    expect(econ.marketValue.confidenceLabel).toBe(LOW_VOLUME_CONFIDENCE_LABEL);
+    expect(econ.marketValue.mid).toBeGreaterThan(beforeMarket.mid);
+
+    const { mid: resaleMid, high: resaleHigh } = econ.resaleImpact.projectedResale5Year;
+    expect(resaleHigh).toBeGreaterThanOrEqual(500);
+    expect(isImplausibleResaleProjection(econ.marketValue, econ.resaleImpact.projectedResale5Year)).toBe(
+      false,
+    );
+    expect(resaleMid).toBeGreaterThanOrEqual(econ.marketValue.mid * 0.05);
+  });
+
+  it('applyValuationReliabilityGuard widens absurd resale bands', () => {
+    const market = {
+      low: 10_000,
+      high: 14_000,
+      mid: 12_000,
+      confidence: 'medium' as const,
+      confidenceLabel: 'Ontario-baseline model estimate, not a live listing quote',
+      msrpAnchor: 50_000,
+      retainedFraction: 0.3,
+    };
+    const resale = {
+      currentValue: { low: 10_000, high: 14_000, mid: 12_000 },
+      projectedResale5Year: { low: 93, high: 493, mid: 293 },
+      estimatedLoss5Year: { low: 10_000, mid: 11_500, high: 12_000 },
+      note: 'Depreciation is realized when you sell.',
+    };
+    expect(isImplausibleResaleProjection(market, resale.projectedResale5Year)).toBe(true);
+
+    const guarded = applyValuationReliabilityGuard(market, resale);
+    expect(guarded.market.confidence).toBe('low');
+    expect(guarded.market.confidenceLabel).toBe(LOW_VOLUME_CONFIDENCE_LABEL);
+    expect(guarded.resale.projectedResale5Year.high).toBeGreaterThanOrEqual(500);
+    expect(
+      guarded.resale.projectedResale5Year.mid / guarded.market.mid,
+    ).toBeGreaterThanOrEqual(0.05);
   });
 });

@@ -40,6 +40,12 @@ export function inferEffectiveFuelType(car: CarSpecs): FuelType {
 
   if (stored !== 'electric') return stored;
 
+  // Series / range-extender PHEVs (gas generator, electric drive) store gas-engine
+  // displacement on EPA rows labeled "electric". Any meaningful displacement → PHEV.
+  if (displacement >= 1.0) {
+    return 'plug-in hybrid';
+  }
+
   // Gas displacement + short electric range → PHEV mislabel.
   if (displacement >= 1.5 && range > 0 && range < PHEV_RANGE_THRESHOLD_MI) {
     return 'plug-in hybrid';

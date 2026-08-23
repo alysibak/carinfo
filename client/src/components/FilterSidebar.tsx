@@ -209,7 +209,7 @@ export default function FilterSidebar({ onFiltersApplied }: { onFiltersApplied?:
   }));
 
   return (
-    <div className="surface-card p-5 space-y-7 lg:max-h-[calc(100vh-var(--header-height)-2rem)] lg:overflow-y-auto rounded-none">
+    <div className={`surface-card p-5 space-y-7 lg:sticky lg:top-[calc(var(--header-height)+1rem)] lg:max-h-[calc(100vh-var(--header-height)-2rem)] lg:overflow-y-auto rounded-none`}>
       <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
         <h2 className="text-base font-black tracking-tight text-white uppercase">
           Refine{activeFilterCount > 0 ? ` · ${activeFilterCount}` : ''}
@@ -354,7 +354,7 @@ export default function FilterSidebar({ onFiltersApplied }: { onFiltersApplied?:
               step={0.5}
               onCommit={(range) => commitFilters({ ...filters, displacement: range })}
             />
-            <p className="text-[10px] text-zinc-400 mt-2">Excludes EVs</p>
+            <p className="text-[10px] text-zinc-500 mt-2">Excludes EVs</p>
           </div>
         </div>
       </details>

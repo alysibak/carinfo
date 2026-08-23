@@ -10,6 +10,7 @@ import {
   type RegionalAssumptions,
 } from '../config/regional-assumptions.js';
 import {
+  applyValuationReliabilityGuard,
   classifyMarketSegment,
   estimateDepreciation5Year,
   estimateMarketValue,
@@ -300,7 +301,7 @@ export function calculateResaleImpact(car: CarSpecs, market: MarketValueEstimate
       mid: projectedMid,
     },
     estimatedLoss5Year: dep,
-    note: 'Depreciation is realized when you sell — not a per-mile driving expense. Projected resale assumes typical condition.',
+    note: 'Depreciation is realized when you sell, not a per-mile driving expense. Projected resale assumes typical condition.',
   };
 }
 
@@ -319,7 +320,7 @@ function buildDerivedComparison(
     fuelCostPerMile: fuelCpm,
     effectiveCostPerMile: effectiveCpm,
     disclaimer:
-      'Derived comparison metric only. Fuel/energy is usage-based; insurance, maintenance, and depreciation are annual lifecycle costs divided by mileage for ranking — not how you pay for them.',
+      'Derived comparison metric only. Fuel/energy is usage-based; insurance, maintenance, and depreciation are annual lifecycle costs divided by mileage for ranking, not how you pay for them.',
   };
 }
 
@@ -362,16 +363,16 @@ export function estimateTco5Year(car: CarSpecs, market: MarketValueEstimate, ann
 
 function practicalityNote(car: CarSpecs, marketMid: number): string {
   if (isBeaterTier(car, marketMid)) {
-    return 'Very aged or low-value vehicle — repair costs can spike unpredictably. Annual baseline understates tail-risk.';
+    return 'Very aged or low-value vehicle. Repair costs can spike unpredictably. Annual baseline understates tail-risk.';
   }
   if (car.engine.fuelType === 'hydrogen') {
-    return 'Hydrogen fueling is sparse outside a few regions — high fuel and resale uncertainty for Ontario.';
+    return 'Hydrogen fueling is sparse outside a few regions. High fuel and resale uncertainty for Ontario.';
   }
   if (isHeavyEvTruck(car)) {
-    return 'Large EV truck — plan for home charging, tire wear, and higher insurance.';
+    return 'Large EV truck. Plan for home charging, tire wear, and higher insurance.';
   }
   if (effectiveFuelType(car) === 'electric' && (car.epa?.rangeMiles ?? 0) < 120) {
-    return 'Short-range EV — battery health strongly affects usable range and resale.';
+    return 'Short-range EV. Battery health strongly affects usable range and resale.';
   }
   if (effectiveFuelType(car) === 'electric') {
     return 'Battery condition and charging access materially affect real-world ownership cost.';
@@ -380,9 +381,10 @@ function practicalityNote(car: CarSpecs, marketMid: number): string {
 }
 
 export function computeOwnershipEconomics(car: CarSpecs, _segment: CarSpecs[]): OwnershipEconomics {
-  const market = estimateMarketValue(car);
+  let market = estimateMarketValue(car);
   const annualCost = calculateAnnualCosts(car, market);
-  const resaleImpact = calculateResaleImpact(car, market);
+  let resaleImpact = calculateResaleImpact(car, market);
+  ({ market, resale: resaleImpact } = applyValuationReliabilityGuard(market, resaleImpact));
   const derivedComparison = buildDerivedComparison(annualCost, resaleImpact.estimatedLoss5Year.mid, car);
   const tco5Year = estimateTco5Year(car, market, annualCost);
 
@@ -391,7 +393,7 @@ export function computeOwnershipEconomics(car: CarSpecs, _segment: CarSpecs[]): 
     warnings.push('Beater-tier vehicle: maintenance baseline may not capture sudden repair bills.');
   }
   if (car.engine.fuelType === 'hydrogen') {
-    warnings.push('Hydrogen fuel costs and infrastructure vary sharply — energy costs may be incomplete.');
+    warnings.push('Hydrogen fuel costs and infrastructure vary sharply. Energy costs may be incomplete.');
   }
   if (effectiveFuelType(car) === 'electric' && market.batteryHealth) {
     warnings.push(`Battery health estimate: ${market.batteryHealth.label}. ${market.batteryHealth.chemistryNote}`);

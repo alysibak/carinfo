@@ -9,12 +9,12 @@ import { findCar, loadRawCars } from '../__tests__/helpers/loadCars.js';
 const CAYENNE_ID = 'porsche-cayenne-e-hybrid-2019-cayenne-automatic-s8';
 
 describe('fuel-type-inference', () => {
-  it('corrects exactly 419 raw electric records to plug-in hybrid', () => {
+  it('corrects exactly 437 raw electric records to plug-in hybrid (includes series/EREV hybrids with gas displacement)', () => {
     const cars = loadRawCars();
     const misclassified = cars.filter(
       (c) => c.engine.fuelType === 'electric' && inferEffectiveFuelType(c) === 'plug-in hybrid',
     );
-    expect(misclassified).toHaveLength(419);
+    expect(misclassified).toHaveLength(437);
   });
 
   it('reclassifies Cayenne e-Hybrid from electric to plug-in hybrid', () => {
@@ -55,6 +55,16 @@ describe('fuel-type-inference', () => {
 
     const alreadyPhev: Car = { ...synthetic, engine: { fuelType: 'plug-in hybrid' } };
     expect(isLikelyMisclassifiedPhev(alreadyPhev)).toBe(false);
+  });
+
+  it('reclassifies Karma GS-6 series hybrid from electric to plug-in hybrid', () => {
+    const karma = findCar(
+      (c) => c.make === 'Karma' && c.model.includes('GS-6') && c.year === 2021,
+    );
+    expect(karma).toBeDefined();
+    expect(karma!.engine.fuelType).toBe('electric');
+    expect(inferEffectiveFuelType(karma!)).toBe('plug-in hybrid');
+    expect(isLikelyMisclassifiedPhev(karma!)).toBe(true);
   });
 
   it('short-range + displacement signature drives PHEV correction', () => {

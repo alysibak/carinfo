@@ -18,13 +18,14 @@ const Browse = lazy(() => import('./pages/Browse'));
 const SharedGarage = lazy(() => import('./pages/SharedGarage'));
 const VinDecoder = lazy(() => import('./pages/VinDecoder'));
 const Methodology = lazy(() => import('./pages/Methodology'));
+const Account = lazy(() => import('./pages/Account'));
 
 function RouteFallback() {
   return (
     <div className="min-h-[50vh] bg-black flex items-center justify-center">
       <div className="text-center">
         <div className="inline-block w-10 h-10 border-2 border-zinc-800 border-t-zinc-500 mb-3" />
-        <p className="text-[10px] tracking-widest text-zinc-400 uppercase">Loading</p>
+        <p className="text-[10px] tracking-widest text-zinc-500 uppercase">Loading</p>
       </div>
     </div>
   );
@@ -53,6 +54,7 @@ function App() {
               <Route path="/value-matrix" element={<ValueMatrix />} />
               <Route path="/vin" element={<VinDecoder />} />
               <Route path="/methodology" element={<Methodology />} />
+              <Route path="/account" element={<Account />} />
             </Route>
           </Routes>
         </Suspense>

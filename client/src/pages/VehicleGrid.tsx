@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import * as api from '../services/api';
 import type { CarSpecs, SearchQuery } from '../types/car.types';
@@ -21,6 +21,7 @@ export default function VehicleGrid() {
   const [selectedDriveTypes, setSelectedDriveTypes] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(36);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadVehicles();
@@ -444,20 +445,16 @@ export default function VehicleGrid() {
                 {pageCars.map((car) => (
                   <div
                     key={car.id}
-                    className="bg-black p-8 hover:bg-zinc-950 transition-all duration-300 group border border-zinc-900 hover:border-zinc-700 focus-within:border-zinc-600 relative"
+                    onClick={() => navigate(`/car/${car.id}`)}
+                    className="bg-black p-8 hover:bg-zinc-950 transition-all duration-300 cursor-pointer group border border-zinc-900 hover:border-zinc-700 relative"
                   >
                   {/* Identity — model-forward, year demoted to a label */}
                   <div className="mb-6 pr-20">
-                    <p className="text-[11px] font-medium tracking-[0.3em] text-zinc-400 uppercase mb-2">
+                    <p className="text-[11px] font-medium tracking-[0.3em] text-zinc-500 uppercase mb-2">
                       {car.year}
                     </p>
                     <h3 className="text-2xl font-black tracking-tight leading-none mb-1 group-hover:tracking-wide transition-all">
-                      <Link
-                        to={`/car/${car.id}`}
-                        className="after:absolute after:inset-0 focus:outline-none"
-                      >
-                        {car.make.toUpperCase()}
-                      </Link>
+                      {car.make.toUpperCase()}
                     </h3>
                     <p className="text-lg font-light tracking-wide text-zinc-300 group-hover:text-white transition-colors">
                       {car.model}

@@ -14,7 +14,7 @@ export default function Layout() {
       </main>
 
       <footer className="border-t border-zinc-900 py-8 mt-auto">
-        <div className="page-wrap text-center text-xs text-zinc-400 leading-relaxed space-y-2">
+        <div className="page-wrap text-center text-xs text-zinc-500 leading-relaxed space-y-2">
           <p className="flex flex-wrap items-center justify-center gap-x-1 gap-y-1">
             <span>
               Specs from{' '}
@@ -47,7 +47,7 @@ export default function Layout() {
               Methodology &amp; data policy
             </Link>
             <span aria-hidden="true"> · </span>
-            <span className="text-zinc-400">Body-type illustrations only, no listing photos</span>
+            <span className="text-zinc-600">Body-type illustrations only, no listing photos</span>
           </p>
         </div>
       </footer>

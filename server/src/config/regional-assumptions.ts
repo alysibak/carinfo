@@ -161,5 +161,5 @@ export function formatOntarioEnergyAssumptionNote(region: RegionalAssumptions = 
 }
 
 export function formatOntarioRegionNote(region: RegionalAssumptions = getRegionalAssumptions()): string {
-  return `${region.label}-baseline estimates in ${region.displayCurrency} — condition, mileage, and local demand still cause real variation`;
+  return `${region.label}-baseline estimates in ${region.displayCurrency}. Condition, mileage, and local demand still cause real variation`;
 }

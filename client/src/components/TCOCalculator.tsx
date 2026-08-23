@@ -87,13 +87,13 @@ export default function TCOCalculator({ car, onClose }: TCOCalculatorProps) {
             <h2 className="text-3xl font-black tracking-tighter mb-2">
               TOTAL COST OF OWNERSHIP
             </h2>
-            <p className="text-sm tracking-wider text-zinc-400 uppercase">
+            <p className="text-sm tracking-wider text-zinc-600 uppercase">
               {car.year} {car.make} {car.model}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-zinc-400 hover:text-white transition-colors"
+            className="text-zinc-600 hover:text-white transition-colors"
           >
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M6 18L18 6M6 6l12 12" />

@@ -7,7 +7,7 @@ export function SpecTipBody({ glossaryKey }: { glossaryKey: SpecGlossaryKey }) {
   return (
     <>
       <span className="block text-zinc-300">{what}</span>
-      {why && <span className="block mt-1.5 text-zinc-400">{why}</span>}
+      {why && <span className="block mt-1.5 text-zinc-500">{why}</span>}
     </>
   );
 }

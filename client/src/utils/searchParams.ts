@@ -155,14 +155,14 @@ export function describeActiveFilters(filters: CarFilter = {}): { key: string; l
     const { min, max } = filters.year;
     chips.push({
       key: 'year',
-      label: min != null && max != null && min === max ? `${min}` : `${min ?? '…'}–${max ?? '…'}`,
+      label: min != null && max != null && min === max ? `${min}` : `${min ?? '…'}-${max ?? '…'}`,
     });
   }
   if (filters.price?.min != null || filters.price?.max != null) {
     const { min, max } = filters.price;
     let label: string;
     if (min != null && max != null) {
-      label = `$${(min / 1000).toFixed(0)}k–$${(max / 1000).toFixed(0)}k`;
+      label = `$${(min / 1000).toFixed(0)}k-$${(max / 1000).toFixed(0)}k`;
     } else if (max != null) {
       label = `Under $${(max / 1000).toFixed(0)}k`;
     } else {

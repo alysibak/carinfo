@@ -29,7 +29,7 @@ function CategoricalFallback({ car }: { car: CarDashboard['car'] }) {
 
   return (
     <div className="bg-black px-4 py-6 text-center col-span-full">
-      <p className="text-[10px] tracking-widest text-zinc-400 uppercase mb-4">At a glance</p>
+      <p className="text-[10px] tracking-widest text-zinc-500 uppercase mb-4">At a glance</p>
       <div className="flex flex-wrap justify-center gap-2 mb-4">
         {chips.map((chip) => (
           <span
@@ -40,7 +40,7 @@ function CategoricalFallback({ car }: { car: CarDashboard['car'] }) {
           </span>
         ))}
       </div>
-      <p className="text-xs text-zinc-400 max-w-md mx-auto leading-relaxed">
+      <p className="text-xs text-zinc-600 max-w-md mx-auto leading-relaxed">
         Open the dossier for the full specification breakdown.
       </p>
     </div>
@@ -75,7 +75,7 @@ export default function GlanceRow({
         ))}
       </div>
       {note && (
-        <p className="max-w-7xl mx-auto px-4 py-2 text-[10px] tracking-wide text-zinc-400 text-center border-x border-b border-zinc-800">
+        <p className="max-w-7xl mx-auto px-4 py-2 text-[10px] tracking-wide text-zinc-600 text-center border-x border-b border-zinc-800">
           {note}
         </p>
       )}

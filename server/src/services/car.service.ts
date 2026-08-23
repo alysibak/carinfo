@@ -13,6 +13,8 @@ interface CarDatabase {
   cars: Car[];
   lastUpdated: string;
   sources?: string[];
+  /** Present when file was pre-built by scripts/build-runtime-database.ts */
+  ready?: boolean;
 }
 
 // ─── In-memory cache & indexes ────────────────────────────────────────────────
@@ -98,12 +100,14 @@ const FALLBACK_CARS: Car[] = [
 
 /**
  * Load the database once into memory and build all indexes.
+ * Prefers cars-ready.json (pre-enriched at build time) for fast Vercel cold starts.
  */
 function initDatabase(): void {
-  if (cachedCars.length > 0) return; // already loaded
+  if (cachedCars.length > 0) return;
 
   try {
-    const dbPath = resolveDbPath();
+    const readyPath = resolveDataFile('cars-ready.json');
+    const dbPath = readyPath ?? resolveDbPath();
     if (!dbPath) {
       console.warn(
         `[car.service] Missing database file. Tried: ${dataFileCandidates('cars.json').join(', ')}. Using fallback dataset.`,
@@ -115,19 +119,28 @@ function initDatabase(): void {
       return;
     }
 
+    const started = Date.now();
     const raw = readFileSync(dbPath, 'utf-8');
     const db: CarDatabase = JSON.parse(raw);
-    // Merge offline EPA/NHTSA enrichment once at load (no network calls), then
-    // normalize so the corrected fuel type (e.g. EPA-mislabeled PHEVs stored as
-    // "electric"/"hybrid" → "plug-in hybrid") is what the indexes and stats are
-    // built from. Without this, fuelTypeIndex keys off the raw stored value and
-    // filtering by "plug-in hybrid" matches nothing. Enrich first so range/PHEV
-    // EPA fields the inference relies on are present.
-    cachedCars = db.cars.map(enrichCar).map(normalizeCarRecord);
-    rawIdIndex = new Map(db.cars.map((car) => [car.id, car]));
+
+    if (db.ready || readyPath) {
+      // Pre-built at deploy time — skip enrich/normalize (the cold-start killer).
+      cachedCars = db.cars;
+      rawIdIndex = new Map(db.cars.map((car) => [car.id, car]));
+      console.log(
+        `[car.service] Loaded ready DB: ${cachedCars.length.toLocaleString()} cars in ${((Date.now() - started) / 1000).toFixed(1)}s`,
+      );
+    } else {
+      // Dev / missing ready file: enrich + normalize at load (slow on large DBs).
+      cachedCars = db.cars.map(enrichCar).map(normalizeCarRecord);
+      rawIdIndex = new Map(db.cars.map((car) => [car.id, car]));
+      console.log(
+        `[car.service] Loaded + enriched DB: ${cachedCars.length.toLocaleString()} cars in ${((Date.now() - started) / 1000).toFixed(1)}s`,
+      );
+    }
+
     lastUpdated = db.lastUpdated;
     dbSources = db.sources?.length ? db.sources : ['epa'];
-
     buildIndexes();
   } catch (error) {
     console.error(
@@ -135,6 +148,7 @@ function initDatabase(): void {
       error,
     );
     cachedCars = FALLBACK_CARS;
+    rawIdIndex = new Map(FALLBACK_CARS.map((car) => [car.id, car]));
     lastUpdated = new Date().toISOString();
     buildIndexes();
   }
@@ -813,17 +827,29 @@ export interface ChartPointsQuery {
   limit?: number;
 }
 
-/** Lightweight scatter-plot points computed server-side (avoids shipping full DB to browser). */
-export function getChartPoints(query: ChartPointsQuery = {}): ChartPoint[] {
+/** Shared filters for value-matrix chart endpoints. */
+function filterChartCars(query: ChartPointsQuery = {}): Array<{
+  car: Car;
+  price: number;
+  mpg: number;
+  displacement: number;
+  co2: number;
+}> {
   ensureDatabase();
-  const limit = Math.min(Math.max(query.limit ?? 3000, 1), 5000);
   const priceMin = query.priceMin ?? 0;
   const priceMax = query.priceMax ?? Infinity;
   const bodySet = query.bodyStyles?.length ? new Set(query.bodyStyles) : null;
   const yearMin = query.yearMin;
   const yearMax = query.yearMax;
 
-  const points: ChartPoint[] = [];
+  const rows: Array<{
+    car: Car;
+    price: number;
+    mpg: number;
+    displacement: number;
+    co2: number;
+  }> = [];
+
   for (const car of cachedCars) {
     const price = car.price?.msrp;
     if (price == null || price <= 0 || price < priceMin || price > priceMax) continue;
@@ -831,28 +857,188 @@ export function getChartPoints(query: ChartPointsQuery = {}): ChartPoint[] {
     if (yearMin != null && car.year < yearMin) continue;
     if (yearMax != null && car.year > yearMax) continue;
 
-    points.push({
-      id: car.id,
-      make: car.make,
-      model: car.model,
-      year: car.year,
+    rows.push({
+      car,
       price,
       mpg: car.fuelEconomy.combined ?? 0,
       displacement: car.engine.displacement ?? 0,
       co2: car.epa?.co2 ?? 0,
-      bodyStyle: car.bodyStyle,
-      ySource: 'epa',
-      priceIsEstimated: car.price?.isEstimated !== false,
     });
   }
 
-  if (points.length <= limit) return points;
+  return rows;
+}
 
-  // Even sample when dataset exceeds limit
+export type ChartMetric = 'mpg' | 'displacement' | 'co2';
+
+export interface ChartDensityCell {
+  priceMin: number;
+  priceMax: number;
+  yMin: number;
+  yMax: number;
+  count: number;
+  dominantBodyStyle: string;
+}
+
+export interface ChartDensityResult {
+  total: number;
+  metric: ChartMetric;
+  priceMin: number;
+  priceMax: number;
+  yMin: number;
+  yMax: number;
+  priceBins: number;
+  yBins: number;
+  cells: ChartDensityCell[];
+}
+
+function yValueForMetric(
+  row: { mpg: number; displacement: number; co2: number },
+  metric: ChartMetric,
+): number {
+  if (metric === 'mpg') return row.mpg;
+  if (metric === 'displacement') return row.displacement;
+  return row.co2;
+}
+
+/** 2D histogram for the full filtered fleet (handles 20k+ cars in ~400 bins). */
+export function getChartDensity(
+  query: ChartPointsQuery & { metric?: ChartMetric; priceBins?: number; yBins?: number } = {},
+): ChartDensityResult {
+  const metric = query.metric ?? 'mpg';
+  const priceBinCount = Math.min(Math.max(query.priceBins ?? 32, 8), 48);
+  const yBinCount = Math.min(Math.max(query.yBins ?? 20, 8), 32);
+
+  const rows = filterChartCars(query).filter((row) => yValueForMetric(row, metric) > 0);
+  const total = rows.length;
+
+  if (total === 0) {
+    return {
+      total: 0,
+      metric,
+      priceMin: query.priceMin ?? 0,
+      priceMax: query.priceMax ?? 0,
+      yMin: 0,
+      yMax: 0,
+      priceBins: priceBinCount,
+      yBins: yBinCount,
+      cells: [],
+    };
+  }
+
+  let priceMin = Infinity;
+  let priceMax = -Infinity;
+  let yMin = Infinity;
+  let yMax = -Infinity;
+  for (const row of rows) {
+    const y = yValueForMetric(row, metric);
+    if (row.price < priceMin) priceMin = row.price;
+    if (row.price > priceMax) priceMax = row.price;
+    if (y < yMin) yMin = y;
+    if (y > yMax) yMax = y;
+  }
+
+  const priceSpan = Math.max(priceMax - priceMin, 1);
+  const ySpan = Math.max(yMax - yMin, 0.01);
+  const grid = new Map<
+    string,
+    { count: number; priceMin: number; priceMax: number; yMin: number; yMax: number; bodyStyles: Map<string, number> }
+  >();
+
+  for (const row of rows) {
+    const y = yValueForMetric(row, metric);
+    const pi = Math.min(priceBinCount - 1, Math.floor(((row.price - priceMin) / priceSpan) * priceBinCount));
+    const yi = Math.min(yBinCount - 1, Math.floor(((y - yMin) / ySpan) * yBinCount));
+    const key = `${pi}:${yi}`;
+    const cellPriceMin = priceMin + (pi / priceBinCount) * priceSpan;
+    const cellPriceMax = priceMin + ((pi + 1) / priceBinCount) * priceSpan;
+    const cellYMin = yMin + (yi / yBinCount) * ySpan;
+    const cellYMax = yMin + ((yi + 1) / yBinCount) * ySpan;
+
+    const existing = grid.get(key);
+    if (existing) {
+      existing.count += 1;
+      existing.bodyStyles.set(row.car.bodyStyle, (existing.bodyStyles.get(row.car.bodyStyle) ?? 0) + 1);
+    } else {
+      const bodyStyles = new Map<string, number>();
+      bodyStyles.set(row.car.bodyStyle, 1);
+      grid.set(key, {
+        count: 1,
+        priceMin: cellPriceMin,
+        priceMax: cellPriceMax,
+        yMin: cellYMin,
+        yMax: cellYMax,
+        bodyStyles,
+      });
+    }
+  }
+
+  const cells: ChartDensityCell[] = [];
+  for (const cell of grid.values()) {
+    let dominantBodyStyle = 'sedan';
+    let maxStyle = 0;
+    for (const [style, n] of cell.bodyStyles) {
+      if (n > maxStyle) {
+        maxStyle = n;
+        dominantBodyStyle = style;
+      }
+    }
+    cells.push({
+      priceMin: cell.priceMin,
+      priceMax: cell.priceMax,
+      yMin: cell.yMin,
+      yMax: cell.yMax,
+      count: cell.count,
+      dominantBodyStyle,
+    });
+  }
+
+  cells.sort((a, b) => b.count - a.count);
+
+  return {
+    total,
+    metric,
+    priceMin,
+    priceMax,
+    yMin,
+    yMax,
+    priceBins: priceBinCount,
+    yBins: yBinCount,
+    cells,
+  };
+}
+
+/** Lightweight scatter-plot points computed server-side (avoids shipping full DB to browser). */
+export function getChartPoints(
+  query: ChartPointsQuery = {},
+): { points: ChartPoint[]; total: number; returned: number } {
+  const limit = Math.min(Math.max(query.limit ?? 3000, 1), 5000);
+  const rows = filterChartCars(query);
+
+  const points: ChartPoint[] = rows.map(({ car, price, mpg, displacement, co2 }) => ({
+    id: car.id,
+    make: car.make,
+    model: car.model,
+    year: car.year,
+    price,
+    mpg,
+    displacement,
+    co2,
+    bodyStyle: car.bodyStyle,
+    ySource: 'epa' as const,
+    priceIsEstimated: car.price?.isEstimated !== false,
+  }));
+
+  const total = points.length;
+  if (total <= limit) {
+    return { points, total, returned: total };
+  }
+
   const sampled: ChartPoint[] = [];
-  const step = points.length / limit;
+  const step = total / limit;
   for (let i = 0; i < limit; i++) {
     sampled.push(points[Math.floor(i * step)]);
   }
-  return sampled;
+  return { points: sampled, total, returned: sampled.length };
 }
+

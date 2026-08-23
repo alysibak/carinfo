@@ -28,7 +28,7 @@ function BattleValueCell({
         <div className={`mt-2 flex flex-wrap gap-1 ${align === 'right' ? 'justify-end' : ''}`}>
           <ProvenanceChip source={source} />
           {confidence && (
-            <span className="text-[9px] text-zinc-400 uppercase tracking-wider self-center">{confidence}</span>
+            <span className="text-[9px] text-zinc-500 uppercase tracking-wider self-center">{confidence}</span>
           )}
         </div>
       )}
@@ -152,11 +152,11 @@ export default function BattleMode() {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
         <div className="text-center px-8">
-          <h1 className="text-4xl font-black tracking-tighter mb-4">
-            PICK TWO CARS TO BATTLE
-          </h1>
+          <h2 className="text-4xl font-black tracking-tighter mb-4">
+            BATTLE MODE UNAVAILABLE
+          </h2>
           <p className="text-lg tracking-wider text-zinc-400 mb-8">
-            Save at least 2 cars to your garage, then come back to put them head to head.
+            Add at least 2 cars to your garage to start battling
           </p>
           <Link
             to="/"
@@ -222,7 +222,7 @@ export default function BattleMode() {
                       <h3 className="text-3xl font-black tracking-tight mb-2">
                         {fighter1.make.toUpperCase()}
                       </h3>
-                      <p className="text-xl font-light tracking-wider text-zinc-400 mb-4">
+                      <p className="text-xl font-light tracking-wider text-zinc-500 mb-4">
                         {fighter1.model}
                       </p>
                       <p className="text-5xl font-black text-zinc-300 mb-6">
@@ -251,7 +251,7 @@ export default function BattleMode() {
                               <h3 className="text-xl font-black tracking-tight">
                                 {car.make.toUpperCase()}
                               </h3>
-                              <p className="text-lg font-light tracking-wider text-zinc-400">
+                              <p className="text-lg font-light tracking-wider text-zinc-500">
                                 {car.model}
                               </p>
                             </div>
@@ -275,7 +275,7 @@ export default function BattleMode() {
                       <h3 className="text-3xl font-black tracking-tight mb-2">
                         {fighter2.make.toUpperCase()}
                       </h3>
-                      <p className="text-xl font-light tracking-wider text-zinc-400 mb-4">
+                      <p className="text-xl font-light tracking-wider text-zinc-500 mb-4">
                         {fighter2.model}
                       </p>
                       <p className="text-5xl font-black text-zinc-300 mb-6">
@@ -304,7 +304,7 @@ export default function BattleMode() {
                               <h3 className="text-xl font-black tracking-tight">
                                 {car.make.toUpperCase()}
                               </h3>
-                              <p className="text-lg font-light tracking-wider text-zinc-400">
+                              <p className="text-lg font-light tracking-wider text-zinc-500">
                                 {car.model}
                               </p>
                             </div>
@@ -338,7 +338,7 @@ export default function BattleMode() {
                         <h3 className="text-2xl sm:text-4xl font-black tracking-tight text-white mb-2">
                           {fighter1.make}
                         </h3>
-                        <p className="text-lg sm:text-2xl font-light tracking-wider text-zinc-400">
+                        <p className="text-lg sm:text-2xl font-light tracking-wider text-zinc-500">
                           {fighter1.model}
                         </p>
                       </div>
@@ -351,7 +351,7 @@ export default function BattleMode() {
                         <h3 className="text-4xl font-black tracking-tight text-zinc-400 mb-2">
                           {fighter2.make}
                         </h3>
-                        <p className="text-2xl font-light tracking-wider text-zinc-400">
+                        <p className="text-2xl font-light tracking-wider text-zinc-500">
                           {fighter2.model}
                         </p>
                       </div>
@@ -416,7 +416,7 @@ export default function BattleMode() {
                           <h3 className="text-2xl font-black tracking-tight">
                             {fighter1!.make} {fighter1!.model}
                           </h3>
-                          <p className="text-lg font-light tracking-wider text-zinc-400">
+                          <p className="text-lg font-light tracking-wider text-zinc-500">
                             {fighter1!.year}
                           </p>
                         </div>
@@ -430,7 +430,7 @@ export default function BattleMode() {
                           <h3 className="text-2xl font-black tracking-tight">
                             {fighter2!.make} {fighter2!.model}
                           </h3>
-                          <p className="text-lg font-light tracking-wider text-zinc-400">
+                          <p className="text-lg font-light tracking-wider text-zinc-500">
                             {fighter2!.year}
                           </p>
                         </div>

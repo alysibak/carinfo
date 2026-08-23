@@ -1,5 +1,7 @@
 import TrustLabel from './ui';
 import type { GlanceMetric } from '../utils/glanceMetrics';
+import { GLANCE_GLOSSARY } from '../utils/specGlossary';
+import { SpecExplain } from './SpecExplain';
 
 function parseInstrument(metric: GlanceMetric): { number: string; unit?: string } {
   if (metric.unavailable) return { number: '-' };
@@ -30,11 +32,13 @@ export default function GlanceMetricCell({ metric, size = 'default' }: GlanceMet
   const unavailable = metric.unavailable;
   const { number, unit } = parseInstrument(metric);
   const numSize = size === 'compact' ? 'text-4xl' : 'text-5xl';
+  const glossaryKey = GLANCE_GLOSSARY[metric.id];
 
   return (
     <div className="bg-zinc-950 p-4 min-w-0 flex-1 flex flex-col items-center justify-center text-center">
-      <p className="text-[10px] uppercase tracking-widest text-zinc-400 mb-2 flex items-center justify-center gap-1.5 flex-wrap">
+      <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-2 flex items-center justify-center gap-1.5 flex-wrap">
         {metric.label}
+        {glossaryKey && <SpecExplain glossaryKey={glossaryKey} />}
         {metric.estimated && <TrustLabel estimated className="!text-[7px] !px-1" />}
         {metric.trustSource && !metric.estimated && (
           <TrustLabel source={metric.trustSource} className="!text-[7px] !px-1" />
@@ -56,7 +60,7 @@ export default function GlanceMetricCell({ metric, size = 'default' }: GlanceMet
         )}
       </div>
       {metric.detail && !unavailable && (
-        <p className="text-xs text-zinc-400 mt-2 leading-snug normal-case">{metric.detail}</p>
+        <p className="text-xs text-zinc-500 mt-2 leading-snug normal-case">{metric.detail}</p>
       )}
     </div>
   );

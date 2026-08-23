@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useGarageStore } from '../stores/garageStore';
+import { useGarageStore, FREE_GARAGE_LIMIT } from '../stores/garageStore';
 import { cardStatClass, formatEngineForCard, formatMpgForCard, formatPriceShort } from '../utils/dataValue';
+import SignInPromptSlot from '../components/SignInPromptSlot';
 
 export default function DreamGarage() {
   const [shareLink, setShareLink] = useState('');
@@ -9,6 +10,10 @@ export default function DreamGarage() {
   const garage = useGarageStore((s) => s.cars);
   const removeFromGarage = useGarageStore((s) => s.remove);
   const clearGarage = useGarageStore((s) => s.clear);
+  const plan = useGarageStore((s) => s.plan);
+  const garageLimit = useGarageStore((s) => s.garageLimit);
+  const syncMode = useGarageStore((s) => s.syncMode);
+  const lastSyncError = useGarageStore((s) => s.lastSyncError);
   const navigate = useNavigate();
   const confirmAndClear = () => {
     if (confirm('Are you sure you want to clear your entire garage?')) {
@@ -63,7 +68,7 @@ export default function DreamGarage() {
 
             <button
               onClick={confirmAndClear}
-              className="min-h-[44px] px-2 -mr-2 text-xs tracking-[0.3em] text-zinc-400 hover:text-red-500 transition-colors"
+              className="text-xs tracking-[0.3em] text-zinc-400 hover:text-red-500 transition-colors"
             >
               CLEAR
             </button>
@@ -72,6 +77,25 @@ export default function DreamGarage() {
       </div>
 
       <div className="pt-8 pb-16 px-8">
+        <div className="max-w-7xl mx-auto mb-8 space-y-3">
+          <SignInPromptSlot />
+          {lastSyncError && (
+            <p className="text-sm text-amber-200/90 border border-zinc-800 bg-zinc-950 px-4 py-3">
+              {lastSyncError}
+            </p>
+          )}
+          {plan === 'free' && (
+            <div className="border border-zinc-800 bg-zinc-950 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <p className="text-sm text-zinc-400">
+                Free plan · {garage.length}/{garageLimit ?? FREE_GARAGE_LIMIT} vehicles
+                {syncMode === 'cloud' ? ' · synced' : ' · this device'}
+              </p>
+              <Link to="/account" className="text-xs uppercase tracking-widest text-white hover:underline shrink-0">
+                Upgrade to Pro →
+              </Link>
+            </div>
+          )}
+        </div>
         {garage.length === 0 ? (
           <div className="max-w-4xl mx-auto text-center py-32">
             <svg
@@ -103,19 +127,19 @@ export default function DreamGarage() {
             {/* Garage Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-zinc-800 border border-zinc-800 mb-12">
               <div className="bg-zinc-950 p-4">
-                <p className="text-[10px] uppercase tracking-widest text-zinc-400 mb-2">Est. total value</p>
+                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-2">Est. total value</p>
                 <p className="text-3xl font-bold tabular-nums text-white">{formattedValue}</p>
               </div>
               <div className="bg-zinc-950 p-4">
-                <p className="text-[10px] uppercase tracking-widest text-zinc-400 mb-2">Makes</p>
+                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-2">Makes</p>
                 <p className="text-3xl font-bold tabular-nums text-white">{uniqueMakes}</p>
               </div>
               <div className="bg-zinc-950 p-4">
-                <p className="text-[10px] uppercase tracking-widest text-zinc-400 mb-2">Avg MPG</p>
+                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-2">Avg MPG</p>
                 <p className="text-3xl font-bold tabular-nums text-white">{avgMPG}</p>
               </div>
               <div className="bg-zinc-950 p-4">
-                <p className="text-[10px] uppercase tracking-widest text-zinc-400 mb-2">Vehicles</p>
+                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-2">Vehicles</p>
                 <p className="text-3xl font-bold tabular-nums text-white">{garage.length}</p>
               </div>
             </div>

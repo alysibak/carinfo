@@ -27,13 +27,68 @@ import { efficiencySecondaryLine, formatKwhPer100KmFromMi } from '../utils/fuelE
 import { ghgFraming, phevModes, fiveYearFuelSavings, fuelSavingsSentence, type PhevModes } from '../utils/epaContent';
 import { SpecLabel } from '../components/SpecExplain';
 import type { TrustFilter } from '../utils/dataTrust';
+import type { AnnualCostBreakdown } from '../types/car.types';
+import { TIER_HELPER } from '../utils/visualTiers';
 import { usePageMeta } from '../utils/pageMeta';
 
 function Subheading({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[10px] tracking-widest text-zinc-400 uppercase pt-4 pb-1">
+    <p className="text-[10px] tracking-widest text-zinc-500 uppercase pt-4 pb-1">
       {children}
     </p>
+  );
+}
+
+/** Fixed scale so city / highway / combined bars are comparable on the dossier. */
+const FUEL_BAR_SCALE_MAX = 60;
+
+const ANNUAL_COST_SEGMENTS: {
+  key: keyof Pick<AnnualCostBreakdown, 'energy' | 'insurance' | 'maintenance' | 'tires' | 'registration'>;
+  label: string;
+  color: string;
+}[] = [
+  { key: 'energy', label: 'Fuel / energy', color: 'bg-zinc-300' },
+  { key: 'insurance', label: 'Insurance', color: 'bg-zinc-400' },
+  { key: 'maintenance', label: 'Maintenance', color: 'bg-zinc-500' },
+  { key: 'tires', label: 'Tires', color: 'bg-zinc-600' },
+  { key: 'registration', label: 'Registration', color: 'bg-zinc-700' },
+];
+
+function AnnualCostStackBar({ annualCost }: { annualCost: AnnualCostBreakdown }) {
+  const total = annualCost.total;
+  if (total == null || total <= 0) return null;
+
+  const segments = ANNUAL_COST_SEGMENTS.flatMap(({ key, label, color }) => {
+    const value = annualCost[key];
+    if (value == null || value <= 0) return [];
+    return [{ key, label, color, value }];
+  });
+
+  if (segments.length === 0) return null;
+
+  return (
+    <div className="max-w-md mt-2 mb-1">
+      <div className="flex h-2 w-full overflow-hidden rounded-sm bg-zinc-900" aria-hidden>
+        {segments.map((seg) => (
+          <div
+            key={seg.key}
+            className={`${seg.color} min-w-0`}
+            style={{ width: `${(seg.value / total) * 100}%` }}
+            title={`${seg.label}: ${seg.value}`}
+          />
+        ))}
+      </div>
+      <ul className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
+        {segments.map((seg) => (
+          <li key={seg.key} className="flex items-center gap-1.5">
+            <span className={`inline-block w-2 h-2 shrink-0 ${seg.color}`} aria-hidden />
+            <span className={TIER_HELPER}>
+              {seg.label} {Math.round((seg.value / total) * 100)}%
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -53,10 +108,10 @@ function FuelBar({
   return (
     <div className="py-3 border-b border-zinc-900 last:border-b-0">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] tracking-widest text-zinc-400 uppercase">{label}</span>
+        <span className="text-[10px] tracking-widest text-zinc-500 uppercase">{label}</span>
         <div className="text-right">
           <span className="text-2xl font-bold tabular-nums text-white">{Math.round(value!)}</span>
-          {secondary && <p className="text-xs text-zinc-400 mt-0.5">{secondary}</p>}
+          {secondary && <p className="text-xs text-zinc-500 mt-0.5">{secondary}</p>}
         </div>
       </div>
       <div className="meter-track">
@@ -79,7 +134,7 @@ function PhevDualModeBlock({ modes }: { modes: PhevModes }) {
               {hasNumericValue(modes.electricRangeMi) ? ` · ${modes.electricRangeMi} mi` : ''}
             </span>
           </div>
-          <p className="text-[11px] text-zinc-400 leading-relaxed mt-1">
+          <p className="text-[11px] text-zinc-500 leading-relaxed mt-1">
             Drives on battery power
             {hasNumericValue(modes.electricRangeMi) ? ` for about ${modes.electricRangeMi} miles` : ''} after a full
             charge, like an EV, then switches to gas automatically.
@@ -92,13 +147,13 @@ function PhevDualModeBlock({ modes }: { modes: PhevModes }) {
             <span className="text-[10px] tracking-[0.25em] text-zinc-300 uppercase">Gas mode</span>
             <span className="text-sm font-bold text-white">{modes.gasMpg} MPG</span>
           </div>
-          <p className="text-[11px] text-zinc-400 leading-relaxed mt-1">
+          <p className="text-[11px] text-zinc-500 leading-relaxed mt-1">
             Once the battery is used up it runs like a regular hybrid on gasoline. No plugging in required.
           </p>
         </div>
       )}
       {hasNumericValue(modes.chargeL2Hours) && (
-        <p className="text-[11px] text-zinc-400 leading-relaxed">
+        <p className="text-[11px] text-zinc-500 leading-relaxed">
           Recharges in about {modes.chargeL2Hours} h on a 240V Level 2 charger.
         </p>
       )}
@@ -185,12 +240,6 @@ export default function CarDetail() {
   const isEv = car.engine.fuelType === 'electric';
   const isHydrogen = car.engine.fuelType === 'hydrogen';
   const efficiencyLabel = efficiencyUnit(car);
-  const fuelMax = Math.max(
-    car.fuelEconomy.city ?? 0,
-    car.fuelEconomy.highway ?? 0,
-    car.fuelEconomy.combined ?? 0,
-    1,
-  );
   const isInCompare = comparedCars.some((c) => c.id === car.id);
   const trimLabel = displayListingSubtitle(car);
   const isPhev = car.engine.fuelType === 'plug-in hybrid';
@@ -222,21 +271,28 @@ export default function CarDetail() {
     ? `NHTSA ${car.safetyRating!.overall}/5 stars`
     : '';
 
-  const valueSummary = hasEconomics
-    ? `${formatCurrencyRange(annualCost.totalLow, annualCost.totalHigh)}/yr · expand for breakdown`
-    : hasMarketValue
-      ? `${formatCurrencyRange(marketValue.low, marketValue.high)} est. value`
-      : '';
+  const valueSummary =
+    hasMarketValue && hasEconomics
+      ? `Est. value ${formatCurrencyRange(marketValue.low, marketValue.high)} · Annual running cost ${formatCurrencyRange(annualCost.totalLow, annualCost.totalHigh)}/yr`
+      : hasEconomics
+        ? `Annual running cost ${formatCurrencyRange(annualCost.totalLow, annualCost.totalHigh)}/yr`
+        : hasMarketValue
+          ? `Est. value ${formatCurrencyRange(marketValue.low, marketValue.high)}`
+          : '';
 
   const handleAddToComparison = () => {
     addCarToComparison(car);
     setToast('Added to compare');
   };
 
-  const handleAddToGarage = () => {
-    const res = addToGarage(car);
+  const handleAddToGarage = async () => {
+    const res = await Promise.resolve(addToGarage(car));
     if (!res.ok && res.reason === 'duplicate') {
       setToast('Already in garage');
+      return;
+    }
+    if (!res.ok && res.reason === 'limit') {
+      setToast(res.message ?? 'Garage limit reached — upgrade to Pro');
       return;
     }
     setToast('Added to garage');
@@ -308,12 +364,11 @@ export default function CarDetail() {
               <VehiclePlaceholder car={car} />
             </div>
             <div className="min-w-0">
-              {/* Deliberately recessed, but zinc-800 left the year invisible (1.4:1). */}
-              <p className="text-6xl md:text-7xl font-black text-zinc-500 leading-none mb-3 tracking-tight">{car.year}</p>
+              <p className="text-6xl md:text-7xl font-black text-zinc-800 leading-none mb-3 tracking-tight">{car.year}</p>
               <h1 className="text-3xl font-black uppercase tracking-tight mb-1">{car.make}</h1>
               <p className="text-xl font-medium text-zinc-300 mb-1">{car.model}</p>
               {trimLabel && (
-                <p className="text-xs tracking-widest text-zinc-400 uppercase mb-4">{trimLabel}</p>
+                <p className="text-xs tracking-widest text-zinc-500 uppercase mb-4">{trimLabel}</p>
               )}
               <div className="flex flex-wrap gap-1.5 mb-5">
                 {car.bodyStyle && (
@@ -347,7 +402,7 @@ export default function CarDetail() {
               </div>
               {car.ownershipProfile && (
                 <div className="mb-5 p-4 border border-zinc-800 bg-zinc-950 rounded-none">
-                  <p className="text-[10px] tracking-widest text-zinc-400 uppercase mb-2">Ownership profile</p>
+                  <p className="text-[10px] tracking-widest text-zinc-500 uppercase mb-2">Ownership profile</p>
                   <p className="text-base font-semibold text-white mb-3">{car.ownershipProfile.label}</p>
                   <div className="flex flex-wrap gap-1.5 mb-3">
                     {car.ownershipProfile.tags.map((tag) => (
@@ -356,7 +411,7 @@ export default function CarDetail() {
                       </span>
                     ))}
                   </div>
-                  <p className="text-[10px] tracking-widest text-zinc-400 uppercase mb-2">Best for</p>
+                  <p className="text-[10px] tracking-widest text-zinc-500 uppercase mb-2">Best for</p>
                   <ul className="text-sm text-zinc-400 space-y-1">
                     {car.ownershipProfile.bestFor.map((item) => (
                       <li key={item}>• {item}</li>
@@ -423,7 +478,7 @@ export default function CarDetail() {
         <div className="space-y-3">
           {hasFuelData && (
             <ExpandableSection title="Fuel economy" summary={fuelSummary}>
-              <p className="text-xs text-zinc-400 leading-relaxed pb-2">
+              <p className="text-xs text-zinc-500 leading-relaxed pb-2">
                 EPA test-cycle figures.{' '}
                 <SpecLabel label="What is MPG?" glossaryKey="mpgCombined" />
               </p>
@@ -437,19 +492,19 @@ export default function CarDetail() {
                   <FuelBar
                     label={`City ${efficiencyLabel}`}
                     value={car.fuelEconomy.city}
-                    max={fuelMax}
+                    max={FUEL_BAR_SCALE_MAX}
                     secondary={efficiencySecondaryLine(car.fuelEconomy.city, efficiencyLabel)}
                   />
                   <FuelBar
                     label={`Highway ${efficiencyLabel}`}
                     value={car.fuelEconomy.highway}
-                    max={fuelMax}
+                    max={FUEL_BAR_SCALE_MAX}
                     secondary={efficiencySecondaryLine(car.fuelEconomy.highway, efficiencyLabel)}
                   />
                   <FuelBar
                     label={`Combined ${efficiencyLabel}`}
                     value={car.fuelEconomy.combined}
-                    max={fuelMax}
+                    max={FUEL_BAR_SCALE_MAX}
                     secondary={efficiencySecondaryLine(car.fuelEconomy.combined, efficiencyLabel)}
                   />
                 </>
@@ -485,7 +540,7 @@ export default function CarDetail() {
 
           {hasSafety && (
             <ExpandableSection title="Crash safety" summary={safetySummary}>
-              <p className="text-xs text-zinc-400 leading-relaxed pb-2">
+              <p className="text-xs text-zinc-500 leading-relaxed pb-2">
                 NHTSA star ratings for this make, model, and year.{' '}
                 <SpecLabel label="What are NHTSA stars?" glossaryKey="safetyOverall" />
               </p>
@@ -520,48 +575,99 @@ export default function CarDetail() {
 
           {(hasEconomics || hasMarketValue) && (
           <ExpandableSection title="Value & ownership cost" summary={valueSummary}>
-            <p className="text-[10px] text-zinc-400 leading-relaxed pb-3">{CURRENCY_SECTION_NOTE}</p>
+            <p className="text-[10px] text-zinc-600 leading-relaxed pb-3">{CURRENCY_SECTION_NOTE}</p>
             {marketValue.confidenceLabel && (
-              <p className="text-xs text-zinc-400 pb-2">
+              <p className="text-xs text-zinc-500 pb-2">
                 Value confidence: <span className="text-zinc-300">{marketValue.confidenceLabel}</span>
               </p>
             )}
             <Subheading>Current market value</Subheading>
-            <DataRow label="Est. value range" value={formatCurrencyRange(marketValue.low, marketValue.high)} />
+            <DataRow
+              label="Est. value range"
+              value={formatCurrencyRange(marketValue.low, marketValue.high)}
+              valueTier={1}
+              pairLayout
+            />
             {marketValue.batteryHealth && (
               <>
-                <DataRow label="Battery health (est.)" value={marketValue.batteryHealth.label} />
-                <DataRow label="Pack note" value={marketValue.batteryHealth.chemistryNote} />
+                <DataRow
+                  label="Battery health (est.)"
+                  value={marketValue.batteryHealth.label}
+                  valueTier={2}
+                  pairLayout
+                />
+                <DataRow
+                  label="Pack note"
+                  value={marketValue.batteryHealth.chemistryNote}
+                  valueTier={2}
+                  pairLayout
+                />
               </>
             )}
             {marketValue.conditionBands?.map((band) => (
-              <DataRow key={band.label} label={band.label} value={formatCurrencyRange(band.low, band.high)} />
+              <DataRow
+                key={band.label}
+                label={band.label}
+                value={formatCurrencyRange(band.low, band.high)}
+                valueTier={2}
+                pairLayout
+              />
             ))}
 
             {hasEconomics ? (
               <>
                 <Subheading>Annual running cost</Subheading>
                 {annualCost.energy != null && (
-                  <DataRow label="Fuel / energy" value={formatCurrency(annualCost.energy, true)} />
+                  <DataRow
+                    label="Fuel / energy"
+                    value={formatCurrency(annualCost.energy, true)}
+                    valueTier={2}
+                    pairLayout
+                  />
                 )}
-                <DataRow label="Insurance" value={formatCurrency(annualCost.insurance, true)} />
-                <DataRow label="Maintenance" value={formatCurrency(annualCost.maintenance, true)} />
-                <DataRow label="Tires" value={formatCurrency(annualCost.tires, true)} />
-                <DataRow label="Registration" value={formatCurrency(annualCost.registration, true)} />
+                <DataRow
+                  label="Insurance"
+                  value={formatCurrency(annualCost.insurance, true)}
+                  valueTier={2}
+                  pairLayout
+                />
+                <DataRow
+                  label="Maintenance"
+                  value={formatCurrency(annualCost.maintenance, true)}
+                  valueTier={2}
+                  pairLayout
+                />
+                <DataRow
+                  label="Tires"
+                  value={formatCurrency(annualCost.tires, true)}
+                  valueTier={2}
+                  pairLayout
+                />
+                <DataRow
+                  label="Registration"
+                  value={formatCurrency(annualCost.registration, true)}
+                  valueTier={2}
+                  pairLayout
+                />
                 <DataRow
                   label="Total per year"
                   value={formatCurrencyRange(annualCost.totalLow, annualCost.totalHigh)}
+                  valueTier={1}
+                  pairLayout
                   total
                 />
+                <AnnualCostStackBar annualCost={annualCost} />
 
                 <Subheading>Resale projection</Subheading>
-                <p className="text-xs text-zinc-400 leading-relaxed py-2">{resaleImpact.note}</p>
+                <p className="text-xs text-zinc-500 leading-relaxed py-2">{resaleImpact.note}</p>
                 <DataRow
                   label="Projected resale (5 yr)"
                   value={formatCurrencyRange(
                     resaleImpact.projectedResale5Year.low,
                     resaleImpact.projectedResale5Year.high,
                   )}
+                  valueTier={2}
+                  pairLayout
                 />
                 <DataRow
                   label="Est. value loss (5 yr)"
@@ -569,21 +675,25 @@ export default function CarDetail() {
                     resaleImpact.estimatedLoss5Year.low,
                     resaleImpact.estimatedLoss5Year.high,
                   )}
+                  valueTier={2}
+                  pairLayout
                 />
 
                 {ownership.tco5Year && (
                   <>
                     <Subheading>5-year lifecycle</Subheading>
-                    <p className="text-xs text-zinc-400 leading-relaxed py-2">{ownership.tco5Year.disclaimer}</p>
+                    <p className="text-xs text-zinc-500 leading-relaxed py-2">{ownership.tco5Year.disclaimer}</p>
                     <DataRow
                       label={ownership.tco5Year.mode === 'operating' ? 'Annual running cost' : '5-year total'}
                       value={formatCurrencyRange(ownership.tco5Year.low, ownership.tco5Year.high)}
+                      valueTier={2}
+                      pairLayout
                     />
                   </>
                 )}
               </>
             ) : (
-              <p className="text-xs text-zinc-400 leading-relaxed py-4 border-t border-zinc-900 mt-4">
+              <p className="text-xs text-zinc-500 leading-relaxed py-4 border-t border-zinc-900 mt-4">
                 Running-cost breakdown is not modeled for this configuration
                 {isHydrogen ? ' (hydrogen fuel costs vary too widely)' : ''}.
               </p>

@@ -12,9 +12,10 @@ import {
   ZAxis,
 } from 'recharts';
 import * as api from '../services/api';
-import type { ChartPoint } from '../services/api';
+import type { ChartDensityCell, ChartDensityResult, ChartPoint } from '../services/api';
 import AboutData from '../components/AboutData';
 import ProvenanceChip from '../components/ProvenanceChip';
+import ValueMatrixHeatmap from '../components/ValueMatrixHeatmap';
 import { formatMpgForCard } from '../utils/dataValue';
 import { DISPLAY_CURRENCY } from '../utils/currency';
 import { usePageMeta } from '../utils/pageMeta';
@@ -42,7 +43,7 @@ const PRESETS: MatrixPreset[] = [
   {
     id: 'commuter',
     title: 'Daily drivers',
-    description: 'Sedans & SUVs between $10k–$35k. Fuel economy vs estimated value.',
+    description: 'Sedans & SUVs between $10k-$35k. Fuel economy vs estimated value.',
     priceRange: [10000, 35000],
     bodyStyles: ['sedan', 'suv'],
     axisMode: 'mpg',
@@ -135,8 +136,8 @@ function useChartHeight() {
 function MatrixLegend() {
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-400">
-        <span className="text-[10px] tracking-widest uppercase text-zinc-400">Axes</span>
+      <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500">
+        <span className="text-[10px] tracking-widest uppercase text-zinc-600">Axes</span>
         <span className="flex items-center gap-1.5">
           X: Est. value <ProvenanceChip source="estimated" />
         </span>
@@ -157,7 +158,7 @@ function MatrixLegend() {
           {style}
         </div>
       ))}
-      <div className="flex items-center gap-2 text-xs text-zinc-400 w-full sm:w-auto sm:ml-2">
+      <div className="flex items-center gap-2 text-xs text-zinc-500 w-full sm:w-auto sm:ml-2">
         <span className="inline-flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-white" />
           <span className="w-3 h-3 rounded-full bg-white" />
@@ -172,12 +173,14 @@ function MatrixLegend() {
 
 export default function ValueMatrix() {
   usePageMeta(
-    'Value Chart',
+    'Value Matrix',
     'Scatter plot of Ontario/CAD estimates against EPA fuel economy, engine size, or emissions with source labels.',
   );
   const [phase, setPhase] = useState<ViewPhase>('choose');
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [densityData, setDensityData] = useState<ChartDensityResult | null>(null);
+  const [totalMatched, setTotalMatched] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [axisMode, setAxisMode] = useState<AxisMode>('mpg');
@@ -186,7 +189,7 @@ export default function ValueMatrix() {
   const [pointLimit, setPointLimit] = useState<number>(POINT_LIMIT_STEPS[0]);
   const [yearMin, setYearMin] = useState<number | undefined>(undefined);
   const [hovered, setHovered] = useState<ChartDataPoint | null>(null);
-  const [viewMode, setViewMode] = useState<'chart' | 'list'>('chart');
+  const [viewMode, setViewMode] = useState<'market' | 'chart' | 'list'>('market');
   const navigate = useNavigate();
   const chartHeight = useChartHeight();
 
@@ -207,15 +210,22 @@ export default function ValueMatrix() {
     setLoading(true);
     setError(null);
     try {
-      const { points } = await api.getChartPoints({
+      const filterParams = {
         priceMin: debouncedPrice[0],
         priceMax: debouncedPrice[1],
         bodyStyles: selectedBodyStyles.size > 0 ? Array.from(selectedBodyStyles) : undefined,
         yearMin,
-        limit: pointLimit,
-      });
+      };
 
-      let filtered = points.filter((car) => {
+      const [density, pointsResult] = await Promise.all([
+        api.getChartDensity({ ...filterParams, metric: axisMode }),
+        api.getChartPoints({ ...filterParams, limit: pointLimit }),
+      ]);
+
+      setDensityData(density);
+      setTotalMatched(density.total);
+
+      let filtered = pointsResult.points.filter((car) => {
         if (axisMode === 'mpg') return car.mpg > 0;
         if (axisMode === 'displacement') return car.displacement > 0;
         return car.co2 > 0;
@@ -232,10 +242,18 @@ export default function ValueMatrix() {
     } catch {
       setError('Unable to load chart data.');
       setChartData([]);
+      setDensityData(null);
+      setTotalMatched(0);
     } finally {
       setLoading(false);
     }
   }, [phase, debouncedPrice, selectedBodyStyles, axisMode, pointLimit, yearMin]);
+
+  const handleDensityCellSelect = (cell: ChartDensityCell) => {
+    setActivePresetId(null);
+    setPriceRange([Math.round(cell.priceMin), Math.round(cell.priceMax)]);
+    setViewMode('chart');
+  };
 
   useEffect(() => {
     loadChartData();
@@ -272,12 +290,6 @@ export default function ValueMatrix() {
         : 0,
     [chartData],
   );
-  const avgMpg = useMemo(() => {
-    const withMpg = chartData.filter((c) => c.mpg > 0);
-    return withMpg.length > 0
-      ? Math.round(withMpg.reduce((s, c) => s + c.mpg, 0) / withMpg.length)
-      : 0;
-  }, [chartData]);
 
   const CustomTooltip = ({
     active,
@@ -334,11 +346,11 @@ export default function ValueMatrix() {
       <div className="page-wrap py-6 sm:py-8 border-b border-zinc-900">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Value Chart</h1>
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Value Matrix</h1>
             <p className="text-sm text-zinc-400 mt-1">
-              {phase === 'chart' && chartData.length > 0
-                ? `${chartData.length.toLocaleString()} vehicles · X: Ontario/CAD estimates · Y: EPA ${axisMode === 'mpg' ? 'MPG' : axisMode === 'co2' ? 'CO₂' : 'engine size'}`
-                : 'Plot labeled estimates against EPA fuel economy, engine size, or emissions'}
+              {phase === 'chart' && totalMatched > 0
+                ? `${totalMatched.toLocaleString()} vehicles match · Market map shows the full fleet · Sample dots for drill-down`
+                : 'Density map of the full fleet, or sample dots for individual vehicles'}
             </p>
           </div>
           <AboutData compact />
@@ -354,9 +366,9 @@ export default function ValueMatrix() {
                   What do you want to compare?
                 </h2>
                 <p className="text-base text-zinc-300 leading-relaxed">
-                  Each dot is one vehicle. Pick a starting lens and we show a{' '}
-                  <strong className="text-white font-semibold">focused sample</strong>, not all 28,000
-                  at once. You can widen the view after.
+                  The <strong className="text-white font-semibold">market map</strong> plots every
+                  matching vehicle as density. Brighter cells mean more cars at that price and efficiency.
+                  Click a cell to zoom into individual vehicles.
                 </p>
               </div>
 
@@ -366,14 +378,15 @@ export default function ValueMatrix() {
                     key={preset.id}
                     type="button"
                     onClick={() => applyPreset(preset)}
-                    className="flex flex-col items-start text-left p-6 border border-zinc-700 bg-zinc-950 hover:border-white hover:bg-zinc-900 transition-colors group"
+                    className="text-left p-6 border border-zinc-700 bg-zinc-950 hover:border-white hover:bg-zinc-900 transition-colors group"
                   >
                     <p className="text-sm font-black tracking-wide text-white mb-2 group-hover:underline underline-offset-4">
                       {preset.title}
                     </p>
                     <p className="text-sm text-zinc-400 leading-relaxed">{preset.description}</p>
                     <p className="text-xs text-zinc-400 mt-3">
-                      {`~${preset.pointLimit} vehicles · $${(preset.priceRange[0] / 1000).toFixed(0)}k–$${(preset.priceRange[1] / 1000).toFixed(0)}k`}
+                      ~{preset.pointLimit} vehicles · ${(preset.priceRange[0] / 1000).toFixed(0)}k-
+                      ${(preset.priceRange[1] / 1000).toFixed(0)}k
                     </p>
                   </button>
                 ))}
@@ -482,7 +495,7 @@ export default function ValueMatrix() {
 
                 <div>
                   <p className="text-xs font-bold tracking-widest text-zinc-300 uppercase mb-2">
-                    Est. value: ${(priceRange[0] / 1000).toFixed(0)}k – ${(priceRange[1] / 1000).toFixed(0)}k
+                    Est. value: ${(priceRange[0] / 1000).toFixed(0)}k - ${(priceRange[1] / 1000).toFixed(0)}k
                   </p>
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                     <input
@@ -514,7 +527,7 @@ export default function ValueMatrix() {
                   </div>
                 </div>
 
-                {canShowMore && (
+                {canShowMore && viewMode === 'chart' && (
                   <button
                     type="button"
                     onClick={() => setPointLimit(nextLimit)}
@@ -526,8 +539,22 @@ export default function ValueMatrix() {
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                <MatrixLegend />
+                {viewMode !== 'market' && <MatrixLegend />}
+                {viewMode === 'market' && (
+                  <p className="text-xs text-zinc-500">
+                    Cell tint follows the most common body style in that band
+                  </p>
+                )}
                 <div className="flex rounded-none border border-zinc-700 overflow-hidden shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('market')}
+                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                      viewMode === 'market' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    Market map
+                  </button>
                   <button
                     type="button"
                     onClick={() => setViewMode('chart')}
@@ -535,7 +562,7 @@ export default function ValueMatrix() {
                       viewMode === 'chart' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
                     }`}
                   >
-                    Chart
+                    Sample dots
                   </button>
                   <button
                     type="button"
@@ -577,7 +604,7 @@ export default function ValueMatrix() {
                     </div>
                   </div>
                 )}
-                {error && !loading && chartData.length === 0 ? (
+                {error && !loading && totalMatched === 0 ? (
                   <div className="py-24 text-center">
                     <p className="text-zinc-300 mb-4">{error}</p>
                     <button
@@ -588,7 +615,7 @@ export default function ValueMatrix() {
                       Retry
                     </button>
                   </div>
-                ) : chartData.length === 0 && !loading ? (
+                ) : totalMatched === 0 && !loading ? (
                   <div className="py-24 text-center px-4">
                     <p className="text-lg text-zinc-300 mb-2">No vehicles match these filters</p>
                     <p className="text-sm text-zinc-400 mb-6">Try widening the price range or adding body types.</p>
@@ -600,6 +627,13 @@ export default function ValueMatrix() {
                       Pick a different focus
                     </button>
                   </div>
+                ) : viewMode === 'market' && densityData && densityData.cells.length > 0 ? (
+                  <ValueMatrixHeatmap
+                    density={densityData}
+                    height={chartHeight}
+                    yLabel={getYAxisLabel()}
+                    onCellSelect={handleDensityCellSelect}
+                  />
                 ) : viewMode === 'list' ? (
                   <div className="max-h-[480px] overflow-y-auto divide-y divide-zinc-900">
                     {[...chartData]
@@ -619,11 +653,11 @@ export default function ValueMatrix() {
                             <p className="text-sm font-medium text-white truncate">
                               {car.year} {car.make} {car.model}
                             </p>
-                            <p className="text-xs text-zinc-400 capitalize">{car.bodyStyle}</p>
+                            <p className="text-xs text-zinc-500 capitalize">{car.bodyStyle}</p>
                           </div>
                           <div className="text-right shrink-0">
                             <p className="text-sm font-medium text-white">${(car.price / 1000).toFixed(0)}k</p>
-                            <p className="text-xs text-zinc-400">{formatMpgForCard(car.mpg)} MPG</p>
+                            <p className="text-xs text-zinc-500">{formatMpgForCard(car.mpg)} MPG</p>
                           </div>
                         </button>
                       ))}
@@ -687,8 +721,10 @@ export default function ValueMatrix() {
                 )}
               </div>
 
-              <p className="mt-3 text-xs text-zinc-400 text-center sm:text-left">
-                Color = body style · size = model year · tap or click a dot for details
+              <p className="mt-3 text-xs text-zinc-500 text-center sm:text-left">
+                {viewMode === 'market'
+                  ? 'Brightness = vehicle count in that price/efficiency band · click a cell to drill down'
+                  : 'Color = body style · size = model year · tap or click a dot for details'}
               </p>
 
               {hovered && viewMode === 'chart' && (
@@ -713,19 +749,19 @@ export default function ValueMatrix() {
                 </div>
               )}
 
-              {chartData.length > 0 && (
+              {totalMatched > 0 && (
                 <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-px bg-zinc-800 border border-zinc-800">
                   <div className="bg-zinc-950 p-5">
-                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Plotted</p>
-                    <p className="text-2xl font-black text-white">{chartData.length.toLocaleString()}</p>
+                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Matching fleet</p>
+                    <p className="text-2xl font-black text-white">{totalMatched.toLocaleString()}</p>
                   </div>
                   <div className="bg-zinc-950 p-5">
                     <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Avg est. value</p>
                     <p className="text-2xl font-black text-white">${(avgPrice / 1000).toFixed(0)}k</p>
                   </div>
                   <div className="bg-zinc-950 p-5">
-                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Avg MPG</p>
-                    <p className="text-2xl font-black text-white">{formatMpgForCard(avgMpg || null)}</p>
+                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">Sample plotted</p>
+                    <p className="text-2xl font-black text-white">{chartData.length.toLocaleString()}</p>
                   </div>
                 </div>
               )}

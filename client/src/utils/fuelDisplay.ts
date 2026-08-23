@@ -70,33 +70,6 @@ export function formatPowertrainLabel(fuelType: string): string | null {
   return null;
 }
 
-/**
- * EPA records cylinder count but not bank layout, so the database builder
- * inferred one. That inference holds for the counts with a single common
- * layout (I3/I4, V8/V10/V12) but not for these two: six cylinders are usually
- * a V6 rather than the "I6" it wrote, and five-cylinder engines are inline,
- * never the "V5" it wrote. For those we show the count and claim no layout.
- */
-const GUESSED_LAYOUT_BY_CYLINDERS = new Map<number, string>([
-  [5, 'V5'],
-  [6, 'I6'],
-]);
-
-function isGuessedLayout(configuration: string, cylinders?: number): boolean {
-  if (cylinders == null) return false;
-  const guessed = GUESSED_LAYOUT_BY_CYLINDERS.get(cylinders);
-  return guessed != null && configuration.trim().toUpperCase() === guessed;
-}
-
-/** Bank layout when it is genuinely known, otherwise the honest cylinder count. */
-export function engineLayoutLabel(configuration?: string, cylinders?: number): string | null {
-  if (configuration && !isGuessedLayout(configuration, cylinders)) {
-    return configuration;
-  }
-  if (cylinders != null && cylinders > 0) return `${cylinders}-cyl`;
-  return null;
-}
-
 export function formatEngineSystem(
   fuelType: string,
   displacement?: number | null,
@@ -108,7 +81,7 @@ export function formatEngineSystem(
 
   const parts: string[] = [];
   if (displacement != null && displacement > 0) parts.push(`${displacement}L`);
-  const layout = engineLayoutLabel(configuration, cylinders);
-  if (layout) parts.push(layout);
+  if (configuration) parts.push(configuration);
+  else if (cylinders != null && cylinders > 0) parts.push(`${cylinders}-cyl`);
   return parts.join(' ') || 'Not on file';
 }

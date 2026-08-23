@@ -10,7 +10,7 @@ const LABELS: Record<ProvenanceSource, string> = {
 const STYLES: Record<ProvenanceSource, string> = {
   epa: 'bg-transparent text-zinc-300 border-zinc-600',
   nhtsa: 'bg-transparent text-zinc-400 border-zinc-600',
-  estimated: 'bg-transparent text-zinc-400 border-zinc-700 border-dashed',
+  estimated: 'bg-transparent text-zinc-500 border-zinc-700 border-dashed',
   curated: 'bg-transparent text-zinc-400 border-zinc-600',
 };
 

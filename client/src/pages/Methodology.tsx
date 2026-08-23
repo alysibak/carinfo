@@ -12,7 +12,7 @@ export default function Methodology() {
     <div className="min-h-screen bg-black text-white">
       <div className="border-b border-zinc-900">
         <div className="page-wrap py-8 md:py-12 max-w-3xl">
-          <p className="text-[10px] tracking-[0.3em] text-zinc-400 uppercase mb-3">Architecture</p>
+          <p className="text-[10px] tracking-[0.3em] text-zinc-500 uppercase mb-3">Architecture</p>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight uppercase mb-4">Methodology</h1>
           <p className="text-sm text-zinc-400 leading-relaxed">
             CarInfo is a rules-driven reference over public automotive data. Every number is either a
@@ -25,11 +25,11 @@ export default function Methodology() {
       <div className="page-wrap py-10 md:py-14 max-w-3xl space-y-14">
         <section>
           <h2 className="text-xs font-black tracking-[0.25em] uppercase text-white mb-4">Data pipeline</h2>
-          <ol className="space-y-4 text-sm text-zinc-400 leading-relaxed list-decimal list-inside marker:text-zinc-400">
+          <ol className="space-y-4 text-sm text-zinc-400 leading-relaxed list-decimal list-inside marker:text-zinc-600">
             <li>
               <strong className="text-zinc-200 font-medium">Raw master record</strong> (
-              <code className="text-zinc-400 text-xs">cars.json</code>): ~28,000 EPA FuelEconomy.gov
-              configurations (1995–2026). Deliberately omits horsepower, GHG score, NHTSA ratings,
+              <code className="text-zinc-500 text-xs">cars.json</code>): ~28,000 EPA FuelEconomy.gov
+              configurations (1995-2026). Deliberately omits horsepower, GHG score, NHTSA ratings,
               dimensions, and runtime-only fuel types (PHEV, hydrogen).
             </li>
             <li>
@@ -76,7 +76,7 @@ export default function Methodology() {
             estimated</strong> in Canadian dollars with an Ontario baseline (~15,000 km/yr). They are not live
             listing prices and never presented as MSRP facts.
           </p>
-          <ul className="space-y-2 text-sm text-zinc-400 leading-relaxed list-disc list-inside marker:text-zinc-400">
+          <ul className="space-y-2 text-sm text-zinc-400 leading-relaxed list-disc list-inside marker:text-zinc-600">
             <li>USD EPA anchors converted via a fixed CAD exchange rate in regional assumptions.</li>
             <li>Depreciation tiers by segment, age, fuel type, and retention class (A/B/C for EVs).</li>
             <li>Insurance, maintenance, tires, and registration scaled by body style and fuel type.</li>
@@ -102,7 +102,7 @@ export default function Methodology() {
               <ProvenanceChip source="curated" /> EPA test-car rated horsepower (~71% coverage)
             </li>
             <li className="flex items-center gap-2">
-              <ProvenanceChip source="estimated" /> Market value, TCO, predicted 0–60, EV HP when no test-car match
+              <ProvenanceChip source="estimated" /> Market value, TCO, predicted 0-60, EV HP when no test-car match
             </li>
           </ul>
         </section>
@@ -121,7 +121,7 @@ export default function Methodology() {
         <section>
           <h2 className="text-xs font-black tracking-[0.25em] uppercase text-white mb-4">What we omit</h2>
           <p className="text-sm text-zinc-400 leading-relaxed">
-            Dimensions, torque, real 0–60 times, and listing photos are not in the EPA bulk source. Missing
+            Dimensions, torque, real 0-60 times, and listing photos are not in the EPA bulk source. Missing
             fields are left empty on the dossier (no row, no chip) and dropped from compare when empty across
             all vehicles. Compare cells use &quot;Not on file&quot; only when some cars have data and others do
             not.

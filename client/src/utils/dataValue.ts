@@ -1,5 +1,5 @@
 import { DISPLAY_CURRENCY } from './currency';
-import { engineLayoutLabel, formatEngineSystem, usesMpge } from './fuelDisplay';
+import { formatEngineSystem, usesMpge } from './fuelDisplay';
 
 /** Single label for missing / invalid field values across the app. */
 export const UNAVAILABLE_LABEL = 'Not on file';
@@ -16,7 +16,7 @@ export const SAFETY_UNAVAILABLE_NOTE =
   'No NHTSA rating found for this specific EPA configuration. The vehicle may still share crash-test results with closely related trims or model years.';
 /** EPA omits torque and 0–60; horsepower is filled from EPA test data when available. EV motor output may be manufacturer-estimated. */
 export const PERFORMANCE_GAP_NOTE =
-  'Torque and 0–60 times aren’t part of EPA’s fuel-economy records. Horsepower is shown when EPA rated it for this configuration; for many EVs we show manufacturer-rated motor output instead.';
+  'Torque and 0-60 times are not part of EPA fuel-economy records. Horsepower is shown when EPA rated it for this configuration; for many EVs we show manufacturer-rated motor output instead.';
 
 export interface FormatOptions {
   suffix?: string;
@@ -70,10 +70,10 @@ export function formatCurrencyRangeOrFallback(
   if (low === high) return formatCurrencyOrFallback(low, isEstimated);
   // Sub-$5k: show dollar precision — avoid fake "$1k-$1k" ranges.
   if ((high ?? 0) < 5000) {
-    return `$${Math.round(low!).toLocaleString()}–$${Math.round(high!).toLocaleString()}${suffix}`;
+    return `$${Math.round(low!).toLocaleString()}-$${Math.round(high!).toLocaleString()}${suffix}`;
   }
   const fmt = (n: number) => `$${Math.round(n / 1000)}k`;
-  return `${fmt(low!)}–${fmt(high!)}${suffix}`;
+  return `${fmt(low!)}-${fmt(high!)}${suffix}`;
 }
 
 const KM_PER_MILE = 1.609344;
@@ -88,7 +88,7 @@ export function formatCostPerKm(
   if (range?.low != null && range?.high != null && range.low !== range.high) {
     const lowKm = range.low / KM_PER_MILE;
     const highKm = range.high / KM_PER_MILE;
-    return `$${lowKm.toFixed(2)}–$${highKm.toFixed(2)}/km ${DISPLAY_CURRENCY}`;
+    return `$${lowKm.toFixed(2)}-$${highKm.toFixed(2)}/km ${DISPLAY_CURRENCY}`;
   }
   return mid;
 }
@@ -101,7 +101,7 @@ export function formatCostPerMile(
   if (!hasNumericValue(value)) return UNAVAILABLE_LABEL;
   const mid = `$${value!.toFixed(2)}/mi ${DISPLAY_CURRENCY}`;
   if (range?.low != null && range?.high != null && range.low !== range.high) {
-    return `$${range.low.toFixed(2)}–$${range.high.toFixed(2)}/mi ${DISPLAY_CURRENCY}`;
+    return `$${range.low.toFixed(2)}-$${range.high.toFixed(2)}/mi ${DISPLAY_CURRENCY}`;
   }
   return mid;
 }
@@ -126,7 +126,7 @@ export function formatCurrencyRange(
 /** Muted styling when a formatted value is unavailable. */
 export function unavailableClass(value: string, base = 'font-semibold mt-0.5'): string {
   return isUnavailableFormatted(value)
-    ? `${base} text-zinc-400 italic font-normal text-xs`
+    ? `${base} text-zinc-600 italic font-normal text-xs`
     : `${base} text-white`;
 }
 
@@ -149,8 +149,8 @@ export function formatEngineDetailForCard(engine: {
   }
   const parts: string[] = [];
   if (hasNumericValue(engine.displacement)) parts.push(`${engine.displacement}L`);
-  const layout = engineLayoutLabel(engine.configuration, engine.cylinders);
-  if (layout) parts.push(layout);
+  if (engine.configuration) parts.push(engine.configuration);
+  else if (hasNumericValue(engine.cylinders)) parts.push(`${engine.cylinders}-cyl`);
   return parts.length ? parts.join(' ') : formatEngineForCard(engine.fuelType, engine.displacement);
 }
 
@@ -204,6 +204,6 @@ export function formatPriceShort(msrp?: number | null, isEstimated = false): str
 
 export function cardStatClass(value: string): string {
   return isUnavailableFormatted(value)
-    ? 'text-lg font-bold text-zinc-400 italic text-sm'
+    ? 'text-lg font-bold text-zinc-600 italic text-sm'
     : 'text-lg font-bold';
 }
