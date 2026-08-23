@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import * as api from '../services/api';
 import type { CarSpecs, SearchQuery } from '../types/car.types';
 import AggregateStats from '../components/AggregateStats';
+import SelectMenu from '../components/SelectMenu';
 import { cardStatClass, formatEngineDetailForCard, formatMpgForCard, formatPowerForCard } from '../utils/dataValue';
 import { usesMpge } from '../utils/fuelDisplay';
 import { formatTransmissionLabel } from '../utils/trimLabel';
@@ -193,19 +194,21 @@ export default function VehicleGrid() {
             <div className="flex items-center gap-6">
               <div className="hidden md:flex items-center gap-2 text-[10px] tracking-[0.25em] text-zinc-400">
                 <span>PER PAGE</span>
-                <select
-                  value={pageSize}
-                  onChange={(e) => {
-                    const value = Number(e.target.value) || 36;
-                    setPageSize(value);
+                <SelectMenu
+                  aria-label="Vehicles per page"
+                  size="sm"
+                  className="w-20"
+                  value={String(pageSize)}
+                  onChange={(v) => {
+                    setPageSize(Number(v) || 36);
                     setCurrentPage(1);
                   }}
-                  className="bg-black border border-zinc-800 px-2 py-1 text-[10px] tracking-[0.25em] focus:outline-none focus:border-zinc-600"
-                >
-                  <option value={24}>24</option>
-                  <option value={36}>36</option>
-                  <option value={60}>60</option>
-                </select>
+                  options={[
+                    { value: '24', label: '24' },
+                    { value: '36', label: '36' },
+                    { value: '60', label: '60' },
+                  ]}
+                />
               </div>
 
               <button
@@ -324,27 +327,29 @@ export default function VehicleGrid() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[10px] tracking-[0.25em] text-zinc-300 mb-1">SORT BY</label>
-                      <select
+                      <SelectMenu
+                        aria-label="Sort by"
                         value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value as 'year' | 'mpg' | 'name')}
-                        className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-[11px] focus:outline-none focus:border-zinc-600 transition-colors"
-                      >
-                        <option value="year">YEAR</option>
-                        <option value="mpg">MPG</option>
-                        <option value="name">NAME</option>
-                      </select>
+                        onChange={(v) => setSortBy(v as 'year' | 'mpg' | 'name')}
+                        options={[
+                          { value: 'year', label: 'YEAR' },
+                          { value: 'mpg', label: 'MPG' },
+                          { value: 'name', label: 'NAME' },
+                        ]}
+                      />
                     </div>
 
                     <div>
                       <label className="block text-[10px] tracking-[0.25em] text-zinc-300 mb-1">ORDER</label>
-                      <select
+                      <SelectMenu
+                        aria-label="Sort order"
                         value={sortOrder}
-                        onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
-                        className="w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-[11px] focus:outline-none focus:border-zinc-600 transition-colors"
-                      >
-                        <option value="desc">HIGH TO LOW</option>
-                        <option value="asc">LOW TO HIGH</option>
-                      </select>
+                        onChange={(v) => setSortOrder(v as 'asc' | 'desc')}
+                        options={[
+                          { value: 'desc', label: 'HIGH TO LOW' },
+                          { value: 'asc', label: 'LOW TO HIGH' },
+                        ]}
+                      />
                     </div>
                   </div>
 
@@ -402,19 +407,21 @@ export default function VehicleGrid() {
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2 md:hidden">
                     <span className="text-[10px] uppercase">PER PAGE</span>
-                    <select
-                      value={pageSize}
-                      onChange={(e) => {
-                        const value = Number(e.target.value) || 36;
-                        setPageSize(value);
+                    <SelectMenu
+                      aria-label="Vehicles per page"
+                      size="sm"
+                      className="w-20"
+                      value={String(pageSize)}
+                      onChange={(v) => {
+                        setPageSize(Number(v) || 36);
                         setCurrentPage(1);
                       }}
-                      className="bg-black border border-zinc-800 px-2 py-1 text-[10px] tracking-[0.25em] focus:outline-none focus:border-zinc-600"
-                    >
-                      <option value={24}>24</option>
-                      <option value={36}>36</option>
-                      <option value={60}>60</option>
-                    </select>
+                      options={[
+                        { value: '24', label: '24' },
+                        { value: '36', label: '36' },
+                        { value: '60', label: '60' },
+                      ]}
+                    />
                   </div>
 
                   <div className="flex items-center gap-2">

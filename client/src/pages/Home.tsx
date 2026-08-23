@@ -4,6 +4,7 @@ import { useCarStore } from '../stores/carStore';
 import FilterSidebar from '../components/FilterSidebar';
 import CarCard from '../components/CarCard';
 import SearchBar from '../components/SearchBar';
+import SelectMenu from '../components/SelectMenu';
 import AboutData from '../components/AboutData';
 import {
   describeActiveFilters,
@@ -247,20 +248,22 @@ export default function Home() {
 
                     <div className="flex items-center gap-3">
                       <span className="text-[10px] tracking-[0.2em] text-zinc-400 uppercase">Sort</span>
-                      <select
-                        className="bg-black border border-zinc-700 px-3 py-2 text-xs tracking-widest text-white uppercase focus:outline-none focus:border-zinc-400"
+                      <SelectMenu
+                        aria-label="Sort results"
+                        className="w-40"
                         value={sortField}
-                        onChange={(e) => handleSortChange(e.target.value)}
-                      >
-                        {searchText && <option value="relevance">Best match</option>}
-                        {isEvBrowse && <option value="evScore">EV score</option>}
-                        <option value="year">Year</option>
-                        <option value="make">Make</option>
-                        <option value="model">Model</option>
-                        <option value="price">Est. value</option>
-                        {isEvBrowse && <option value="range">EPA range</option>}
-                        <option value="fuelEconomy">{isEvBrowse ? 'MPGe' : 'MPG'}</option>
-                      </select>
+                        onChange={handleSortChange}
+                        options={[
+                          ...(searchText ? [{ value: 'relevance', label: 'Best match' }] : []),
+                          ...(isEvBrowse ? [{ value: 'evScore', label: 'EV score' }] : []),
+                          { value: 'year', label: 'Year' },
+                          { value: 'make', label: 'Make' },
+                          { value: 'model', label: 'Model' },
+                          { value: 'price', label: 'Est. value' },
+                          ...(isEvBrowse ? [{ value: 'range', label: 'EPA range' }] : []),
+                          { value: 'fuelEconomy', label: isEvBrowse ? 'MPGe' : 'MPG' },
+                        ]}
+                      />
                       <button
                         type="button"
                         onClick={() => handleSortChange(sortField)}

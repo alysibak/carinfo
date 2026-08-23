@@ -12,6 +12,7 @@ import {
   type CollectionRankBy,
 } from '../utils/collectionCuration';
 import AggregateStats from '../components/AggregateStats';
+import SelectMenu from '../components/SelectMenu';
 import { COLLECTIONS } from '../config/collections';
 import { cardStatClass, formatEngineDetailForCard, formatMpgForCard, formatPowerForCard, formatPriceShort } from '../utils/dataValue';
 import { usesMpge } from '../utils/fuelDisplay';
@@ -287,43 +288,46 @@ export default function Collection() {
 
                 <div>
                   <label className="block text-xs tracking-widest text-zinc-300 mb-2">SORT BY</label>
-                  <select
+                  <SelectMenu
+                    aria-label="Sort by"
                     value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as SortBy)}
-                    className="w-full bg-zinc-950 border border-zinc-800 px-4 py-2 text-sm focus:outline-none focus:border-zinc-600 transition-colors"
-                  >
-                    {isCurated && <option value="value">BEST MATCH</option>}
-                    <option value="year">YEAR</option>
-                    <option value="mpg">MPG</option>
-                    <option value="name">NAME</option>
-                  </select>
+                    onChange={(v) => setSortBy(v as SortBy)}
+                    options={[
+                      ...(isCurated ? [{ value: 'value', label: 'BEST MATCH' }] : []),
+                      { value: 'year', label: 'YEAR' },
+                      { value: 'mpg', label: 'MPG' },
+                      { value: 'name', label: 'NAME' },
+                    ]}
+                  />
                 </div>
 
                 <div>
                   <label className="block text-xs tracking-widest text-zinc-300 mb-2">ORDER</label>
-                  <select
+                  <SelectMenu
+                    aria-label="Sort order"
                     value={sortOrder}
-                    onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
-                    className="w-full bg-zinc-950 border border-zinc-800 px-4 py-2 text-sm focus:outline-none focus:border-zinc-600 transition-colors"
-                  >
-                    <option value="desc">HIGH TO LOW</option>
-                    <option value="asc">LOW TO HIGH</option>
-                  </select>
+                    onChange={(v) => setSortOrder(v as 'asc' | 'desc')}
+                    options={[
+                      { value: 'desc', label: 'HIGH TO LOW' },
+                      { value: 'asc', label: 'LOW TO HIGH' },
+                    ]}
+                  />
                 </div>
 
                 <div>
                   <label className="block text-xs tracking-widest text-zinc-300 mb-2">FUEL TYPE</label>
-                  <select
+                  <SelectMenu
+                    aria-label="Fuel type"
                     value={fuelTypeFilter}
-                    onChange={(e) => setFuelTypeFilter(e.target.value as FuelTypeFilter)}
-                    className="w-full bg-zinc-950 border border-zinc-800 px-4 py-2 text-sm focus:outline-none focus:border-zinc-600 transition-colors"
-                  >
-                    <option value="all">ALL VEHICLES</option>
-                    <option value="gasoline">GAS + HYBRID</option>
-                    <option value="gasoline-only">GAS ONLY</option>
-                    <option value="hybrid">HYBRID ONLY</option>
-                    <option value="electric">ELECTRIC ONLY</option>
-                  </select>
+                    onChange={(v) => setFuelTypeFilter(v as FuelTypeFilter)}
+                    options={[
+                      { value: 'all', label: 'ALL VEHICLES' },
+                      { value: 'gasoline', label: 'GAS + HYBRID' },
+                      { value: 'gasoline-only', label: 'GAS ONLY' },
+                      { value: 'hybrid', label: 'HYBRID ONLY' },
+                      { value: 'electric', label: 'ELECTRIC ONLY' },
+                    ]}
+                  />
                 </div>
               </div>
 
@@ -371,18 +375,21 @@ export default function Collection() {
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] uppercase">Per page</span>
-                  <select
-                    value={pageSize}
-                    onChange={(e) => {
-                      setPageSize(Number(e.target.value) || 24);
+                  <SelectMenu
+                    aria-label="Vehicles per page"
+                    size="sm"
+                    className="w-20"
+                    value={String(pageSize)}
+                    onChange={(v) => {
+                      setPageSize(Number(v) || 24);
                       setCurrentPage(1);
                     }}
-                    className="bg-black border border-zinc-800 px-2 py-1 text-[10px] tracking-[0.25em] focus:outline-none focus:border-zinc-600"
-                  >
-                    <option value={12}>12</option>
-                    <option value={24}>24</option>
-                    <option value={48}>48</option>
-                  </select>
+                    options={[
+                      { value: '12', label: '12' },
+                      { value: '24', label: '24' },
+                      { value: '48', label: '48' },
+                    ]}
+                  />
                 </div>
 
                 <div className="flex items-center gap-2">

@@ -4,6 +4,7 @@ import * as api from '../services/api';
 import type { CarSpecs, SearchQuery } from '../types/car.types';
 import { filterCarsByFuelType, calculateReliabilityScore, type FuelTypeFilter } from '../utils/marketIntelligence';
 import AggregateStats from '../components/AggregateStats';
+import SelectMenu from '../components/SelectMenu';
 import {
   cardStatClass,
   formatEngineDetailForCard,
@@ -351,33 +352,32 @@ export default function SmartSearch() {
                 {/* Smart Sort */}
                 <div>
                   <label className="block text-xs tracking-widest text-zinc-300 mb-2">SMART SORT</label>
-                  <select
+                  <SelectMenu
+                    aria-label="Smart sort"
                     value={smartSort}
-                    onChange={(e) => setSmartSort(e.target.value as SmartSort)}
-                    className="w-full bg-zinc-950 border border-zinc-800 px-4 py-2 text-sm focus:outline-none focus:border-zinc-600 transition-colors"
-                  >
-                    {smartSortOptions.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}: {option.desc}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(v) => setSmartSort(v as SmartSort)}
+                    options={smartSortOptions.map((option) => ({
+                      value: option.value,
+                      label: `${option.label}: ${option.desc}`,
+                    }))}
+                  />
                 </div>
 
                 {/* Fuel Type Filter */}
                 <div>
                   <label className="block text-xs tracking-widest text-zinc-300 mb-2">FUEL TYPE</label>
-                  <select
+                  <SelectMenu
+                    aria-label="Fuel type"
                     value={fuelTypeFilter}
-                    onChange={(e) => setFuelTypeFilter(e.target.value as FuelTypeFilter)}
-                    className="w-full bg-zinc-950 border border-zinc-800 px-4 py-2 text-sm focus:outline-none focus:border-zinc-600 transition-colors"
-                  >
-                    <option value="all">ALL VEHICLES</option>
-                    <option value="gasoline">GASOLINE + HYBRID</option>
-                    <option value="gasoline-only">GASOLINE ONLY</option>
-                    <option value="hybrid">HYBRID ONLY</option>
-                    <option value="electric">ELECTRIC ONLY</option>
-                  </select>
+                    onChange={(v) => setFuelTypeFilter(v as FuelTypeFilter)}
+                    options={[
+                      { value: 'all', label: 'ALL VEHICLES' },
+                      { value: 'gasoline', label: 'GASOLINE + HYBRID' },
+                      { value: 'gasoline-only', label: 'GASOLINE ONLY' },
+                      { value: 'hybrid', label: 'HYBRID ONLY' },
+                      { value: 'electric', label: 'ELECTRIC ONLY' },
+                    ]}
+                  />
                 </div>
               </div>
 
