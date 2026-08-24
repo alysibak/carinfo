@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, NavLink } from 'react-router-dom';
 import { useCarStore } from '../stores/carStore';
 import { useGarageStore } from '../stores/garageStore';
@@ -79,9 +80,18 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
     };
   }, [menuOpen]);
 
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [menuOpen]);
+
   const showBorder = !transparentUntilScroll || scrolled;
 
-  return (
+  const header = (
     <header
       ref={headerRef}
       className={`sticky top-0 z-50 transition-colors duration-150 ${
@@ -143,30 +153,51 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
         </div>
       </div>
 
-      {menuOpen && (
-        <div className="lg:hidden fixed inset-0 top-[var(--header-height)] z-40 bg-black/95 backdrop-blur-sm">
-          <nav className="page-wrap py-4 flex flex-col divide-y divide-zinc-800 border-t border-zinc-800">
-            {NAV_LINKS.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                onClick={() => setMenuOpen(false)}
-                className={({ isActive }) =>
-                  `flex items-center justify-between py-3.5 text-xs uppercase tracking-widest transition-colors ${
-                    isActive ? 'text-white' : 'text-zinc-400 hover:text-white'
-                  }`
-                }
-              >
-                {item.label}
-                <Badge count={badgeFor(item.to)} />
-              </NavLink>
-            ))}
-            <div className="py-4">
-              <AuthHeaderSlot onNavigate={() => setMenuOpen(false)} />
-            </div>
-          </nav>
-        </div>
-      )}
     </header>
+  );
+
+  // Rendered through a portal rather than inside <header>: the header's
+  // backdrop-filter makes it the containing block for fixed-position
+  // descendants, which collapsed this panel to the header's own height.
+  const mobileMenu =
+    menuOpen &&
+    typeof document !== 'undefined' &&
+    createPortal(
+      <div
+        className="lg:hidden fixed inset-x-0 bottom-0 z-40 overflow-y-auto overscroll-contain bg-black"
+        style={{ top: 'var(--header-height, 64px)' }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) setMenuOpen(false);
+        }}
+      >
+        <nav className="page-wrap py-4 flex flex-col divide-y divide-zinc-800 border-t border-zinc-800">
+          {NAV_LINKS.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              onClick={() => setMenuOpen(false)}
+              className={({ isActive }) =>
+                `flex items-center justify-between py-3.5 text-xs uppercase tracking-widest transition-colors ${
+                  isActive ? 'text-white' : 'text-zinc-400 hover:text-white'
+                }`
+              }
+            >
+              {item.label}
+              <Badge count={badgeFor(item.to)} />
+            </NavLink>
+          ))}
+          <div className="py-4">
+            <AuthHeaderSlot onNavigate={() => setMenuOpen(false)} />
+          </div>
+        </nav>
+      </div>,
+      document.body,
+    );
+
+  return (
+    <>
+      {header}
+      {mobileMenu}
+    </>
   );
 }
