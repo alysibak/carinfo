@@ -36,7 +36,7 @@ export default function GlanceMetricCell({ metric, size = 'default' }: GlanceMet
 
   return (
     <div className="bg-zinc-950 p-4 min-w-0 flex-1 flex flex-col items-center justify-center text-center">
-      <p className="text-[10px] uppercase tracking-widest text-zinc-400 mb-2 flex items-center justify-center gap-1.5 flex-wrap">
+      <p className="w-full text-[10px] uppercase tracking-widest text-zinc-400 mb-2 flex items-center justify-center gap-1.5 flex-wrap">
         {metric.label}
         {glossaryKey && <SpecExplain glossaryKey={glossaryKey} />}
         {metric.estimated && <TrustLabel estimated className="!text-[7px] !px-1" />}
@@ -47,9 +47,9 @@ export default function GlanceMetricCell({ metric, size = 'default' }: GlanceMet
           <TrustLabel source="epa" className="!text-[7px] !px-1" />
         )}
       </p>
-      <div className="flex items-baseline justify-center gap-1.5 flex-wrap">
+      <div className="w-full flex items-baseline justify-center gap-1.5 flex-wrap">
         <span
-          className={`${numSize} font-bold tabular-nums tracking-normal leading-none ${
+          className={`${numSize} font-bold tabular-nums tracking-normal leading-none break-words max-w-full ${
             unavailable ? 'text-zinc-700' : 'text-white'
           }`}
         >

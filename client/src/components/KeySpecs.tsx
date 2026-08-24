@@ -404,6 +404,12 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   ].filter((g) => g.rows.length > 0);
 }
 
+// Beyond this, a value cannot sit beside its label in a column this narrow
+// without pushing out of the card, so it stacks under the label the way the
+// price row already does. Every inline value in the data is comfortably short
+// of it; EPA class strings and valuation notes are the ones that are not.
+const INLINE_VALUE_MAX_CHARS = 24;
+
 function SpecGroupBlock({ group }: { group: SpecGroup }) {
   return (
     <div className="border border-zinc-800 min-w-0">
@@ -411,33 +417,35 @@ function SpecGroupBlock({ group }: { group: SpecGroup }) {
         {group.title}
       </p>
       <div className="flex flex-col">
-        {group.rows.map((spec) => (
-          <div
-            key={spec.key}
-            className={`py-1 px-3 border-b border-zinc-900 last:border-b-0 min-w-0 ${
-              spec.key === 'msrp'
-                ? 'flex flex-col gap-0.5'
-                : 'flex items-baseline justify-between gap-4'
-            }`}
-          >
-            <p className={`${TIER3_LABEL} min-w-0`}>
-              <SpecLabel label={spec.label} glossaryKey={spec.glossary} />
-            </p>
+        {group.rows.map((spec) => {
+          const emphasised = spec.key === 'msrp';
+          const stacked = emphasised || String(spec.value ?? '').length > INLINE_VALUE_MAX_CHARS;
+          return (
             <div
-              className={`flex items-center gap-1.5 min-w-0 ${
-                spec.key === 'msrp' ? 'flex-wrap' : 'justify-end shrink-0'
+              key={spec.key}
+              className={`py-1 px-3 border-b border-zinc-900 last:border-b-0 min-w-0 ${
+                stacked ? 'flex flex-col gap-0.5' : 'flex items-baseline justify-between gap-4'
               }`}
             >
-              <DataValue
-                value={spec.value}
-                className={`${
-                  spec.key === 'msrp' ? TIER1_SPEC_EMPHASIS : TIER2_VALUE
-                } break-words max-w-full ${spec.key === 'msrp' ? '' : 'text-right'}`}
-              />
-              {spec.provenanceSource && <ProvenanceChip source={spec.provenanceSource} />}
+              <p className={`${TIER3_LABEL} min-w-0`}>
+                <SpecLabel label={spec.label} glossaryKey={spec.glossary} />
+              </p>
+              <div
+                className={`flex items-center gap-1.5 min-w-0 ${
+                  stacked ? 'flex-wrap' : 'justify-end shrink-0'
+                }`}
+              >
+                <DataValue
+                  value={spec.value}
+                  className={`${emphasised ? TIER1_SPEC_EMPHASIS : TIER2_VALUE} break-words max-w-full ${
+                    stacked ? '' : 'text-right'
+                  }`}
+                />
+                {spec.provenanceSource && <ProvenanceChip source={spec.provenanceSource} />}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
