@@ -13,11 +13,16 @@ export default function AccountPage() {
       <div className="page-wrap py-10 max-w-2xl">
         <h1 className="text-2xl font-bold mb-3">Account</h1>
         <p className="text-sm text-zinc-400">
-          Accounts are not enabled on this build. Set{' '}
-          <code className="text-zinc-200">VITE_CLERK_PUBLISHABLE_KEY</code>,{' '}
-          <code className="text-zinc-200">CLERK_SECRET_KEY</code>, and{' '}
-          <code className="text-zinc-200">DATABASE_URL</code> to turn on cloud garage sync.
+          Accounts aren&rsquo;t available yet. Your garage is saved on this device and works
+          without one &mdash; sign-in and cross-device sync are coming.
         </p>
+        {import.meta.env.DEV && (
+          <p className="mt-3 text-xs text-zinc-500">
+            Set <code className="text-zinc-300">VITE_CLERK_PUBLISHABLE_KEY</code>,{' '}
+            <code className="text-zinc-300">CLERK_SECRET_KEY</code> and{' '}
+            <code className="text-zinc-300">DATABASE_URL</code> to enable them.
+          </p>
+        )}
         <Link to="/garage" className="inline-block mt-6 btn-secondary text-xs">
           Local garage
         </Link>

@@ -90,9 +90,14 @@ export default function DreamGarage() {
                 Free plan · {garage.length}/{garageLimit ?? FREE_GARAGE_LIMIT} vehicles
                 {syncMode === 'cloud' ? ' · synced' : ' · this device'}
               </p>
-              <Link to="/account" className="text-xs uppercase tracking-widest text-white hover:underline shrink-0">
-                Upgrade to Pro →
-              </Link>
+              {import.meta.env.VITE_CLERK_PUBLISHABLE_KEY && (
+                <Link
+                  to="/account"
+                  className="text-xs uppercase tracking-widest text-white hover:underline shrink-0"
+                >
+                  Upgrade to Pro →
+                </Link>
+              )}
             </div>
           )}
         </div>
