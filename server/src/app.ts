@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import carRoutes from './routes/car.routes.js';
 import vinRoutes from './routes/vin.routes.js';
 import meRoutes from './routes/me.routes.js';
@@ -9,7 +10,10 @@ import * as carService from './services/car.service.js';
 import * as billingController from './controllers/billing.controller.js';
 import { resolveDataFile } from './utils/data-paths.js';
 
+// Load .env from the CWD (server/ in dev), then fall back to the repo
+// root so one root .env can configure both workspaces. Missing files no-op.
 dotenv.config();
+dotenv.config({ path: path.resolve(process.cwd(), '..', '.env') });
 
 const app = express();
 
