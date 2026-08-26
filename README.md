@@ -961,6 +961,20 @@ npm run start    # Express on :5000 serves API + client/dist
 
 See [`.env.example`](.env.example). Core browse/dossier works without these; account sync and billing need Clerk + Postgres (+ Stripe for Pro).
 
+### Enabling accounts
+
+The code ships ready — sign-in, the `/account` page, and cloud garage sync all appear automatically once three keys exist:
+
+1. **Clerk** — create a free app at [dashboard.clerk.com](https://dashboard.clerk.com), then copy the **Publishable key** (`pk_...`) and **Secret key** (`sk_...`) from API Keys.
+2. **Postgres** — create a free database (Neon, Vercel Postgres, or Supabase) and copy its connection string. Tables are created automatically on first request; no migration step.
+3. **Vercel** — Project → Settings → Environment Variables, add:
+   - `VITE_CLERK_PUBLISHABLE_KEY` = the `pk_...` key (baked in at build time)
+   - `CLERK_SECRET_KEY` = the `sk_...` key
+   - `DATABASE_URL` = the Postgres connection string
+
+   Then redeploy. For local dev, put the same three in a root `.env`.
+4. **Stripe (optional, for Pro)** — add `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, and `STRIPE_WEBHOOK_SECRET` with a webhook pointed at `/api/billing/webhook`.
+
 **Accounts API:** `GET /api/me/status`, `GET/PUT /api/me/garage`, `POST /api/billing/checkout`, `POST /api/billing/portal`, `POST /api/billing/webhook`.
 
 No `.env` required for local development of the public catalog.

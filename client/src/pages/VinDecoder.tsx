@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { decodeVin, type VinDecodeResult } from '../services/api';
 import TrustLabel, { InfoTip } from '../components/ui';
+
+const VinScanner = lazy(() => import('../components/VinScanner'));
 
 const SAMPLE_VIN = '1HGCM82633A004352'; // 2003 Honda Accord EX-V6 — decodes with 240 hp
 
@@ -39,6 +41,7 @@ export default function VinDecoder() {
   const [result, setResult] = useState<VinDecodeResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [scanning, setScanning] = useState(false);
 
   const run = async (raw: string) => {
     const v = raw.trim().toUpperCase();
@@ -100,6 +103,22 @@ export default function VinDecoder() {
             className="flex-1 h-14 bg-zinc-950 border-0 px-4 text-base font-mono tracking-widest text-white placeholder:text-zinc-400 focus:outline-none uppercase rounded-none"
           />
           <button
+            type="button"
+            onClick={() => setScanning(true)}
+            aria-label="Scan VIN barcode with camera"
+            title="Scan VIN barcode with camera"
+            className="h-14 px-4 bg-zinc-950 text-zinc-300 hover:text-white border-l border-zinc-700 rounded-none transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" aria-hidden>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"
+              />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+            </svg>
+          </button>
+          <button
             onClick={() => run(vin)}
             disabled={loading || vin.trim().length < 11}
             className="h-14 px-8 bg-white text-black text-xs font-semibold uppercase tracking-widest hover:bg-zinc-200 disabled:opacity-40 border-l border-zinc-700 rounded-none transition-colors"
@@ -116,8 +135,24 @@ export default function VinDecoder() {
           >
             Sample VIN
           </button>
-          <span>Find your VIN on the dashboard by the windshield, the driver’s door jamb, or your registration.</span>
+          <span>
+            Find your VIN on the dashboard by the windshield, the driver’s door jamb, or your registration —
+            or tap the camera to scan its barcode.
+          </span>
         </div>
+
+        {scanning && (
+          <Suspense fallback={null}>
+            <VinScanner
+              onDetected={(scanned) => {
+                setScanning(false);
+                setVin(scanned);
+                run(scanned);
+              }}
+              onClose={() => setScanning(false)}
+            />
+          </Suspense>
+        )}
 
         {error && (
           <div className="mt-8 max-w-2xl border border-zinc-800 bg-zinc-950 px-5 py-4 text-sm text-zinc-300">
