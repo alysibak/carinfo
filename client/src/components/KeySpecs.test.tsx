@@ -24,6 +24,14 @@ describe('KeySpecs omit-when-empty', () => {
     expect(screen.getByText('1.8L I4')).toBeInTheDocument();
     expect(screen.getByText('33')).toBeInTheDocument();
   });
+
+  it('omits rows the dossier already showed', () => {
+    render(<KeySpecs dashboard={sparseDashboard} omitKeys={['engine', 'mpgCombined']} />);
+
+    expect(screen.queryByText('1.8L I4')).not.toBeInTheDocument();
+    expect(screen.queryByText('33')).not.toBeInTheDocument();
+    expect(screen.getByText('Powertrain')).toBeInTheDocument();
+  });
 });
 
 describe('KeySpecs long values', () => {

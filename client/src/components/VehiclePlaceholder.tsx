@@ -28,10 +28,10 @@ export default function VehiclePlaceholder({
       aria-label={`${car.year} ${car.make} ${displayModelLabel(car)}, illustration placeholder`}
     >
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 transition-opacity duration-300 group-hover:opacity-70"
         style={{
-          background: `radial-gradient(ellipse at 50% 68%, #${accent}66 0%, transparent 60%)`,
-          opacity: 0.4,
+          background: `radial-gradient(ellipse at 50% 68%, #${accent}88 0%, transparent 62%)`,
+          opacity: 0.55,
         }}
       />
       <div
@@ -43,8 +43,8 @@ export default function VehiclePlaceholder({
           src={bodyTypeImg}
           alt=""
           aria-hidden
-          className={`absolute left-0 right-0 mx-auto w-full max-w-[92%] object-contain pointer-events-none ${
-            compact ? 'top-[6%] h-[58%]' : 'top-[8%] h-[62%]'
+          className={`absolute left-0 right-0 mx-auto w-full max-w-[96%] object-contain pointer-events-none transition-transform duration-500 ease-out group-hover:scale-105 ${
+            compact ? 'top-[4%] h-[70%]' : 'top-[6%] h-[72%]'
           }`}
         />
       ) : (

@@ -6,6 +6,8 @@ export interface CollectionDisplayConfig {
   dedupeByModel?: boolean;
   /** Client-side ranking for curated collections. */
   rankBy?: CollectionRankBy;
+  /** How many ranked picks to show before “open Search”. */
+  shortlistSize?: number;
 }
 
 export interface CollectionConfig {
@@ -17,17 +19,21 @@ export interface CollectionConfig {
   display?: CollectionDisplayConfig;
 }
 
+const CURATED: CollectionDisplayConfig = {
+  dedupeByModel: true,
+  rankBy: 'best-value',
+  shortlistSize: 12,
+};
+
 /**
- * Curated collection definitions shared by the Landing page (cards + live
- * counts) and the Collection page (actual results). All filters use fields
- * that exist in the EPA-derived database.
+ * Curated shortlists — not catalogs. Each opens as ranked picks + Search exit.
  */
 export const COLLECTIONS: Record<string, CollectionConfig> = {
-  'goldilocks': {
+  goldilocks: {
     id: 'goldilocks',
-    title: 'THE GOLDILOCKS ZONE',
-    subtitle: 'Just Right for Most People',
-    description: 'Balanced price and efficiency for everyday drivers',
+    title: 'The Goldilocks zone',
+    subtitle: 'Balanced price and efficiency',
+    description: 'Everyday drivers who want solid MPG without a luxury budget.',
     query: {
       filters: {
         price: { min: 15000, max: 35000 },
@@ -35,16 +41,13 @@ export const COLLECTIONS: Record<string, CollectionConfig> = {
       },
       sort: { field: 'year', order: 'desc' },
     },
-    display: {
-      dedupeByModel: true,
-      rankBy: 'best-value',
-    },
+    display: CURATED,
   },
   'gas-savers': {
     id: 'gas-savers',
-    title: 'BEST GAS SAVERS',
-    subtitle: 'Fill Up Less, Save More',
-    description: 'Maximum fuel efficiency without breaking the bank',
+    title: 'Gas savers',
+    subtitle: 'Efficiency first',
+    description: 'Highest combined economy under a practical budget.',
     query: {
       filters: {
         fuelEconomy: { min: 35 },
@@ -52,12 +55,13 @@ export const COLLECTIONS: Record<string, CollectionConfig> = {
       },
       sort: { field: 'fuelEconomy', order: 'desc' },
     },
+    display: { ...CURATED, rankBy: 'daily-driver' },
   },
   'luxury-less': {
     id: 'luxury-less',
-    title: 'LUXURY FOR LESS',
-    subtitle: 'Premium Badge, Smart Price',
-    description: 'High-end brands at accessible prices',
+    title: 'Luxury for less',
+    subtitle: 'Premium badges, used-market prices',
+    description: 'German and Japanese luxury brands in an accessible CAD value band.',
     query: {
       filters: {
         make: ['Mercedes-Benz', 'BMW', 'Audi', 'Lexus', 'Acura', 'Infiniti', 'Cadillac', 'Lincoln'],
@@ -66,24 +70,26 @@ export const COLLECTIONS: Record<string, CollectionConfig> = {
       },
       sort: { field: 'year', order: 'desc' },
     },
+    display: CURATED,
   },
   'family-fortress': {
     id: 'family-fortress',
-    title: 'FAMILY FORTRESS',
-    subtitle: 'Protect What Matters Most',
-    description: 'Maximum space and practicality for the whole crew',
+    title: 'Family fortress',
+    subtitle: 'Space and practicality',
+    description: 'SUVs and minivans for crews and cargo.',
     query: {
       filters: {
         bodyStyle: ['suv', 'minivan'],
       },
       sort: { field: 'year', order: 'desc' },
     },
+    display: { ...CURATED, rankBy: 'daily-driver' },
   },
   'weekend-warriors': {
     id: 'weekend-warriors',
-    title: 'WEEKEND WARRIORS',
-    subtitle: 'Live for the Drive',
-    description: 'Sporty coupes with larger engines (EPA has no convertible class)',
+    title: 'Weekend warriors',
+    subtitle: 'Sporty coupes',
+    description: 'Coupes with larger engines (EPA has no convertible class).',
     query: {
       filters: {
         bodyStyle: ['coupe'],
@@ -91,12 +97,13 @@ export const COLLECTIONS: Record<string, CollectionConfig> = {
       },
       sort: { field: 'year', order: 'desc' },
     },
+    display: CURATED,
   },
   'work-horses': {
     id: 'work-horses',
-    title: 'WORK HORSES',
-    subtitle: 'Built to Work, Priced to Own',
-    description: 'Serious truck capability for serious work',
+    title: 'Work horses',
+    subtitle: 'Trucks that haul',
+    description: 'AWD/4WD trucks for serious work.',
     query: {
       filters: {
         bodyStyle: ['truck'],
@@ -104,12 +111,13 @@ export const COLLECTIONS: Record<string, CollectionConfig> = {
       },
       sort: { field: 'year', order: 'desc' },
     },
+    display: CURATED,
   },
   'future-proof': {
     id: 'future-proof',
-    title: 'FUTURE-PROOF',
-    subtitle: 'Drive Tomorrow, Today',
-    description: 'Electric and hybrid vehicles leading the way',
+    title: 'Future-proof',
+    subtitle: 'Electric and hybrid',
+    description: 'Electrified powertrains from 2018 on — ranked shortlist, not every trim.',
     query: {
       filters: {
         fuelType: ['electric', 'hybrid', 'plug-in hybrid'],
@@ -117,5 +125,6 @@ export const COLLECTIONS: Record<string, CollectionConfig> = {
       },
       sort: { field: 'year', order: 'desc' },
     },
+    display: { ...CURATED, rankBy: 'best-value', shortlistSize: 12 },
   },
 };

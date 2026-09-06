@@ -4,6 +4,8 @@ import * as api from '../services/api';
 import type { CarSpecs } from '../types/car.types';
 import { useGarageStore } from '../stores/garageStore';
 import { cardStatClass, formatEngineForCard, formatMpgForCard, formatPriceShort } from '../utils/dataValue';
+import ToolPageHeader from '../components/ToolPageHeader';
+import { ErrorState, LoadingScreen, StatusToast } from '../components/ui';
 
 export default function SharedGarage() {
   const [searchParams] = useSearchParams();
@@ -46,88 +48,63 @@ export default function SharedGarage() {
     load();
   }, [searchParams]);
 
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+
   const saveAllToLocalGarage = () => {
     if (cars.length === 0) {
-      alert('There are no vehicles to save from this shared garage.');
+      setSaveMessage('There are no vehicles to save from this shared garage.');
       return;
     }
     try {
       mergeIntoGarage(cars);
-      alert('Saved these cars to your Dream Garage.');
       navigate('/garage');
     } catch (e) {
       console.error('Failed to save shared garage to local store:', e);
-      alert('Could not save these cars to your Dream Garage.');
+      setSaveMessage('Could not save these cars to your Dream Garage.');
     }
   };
 
+  useEffect(() => {
+    if (!saveMessage) return;
+    const t = setTimeout(() => setSaveMessage(null), 2800);
+    return () => clearTimeout(t);
+  }, [saveMessage]);
+
   if (loading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block w-16 h-16 border-2 border-zinc-800 border-t-zinc-500 mb-4 opacity-50" />
-          <p className="text-xs tracking-[0.3em] text-zinc-300 uppercase">Loading Garage</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen label="Loading shared garage" />;
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center text-white">
-        <div className="text-center px-6">
-          <h2 className="text-3xl font-black tracking-tighter mb-3">SHARED GARAGE UNAVAILABLE</h2>
-          <p className="text-sm tracking-widest text-zinc-400 mb-6">{error}</p>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 text-xs tracking-[0.3em] text-zinc-400 hover:text-white transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
-            </svg>
-            <span>BACK TO HOME</span>
-          </Link>
-        </div>
-      </div>
+      <ErrorState
+        title="Shared garage unavailable"
+        message={error}
+        backTo="/"
+        backLabel="Home"
+      />
     );
   }
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Header */}
-      <div className="bg-black border-b border-zinc-900">
-        <div className="px-8 py-6">
-          <div className="flex items-center justify-between max-w-7xl mx-auto">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-3 text-xs tracking-[0.3em] text-zinc-400 hover:text-white transition-colors group"
-            >
-              <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
-              </svg>
-              <span>HOME</span>
-            </Link>
+      <StatusToast message={saveMessage} />
+      <ToolPageHeader
+        backTo="/"
+        backLabel="Home"
+        title="Shared Garage"
+        subtitle={`${cars.length} vehicle${cars.length !== 1 ? 's' : ''}`}
+        action={
+          <button
+            type="button"
+            onClick={saveAllToLocalGarage}
+            className="min-h-[44px] px-2 -mr-2 text-[10px] sm:text-xs tracking-[0.15em] sm:tracking-[0.25em] text-zinc-400 hover:text-white transition-colors text-right"
+          >
+            Save all
+          </button>
+        }
+      />
 
-            <div className="text-center">
-              <h1 className="text-2xl md:text-3xl font-black tracking-tighter">
-                SHARED GARAGE
-              </h1>
-              <p className="text-xs tracking-[0.3em] text-zinc-300 mt-1">
-                {cars.length} VEHICLE{cars.length !== 1 ? 'S' : ''}
-              </p>
-            </div>
-
-            <button
-              onClick={saveAllToLocalGarage}
-              className="text-xs tracking-[0.3em] text-zinc-400 hover:text-white transition-colors"
-            >
-              SAVE TO MY GARAGE
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="pt-8 pb-16 px-8">
+      <div className="pt-8 pb-16 page-wrap-wide">
         {cars.length === 0 ? (
           <div className="max-w-4xl mx-auto text-center py-32">
             <h2 className="text-3xl font-black tracking-tighter mb-4">
@@ -144,12 +121,12 @@ export default function SharedGarage() {
             </Link>
           </div>
         ) : (
-          <div className="max-w-7xl mx-auto">
+          <div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-zinc-900">
               {cars.map((car, index) => (
                 <div
                   key={car.id}
-                  className="bg-black p-8 hover:bg-zinc-950 transition-all duration-300 border border-zinc-900 hover:border-zinc-700 group relative"
+                  className="bg-black p-5 sm:p-8 hover:bg-zinc-950 transition-all duration-300 border border-zinc-900 hover:border-zinc-700 group relative"
                 >
                   {/* Position Badge */}
                   <div className="absolute top-4 left-4 w-10 h-10 bg-zinc-950 border border-zinc-800 flex items-center justify-center">
@@ -158,7 +135,7 @@ export default function SharedGarage() {
 
                   {/* Year */}
                   <div className="mb-4 mt-12">
-                    <p className="text-5xl font-black text-zinc-400 group-hover:text-zinc-300 transition-colors">
+                    <p className="text-3xl sm:text-5xl font-black text-zinc-400 group-hover:text-zinc-300 transition-colors">
                       {car.year}
                     </p>
                   </div>

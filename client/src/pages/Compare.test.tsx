@@ -1,4 +1,4 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import Compare from './Compare';
@@ -9,6 +9,7 @@ import { useCarStore } from '../stores/carStore';
 vi.mock('../stores/carStore');
 vi.mock('../services/api', () => ({
   getCarDashboard: vi.fn(),
+  compareCars: vi.fn(),
 }));
 
 describe('Compare provenance', () => {
@@ -18,6 +19,7 @@ describe('Compare provenance', () => {
       removeCarFromComparison: vi.fn(),
       clearComparison: vi.fn(),
       addCarToComparison: vi.fn(),
+      replaceComparison: vi.fn(),
       searchResults: [],
       searchQuery: {},
       setSearchQuery: vi.fn(),
@@ -28,7 +30,7 @@ describe('Compare provenance', () => {
     vi.mocked(api.getCarDashboard).mockResolvedValue(trustDashboard);
   });
 
-  it('loads full dashboards and renders provenance chips', async () => {
+  it('loads full dashboards and marks estimated fields', async () => {
     render(
       <MemoryRouter>
         <Compare />
@@ -43,24 +45,8 @@ describe('Compare provenance', () => {
       expect(screen.getByText('EFF AVG')).toBeInTheDocument();
     });
 
-    expect(screen.getAllByText('EPA').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Est.').length).toBeGreaterThan(0);
-  });
-
-  it('trust filter limits rows to estimates', async () => {
-    render(
-      <MemoryRouter>
-        <Compare />
-      </MemoryRouter>,
-    );
-
-    await waitFor(() => expect(screen.getByText('EST. VALUE')).toBeInTheDocument());
-
-    fireEvent.click(screen.getByRole('button', { name: 'Estimates only' }));
-
-    await waitFor(() => {
-      expect(screen.getByText('EST. VALUE')).toBeInTheDocument();
-      expect(screen.queryByText('EFF AVG')).not.toBeInTheDocument();
-    });
+    expect(screen.getAllByText('est.').length).toBeGreaterThan(0);
+    expect(screen.getByText('EST. VALUE')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Estimates only' })).not.toBeInTheDocument();
   });
 });

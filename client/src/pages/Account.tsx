@@ -13,8 +13,8 @@ export default function AccountPage() {
       <div className="page-wrap py-10 max-w-2xl">
         <h1 className="text-2xl font-bold mb-3">Account</h1>
         <p className="text-sm text-zinc-400">
-          Accounts aren&rsquo;t available yet. Your garage is saved on this device and works
-          without one &mdash; sign-in and cross-device sync are coming.
+          Accounts aren't available yet. Your garage is saved on this device and works
+          without one. Sign-in and cross-device sync are coming.
         </p>
         {import.meta.env.DEV && (
           <p className="mt-3 text-xs text-zinc-500">

@@ -36,6 +36,7 @@ export function normalizeSearchQuery(body: unknown): SearchQuery {
     query: typeof raw.query === 'string' ? raw.query : undefined,
     limit: asNumber(raw.limit),
     offset: asNumber(raw.offset),
+    collapseByModel: raw.collapseByModel === true || raw.collapseByModel === '1' || undefined,
   };
 
   if (filtersRaw) {

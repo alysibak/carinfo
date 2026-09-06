@@ -45,7 +45,7 @@ function PreviewFuelBar({ dashboard }: { dashboard: CarDashboard }) {
         </div>
       </div>
       <div className="meter-track">
-        <div className="meter-fill" style={{ width: `${pct}%` }} />
+        <div className="meter-fill meter-fill-animated" style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
@@ -62,7 +62,7 @@ export default function HeroDossierPreview({ dashboard }: { dashboard: CarDashbo
   return (
     <Link
       to={`/car/${car.id}`}
-      className="group block relative bg-zinc-950 border border-zinc-800 rounded-none overflow-hidden"
+      className="group block relative bg-zinc-950 border border-zinc-800 rounded-none overflow-hidden transition-all duration-200 hover:border-zinc-500 hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgba(0,0,0,0.45)]"
     >
       <div className="relative">
         <div className="p-4 border-b border-zinc-800">

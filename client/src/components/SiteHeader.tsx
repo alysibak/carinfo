@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Link, NavLink } from 'react-router-dom';
 import { useCarStore } from '../stores/carStore';
 import { useGarageStore } from '../stores/garageStore';
+import { REGION_OPTIONS, useRegionStore } from '../stores/regionStore';
 import AuthHeaderSlot from './AuthHeaderSlot';
 
 interface NavLinkItem {
@@ -12,13 +13,11 @@ interface NavLinkItem {
 }
 
 const NAV_LINKS: NavLinkItem[] = [
-  { to: '/browse', label: 'Browse' },
   { to: '/home', label: 'Search' },
   { to: '/compare', label: 'Compare' },
-  { to: '/value-matrix', label: 'Value Chart' },
-  { to: '/vin', label: 'VIN Lookup' },
-  { to: '/methodology', label: 'Methodology' },
+  { to: '/vin', label: 'VIN' },
   { to: '/garage', label: 'Garage' },
+  { to: '/browse', label: 'Guides' },
 ];
 
 function Badge({ count }: { count: number }) {
@@ -41,6 +40,8 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
   const [scrolled, setScrolled] = useState(false);
   const comparedCount = useCarStore((s) => s.comparedCars.length);
   const garageCount = useGarageStore((s) => s.cars.length);
+  const region = useRegionStore((s) => s.region);
+  const setRegion = useRegionStore((s) => s.setRegion);
 
   const badgeFor = (to: string) => {
     if (to === '/garage') return garageCount;
@@ -129,6 +130,21 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
         </nav>
 
         <div className="flex items-center gap-2 shrink-0">
+          <label className="hidden md:flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-zinc-500">
+            <span className="sr-only">Cost region</span>
+            <select
+              value={region}
+              onChange={(e) => setRegion(e.target.value as typeof region)}
+              className="bg-transparent border border-zinc-800 text-zinc-300 text-[10px] uppercase tracking-wider px-2 py-1.5 focus:outline-none focus:border-zinc-500"
+              aria-label="Cost estimate region"
+            >
+              {REGION_OPTIONS.map((opt) => (
+                <option key={opt.id} value={opt.id} className="bg-zinc-950 text-white">
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </label>
           {trailing}
           <div className="hidden sm:block">
             <AuthHeaderSlot />
@@ -187,7 +203,32 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
             </NavLink>
           ))}
           <div className="py-4">
+            <label className="flex flex-col gap-2 text-[10px] uppercase tracking-wider text-zinc-500">
+              Cost region (CAD estimates)
+              <select
+                value={region}
+                onChange={(e) => setRegion(e.target.value as typeof region)}
+                className="bg-zinc-950 border border-zinc-800 text-zinc-200 text-xs uppercase tracking-wider px-3 py-2.5 focus:outline-none focus:border-zinc-500"
+                aria-label="Cost estimate region"
+              >
+                {REGION_OPTIONS.map((opt) => (
+                  <option key={opt.id} value={opt.id} className="bg-zinc-950 text-white">
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="py-4">
             <AuthHeaderSlot onNavigate={() => setMenuOpen(false)} />
+          </div>
+          <div className="py-4 flex flex-col gap-3 text-xs uppercase tracking-widest text-zinc-500">
+            <NavLink to="/value-matrix" onClick={() => setMenuOpen(false)} className="hover:text-white">
+              Value chart
+            </NavLink>
+            <NavLink to="/methodology" onClick={() => setMenuOpen(false)} className="hover:text-white">
+              Methodology
+            </NavLink>
           </div>
         </nav>
       </div>,

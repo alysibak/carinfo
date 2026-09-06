@@ -3,6 +3,12 @@ import { readFileSync } from 'fs';
 import { computeEvScore } from '../utils/ev-scoring.js';
 import { normalizeCarRecord } from '../utils/car-normalize.js';
 import { dataFileCandidates, resolveDataFile } from '../utils/data-paths.js';
+import {
+  bestFuzzyScore,
+  fuzzyTokenMatch,
+  normalizeSearchQuery,
+  normalizeSearchToken,
+} from '../utils/fuzzy-search.js';
 import { enrichCar } from './content-enrichment.js';
 
 function resolveDbPath(): string | null {
@@ -239,6 +245,37 @@ export function getCarById(id: string): Car | null {
   return car ? normalizeCarRecord(car) : null;
 }
 
+/** Cars sharing a body style — for segment / similar prefiltering. */
+export function getCarsByBodyStyle(bodyStyle: string): Car[] {
+  ensureDatabase();
+  if (!bodyStyle) return [];
+  return bodyStyleIndex.get(bodyStyle) ?? bodyStyleIndex.get(bodyStyle.toLowerCase()) ?? [];
+}
+
+/** Same make + model + year, different EPA configurations (trims/transmissions). */
+export function getSiblingConfigs(id: string, limit = 24): Car[] {
+  ensureDatabase();
+  const anchor = idIndex.get(id);
+  if (!anchor) return [];
+  const makeCars = makeIndex.get(anchor.make.toLowerCase()) ?? [];
+  const siblings = makeCars.filter(
+    (c) =>
+      c.id !== anchor.id &&
+      c.year === anchor.year &&
+      c.model.toLowerCase() === anchor.model.toLowerCase(),
+  );
+  siblings.sort((a, b) => {
+    const drive = (a.driveType ?? '').localeCompare(b.driveType ?? '');
+    if (drive !== 0) return drive;
+    const mpg = (b.fuelEconomy?.combined ?? 0) - (a.fuelEconomy?.combined ?? 0);
+    if (mpg !== 0) return mpg;
+    const hp = (b.engine?.horsepower ?? 0) - (a.engine?.horsepower ?? 0);
+    if (hp !== 0) return hp;
+    return (a.trim ?? '').localeCompare(b.trim ?? '');
+  });
+  return siblings.slice(0, limit).map(normalizeCarRecord);
+}
+
 /** Debug: raw cars.json record plus enrichment and normalization stages. */
 export function getCarPipelineDebug(id: string): {
   raw: Car;
@@ -282,6 +319,13 @@ export function searchCars(query: SearchQuery): {
     sortByRelevanceInPlace(candidates, enriched.query!);
   } else if (sortField) {
     sortResultsInPlace(candidates, sortField, sortOrder);
+  } else {
+    // Stable default so one-per-model collapse keeps a recent, useful trim.
+    sortResultsInPlace(candidates, 'year', 'desc');
+  }
+
+  if (enriched.collapseByModel) {
+    candidates = collapseCandidatesByModel(candidates);
   }
 
   const total = candidates.length;
@@ -293,6 +337,16 @@ export function searchCars(query: SearchQuery): {
     total,
     hasMore: offset + limit < total,
   };
+}
+
+/** Keep the first car per make+model after the caller’s sort (sort before collapse). */
+function collapseCandidatesByModel(cars: Car[]): Car[] {
+  const best = new Map<string, Car>();
+  for (const car of cars) {
+    const key = `${car.make}|${car.model}`.toLowerCase();
+    if (!best.has(key)) best.set(key, car);
+  }
+  return Array.from(best.values());
 }
 
 export interface SearchSuggestion {
@@ -311,45 +365,80 @@ const POPULAR_SUGGESTIONS: SearchSuggestion[] = [
   { id: 'pop-accord', label: 'Honda Accord', sublabel: 'Sedan · reliable', query: 'honda accord' },
 ];
 
-/** Autocomplete suggestions for the search bar. */
+/** Autocomplete suggestions for the search bar — includes typo-tolerant matches. */
 export function getSearchSuggestions(rawQuery: string, limit = 8): SearchSuggestion[] {
   ensureDatabase();
-  const q = rawQuery.trim().toLowerCase();
+  const qRaw = rawQuery.trim().toLowerCase();
+  const q = normalizeSearchQuery(qRaw);
   if (!q) return POPULAR_SUGGESTIONS.slice(0, limit);
 
-  const results: SearchSuggestion[] = [];
+  type Ranked = SearchSuggestion & { score: number };
+  const ranked: Ranked[] = [];
   const seen = new Set<string>();
 
-  const add = (s: SearchSuggestion) => {
-    if (seen.has(s.id) || results.length >= limit) return;
+  const add = (s: SearchSuggestion, score: number) => {
+    if (seen.has(s.id)) return;
     seen.add(s.id);
-    results.push(s);
+    ranked.push({ ...s, score });
   };
 
   for (const make of cachedMakes) {
     const lower = make.toLowerCase();
-    if (lower.startsWith(q) || lower.includes(q)) {
-      add({ id: `make-${make}`, label: make, sublabel: 'Manufacturer', query: make.toLowerCase() });
+    const dist = bestFuzzyScore(q, lower);
+    if (dist <= 2 || lower.includes(q) || q.includes(lower)) {
+      const score = dist <= 0.5 ? 100 - dist * 10 : 80 - dist * 15;
+      if (score > 40) {
+        add(
+          {
+            id: `make-${make}`,
+            label: make,
+            sublabel: dist > 0.5 ? `Did you mean ${make}?` : 'Manufacturer',
+            query: make.toLowerCase(),
+          },
+          score,
+        );
+      }
     }
   }
 
   for (const [modelKey, cars] of modelIndex) {
-    if (!modelKey.startsWith(q) && !modelKey.includes(q)) continue;
     const car = cars[0];
-    add({
-      id: `model-${car.make}-${car.model}`,
-      label: `${car.make} ${car.model}`,
-      sublabel: 'Model',
-      query: `${car.make.toLowerCase()} ${car.model.toLowerCase()}`,
-    });
+    const label = `${car.make} ${car.model}`;
+    const labelLower = label.toLowerCase();
+    const modelLower = car.model.toLowerCase();
+    let score = -1;
+    if (modelKey.startsWith(q) || modelKey.includes(q) || labelLower.includes(q)) {
+      score = modelKey.startsWith(q) ? 95 : 75;
+    } else {
+      const dModel = bestFuzzyScore(q, modelLower);
+      const dLabel = bestFuzzyScore(q, labelLower);
+      const d = Math.min(dModel, dLabel);
+      if (d <= 2) score = 70 - d * 12;
+    }
+    if (score >= 40) {
+      add(
+        {
+          id: `model-${car.make}-${car.model}`,
+          label,
+          sublabel: score < 70 ? `Close match · ${car.bodyStyle ?? 'Model'}` : 'Model',
+          query: `${car.make.toLowerCase()} ${car.model.toLowerCase()}`,
+        },
+        score,
+      );
+    }
   }
 
   for (const p of POPULAR_SUGGESTIONS) {
-    if (p.label.toLowerCase().includes(q) || p.query.includes(q)) add(p);
+    if (p.label.toLowerCase().includes(q) || p.query.includes(q) || bestFuzzyScore(q, p.query) <= 2) {
+      add(p, 60);
+    }
   }
 
-  add({
-    id: `raw-${q}`,
+  ranked.sort((a, b) => b.score - a.score);
+
+  const results: SearchSuggestion[] = ranked.slice(0, Math.max(0, limit - 1)).map(({ score: _s, ...s }) => s);
+  results.push({
+    id: `raw-${qRaw}`,
     label: `Search “${rawQuery.trim()}”`,
     sublabel: 'All makes, models & years',
     query: rawQuery.trim(),
@@ -367,7 +456,7 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
   if (!raw) return query;
 
   const filters = { ...(query.filters || {}) };
-  const tokens = raw.split(/\s+/).filter(Boolean);
+  const tokens = normalizeSearchQuery(raw).split(/\s+/).filter(Boolean);
   const textTokens: string[] = [];
 
   for (const token of tokens) {
@@ -390,6 +479,12 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
       if (prefixMakes.length === 1) {
         filters.make = [prefixMakes[0]];
         textTokens.shift();
+      } else {
+        const fuzzyMakes = cachedMakes.filter((m) => fuzzyTokenMatch(m.toLowerCase(), firstLower));
+        if (fuzzyMakes.length === 1) {
+          filters.make = [fuzzyMakes[0]];
+          textTokens.shift();
+        }
       }
     }
   }
@@ -442,7 +537,8 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
 }
 
 function sortByRelevanceInPlace(cars: Car[], searchText: string): void {
-  const tokens = searchText.toLowerCase().split(/\s+/).filter(Boolean);
+  const normalized = normalizeSearchQuery(searchText);
+  const tokens = normalized.split(/\s+/).filter(Boolean);
   if (tokens.length === 0) return;
 
   cars.sort((a, b) => {
@@ -464,6 +560,9 @@ function scoreRelevance(car: Car, tokens: string[]): number {
     else if (modelLower === token) score += 45;
     else if (modelLower.startsWith(token)) score += 30;
     else if (haystack.includes(token)) score += 12;
+    else if (fuzzyTokenMatch(makeLower, token)) score += 28;
+    else if (fuzzyTokenMatch(modelLower, token)) score += 24;
+    else if (fuzzyTokenMatch(haystack, token)) score += 8;
   }
 
   return score;
@@ -579,9 +678,9 @@ function getCandidateSet(query: SearchQuery): Car[] {
  */
 function singlePassFilter(cars: Car[], query: SearchQuery): Car[] {
   const filters = query.filters;
-  const searchTerm = query.query?.toLowerCase().trim();
+  const searchTerm = query.query ? normalizeSearchQuery(query.query) : '';
   // Tokenize so multi-word queries like "2024 camry" match across fields
-  const searchTokens = searchTerm ? searchTerm.split(/\s+/).filter(Boolean) : [];
+  const searchTokens = searchTerm ? searchTerm.split(/\s+/).filter(Boolean).map(normalizeSearchToken) : [];
 
   // If nothing to filter, return as-is
   const hasTextSearch = searchTokens.length > 0;
@@ -624,15 +723,14 @@ function singlePassFilter(cars: Car[], query: SearchQuery): Car[] {
   const result: Car[] = [];
 
   for (const car of cars) {
-    // Text search: every token must match at least one field
+    // Text search: every token must match at least one field (exact or fuzzy typo)
     if (hasTextSearch) {
       const haystack = `${car.make} ${car.model} ${car.year} ${car.trim ?? ''}`.toLowerCase();
       let allMatch = true;
       for (const token of searchTokens) {
-        if (!haystack.includes(token)) {
-          allMatch = false;
-          break;
-        }
+        if (haystack.includes(token) || fuzzyTokenMatch(haystack, token)) continue;
+        allMatch = false;
+        break;
       }
       if (!allMatch) continue;
     }

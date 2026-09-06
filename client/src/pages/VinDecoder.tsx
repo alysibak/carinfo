@@ -1,7 +1,8 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { decodeVin, type VinDecodeResult } from '../services/api';
-import TrustLabel, { InfoTip } from '../components/ui';
+import { InfoTip } from '../components/ui';
+import { searchQueryToParams } from '../utils/searchParams';
 
 const VinScanner = lazy(() => import('../components/VinScanner'));
 
@@ -16,11 +17,10 @@ function hpPlain(hp: number): string {
   return 'High performance, seriously fast.';
 }
 
-function Subheading({ children, source }: { children: React.ReactNode; source?: 'nhtsa' }) {
+function Subheading({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[10px] tracking-[0.25em] text-zinc-400 uppercase pt-5 pb-2 border-b border-zinc-900 flex items-center gap-2">
+    <p className="text-[10px] tracking-[0.25em] text-zinc-400 uppercase pt-5 pb-2 border-b border-zinc-900">
       {children}
-      {source && <TrustLabel source={source} />}
     </p>
   );
 }
@@ -93,21 +93,22 @@ export default function VinDecoder() {
           in the VIN record. We show it honestly when it’s there.
         </p>
 
-        <div className="flex border border-zinc-700 rounded-none max-w-2xl">
+        <div className="flex flex-col sm:flex-row border border-zinc-700 rounded-none max-w-2xl min-w-0">
           <input
             value={vin}
             onChange={(e) => setVin(e.target.value.toUpperCase().slice(0, 17))}
             onKeyDown={(e) => e.key === 'Enter' && run(vin)}
             placeholder="e.g. 1HGCM82633A004352"
             spellCheck={false}
-            className="flex-1 h-14 bg-zinc-950 border-0 px-4 text-base font-mono tracking-widest text-white placeholder:text-zinc-400 focus:outline-none uppercase rounded-none"
+            className="flex-1 min-w-0 h-12 sm:h-14 bg-zinc-950 border-0 px-3 sm:px-4 text-sm sm:text-base font-mono tracking-normal sm:tracking-widest text-white placeholder:text-zinc-500 focus:outline-none uppercase rounded-none"
           />
+          <div className="flex border-t sm:border-t-0 sm:border-l border-zinc-700 shrink-0">
           <button
             type="button"
             onClick={() => setScanning(true)}
             aria-label="Scan VIN barcode with camera"
             title="Scan VIN barcode with camera"
-            className="h-14 px-4 bg-zinc-950 text-zinc-300 hover:text-white border-l border-zinc-700 rounded-none transition-colors"
+            className="h-12 sm:h-14 px-4 bg-zinc-950 text-zinc-300 hover:text-white rounded-none transition-colors"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" aria-hidden>
               <path
@@ -121,10 +122,11 @@ export default function VinDecoder() {
           <button
             onClick={() => run(vin)}
             disabled={loading || vin.trim().length < 11}
-            className="h-14 px-8 bg-white text-black text-xs font-semibold uppercase tracking-widest hover:bg-zinc-200 disabled:opacity-40 border-l border-zinc-700 rounded-none transition-colors"
+            className="flex-1 sm:flex-none h-12 sm:h-14 px-5 sm:px-8 bg-white text-black text-xs font-semibold uppercase tracking-widest hover:bg-zinc-200 disabled:opacity-40 border-l border-zinc-700 rounded-none transition-colors"
           >
             {loading ? '…' : 'Decode'}
           </button>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 mt-3 text-[11px] text-zinc-400">
@@ -185,7 +187,7 @@ export default function VinDecoder() {
                 )}
 
                 {/* Horsepower — the headline figure, with dual framing */}
-                <Subheading source="nhtsa">
+                <Subheading>
                   <InfoTip label="Horsepower">
                     A measure of engine power. More horsepower generally means quicker acceleration. NHTSA publishes
                     this for many vehicles based on the VIN.
@@ -194,7 +196,7 @@ export default function VinDecoder() {
                 {eng?.hp != null ? (
                   <div className="py-4">
                     <div className="flex items-baseline gap-3">
-                      <span className="text-5xl font-black tracking-tighter text-white">{eng.hp}</span>
+                      <span className="text-3xl sm:text-5xl font-black tracking-tighter text-white">{eng.hp}</span>
                       <span className="text-lg font-bold text-zinc-400">hp</span>
                       {eng.kw != null && <span className="text-xs text-zinc-400">({eng.kw} kW)</span>}
                     </div>
@@ -210,7 +212,7 @@ export default function VinDecoder() {
                   </p>
                 )}
 
-                <Subheading source="nhtsa">Engine &amp; drivetrain</Subheading>
+                <Subheading>Engine &amp; drivetrain</Subheading>
                 <Row label="Engine" value={engineSummary || undefined} />
                 <Row label="Turbo" value={eng?.turbo == null ? undefined : eng.turbo ? 'Yes' : 'No'} />
                 <Row label="Fuel" value={fuelLabel} />
@@ -223,7 +225,7 @@ export default function VinDecoder() {
                     .join(' ') || undefined}
                 />
 
-                <Subheading source="nhtsa">Body &amp; build</Subheading>
+                <Subheading>Body &amp; build</Subheading>
                 <Row label="Body class" value={result.bodyClass} />
                 <Row label="Vehicle type" value={result.vehicleType} />
                 <Row label="Doors" value={result.doors} />
@@ -242,6 +244,49 @@ export default function VinDecoder() {
               <div className="border border-zinc-800 bg-zinc-950 px-5 py-4 text-sm text-zinc-300 leading-relaxed">
                 NHTSA couldn’t identify a vehicle from that VIN{result.errorText ? ` (${result.errorText})` : ''}.
                 Double-check the 17 characters and try again.
+              </div>
+            )}
+
+            {result.make && (
+              <div className="mt-6 border border-zinc-800 bg-zinc-950 px-5 py-4 space-y-3">
+                <p className="text-sm text-zinc-300">
+                  Open matching EPA configs in the CarInfo catalog.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <Link
+                    to={`/home?${searchQueryToParams(
+                      {
+                        query: [result.year, result.make, result.model].filter(Boolean).join(' '),
+                        sort: { field: 'relevance', order: 'desc' },
+                      },
+                      1,
+                    ).toString()}`}
+                    className="px-4 py-2 bg-white text-black text-xs font-semibold uppercase tracking-wider hover:bg-zinc-200"
+                  >
+                    Search catalog
+                  </Link>
+                  {result.make && result.model && (
+                    <Link
+                      to={`/home?${searchQueryToParams(
+                        {
+                          filters: {
+                            make: [result.make],
+                            model: [result.model],
+                            ...(result.year
+                              ? { year: { min: result.year, max: result.year } }
+                              : {}),
+                          },
+                          sort: { field: 'year', order: 'desc' },
+                          collapseByModel: true,
+                        },
+                        1,
+                      ).toString()}`}
+                      className="px-4 py-2 border border-zinc-600 text-xs font-semibold uppercase tracking-wider text-zinc-200 hover:border-zinc-400"
+                    >
+                      Filter by make / model
+                    </Link>
+                  )}
+                </div>
               </div>
             )}
           </div>

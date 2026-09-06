@@ -80,9 +80,8 @@ export default function SelectMenu({
     const spaceAbove = rect.top - MENU_GAP - VIEWPORT_MARGIN;
     const openUp = spaceBelow < MENU_MIN_HEIGHT && spaceAbove > spaceBelow;
 
-    // Never taller than the room actually available, so the list scrolls
-    // internally instead of running off the viewport.
-    const room = Math.max(openUp ? spaceAbove : spaceBelow, MENU_MIN_HEIGHT);
+    // Cap to real free space only — MENU_MIN_HEIGHT is for open-up preference, not a floor.
+    const room = Math.max(0, openUp ? spaceAbove : spaceBelow);
 
     setMenuPosition({
       left: rect.left,
@@ -140,11 +139,19 @@ export default function SelectMenu({
     };
   }, [open, listId, closeMenu, updateMenuPosition]);
 
-  // Keep the highlighted option inside the scroll box. Without this, arrowing
-  // past the visible rows moves a highlight the user cannot see.
+  // Scroll only inside the listbox — option.scrollIntoView can scroll the page
+  // and trip the capture scroll listener that closes the menu.
   useEffect(() => {
     if (!open || activeIndex < 0) return;
-    optionRefs.current[activeIndex]?.scrollIntoView({ block: 'nearest' });
+    const list = listRef.current;
+    const option = optionRefs.current[activeIndex];
+    if (!list || !option) return;
+    const listTop = list.scrollTop;
+    const listBottom = listTop + list.clientHeight;
+    const optTop = option.offsetTop;
+    const optBottom = optTop + option.offsetHeight;
+    if (optTop < listTop) list.scrollTop = optTop;
+    else if (optBottom > listBottom) list.scrollTop = optBottom - list.clientHeight;
   }, [open, activeIndex]);
 
   const pick = (next: string) => {
@@ -298,7 +305,7 @@ export default function SelectMenu({
     );
 
   return (
-    <div ref={rootRef} className={`relative ${className}`}>
+    <div ref={rootRef} className={`relative min-w-0 ${className}`}>
       <button
         ref={triggerRef}
         type="button"
@@ -311,7 +318,6 @@ export default function SelectMenu({
         disabled={disabled}
         onClick={() => (open ? closeMenu() : openMenu())}
         onKeyDown={handleKeyDown}
-        onBlur={() => open && closeMenu()}
         className={`w-full flex items-center justify-between border bg-zinc-950 text-left text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 disabled:opacity-40 disabled:cursor-not-allowed ${
           open ? 'border-zinc-500' : 'border-zinc-800 hover:border-zinc-600'
         } ${triggerClass}`}

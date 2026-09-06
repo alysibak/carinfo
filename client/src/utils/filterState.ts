@@ -76,10 +76,10 @@ export function sortForFilters(
     return { field: 'relevance', order: 'desc' };
   }
   if (isElectricOnlyBrowse(filters)) {
-    return { field: 'evScore', order: 'desc' };
+    return { field: 'range', order: 'desc' };
   }
-  if (currentSort?.field === 'evScore' || currentSort?.field === 'range') {
-    return { field: 'year', order: 'desc' };
+  if (currentSort?.field === 'evScore') {
+    return { field: 'range', order: 'desc' };
   }
   return currentSort ?? { field: 'year', order: 'desc' };
 }

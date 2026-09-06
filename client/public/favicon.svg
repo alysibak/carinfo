@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="CarInfo">
+  <rect width="32" height="32" fill="#09090b"/>
+  <rect x="2.5" y="2.5" width="27" height="27" fill="none" stroke="#fafafa" stroke-width="1.25"/>
+  <path fill="#fafafa" d="M10 8h9.2c3.6 0 6.3 2.5 6.3 6.1 0 3.6-2.7 6.2-6.3 6.2H13v3.7h-3V8zm3 2.8v6.7h6c2 0 3.4-1.4 3.4-3.35S21 10.8 19 10.8H13z"/>
+</svg>

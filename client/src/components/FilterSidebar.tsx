@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useCarStore } from '../stores/carStore';
 import * as api from '../services/api';
 import FilterPills from './FilterPills';
+import { ExpandableSection } from './ui';
 import type { CarFilter, SearchQuery } from '../types/car.types';
 import {
   LIFESTYLE_PRESETS,
@@ -294,70 +295,68 @@ export default function FilterSidebar({ onFiltersApplied }: { onFiltersApplied?:
         />
       </div>
 
-      <details className="group border-t border-zinc-800 pt-5">
-        <summary className="cursor-pointer list-none text-[10px] tracking-[0.25em] text-zinc-400 uppercase hover:text-white flex items-center justify-between">
-          More filters
-          <span className="group-open:rotate-180 transition-transform">▼</span>
-        </summary>
-        <div className="mt-5 space-y-6">
-          <div>
-            <SectionLabel>Make</SectionLabel>
-            <input
-              type="text"
-              placeholder="Find a make…"
-              value={makeSearch}
-              onChange={(e) => setMakeSearch(e.target.value)}
-              className="w-full bg-black border border-zinc-700 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 mb-2"
-            />
-            <div className="max-h-36 overflow-y-auto space-y-0.5">
-              {filteredMakes.map((make) => {
-                const active = filters.make?.includes(make);
-                return (
-                  <button
-                    key={make}
-                    type="button"
-                    onClick={() => toggleArrayFilter('make', make)}
-                    className={`w-full text-left px-2 py-1 text-sm transition-colors ${
-                      active ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white'
-                    }`}
-                  >
-                    {make}
-                  </button>
-                );
-              })}
+      <div className="mt-5 pt-5 border-t border-zinc-800">
+        <ExpandableSection title="More filters" summary="Make, price, origin, engine size">
+          <div className="space-y-6">
+            <div>
+              <SectionLabel>Make</SectionLabel>
+              <input
+                type="text"
+                placeholder="Find a make…"
+                value={makeSearch}
+                onChange={(e) => setMakeSearch(e.target.value)}
+                className="w-full bg-black border border-zinc-700 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 mb-2"
+              />
+              <div className="max-h-36 overflow-y-auto space-y-0.5">
+                {filteredMakes.map((make) => {
+                  const active = filters.make?.includes(make);
+                  return (
+                    <button
+                      key={make}
+                      type="button"
+                      onClick={() => toggleArrayFilter('make', make)}
+                      className={`w-full text-left px-2 py-1 text-sm transition-colors ${
+                        active ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      {make}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <SectionLabel>Custom price range</SectionLabel>
+              <RangeInputs
+                value={filters.price}
+                step={1000}
+                onCommit={(range) => commitFilters({ ...filters, price: range })}
+              />
+            </div>
+
+            <div>
+              <SectionLabel>Country of origin</SectionLabel>
+              <FilterPills
+                options={countries.map((c) => ({ id: c, label: c }))}
+                activeIds={filters.countryOfOrigin ?? []}
+                onToggle={(id) => toggleArrayFilter('countryOfOrigin', id)}
+                compact
+              />
+            </div>
+
+            <div>
+              <SectionLabel>Engine size (L)</SectionLabel>
+              <RangeInputs
+                value={filters.displacement}
+                step={0.5}
+                onCommit={(range) => commitFilters({ ...filters, displacement: range })}
+              />
+              <p className="text-[10px] text-zinc-400 mt-2">Excludes EVs</p>
             </div>
           </div>
-
-          <div>
-            <SectionLabel>Custom price range</SectionLabel>
-            <RangeInputs
-              value={filters.price}
-              step={1000}
-              onCommit={(range) => commitFilters({ ...filters, price: range })}
-            />
-          </div>
-
-          <div>
-            <SectionLabel>Country of origin</SectionLabel>
-            <FilterPills
-              options={countries.map((c) => ({ id: c, label: c }))}
-              activeIds={filters.countryOfOrigin ?? []}
-              onToggle={(id) => toggleArrayFilter('countryOfOrigin', id)}
-              compact
-            />
-          </div>
-
-          <div>
-            <SectionLabel>Engine size (L)</SectionLabel>
-            <RangeInputs
-              value={filters.displacement}
-              step={0.5}
-              onCommit={(range) => commitFilters({ ...filters, displacement: range })}
-            />
-            <p className="text-[10px] text-zinc-400 mt-2">Excludes EVs</p>
-          </div>
-        </div>
-      </details>
+        </ExpandableSection>
+      </div>
     </div>
   );
 }

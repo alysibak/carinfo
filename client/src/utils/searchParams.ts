@@ -31,7 +31,7 @@ export function defaultSortForQuery(
 ): { field: string; order: 'asc' | 'desc' } {
   if (query?.trim()) return { field: 'relevance', order: 'desc' };
   if (isElectricOnlyBrowse(filters)) {
-    return { field: 'evScore', order: 'desc' };
+    return { field: 'range', order: 'desc' };
   }
   return { field: 'year', order: 'desc' };
 }
@@ -41,7 +41,7 @@ export function hasActiveSearch(params: URLSearchParams): boolean {
   const filterKeys = [
     'make', 'model', 'body', 'fuel', 'drive', 'trans', 'country',
     'yearMin', 'yearMax', 'priceMin', 'priceMax', 'mpgMin', 'mpgMax',
-    'dispMin', 'dispMax',
+    'dispMin', 'dispMax', 'hpMin', 'hpMax',
   ];
   return filterKeys.some((k) => params.get(k));
 }
@@ -76,6 +76,10 @@ export function paramsToSearchQuery(params: URLSearchParams): { query: SearchQue
   const dispMax = numParam(params.get('dispMax'));
   if (dispMin != null || dispMax != null) filters.displacement = { min: dispMin, max: dispMax };
 
+  const hpMin = numParam(params.get('hpMin'));
+  const hpMax = numParam(params.get('hpMax'));
+  if (hpMin != null || hpMax != null) filters.horsepower = { min: hpMin, max: hpMax };
+
   const hasFilters = Object.values(filters).some((v) => {
     if (v == null) return false;
     if (Array.isArray(v)) return v.length > 0;
@@ -95,6 +99,7 @@ export function paramsToSearchQuery(params: URLSearchParams): { query: SearchQue
         field: sortField,
         order: sortOrder as 'asc' | 'desc',
       },
+      collapseByModel: params.get('onePerModel') !== '0',
       limit: PAGE_SIZE,
       offset: (page - 1) * PAGE_SIZE,
     },
@@ -108,7 +113,8 @@ export function searchQueryToParams(query: SearchQuery, page: number): URLSearch
   if (query.query?.trim()) params.set('q', query.query.trim());
   if (page > 1) params.set('page', String(page));
 
-  if (query.sort?.field && query.sort.field !== 'year') {
+  // Always persist sort so Year / Price / etc. survive URL sync (esp. when a text query is active).
+  if (query.sort?.field) {
     params.set('sort', query.sort.field);
   }
   if (query.sort?.order === 'asc') params.set('order', 'asc');
@@ -136,6 +142,10 @@ export function searchQueryToParams(query: SearchQuery, page: number): URLSearch
   if (f.fuelEconomy?.max != null) params.set('mpgMax', String(f.fuelEconomy.max));
   if (f.displacement?.min != null) params.set('dispMin', String(f.displacement.min));
   if (f.displacement?.max != null) params.set('dispMax', String(f.displacement.max));
+  if (f.horsepower?.min != null) params.set('hpMin', String(f.horsepower.min));
+  if (f.horsepower?.max != null) params.set('hpMax', String(f.horsepower.max));
+  // Default: one trim per model (denser results). Opt out with onePerModel=0.
+  if (query.collapseByModel === false) params.set('onePerModel', '0');
 
   return params;
 }
@@ -177,6 +187,47 @@ export function describeActiveFilters(filters: CarFilter = {}): { key: string; l
   if (filters.displacement?.min != null || filters.displacement?.max != null) {
     chips.push({ key: 'disp', label: 'Engine size filter' });
   }
+  if (filters.horsepower?.min != null || filters.horsepower?.max != null) {
+    const { min, max } = filters.horsepower;
+    chips.push({
+      key: 'hp',
+      label:
+        min != null && max != null
+          ? `${min}-${max} hp`
+          : min != null
+            ? `${min}+ hp`
+            : `≤${max} hp`,
+    });
+  }
 
   return chips;
 }
+
+/** Remove one chip from filters. Returns a new CarFilter. */
+export function removeActiveFilterChip(filters: CarFilter, chipKey: string): CarFilter {
+  const next: CarFilter = { ...filters };
+
+  const dropFromList = (field: keyof CarFilter, value: string) => {
+    const list = next[field];
+    if (!Array.isArray(list)) return;
+    const filtered = list.filter((v) => v !== value);
+    if (filtered.length) (next as Record<string, unknown>)[field] = filtered;
+    else delete (next as Record<string, unknown>)[field];
+  };
+
+  if (chipKey.startsWith('make-')) dropFromList('make', chipKey.slice(5));
+  else if (chipKey.startsWith('model-')) dropFromList('model', chipKey.slice(6));
+  else if (chipKey.startsWith('body-')) dropFromList('bodyStyle', chipKey.slice(5));
+  else if (chipKey.startsWith('fuel-')) dropFromList('fuelType', chipKey.slice(5));
+  else if (chipKey.startsWith('drive-')) dropFromList('driveType', chipKey.slice(6));
+  else if (chipKey.startsWith('trans-')) dropFromList('transmission', chipKey.slice(6));
+  else if (chipKey.startsWith('country-')) dropFromList('countryOfOrigin', chipKey.slice(8));
+  else if (chipKey === 'year') delete next.year;
+  else if (chipKey === 'price') delete next.price;
+  else if (chipKey === 'mpg') delete next.fuelEconomy;
+  else if (chipKey === 'disp') delete next.displacement;
+  else if (chipKey === 'hp') delete next.horsepower;
+
+  return next;
+}
+

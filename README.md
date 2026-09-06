@@ -162,7 +162,7 @@ Slug derived from EPA record, e.g. `acura-nsx-1995-nsx-2mode-clkup-automatic-4-s
 | `server/data/raw/vehicles.csv` | — | EPA source CSV | Gitignored |
 | `server/data/raw/nhtsa-enrichment-cache.json` | — | NHTSA API cache | Gitignored |
 | `server/data/raw/test-car-data/*.csv` | — | EPA test car list per year | Gitignored |
-| `server/data/manual-prices.json` | — | Referenced in build script | **Does not exist** |
+| `server/data/manual-prices.json` | — | Optional MSRP overrides keyed by car id | Not present (build skips it) |
 
 ---
 
@@ -448,6 +448,7 @@ Loaded once at startup into memory:
 | `/value-matrix` | `ValueMatrix.tsx` | Yes | Recharts scatter (lazy-loaded chunk) |
 | `/methodology` | `Methodology.tsx` | Yes | Data pipeline, PHEV correction, valuation model |
 | `/vin` | `VinDecoder.tsx` | Yes | VIN lookup |
+| `/account` | `Account.tsx` | Yes | Clerk garage sync and billing (when keys exist) |
 
 `Layout.tsx` wraps all non-landing routes with `SiteHeader`.
 
@@ -465,7 +466,7 @@ Browse · Search · Compare (badge) · Value Chart · VIN Lookup · Methodology 
 2. **Browse** → lifestyle preset → VehicleGrid
 3. **Search** → filter/sort → CarDetail → compare/garage
 4. **CarDetail** → expandables, TCO calc, similar cars
-5. **Compare** → up to 5 cars; loads full `CarDashboard` per vehicle (provenance + confidence)
+5. **Compare** → up to 5 cars; loads full `CarDashboard` per vehicle (provenance + confidence). Share copies `/compare?cars=id1,id2`.
 6. **Garage** → save locally → share URL → SharedGarage
 7. **Battle** → pick 2 fighters → stat duel
 8. **Value Matrix** → scatter plot with presets
@@ -591,7 +592,7 @@ Modal explaining EPA vs estimated data. Dismissible per session (`sessionStorage
 
 **File:** `client/src/pages/Compare.tsx` · max 5 cars from `carStore`
 
-On load, fetches a full `CarDashboard` per compared car (same depth as the dossier). Uses `fieldProvenance`, `ownership.marketValue.confidenceLabel`, and per-field `ProvenanceChip` on analytics rows.
+On load, fetches a full `CarDashboard` per compared car (same depth as the dossier). Uses `fieldProvenance`, `ownership.marketValue.confidenceLabel`, and per-field `ProvenanceChip` on analytics rows. The current set is persisted locally and synced to `/compare?cars=id1,id2` so a refresh or share keeps the same lineup.
 
 ### Spec rows (rows with zero data across all cars are dropped)
 
@@ -640,7 +641,7 @@ Best value highlighted when 2+ cars have numeric data. Missing cells use `UNAVAI
 
 ### Compare store
 
-- `carStore.comparedCars` — max 5, memory only (not persisted)
+- `carStore.comparedCars` — max 5, persisted in `localStorage` (`carinfo-compare`) and mirrored to `/compare?cars=`
 
 ---
 
@@ -798,7 +799,7 @@ Landing detects 17-char VIN in search → redirects to `/vin`.
 
 ### Client — pages (16)
 
-`Landing.tsx` · `Browse.tsx` · `Explore.tsx` · `VehicleGrid.tsx` · `CarDetail.tsx` · `Home.tsx` · `Compare.tsx` · `Collection.tsx` · `SmartSearch.tsx` · `DreamGarage.tsx` · `SharedGarage.tsx` · `BattleMode.tsx` · `ValueMatrix.tsx` · `VinDecoder.tsx`
+`Landing.tsx` · `Browse.tsx` · `Explore.tsx` · `VehicleGrid.tsx` · `CarDetail.tsx` · `Home.tsx` · `Compare.tsx` · `Collection.tsx` · `SmartSearch.tsx` · `DreamGarage.tsx` · `SharedGarage.tsx` · `BattleMode.tsx` · `ValueMatrix.tsx` · `VinDecoder.tsx` · `Methodology.tsx` · `Account.tsx` · `NotFound.tsx`
 
 ### Client — components (30)
 
@@ -1098,7 +1099,6 @@ Landing stays eager; other layout routes lazy-load via `React.lazy`.
 | Photos | Body-type illustrations only (documented on `/methodology`) |
 | PHEV in raw JSON | Runtime reclassification required (419 records; pinned by test) |
 | Hydrogen fuel cost | Not modeled (price varies too widely) |
-| `manual-prices.json` | Referenced but missing |
 | `server/data/raw/` | Gitignored — rebuild needed on fresh clone |
 | Vercel cold start | Full 28k JSON loaded into memory on first request (sharding deferred) |
 | Deal rating | Disabled (`getDealRating` returns null); UI removed |
@@ -1110,7 +1110,6 @@ Landing stays eager; other layout routes lazy-load via `React.lazy`.
 ### Data
 
 - [ ] Run full NHTSA backfill without limit → `build-enrichment`
-- [ ] Add or remove `manual-prices.json` reference
 - [ ] New source for dimensions/weight/torque
 - [ ] IIHS or other safety sources (not started)
 - [ ] **Deferred (hard stop):** shard `cars.json` by make for Vercel cold start
@@ -1118,6 +1117,7 @@ Landing stays eager; other layout routes lazy-load via `React.lazy`.
 ### Product
 
 - Battle Mode and Value Matrix surface EPA vs estimated provenance on playful views (shipped).
+- Optional `manual-prices.json` is a build-time override, not a required data file.
 
 ---
 

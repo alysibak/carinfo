@@ -1,6 +1,9 @@
 # EPA/NHTSA raw ingestion cache
 server/data/raw/
 
+# Runtime site visit counter (local / deploy ephemeral OK)
+server/data/site-stats.json
+
 # Logs
 logs
 *.log

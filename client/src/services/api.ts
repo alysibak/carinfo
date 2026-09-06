@@ -52,6 +52,17 @@ export async function getSearchSuggestions(q = '', limit = 8): Promise<SearchSug
   return response.data.data;
 }
 
+export async function getSiteVisitCount(): Promise<number> {
+  const response = await api.get('/stats/site');
+  return Number(response.data?.data?.visits) || 0;
+}
+
+/** Record one visit for this browser session; returns updated total. */
+export async function recordSiteVisit(): Promise<number> {
+  const response = await api.post('/stats/visit');
+  return Number(response.data?.data?.visits) || 0;
+}
+
 /**
  * Fetch every match for a query by paginating past the server's per-request
  * limit (500). Capped at maxRecords to avoid hammering the API.
@@ -77,8 +88,9 @@ export async function getCarById(id: string): Promise<CarSpecs> {
   return response.data.data;
 }
 
-export async function getCarDashboard(id: string): Promise<CarDashboard> {
-  const response = await api.get(`/cars/${id}/dashboard`);
+export async function getCarDashboard(id: string, region?: string): Promise<CarDashboard> {
+  const params = region ? `?region=${encodeURIComponent(region)}` : '';
+  const response = await api.get(`/cars/${id}/dashboard${params}`);
   return response.data.data;
 }
 
@@ -87,6 +99,12 @@ export async function getCarDashboard(id: string): Promise<CarDashboard> {
  */
 export async function getSimilarCars(id: string, limit = 6): Promise<CarSpecs[]> {
   const response = await api.get(`/cars/${id}/similar?limit=${limit}`);
+  return response.data.data;
+}
+
+/** Same year/make/model EPA configs (other trims/transmissions). */
+export async function getSiblingConfigs(id: string, limit = 24): Promise<CarSpecs[]> {
+  const response = await api.get(`/cars/${id}/siblings?limit=${limit}`);
   return response.data.data;
 }
 

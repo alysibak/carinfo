@@ -2,118 +2,125 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import * as api from '../services/api';
 import type { CarSpecs, SearchQuery } from '../types/car.types';
-import { filterCarsByFuelType, calculateReliabilityScore, type FuelTypeFilter } from '../utils/marketIntelligence';
-import AggregateStats from '../components/AggregateStats';
+import { type FuelTypeFilter } from '../utils/marketIntelligence';
 import SelectMenu from '../components/SelectMenu';
+import ToolPageHeader from '../components/ToolPageHeader';
+import PageShell, { PageBody } from '../components/PageShell';
+import { ErrorState, LoadingScreen } from '../components/ui';
 import {
-  cardStatClass,
-  formatEngineDetailForCard,
   formatMpgForCard,
   formatPowerForCard,
+  formatPriceShort,
 } from '../utils/dataValue';
-import { usesMpge } from '../utils/fuelDisplay';
+import { formatFuelBadge, usesMpge } from '../utils/fuelDisplay';
+import { displayModelLabel } from '../utils/trimLabel';
+import { searchQueryToParams } from '../utils/searchParams';
+import { differentiateCars } from '../utils/differentiateCars';
+import { usePageMeta } from '../utils/pageMeta';
 
-type SmartSort = 'best-value' | 'bang-for-buck' | 'lowest-tco' | 'daily-driver' | 'weekend' | 'resale' | 'eco' | 'track';
+type RankBy = 'match' | 'efficiency' | 'value' | 'power';
 
-const PAGE_SIZE = 50;
+/**
+ * Quiz results are a decision aid, not a catalog.
+ * Show exactly three picks. Everything else lives in Search.
+ */
+const PICK_COUNT = 3;
+const FETCH_LIMIT = 40;
+
+const PERSONA_COPY: Record<string, { title: string; defaultRank: RankBy }> = {
+  commuter: { title: 'Built around commuting', defaultRank: 'efficiency' },
+  gearhead: { title: 'Built around performance', defaultRank: 'power' },
+  family: { title: 'Built around family use', defaultRank: 'match' },
+  work: { title: 'Built around work use', defaultRank: 'value' },
+};
+
+function buildQuizFilters(
+  persona: string | null,
+  priority: string | null,
+  usage: string | null,
+  minPrice: number,
+  maxPrice: number,
+): SearchQuery['filters'] {
+  const filters: SearchQuery['filters'] = {
+    price: { min: minPrice, max: maxPrice },
+  };
+
+  if (persona === 'commuter') filters.fuelEconomy = { min: 25 };
+  else if (persona === 'gearhead') filters.horsepower = { min: 250 };
+  else if (persona === 'family') filters.bodyStyle = ['suv', 'minivan', 'wagon'];
+  else if (persona === 'work') {
+    filters.bodyStyle = ['truck'];
+    filters.driveType = ['AWD', '4WD'];
+  }
+
+  if (priority === 'mpg') filters.fuelEconomy = { min: 30 };
+  else if (priority === 'power') filters.horsepower = { min: 300 };
+  else if (priority === 'safety') filters.bodyStyle = ['suv', 'minivan', 'wagon', 'sedan'];
+  else if (priority === 'space') filters.bodyStyle = ['suv', 'minivan', 'wagon'];
+
+  if (usage === 'commute') {
+    filters.fuelEconomy = { min: Math.max(filters.fuelEconomy?.min || 0, 28) };
+  } else if (usage === 'family') {
+    filters.bodyStyle = filters.bodyStyle || ['suv', 'minivan', 'wagon'];
+  } else if (usage === 'fun') {
+    filters.horsepower = { min: Math.max(filters.horsepower?.min || 0, 250) };
+  } else if (usage === 'work') {
+    filters.bodyStyle = filters.bodyStyle || ['truck', 'van'];
+    filters.driveType = filters.driveType || ['AWD', '4WD'];
+  }
+
+  return filters;
+}
 
 export default function SmartSearch() {
+  usePageMeta('Three picks for you', 'Quiz results: three cars to compare, not a scrolling catalog.');
   const [searchParams] = useSearchParams();
   const [allCars, setAllCars] = useState<CarSpecs[]>([]);
-  const [filteredCars, setFilteredCars] = useState<CarSpecs[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [smartSort, setSmartSort] = useState<SmartSort>('best-value');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
-  const [fuelTypeFilter, setFuelTypeFilter] = useState<FuelTypeFilter>('gasoline');
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [rankBy, setRankBy] = useState<RankBy>('match');
+  const [fuelTypeFilter, setFuelTypeFilter] = useState<FuelTypeFilter>('all');
 
-  // Get persona from URL params
   const persona = searchParams.get('persona') as 'commuter' | 'gearhead' | 'family' | 'work' | null;
-  const minPrice = parseInt(searchParams.get('minPrice') || '0');
-  const maxPrice = parseInt(searchParams.get('maxPrice') || '999999');
+  const minPrice = parseInt(searchParams.get('minPrice') || '0', 10);
+  const maxPrice = parseInt(searchParams.get('maxPrice') || '999999', 10);
   const priority = searchParams.get('priority') as 'mpg' | 'power' | 'safety' | 'space' | null;
   const usage = searchParams.get('usage') as 'commute' | 'family' | 'fun' | 'work' | null;
 
-  useEffect(() => {
-    loadVehicles();
-  }, [persona, minPrice, maxPrice]);
+  const copy = PERSONA_COPY[persona ?? ''] ?? {
+    title: 'Based on your answers',
+    defaultRank: 'match' as RankBy,
+  };
+
+  const quizFilters = useMemo(
+    () => buildQuizFilters(persona, priority, usage, minPrice, maxPrice),
+    [persona, priority, usage, minPrice, maxPrice],
+  );
 
   useEffect(() => {
-    applySmartSort();
-    setVisibleCount(PAGE_SIZE);
-  }, [allCars, smartSort, searchTerm, fuelTypeFilter]);
+    setRankBy(copy.defaultRank);
+  }, [copy.defaultRank]);
 
-  const loadVehicles = async () => {
+  const loadVehicles = useCallback(async () => {
     setLoading(true);
     setError(null);
-
     try {
-      // Base filters from persona quiz URL params
-      const baseFilters: SearchQuery['filters'] = {
-        price: { min: minPrice, max: maxPrice },
-      };
-
-      // Persona-based defaults.
-      // NOTE: EPA data has no horsepower, so "performance" intent uses engine
-      // displacement (a real EPA field) as the proxy.
-      if (persona === 'commuter') {
-        baseFilters.fuelEconomy = { min: 25 };
-      } else if (persona === 'gearhead') {
-        baseFilters.displacement = { min: 3.0 };
-      } else if (persona === 'family') {
-        baseFilters.bodyStyle = ['suv', 'minivan', 'wagon'];
-      } else if (persona === 'work') {
-        baseFilters.bodyStyle = ['truck'];
-        baseFilters.driveType = ['AWD', '4WD'];
-      }
-
-      // Priority-based overrides (can tighten persona filters)
-      if (priority === 'mpg') {
-        baseFilters.fuelEconomy = { min: 30 };
-      } else if (priority === 'power') {
-        baseFilters.displacement = { min: 3.5 };
-      } else if (priority === 'safety') {
-        baseFilters.bodyStyle = ['suv', 'minivan', 'wagon', 'sedan'];
-      } else if (priority === 'space') {
-        baseFilters.bodyStyle = ['suv', 'minivan', 'wagon'];
-      }
-
-      // Usage-based hints (light-touch adjustments layered on top)
-      if (usage === 'commute') {
-        baseFilters.fuelEconomy = {
-          min: Math.max(baseFilters.fuelEconomy?.min || 0, 28),
-        };
-      } else if (usage === 'family') {
-        baseFilters.bodyStyle = baseFilters.bodyStyle || ['suv', 'minivan', 'wagon'];
-      } else if (usage === 'fun') {
-        baseFilters.displacement = {
-          min: Math.max(baseFilters.displacement?.min || 0, 3.0),
-        };
-      } else if (usage === 'work') {
-        baseFilters.bodyStyle = baseFilters.bodyStyle || ['truck', 'van'];
-        baseFilters.driveType = baseFilters.driveType || ['AWD', '4WD'];
-      }
-
-      const initialQuery: SearchQuery = {
-        filters: baseFilters,
+      let results = await api.searchCars({
+        filters: quizFilters,
         sort: { field: 'year', order: 'desc' },
-        limit: 500,
-      };
+        limit: FETCH_LIMIT,
+        collapseByModel: true,
+      });
 
-      let results = await api.searchCars(initialQuery);
-
-      // Fallback 1: drop persona constraints but keep the budget.
       if (results.total === 0 && (persona || priority || usage)) {
         results = await api.searchCars({
           filters: { price: { min: minPrice, max: maxPrice } },
           sort: { field: 'year', order: 'desc' },
-          limit: 500,
+          limit: FETCH_LIMIT,
+          collapseByModel: true,
         });
       }
 
-      // Fallback 2: widen the budget so the user never hits a dead end.
       if (results.total === 0) {
         results = await api.searchCars({
           filters: {
@@ -123,410 +130,295 @@ export default function SmartSearch() {
             },
           },
           sort: { field: 'year', order: 'desc' },
-          limit: 500,
+          limit: FETCH_LIMIT,
+          collapseByModel: true,
         });
       }
 
       setAllCars(results.results);
-    } catch (error) {
-      console.error('SmartSearch load failed:', error);
+    } catch {
       setAllCars([]);
-      setError('Unable to load smart search results right now.');
+      setError('Unable to load matches right now.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [quizFilters, persona, priority, usage, minPrice, maxPrice]);
 
-  const calculateScore = useCallback((car: CarSpecs, algorithm: SmartSort): number => {
-    const price = car.price?.msrp || 50000;
-    const mpg = car.fuelEconomy.combined || 20;
-    const safety = car.safetyRating?.overall || 3;
-    const reliability = calculateReliabilityScore(car) / 20;
-    // EPA data has no horsepower; rank "power" by real fields:
-    // measured HP if present, otherwise displacement, with EVs treated as quick.
-    const powerProxy = car.engine.horsepower
-      ?? (car.engine.fuelType === 'electric' ? 250 : (car.engine.displacement ?? 2.0) * 70);
+  useEffect(() => {
+    loadVehicles();
+  }, [loadVehicles]);
 
-    switch (algorithm) {
-      case 'best-value':
-        return (reliability * mpg * safety) / (price / 10000);
+  const scoreCar = useCallback(
+    (car: CarSpecs): number => {
+      const price = car.price?.msrp || 50000;
+      const mpg = car.fuelEconomy.combined || 20;
+      const safety =
+        car.safetyRating?.overall && car.safetyRating.overall > 0
+          ? car.safetyRating.overall
+          : 3;
+      const yearBoost = Math.max(0, car.year - 2005) / 20;
+      const power =
+        car.engine.horsepower ??
+        (car.engine.fuelType === 'electric' ? 250 : (car.engine.displacement ?? 2.0) * 70);
 
-      case 'bang-for-buck':
-        return powerProxy / (price / 1000);
-
-      case 'lowest-tco': {
-        const fuelCostPerYear = (15000 / mpg) * 3.5;
-        const maintenanceCostPerYear = 1000;
-        const insuranceCostPerYear = price * 0.01;
-        const tco = price + (fuelCostPerYear + maintenanceCostPerYear + insuranceCostPerYear) * 5;
-        return 1000000 / tco;
+      switch (rankBy) {
+        case 'efficiency':
+          return mpg * (car.engine.fuelType === 'electric' || car.engine.fuelType === 'hybrid' ? 1.2 : 1);
+        case 'power':
+          return power / (price / 1000);
+        case 'value':
+          return (mpg * safety * (1 + yearBoost * 0.1)) / (price / 10000);
+        case 'match':
+        default: {
+          let score = (mpg * safety * (1 + yearBoost * 0.1)) / (price / 10000);
+          if (priority === 'mpg') score = mpg * 2;
+          if (priority === 'power') score = power / (price / 1000);
+          if (priority === 'safety') score = safety * 20 + mpg;
+          if (priority === 'space') {
+            score = (['suv', 'minivan', 'wagon'].includes(car.bodyStyle) ? 1.4 : 1) * mpg;
+          }
+          return score;
+        }
       }
+    },
+    [rankBy, priority],
+  );
 
-      case 'daily-driver':
-        return mpg * reliability * ((car.dimensions?.length ?? 180) / 100);
+  const rankedCars = useMemo(() => {
+    let list = [...allCars];
 
-      case 'weekend': {
-        const funFactor = ['coupe', 'convertible'].includes(car.bodyStyle) ? 1.5 : 1;
-        return powerProxy * funFactor;
-      }
-
-      case 'resale': {
-        const luxuryBrands = ['Mercedes-Benz', 'BMW', 'Audi', 'Lexus', 'Porsche'];
-        const prestige = luxuryBrands.includes(car.make) ? 1.5 : 1;
-        const ageFactor = Math.max(0, 10 - (new Date().getFullYear() - car.year)) / 10;
-        return prestige * ageFactor * reliability * 100;
-      }
-
-      case 'eco': {
-        const electricBonus = car.engine.fuelType === 'electric' ? 2 : car.engine.fuelType === 'hybrid' ? 1.5 : 1;
-        return mpg * electricBonus * 10;
-      }
-
-      case 'track': {
-        const weight = car.dimensions?.curbWeight ?? 3500;
-        const weightFactor = 5000 / weight;
-        return powerProxy * weightFactor;
-      }
-
-      default:
-        return 0;
-    }
-  }, []);
-
-  const applySmartSort = () => {
-    let filtered = [...allCars];
-
-    // Apply fuel type filter
-    filtered = filterCarsByFuelType(filtered, fuelTypeFilter);
-
-    // Apply search filter
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(car =>
-        car.make.toLowerCase().includes(term) ||
-        car.model.toLowerCase().includes(term) ||
-        car.year.toString().includes(term)
+    if (fuelTypeFilter === 'electric') {
+      list = list.filter((c) => c.engine.fuelType === 'electric');
+    } else if (fuelTypeFilter === 'hybrid') {
+      list = list.filter(
+        (c) => c.engine.fuelType === 'hybrid' || c.engine.fuelType === 'plug-in hybrid',
+      );
+    } else if (fuelTypeFilter === 'gasoline-only') {
+      list = list.filter((c) => c.engine.fuelType === 'gasoline');
+    } else if (fuelTypeFilter === 'gasoline') {
+      list = list.filter(
+        (c) =>
+          c.engine.fuelType === 'gasoline' ||
+          c.engine.fuelType === 'hybrid' ||
+          c.engine.fuelType === 'plug-in hybrid',
       );
     }
 
-    // Apply smart sorting
-    filtered.sort((a, b) => {
-      const scoreA = calculateScore(a, smartSort);
-      const scoreB = calculateScore(b, smartSort);
-      return scoreB - scoreA;
-    });
+    list.sort((a, b) => scoreCar(b) - scoreCar(a));
+    return list;
+  }, [allCars, fuelTypeFilter, scoreCar]);
 
-    setFilteredCars(filtered);
-  };
+  const picks = rankedCars.slice(0, PICK_COUNT);
+  const moreCount = Math.max(0, rankedCars.length - PICK_COUNT);
+  const pickDiff = useMemo(() => differentiateCars(picks), [picks]);
 
-  // Memoize scores so render doesn't recompute them
-  const scoreMap = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const car of filteredCars) {
-      map.set(car.id, calculateScore(car, smartSort));
-    }
-    return map;
-  }, [filteredCars, smartSort, calculateScore]);
+  const catalogHref = `/home?${searchQueryToParams(
+    {
+      filters: quizFilters,
+      sort: { field: 'year', order: 'desc' },
+      collapseByModel: true,
+    },
+    1,
+  ).toString()}`;
 
-  const visibleCars = useMemo(
-    () => filteredCars.slice(0, visibleCount),
-    [filteredCars, visibleCount],
-  );
+  const compareHref =
+    picks.length >= 2
+      ? `/compare?cars=${picks.map((c) => c.id).join(',')}`
+      : null;
 
-  const getPersonaTitle = () => {
-    if (persona === 'commuter') return 'THE COMMUTER';
-    if (persona === 'gearhead') return 'THE GEARHEAD';
-    if (persona === 'family') return 'THE FAMILY BUYER';
-    return 'SMART SEARCH';
-  };
-
-  const getPersonaSubtitle = () => {
-    if (persona === 'commuter') return 'Efficiency meets reliability';
-    if (persona === 'gearhead') return 'Performance without compromise';
-    if (persona === 'family') return 'Safety and space first';
-    return 'Personalized results';
-  };
-
-  const smartSortOptions = [
-    { value: 'best-value', label: 'BEST VALUE', desc: 'Quality per dollar' },
-    { value: 'bang-for-buck', label: 'BANG FOR BUCK', desc: 'Power per dollar' },
-    { value: 'lowest-tco', label: 'LOWEST TCO', desc: '5-year total cost' },
-    { value: 'daily-driver', label: 'DAILY DRIVER', desc: 'Comfort & efficiency' },
-    { value: 'weekend', label: 'WEEKEND WARRIOR', desc: 'Maximum fun' },
-    { value: 'resale', label: 'RESALE CHAMPION', desc: 'Keep value longer' },
-    { value: 'eco', label: 'ECO WARRIOR', desc: 'Planet-friendly' },
-    { value: 'track', label: 'TRACK READY', desc: 'Performance focus' },
-  ];
+  const answerLine = [
+    persona,
+    priority && `cares about ${priority}`,
+    usage && `for ${usage}`,
+    `est. $${minPrice.toLocaleString()}–$${maxPrice >= 999999 ? '100k+' : maxPrice.toLocaleString()} CAD`,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block w-16 h-16 border-2 border-zinc-800 border-t-zinc-500 mb-4 opacity-50" />
-          <p className="text-xs tracking-[0.3em] text-zinc-300 uppercase">Finding Your Perfect Match</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen label="Picking three cars" />;
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center px-6">
-          <div className="inline-block w-16 h-16 border-2 border-zinc-800 border-t-zinc-500 mb-4 opacity-50" />
-          <p className="text-sm tracking-[0.3em] text-zinc-400 uppercase mb-4">
-            SMART SEARCH UNAVAILABLE
-          </p>
-          <p className="text-zinc-400 mb-6">{error}</p>
-          <button
-            onClick={loadVehicles}
-            className="inline-flex items-center px-6 py-3 rounded-none bg-white text-black text-xs tracking-[0.3em] font-semibold hover:bg-zinc-200 transition"
-          >
-            RETRY
-          </button>
-        </div>
-      </div>
+      <ErrorState
+        title="Matches unavailable"
+        message={error}
+        onRetry={loadVehicles}
+        backTo="/"
+        backLabel="Home"
+      />
     );
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Sticky Header */}
-      <div className="bg-black border-b border-zinc-900">
-        <div className="px-8 py-6">
-          <div className="flex items-center justify-between max-w-7xl mx-auto">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-3 text-xs tracking-[0.3em] text-zinc-400 hover:text-white transition-colors group"
-            >
-              <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
-              </svg>
-              <span>BACK</span>
-            </Link>
+    <PageShell>
+      <ToolPageHeader
+        backTo="/"
+        backLabel="Home"
+        title="Three picks"
+        subtitle={copy.title}
+        action={
+          <Link
+            to="/?quiz=1"
+            className="text-xs text-zinc-500 hover:text-white min-h-[44px] inline-flex items-center"
+          >
+            Retake quiz
+          </Link>
+        }
+      />
 
-            <div className="text-center">
-              <h1 className="text-2xl md:text-3xl font-black tracking-tighter">
-                {getPersonaTitle()}
-              </h1>
-              <p className="text-xs tracking-[0.3em] text-zinc-300 mt-1">
-                {filteredCars.length} MATCHED
-              </p>
-            </div>
+      <PageBody>
+        <p className="text-sm text-zinc-400 mb-1">{answerLine}</p>
+        <p className="text-xs text-zinc-600 mb-6">
+          Three cars that fit — with plain-English notes on how they differ, so you can choose.
+        </p>
 
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="min-h-[44px] px-2 -mr-2 text-xs tracking-[0.3em] text-zinc-400 hover:text-white transition-colors"
-            >
-              {showFilters ? 'HIDE' : 'REFINE'}
-            </button>
-          </div>
-
-          {/* Persona Description */}
-          <div className="max-w-7xl mx-auto mt-6 pt-6 border-t border-zinc-900 text-center">
-            <p className="text-sm tracking-wider text-zinc-400 uppercase">
-              {getPersonaSubtitle()}
+        {pickDiff.axes.length > 0 && picks.length > 1 && (
+          <div className="mb-6 pb-5 border-b border-zinc-800">
+            <p className="text-xs uppercase tracking-wider text-zinc-500 mb-2">
+              How these three differ
             </p>
-            <p className="text-xs tracking-widest text-zinc-300 mt-2">
-              Budget: ${minPrice.toLocaleString()} - ${maxPrice.toLocaleString()}
-              {priority && ` • Priority: ${priority.toUpperCase()}`}
-            </p>
-          </div>
-
-          {/* Filter Controls */}
-          {showFilters && (
-            <div className="max-w-7xl mx-auto mt-6 pt-6 border-t border-zinc-900">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Search */}
-                <div>
-                  <label className="block text-xs tracking-widest text-zinc-300 mb-2">SEARCH</label>
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Make, model, year..."
-                    className="w-full bg-zinc-950 border border-zinc-800 px-4 py-2 text-sm focus:outline-none focus:border-zinc-600 transition-colors"
-                  />
-                </div>
-
-                {/* Smart Sort */}
-                <div>
-                  <label className="block text-xs tracking-widest text-zinc-300 mb-2">SMART SORT</label>
-                  <SelectMenu
-                    aria-label="Smart sort"
-                    value={smartSort}
-                    onChange={(v) => setSmartSort(v as SmartSort)}
-                    options={smartSortOptions.map((option) => ({
-                      value: option.value,
-                      label: `${option.label}: ${option.desc}`,
-                    }))}
-                  />
-                </div>
-
-                {/* Fuel Type Filter */}
-                <div>
-                  <label className="block text-xs tracking-widest text-zinc-300 mb-2">FUEL TYPE</label>
-                  <SelectMenu
-                    aria-label="Fuel type"
-                    value={fuelTypeFilter}
-                    onChange={(v) => setFuelTypeFilter(v as FuelTypeFilter)}
-                    options={[
-                      { value: 'all', label: 'ALL VEHICLES' },
-                      { value: 'gasoline', label: 'GASOLINE + HYBRID' },
-                      { value: 'gasoline-only', label: 'GASOLINE ONLY' },
-                      { value: 'hybrid', label: 'HYBRID ONLY' },
-                      { value: 'electric', label: 'ELECTRIC ONLY' },
-                    ]}
-                  />
-                </div>
-              </div>
-
-              {/* Filter Descriptions */}
-              <div className="mt-4 p-4 bg-zinc-950 border border-zinc-900 space-y-2">
-                <p className="text-xs tracking-widest text-zinc-400 text-center">
-                  {smartSortOptions.find(o => o.value === smartSort)?.desc.toUpperCase()}
-                </p>
-                {fuelTypeFilter === 'gasoline' && (
-                  <p className="text-xs text-zinc-400 text-center tracking-widest uppercase">
-                    💡 EVs excluded from fuel economy filtering (MPGe ≠ MPG)
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="pt-8 px-8 pb-16">
-        {filteredCars.length === 0 ? (
-          <div className="text-center py-24 border border-zinc-800 px-6">
-            <p className="text-base text-zinc-300 mb-2">
-              No vehicles match this persona and budget.
-            </p>
-            <p className="text-sm text-zinc-400 mb-6">
-              Try adjusting the budget range above.
-            </p>
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm('')}
-                className="text-xs tracking-widest text-zinc-400 hover:text-white transition-colors"
-              >
-                CLEAR SEARCH
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="max-w-7xl mx-auto">
-            {/* Aggregate Stats */}
-            <div className="mb-8">
-              <AggregateStats cars={filteredCars} title="MATCHED RESULTS" />
-            </div>
-
-            {/* Smart Sort Indicator */}
-            <div className="mb-8 text-center">
-              <p className="text-xs tracking-[0.3em] text-zinc-300 uppercase mb-2">
-                Sorted by: {smartSortOptions.find(o => o.value === smartSort)?.label}
-              </p>
-              <div className="h-px w-64 bg-gradient-to-r from-transparent via-zinc-800 to-transparent mx-auto" />
-            </div>
-
-            {/* Grid of vehicles */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-zinc-900">
-              {visibleCars.map((car, index) => {
-                const score = scoreMap.get(car.id) ?? 0;
-
-                return (
-                  <div
-                    key={car.id}
-                    className="bg-black p-8 hover:bg-zinc-950 transition-all duration-300 group border border-zinc-900 hover:border-zinc-700 focus-within:border-zinc-600 relative"
-                  >
-                    {index < 3 && (
-                      <div className="absolute top-4 right-4">
-                        <span className="spec-chip border-zinc-600 text-white tabular-nums">
-                          #{index + 1}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Year */}
-                    <div className="mb-4">
-                      <p className="text-5xl font-black text-zinc-300 group-hover:text-zinc-400 transition-colors">
-                        {car.year}
-                      </p>
-                    </div>
-
-                    {/* Make & Model */}
-                    <div className="mb-6">
-                      <h3 className="text-2xl font-black tracking-tight mb-1 group-hover:tracking-wide transition-all">
-                        <Link
-                          to={`/car/${car.id}`}
-                          className="after:absolute after:inset-0 focus:outline-none"
-                        >
-                          {car.make.toUpperCase()}
-                        </Link>
-                      </h3>
-                      <p className="text-lg font-light tracking-wider text-zinc-400 group-hover:text-zinc-400 transition-colors">
-                        {car.model}
-                      </p>
-                    </div>
-
-                    {/* Divider */}
-                    <div className="h-px bg-zinc-900 group-hover:bg-zinc-700 transition-colors mb-6" />
-
-                    {/* Specs Grid */}
-                    <div className="grid grid-cols-2 gap-4 mb-6">
-                      <div>
-                        <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">Power</p>
-                        <p className={cardStatClass(formatPowerForCard(car.engine.horsepower))}>
-                          {formatPowerForCard(car.engine.horsepower)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">
-                          {usesMpge(car.engine.fuelType) ? 'MPGe' : 'MPG'}
-                        </p>
-                        <p className={cardStatClass(formatMpgForCard(car.fuelEconomy.combined))}>
-                          {formatMpgForCard(car.fuelEconomy.combined)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">Engine</p>
-                        <p className={cardStatClass(formatEngineDetailForCard(car.engine))}>
-                          {formatEngineDetailForCard(car.engine)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">Score</p>
-                        <p className="text-lg font-bold">{score.toFixed(0)}</p>
-                      </div>
-                    </div>
-
-                    {/* View Arrow */}
-                    <div className="flex items-center gap-2 text-xs tracking-widest text-zinc-300 group-hover:text-white transition-all">
-                      <span>VIEW</span>
-                      <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                      </svg>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Load More */}
-            {visibleCount < filteredCars.length && (
-              <div className="text-center mt-12">
-                <button
-                  onClick={() => setVisibleCount(prev => prev + PAGE_SIZE)}
-                  className="px-8 py-3 border border-zinc-800 text-xs tracking-[0.3em] text-zinc-400 hover:text-white hover:border-zinc-600 transition-all uppercase"
-                >
-                  Load More ({filteredCars.length - visibleCount} remaining)
-                </button>
-              </div>
-            )}
+            <ul className="space-y-2">
+              {pickDiff.axes.map((axis) => (
+                <li key={axis} className="text-base text-zinc-200 leading-snug">
+                  {axis}
+                </li>
+              ))}
+            </ul>
           </div>
         )}
-      </div>
-    </div>
+
+        <div className="flex flex-wrap items-center gap-3 mb-8 pb-5 border-b border-zinc-900">
+          <SelectMenu
+            aria-label="Rank picks"
+            size="sm"
+            className="w-40"
+            value={rankBy}
+            onChange={(v) => setRankBy(v as RankBy)}
+            options={[
+              { value: 'match', label: 'Best match' },
+              { value: 'efficiency', label: 'Efficiency' },
+              { value: 'value', label: 'Value' },
+              { value: 'power', label: 'Power / $' },
+            ]}
+          />
+          <div className="flex gap-1">
+            {(
+              [
+                ['all', 'All'],
+                ['gasoline', 'Gas'],
+                ['electric', 'EV'],
+                ['hybrid', 'Hybrid'],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setFuelTypeFilter(value)}
+                className={`px-2 py-1 text-[10px] uppercase tracking-wider ${
+                  fuelTypeFilter === value ? 'text-white' : 'text-zinc-600 hover:text-zinc-400'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {picks.length === 0 ? (
+          <div className="py-12">
+            <p className="text-base text-zinc-300 mb-3">Nothing matched those answers.</p>
+            <div className="flex flex-wrap gap-4 text-xs">
+              <Link to="/?quiz=1" className="underline underline-offset-4 text-zinc-400 hover:text-white">
+                Retake quiz
+              </Link>
+              <Link to={catalogHref} className="underline underline-offset-4 text-zinc-400 hover:text-white">
+                Open Search anyway
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <>
+            <ol>
+              {picks.map((car, i) => (
+                <li key={car.id} className="border-t border-zinc-800">
+                  <div className="flex gap-4 py-5 items-start">
+                    <span
+                      className={`shrink-0 tabular-nums font-bold leading-none ${
+                        i === 0 ? 'text-3xl text-white w-10' : 'text-lg text-zinc-500 w-10 pt-1'
+                      }`}
+                    >
+                      {i + 1}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] uppercase tracking-wider text-zinc-600 mb-1">
+                        {i === 0 ? 'Start here' : i === 1 ? 'Strong alternative' : 'Also worth a look'}
+                      </p>
+                      <Link to={`/car/${car.id}`} className="group block">
+                        <h2
+                          className={`font-bold tracking-tight text-white group-hover:text-zinc-300 ${
+                            i === 0 ? 'text-2xl sm:text-3xl' : 'text-lg sm:text-xl'
+                          }`}
+                        >
+                          {car.year} {car.make} {displayModelLabel(car)}
+                        </h2>
+                      </Link>
+                      <p className="text-base sm:text-lg text-white font-medium mt-2 leading-snug">
+                        {pickDiff.byCarId[car.id]?.edge ?? 'Open the dossier for full specs'}
+                      </p>
+                      <p className="text-xs text-zinc-500 mt-2">
+                        {[
+                          formatPowerForCard(car.engine.horsepower),
+                          `${formatMpgForCard(car.fuelEconomy.combined)} ${
+                            usesMpge(car.engine.fuelType) ? 'MPGe' : 'MPG'
+                          }`,
+                          car.price?.msrp != null
+                            ? `est. ${formatPriceShort(car.price.msrp, true)}`
+                            : null,
+                          car.bodyStyle,
+                          formatFuelBadge(car.engine.fuelType),
+                        ]
+                          .filter((x) => x && x !== 'Not on file')
+                          .join(' · ')}
+                      </p>
+                      <Link
+                        to={`/car/${car.id}`}
+                        className={`inline-block mt-3 text-[10px] uppercase tracking-wider ${
+                          i === 0
+                            ? 'bg-white text-black px-3 py-2 font-semibold hover:bg-zinc-200'
+                            : 'text-zinc-400 border-b border-zinc-700 hover:text-white hover:border-white pb-0.5'
+                        }`}
+                      >
+                        {i === 0 ? 'Open this car' : 'View'}
+                      </Link>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ol>
+
+            <div className="mt-8 pt-6 border-t border-zinc-800 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+              {compareHref && (
+                <Link
+                  to={compareHref}
+                  className="text-xs uppercase tracking-wider text-white border border-zinc-600 px-4 py-2.5 hover:border-white text-center sm:text-left"
+                >
+                  Compare these {picks.length}
+                </Link>
+              )}
+              <Link to="/?quiz=1" className="text-xs text-zinc-500 hover:text-white">
+                Change answers
+              </Link>
+              {moreCount > 0 && (
+                <Link to={catalogHref} className="text-xs text-zinc-500 hover:text-white sm:ml-auto">
+                  {moreCount}+ more in Search →
+                </Link>
+              )}
+            </div>
+          </>
+        )}
+      </PageBody>
+    </PageShell>
   );
 }

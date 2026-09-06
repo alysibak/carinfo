@@ -23,6 +23,7 @@ const CSV_PATH = join(RAW_DIR, 'vehicles.csv');
 const ZIP_PATH = join(RAW_DIR, 'vehicles.csv.zip');
 const OUTPUT_PATH = join(DATA_DIR, 'cars.json');
 const NHTSA_CACHE_PATH = join(RAW_DIR, 'nhtsa-enrichment-cache.json');
+/** Optional MSRP overrides keyed by car id. File is not required; missing is a no-op. */
 const MANUAL_PRICES_PATH = join(DATA_DIR, 'manual-prices.json');
 const CURRENT_YEAR = new Date().getFullYear();
 const MIN_YEAR = 1995;

@@ -6,6 +6,7 @@ import carRoutes from './routes/car.routes.js';
 import vinRoutes from './routes/vin.routes.js';
 import meRoutes from './routes/me.routes.js';
 import billingRoutes from './routes/billing.routes.js';
+import statsRoutes from './routes/stats.routes.js';
 import * as carService from './services/car.service.js';
 import * as billingController from './controllers/billing.controller.js';
 import { resolveDataFile } from './utils/data-paths.js';
@@ -32,6 +33,7 @@ app.use('/api/cars', carRoutes);
 app.use('/api/vin', vinRoutes);
 app.use('/api/me', meRoutes);
 app.use('/api/billing', billingRoutes);
+app.use('/api/stats', statsRoutes);
 
 app.get('/api/health', (_req, res) => {
   try {

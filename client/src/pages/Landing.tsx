@@ -1,25 +1,22 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import PersonaQuiz, { PersonaResult } from '../components/PersonaQuiz';
-import AboutData from '../components/AboutData';
 import SearchBar from '../components/SearchBar';
 import SiteHeader from '../components/SiteHeader';
-import HeroDossierPreview from '../components/HeroDossierPreview';
 import VehiclePlaceholder from '../components/VehiclePlaceholder';
 import * as api from '../services/api';
-import type { CarDashboard, CarFilter, CarSpecs, SearchQuery } from '../types/car.types';
+import type { CarSpecs } from '../types/car.types';
 import { COLLECTIONS } from '../config/collections';
 import {
-  filtersToSearchQuery,
-  fuelTypeFilter,
-  bodyTypeFilter,
+  LIFESTYLE_PRESETS,
+  POPULAR_SEARCHES,
+  presetToSearchQuery,
 } from '../config/browseTaxonomy';
 import { searchQueryToParams } from '../utils/searchParams';
 import { formatFuelBadge, usesMpge } from '../utils/fuelDisplay';
 import { displayModelLabel, displayListingSubtitle } from '../utils/trimLabel';
 import { formatLPer100KmFromMpg, formatKwhPer100KmFromMpge } from '../utils/fuelEconomyUnits';
 import {
-  DOSSIER_EXAMPLE_QUERIES,
   HERO_PREVIEW_QUERY,
   pickHeroPreviewCar,
   pickFirstEligible,
@@ -27,58 +24,20 @@ import {
   type ShowcaseQuery,
 } from '../utils/landingShowcase';
 import { usePageMeta } from '../utils/pageMeta';
+import CompareTray from '../components/CompareTray';
+import VisitCounter from '../components/VisitCounter';
+import { useCarStore } from '../stores/carStore';
 
 const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/i;
-
-type ChipCountKey = 'electric' | 'suv' | 'under20k' | 'bestMpg';
-
-interface QuickChip {
-  label: string;
-  filters: CarFilter;
-  sort?: SearchQuery['sort'];
-  countKey?: ChipCountKey;
-}
-
-const QUICK_CHIPS: QuickChip[] = [
-  {
-    label: 'Electric',
-    filters: { fuelType: ['electric', 'hybrid', 'plug-in hybrid'] },
-    sort: { field: 'year', order: 'desc' },
-    countKey: 'electric',
-  },
-  { label: 'SUV', filters: { bodyStyle: ['suv'] }, countKey: 'suv' },
-  {
-    label: 'Under $20k',
-    filters: { price: { max: 20000 } },
-    sort: { field: 'price', order: 'asc' },
-    countKey: 'under20k',
-  },
-  {
-    label: 'Best fuel economy',
-    filters: { fuelEconomy: { min: 35 } },
-    sort: { field: 'fuelEconomy', order: 'desc' },
-    countKey: 'bestMpg',
-  },
-];
 
 interface ShowcaseItem {
   car: CarSpecs;
   insight: ShowcaseQuery['insight'];
 }
 
-interface DossierExample {
-  question: string;
-  car: CarSpecs;
+function homeLinkFromPreset(preset: (typeof LIFESTYLE_PRESETS)[number]) {
+  return `/home?${searchQueryToParams(presetToSearchQuery(preset), 1).toString()}`;
 }
-
-const BROWSE_TILES = [
-  { label: 'Sedans', bodyStyle: 'sedan' },
-  { label: 'SUVs', bodyStyle: 'suv' },
-  { label: 'Electric', fuelType: 'electric' },
-  { label: 'Hybrids', fuelType: 'hybrid' },
-] as const;
-
-const DOSSIER_QUESTIONS = DOSSIER_EXAMPLE_QUERIES.map((q) => q.question);
 
 export default function Landing() {
   usePageMeta(
@@ -86,21 +45,23 @@ export default function Landing() {
     'Browse 28,000+ vehicles with EPA fuel economy, NHTSA safety when on file, and labeled Ontario/CAD market estimates.',
   );
   const [showQuiz, setShowQuiz] = useState(false);
-  const [stats, setStats] = useState<{
-    totalCars: number;
-    totalMakes: number;
-    yearRange: { min: number; max: number };
-    bodyStyles?: Record<string, number>;
-    fuelTypes?: Record<string, number>;
-  } | null>(null);
-  const [collectionCounts, setCollectionCounts] = useState<Record<string, number>>({});
-  const [chipCounts, setChipCounts] = useState<Partial<Record<ChipCountKey, number>>>({});
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('quiz') === '1') {
+      setShowQuiz(true);
+      params.delete('quiz');
+      const next = params.toString();
+      window.history.replaceState({}, '', next ? `/?${next}` : '/');
+    }
+  }, []);
   const [heroQuery, setHeroQuery] = useState('');
-  const [heroDashboard, setHeroDashboard] = useState<CarDashboard | null>(null);
+  const [heroCar, setHeroCar] = useState<CarSpecs | null>(null);
   const [showcase, setShowcase] = useState<ShowcaseItem[]>([]);
-  const [dossierExamples, setDossierExamples] = useState<DossierExample[]>([]);
-  const [vinInput, setVinInput] = useState('');
   const navigate = useNavigate();
+  const compareCount = useCarStore((s) => s.comparedCars.length);
+  const trayPad =
+    compareCount > 0 ? 'pb-[calc(4.25rem+env(safe-area-inset-bottom))]' : '';
 
   const handleHeroSearch = (q: string) => {
     const trimmed = q.trim();
@@ -114,12 +75,6 @@ export default function Landing() {
       params.set('sort', 'relevance');
     }
     navigate(`/home?${params.toString()}`);
-  };
-
-  const handleVinSubmit = () => {
-    const v = vinInput.trim().toUpperCase();
-    if (!v) return;
-    navigate(`/vin?vin=${encodeURIComponent(v)}`);
   };
 
   const handleQuizComplete = (persona: PersonaResult) => {
@@ -136,42 +91,16 @@ export default function Landing() {
 
   useEffect(() => {
     api
-      .getStatistics()
-      .then((data) => {
-        if (data?.totalCars) {
-          setStats({
-            totalCars: data.totalCars,
-            totalMakes: data.totalMakes,
-            yearRange: data.yearRange,
-            bodyStyles: data.bodyStyles,
-            fuelTypes: data.fuelTypes,
-          });
-          const ft = data.fuelTypes ?? {};
-          const electricSum =
-            (ft.electric ?? 0) + (ft.hybrid ?? 0) + (ft['plug-in hybrid'] ?? 0);
-          setChipCounts((prev) => ({
-            ...prev,
-            electric: electricSum,
-            suv: data.bodyStyles?.suv,
-          }));
-        }
-      })
-      .catch(() => {});
-
-    api
       .searchCars(HERO_PREVIEW_QUERY)
-      .then(async (res) => {
+      .then((res) => {
         const car = pickHeroPreviewCar(res.results);
-        if (!car) return;
-        const dashboard = await api.getCarDashboard(car.id);
-        setHeroDashboard(dashboard);
+        if (car) setHeroCar(car);
       })
       .catch(() => {});
 
     const used = new Set<string>();
     (async () => {
       const items: ShowcaseItem[] = [];
-
       await Promise.all(
         SHOWCASE_QUERIES.map(async ({ insight, query }) => {
           try {
@@ -183,178 +112,153 @@ export default function Landing() {
           }
         }),
       );
-
       setShowcase(items);
     })();
 
-    Promise.all([
-      api.searchCars({
-        filters: { price: { max: 20000 } },
-        limit: 1,
-        offset: 0,
-      }),
-      api.searchCars({
-        filters: { fuelEconomy: { min: 35 } },
-        limit: 1,
-        offset: 0,
-      }),
-    ])
-      .then(([under20, bestMpg]) => {
-        setChipCounts((prev) => ({
-          ...prev,
-          under20k: under20.total,
-          bestMpg: bestMpg.total,
-        }));
-      })
-      .catch(() => {});
-
-    Promise.all(
-      Object.values(COLLECTIONS).map(async (c) => {
-        try {
-          const res = await api.searchCars({ ...c.query, limit: 1, offset: 0 });
-          return [c.id, res.total] as const;
-        } catch {
-          return [c.id, -1] as const;
-        }
-      }),
-    ).then((entries) => {
-      setCollectionCounts(Object.fromEntries(entries.filter(([, n]) => n >= 0)));
-    });
   }, []);
 
-  useEffect(() => {
-    if (showcase.length === 0 && !heroDashboard) return;
-    const exampleCars: CarSpecs[] = [];
-    if (heroDashboard?.car) exampleCars.push(heroDashboard.car);
-    for (const item of showcase) {
-      if (!exampleCars.some((c) => c.id === item.car.id)) exampleCars.push(item.car);
-    }
-    if (exampleCars.length === 0) return;
-    setDossierExamples(
-      DOSSIER_QUESTIONS.slice(0, exampleCars.length).map((question, i) => ({
-        question,
-        car: exampleCars[i],
-      })),
-    );
-  }, [heroDashboard, showcase]);
-
-  const vehicles = stats ? stats.totalCars.toLocaleString() : '28,000+';
-  const makes = stats ? String(stats.totalMakes) : '89';
-  const years = stats ? `${stats.yearRange.min}-${stats.yearRange.max}` : '1995-2026';
-
-  const browseCount = (tile: (typeof BROWSE_TILES)[number]) => {
-    if ('bodyStyle' in tile && tile.bodyStyle) {
-      return stats?.bodyStyles?.[tile.bodyStyle];
-    }
-    if ('fuelType' in tile && tile.fuelType) {
-      return stats?.fuelTypes?.[tile.fuelType];
-    }
-    return undefined;
-  };
-
-  const browseLink = (tile: (typeof BROWSE_TILES)[number]) => {
-    if ('bodyStyle' in tile && tile.bodyStyle) {
-      return `/home?${searchQueryToParams(filtersToSearchQuery(bodyTypeFilter(tile.bodyStyle)), 1).toString()}`;
-    }
-    return `/home?${searchQueryToParams(filtersToSearchQuery(fuelTypeFilter(tile.fuelType!)), 1).toString()}`;
-  };
-
-  const chipLabel = (chip: QuickChip) => {
-    const count = chip.countKey ? chipCounts[chip.countKey] : undefined;
-    if (count == null) return chip.label;
-    return (
-      <>
-        {chip.label}{' '}
-        <span className="text-zinc-400 font-tabular">({count.toLocaleString()})</span>
-      </>
-    );
-  };
+  const situationPresets = LIFESTYLE_PRESETS.slice(0, 4);
 
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-white/20">
+    <div className={`min-h-screen bg-black text-white selection:bg-white/20 ${trayPad}`}>
       {showQuiz && <PersonaQuiz onComplete={handleQuizComplete} />}
 
       <SiteHeader transparentUntilScroll />
 
-      {/* ── Hero + showcase (tight vertical rhythm) ── */}
-      <section className="relative mesh-hero">
-        <div className="page-wrap pt-8 pb-12 md:pt-12 md:pb-14">
-          <div className="lg:grid lg:grid-cols-[1.05fr_0.95fr] xl:grid-cols-[1.1fr_0.9fr] gap-10 xl:gap-14 items-start">
-            <div className="min-w-0">
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white tracking-tight leading-[1.1] mb-4 animate-hero-rise">
-                Car specs, explained
-              </h1>
-              <p className="text-base md:text-lg text-zinc-400 leading-relaxed max-w-lg mb-8 animate-hero-rise [animation-delay:50ms]">
-                EPA fuel economy, engine and drivetrain details, and NHTSA safety ratings, with
-                plain-English notes on every vehicle page.
-              </p>
-
-              <div className="grid grid-cols-3 divide-x divide-zinc-800 border-y border-zinc-800 mb-8 animate-hero-rise [animation-delay:100ms]">
-                <Stat value={vehicles} label="Vehicles" />
-                <Stat value={makes} label="Brands" />
-                <Stat value={years} label="Model years" />
-              </div>
-
-              <div className="w-full max-w-none animate-hero-rise [animation-delay:150ms]">
-                <SearchBar
-                  value={heroQuery}
-                  onChange={setHeroQuery}
-                  onSubmit={handleHeroSearch}
-                  size="hero"
-                  placeholder="Make, model, year, or VIN"
-                />
-
-                <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowQuiz(true)}
-                    className="text-sm text-zinc-300 hover:text-white transition-colors text-left"
-                  >
-                    Not sure what you want?{' '}
-                    <span className="text-white font-medium">Answer 3 questions →</span>
-                  </button>
-                  <Link
-                    to="/vin"
-                    className="text-sm text-zinc-400 hover:text-zinc-300 transition-colors shrink-0"
-                  >
-                    Have a VIN? Look it up directly →
-                  </Link>
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {QUICK_CHIPS.map((chip) => (
-                    <Link
-                      key={chip.label}
-                      to={`/home?${searchQueryToParams(
-                        filtersToSearchQuery(chip.filters, chip.sort),
-                        1,
-                      ).toString()}`}
-                      className="chip"
-                    >
-                      {chipLabel(chip)}
-                    </Link>
-                  ))}
-                </div>
-              </div>
+      <section className="mesh-hero">
+        {heroCar && (
+          <div className="hero-plane hidden lg:block" aria-hidden>
+            <div className="absolute inset-y-0 right-0 w-[58%] opacity-50">
+              <VehiclePlaceholder car={heroCar} hideCaption className="h-full" />
             </div>
+            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/85 to-transparent" />
+          </div>
+        )}
 
-            {heroDashboard && (
-              <div className="hidden lg:block lg:sticky lg:top-24 animate-fade-in">
-                <HeroDossierPreview dashboard={heroDashboard} />
-              </div>
-            )}
+        <div className="hero-content page-wrap pt-10 pb-12 md:pt-24 md:pb-28 lg:min-h-[calc(100svh-var(--header-height))] lg:flex lg:flex-col lg:justify-center">
+          <div className="max-w-xl min-w-0">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05] mb-4 animate-hero-rise">
+              CarInfo
+            </h1>
+            <p className="text-base md:text-lg text-zinc-400 leading-relaxed mb-8 animate-hero-rise [animation-delay:40ms]">
+              Specs you can trust — EPA, NHTSA when on file, and labeled Ontario estimates.
+              Look up a car, or answer three questions.
+            </p>
+
+            <div className="animate-hero-rise [animation-delay:80ms]">
+              <SearchBar
+                value={heroQuery}
+                onChange={setHeroQuery}
+                onSubmit={handleHeroSearch}
+                size="hero"
+                placeholder="Make, model, or VIN"
+              />
+              <p className="mt-3 text-sm text-zinc-500">
+                Paste a 17-character VIN in the same box.{' '}
+                <button
+                  type="button"
+                  onClick={() => setShowQuiz(true)}
+                  className="text-zinc-300 hover:text-white transition-colors underline underline-offset-4 decoration-zinc-700"
+                >
+                  Or answer 3 questions
+                </button>
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="page-wrap py-14 md:py-20 border-t border-zinc-900">
+        <h2 className="section-title mb-2">How do you want to start?</h2>
+        <p className="text-sm text-zinc-400 mb-10 max-w-xl leading-relaxed">
+          Most people arrive with one of these in mind. Pick the path that matches.
+        </p>
+
+        <div>
+          <div className="intent-row">
+            <p className="text-sm font-semibold text-white">I know the car</p>
+            <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+              {POPULAR_SEARCHES.map((s) => (
+                <Link
+                  key={s.query}
+                  to={`/home?${new URLSearchParams({ q: s.query, sort: 'relevance' }).toString()}`}
+                  className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700"
+                >
+                  {s.label}
+                </Link>
+              ))}
+              <Link to="/home" className="text-zinc-500 hover:text-zinc-300">
+                Open search →
+              </Link>
+            </div>
+          </div>
+
+          <div className="intent-row">
+            <p className="text-sm font-semibold text-white">I&apos;m still deciding</p>
+            <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+              <button
+                type="button"
+                onClick={() => setShowQuiz(true)}
+                className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700"
+              >
+                3-question quiz
+              </button>
+              {situationPresets.map((preset) => (
+                <Link
+                  key={preset.id}
+                  to={homeLinkFromPreset(preset)}
+                  className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700"
+                >
+                  {preset.label}
+                </Link>
+              ))}
+              <Link to="/browse" className="text-zinc-500 hover:text-zinc-300">
+                All guides →
+              </Link>
+            </div>
+          </div>
+
+          <div className="intent-row">
+            <p className="text-sm font-semibold text-white">I have a VIN</p>
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Drop it in the search above, or use{' '}
+              <Link to="/vin" className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700">
+                VIN lookup
+              </Link>{' '}
+              if you want the scanner.
+            </p>
+          </div>
+
+          <div className="intent-row border-b-0">
+            <p className="text-sm font-semibold text-white">I&apos;m comparing options</p>
+            <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+              <Link
+                to="/compare"
+                className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700"
+              >
+                Side-by-side compare
+              </Link>
+              <Link
+                to="/value-matrix"
+                className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700"
+              >
+                Value chart
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
       {showcase.length > 0 && (
-        <section className="page-wrap py-12 md:py-14 border-t border-zinc-900">
-          <SectionHeader
-            kicker="Explore"
-            title="See what's in the database"
-            subtitle="Fuel economy, powertrain specs, and crash-test ratings from EPA and NHTSA."
-          />
-          <div className="grid sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-zinc-800 border border-zinc-800">
+        <section className="border-t border-zinc-900">
+          <div className="page-wrap py-14 md:py-20">
+            <h2 className="section-title mb-2">What a dossier looks like</h2>
+            <p className="text-sm text-zinc-400 mb-10 max-w-xl leading-relaxed">
+              Every vehicle page leads with the numbers people actually weigh: efficiency, safety,
+              and estimated value.
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-zinc-800 border-y border-zinc-800">
             {showcase.map(({ car, insight }, index) => (
               <ShowcaseCard
                 key={`${car.id}-${insight}`}
@@ -367,161 +271,23 @@ export default function Landing() {
         </section>
       )}
 
-      {dossierExamples.length > 0 && (
-        <section className="page-wrap py-12 md:py-16 border-t border-zinc-900">
-          <SectionHeader
-            kicker="Dossier"
-            title="On every vehicle page"
-            subtitle="Full specs with short explanations: engine, MPG, drivetrain, safety, and more."
-          />
-          <div className="grid sm:grid-cols-2 gap-4">
-            {dossierExamples.map(({ question, car }) => (
-              <Link
-                key={question}
-                to={`/car/${car.id}`}
-                className="group p-4 border border-zinc-800 rounded-none hover:border-zinc-600 transition-colors"
-              >
-                <p className="text-sm font-medium text-white group-hover:text-zinc-200 transition-colors">
-                  {question}
-                </p>
-                <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
-                  See on {car.year} {car.make} {displayModelLabel(car)} →
-                </p>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <section className="page-wrap py-12 md:py-16 border-t border-zinc-900">
-        <SectionHeader
-          kicker="Browse"
-          title="Browse by category"
-          subtitle="Explore the full database. No search term required."
-        />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-          {BROWSE_TILES.map((tile) => {
-            const count = browseCount(tile);
-            return (
-              <Link
-                key={tile.label}
-                to={browseLink(tile)}
-                className="group p-4 border border-zinc-800 rounded-none hover:border-zinc-600 transition-colors min-h-[100px] flex flex-col justify-center"
-              >
-                <p className="text-lg font-semibold text-white group-hover:text-zinc-200 transition-colors">
-                  {tile.label}
-                </p>
-                {count != null && (
-                  <p className="text-sm text-zinc-400 mt-1.5 font-tabular">
-                    {count.toLocaleString()} vehicles
-                  </p>
-                )}
-              </Link>
-            );
-          })}
-        </div>
-        <Link
-          to="/browse"
-          className="inline-block mt-6 text-sm text-zinc-400 hover:text-white transition-colors"
-        >
-          All browse categories →
-        </Link>
-      </section>
-
-      <section className="page-wrap py-12 md:py-16 border-t border-zinc-900">
-        <div className="border border-zinc-800 rounded-none bg-zinc-950/50 p-5 md:p-8">
-          <div className="lg:grid lg:grid-cols-[1fr_1.1fr] gap-6 lg:gap-10 lg:items-center">
-            <SectionHeader
-              kicker="VIN lookup"
-              title="Already own a car?"
-              subtitle="Enter your VIN to see fuel economy, specs, and estimated value for that exact vehicle."
-            />
-            <div className="flex flex-col sm:flex-row border border-zinc-700 rounded-none">
-              <input
-                value={vinInput}
-                onChange={(e) => setVinInput(e.target.value.toUpperCase().slice(0, 17))}
-                onKeyDown={(e) => e.key === 'Enter' && handleVinSubmit()}
-                placeholder="17-character VIN"
-                spellCheck={false}
-                className="min-w-0 flex-1 h-14 lg:h-16 bg-zinc-950 border-0 px-4 text-base font-mono tracking-widest text-white placeholder:text-zinc-400 focus:outline-none rounded-none uppercase"
-              />
-              <button
-                type="button"
-                onClick={handleVinSubmit}
-                disabled={vinInput.trim().length < 11}
-                className="h-14 lg:h-16 px-6 lg:px-8 bg-white text-black text-sm font-semibold uppercase tracking-widest rounded-none hover:bg-zinc-200 transition-colors shrink-0 disabled:opacity-40 border-t border-zinc-700 sm:border-t-0 sm:border-l"
-              >
-                Search by VIN
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="page-wrap py-12 md:py-16 border-t border-zinc-900">
-        <SectionHeader kicker="Sources" title="How the data works" />
-        <div className="grid sm:grid-cols-3 gap-8">
-          <div>
-            <p className="text-4xl font-bold text-zinc-700 mb-3 leading-none" aria-hidden>
-              E
-            </p>
-            <p className="text-base font-semibold text-white mb-2">EPA verified</p>
-            <p className="text-sm text-zinc-400 leading-relaxed">
-              Fuel economy and powertrain specs from EPA laboratory testing, the same figures on window stickers.
-            </p>
-          </div>
-          <div>
-            <p className="text-4xl font-bold text-zinc-700 mb-3 leading-none" aria-hidden>
-              N
-            </p>
-            <p className="text-base font-semibold text-white mb-2">NHTSA when available</p>
-            <p className="text-sm text-zinc-400 leading-relaxed">
-              Crash-test safety ratings from NHTSA where they match this EPA configuration.
-              Many vehicles share ratings across trims.
-            </p>
-          </div>
-          <div>
-            <p className="text-4xl font-bold text-zinc-700 mb-3 leading-none" aria-hidden>
-              ON
-            </p>
-            <p className="text-base font-semibold text-white mb-2">Ontario estimates modeled</p>
-            <p className="text-sm text-zinc-400 leading-relaxed">
-              Value and ownership cost figures are Ontario-baseline estimates in CAD, built for
-              comparison and planning, not live dealer quotes.
-            </p>
-          </div>
-        </div>
-        <div className="mt-6">
-          <AboutData compact />
-        </div>
-      </section>
-
-      <section className="page-wrap py-12 md:py-16 border-t border-zinc-900">
-        <SectionHeader
-          kicker="Curated"
-          title="Collections"
-          subtitle="Hand-picked lists for common searches."
-        />
+      <section className="page-wrap py-14 md:py-20 border-t border-zinc-900">
+        <h2 className="section-title mb-2">Curated shortlists</h2>
+        <p className="text-sm text-zinc-400 mb-8 max-w-xl leading-relaxed">
+          A few ranked picks for common situations — not every matching trim in the archive.
+        </p>
         <div>
           {Object.values(COLLECTIONS).map((c) => (
-            <Link
-              key={c.id}
-              to={`/collection/${c.id}`}
-              className="list-row group"
-            >
+            <Link key={c.id} to={`/collection/${c.id}`} className="list-row group">
               <div className="min-w-0 pr-4">
-                <p className="text-base sm:text-lg font-semibold text-white tracking-tight group-hover:text-zinc-300 transition-colors">
+                <p className="text-base font-semibold text-white tracking-tight group-hover:text-zinc-300 transition-colors">
                   {c.title}
                 </p>
-                <p className="text-sm text-zinc-400 mt-0.5 sm:mt-1 line-clamp-2">{c.subtitle}</p>
+                <p className="text-sm text-zinc-400 mt-0.5 line-clamp-2">{c.subtitle}</p>
               </div>
-              <div className="text-right shrink-0">
-                <p className="text-xs text-zinc-400 whitespace-nowrap">
-                  {collectionCounts[c.id] != null
-                    ? `${collectionCounts[c.id].toLocaleString()} vehicles`
-                    : 'View'}
-                </p>
-              </div>
+              <p className="text-xs text-zinc-500 whitespace-nowrap shrink-0">
+                Picks →
+              </p>
             </Link>
           ))}
         </div>
@@ -532,14 +298,19 @@ export default function Landing() {
           <div>
             <p className="text-sm font-semibold text-white">CarInfo</p>
             <p className="text-sm text-zinc-400 mt-2 max-w-xs leading-relaxed">
-              EPA specs, NHTSA safety, and plain-English explanations on every vehicle page.
+              EPA specs, NHTSA safety, and labeled estimates on every vehicle page.
             </p>
           </div>
-          <p className="text-xs text-zinc-400">
-            © {new Date().getFullYear()} CarInfo
-          </p>
+          <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-zinc-500">
+            <Link to="/vin" className="hover:text-white">VIN lookup</Link>
+            <Link to="/methodology" className="hover:text-white">Methodology</Link>
+            <VisitCounter className="text-zinc-500" />
+            <span>© {new Date().getFullYear()}</span>
+          </div>
         </div>
       </footer>
+
+      <CompareTray />
     </div>
   );
 }
@@ -592,8 +363,8 @@ function ShowcaseCard({
     }
     if (safety) {
       return {
-        value: '★'.repeat(safety) + '☆'.repeat(5 - safety),
-        unit: 'NHTSA',
+        value: String(safety),
+        unit: '/5',
       };
     }
     return { value: String(Math.round(combined)), unit: mpgLabel };
@@ -611,84 +382,43 @@ function ShowcaseCard({
   return (
     <Link
       to={`/car/${car.id}`}
-      className="group bg-zinc-950 border-0 overflow-hidden flex flex-col animate-fade-in opacity-0 [animation-fill-mode:forwards] hover:bg-black transition-colors"
+      className="group bg-black overflow-hidden flex flex-col animate-fade-in opacity-0 [animation-fill-mode:forwards] hover:bg-zinc-950 transition-colors"
       style={style}
     >
-      <p className="text-[10px] uppercase tracking-widest text-zinc-400 border-b border-zinc-800 px-4 py-2">
+      <p className="text-[10px] uppercase tracking-widest text-zinc-500 px-5 md:px-8 pt-5">
         {theme}
       </p>
-      <div className="relative h-24 overflow-hidden border-b border-zinc-800">
-        <VehiclePlaceholder car={car} compact className="!absolute inset-0" />
+      <div className="relative h-24 overflow-hidden">
+        <VehiclePlaceholder car={car} compact hideCaption className="!absolute inset-0" />
       </div>
-      <div className="p-4 flex flex-col flex-1 gap-3">
-        <div className="border-t border-zinc-800 pt-3">
-          <p className="text-xs text-zinc-400">
+      <div className="px-5 md:px-8 pb-8 pt-4 flex flex-col flex-1 gap-4">
+        <div>
+          <p className="text-xs text-zinc-500">
             {car.year} {car.make}
           </p>
-          <h3 className="text-base font-medium text-white tracking-tight group-hover:text-zinc-200 transition-colors">
+          <h3 className="text-lg font-semibold text-white tracking-tight">
             {displayModelLabel(car)}
           </h3>
-          {subtitle && <p className="text-xs text-zinc-400 mt-0.5 truncate">{subtitle}</p>}
+          {subtitle && <p className="text-xs text-zinc-500 mt-0.5 truncate">{subtitle}</p>}
         </div>
 
         <div className="mt-auto">
           {primaryMetric.unit ? (
             <div className="flex items-baseline gap-2">
-              <span className="text-5xl sm:text-6xl font-bold text-white leading-none tabular-nums">
+              <span className="text-3xl sm:text-4xl md:text-5xl font-bold text-white leading-none tabular-nums">
                 {primaryMetric.value}
               </span>
-              <span className="text-sm uppercase text-zinc-400 tracking-wider">{primaryMetric.unit}</span>
+              <span className="text-sm uppercase text-zinc-500 tracking-wider">{primaryMetric.unit}</span>
             </div>
           ) : (
-            <p className="text-2xl sm:text-3xl font-bold text-white leading-tight tabular-nums">
+            <p className="text-2xl font-bold text-white leading-tight tabular-nums">
               {primaryMetric.value}
             </p>
           )}
-          {secondaryLine && (
-            <p className="text-xs text-zinc-400 mt-2">{secondaryLine}</p>
-          )}
-          <p className="text-xs text-zinc-400 mt-1">{tertiary}</p>
+          {secondaryLine && <p className="text-xs text-zinc-500 mt-2">{secondaryLine}</p>}
+          <p className="text-xs text-zinc-500 mt-1">{tertiary}</p>
         </div>
       </div>
     </Link>
-  );
-}
-
-function SectionHeader({
-  kicker,
-  title,
-  subtitle,
-}: {
-  kicker?: string;
-  title: string;
-  subtitle?: string;
-}) {
-  return (
-    <div className="mb-5 sm:mb-6 flex flex-col gap-1 sm:gap-1.5 border-t border-zinc-800 pt-4">
-      {kicker && <span className="kicker">{kicker}</span>}
-      <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight leading-tight">
-        {title}
-      </h2>
-      {subtitle && <p className="text-sm text-zinc-400 max-w-2xl leading-relaxed">{subtitle}</p>}
-    </div>
-  );
-}
-
-function Stat({ value, label }: { value: string; label: string }) {
-  // Year ranges like "1995-2026" need smaller type than "89" so they are not clipped.
-  const compact = value.length > 5;
-  return (
-    <div className="min-w-0 px-1.5 sm:px-3 md:px-4 py-4 text-center">
-      <p
-        className={`font-bold text-white leading-none tabular-nums tracking-tight ${
-          compact
-            ? 'text-lg sm:text-2xl md:text-3xl lg:text-4xl'
-            : 'text-2xl sm:text-3xl md:text-4xl lg:text-5xl'
-        }`}
-      >
-        {value}
-      </p>
-      <p className="text-[10px] sm:text-xs uppercase tracking-widest text-zinc-400 mt-2">{label}</p>
-    </div>
   );
 }

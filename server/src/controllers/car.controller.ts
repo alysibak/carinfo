@@ -113,13 +113,16 @@ export function compareCars(req: Request, res: Response) {
   }
 }
 
+import { parseRegionId } from '../config/regional-assumptions.js';
+
 /**
  * Get car dashboard with analytics and provenance
  */
 export function getCarDashboard(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const dashboard = dashboardService.getCarDashboard(id);
+    const region = parseRegionId(req.query.region);
+    const dashboard = dashboardService.getCarDashboard(id, region);
 
     if (!dashboard) {
       return res.status(404).json({ success: false, error: 'Car not found' });
@@ -143,6 +146,21 @@ export function getSimilarCars(req: Request, res: Response) {
     res.json({ success: true, data: cars });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to fetch similar cars' });
+  }
+}
+
+/**
+ * Same make/model/year EPA configurations (trims, transmissions).
+ */
+export function getSiblingConfigs(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const limitRaw = req.query.limit != null ? Number(req.query.limit) : 24;
+    const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 48) : 24;
+    const cars = dashboardService.getSiblingConfigs(id, limit);
+    res.json({ success: true, data: cars });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to fetch sibling configs' });
   }
 }
 

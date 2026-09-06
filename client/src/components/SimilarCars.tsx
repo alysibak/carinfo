@@ -1,17 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import * as api from '../services/api';
 import type { CarSpecs } from '../types/car.types';
-import CarCard from './CarCard';
+import { differentiateVsAnchor } from '../utils/differentiateCars';
+import { formatMpgForCard, formatPriceShort } from '../utils/dataValue';
+import { usesMpge } from '../utils/fuelDisplay';
+import { displayModelLabel } from '../utils/trimLabel';
+import { useCarStore } from '../stores/carStore';
 
-/** "Keep exploring" rail of cross-shopped vehicles, shown at the foot of a car page. */
-export default function SimilarCars({ carId }: { carId: string }) {
+/** Nearby alternatives with plain-English trade-offs vs the car you're viewing. */
+export default function SimilarCars({ car }: { car: CarSpecs }) {
   const [cars, setCars] = useState<CarSpecs[] | null>(null);
+  const { addOrReplaceOldestInComparison, comparedCars } = useCarStore();
 
   useEffect(() => {
     let active = true;
     setCars(null);
     api
-      .getSimilarCars(carId, 6)
+      .getSimilarCars(car.id, 6)
       .then((results) => {
         if (active) setCars(results);
       })
@@ -21,29 +27,74 @@ export default function SimilarCars({ carId }: { carId: string }) {
     return () => {
       active = false;
     };
-  }, [carId]);
+  }, [car.id]);
 
-  // Hide the section entirely when there is nothing relevant to show.
+  const edges = useMemo(
+    () => (cars && cars.length > 0 ? differentiateVsAnchor(car, cars) : {}),
+    [car, cars],
+  );
+
   if (cars && cars.length === 0) return null;
 
   return (
     <section id="similar" className="border-t border-zinc-900 scroll-mt-24">
-      <div className="max-w-7xl mx-auto px-6 md:px-8 py-12">
-        <p className="kicker mb-2">Keep exploring</p>
-        <h2 className="text-xl md:text-2xl font-black tracking-tight mb-6">Cross-shopped alternatives</h2>
+      <div className="page-wrap-wide py-6 md:py-8">
+        <h2 className="text-base font-bold tracking-tight mb-1">If you&apos;re still looking</h2>
+        <p className="text-xs text-zinc-500 mb-4">
+          Nearby alternatives — each note is how it differs from this {car.year}{' '}
+          {displayModelLabel(car)}.
+        </p>
 
         {cars == null ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="space-y-0 border-t border-zinc-900">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="surface-card aspect-[16/10] opacity-50" />
+              <div key={i} className="h-16 border-b border-zinc-900 opacity-40" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {cars.map((car) => (
-              <CarCard key={car.id} car={car} />
-            ))}
-          </div>
+          <ul className="border-t border-zinc-800">
+            {cars.map((alt) => {
+              const mpgLabel = usesMpge(alt.engine.fuelType) ? 'MPGe' : 'MPG';
+              const mpg = formatMpgForCard(alt.fuelEconomy.combined);
+              const price = formatPriceShort(alt.price?.msrp, true);
+              const inCompare = comparedCars.some((c) => c.id === alt.id);
+              return (
+                <li key={alt.id} className="border-b border-zinc-900">
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4 py-3.5">
+                    <Link to={`/car/${alt.id}`} className="min-w-0 flex-1 group">
+                      <p className="text-sm font-semibold text-white group-hover:text-zinc-300 tracking-tight">
+                        {alt.year} {alt.make} {displayModelLabel(alt)}
+                      </p>
+                      {edges[alt.id] && (
+                        <p className="text-base text-white font-medium mt-1.5 leading-snug">{edges[alt.id]}</p>
+                      )}
+                      <p className="text-xs text-zinc-500 mt-1.5">
+                        {[
+                          mpg !== 'Not on file' ? `${mpg} ${mpgLabel}` : null,
+                          price !== 'Not on file' ? `est. ${price}` : null,
+                          alt.bodyStyle,
+                          alt.driveType,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </p>
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => addOrReplaceOldestInComparison(alt)}
+                      className={`shrink-0 self-start text-[10px] uppercase tracking-wider px-2.5 py-1.5 border ${
+                        inCompare
+                          ? 'border-white text-white'
+                          : 'border-zinc-700 text-zinc-500 hover:border-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      {inCompare ? 'In compare' : '+ Compare'}
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </div>
     </section>

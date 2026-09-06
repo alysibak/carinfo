@@ -3,7 +3,7 @@
  * Default region: Ontario. Review price/rate constants periodically (last reviewed: 2025-Q2).
  */
 
-export type RegionId = 'ontario';
+export type RegionId = 'ontario' | 'british-columbia';
 
 export interface InsuranceAssumptions {
   sedan: number;
@@ -117,6 +117,55 @@ export const REGIONAL_ASSUMPTIONS: Record<RegionId, RegionalAssumptions> = {
       electricMileFraction: 0.35,
     },
   },
+  'british-columbia': {
+    id: 'british-columbia',
+    label: 'British Columbia',
+    displayCurrency: 'CAD',
+    cadUsdExchangeRate: 1.38,
+    canadianUsedMarketFactor: 1.1,
+    gasPriceCadPerL: 1.72,
+    electricityRateCadPerKwh: 0.12,
+    annualKm: 14000,
+    registrationCadPerYear: 180,
+    beaterValueThresholdCad: 8500,
+    insurance: {
+      sedan: 3100,
+      suv: 3600,
+      truck: 3800,
+      coupe: 3300,
+      luxuryMultiplier: 1.5,
+      heavyEvTruck: 5400,
+      luxuryPerformance: 5000,
+      highValueMultiplier: 1.22,
+      highValueThresholdCad: 110000,
+      beaterMaxCad: 1600,
+      lowValueMaxCad: 2200,
+      lowValueThresholdCad: 11000,
+    },
+    maintenance: {
+      base: 1200,
+      heavyEvTruck: 1950,
+      luxuryPerformance: 2500,
+      luxury: 1950,
+      electric: 980,
+      hydrogen: 1650,
+      hybrid: 1100,
+      ageIncrementPerYear: 55,
+      ageIncrementCapYears: 10,
+    },
+    tires: {
+      default: 700,
+      heavyEvTruck: 1950,
+      truck: 1250,
+      luxuryPerformance: 1550,
+      suv: 1000,
+      electric: 850,
+    },
+    phev: {
+      gasMileFraction: 0.6,
+      electricMileFraction: 0.4,
+    },
+  },
 };
 
 export const DEFAULT_REGION: RegionId = 'ontario';
@@ -157,9 +206,14 @@ export function usdAnchorToCadValue(
 }
 
 export function formatOntarioEnergyAssumptionNote(region: RegionalAssumptions = getRegionalAssumptions()): string {
-  return `Ontario ~$${region.gasPriceCadPerL.toFixed(2)}/L gas, ~$${region.electricityRateCadPerKwh.toFixed(3)}/kWh home electricity @ ~${region.annualKm.toLocaleString()} km/yr`;
+  return `${region.label} ~$${region.gasPriceCadPerL.toFixed(2)}/L gas, ~$${region.electricityRateCadPerKwh.toFixed(3)}/kWh home electricity @ ~${region.annualKm.toLocaleString()} km/yr`;
 }
 
 export function formatOntarioRegionNote(region: RegionalAssumptions = getRegionalAssumptions()): string {
   return `${region.label}-baseline estimates in ${region.displayCurrency}. Condition, mileage, and local demand still cause real variation`;
+}
+
+export function parseRegionId(raw: unknown): RegionId {
+  if (raw === 'british-columbia' || raw === 'bc') return 'british-columbia';
+  return DEFAULT_REGION;
 }

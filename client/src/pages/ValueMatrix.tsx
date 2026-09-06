@@ -14,7 +14,6 @@ import {
 import * as api from '../services/api';
 import type { ChartDensityCell, ChartDensityResult, ChartPoint } from '../services/api';
 import AboutData from '../components/AboutData';
-import ProvenanceChip from '../components/ProvenanceChip';
 import ValueMatrixHeatmap from '../components/ValueMatrixHeatmap';
 import { formatMpgForCard } from '../utils/dataValue';
 import { DISPLAY_CURRENCY } from '../utils/currency';
@@ -136,15 +135,9 @@ function useChartHeight() {
 function MatrixLegend() {
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-400">
-        <span className="text-[10px] tracking-widest uppercase text-zinc-400">Axes</span>
-        <span className="flex items-center gap-1.5">
-          X: Est. value <ProvenanceChip source="estimated" />
-        </span>
-        <span className="flex items-center gap-1.5">
-          Y: EPA pipeline <ProvenanceChip source="epa" />
-        </span>
-      </div>
+      <p className="text-xs text-zinc-500">
+        X is estimated Ontario/CAD value. Y is EPA test data.
+      </p>
       <div className="flex flex-wrap gap-x-4 gap-y-2 justify-center sm:justify-start">
       {KNOWN_BODY_STYLES.map((style) => (
         <div key={style} className="flex items-center gap-2 text-xs text-zinc-400 capitalize">
@@ -307,26 +300,28 @@ export default function ValueMatrix() {
         </p>
         <p className="text-sm text-zinc-300 mb-3">{data.model}</p>
         <div className="space-y-2 text-sm">
-          <div className="flex justify-between gap-6 items-center">
+          <div className="flex justify-between gap-4 items-baseline">
             <span className="text-zinc-400">Est. value</span>
-            <span className="flex items-center gap-2">
-              <span className="font-bold text-white">${data.price.toLocaleString()}</span>
-              {data.priceIsEstimated && <ProvenanceChip source="estimated" />}
+            <span className="font-bold text-white">
+              ${data.price.toLocaleString()}
+              {data.priceIsEstimated && (
+                <span className="ml-1.5 text-[10px] font-normal text-zinc-500">est.</span>
+              )}
             </span>
           </div>
-          <div className="flex justify-between gap-6 items-center">
+          <div className="flex justify-between gap-4 items-baseline">
             <span className="text-zinc-400">
               {axisMode === 'mpg' ? 'MPG' : axisMode === 'co2' ? 'CO₂' : 'Engine'}
             </span>
-            <span className="flex items-center gap-2">
-              <span className="font-bold text-white">
-                {axisMode === 'mpg'
-                  ? formatMpgForCard(data.mpg)
-                  : axisMode === 'co2'
-                    ? data.co2
-                    : `${data.displacement}L`}
-              </span>
-              <ProvenanceChip source={data.ySource === 'epa' ? 'epa' : 'estimated'} />
+            <span className="font-bold text-white">
+              {axisMode === 'mpg'
+                ? formatMpgForCard(data.mpg)
+                : axisMode === 'co2'
+                  ? data.co2
+                  : `${data.displacement}L`}
+              {data.ySource !== 'epa' && (
+                <span className="ml-1.5 text-[10px] font-normal text-zinc-500">est.</span>
+              )}
             </span>
           </div>
           <div className="flex justify-between gap-6">

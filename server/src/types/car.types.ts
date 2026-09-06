@@ -173,6 +173,8 @@ export interface SearchQuery {
   };
   limit?: number;
   offset?: number;
+  /** Keep highest-ranking trim per make+model before pagination. */
+  collapseByModel?: boolean;
 }
 
 export interface OwnershipAssumptions {

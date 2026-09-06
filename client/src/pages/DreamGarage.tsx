@@ -1,12 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGarageStore, FREE_GARAGE_LIMIT } from '../stores/garageStore';
 import { cardStatClass, formatEngineForCard, formatMpgForCard, formatPriceShort } from '../utils/dataValue';
 import SignInPromptSlot from '../components/SignInPromptSlot';
+import ToolPageHeader from '../components/ToolPageHeader';
+import { ConfirmDialog, Modal, StatusToast } from '../components/ui';
 
 export default function DreamGarage() {
   const [shareLink, setShareLink] = useState('');
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [copiedAgain, setCopiedAgain] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
   const garage = useGarageStore((s) => s.cars);
   const removeFromGarage = useGarageStore((s) => s.remove);
   const clearGarage = useGarageStore((s) => s.clear);
@@ -15,21 +20,26 @@ export default function DreamGarage() {
   const syncMode = useGarageStore((s) => s.syncMode);
   const lastSyncError = useGarageStore((s) => s.lastSyncError);
   const navigate = useNavigate();
-  const confirmAndClear = () => {
-    if (confirm('Are you sure you want to clear your entire garage?')) {
-      clearGarage();
-    }
-  };
 
-  const generateShareLink = () => {
-    // Generate a shareable link with car IDs
-    const carIds = garage.map(car => car.id).join(',');
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 2200);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  const generateShareLink = async () => {
+    const carIds = garage.map((car) => car.id).join(',');
     const link = `${window.location.origin}/shared-garage?cars=${carIds}`;
     setShareLink(link);
     setShowShareModal(true);
+    setCopiedAgain(false);
 
-    // Copy to clipboard
-    navigator.clipboard.writeText(link);
+    try {
+      await navigator.clipboard.writeText(link);
+      setToast('Link copied to clipboard');
+    } catch {
+      setToast('Share link ready — copy from the dialog');
+    }
   };
 
   const totalValue = garage.reduce((sum, car) => sum + (car.price?.msrp || 0), 0);
@@ -43,41 +53,37 @@ export default function DreamGarage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Header */}
-      <div className="bg-black border-b border-zinc-900">
-        <div className="px-8 py-6">
-          <div className="flex items-center justify-between max-w-7xl mx-auto">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-3 text-xs tracking-[0.3em] text-zinc-400 hover:text-white transition-colors group"
-            >
-              <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
-              </svg>
-              <span>HOME</span>
-            </Link>
+      <StatusToast message={toast} />
+      <ConfirmDialog
+        open={showClearConfirm}
+        onClose={() => setShowClearConfirm(false)}
+        onConfirm={clearGarage}
+        title="Clear dream garage?"
+        message="This removes every saved vehicle from your garage. You can't undo this."
+        confirmLabel="Clear all"
+        danger
+      />
 
-            <div className="text-center">
-              <h1 className="text-2xl md:text-3xl font-black tracking-tighter">
-                DREAM GARAGE
-              </h1>
-              <p className="text-xs tracking-[0.3em] text-zinc-300 mt-1">
-                {garage.length} VEHICLE{garage.length !== 1 ? 'S' : ''}
-              </p>
-            </div>
-
+      <ToolPageHeader
+        backTo="/"
+        backLabel="Home"
+        title="Dream Garage"
+        subtitle={`${garage.length} vehicle${garage.length !== 1 ? 's' : ''}`}
+        action={
+          garage.length > 0 ? (
             <button
-              onClick={confirmAndClear}
-              className="min-h-[44px] px-2 -mr-2 text-xs tracking-[0.3em] text-zinc-400 hover:text-red-500 transition-colors"
+              type="button"
+              onClick={() => setShowClearConfirm(true)}
+              className="min-h-[44px] px-2 -mr-2 text-xs tracking-[0.2em] sm:tracking-[0.3em] text-zinc-400 hover:text-red-500 transition-colors"
             >
-              CLEAR
+              Clear
             </button>
-          </div>
-        </div>
-      </div>
+          ) : undefined
+        }
+      />
 
-      <div className="pt-8 pb-16 px-8">
-        <div className="max-w-7xl mx-auto mb-8 space-y-3">
+      <div className="pt-8 pb-16 page-wrap-wide">
+        <div className="mb-8 space-y-3">
           <SignInPromptSlot />
           {lastSyncError && (
             <p className="text-sm text-amber-200/90 border border-zinc-800 bg-zinc-950 px-4 py-3">
@@ -121,14 +127,14 @@ export default function DreamGarage() {
               No vehicles saved yet
             </h2>
             <p className="text-sm text-zinc-400 mb-8 max-w-md mx-auto leading-relaxed">
-              Browse or search to build your garage. Save up to compare, share, or battle head to head.
+              Browse or search to save cars here. Use Compare when you&apos;re ready to decide.
             </p>
             <Link to="/home" className="btn-primary text-xs">
               Browse vehicles
             </Link>
           </div>
         ) : (
-          <div className="max-w-7xl mx-auto">
+          <div>
             {/* Garage Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-zinc-800 border border-zinc-800 mb-12">
               <div className="bg-zinc-950 p-4">
@@ -151,11 +157,18 @@ export default function DreamGarage() {
 
             <div className="flex items-center justify-center gap-3 mb-12">
               <button
-                onClick={() => navigate('/battle')}
+                onClick={() =>
+                  navigate(
+                    `/compare?cars=${garage
+                      .slice(0, 5)
+                      .map((c) => c.id)
+                      .join(',')}`,
+                  )
+                }
                 disabled={garage.length < 2}
                 className={`btn-primary text-xs ${garage.length < 2 ? 'opacity-40 cursor-not-allowed' : ''}`}
               >
-                Battle mode
+                Compare saved
               </button>
               <button onClick={generateShareLink} className="btn-secondary text-xs">
                 Share garage
@@ -186,7 +199,7 @@ export default function DreamGarage() {
 
                   {/* Year */}
                   <div className="mb-4 mt-12">
-                    <p className="text-5xl font-black text-zinc-300 group-hover:text-zinc-400 transition-colors">
+                    <p className="text-3xl sm:text-5xl font-black text-zinc-300 group-hover:text-zinc-400 transition-colors">
                       {car.year}
                     </p>
                   </div>
@@ -247,50 +260,40 @@ export default function DreamGarage() {
         )}
       </div>
 
-      {/* Share Modal */}
-      {showShareModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center p-8">
-          <div className="max-w-2xl w-full bg-black border border-zinc-800 p-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-black tracking-tight">SHARE YOUR GARAGE</h2>
-              <button
-                onClick={() => setShowShareModal(false)}
-                className="text-zinc-400 hover:text-white transition-colors"
-              >
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+      <Modal open={showShareModal} onClose={() => setShowShareModal(false)} title="Share your garage">
+        <p className="text-sm tracking-wide text-zinc-400 mb-6">
+          Anyone with this link can view your saved vehicles and add them to their own garage.
+        </p>
 
-            <p className="text-sm tracking-wider text-zinc-400 mb-6">
-              Link copied to clipboard! Share it with friends to get their opinion on your collection.
-            </p>
-
-            <div className="bg-zinc-950 border border-zinc-900 p-4 mb-6 font-mono text-sm break-all">
-              {shareLink}
-            </div>
-
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(shareLink);
-                  alert('Link copied again!');
-                }}
-                className="flex-1 bg-white text-black px-6 py-4 font-black tracking-widest text-sm hover:bg-zinc-300 transition-all"
-              >
-                COPY AGAIN
-              </button>
-              <button
-                onClick={() => setShowShareModal(false)}
-                className="flex-1 bg-zinc-900 border border-zinc-800 px-6 py-4 font-black tracking-widest text-sm hover:bg-zinc-800 transition-all"
-              >
-                CLOSE
-              </button>
-            </div>
-          </div>
+        <div className="bg-zinc-950 border border-zinc-900 p-4 mb-6 font-mono text-sm break-all">
+          {shareLink}
         </div>
-      )}
+
+        <div className="flex flex-col sm:flex-row items-stretch gap-3">
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(shareLink);
+                setCopiedAgain(true);
+                setToast('Link copied');
+              } catch {
+                setToast('Could not copy — select the link above');
+              }
+            }}
+            className="flex-1 btn-primary text-xs tracking-[0.2em]"
+          >
+            {copiedAgain ? 'Copied' : 'Copy link'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowShareModal(false)}
+            className="flex-1 btn-secondary text-xs tracking-[0.2em]"
+          >
+            Close
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

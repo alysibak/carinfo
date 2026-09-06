@@ -1,9 +1,22 @@
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import SiteHeader from './SiteHeader';
+import CompareTray from './CompareTray';
+import VisitCounter from './VisitCounter';
+import { useCarStore } from '../stores/carStore';
+import { useRegionStore } from '../stores/regionStore';
 
 export default function Layout() {
+  const location = useLocation();
+  const compareCount = useCarStore((s) => s.comparedCars.length);
+  const region = useRegionStore((s) => s.region);
+  const regionLabel = region === 'british-columbia' ? 'British Columbia' : 'Ontario';
+  const trayPad =
+    compareCount > 0 && location.pathname !== '/compare'
+      ? 'pb-[calc(4.25rem+env(safe-area-inset-bottom))]'
+      : '';
+
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
+    <div className={`min-h-screen bg-black text-white flex flex-col ${trayPad}`}>
       <a href="#main-content" className="skip-link">
         Skip to content
       </a>
@@ -40,17 +53,24 @@ export default function Layout() {
               </a>
             </span>
             <span aria-hidden="true">·</span>
-            <span>Ontario-baseline estimates in CAD</span>
+            <span>{regionLabel}-baseline estimates in CAD</span>
           </p>
           <p>
+            <Link to="/vin" className="text-zinc-400 hover:text-white underline underline-offset-2">
+              VIN lookup
+            </Link>
+            <span aria-hidden="true"> · </span>
             <Link to="/methodology" className="text-zinc-400 hover:text-white underline underline-offset-2">
               Methodology &amp; data policy
             </Link>
             <span aria-hidden="true"> · </span>
             <span className="text-zinc-400">Body-type illustrations only, no listing photos</span>
           </p>
+          <VisitCounter className="text-zinc-500" />
         </div>
       </footer>
+
+      <CompareTray />
     </div>
   );
 }

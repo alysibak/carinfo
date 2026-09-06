@@ -12,11 +12,13 @@ import {
 } from '../utils/ownership-economics.js';
 import { findSimilarCars } from '../utils/similar-vehicles.js';
 
-export function getCarDashboard(id: string): CarDashboard | null {
+export function getCarDashboard(
+  id: string,
+  regionId?: import('../config/regional-assumptions.js').RegionId,
+): CarDashboard | null {
   const car = carService.getCarById(id);
   if (!car) return null;
 
-  const allCars = carService.getAllCars();
   const market = estimateMarketValue(car);
   const carForSegment = {
     ...car,
@@ -27,8 +29,11 @@ export function getCarDashboard(id: string): CarDashboard | null {
       isEstimated: true,
     },
   };
-  const segment = getSegment(carForSegment, allCars);
-  const ownership = computeOwnershipEconomics(car, segment);
+  // Prefer body-style index over full fleet scan for segment peers.
+  const pool = carService.getCarsByBodyStyle(car.bodyStyle);
+  const segmentPool = pool.length > 0 ? pool : carService.getAllCars();
+  const segment = getSegment(carForSegment, segmentPool);
+  const ownership = computeOwnershipEconomics(car, segment, regionId);
   const zeroToSixty = predictZeroToSixty(car);
 
   const displayCar = {
@@ -112,5 +117,12 @@ export function getCarDashboard(id: string): CarDashboard | null {
 export function getSimilarCars(id: string, limit = 6): Car[] {
   const anchor = carService.getCarById(id);
   if (!anchor) return [];
-  return findSimilarCars(anchor, carService.getAllCars(), limit);
+  // Cross-shop within body style first; widen only if the pool is tiny.
+  const bodyPool = carService.getCarsByBodyStyle(anchor.bodyStyle);
+  const pool = bodyPool.length >= 40 ? bodyPool : carService.getAllCars();
+  return findSimilarCars(anchor, pool, limit);
+}
+
+export function getSiblingConfigs(id: string, limit = 24): Car[] {
+  return carService.getSiblingConfigs(id, limit);
 }

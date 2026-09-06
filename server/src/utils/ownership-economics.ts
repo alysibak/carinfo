@@ -195,41 +195,40 @@ function electricAnnualCostCad(mpge: number, region: RegionalAssumptions = REGIO
   return Math.round((region.annualKm / 100) * kwhPer100Km * region.electricityRateCadPerKwh);
 }
 
-function energyAnnualCost(car: CarSpecs): number | null {
+function energyAnnualCost(car: CarSpecs, region: RegionalAssumptions = REGION): number | null {
   const mpg = roundEfficiency(car.fuelEconomy.combined) ?? 0;
   const ft = effectiveFuelType(car);
+  const annualKm = region.annualKm;
 
   if (ft === 'hydrogen') {
     const epaAnnualUsd = car.epa?.annualFuelCost;
     if (epaAnnualUsd != null && epaAnnualUsd > 0) {
-      const epaCad = epaAnnualUsd * REGION.cadUsdExchangeRate;
-      return Math.round(epaCad * (ANNUAL_KM / (EPA_ANNUAL_MILES * 1.609344)));
+      const epaCad = epaAnnualUsd * region.cadUsdExchangeRate;
+      return Math.round(epaCad * (annualKm / (EPA_ANNUAL_MILES * 1.609344)));
     }
     return null;
   }
 
   if (ft === 'electric' && mpg > 0) {
-    return electricAnnualCostCad(mpg);
+    return electricAnnualCostCad(mpg, region);
   }
 
   if (ft === 'plug-in hybrid' && mpg > 0) {
-    // Use EPA dual-mode figures when present: gas miles at gas MPG, electric
-    // miles at electric MPGe (the blended `combined` alone understates EV savings).
     const gasMpg = car.epa?.phev?.gasMpg ?? mpg;
     const electricMpge = car.epa?.phev?.electricMpge ?? mpg;
-    const gas = gasolineAnnualCostCad(gasMpg) * REGION.phev.gasMileFraction;
-    const electric = electricAnnualCostCad(electricMpge) * REGION.phev.electricMileFraction;
+    const gas = gasolineAnnualCostCad(gasMpg, region) * region.phev.gasMileFraction;
+    const electric = electricAnnualCostCad(electricMpge, region) * region.phev.electricMileFraction;
     return Math.round(gas + electric);
   }
 
   if (mpg > 0) {
-    return gasolineAnnualCostCad(mpg);
+    return gasolineAnnualCostCad(mpg, region);
   }
 
   const epaAnnualUsd = car.epa?.annualFuelCost;
   if (epaAnnualUsd != null && epaAnnualUsd > 0) {
-    const epaCad = epaAnnualUsd * REGION.cadUsdExchangeRate;
-    return Math.round(epaCad * (ANNUAL_KM / (EPA_ANNUAL_MILES * 1.609344)));
+    const epaCad = epaAnnualUsd * region.cadUsdExchangeRate;
+    return Math.round(epaCad * (annualKm / (EPA_ANNUAL_MILES * 1.609344)));
   }
 
   return null;
@@ -242,12 +241,16 @@ export function fuelCostPerMile(car: CarSpecs): number | null {
   return Math.round((annual / ANNUAL_MILES) * 100) / 100;
 }
 
-export function calculateAnnualCosts(car: CarSpecs, market: MarketValueEstimate): AnnualCostBreakdown {
-  const energy = energyAnnualCost(car);
-  const insurance = insuranceAnnual(car, market.mid);
-  const maintenance = maintenanceAnnual(car, market.mid);
-  const tires = tiresAnnual(car);
-  const registration = REGION.registrationCadPerYear;
+export function calculateAnnualCosts(
+  car: CarSpecs,
+  market: MarketValueEstimate,
+  region: RegionalAssumptions = REGION,
+): AnnualCostBreakdown {
+  const energy = energyAnnualCost(car, region);
+  const insurance = insuranceAnnual(car, market.mid, region.insurance);
+  const maintenance = maintenanceAnnual(car, market.mid, region.maintenance);
+  const tires = tiresAnnual(car, region.tires);
+  const registration = region.registrationCadPerYear;
 
   if (energy == null && car.engine.fuelType === 'hydrogen') {
     const partial = insurance + maintenance + tires + registration;
@@ -380,9 +383,15 @@ function practicalityNote(car: CarSpecs, marketMid: number): string {
   return 'Annual costs are time-based estimates. Resale value is separate from day-to-day running costs.';
 }
 
-export function computeOwnershipEconomics(car: CarSpecs, _segment: CarSpecs[]): OwnershipEconomics {
+export function computeOwnershipEconomics(
+  car: CarSpecs,
+  _segment: CarSpecs[],
+  regionId?: import('../config/regional-assumptions.js').RegionId,
+): OwnershipEconomics {
+  const region = getRegionalAssumptions(regionId);
+  const annualMiles = annualKmToMiles(region.annualKm);
   let market = estimateMarketValue(car);
-  const annualCost = calculateAnnualCosts(car, market);
+  const annualCost = calculateAnnualCosts(car, market, region);
   let resaleImpact = calculateResaleImpact(car, market);
   ({ market, resale: resaleImpact } = applyValuationReliabilityGuard(market, resaleImpact));
   const derivedComparison = buildDerivedComparison(annualCost, resaleImpact.estimatedLoss5Year.mid, car);
@@ -416,18 +425,18 @@ export function computeOwnershipEconomics(car: CarSpecs, _segment: CarSpecs[]): 
     derivedComparison,
     tco5Year,
     assumptions: {
-      annualKm: `~${REGION.annualKm.toLocaleString()} km / year`,
-      annualMiles: ANNUAL_MILES,
-      energyPriceNote: formatOntarioEnergyAssumptionNote(REGION),
+      annualKm: `~${region.annualKm.toLocaleString()} km / year`,
+      annualMiles,
+      energyPriceNote: formatOntarioEnergyAssumptionNote(region),
       insuranceTier: isBeaterTier(car, market.mid)
-        ? 'Aged vehicle / liability-focused Ontario estimate'
+        ? `Aged vehicle / liability-focused ${region.label} estimate`
         : isHeavyEvTruck(car)
-          ? 'Heavy EV / truck (Ontario baseline)'
+          ? `Heavy EV / truck (${region.label} baseline)`
           : isLuxuryPerformance(car)
-            ? 'Luxury coupe (Ontario baseline)'
-            : `${car.bodyStyle} baseline (Ontario)`,
-      depreciationNote: `${depNote}; USD MSRP anchors × ${REGION.cadUsdExchangeRate} FX × ${REGION.canadianUsedMarketFactor} Canadian market factor`,
-      regionNote: formatOntarioRegionNote(REGION),
+            ? `Luxury coupe (${region.label} baseline)`
+            : `${car.bodyStyle} baseline (${region.label})`,
+      depreciationNote: `${depNote}; USD MSRP anchors × ${region.cadUsdExchangeRate} FX × ${region.canadianUsedMarketFactor} Canadian market factor`,
+      regionNote: formatOntarioRegionNote(region),
     },
     warnings,
     practicalityNote: practicalityNote(car, market.mid),

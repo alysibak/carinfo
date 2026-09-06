@@ -2,6 +2,11 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { CarSpecs, SearchQuery, SearchResults } from '../types/car.types';
 import * as api from '../services/api';
+import { MAX_COMPARE } from '../utils/compareIds';
+
+export type CompareAddResult =
+  | { ok: true; swappedOut?: CarSpecs }
+  | { ok: false; reason: 'duplicate' | 'limit'; message: string };
 
 interface CarStore {
   // Search state
@@ -21,7 +26,10 @@ interface CarStore {
   // Actions
   setSearchQuery: (query: SearchQuery) => void;
   performSearch: () => Promise<void>;
-  addCarToComparison: (car: CarSpecs) => void;
+  addCarToComparison: (car: CarSpecs) => CompareAddResult;
+  /** Add, or if full, replace the oldest compare slot. */
+  addOrReplaceOldestInComparison: (car: CarSpecs) => CompareAddResult;
+  replaceComparison: (cars: CarSpecs[]) => void;
   removeCarFromComparison: (carId: string) => void;
   clearComparison: () => void;
   loadMakes: () => Promise<void>;
@@ -37,13 +45,14 @@ export const useCarStore = create<CarStore>()(
         query: '',
         filters: {},
         sort: { field: 'year', order: 'desc' },
+        collapseByModel: true,
         limit: 36,
         offset: 0,
       },
       isSearching: false,
       searchError: null,
       comparedCars: [],
-      maxCompared: 5,
+      maxCompared: MAX_COMPARE,
       availableMakes: [],
       availableModels: [],
 
@@ -65,14 +74,44 @@ export const useCarStore = create<CarStore>()(
 
       addCarToComparison: (car) => {
         const { comparedCars, maxCompared } = get();
-        if (comparedCars.length >= maxCompared) {
-          alert(`You can only compare up to ${maxCompared} cars at once`);
-          return;
-        }
         if (comparedCars.some((c) => c.id === car.id)) {
-          return; // Already in comparison
+          return { ok: false, reason: 'duplicate', message: 'Already in compare' };
+        }
+        if (comparedCars.length >= maxCompared) {
+          return {
+            ok: false,
+            reason: 'limit',
+            message: `You can compare up to ${maxCompared} vehicles at once. Remove one first.`,
+          };
         }
         set({ comparedCars: [...comparedCars, car] });
+        return { ok: true };
+      },
+
+      addOrReplaceOldestInComparison: (car) => {
+        const { comparedCars, maxCompared } = get();
+        if (comparedCars.some((c) => c.id === car.id)) {
+          return { ok: false, reason: 'duplicate', message: 'Already in compare' };
+        }
+        if (comparedCars.length < maxCompared) {
+          set({ comparedCars: [...comparedCars, car] });
+          return { ok: true };
+        }
+        const [oldest, ...rest] = comparedCars;
+        set({ comparedCars: [...rest, car] });
+        return { ok: true, swappedOut: oldest };
+      },
+
+      replaceComparison: (cars) => {
+        const seen = new Set<string>();
+        const next: CarSpecs[] = [];
+        for (const car of cars) {
+          if (seen.has(car.id)) continue;
+          seen.add(car.id);
+          next.push(car);
+          if (next.length >= get().maxCompared) break;
+        }
+        set({ comparedCars: next });
       },
 
       removeCarFromComparison: (carId) => {

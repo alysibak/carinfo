@@ -10,7 +10,6 @@ import type { SpecGlossaryKey } from '../utils/specGlossary';
 import { TIER1_SPEC_EMPHASIS, TIER2_VALUE, TIER3_LABEL } from '../utils/visualTiers';
 import { SpecLabel } from './SpecExplain';
 import DataValue from './DataValue';
-import ProvenanceChip from './ProvenanceChip';
 
 interface SpecRow {
   key: string;
@@ -412,18 +411,16 @@ const INLINE_VALUE_MAX_CHARS = 24;
 
 function SpecGroupBlock({ group }: { group: SpecGroup }) {
   return (
-    <div className="border border-zinc-800 min-w-0">
-      <p className={`px-3 py-2 border-b border-zinc-800 bg-zinc-950/80 ${TIER3_LABEL}`}>
-        {group.title}
-      </p>
-      <div className="flex flex-col">
+    <div className="min-w-0">
+      <p className={`${TIER3_LABEL} mb-2`}>{group.title}</p>
+      <div className="flex flex-col border-t border-zinc-800">
         {group.rows.map((spec) => {
           const emphasised = spec.key === 'msrp';
           const stacked = emphasised || String(spec.value ?? '').length > INLINE_VALUE_MAX_CHARS;
           return (
             <div
               key={spec.key}
-              className={`py-1 px-3 border-b border-zinc-900 last:border-b-0 min-w-0 ${
+              className={`py-2 border-b border-zinc-900 last:border-b-0 min-w-0 ${
                 stacked ? 'flex flex-col gap-0.5' : 'flex items-baseline justify-between gap-4'
               }`}
             >
@@ -441,7 +438,9 @@ function SpecGroupBlock({ group }: { group: SpecGroup }) {
                     stacked ? '' : 'text-right'
                   }`}
                 />
-                {spec.provenanceSource && <ProvenanceChip source={spec.provenanceSource} />}
+                {spec.provenanceSource === 'estimated' && (
+                  <span className="text-[10px] text-zinc-600">est.</span>
+                )}
               </div>
             </div>
           );
@@ -451,16 +450,36 @@ function SpecGroupBlock({ group }: { group: SpecGroup }) {
   );
 }
 
-export default function KeySpecs({ dashboard }: { dashboard: CarDashboard }) {
-  const groups = buildSpecGroups(dashboard);
+export default function KeySpecs({
+  dashboard,
+  omitKeys,
+  heading = 'Specifications',
+}: {
+  dashboard: CarDashboard;
+  /** Row keys already shown in glance or deepening sections. */
+  omitKeys?: string[];
+  heading?: string;
+}) {
+  const omit = new Set(omitKeys);
+  const groups = buildSpecGroups(dashboard)
+    .map((group) => ({
+      ...group,
+      rows: omit.size ? group.rows.filter((row) => !omit.has(row.key)) : group.rows,
+    }))
+    .filter((group) => group.rows.length > 0);
+
+  if (groups.length === 0) return null;
 
   return (
-    <section className="border-b border-zinc-800">
-      <div className="max-w-7xl mx-auto px-5 md:px-8 py-6">
-        <p className="text-[10px] tracking-widest text-zinc-400 uppercase mb-4 border-t border-zinc-800 pt-4">
-          Specifications
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6">
+    <section className="border-t border-zinc-900">
+      <div className="page-wrap-wide py-6 md:py-8">
+        <h2 className="text-base font-bold tracking-tight mb-1">{heading}</h2>
+        {omit.size > 0 && (
+          <p className="text-xs text-zinc-500 mb-4">
+            Leftover fields for this configuration.
+          </p>
+        )}
+        <div className={`grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6 ${omit.size > 0 ? '' : 'mt-4'}`}>
           {groups.map((group) => (
             <SpecGroupBlock key={group.title} group={group} />
           ))}

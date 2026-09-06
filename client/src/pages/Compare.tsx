@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import { useCarStore } from '../stores/carStore';
 import type { CarDashboard, CarSpecs } from '../types/car.types';
@@ -10,19 +10,15 @@ import {
   displayModelLabel,
   formatTransmissionLabel,
 } from '../utils/trimLabel';
-import {
-  fieldConfidence,
-  fieldProvenanceSource,
-  type TrustFilter,
-} from '../utils/dataTrust';
-import ProvenanceChip from '../components/ProvenanceChip';
+import { fieldProvenanceSource } from '../utils/dataTrust';
+import VehiclePlaceholder from '../components/VehiclePlaceholder';
+import { StatusToast, LoadingScreen } from '../components/ui';
 import { usePageMeta } from '../utils/pageMeta';
-
-const FILTERS: { id: TrustFilter; label: string }[] = [
-  { id: 'all', label: 'All fields' },
-  { id: 'verified', label: 'Verified only' },
-  { id: 'estimated', label: 'Estimates only' },
-];
+import { formatCompareIds, parseCompareIds } from '../utils/compareIds';
+import { differentiateCars } from '../utils/differentiateCars';
+import { DISPLAY_CURRENCY } from '../utils/currency';
+import { useRegionStore } from '../stores/regionStore';
+import { POPULAR_SEARCHES } from '../config/browseTaxonomy';
 
 function isUnavailable(value: string | number): boolean {
   return value === UNAVAILABLE_LABEL;
@@ -56,6 +52,17 @@ const ALL_SPECS: SpecRow[] = [
     provenanceKey: 'engine.horsepower',
     getValue: (car) => (car.engine.horsepower != null ? `${car.engine.horsepower} HP` : UNAVAILABLE_LABEL),
     getNumeric: (car) => car.engine.horsepower ?? null,
+    higherIsBetter: true,
+  },
+  {
+    key: 'safety',
+    label: 'NHTSA',
+    provenanceKey: 'safetyRating.overall',
+    getValue: (car) =>
+      car.safetyRating?.overall != null && car.safetyRating.overall > 0
+        ? `${car.safetyRating.overall}/5`
+        : UNAVAILABLE_LABEL,
+    getNumeric: (car) => car.safetyRating?.overall ?? null,
     higherIsBetter: true,
   },
   {
@@ -120,10 +127,12 @@ const ALL_SPECS: SpecRow[] = [
   },
   {
     key: 'annualFuelCost',
-    label: 'FUEL $/YR',
+    label: 'EPA FUEL $/YR',
     provenanceKey: 'epa.annualFuelCost',
     getValue: (car) =>
-      car.epa?.annualFuelCost != null ? `$${car.epa.annualFuelCost.toLocaleString()}` : UNAVAILABLE_LABEL,
+      car.epa?.annualFuelCost != null
+        ? `$${car.epa.annualFuelCost.toLocaleString()} USD (EPA)`
+        : UNAVAILABLE_LABEL,
     getNumeric: (car) => car.epa?.annualFuelCost ?? null,
     higherIsBetter: false,
   },
@@ -137,15 +146,17 @@ const ALL_SPECS: SpecRow[] = [
   },
   {
     key: 'price',
-    label: 'EST. VALUE',
+    label: `EST. VALUE (${DISPLAY_CURRENCY})`,
     provenanceKey: 'price.msrp',
     isEstimatedRow: true,
     getValue: (car, dash) => {
       const mid = dash.ownership.marketValue.mid;
       if (mid > 0) {
-        return `$${Math.round(mid).toLocaleString()} (est.)`;
+        return `$${Math.round(mid).toLocaleString()} ${DISPLAY_CURRENCY} (est.)`;
       }
-      return car.price?.msrp ? `$${Math.round(car.price.msrp).toLocaleString()} (est.)` : UNAVAILABLE_LABEL;
+      return car.price?.msrp
+        ? `$${Math.round(car.price.msrp).toLocaleString()} ${DISPLAY_CURRENCY} (est.)`
+        : UNAVAILABLE_LABEL;
     },
     getNumeric: (car, dash) => dash.ownership.marketValue.mid || car.price?.msrp || null,
     higherIsBetter: false,
@@ -154,13 +165,55 @@ const ALL_SPECS: SpecRow[] = [
 
 export default function Compare() {
   usePageMeta('Compare', 'Side-by-side EPA specs and labeled estimates for up to five vehicles.');
-  const { comparedCars, removeCarFromComparison, clearComparison } = useCarStore();
-  const [trustFilter, setTrustFilter] = useState<TrustFilter>('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { comparedCars, removeCarFromComparison, clearComparison, replaceComparison } = useCarStore();
   const [dashboards, setDashboards] = useState<CarDashboard[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [urlHydrated, setUrlHydrated] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const region = useRegionStore((s) => s.region);
 
   const comparedIds = useMemo(() => comparedCars.map((c) => c.id).join(','), [comparedCars]);
+
+  useEffect(() => {
+    const urlIds = parseCompareIds(searchParams.get('cars'));
+    if (urlIds.length === 0) {
+      setUrlHydrated(true);
+      return;
+    }
+    let cancelled = false;
+    api
+      .compareCars(urlIds)
+      .then((cars) => {
+        if (!cancelled) replaceComparison(cars);
+      })
+      .catch(() => {
+        if (!cancelled) setLoadError('Could not load vehicles from this compare link.');
+      })
+      .finally(() => {
+        if (!cancelled) setUrlHydrated(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // Hydrate from the URL once per mount. Store changes write back below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!urlHydrated) return;
+    const next = formatCompareIds(comparedCars.map((c) => c.id));
+    const current = searchParams.get('cars') || '';
+    if (next === current) return;
+    setSearchParams(next ? { cars: next } : {}, { replace: true });
+  }, [comparedCars, urlHydrated, searchParams, setSearchParams]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 2000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   useEffect(() => {
     if (comparedCars.length === 0) {
@@ -170,7 +223,7 @@ export default function Compare() {
     let cancelled = false;
     setLoading(true);
     setLoadError(null);
-    Promise.all(comparedCars.map((c) => api.getCarDashboard(c.id)))
+    Promise.all(comparedCars.map((c) => api.getCarDashboard(c.id, region)))
       .then((rows) => {
         if (!cancelled) setDashboards(rows);
       })
@@ -183,7 +236,7 @@ export default function Compare() {
     return () => {
       cancelled = true;
     };
-  }, [comparedIds, comparedCars]);
+  }, [comparedIds, comparedCars, region]);
 
   const dashboardById = useMemo(() => {
     const map = new Map<string, CarDashboard>();
@@ -191,26 +244,55 @@ export default function Compare() {
     return map;
   }, [dashboards]);
 
+  const urlHasCars = parseCompareIds(searchParams.get('cars')).length > 0;
+
+  if (!urlHydrated && urlHasCars) {
+    return <LoadingScreen label="Loading comparison" />;
+  }
+
   if (comparedCars.length === 0) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center px-8">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-3 text-xs tracking-[0.3em] text-zinc-400 hover:text-white transition-colors mb-12 group"
-          >
-            <svg className="w-6 h-6 group-hover:-translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
-            </svg>
-            <span>BACK</span>
-          </Link>
-          <h1 className="text-2xl font-bold tracking-tight mb-3 uppercase">No vehicles selected</h1>
-          <p className="text-sm text-zinc-400 mb-8 max-w-md mx-auto leading-relaxed">
-            Add up to 5 vehicles from search or browse to compare specs side by side.
+      <div className="min-h-screen bg-black text-white">
+        <div className="page-wrap py-14 md:py-20">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">Compare</h1>
+          <p className="text-sm text-zinc-400 mb-10 max-w-lg leading-relaxed">
+            Add up to 5 vehicles from a dossier or search card. Start with a name you already have,
+            or a situation.
           </p>
-          <Link to="/home" className="btn-primary text-xs">
-            Search vehicles
-          </Link>
+          <div className="max-w-xl">
+            <div className="intent-row">
+              <p className="text-sm font-semibold text-white">I have names</p>
+              <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+                {POPULAR_SEARCHES.map((s) => (
+                  <Link
+                    key={s.query}
+                    to={`/home?${new URLSearchParams({ q: s.query, sort: 'relevance' }).toString()}`}
+                    className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700"
+                  >
+                    {s.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+            <div className="intent-row">
+              <p className="text-sm font-semibold text-white">I don&apos;t yet</p>
+              <Link
+                to="/browse"
+                className="text-sm text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700"
+              >
+                Start from a situation →
+              </Link>
+            </div>
+            <div className="intent-row border-b-0">
+              <p className="text-sm font-semibold text-white">I want the market</p>
+              <Link
+                to="/value-matrix"
+                className="text-sm text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700"
+              >
+                Open the value chart →
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -221,18 +303,14 @@ export default function Compare() {
     dashboard: dashboardById.get(car.id),
   }));
 
+  const diff = useMemo(() => differentiateCars(comparedCars), [comparedCars]);
+
   const specs = ALL_SPECS.filter((spec) => {
     const hasAnyData = pairs.some(({ car, dashboard }) => {
       if (!dashboard) return false;
       return !isUnavailable(spec.getValue(car, dashboard));
     });
-    if (!hasAnyData) return false;
-    if (trustFilter === 'all') return true;
-    if (spec.isEstimatedRow || spec.provenanceKey === 'price.msrp') {
-      return trustFilter === 'estimated';
-    }
-    if (spec.provenanceKey) return trustFilter === 'verified';
-    return trustFilter === 'verified';
+    return hasAnyData;
   });
 
   const bestByRow = new Map<string, number>();
@@ -263,33 +341,33 @@ export default function Compare() {
 
   return (
     <div className="min-h-screen bg-black text-white">
+      <StatusToast message={toast} />
       <div className="border-b border-zinc-900">
         <div className="page-wrap py-5 sm:py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="min-w-0">
               <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Compare</h1>
               <p className="text-xs sm:text-sm text-zinc-400 mt-0.5">
-                {comparedCars.length} vehicle{comparedCars.length !== 1 ? 's' : ''} · full dossier provenance
+                {comparedCars.length} vehicle{comparedCars.length !== 1 ? 's' : ''}
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex flex-wrap gap-1" role="group" aria-label="Filter compare rows">
-                {FILTERS.map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    onClick={() => setTrustFilter(f.id)}
-                    className={`px-2 py-1 text-[10px] tracking-widest uppercase border transition-colors ${
-                      trustFilter === f.id
-                        ? 'border-white text-white'
-                        : 'border-zinc-700 text-zinc-400 hover:text-zinc-300'
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
+            <div className="flex flex-wrap items-center gap-4">
               <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(window.location.href);
+                    setToast('Compare link copied');
+                  } catch {
+                    setToast('Copy the URL from the address bar');
+                  }
+                }}
+                className="text-xs sm:text-sm text-zinc-400 hover:text-white transition-colors shrink-0"
+              >
+                Share
+              </button>
+              <button
+                type="button"
                 onClick={clearComparison}
                 className="text-xs sm:text-sm text-zinc-400 hover:text-red-400 transition-colors shrink-0"
               >
@@ -298,8 +376,9 @@ export default function Compare() {
             </div>
           </div>
           {loadError && <p className="text-xs text-amber-300/90 mt-3">{loadError}</p>}
-          <p className="text-[10px] text-zinc-400 mt-3">
-            Rows with no data across all vehicles are hidden.{' '}
+          <p className="text-[10px] text-zinc-500 mt-3">
+            Estimated values use your cost region ({region === 'british-columbia' ? 'B.C.' : 'Ontario'}), CAD.
+            EPA fuel $/yr is a US-dollar reference from EPA tests.{' '}
             <Link to="/methodology" className="underline underline-offset-2 hover:text-zinc-300">
               Methodology
             </Link>
@@ -309,36 +388,65 @@ export default function Compare() {
 
       <div className="page-wrap py-6 sm:py-8 pb-16">
         {loading ? (
-          <div className="text-center py-16">
-            <div className="inline-block w-10 h-10 border-2 border-zinc-800 border-t-zinc-500 mb-3" />
+          <div className="text-center py-20" role="status">
+            <div className="inline-block w-10 h-10 border-2 border-zinc-800 border-t-zinc-500 mb-3 animate-spin" />
             <p className="text-[10px] tracking-widest text-zinc-400 uppercase">Loading comparison data</p>
           </div>
         ) : (
           <div className="max-w-7xl mx-auto">
+            {diff.axes.length > 0 && comparedCars.length > 1 && (
+              <div className="mb-8 pb-6 border-b border-zinc-800">
+                <p className="text-xs uppercase tracking-wider text-zinc-500 mb-3">
+                  How they differ
+                </p>
+                <ul className="space-y-2 mb-5">
+                  {diff.axes.map((axis) => (
+                    <li key={axis} className="text-base text-zinc-100 leading-snug">
+                      {axis}
+                    </li>
+                  ))}
+                </ul>
+                <ul className="space-y-3">
+                  {comparedCars.map((car) => (
+                    <li key={car.id} className="text-base leading-snug">
+                      <span className="text-zinc-500">
+                        {car.year} {car.make} {displayModelLabel(car)} —{' '}
+                      </span>
+                      <span className="text-white font-medium">
+                        {diff.byCarId[car.id]?.edge}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-              <table className="w-full border-collapse min-w-[320px]">
+              <table className="w-full border-collapse">
                 <thead>
                   <tr className="border-b border-zinc-700">
-                    <th className="px-3 sm:px-4 py-4 text-left sticky left-0 bg-black z-10 min-w-[100px]">
-                      <span className="text-xs uppercase tracking-widest text-zinc-400">Spec</span>
+                    <th className="px-2 sm:px-4 py-3 sm:py-4 text-left sticky left-0 bg-black z-10 min-w-[72px] sm:min-w-[100px]">
+                      <span className="text-[10px] sm:text-xs uppercase tracking-widest text-zinc-400">Spec</span>
                     </th>
                     {pairs.map(({ car }) => (
-                      <th key={car.id} className="px-3 sm:px-4 py-4 min-w-[180px] sm:min-w-[220px] border-l border-zinc-800">
-                        <div className="text-center">
-                          <p className="text-4xl font-black text-zinc-300 tabular-nums">{car.year}</p>
-                          <h3 className="text-lg font-black tracking-tight uppercase mt-3">{car.make}</h3>
-                          <p className="text-sm font-medium text-zinc-400">{displayModelLabel(car)}</p>
-                          {/* Two columns can otherwise read identically — this is what separates them. */}
+                      <th key={car.id} className="px-2 sm:px-4 py-3 sm:py-4 min-w-[132px] sm:min-w-[200px] border-l border-zinc-800 align-top">
+                        <Link to={`/car/${car.id}`} className="block text-center group/col hover:opacity-90 transition-opacity">
+                          <div className="relative h-10 sm:h-12 mb-2 border border-zinc-800 overflow-hidden mx-auto max-w-[120px]">
+                            <VehiclePlaceholder car={car} compact hideCaption className="!absolute inset-0" />
+                          </div>
+                          <p className="text-xl sm:text-3xl font-black text-zinc-300 tabular-nums group-hover/col:text-white transition-colors">{car.year}</p>
+                          <h3 className="text-sm sm:text-base font-black tracking-tight uppercase mt-1 sm:mt-2 group-hover/col:underline underline-offset-4 decoration-zinc-600">{car.make}</h3>
+                          <p className="text-xs sm:text-sm font-medium text-zinc-400 break-words">{displayModelLabel(car)}</p>
                           {displayListingSubtitle(car) && (
-                            <p className="text-xs text-zinc-400 mt-1">{displayListingSubtitle(car)}</p>
+                            <p className="text-xs text-zinc-500 mt-1">{displayListingSubtitle(car)}</p>
                           )}
-                          <button
-                            onClick={() => removeCarFromComparison(car.id)}
-                            className="mt-4 px-2 py-2 text-[10px] tracking-widest text-zinc-400 hover:text-red-500 transition-colors uppercase"
-                          >
-                            Remove
-                          </button>
-                        </div>
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => removeCarFromComparison(car.id)}
+                          className="mt-3 px-2 py-2 text-[10px] tracking-widest text-zinc-500 hover:text-red-400 transition-colors uppercase w-full"
+                        >
+                          Remove
+                        </button>
                       </th>
                     ))}
                   </tr>
@@ -346,14 +454,16 @@ export default function Compare() {
                 <tbody>
                   {specs.map((spec) => (
                     <tr key={spec.key} className="border-b border-zinc-900">
-                      <td className="px-4 py-3 sticky left-0 z-10 bg-black border-r border-zinc-800">
+                      <td className="px-2 sm:px-4 py-3 sticky left-0 z-10 bg-black border-r border-zinc-800">
                         <span className="text-xs tracking-widest text-zinc-400 uppercase block">{spec.label}</span>
-                        {spec.isEstimatedRow && <ProvenanceChip source="estimated" className="mt-1" />}
+                        {spec.isEstimatedRow && (
+                          <span className="text-[10px] text-zinc-600 mt-0.5 block">est.</span>
+                        )}
                       </td>
                       {pairs.map(({ car, dashboard }) => {
                         if (!dashboard) {
                           return (
-                            <td key={car.id} className="px-4 py-3 text-center border-l border-zinc-800 text-zinc-400 text-xs">
+                            <td key={car.id} className="px-2 sm:px-4 py-3 text-center border-l border-zinc-800 text-zinc-400 text-xs">
                               …
                             </td>
                           );
@@ -364,11 +474,13 @@ export default function Compare() {
                         const raw = spec.getValue(car, dashboard);
                         const missing = isUnavailable(raw);
                         const prov = resolveProvenance(dashboard, spec);
-                        const confidence = spec.provenanceKey
-                          ? fieldConfidence(dashboard, spec.provenanceKey)
-                          : undefined;
                         return (
-                          <td key={car.id} className="px-4 py-3 text-center border-l border-zinc-800">
+                          <td
+                            key={car.id}
+                            className={`px-2 sm:px-4 py-3 text-center border-l border-zinc-800 ${
+                              isBest && !missing ? 'compare-win' : ''
+                            }`}
+                          >
                             <span
                               className={`text-sm inline-flex flex-col items-center gap-1 ${
                                 missing
@@ -383,20 +495,13 @@ export default function Compare() {
                               <span>
                                 {raw}
                                 {isBest && !missing && (
-                                  <span className="ml-1 text-[10px] text-emerald-500/90 align-middle not-italic font-bold">
-                                    best
+                                  <span className="ml-1.5 text-[9px] text-emerald-400 align-middle not-italic font-bold uppercase tracking-wider bg-emerald-950/50 px-1.5 py-0.5 border border-emerald-800/40">
+                                    Best
                                   </span>
                                 )}
                               </span>
-                              {prov && !missing && (
-                                <span className="flex items-center gap-1">
-                                  <ProvenanceChip source={prov} />
-                                  {confidence && (
-                                    <span className="text-[9px] text-zinc-400 uppercase tracking-wider">
-                                      {confidence}
-                                    </span>
-                                  )}
-                                </span>
+                              {prov === 'estimated' && !missing && (
+                                <span className="text-[10px] text-zinc-600">est.</span>
                               )}
                             </span>
                           </td>
