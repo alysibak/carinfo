@@ -6,6 +6,8 @@ import { dataFileCandidates, resolveDataFile } from '../utils/data-paths.js';
 import {
   bestFuzzyScore,
   fuzzyTokenMatch,
+  modelFamilyName,
+  modelPhraseMatches,
   normalizeSearchQuery,
   normalizeSearchToken,
 } from '../utils/fuzzy-search.js';
@@ -305,27 +307,37 @@ export function searchCars(query: SearchQuery): {
   hasMore: boolean;
 } {
   ensureDatabase();
+  const originalText = query.query?.trim() ?? '';
   const enriched = enrichSearchQuery(query);
   let candidates = getCandidateSet(enriched);
 
   // Single-pass filtering for criteria not already handled by index selection
   candidates = singlePassFilter(candidates, enriched);
 
-  const hasText = !!enriched.query?.trim();
   const sortField = enriched.sort?.field;
   const sortOrder = enriched.sort?.order ?? 'desc';
+  const wantRelevance = !sortField || sortField === 'relevance';
 
-  if (hasText && (!sortField || sortField === 'relevance')) {
-    sortByRelevanceInPlace(candidates, enriched.query!);
-  } else if (sortField) {
+  // Always rank natural-language searches with the *original* query.
+  // enrichSearchQuery may clear `query` after parsing make/model/year; using that
+  // cleared value made "relevance" a no-op and left oldest EPA rows first.
+  if (wantRelevance && originalText) {
+    sortByRelevanceInPlace(candidates, originalText);
+  } else if (sortField && sortField !== 'relevance') {
     sortResultsInPlace(candidates, sortField, sortOrder);
   } else {
     // Stable default so one-per-model collapse keeps a recent, useful trim.
     sortResultsInPlace(candidates, 'year', 'desc');
   }
 
-  if (enriched.collapseByModel) {
-    candidates = collapseCandidatesByModel(candidates);
+  if (enriched.collapseByModel === true) {
+    // One row per make|family (e.g. a single Mazda 3). Year filters narrow the
+    // pool first — "2024 mazda 3" still yields one best trim for that year.
+    candidates = collapseCandidatesByModel(candidates, false);
+  } else if (enriched.collapseByModel === false) {
+    // Explicit opt-out: keep one row per make|family|year so years show without
+    // every EPA trim. Omitting the flag leaves results uncollapsed.
+    candidates = collapseCandidatesByModel(candidates, true);
   }
 
   const total = candidates.length;
@@ -339,14 +351,35 @@ export function searchCars(query: SearchQuery): {
   };
 }
 
-/** Keep the first car per make+model after the caller’s sort (sort before collapse). */
-function collapseCandidatesByModel(cars: Car[]): Car[] {
+/**
+ * Keep the best car per shopper-facing model family after the caller’s sort.
+ * "3 4-Door 2WD" and "3 5-Door 4WD" collapse together as Mazda 3.
+ * "Civic Si" / "Civic 4Dr" collapse together as Civic.
+ * When includeYear is true, keep one row per make|family|year (trim dedupe
+ * while preserving year rows). Search uses includeYear=false so collapseByModel
+ * means a true one-per-model collapse.
+ */
+function collapseCandidatesByModel(cars: Car[], includeYear = false): Car[] {
   const best = new Map<string, Car>();
   for (const car of cars) {
-    const key = `${car.make}|${car.model}`.toLowerCase();
+    const base = `${car.make}|${collapseModelKey(car.model)}`.toLowerCase();
+    const key = includeYear ? `${base}|${car.year}` : base;
     if (!best.has(key)) best.set(key, car);
   }
   return Array.from(best.values());
+}
+
+/** Stable one-per-model key from messy EPA model strings. */
+function collapseModelKey(model: string): string {
+  const family = modelFamilyName(model);
+  const parts = family.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2 && parts[0] === 'model') {
+    return `${parts[0]} ${parts[1]}`;
+  }
+  if (parts.length >= 2 && parts[0] === 'range' && parts[1] === 'rover') {
+    return parts.slice(0, Math.min(3, parts.length)).join(' ');
+  }
+  return parts[0] || family;
 }
 
 export interface SearchSuggestion {
@@ -448,44 +481,34 @@ export function getSearchSuggestions(rawQuery: string, limit = 8): SearchSuggest
 }
 
 /**
- * Parse natural queries like "2024 camry" or "toyota rav4" into structured filters.
- * User-provided filters always win — we only fill gaps.
+ * Parse natural queries like "2024 camry", "mazda 3", or "toyota camry 2022"
+ * into structured filters. User-provided filters always win — we only fill gaps.
+ * Year prefixes: "20" → 2000–2099, "202" → 2020–2029; full years stay exact.
  */
 function enrichSearchQuery(query: SearchQuery): SearchQuery {
   const raw = query.query?.trim();
   if (!raw) return query;
 
   const filters = { ...(query.filters || {}) };
-  const tokens = normalizeSearchQuery(raw).split(/\s+/).filter(Boolean);
+  const tokens = expandGluedMakeTokens(
+    normalizeSearchQuery(raw).split(/\s+/).filter(Boolean),
+  );
   const textTokens: string[] = [];
 
   for (const token of tokens) {
-    const asYear = /^(19|20)\d{2}$/.test(token) ? parseInt(token, 10) : null;
-    if (asYear != null && filters.year?.min == null && filters.year?.max == null) {
-      filters.year = { min: asYear, max: asYear };
+    const yearRange = parseYearToken(token);
+    if (yearRange && filters.year?.min == null && filters.year?.max == null) {
+      filters.year = yearRange;
     } else {
       textTokens.push(token);
     }
   }
 
   if (!filters.make?.length && textTokens.length > 0) {
-    const firstLower = textTokens[0].toLowerCase();
-    const exactMake = cachedMakes.find((m) => m.toLowerCase() === firstLower);
-    if (exactMake) {
-      filters.make = [exactMake];
-      textTokens.shift();
-    } else {
-      const prefixMakes = cachedMakes.filter((m) => m.toLowerCase().startsWith(firstLower));
-      if (prefixMakes.length === 1) {
-        filters.make = [prefixMakes[0]];
-        textTokens.shift();
-      } else {
-        const fuzzyMakes = cachedMakes.filter((m) => fuzzyTokenMatch(m.toLowerCase(), firstLower));
-        if (fuzzyMakes.length === 1) {
-          filters.make = [fuzzyMakes[0]];
-          textTokens.shift();
-        }
-      }
+    const makeHit = resolveMakeFromTokens(textTokens);
+    if (makeHit) {
+      filters.make = [makeHit.make];
+      textTokens.splice(makeHit.index, makeHit.consumed);
     }
   }
 
@@ -493,36 +516,21 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
     const modelPhrase = textTokens.join(' ').toLowerCase();
 
     if (filters.make?.length === 1) {
-      const models = getModelsByMake(filters.make[0]);
-      const exact = models.find((m) => m.toLowerCase() === modelPhrase);
-      if (exact) {
-        filters.model = [exact];
+      const matched = resolveModelsForPhrase(filters.make[0], modelPhrase);
+      if (matched.length) {
+        filters.model = matched;
         textTokens.length = 0;
-      } else {
-        const prefixModels = models.filter((m) => m.toLowerCase().startsWith(modelPhrase));
-        if (prefixModels.length === 1) {
-          filters.model = [prefixModels[0]];
-          textTokens.length = 0;
-        }
       }
     }
 
-    if (!filters.model?.length && textTokens.length === 1) {
-      const t = textTokens[0].toLowerCase();
-      const bucket = modelIndex.get(t);
-      if (bucket?.length) {
-        filters.model = [bucket[0].model];
-        if (!filters.make?.length) filters.make = [bucket[0].make];
+    if (!filters.model?.length) {
+      const matched = resolveModelsAcrossMakes(modelPhrase);
+      if (matched.models.length) {
+        filters.model = matched.models;
+        if (!filters.make?.length && matched.makes.length === 1) {
+          filters.make = matched.makes;
+        }
         textTokens.length = 0;
-      } else {
-        const matches = new Set<string>();
-        for (const [modelKey, cars] of modelIndex) {
-          if (modelKey.startsWith(t) && cars.length) matches.add(cars[0].model);
-        }
-        if (matches.size === 1) {
-          filters.model = [Array.from(matches)[0]];
-          textTokens.length = 0;
-        }
       }
     }
   }
@@ -536,10 +544,156 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
   };
 }
 
+/**
+ * Full years (2022) → exact min=max.
+ * Decade prefixes of length 3 under 19xx/20xx (202 → 2020–2029).
+ * Century prefixes of length 2: only "19" → 1900–1999 and "20" → 2000–2099.
+ */
+function parseYearToken(token: string): { min: number; max: number } | null {
+  if (/^(19|20)\d{2}$/.test(token)) {
+    const year = parseInt(token, 10);
+    return { min: year, max: year };
+  }
+  if (/^(19|20)\d$/.test(token)) {
+    const decade = parseInt(token, 10);
+    return { min: decade * 10, max: decade * 10 + 9 };
+  }
+  if (token === '19' || token === '20') {
+    const century = parseInt(token, 10);
+    return { min: century * 100, max: century * 100 + 99 };
+  }
+  return null;
+}
+
+/** Split tokens like "mazda3" when aliasing missed them. */
+function expandGluedMakeTokens(tokens: string[]): string[] {
+  const makes = cachedMakes
+    .map((m) => m.toLowerCase())
+    .sort((a, b) => b.length - a.length);
+  const out: string[] = [];
+
+  for (const token of tokens) {
+    let split = false;
+    const compactToken = token.replace(/[\s\-]/g, '');
+    for (const make of makes) {
+      const compactMake = make.replace(/[\s\-]/g, '');
+      if (
+        compactToken.startsWith(compactMake) &&
+        compactToken.length > compactMake.length
+      ) {
+        const rest = compactToken.slice(compactMake.length);
+        if (/^[a-z0-9]/i.test(rest)) {
+          out.push(make, normalizeSearchToken(rest));
+          split = true;
+          break;
+        }
+      }
+    }
+    if (!split) out.push(token);
+  }
+
+  return out.join(' ').split(/\s+/).filter(Boolean);
+}
+
+function resolveMakeFromTokens(
+  tokens: string[],
+): { make: string; index: number; consumed: number } | null {
+  // 1) Exact single-token make first so "mazda 3" keeps "3" as the model.
+  for (let i = 0; i < tokens.length; i++) {
+    const hit = findExactMake(tokens[i]);
+    if (hit) return { make: hit, index: i, consumed: 1 };
+  }
+
+  // 2) Exact multi-word makes before prefix matching ("land rover")
+  for (let i = 0; i < tokens.length - 1; i++) {
+    const two = `${tokens[i]} ${tokens[i + 1]}`;
+    const hit = findExactMake(two);
+    if (hit) return { make: hit, index: i, consumed: 2 };
+  }
+
+  // 3) Unique prefix single token ("chev" → Chevrolet) — not used for multi-word
+  for (let i = 0; i < tokens.length; i++) {
+    const hit = findPrefixMake(tokens[i]);
+    if (hit) return { make: hit, index: i, consumed: 1 };
+  }
+
+  // 4) Fuzzy single token for typos: "toyata" → Toyota
+  for (let i = 0; i < tokens.length; i++) {
+    const hit = findFuzzyMake(tokens[i]);
+    if (hit) return { make: hit, index: i, consumed: 1 };
+  }
+
+  return null;
+}
+
+function findExactMake(label: string): string | null {
+  const lower = label.toLowerCase();
+  return cachedMakes.find((m) => m.toLowerCase() === lower) ?? null;
+}
+
+function findPrefixMake(label: string): string | null {
+  const lower = label.toLowerCase();
+  if (lower.length < 3 || /\s/.test(lower)) return null;
+  const prefixMakes = cachedMakes.filter((m) => m.toLowerCase().startsWith(lower));
+  return prefixMakes.length === 1 ? prefixMakes[0] : null;
+}
+
+function findFuzzyMake(label: string): string | null {
+  const lower = label.toLowerCase();
+  // Multi-word labels like "mazda 3" are within edit distance of "mazda"
+  // and would steal the model token if allowed here.
+  if (!lower || /\s/.test(lower)) return null;
+  const fuzzyMakes = cachedMakes.filter((m) => fuzzyTokenMatch(m.toLowerCase(), lower));
+  return fuzzyMakes.length === 1 ? fuzzyMakes[0] : null;
+}
+
+/** All EPA model strings for a make that shoppers mean by `phrase` (e.g. "3"). */
+function resolveModelsForPhrase(make: string, phrase: string): string[] {
+  const models = getModelsByMake(make);
+  const matched = models.filter((m) => modelPhraseMatches(m, phrase));
+  if (matched.length) return matched;
+
+  // Unique fuzzy fallback for mild typos ("civc" → Civic)
+  const fuzzy = models.filter((m) => fuzzyTokenMatch(modelFamilyName(m), phrase));
+  return fuzzy.length === 1 ? fuzzy : [];
+}
+
+function resolveModelsAcrossMakes(
+  phrase: string,
+): { models: string[]; makes: string[] } {
+  const models = new Set<string>();
+  const makes = new Set<string>();
+
+  for (const [modelKey, cars] of modelIndex) {
+    if (!cars.length) continue;
+    if (!modelPhraseMatches(cars[0].model, phrase) && !modelKey.startsWith(phrase)) {
+      continue;
+    }
+    // Avoid ultra-short phrases matching huge prefixes ("3" → every "3..." globally)
+    if (phrase.length <= 2 && modelFamilyName(cars[0].model) !== phrase) continue;
+    models.add(cars[0].model);
+    makes.add(cars[0].make);
+  }
+
+  // If the phrase only matched one family name, expand to every EPA variant.
+  if (models.size > 0 && makes.size === 1) {
+    const make = Array.from(makes)[0];
+    return { models: resolveModelsForPhrase(make, phrase), makes: [make] };
+  }
+
+  return {
+    models: Array.from(models),
+    makes: Array.from(makes),
+  };
+}
+
 function sortByRelevanceInPlace(cars: Car[], searchText: string): void {
   const normalized = normalizeSearchQuery(searchText);
   const tokens = normalized.split(/\s+/).filter(Boolean);
-  if (tokens.length === 0) return;
+  if (tokens.length === 0) {
+    cars.sort((a, b) => b.year - a.year);
+    return;
+  }
 
   cars.sort((a, b) => {
     const scoreDiff = scoreRelevance(b, tokens) - scoreRelevance(a, tokens);
@@ -552,18 +706,35 @@ function scoreRelevance(car: Car, tokens: string[]): number {
   let score = 0;
   const makeLower = car.make.toLowerCase();
   const modelLower = car.model.toLowerCase();
+  const family = modelFamilyName(car.model);
   const haystack = `${makeLower} ${modelLower} ${car.year} ${car.trim ?? ''}`.toLowerCase();
 
   for (const token of tokens) {
+    const yearRange = parseYearToken(token);
+    if (yearRange) {
+      if (car.year >= yearRange.min && car.year <= yearRange.max) {
+        // Exact year outranks a decade-prefix hit; both beat near-miss years.
+        score += yearRange.min === yearRange.max ? 60 : 50;
+      } else if (yearRange.min === yearRange.max && Math.abs(car.year - yearRange.min) === 1) {
+        score += 15;
+      }
+      continue;
+    }
+
     if (makeLower === token) score += 50;
     else if (makeLower.startsWith(token)) score += 35;
-    else if (modelLower === token) score += 45;
+    else if (family === token || modelLower === token) score += 48;
+    else if (modelPhraseMatches(car.model, token)) score += 42;
     else if (modelLower.startsWith(token)) score += 30;
     else if (haystack.includes(token)) score += 12;
     else if (fuzzyTokenMatch(makeLower, token)) score += 28;
-    else if (fuzzyTokenMatch(modelLower, token)) score += 24;
+    else if (fuzzyTokenMatch(family, token) || fuzzyTokenMatch(modelLower, token)) score += 24;
     else if (fuzzyTokenMatch(haystack, token)) score += 8;
   }
+
+  // Prefer current-generation inventory when tokens otherwise tie
+  // (e.g. every Mazda 3 year scores the same on "mazda" + "3").
+  score += Math.max(0, car.year - 1990) * 0.35;
 
   return score;
 }

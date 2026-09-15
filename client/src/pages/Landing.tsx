@@ -135,12 +135,12 @@ export default function Landing() {
           </div>
         )}
 
-        <div className="hero-content page-wrap pt-10 pb-12 md:pt-24 md:pb-28 lg:min-h-[calc(100svh-var(--header-height))] lg:flex lg:flex-col lg:justify-center">
+        <div className="hero-content page-wrap pt-10 pb-10 md:pt-16 md:pb-16 lg:pt-20 lg:pb-20">
           <div className="max-w-xl min-w-0">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05] mb-4 animate-hero-rise">
               CarInfo
             </h1>
-            <p className="text-base md:text-lg text-zinc-400 leading-relaxed mb-8 animate-hero-rise [animation-delay:40ms]">
+            <p className="text-base md:text-lg text-zinc-400 leading-relaxed mb-6 md:mb-8 animate-hero-rise [animation-delay:40ms]">
               Specs you can trust — EPA, NHTSA when on file, and labeled Ontario estimates.
               Look up a car, or answer three questions.
             </p>
@@ -168,26 +168,26 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="page-wrap py-14 md:py-20 border-t border-zinc-900">
+      <section className="page-wrap section-y border-t border-zinc-900">
         <h2 className="section-title mb-2">How do you want to start?</h2>
-        <p className="text-sm text-zinc-400 mb-10 max-w-xl leading-relaxed">
+        <p className="text-sm text-zinc-400 mb-6 md:mb-8 max-w-xl leading-relaxed">
           Most people arrive with one of these in mind. Pick the path that matches.
         </p>
 
         <div>
           <div className="intent-row">
             <p className="text-sm font-semibold text-white">I know the car</p>
-            <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+            <div className="flex flex-wrap gap-x-4 gap-y-2.5 text-sm">
               {POPULAR_SEARCHES.map((s) => (
                 <Link
                   key={s.query}
                   to={`/home?${new URLSearchParams({ q: s.query, sort: 'relevance' }).toString()}`}
-                  className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700"
+                  className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 py-1"
                 >
                   {s.label}
                 </Link>
               ))}
-              <Link to="/home" className="text-zinc-500 hover:text-zinc-300">
+              <Link to="/home" className="text-zinc-500 hover:text-zinc-300 py-1">
                 Open search →
               </Link>
             </div>
@@ -195,11 +195,11 @@ export default function Landing() {
 
           <div className="intent-row">
             <p className="text-sm font-semibold text-white">I&apos;m still deciding</p>
-            <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+            <div className="flex flex-wrap gap-x-4 gap-y-2.5 text-sm">
               <button
                 type="button"
                 onClick={() => setShowQuiz(true)}
-                className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700"
+                className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 py-1"
               >
                 3-question quiz
               </button>
@@ -207,12 +207,12 @@ export default function Landing() {
                 <Link
                   key={preset.id}
                   to={homeLinkFromPreset(preset)}
-                  className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700"
+                  className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 py-1"
                 >
                   {preset.label}
                 </Link>
               ))}
-              <Link to="/browse" className="text-zinc-500 hover:text-zinc-300">
+              <Link to="/browse" className="text-zinc-500 hover:text-zinc-300 py-1">
                 All guides →
               </Link>
             </div>
@@ -231,16 +231,16 @@ export default function Landing() {
 
           <div className="intent-row border-b-0">
             <p className="text-sm font-semibold text-white">I&apos;m comparing options</p>
-            <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+            <div className="flex flex-wrap gap-x-4 gap-y-2.5 text-sm">
               <Link
                 to="/compare"
-                className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700"
+                className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 py-1"
               >
                 Side-by-side compare
               </Link>
               <Link
                 to="/value-matrix"
-                className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700"
+                className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 py-1"
               >
                 Value chart
               </Link>
@@ -251,9 +251,9 @@ export default function Landing() {
 
       {showcase.length > 0 && (
         <section className="border-t border-zinc-900">
-          <div className="page-wrap py-14 md:py-20">
+          <div className="page-wrap pt-10 md:pt-14 pb-6 md:pb-8">
             <h2 className="section-title mb-2">What a dossier looks like</h2>
-            <p className="text-sm text-zinc-400 mb-10 max-w-xl leading-relaxed">
+            <p className="text-sm text-zinc-400 max-w-xl leading-relaxed">
               Every vehicle page leads with the numbers people actually weigh: efficiency, safety,
               and estimated value.
             </p>
@@ -271,9 +271,9 @@ export default function Landing() {
         </section>
       )}
 
-      <section className="page-wrap py-14 md:py-20 border-t border-zinc-900">
+      <section className="page-wrap section-y border-t border-zinc-900">
         <h2 className="section-title mb-2">Curated shortlists</h2>
-        <p className="text-sm text-zinc-400 mb-8 max-w-xl leading-relaxed">
+        <p className="text-sm text-zinc-400 mb-6 max-w-xl leading-relaxed">
           A few ranked picks for common situations — not every matching trim in the archive.
         </p>
         <div>
@@ -294,7 +294,7 @@ export default function Landing() {
       </section>
 
       <footer className="border-t border-zinc-900">
-        <div className="page-wrap py-10 sm:py-12 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
+        <div className="page-wrap py-8 sm:py-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
           <div>
             <p className="text-sm font-semibold text-white">CarInfo</p>
             <p className="text-sm text-zinc-400 mt-2 max-w-xs leading-relaxed">
@@ -385,38 +385,38 @@ function ShowcaseCard({
       className="group bg-black overflow-hidden flex flex-col animate-fade-in opacity-0 [animation-fill-mode:forwards] hover:bg-zinc-950 transition-colors"
       style={style}
     >
-      <p className="text-[10px] uppercase tracking-widest text-zinc-500 px-5 md:px-8 pt-5">
+      <p className="text-[10px] uppercase tracking-widest text-zinc-500 px-4 sm:px-5 md:px-6 pt-4">
         {theme}
       </p>
-      <div className="relative h-24 overflow-hidden">
+      <div className="relative h-20 sm:h-24 overflow-hidden">
         <VehiclePlaceholder car={car} compact hideCaption className="!absolute inset-0" />
       </div>
-      <div className="px-5 md:px-8 pb-8 pt-4 flex flex-col flex-1 gap-4">
-        <div>
+      <div className="px-4 sm:px-5 md:px-6 pb-5 pt-3 flex flex-col gap-3">
+        <div className="min-w-0">
           <p className="text-xs text-zinc-500">
             {car.year} {car.make}
           </p>
-          <h3 className="text-lg font-semibold text-white tracking-tight">
+          <h3 className="text-base sm:text-lg font-semibold text-white tracking-tight truncate">
             {displayModelLabel(car)}
           </h3>
           {subtitle && <p className="text-xs text-zinc-500 mt-0.5 truncate">{subtitle}</p>}
         </div>
 
-        <div className="mt-auto">
+        <div>
           {primaryMetric.unit ? (
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl sm:text-4xl md:text-5xl font-bold text-white leading-none tabular-nums">
+            <div className="flex items-baseline gap-2 min-w-0">
+              <span className="text-3xl sm:text-4xl font-bold text-white leading-none tabular-nums">
                 {primaryMetric.value}
               </span>
-              <span className="text-sm uppercase text-zinc-500 tracking-wider">{primaryMetric.unit}</span>
+              <span className="text-sm uppercase text-zinc-500 tracking-wider shrink-0">{primaryMetric.unit}</span>
             </div>
           ) : (
             <p className="text-2xl font-bold text-white leading-tight tabular-nums">
               {primaryMetric.value}
             </p>
           )}
-          {secondaryLine && <p className="text-xs text-zinc-500 mt-2">{secondaryLine}</p>}
-          <p className="text-xs text-zinc-500 mt-1">{tertiary}</p>
+          {secondaryLine && <p className="text-xs text-zinc-500 mt-1.5 truncate">{secondaryLine}</p>}
+          <p className="text-xs text-zinc-500 mt-1 truncate">{tertiary}</p>
         </div>
       </div>
     </Link>

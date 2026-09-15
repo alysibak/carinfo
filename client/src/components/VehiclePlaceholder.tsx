@@ -43,14 +43,14 @@ export default function VehiclePlaceholder({
           src={bodyTypeImg}
           alt=""
           aria-hidden
-          className={`absolute left-0 right-0 mx-auto w-full max-w-[96%] object-contain pointer-events-none transition-transform duration-500 ease-out group-hover:scale-105 ${
-            compact ? 'top-[4%] h-[70%]' : 'top-[6%] h-[72%]'
+          className={`absolute inset-x-[2%] object-contain pointer-events-none transition-transform duration-500 ease-out group-hover:scale-105 ${
+            compact ? 'top-[8%] h-[84%]' : 'top-[6%] h-[72%]'
           }`}
         />
       ) : (
         <svg
           viewBox="0 0 400 120"
-          className={`relative w-[88%] max-w-md text-zinc-600 ${compact ? 'opacity-50' : 'opacity-60'}`}
+          className={`relative w-[92%] max-w-md text-zinc-600 ${compact ? 'opacity-55' : 'opacity-60'}`}
           aria-hidden
         >
           <path d={silhouette} fill="currentColor" stroke="#52525b" strokeWidth="1" />

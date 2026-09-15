@@ -50,7 +50,7 @@ export function BackLink({ to, label = 'Back' }: { to: string; label?: string })
 
 export function LoadingScreen({ label = 'Loading' }: { label?: string }) {
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center">
+    <div className="min-h-[40vh] bg-black flex items-center justify-center py-16">
       <div className="text-center" role="status" aria-live="polite">
         <div className="inline-block w-12 h-12 border-2 border-zinc-800 border-t-zinc-500 mb-4 opacity-60 animate-spin" aria-hidden />
         <p className="text-xs tracking-[0.3em] text-zinc-300 uppercase">{label}</p>
@@ -73,7 +73,7 @@ export function ErrorState({
   backLabel?: string;
 }) {
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center text-white">
+    <div className="min-h-[40vh] bg-black flex items-center justify-center text-white py-16">
       <div className="text-center px-6 max-w-md">
         <h2 className="text-2xl sm:text-3xl font-black tracking-tighter mb-3">{title}</h2>
         <p className="text-sm tracking-wide text-zinc-400 mb-6">{message}</p>

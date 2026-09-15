@@ -78,8 +78,8 @@ export default function VinDecoder() {
     .join(' ');
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="page-wrap py-10 md:py-14">
+    <div className="bg-black text-white">
+      <div className="page-wrap section-y">
         <p className="text-[10px] tracking-[0.3em] text-zinc-400 uppercase mb-3">Tools</p>
         <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-3">VIN Lookup</h1>
         <p className="text-sm text-zinc-400 leading-relaxed max-w-2xl mb-2">

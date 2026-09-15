@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
 
 /**
- * Shared page frame — one place for the full-page black shell.
- * Compare-tray padding lives on Layout; don't duplicate it here.
+ * Shared page frame — black shell only.
+ * Layout already owns min-h-screen; nesting another full viewport here
+ * left blank bands above the site footer on short pages.
  */
 export default function PageShell({
   children,
@@ -11,7 +12,7 @@ export default function PageShell({
   children: ReactNode;
   className?: string;
 }) {
-  return <div className={`min-h-screen bg-black text-white ${className}`.trim()}>{children}</div>;
+  return <div className={`bg-black text-white ${className}`.trim()}>{children}</div>;
 }
 
 export function PageBody({
@@ -24,7 +25,7 @@ export function PageBody({
   className?: string;
 }) {
   return (
-    <div className={`${wide ? 'page-wrap-wide' : 'page-wrap'} py-6 sm:py-8 ${className}`.trim()}>
+    <div className={`${wide ? 'page-wrap-wide' : 'page-wrap'} section-y-tight ${className}`.trim()}>
       {children}
     </div>
   );

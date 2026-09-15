@@ -97,26 +97,26 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
       ref={headerRef}
       className={`sticky top-0 z-50 transition-colors duration-150 ${
         showBorder
-          ? 'border-b border-zinc-900 bg-black/90 backdrop-blur-md'
+          ? 'border-b border-zinc-800/80 bg-black/92 backdrop-blur-md'
           : 'border-b border-transparent bg-transparent'
       }`}
     >
-      <div className="page-wrap py-3.5 flex items-center justify-between gap-3">
+      <div className="page-wrap py-3 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-3">
         <Link
           to="/"
-          className="text-sm font-bold uppercase tracking-widest text-white hover:text-zinc-300 transition-colors shrink-0"
+          className="text-sm font-bold uppercase tracking-widest text-white hover:text-zinc-300 transition-colors shrink-0 min-h-[44px] inline-flex items-center"
           onClick={() => setMenuOpen(false)}
         >
           CarInfo
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-0">
+        <nav className="hidden lg:flex items-center gap-0 min-w-0">
           {NAV_LINKS.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `text-xs uppercase tracking-widest px-3 py-2 transition-colors border-b-2 ${
+                `text-xs uppercase tracking-widest px-2.5 xl:px-3 min-h-[44px] inline-flex items-center transition-colors border-b-2 whitespace-nowrap ${
                   isActive
                     ? 'text-white border-white'
                     : 'text-zinc-400 border-transparent hover:text-zinc-300'
@@ -129,13 +129,13 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
           ))}
         </nav>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <label className="hidden md:flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-zinc-500">
             <span className="sr-only">Cost region</span>
             <select
               value={region}
               onChange={(e) => setRegion(e.target.value as typeof region)}
-              className="bg-transparent border border-zinc-800 text-zinc-300 text-[10px] uppercase tracking-wider px-2 py-1.5 focus:outline-none focus:border-zinc-500"
+              className="bg-transparent border border-zinc-800 text-zinc-300 text-[10px] uppercase tracking-wider px-2 py-1.5 focus:outline-none focus:border-zinc-500 max-w-[9.5rem]"
               aria-label="Cost estimate region"
             >
               {REGION_OPTIONS.map((opt) => (
@@ -151,7 +151,7 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
           </div>
           <button
             type="button"
-            className="lg:hidden p-2 -mr-2 text-zinc-400 hover:text-white transition-colors"
+            className="lg:hidden min-h-[44px] min-w-[44px] inline-flex items-center justify-center -mr-1 text-zinc-400 hover:text-white transition-colors"
             aria-expanded={menuOpen}
             aria-label={menuOpen ? 'Close menu' : 'Open menu'}
             onClick={() => setMenuOpen((o) => !o)}
@@ -186,14 +186,14 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
           if (e.target === e.currentTarget) setMenuOpen(false);
         }}
       >
-        <nav className="page-wrap py-4 flex flex-col divide-y divide-zinc-800 border-t border-zinc-800">
+        <nav className="page-wrap py-3 flex flex-col divide-y divide-zinc-800 border-t border-zinc-800">
           {NAV_LINKS.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               onClick={() => setMenuOpen(false)}
               className={({ isActive }) =>
-                `flex items-center justify-between py-3.5 text-xs uppercase tracking-widest transition-colors ${
+                `flex items-center justify-between min-h-[48px] py-3 text-xs uppercase tracking-widest transition-colors ${
                   isActive ? 'text-white' : 'text-zinc-400 hover:text-white'
                 }`
               }

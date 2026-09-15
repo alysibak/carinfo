@@ -36,6 +36,20 @@ export function defaultSortForQuery(
   return { field: 'year', order: 'desc' };
 }
 
+/**
+ * Default one-per-model collapse.
+ * Make-only / browse stays dense (on). Specific model searches default off so
+ * years show unless the user opts in via the toggle / onePerModel URL param.
+ */
+export function defaultCollapseByModel(queryText?: string, filters?: CarFilter): boolean {
+  if (filters?.model?.length) return false;
+  const tokens = (queryText ?? '').trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return true;
+  const nonYear = tokens.filter((t) => !/^(19|20)\d{0,2}$/.test(t));
+  // "mazda 3", "honda civic", "2024 mazda 3" → show years by default
+  return nonYear.length < 2;
+}
+
 export function hasActiveSearch(params: URLSearchParams): boolean {
   if (params.get('q')) return true;
   const filterKeys = [
@@ -90,16 +104,26 @@ export function paramsToSearchQuery(params: URLSearchParams): { query: SearchQue
     params.get('sort') ??
     defaultSortForQuery(params.get('q') ?? undefined, hasFilters ? filters : {}).field;
 
+  const qText = params.get('q')?.trim() || undefined;
+  const resolvedFilters = hasFilters ? filters : {};
+  const onePer = params.get('onePerModel');
+  const collapseByModel =
+    onePer === '0'
+      ? false
+      : onePer === '1'
+        ? true
+        : defaultCollapseByModel(qText, resolvedFilters);
+
   return {
     page,
     query: {
-      query: params.get('q')?.trim() || undefined,
-      filters: hasFilters ? filters : {},
+      query: qText,
+      filters: resolvedFilters,
       sort: {
         field: sortField,
         order: sortOrder as 'asc' | 'desc',
       },
-      collapseByModel: params.get('onePerModel') !== '0',
+      collapseByModel,
       limit: PAGE_SIZE,
       offset: (page - 1) * PAGE_SIZE,
     },
@@ -144,8 +168,14 @@ export function searchQueryToParams(query: SearchQuery, page: number): URLSearch
   if (f.displacement?.max != null) params.set('dispMax', String(f.displacement.max));
   if (f.horsepower?.min != null) params.set('hpMin', String(f.horsepower.min));
   if (f.horsepower?.max != null) params.set('hpMax', String(f.horsepower.max));
-  // Default: one trim per model (denser results). Opt out with onePerModel=0.
-  if (query.collapseByModel === false) params.set('onePerModel', '0');
+  // Only persist when it differs from the dynamic default so heuristic can
+  // adapt as q changes (e.g. "mazda" → dense, "mazda 3" → years).
+  const collapseDefault = defaultCollapseByModel(query.query, query.filters);
+  if (query.collapseByModel === false && collapseDefault !== false) {
+    params.set('onePerModel', '0');
+  } else if (query.collapseByModel === true && collapseDefault !== true) {
+    params.set('onePerModel', '1');
+  }
 
   return params;
 }

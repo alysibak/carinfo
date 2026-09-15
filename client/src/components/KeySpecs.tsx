@@ -472,14 +472,14 @@ export default function KeySpecs({
 
   return (
     <section className="border-t border-zinc-900">
-      <div className="page-wrap-wide py-6 md:py-8">
+      <div className="page-wrap-wide section-y-tight">
         <h2 className="text-base font-bold tracking-tight mb-1">{heading}</h2>
         {omit.size > 0 && (
           <p className="text-xs text-zinc-500 mb-4">
             Leftover fields for this configuration.
           </p>
         )}
-        <div className={`grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6 ${omit.size > 0 ? '' : 'mt-4'}`}>
+        <div className={`grid grid-cols-1 md:grid-cols-2 gap-x-8 md:gap-x-10 gap-y-5 md:gap-y-6 ${omit.size > 0 ? '' : 'mt-4'}`}>
           {groups.map((group) => (
             <SpecGroupBlock key={group.title} group={group} />
           ))}

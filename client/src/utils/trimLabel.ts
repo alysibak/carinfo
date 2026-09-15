@@ -58,6 +58,41 @@ export function displayModelLabel(car: ModelCar): string {
   return cleaned || base || car.model.trim();
 }
 
+/** Drive / door / config tokens that are not part of the shopper-facing model name. */
+const MODEL_CONFIG_SUFFIX =
+  /^(?:\d+-door|\d+dr|\d+wd|awd|fwd|rwd|4x4|4x2|di|automatic|manual|cvt|auto|s\d+|er\d+|sr|pro|platinum|hybrid|phev|ffv|si|type|trd|xse|xle|le|se|ex|lx|base|payload|lt)$/i;
+
+/**
+ * Shopper-facing model family — "3 4-Door 2WD" → "3", "Model 3" → "Model 3".
+ * Keeps short tokens like Mazda 3 / 6 readable in card titles.
+ */
+export function displayModelFamilyLabel(car: ModelCar): string {
+  const full = displayModelLabel(car);
+  const parts = full.split(/[\s_/]+/).filter(Boolean);
+  const kept: string[] = [];
+  for (const part of parts) {
+    if (MODEL_CONFIG_SUFFIX.test(part)) break;
+    kept.push(part);
+  }
+  return (kept.length ? kept : parts.slice(0, 1)).join(' ') || full;
+}
+
+/** Year + make + family, e.g. "2026 Mazda 3". */
+export function displayVehicleTitle(
+  car: Pick<CarSpecs, 'year' | 'make'> & ModelCar,
+): string {
+  return `${car.year} ${car.make} ${displayModelFamilyLabel(car)}`;
+}
+
+/** Config remainder after the family name, e.g. "4-Door 2WD" from "3 4-Door 2WD". */
+export function displayModelConfigRemainder(car: ModelCar): string | null {
+  const full = displayModelLabel(car);
+  const family = displayModelFamilyLabel(car);
+  if (full.toLowerCase() === family.toLowerCase()) return null;
+  const rest = full.slice(family.length).trim().replace(/^[\s/_-]+/, '');
+  return rest || null;
+}
+
 /** EPA / slug tokens that are not consumer-facing trim names. */
 const TRIM_NOISE = new Set([
   'automatic', 'manual', 'auto', 'cvt', 'spd', 'mode', 'clkup', 'av', 'at', 'mt',

@@ -7,6 +7,7 @@ import SearchBar from '../components/SearchBar';
 import SelectMenu from '../components/SelectMenu';
 import PageShell, { PageBody } from '../components/PageShell';
 import {
+  defaultCollapseByModel,
   describeActiveFilters,
   getDefaultPageSize,
   hasActiveSearch,
@@ -107,9 +108,18 @@ export default function Home() {
       // Query unchanged → leave sort/filters alone (user may have just changed sort).
       if (existingQ === trimmed) return;
 
+      const explicitOnePer = params.get('onePerModel');
+      const collapseByModel =
+        explicitOnePer === '0'
+          ? false
+          : explicitOnePer === '1'
+            ? true
+            : defaultCollapseByModel(trimmed, current.filters);
+
       pushSearch({
         ...current,
         query: trimmed,
+        collapseByModel,
         sort: { field: 'relevance', order: 'desc' },
         offset: 0,
       });
@@ -125,9 +135,18 @@ export default function Home() {
       return;
     }
     setSearchText(text);
+    const params = new URLSearchParams(window.location.search);
+    const explicitOnePer = params.get('onePerModel');
+    const collapseByModel =
+      explicitOnePer === '0'
+        ? false
+        : explicitOnePer === '1'
+          ? true
+          : defaultCollapseByModel(trimmed || undefined, searchQuery.filters);
     pushSearch({
       ...searchQuery,
       query: text || undefined,
+      collapseByModel,
       sort: text
         ? { field: 'relevance', order: 'desc' }
         : searchQuery.sort ?? { field: 'year', order: 'desc' },
@@ -175,13 +194,14 @@ export default function Home() {
   return (
     <PageShell className="pb-12">
       <div className="sticky top-[var(--header-height)] z-20 bg-black/90 border-b border-zinc-900 backdrop-blur-md">
-        <div className="page-wrap py-3 sm:py-4 space-y-3">
+        <div className="page-wrap py-3 sm:py-4 space-y-2.5">
           <SearchBar
             value={searchText}
             onChange={setSearchText}
             onSubmit={handleTextSearch}
             loading={isSearching}
             size="default"
+            showButton={false}
             placeholder="Keep typing — typos are OK (e.g. toyata camry)"
           />
           {isSearching && searchText.trim().length >= 2 && (
@@ -233,12 +253,12 @@ export default function Home() {
       </div>
 
       <PageBody>
-        <div className="grid grid-cols-1 lg:grid-cols-[16rem_minmax(0,1fr)] gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-[15rem_minmax(0,1fr)] gap-6 lg:gap-8">
           <aside>
             <button
               type="button"
               onClick={() => setFiltersOpen((o) => !o)}
-              className="lg:hidden w-full mb-4 flex items-center justify-between py-3 text-sm font-medium text-white border-b border-zinc-800"
+              className="lg:hidden w-full mb-3 flex items-center justify-between min-h-[44px] py-2.5 text-sm font-medium text-white border-b border-zinc-800"
             >
               <span>Filters</span>
               <span className="text-zinc-500">{filtersOpen ? 'Hide' : 'Show'}</span>
@@ -272,7 +292,7 @@ export default function Home() {
 
           <div className="min-w-0">
             {!hasSearched && !isSearching ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 pt-1">
                 <div>
                   <h1 className="text-xl font-bold tracking-tight mb-1">I know the name</h1>
                   <p className="text-sm text-zinc-500 mb-5">Type above, or jump to a common search.</p>
@@ -320,8 +340,8 @@ export default function Home() {
               </div>
             ) : (
               <>
-                <div className="flex items-center justify-between flex-wrap gap-4 mb-6 pb-4 border-b border-zinc-900">
-                  <div>
+                <div className="flex items-center justify-between flex-wrap gap-3 mb-5 pb-3 border-b border-zinc-900">
+                  <div className="min-w-0">
                     {searchResults && !searchError && (
                       <p className="text-sm text-zinc-400">
                         <span className="text-white font-semibold tabular-nums">
@@ -345,7 +365,7 @@ export default function Home() {
                     {searchError && <p className="text-sm text-red-400">{searchError}</p>}
                   </div>
 
-                  <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 w-full sm:w-auto">
                     <span className="text-xs text-zinc-500 shrink-0">Sort</span>
                     <SelectMenu
                       aria-label="Sort results"
@@ -366,7 +386,7 @@ export default function Home() {
                     <button
                       type="button"
                       onClick={() => handleSortChange(sortField)}
-                      className="px-3 py-2 text-zinc-400 hover:text-white transition-colors"
+                      className="min-h-[42px] min-w-[42px] px-2 text-zinc-400 hover:text-white transition-colors shrink-0"
                       title={`Sort ${sortOrder === 'asc' ? 'descending' : 'ascending'}`}
                       aria-label="Toggle sort direction"
                     >
@@ -376,50 +396,50 @@ export default function Home() {
                 </div>
 
                 {isSearching ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 opacity-50 pointer-events-none">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 opacity-50 pointer-events-none">
                     {[0, 1, 2, 3, 4, 5].map((i) => (
-                      <div key={i} className="surface-card aspect-[16/10] min-h-[280px]" />
+                      <div key={i} className="surface-card h-52 sm:h-56" />
                     ))}
                   </div>
                 ) : searchError ? (
-                  <div className="text-center py-24 bg-zinc-950 border border-zinc-800">
-                    <p className="text-lg font-light text-zinc-300 mb-6">
+                  <div className="empty-panel">
+                    <p className="text-base text-zinc-300 mb-5">
                       Something went wrong while searching.
                     </p>
                     <button
                       type="button"
                       onClick={performSearch}
-                      className="px-8 py-3 bg-white text-black text-xs font-black tracking-[0.3em] uppercase hover:bg-zinc-200"
+                      className="px-6 py-2.5 bg-white text-black text-xs font-black tracking-[0.3em] uppercase hover:bg-zinc-200"
                     >
                       Try again
                     </button>
                   </div>
                 ) : searchResults && searchResults.results.length > 0 ? (
                   <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                       {searchResults.results.map((car) => (
                         <CarCard key={car.id} car={car} />
                       ))}
                     </div>
 
                     {totalPages > 1 && (
-                      <div className="flex items-center justify-center gap-4 mt-10">
+                      <div className="flex items-center justify-center gap-3 sm:gap-4 mt-8">
                         <button
                           type="button"
                           disabled={currentPage <= 1}
                           onClick={() => goToPage(currentPage - 1)}
-                          className="px-5 py-2 border border-zinc-700 text-xs uppercase tracking-widest disabled:opacity-40 hover:border-zinc-400 transition-colors"
+                          className="min-h-[44px] px-4 sm:px-5 py-2 border border-zinc-700 text-xs uppercase tracking-widest disabled:opacity-40 hover:border-zinc-400 transition-colors"
                         >
                           Previous
                         </button>
-                        <span className="text-sm text-zinc-400">
+                        <span className="text-sm text-zinc-400 tabular-nums">
                           {currentPage} / {totalPages}
                         </span>
                         <button
                           type="button"
                           disabled={currentPage >= totalPages || !searchResults.hasMore}
                           onClick={() => goToPage(currentPage + 1)}
-                          className="px-5 py-2 border border-zinc-700 text-xs uppercase tracking-widest disabled:opacity-40 hover:border-zinc-400 transition-colors"
+                          className="min-h-[44px] px-4 sm:px-5 py-2 border border-zinc-700 text-xs uppercase tracking-widest disabled:opacity-40 hover:border-zinc-400 transition-colors"
                         >
                           Next
                         </button>
@@ -427,9 +447,9 @@ export default function Home() {
                     )}
                   </>
                 ) : (
-                  <div className="text-center py-24 border border-zinc-800 bg-zinc-950 p-8">
+                  <div className="empty-panel">
                     <p className="text-base text-zinc-300 mb-2">No vehicles matched these filters.</p>
-                    <p className="text-sm text-zinc-400 mb-6">
+                    <p className="text-sm text-zinc-400 mb-5">
                       Try widening the year range or removing a filter.
                     </p>
                     <button
@@ -446,7 +466,7 @@ export default function Home() {
                           offset: 0,
                         });
                       }}
-                      className="text-xs tracking-widest text-zinc-400 hover:text-white underline underline-offset-4"
+                      className="min-h-[44px] text-xs tracking-widest text-zinc-400 hover:text-white underline underline-offset-4"
                     >
                       Clear and start over
                     </button>

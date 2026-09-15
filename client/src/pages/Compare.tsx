@@ -252,10 +252,10 @@ export default function Compare() {
 
   if (comparedCars.length === 0) {
     return (
-      <div className="min-h-screen bg-black text-white">
-        <div className="page-wrap py-14 md:py-20">
+      <div className="bg-black text-white">
+        <div className="page-wrap section-y">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">Compare</h1>
-          <p className="text-sm text-zinc-400 mb-10 max-w-lg leading-relaxed">
+          <p className="text-sm text-zinc-400 mb-8 max-w-lg leading-relaxed">
             Add up to 5 vehicles from a dossier or search card. Start with a name you already have,
             or a situation.
           </p>
@@ -340,18 +340,18 @@ export default function Compare() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="bg-black text-white">
       <StatusToast message={toast} />
       <div className="border-b border-zinc-900">
-        <div className="page-wrap py-5 sm:py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="page-wrap py-4 sm:py-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div className="min-w-0">
               <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Compare</h1>
               <p className="text-xs sm:text-sm text-zinc-400 mt-0.5">
                 {comparedCars.length} vehicle{comparedCars.length !== 1 ? 's' : ''}
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
               <button
                 type="button"
                 onClick={async () => {
@@ -362,21 +362,21 @@ export default function Compare() {
                     setToast('Copy the URL from the address bar');
                   }
                 }}
-                className="text-xs sm:text-sm text-zinc-400 hover:text-white transition-colors shrink-0"
+                className="text-xs sm:text-sm text-zinc-400 hover:text-white transition-colors shrink-0 min-h-[44px] inline-flex items-center"
               >
                 Share
               </button>
               <button
                 type="button"
                 onClick={clearComparison}
-                className="text-xs sm:text-sm text-zinc-400 hover:text-red-400 transition-colors shrink-0"
+                className="text-xs sm:text-sm text-zinc-400 hover:text-red-400 transition-colors shrink-0 min-h-[44px] inline-flex items-center"
               >
                 Clear all
               </button>
             </div>
           </div>
           {loadError && <p className="text-xs text-amber-300/90 mt-3">{loadError}</p>}
-          <p className="text-[10px] text-zinc-500 mt-3">
+          <p className="text-[10px] text-zinc-500 mt-3 leading-relaxed">
             Estimated values use your cost region ({region === 'british-columbia' ? 'B.C.' : 'Ontario'}), CAD.
             EPA fuel $/yr is a US-dollar reference from EPA tests.{' '}
             <Link to="/methodology" className="underline underline-offset-2 hover:text-zinc-300">
@@ -386,29 +386,29 @@ export default function Compare() {
         </div>
       </div>
 
-      <div className="page-wrap py-6 sm:py-8 pb-16">
+      <div className="page-wrap section-y-tight pb-12 sm:pb-16">
         {loading ? (
-          <div className="text-center py-20" role="status">
+          <div className="text-center py-12" role="status">
             <div className="inline-block w-10 h-10 border-2 border-zinc-800 border-t-zinc-500 mb-3 animate-spin" />
             <p className="text-[10px] tracking-widest text-zinc-400 uppercase">Loading comparison data</p>
           </div>
         ) : (
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-7xl mx-auto min-w-0">
             {diff.axes.length > 0 && comparedCars.length > 1 && (
-              <div className="mb-8 pb-6 border-b border-zinc-800">
+              <div className="mb-6 sm:mb-8 pb-5 sm:pb-6 border-b border-zinc-800">
                 <p className="text-xs uppercase tracking-wider text-zinc-500 mb-3">
                   How they differ
                 </p>
                 <ul className="space-y-2 mb-5">
                   {diff.axes.map((axis) => (
-                    <li key={axis} className="text-base text-zinc-100 leading-snug">
+                    <li key={axis} className="text-sm sm:text-base text-zinc-100 leading-snug">
                       {axis}
                     </li>
                   ))}
                 </ul>
                 <ul className="space-y-3">
                   {comparedCars.map((car) => (
-                    <li key={car.id} className="text-base leading-snug">
+                    <li key={car.id} className="text-sm sm:text-base leading-snug">
                       <span className="text-zinc-500">
                         {car.year} {car.make} {displayModelLabel(car)} —{' '}
                       </span>
@@ -421,29 +421,29 @@ export default function Compare() {
               </div>
             )}
             <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-              <table className="w-full border-collapse">
+              <table className="w-full border-collapse min-w-[28rem]">
                 <thead>
                   <tr className="border-b border-zinc-700">
-                    <th className="px-2 sm:px-4 py-3 sm:py-4 text-left sticky left-0 bg-black z-10 min-w-[72px] sm:min-w-[100px]">
+                    <th className="px-2 sm:px-4 py-3 sm:py-4 text-left sticky left-0 bg-black z-10 min-w-[68px] sm:min-w-[100px]">
                       <span className="text-[10px] sm:text-xs uppercase tracking-widest text-zinc-400">Spec</span>
                     </th>
                     {pairs.map(({ car }) => (
-                      <th key={car.id} className="px-2 sm:px-4 py-3 sm:py-4 min-w-[132px] sm:min-w-[200px] border-l border-zinc-800 align-top">
+                      <th key={car.id} className="px-2 sm:px-4 py-3 sm:py-4 min-w-[120px] sm:min-w-[180px] border-l border-zinc-800 align-top">
                         <Link to={`/car/${car.id}`} className="block text-center group/col hover:opacity-90 transition-opacity">
-                          <div className="relative h-10 sm:h-12 mb-2 border border-zinc-800 overflow-hidden mx-auto max-w-[120px]">
+                          <div className="relative h-10 sm:h-12 mb-2 border border-zinc-800 overflow-hidden mx-auto max-w-[100px] sm:max-w-[120px]">
                             <VehiclePlaceholder car={car} compact hideCaption className="!absolute inset-0" />
                           </div>
-                          <p className="text-xl sm:text-3xl font-black text-zinc-300 tabular-nums group-hover/col:text-white transition-colors">{car.year}</p>
-                          <h3 className="text-sm sm:text-base font-black tracking-tight uppercase mt-1 sm:mt-2 group-hover/col:underline underline-offset-4 decoration-zinc-600">{car.make}</h3>
+                          <p className="text-lg sm:text-2xl md:text-3xl font-black text-zinc-300 tabular-nums group-hover/col:text-white transition-colors">{car.year}</p>
+                          <h3 className="text-xs sm:text-base font-black tracking-tight uppercase mt-1 sm:mt-2 group-hover/col:underline underline-offset-4 decoration-zinc-600 break-words">{car.make}</h3>
                           <p className="text-xs sm:text-sm font-medium text-zinc-400 break-words">{displayModelLabel(car)}</p>
                           {displayListingSubtitle(car) && (
-                            <p className="text-xs text-zinc-500 mt-1">{displayListingSubtitle(car)}</p>
+                            <p className="text-xs text-zinc-500 mt-1 line-clamp-2">{displayListingSubtitle(car)}</p>
                           )}
                         </Link>
                         <button
                           type="button"
                           onClick={() => removeCarFromComparison(car.id)}
-                          className="mt-3 px-2 py-2 text-[10px] tracking-widest text-zinc-500 hover:text-red-400 transition-colors uppercase w-full"
+                          className="mt-2 sm:mt-3 px-2 py-2 min-h-[40px] text-[10px] tracking-widest text-zinc-500 hover:text-red-400 transition-colors uppercase w-full"
                         >
                           Remove
                         </button>

@@ -17,7 +17,7 @@ function renderCard() {
 describe('CarCard', () => {
   it('exposes the vehicle as a real link, not a click handler', () => {
     renderCard();
-    const link = screen.getByRole('link', { name: new RegExp(car.model, 'i') });
+    const link = screen.getByRole('link', { name: /2020 Toyota Corolla/i });
     expect(link).toHaveAttribute('href', `/car/${car.id}`);
   });
 

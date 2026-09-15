@@ -62,20 +62,20 @@ export function DataRow({
 
   const row = (
     <div
-      className={`flex py-2 border-b border-zinc-900 last:border-b-0 ${
+      className={`flex py-2 border-b border-zinc-900 last:border-b-0 min-w-0 ${
         isPrimaryPair
           ? 'flex-col gap-0.5 items-start'
           : 'items-baseline justify-between gap-3'
       } ${total ? 'border-t border-zinc-700 mt-2 pt-3' : ''}`}
     >
-      <span className={`${labelClass} shrink-0`}>
+      <span className={`${labelClass} shrink-0 max-w-[45%]`}>
         {glossaryKey ? <SpecLabel label={label} glossaryKey={glossaryKey} /> : label}
       </span>
       <DataValue
         value={value}
         suffix={suffix}
         allowZero={allowZero}
-        className={`${valueClass}${isPrimaryPair ? '' : ' text-right'}`}
+        className={`${valueClass} min-w-0 break-words${isPrimaryPair ? '' : ' text-right'}`}
         missingClassName="text-xs font-normal text-zinc-400 italic"
       />
     </div>

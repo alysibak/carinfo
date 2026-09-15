@@ -38,7 +38,7 @@ export default function SimilarCars({ car }: { car: CarSpecs }) {
 
   return (
     <section id="similar" className="border-t border-zinc-900 scroll-mt-24">
-      <div className="page-wrap-wide py-6 md:py-8">
+      <div className="page-wrap-wide section-y-tight">
         <h2 className="text-base font-bold tracking-tight mb-1">If you&apos;re still looking</h2>
         <p className="text-xs text-zinc-500 mb-4">
           Nearby alternatives — each note is how it differs from this {car.year}{' '}
@@ -82,7 +82,7 @@ export default function SimilarCars({ car }: { car: CarSpecs }) {
                     <button
                       type="button"
                       onClick={() => addOrReplaceOldestInComparison(alt)}
-                      className={`shrink-0 self-start text-[10px] uppercase tracking-wider px-2.5 py-1.5 border ${
+                      className={`shrink-0 self-start text-[10px] uppercase tracking-wider px-2.5 py-2 min-h-[40px] border ${
                         inCompare
                           ? 'border-white text-white'
                           : 'border-zinc-700 text-zinc-500 hover:border-zinc-400 hover:text-white'

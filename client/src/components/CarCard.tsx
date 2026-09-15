@@ -2,7 +2,13 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { CarSpecs } from '../types/car.types';
 import { useCarStore } from '../stores/carStore';
-import { displayListingSubtitle, displayModelLabel, formatTransmissionLabel } from '../utils/trimLabel';
+import {
+  displayListingSubtitle,
+  displayModelConfigRemainder,
+  displayModelLabel,
+  displayVehicleTitle,
+  formatTransmissionLabel,
+} from '../utils/trimLabel';
 import {
   formatEngineDetailForCard,
   formatMpgForCard,
@@ -26,7 +32,7 @@ export default function CarCard({ car, showCompare = true }: CarCardProps) {
   const isEv = car.engine.fuelType === 'electric';
   const isHydrogen = car.engine.fuelType === 'hydrogen';
   const isAltPowertrain = isEv || isHydrogen;
-  const variantLabel = displayListingSubtitle(car);
+  const variantLabel = displayListingSubtitle(car) ?? displayModelConfigRemainder(car);
 
   useEffect(() => {
     if (!toast) return;
@@ -77,16 +83,21 @@ export default function CarCard({ car, showCompare = true }: CarCardProps) {
     <article className="surface-card-hover group relative flex flex-col h-full overflow-hidden focus-within:border-zinc-400 focus-within:ring-1 focus-within:ring-white/10">
       <StatusToast message={toast} />
 
-      <div className="h-[4.5rem] sm:h-20 border-b border-zinc-900 overflow-hidden">
+      <div className="h-28 sm:h-32 border-b border-zinc-900 overflow-hidden">
         <VehiclePlaceholder car={car} compact hideCaption />
       </div>
 
       <div className="p-3 flex flex-col flex-1">
         <div className="flex items-start justify-between gap-2 mb-0.5">
-          <p className="text-[10px] uppercase tracking-widest text-zinc-500">
-            {car.year} {car.make}
-          </p>
-          <div className="flex items-center gap-1 shrink-0">
+          <h3 className="text-sm sm:text-base font-bold text-white leading-snug line-clamp-2 min-w-0">
+            <Link
+              to={`/car/${car.id}`}
+              className="after:absolute after:inset-0 focus:outline-none hover:underline underline-offset-2 decoration-zinc-600"
+            >
+              {displayVehicleTitle(car)}
+            </Link>
+          </h3>
+          <div className="flex items-center gap-1 shrink-0 pt-0.5">
             {car.bodyStyle && <span className="spec-chip capitalize">{car.bodyStyle}</span>}
             {safety != null && safety > 0 && (
               <span className="spec-chip text-amber-200/90 border-amber-800/50">
@@ -95,15 +106,6 @@ export default function CarCard({ car, showCompare = true }: CarCardProps) {
             )}
           </div>
         </div>
-
-        <h3 className="text-sm sm:text-base font-bold text-white leading-snug line-clamp-2">
-          <Link
-            to={`/car/${car.id}`}
-            className="after:absolute after:inset-0 focus:outline-none hover:underline underline-offset-2 decoration-zinc-600"
-          >
-            {displayModelLabel(car)}
-          </Link>
-        </h3>
         {variantLabel && <p className="text-[11px] text-zinc-500 mt-0.5 truncate">{variantLabel}</p>}
 
         <div className="grid grid-cols-2 gap-px bg-zinc-900 border border-zinc-900 mt-2.5">

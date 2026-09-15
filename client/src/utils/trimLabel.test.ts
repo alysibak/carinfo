@@ -1,7 +1,34 @@
 import { describe, expect, it } from 'vitest';
-import { displayTrimLabel } from './trimLabel';
+import {
+  displayModelConfigRemainder,
+  displayModelFamilyLabel,
+  displayTrimLabel,
+  displayVehicleTitle,
+} from './trimLabel';
 
 const label = (model: string, trim: string) => displayTrimLabel({ model, trim });
+
+describe('displayVehicleTitle / model family', () => {
+  const mazda3 = {
+    year: 2026,
+    make: 'Mazda',
+    model: '3 4-Door',
+    trim: 'base',
+    engine: { fuelType: 'gasoline' as const },
+  };
+
+  it('keeps short model families in the primary title', () => {
+    expect(displayModelFamilyLabel(mazda3)).toBe('3');
+    expect(displayVehicleTitle(mazda3)).toBe('2026 Mazda 3');
+    expect(displayModelConfigRemainder(mazda3)).toBe('4-Door');
+  });
+
+  it('keeps multi-word families like Model 3', () => {
+    const tesla = { ...mazda3, make: 'Tesla', model: 'Model 3' };
+    expect(displayModelFamilyLabel(tesla)).toBe('Model 3');
+    expect(displayVehicleTitle(tesla)).toBe('2026 Tesla Model 3');
+  });
+});
 
 describe('displayTrimLabel', () => {
   it('drops EPA transmission mode and lock-up codes', () => {

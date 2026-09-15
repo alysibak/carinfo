@@ -3,12 +3,17 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import * as api from '../services/api';
 import type { CarDashboard, CarSpecs } from '../types/car.types';
-import { displayListingSubtitle, displayModelLabel } from '../utils/trimLabel';
+import {
+  displayListingSubtitle,
+  displayModelConfigRemainder,
+  displayModelLabel,
+  displayVehicleTitle,
+} from '../utils/trimLabel';
 import {
   formatCurrency,
   formatCurrencyRange,
   hasNumericValue,
-  SAFETY_UNAVAILABLE_NOTE,
+  NHTSA_CHIP_UNAVAILABLE,
 } from '../utils/dataValue';
 import { CURRENCY_SECTION_NOTE } from '../utils/currency';
 import { useCarStore } from '../stores/carStore';
@@ -217,7 +222,7 @@ export default function CarDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center opacity-50">
+      <div className="min-h-[40vh] bg-black flex items-center justify-center opacity-50 py-16">
         <div className="text-center">
           <div className="inline-block w-12 h-12 border-2 border-zinc-800 border-t-zinc-500 mb-4" />
           <p className="text-xs tracking-widest text-zinc-300 uppercase">Loading dossier</p>
@@ -229,7 +234,7 @@ export default function CarDetail() {
   if (!dashboard) {
     const missing = error === 'not-found';
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center text-center px-4">
+      <div className="min-h-[40vh] bg-black flex items-center justify-center text-center px-4 py-16">
         <div className="max-w-md">
           <p className="text-2xl font-bold tracking-tight text-white mb-3">
             {missing ? 'Vehicle not on file' : 'Could not load this vehicle'}
@@ -253,7 +258,7 @@ export default function CarDetail() {
   const isHydrogen = car.engine.fuelType === 'hydrogen';
   const efficiencyLabel = efficiencyUnit(car);
   const isInCompare = comparedCars.some((c) => c.id === car.id);
-  const trimLabel = displayListingSubtitle(car);
+  const trimLabel = displayListingSubtitle(car) ?? displayModelConfigRemainder(car);
   const isPhev = car.engine.fuelType === 'plug-in hybrid';
   const phev = phevModes(car);
   const ghg = ghgFraming(car);
@@ -352,30 +357,30 @@ export default function CarDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="bg-black text-white">
       <StatusToast message={toast} />
 
       <div className="border-b border-zinc-900">
-        <div className="page-wrap-wide py-4 flex items-center justify-between gap-4">
+        <div className="page-wrap-wide py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-4">
           <button
             onClick={() => navigate(-1)}
-            className="text-xs text-zinc-500 hover:text-white transition-colors shrink-0"
+            className="text-xs text-zinc-500 hover:text-white transition-colors shrink-0 min-h-[44px] min-w-[44px] inline-flex items-center"
           >
             ← <span className="hidden sm:inline">Back</span>
           </button>
-          <p className="text-sm font-semibold tracking-tight truncate text-center min-w-0">
+          <p className="hidden sm:block text-sm font-semibold tracking-tight truncate text-center min-w-0 px-1">
             {car.year} {car.make} {car.model}
           </p>
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-auto sm:ml-0">
             <button
               onClick={handleAddToGarage}
-              className="text-xs text-zinc-400 hover:text-white transition-colors"
+              className="text-xs text-zinc-400 hover:text-white transition-colors min-h-[44px] px-2"
             >
               + Garage
             </button>
             <button
               onClick={handleAddToComparison}
-              className={`text-xs transition-colors ${
+              className={`text-xs transition-colors min-h-[44px] px-2 ${
                 isInCompare ? 'text-white' : 'text-zinc-400 hover:text-white'
               }`}
             >
@@ -395,20 +400,17 @@ export default function CarDetail() {
       )}
 
       <div className="border-b border-zinc-900">
-        <div className="page-wrap-wide py-5 md:py-6">
-          <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,140px)_1fr] gap-4 sm:gap-6 items-end">
-            <div className="h-20 sm:h-24 overflow-hidden">
+        <div className="page-wrap-wide py-4 sm:py-5 md:py-6">
+          <div className="grid grid-cols-[minmax(0,5.5rem)_1fr] sm:grid-cols-[minmax(0,120px)_1fr] gap-3 sm:gap-5 items-end">
+            <div className="h-14 sm:h-20 md:h-24 overflow-hidden">
               <VehiclePlaceholder car={car} compact hideCaption />
             </div>
             <div className="min-w-0">
-              <p className="text-sm text-zinc-500 mb-0.5">
-                {car.year} {car.make}
-              </p>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-1 break-words">
-                {displayModelLabel(car)}
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight mb-1 break-words">
+                {displayVehicleTitle(car)}
               </h1>
               {trimLabel && (
-                <p className="text-sm text-zinc-500 mb-2">{trimLabel}</p>
+                <p className="text-sm text-zinc-500 mb-1.5 sm:mb-2">{trimLabel}</p>
               )}
               <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-zinc-400">
                 {car.bodyStyle && <span className="capitalize">{car.bodyStyle}</span>}
@@ -421,10 +423,6 @@ export default function CarDetail() {
 
         <GlanceRow dashboard={dashboard} />
       </div>
-
-      <DataTrustPanel dashboard={dashboard} />
-
-      <SiblingConfigs car={car} />
 
       {car.ownershipProfile && (
         <div className="border-b border-zinc-900">
@@ -440,186 +438,183 @@ export default function CarDetail() {
       )}
 
       <section className="border-b border-zinc-900">
-        <div className="page-wrap-wide py-6 md:py-8 grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
-            {showEnergySection && (
-              <div className="min-w-0">
-                <h2 className="text-base font-bold tracking-tight mb-1">
-                  {isPhev
-                    ? 'Electric and gas modes'
-                    : hasEvExtras && hasCityHwy
-                      ? 'Energy use'
-                      : hasEvExtras
-                        ? 'Charging'
-                        : 'City and highway'}
-                </h2>
-                <p className="text-xs text-zinc-500 mb-3 leading-relaxed">
-                  {isPhev
-                    ? 'Glance figure is gas-mode, not a blend.'
-                    : hasEvExtras && !hasCityHwy
-                      ? 'Range is above; charge times below.'
-                      : 'Combined is above; this is the EPA split.'}
-                </p>
-                {isPhev && phev ? (
-                  <PhevDualModeBlock modes={phev} />
-                ) : (
-                  <>
-                    <FuelBar
-                      label={`City ${efficiencyLabel}`}
-                      value={car.fuelEconomy.city}
-                      max={FUEL_BAR_SCALE_MAX}
-                      secondary={efficiencySecondaryLine(car.fuelEconomy.city, efficiencyLabel)}
-                    />
-                    <FuelBar
-                      label={`Highway ${efficiencyLabel}`}
-                      value={car.fuelEconomy.highway}
-                      max={FUEL_BAR_SCALE_MAX}
-                      secondary={efficiencySecondaryLine(car.fuelEconomy.highway, efficiencyLabel)}
-                    />
-                  </>
-                )}
-                {hasEvExtras && (
-                  <>
-                    {hasNumericValue(evCharge?.kWhPer100Mi) && (
-                      <DataRow
-                        label="Consumption"
-                        value={`${evCharge!.kWhPer100Mi} kWh/100mi · ${formatKwhPer100KmFromMi(evCharge!.kWhPer100Mi!)}`}
-                        glossaryKey="kwhPer100mi"
-                      />
-                    )}
-                    {hasNumericValue(evCharge?.charge240Hours) && (
-                      <DataRow
-                        label="Home charge (240V)"
-                        value={`~${evCharge!.charge240Hours} h`}
-                        glossaryKey="charge240"
-                      />
-                    )}
-                    {hasNumericValue(evCharge?.charge120Hours ?? car.epa?.charge120Hours) && (
-                      <DataRow
-                        label="Home charge (120V)"
-                        value={`~${evCharge?.charge120Hours ?? car.epa!.charge120Hours} h`}
-                        glossaryKey="charge120"
-                      />
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-
-            {hasSafetyBreakdown && (() => {
-              const scores = [
-                hasNumericValue(car.safetyRating?.frontal, { allowZero: false }) && {
-                  key: 'frontal',
-                  label: 'Frontal',
-                  value: car.safetyRating!.frontal!,
-                },
-                hasNumericValue(car.safetyRating?.side, { allowZero: false }) && {
-                  key: 'side',
-                  label: 'Side',
-                  value: car.safetyRating!.side!,
-                },
-                hasNumericValue(car.safetyRating?.rollover, { allowZero: false }) && {
-                  key: 'rollover',
-                  label: 'Rollover',
-                  value: car.safetyRating!.rollover!,
-                },
-              ].filter(Boolean) as { key: string; label: string; value: number }[];
-
-              return (
+        <div className="page-wrap-wide section-y-tight space-y-6">
+          {(showEnergySection || hasSafetyBreakdown || hasEmissionsData) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 md:gap-x-10 gap-y-8 md:gap-y-10">
+              {showEnergySection && (
                 <div className="min-w-0">
-                  <h2 className="text-base font-bold tracking-tight mb-1">Crash tests</h2>
+                  <h2 className="text-base font-bold tracking-tight mb-1">
+                    {isPhev
+                      ? 'Electric and gas modes'
+                      : hasEvExtras && hasCityHwy
+                        ? 'Energy use'
+                        : hasEvExtras
+                          ? 'Charging'
+                          : 'City and highway'}
+                  </h2>
                   <p className="text-xs text-zinc-500 mb-3 leading-relaxed">
-                    Overall is above. NHTSA tests specific configurations — scores may apply to
-                    closely related trims of the same model year.
+                    {isPhev
+                      ? 'Glance figure is gas-mode, not a blend.'
+                      : hasEvExtras && !hasCityHwy
+                        ? 'Range is above; charge times below.'
+                        : 'Combined is above; this is the EPA split.'}
                   </p>
-                  <div
-                    className={`grid gap-px bg-zinc-800 ${
-                      scores.length >= 3
-                        ? 'grid-cols-3'
-                        : scores.length === 2
-                          ? 'grid-cols-2'
-                          : 'grid-cols-1'
-                    }`}
-                  >
-                    {scores.map((score) => (
-                      <div key={score.key} className="bg-black px-2 py-3 text-center">
-                        <p className="text-[9px] uppercase tracking-wider text-zinc-500 mb-0.5">
-                          {score.label}
-                        </p>
-                        <p className="text-xl font-bold tabular-nums">
-                          {score.value}
-                          <span className="text-[10px] text-zinc-500">/5</span>
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+                  {isPhev && phev ? (
+                    <PhevDualModeBlock modes={phev} />
+                  ) : (
+                    <>
+                      <FuelBar
+                        label={`City ${efficiencyLabel}`}
+                        value={car.fuelEconomy.city}
+                        max={FUEL_BAR_SCALE_MAX}
+                        secondary={efficiencySecondaryLine(car.fuelEconomy.city, efficiencyLabel)}
+                      />
+                      <FuelBar
+                        label={`Highway ${efficiencyLabel}`}
+                        value={car.fuelEconomy.highway}
+                        max={FUEL_BAR_SCALE_MAX}
+                        secondary={efficiencySecondaryLine(car.fuelEconomy.highway, efficiencyLabel)}
+                      />
+                    </>
+                  )}
+                  {hasEvExtras && (
+                    <>
+                      {hasNumericValue(evCharge?.kWhPer100Mi) && (
+                        <DataRow
+                          label="Consumption"
+                          value={`${evCharge!.kWhPer100Mi} kWh/100mi · ${formatKwhPer100KmFromMi(evCharge!.kWhPer100Mi!)}`}
+                          glossaryKey="kwhPer100mi"
+                        />
+                      )}
+                      {hasNumericValue(evCharge?.charge240Hours) && (
+                        <DataRow
+                          label="Home charge (240V)"
+                          value={`~${evCharge!.charge240Hours} h`}
+                          glossaryKey="charge240"
+                        />
+                      )}
+                      {hasNumericValue(evCharge?.charge120Hours ?? car.epa?.charge120Hours) && (
+                        <DataRow
+                          label="Home charge (120V)"
+                          value={`~${evCharge?.charge120Hours ?? car.epa!.charge120Hours} h`}
+                          glossaryKey="charge120"
+                        />
+                      )}
+                    </>
+                  )}
                 </div>
-              );
-            })()}
+              )}
 
-            {!hasOverallSafety && !hasSafetyBreakdown && (
-              <div className="min-w-0">
-                <h2 className="text-base font-bold tracking-tight mb-1">Crash tests</h2>
-                <p className="text-xs text-zinc-500 leading-relaxed">{SAFETY_UNAVAILABLE_NOTE}</p>
-                <p className="text-xs text-zinc-600 mt-2">
-                  <a href="#similar" className="underline underline-offset-2 hover:text-zinc-400">
-                    Compare nearby alternatives
-                  </a>
-                  {' · '}
-                  <Link to="/methodology" className="underline underline-offset-2 hover:text-zinc-400">
-                    How we match NHTSA
-                  </Link>
-                </p>
-              </div>
-            )}
+              {hasSafetyBreakdown && (() => {
+                const scores = [
+                  hasNumericValue(car.safetyRating?.frontal, { allowZero: false }) && {
+                    key: 'frontal',
+                    label: 'Frontal',
+                    value: car.safetyRating!.frontal!,
+                  },
+                  hasNumericValue(car.safetyRating?.side, { allowZero: false }) && {
+                    key: 'side',
+                    label: 'Side',
+                    value: car.safetyRating!.side!,
+                  },
+                  hasNumericValue(car.safetyRating?.rollover, { allowZero: false }) && {
+                    key: 'rollover',
+                    label: 'Rollover',
+                    value: car.safetyRating!.rollover!,
+                  },
+                ].filter(Boolean) as { key: string; label: string; value: number }[];
 
-            {hasOverallSafety && !hasSafetyBreakdown && (
-              <div className="min-w-0">
-                <h2 className="text-base font-bold tracking-tight mb-1">Crash tests</h2>
-                <p className="text-xs text-zinc-500 leading-relaxed">
-                  Overall stars are above. NHTSA tests specific configurations — scores may apply to
-                  closely related trims of the same model year. Component scores are not on file for
-                  this EPA configuration.
-                </p>
-              </div>
-            )}
+                return (
+                  <div className="min-w-0 self-start">
+                    <h2 className="text-base font-bold tracking-tight mb-1">Crash tests</h2>
+                    <p className="text-xs text-zinc-500 mb-3 leading-relaxed">
+                      Overall is above. NHTSA tests specific configurations — scores may apply to
+                      closely related trims of the same model year.
+                    </p>
+                    <div
+                      className={`grid gap-px bg-zinc-800 ${
+                        scores.length >= 3
+                          ? 'grid-cols-3'
+                          : scores.length === 2
+                            ? 'grid-cols-2'
+                            : 'grid-cols-1'
+                      }`}
+                    >
+                      {scores.map((score) => (
+                        <div key={score.key} className="bg-black px-2 sm:px-3 py-3.5 sm:py-4 text-center min-w-0">
+                          <p className="text-[9px] uppercase tracking-wider text-zinc-500 mb-1 break-words">
+                            {score.label}
+                          </p>
+                          <p className="text-lg sm:text-xl font-bold tabular-nums">
+                            {score.value}
+                            <span className="text-[10px] text-zinc-500">/5</span>
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
 
-            {hasEmissionsData && (
-              <div className="min-w-0">
-                <h2 className="text-base font-bold tracking-tight mb-1">Tailpipe</h2>
-                <p className="text-xs text-zinc-500 mb-3 leading-relaxed">
-                  EPA figures for this configuration.
-                </p>
-                {car.epa?.co2 != null && (
-                  <DataRow label="CO₂" value={`${car.epa.co2} g/mi`} allowZero glossaryKey="co2" />
-                )}
-                {ghg && (
-                  <DataRow label="Emissions score" value={`${ghg.score}/10`} glossaryKey="ghgScore" />
-                )}
-                {hasNumericValue(car.epa?.barrelsPerYear) && (
-                  <DataRow
-                    label="Oil use"
-                    value={`${car.epa!.barrelsPerYear} barrels/yr`}
-                    glossaryKey="barrelsPerYear"
-                  />
-                )}
-                {(() => {
-                  const fuelSav = fiveYearFuelSavings(car);
-                  return fuelSav ? (
+              {hasEmissionsData && (
+                <div className="min-w-0">
+                  <h2 className="text-base font-bold tracking-tight mb-1">Tailpipe</h2>
+                  <p className="text-xs text-zinc-500 mb-3 leading-relaxed">
+                    EPA figures for this configuration.
+                  </p>
+                  {car.epa?.co2 != null && (
+                    <DataRow label="CO₂" value={`${car.epa.co2} g/mi`} allowZero glossaryKey="co2" />
+                  )}
+                  {ghg && (
+                    <DataRow label="Emissions score" value={`${ghg.score}/10`} glossaryKey="ghgScore" />
+                  )}
+                  {hasNumericValue(car.epa?.barrelsPerYear) && (
                     <DataRow
-                      label="5-yr fuel vs. average"
-                      value={fuelSavingsSentence(fuelSav)}
-                      glossaryKey="fuelSavings5yr"
+                      label="Oil use"
+                      value={`${car.epa!.barrelsPerYear} barrels/yr`}
+                      glossaryKey="barrelsPerYear"
                     />
-                  ) : null;
-                })()}
-              </div>
-            )}
-          </div>
-        </section>
+                  )}
+                  {(() => {
+                    const fuelSav = fiveYearFuelSavings(car);
+                    return fuelSav ? (
+                      <DataRow
+                        label="5-yr fuel vs. average"
+                        value={fuelSavingsSentence(fuelSav)}
+                        glossaryKey="fuelSavings5yr"
+                      />
+                    ) : null;
+                  })()}
+                </div>
+              )}
+            </div>
+          )}
+
+          {!hasOverallSafety && !hasSafetyBreakdown && (
+            <p className="text-xs text-zinc-500 leading-snug">
+              <span className="font-medium text-zinc-400">Crash tests</span>
+              {' · '}
+              {NHTSA_CHIP_UNAVAILABLE} on file
+              {' · '}
+              <Link to="/methodology" className="underline underline-offset-2 hover:text-zinc-400">
+                How we match NHTSA
+              </Link>
+            </p>
+          )}
+
+          {hasOverallSafety && !hasSafetyBreakdown && (
+            <p className="text-xs text-zinc-500 leading-snug">
+              <span className="font-medium text-zinc-400">Crash tests</span>
+              {' · '}
+              Overall stars are above; component scores are not on file for this configuration.
+            </p>
+          )}
+        </div>
+      </section>
 
       {showOwnership && (
         <section className="border-b border-zinc-900">
-          <div className="page-wrap-wide py-6 md:py-8">
+          <div className="page-wrap-wide section-y-tight">
             <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2 mb-4">
               <div className="min-w-0">
                 <h2 className="text-base font-bold tracking-tight mb-1">Cost to keep</h2>
@@ -634,7 +629,7 @@ export default function CarDetail() {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 md:gap-x-10 gap-y-5 md:gap-y-6">
               <div className="min-w-0">
                 {hasMarketValue && !glanceIds.has('value') && (
                   <DataRow
@@ -781,6 +776,10 @@ export default function CarDetail() {
       )}
 
       <KeySpecs dashboard={dashboard} omitKeys={specOmitKeys} heading="Also on file" />
+
+      <DataTrustPanel dashboard={dashboard} />
+
+      <SiblingConfigs car={car} />
 
       <SimilarCars car={car} />
 

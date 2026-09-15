@@ -26,8 +26,8 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      <footer className="border-t border-zinc-900 py-8 mt-auto">
-        <div className="page-wrap text-center text-xs text-zinc-400 leading-relaxed space-y-2">
+      <footer className="border-t border-zinc-900 py-6 mt-auto">
+        <div className="page-wrap text-center text-xs text-zinc-400 leading-relaxed space-y-2 px-4">
           <p className="flex flex-wrap items-center justify-center gap-x-1 gap-y-1">
             <span>
               Specs from{' '}

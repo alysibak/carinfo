@@ -9,9 +9,9 @@ export default function Methodology() {
   );
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="bg-black text-white">
       <div className="border-b border-zinc-900">
-        <div className="page-wrap py-8 md:py-12 max-w-3xl">
+        <div className="page-wrap section-y max-w-3xl">
           <p className="text-[10px] tracking-[0.3em] text-zinc-400 uppercase mb-3">Architecture</p>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight uppercase mb-4">Methodology</h1>
           <p className="text-sm text-zinc-400 leading-relaxed">
@@ -22,7 +22,7 @@ export default function Methodology() {
         </div>
       </div>
 
-      <div className="page-wrap py-10 md:py-14 max-w-3xl space-y-14">
+      <div className="page-wrap section-y max-w-3xl space-y-10 md:space-y-12">
         <section>
           <h2 className="text-xs font-black tracking-[0.25em] uppercase text-white mb-4">Data pipeline</h2>
           <ol className="space-y-4 text-sm text-zinc-400 leading-relaxed list-decimal list-inside marker:text-zinc-400">

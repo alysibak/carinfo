@@ -38,7 +38,7 @@ export default function VisitCounter({ className = '' }: { className?: string })
 
   return (
     <p className={`tabular-nums ${className}`.trim()}>
-      {visits.toLocaleString()} {visits === 1 ? 'person has' : 'people have'} checked out CarInfo
+      {visits.toLocaleString()} {visits === 1 ? 'visit' : 'visits'} to CarInfo
     </p>
   );
 }
