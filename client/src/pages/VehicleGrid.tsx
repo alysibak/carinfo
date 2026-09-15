@@ -17,7 +17,7 @@ export default function VehicleGrid() {
   } else if (cat === 'brand' || cat === 'make') {
     params.set('make', subcategory ?? '');
   } else if (sub) {
-    params.set('q', subcategory.replace(/-/g, ' '));
+    params.set('q', sub.replace(/-/g, ' '));
     params.set('sort', 'relevance');
   }
 

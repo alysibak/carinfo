@@ -10,6 +10,7 @@ import {
   formatTransmissionLabel,
 } from '../utils/trimLabel';
 import {
+  UNAVAILABLE_LABEL,
   formatEngineDetailForCard,
   formatMpgForCard,
   formatPriceShort,
@@ -113,15 +114,27 @@ export default function CarCard({ car, showCompare = true }: CarCardProps) {
             <p className="text-[9px] uppercase tracking-widest text-zinc-600">
               {isAltPowertrain && hasRange ? 'Range' : mpgLabel}
             </p>
-            <p className="text-lg font-bold tabular-nums text-white leading-tight">
-              {isAltPowertrain && hasRange ? rangeValue : hasMpg ? mpgValue : '—'}
-            </p>
+            {isAltPowertrain && hasRange ? (
+              <p className="text-lg font-bold tabular-nums text-white leading-tight">{rangeValue}</p>
+            ) : hasMpg ? (
+              <p className="text-lg font-bold tabular-nums text-white leading-tight">{mpgValue}</p>
+            ) : (
+              <p className="text-xs font-normal italic text-zinc-500 leading-tight mt-1">
+                {UNAVAILABLE_LABEL}
+              </p>
+            )}
           </div>
           <div className="bg-black px-2.5 py-2">
             <p className="text-[9px] uppercase tracking-widest text-zinc-600">Est. CAD</p>
-            <p className="text-lg font-bold tabular-nums text-white leading-tight truncate">
-              {hasPrice ? (car.price?.isEstimated !== false ? `~${priceShort}` : priceShort) : '—'}
-            </p>
+            {hasPrice ? (
+              <p className="text-lg font-bold tabular-nums text-white leading-tight truncate">
+                {car.price?.isEstimated !== false ? `~${priceShort}` : priceShort}
+              </p>
+            ) : (
+              <p className="text-xs font-normal italic text-zinc-500 leading-tight mt-1 truncate">
+                {UNAVAILABLE_LABEL}
+              </p>
+            )}
           </div>
         </div>
 
