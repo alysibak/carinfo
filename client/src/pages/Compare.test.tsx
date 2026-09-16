@@ -12,21 +12,25 @@ vi.mock('../services/api', () => ({
   compareCars: vi.fn(),
 }));
 
+function mockCompareStore(comparedCars: typeof trustDashboard.car[]) {
+  vi.mocked(useCarStore).mockReturnValue({
+    comparedCars,
+    removeCarFromComparison: vi.fn(),
+    clearComparison: vi.fn(),
+    addCarToComparison: vi.fn(),
+    replaceComparison: vi.fn(),
+    searchResults: [],
+    searchQuery: {},
+    setSearchQuery: vi.fn(),
+    performSearch: vi.fn(),
+    isSearching: false,
+    searchError: null,
+  } as ReturnType<typeof useCarStore>);
+}
+
 describe('Compare provenance', () => {
   beforeEach(() => {
-    vi.mocked(useCarStore).mockReturnValue({
-      comparedCars: [trustDashboard.car],
-      removeCarFromComparison: vi.fn(),
-      clearComparison: vi.fn(),
-      addCarToComparison: vi.fn(),
-      replaceComparison: vi.fn(),
-      searchResults: [],
-      searchQuery: {},
-      setSearchQuery: vi.fn(),
-      performSearch: vi.fn(),
-      isSearching: false,
-      searchError: null,
-    } as ReturnType<typeof useCarStore>);
+    mockCompareStore([trustDashboard.car]);
     vi.mocked(api.getCarDashboard).mockResolvedValue(trustDashboard);
   });
 
@@ -38,7 +42,7 @@ describe('Compare provenance', () => {
     );
 
     await waitFor(() => {
-      expect(api.getCarDashboard).toHaveBeenCalledWith(trustDashboard.car.id);
+      expect(api.getCarDashboard).toHaveBeenCalledWith(trustDashboard.car.id, expect.any(String));
     });
 
     await waitFor(() => {
@@ -46,7 +50,32 @@ describe('Compare provenance', () => {
     });
 
     expect(screen.getAllByText('est.').length).toBeGreaterThan(0);
-    expect(screen.getByText('EST. VALUE')).toBeInTheDocument();
+    expect(screen.getByText(/EST\. VALUE/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Estimates only' })).not.toBeInTheDocument();
+  });
+
+  it('keeps hook order when leaving the empty compare state', async () => {
+    mockCompareStore([]);
+    const { rerender } = render(
+      <MemoryRouter>
+        <Compare />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Compare' })).toBeInTheDocument();
+    expect(screen.getByText(/Add up to 5 vehicles/i)).toBeInTheDocument();
+
+    mockCompareStore([trustDashboard.car]);
+    expect(() =>
+      rerender(
+        <MemoryRouter>
+          <Compare />
+        </MemoryRouter>,
+      ),
+    ).not.toThrow();
+
+    await waitFor(() => {
+      expect(api.getCarDashboard).toHaveBeenCalledWith(trustDashboard.car.id, expect.any(String));
+    });
   });
 });

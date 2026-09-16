@@ -246,6 +246,9 @@ export default function Compare() {
 
   const urlHasCars = parseCompareIds(searchParams.get('cars')).length > 0;
 
+  // Must run before any early return — Rules of Hooks.
+  const diff = useMemo(() => differentiateCars(comparedCars), [comparedCars]);
+
   if (!urlHydrated && urlHasCars) {
     return <LoadingScreen label="Loading comparison" />;
   }
@@ -302,8 +305,6 @@ export default function Compare() {
     car,
     dashboard: dashboardById.get(car.id),
   }));
-
-  const diff = useMemo(() => differentiateCars(comparedCars), [comparedCars]);
 
   const specs = ALL_SPECS.filter((spec) => {
     const hasAnyData = pairs.some(({ car, dashboard }) => {

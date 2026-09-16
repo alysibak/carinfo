@@ -3,7 +3,7 @@ import { GLANCE_GLOSSARY } from '../utils/specGlossary';
 import { SpecExplain } from './SpecExplain';
 
 function parseInstrument(metric: GlanceMetric): { number: string; unit?: string } {
-  if (metric.unavailable) return { number: '-' };
+  if (metric.unavailable) return { number: 'Not on file' };
 
   const v = metric.value.trim();
   const hp = v.match(/^([\d,.]+)\s*hp$/i);
@@ -51,7 +51,7 @@ export default function GlanceMetricCell({ metric, size = 'default' }: GlanceMet
       <div className="w-full flex flex-wrap items-baseline justify-center gap-x-1 gap-y-0.5 min-w-0">
         <span
           className={`${numSize} font-bold tabular-nums leading-tight break-words whitespace-normal max-w-full ${
-            unavailable ? 'text-zinc-700' : 'text-white'
+            unavailable ? 'text-zinc-500 italic text-xs font-normal' : 'text-white'
           }`}
         >
           {number}

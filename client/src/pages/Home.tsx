@@ -373,13 +373,17 @@ export default function Home() {
                       value={sortField}
                       onChange={handleSortChange}
                       options={[
-                        ...(searchText ? [{ value: 'relevance', label: 'Best match' }] : []),
+                        ...(searchText || sortField === 'relevance'
+                          ? [{ value: 'relevance', label: 'Best match' }]
+                          : []),
                         { value: 'year', label: 'Year' },
                         { value: 'make', label: 'Make' },
                         { value: 'model', label: 'Model' },
                         { value: 'price', label: 'Est. value (CAD)' },
                         { value: 'horsepower', label: 'Horsepower' },
-                        ...(isEvBrowse ? [{ value: 'range', label: 'EPA range' }] : []),
+                        ...(isEvBrowse || sortField === 'range'
+                          ? [{ value: 'range', label: 'EPA range' }]
+                          : []),
                         { value: 'fuelEconomy', label: isEvBrowse ? 'MPGe' : 'MPG' },
                       ]}
                     />
@@ -448,9 +452,15 @@ export default function Home() {
                   </>
                 ) : (
                   <div className="empty-panel">
-                    <p className="text-base text-zinc-300 mb-2">No vehicles matched these filters.</p>
+                    <p className="text-base text-zinc-300 mb-2">
+                      {searchText.trim()
+                        ? `No vehicles matched “${searchText.trim()}”.`
+                        : 'No vehicles matched these filters.'}
+                    </p>
                     <p className="text-sm text-zinc-400 mb-5">
-                      Try widening the year range or removing a filter.
+                      {searchText.trim()
+                        ? 'Try a different spelling, or clear filters if any are on.'
+                        : 'Try widening the year range or removing a filter.'}
                     </p>
                     <button
                       type="button"

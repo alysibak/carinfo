@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { decodeVin, type VinDecodeResult } from '../services/api';
 import { InfoTip } from '../components/ui';
 import { searchQueryToParams } from '../utils/searchParams';
+import { usePageMeta } from '../utils/pageMeta';
 
 const VinScanner = lazy(() => import('../components/VinScanner'));
 
@@ -36,6 +37,10 @@ function Row({ label, value }: { label: string; value: string | number | undefin
 }
 
 export default function VinDecoder() {
+  usePageMeta(
+    'VIN Lookup',
+    'Decode a 17-character VIN with NHTSA data, including horsepower when on file.',
+  );
   const [searchParams] = useSearchParams();
   const [vin, setVin] = useState('');
   const [result, setResult] = useState<VinDecodeResult | null>(null);
