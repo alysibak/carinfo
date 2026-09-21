@@ -1,4 +1,4 @@
-import type { Car, CarSpecs, SearchQuery } from '../types/car.types';
+import type { Car, SearchQuery } from '../types/car.types.js';
 import { readFileSync } from 'fs';
 import { computeEvScore } from '../utils/ev-scoring.js';
 import { normalizeCarRecord } from '../utils/car-normalize.js';

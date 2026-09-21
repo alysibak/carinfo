@@ -1,67 +1,6 @@
 import axios from 'axios';
-import type { CarSpecs } from '../types/car.types.js';
 
 const NHTSA_BASE_URL = 'https://vpic.nhtsa.dot.gov/api/vehicles';
-
-export interface NHTSAMake {
-  Make_ID: number;
-  Make_Name: string;
-}
-
-export interface NHTSAModel {
-  Model_ID: number;
-  Model_Name: string;
-}
-
-export interface NHTSAVehicle {
-  Make: string;
-  Model: string;
-  ModelYear: string;
-  VehicleType: string;
-}
-
-/**
- * Fetch all vehicle makes from NHTSA API
- */
-export async function fetchAllMakes(): Promise<NHTSAMake[]> {
-  try {
-    const response = await axios.get(`${NHTSA_BASE_URL}/GetAllMakes?format=json`);
-    return response.data.Results || [];
-  } catch (error) {
-    console.error('Error fetching makes from NHTSA:', error);
-    return [];
-  }
-}
-
-/**
- * Fetch models for a specific make from NHTSA API
- */
-export async function fetchModelsForMake(make: string): Promise<NHTSAModel[]> {
-  try {
-    const response = await axios.get(
-      `${NHTSA_BASE_URL}/GetModelsForMake/${encodeURIComponent(make)}?format=json`
-    );
-    return response.data.Results || [];
-  } catch (error) {
-    console.error(`Error fetching models for ${make}:`, error);
-    return [];
-  }
-}
-
-/**
- * Fetch vehicle details by VIN
- */
-export async function fetchVehicleByVIN(vin: string): Promise<any> {
-  try {
-    const response = await axios.get(
-      `${NHTSA_BASE_URL}/DecodeVin/${vin}?format=json`
-    );
-    return response.data.Results || [];
-  } catch (error) {
-    console.error(`Error fetching vehicle with VIN ${vin}:`, error);
-    return null;
-  }
-}
 
 export interface VinEngine {
   /** Horsepower as published by NHTSA, or converted from NHTSA's kW figure. */
@@ -118,28 +57,36 @@ function cleanNum(v: unknown): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-// Decoded VIN specs are static, so a simple bounded in-memory cache is plenty
-// (and keeps us from re-hitting vPIC for the same VIN).
+// Decoded VIN specs are static, so a bounded LRU is plenty (and keeps us from
+// re-hitting vPIC for the same VIN). Re-inserting on hit makes eviction LRU
+// rather than insertion-order, so hot VINs survive a burst of cold ones.
 const vinCache = new Map<string, VinDecodeResult>();
 const VIN_CACHE_MAX = 500;
 
-/**
- * Decode a VIN against NHTSA's free vPIC database (no key required).
- * Returns curated fields incl. engine horsepower when NHTSA has it.
- */
-export async function decodeVin(vinRaw: string, modelYear?: number): Promise<VinDecodeResult> {
-  const vin = vinRaw.trim().toUpperCase();
-  const cacheKey = `${vin}|${modelYear ?? ''}`;
-  const cached = vinCache.get(cacheKey);
-  if (cached) return cached;
+// Coalesce concurrent decodes of the same VIN into one upstream request, so a
+// burst of identical lookups costs vPIC exactly one call.
+const inFlight = new Map<string, Promise<VinDecodeResult>>();
 
-  const url = `${NHTSA_BASE_URL}/DecodeVinValues/${encodeURIComponent(vin)}?format=json${
-    modelYear ? `&modelyear=${modelYear}` : ''
-  }`;
-  const response = await axios.get(url, { timeout: 12000 });
-  const r = (response.data?.Results || [])[0] || {};
+function cacheGet(key: string): VinDecodeResult | undefined {
+  const hit = vinCache.get(key);
+  if (hit === undefined) return undefined;
+  vinCache.delete(key);
+  vinCache.set(key, hit);
+  return hit;
+}
 
-  const errorCodes = String(r.ErrorCode ?? '').split(',').map((s: string) => s.trim());
+function cacheSet(key: string, value: VinDecodeResult): void {
+  if (vinCache.size >= VIN_CACHE_MAX) {
+    const oldest = vinCache.keys().next().value;
+    if (oldest !== undefined) vinCache.delete(oldest);
+  }
+  vinCache.set(key, value);
+}
+
+function mapVinResponse(vin: string, r: Record<string, unknown>): VinDecodeResult {
+  const errorCodes = String(r.ErrorCode ?? '')
+    .split(',')
+    .map((s) => s.trim());
   const hp = cleanNum(r.EngineHP);
   const kw = cleanNum(r.EngineKW);
   const engine: VinEngine = {
@@ -156,7 +103,7 @@ export async function decodeVin(vinRaw: string, modelYear?: number): Promise<Vin
     model: cleanStr(r.EngineModel),
   };
 
-  const result: VinDecodeResult = {
+  return {
     vin,
     decodedClean: errorCodes.includes('0'),
     errorText: cleanStr(r.ErrorText),
@@ -176,90 +123,44 @@ export async function decodeVin(vinRaw: string, modelYear?: number): Promise<Vin
     plantCity: cleanStr(r.PlantCity),
     manufacturer: cleanStr(r.Manufacturer),
   };
-
-  if (vinCache.size >= VIN_CACHE_MAX) {
-    const first = vinCache.keys().next().value;
-    if (first !== undefined) vinCache.delete(first);
-  }
-  vinCache.set(cacheKey, result);
-  return result;
 }
 
 /**
- * Fetch vehicles for a specific make/model/year
+ * Decode a VIN against NHTSA's free vPIC database (no key required).
+ * Returns curated fields incl. engine horsepower when NHTSA has it.
  */
-export async function fetchVehiclesByMakeModelYear(
-  make: string,
-  model: string,
-  year: number
-): Promise<any> {
-  try {
-    const response = await axios.get(
-      `${NHTSA_BASE_URL}/GetModelsForMakeYear/make/${encodeURIComponent(make)}/modelyear/${year}?format=json`
-    );
-    return response.data.Results || [];
-  } catch (error) {
-    console.error(`Error fetching vehicles for ${make} ${model} ${year}:`, error);
-    return [];
-  }
+export async function decodeVin(vinRaw: string, modelYear?: number): Promise<VinDecodeResult> {
+  const vin = vinRaw.trim().toUpperCase();
+  const cacheKey = `${vin}|${modelYear ?? ''}`;
+
+  const cached = cacheGet(cacheKey);
+  if (cached) return cached;
+
+  const pending = inFlight.get(cacheKey);
+  if (pending) return pending;
+
+  const url = `${NHTSA_BASE_URL}/DecodeVinValues/${encodeURIComponent(vin)}?format=json${
+    modelYear ? `&modelyear=${modelYear}` : ''
+  }`;
+
+  const request = axios
+    .get(url, { timeout: 12_000 })
+    .then((response) => {
+      const raw = (response.data?.Results || [])[0] || {};
+      const result = mapVinResponse(vin, raw as Record<string, unknown>);
+      cacheSet(cacheKey, result);
+      return result;
+    })
+    .finally(() => {
+      inFlight.delete(cacheKey);
+    });
+
+  inFlight.set(cacheKey, request);
+  return request;
 }
 
-/**
- * Fetch all models for a specific make and year
- */
-export async function fetchModelsForMakeYear(make: string, year: number): Promise<NHTSAModel[]> {
-  try {
-    const response = await axios.get(
-      `${NHTSA_BASE_URL}/GetModelsForMakeYear/make/${encodeURIComponent(make)}/modelyear/${year}?format=json`
-    );
-    return response.data.Results || [];
-  } catch (error) {
-    console.error(`Error fetching models for ${make} ${year}:`, error);
-    return [];
-  }
-}
-
-/**
- * Fetch safety ratings for a specific make/model/year
- */
-export async function fetchSafetyRatings(make: string, model: string, year: number): Promise<any> {
-  try {
-    const response = await axios.get(
-      `https://api.nhtsa.gov/SafetyRatings/modelyear/${year}/make/${encodeURIComponent(make)}/model/${encodeURIComponent(model)}?format=json`
-    );
-    return response.data.Results || [];
-  } catch (error) {
-    console.error(`Error fetching safety ratings for ${make} ${model} ${year}:`, error);
-    return [];
-  }
-}
-
-/**
- * Fetch detailed vehicle specifications using WMI (World Manufacturer Identifier)
- */
-export async function fetchVehicleSpecifications(make: string, model: string, year: number): Promise<any> {
-  try {
-    const response = await axios.get(
-      `${NHTSA_BASE_URL}/GetVehicleVariableValuesList/make/${encodeURIComponent(make)}/model/${encodeURIComponent(model)}/year/${year}?format=json`
-    );
-    return response.data.Results || [];
-  } catch (error) {
-    console.error(`Error fetching specifications for ${make} ${model} ${year}:`, error);
-    return [];
-  }
-}
-
-/**
- * Fetch all makes for a specific year
- */
-export async function fetchMakesForYear(year: number): Promise<NHTSAMake[]> {
-  try {
-    const response = await axios.get(
-      `${NHTSA_BASE_URL}/GetMakesForVehicleType/car?year=${year}&format=json`
-    );
-    return response.data.Results || [];
-  } catch (error) {
-    console.error(`Error fetching makes for year ${year}:`, error);
-    return [];
-  }
+/** Test seam — drops cached decodes so suites don't leak state between cases. */
+export function __resetVinCache(): void {
+  vinCache.clear();
+  inFlight.clear();
 }

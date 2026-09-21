@@ -6,7 +6,7 @@ import { normalizeSearchQuery } from '../utils/search-validation.js';
 /**
  * Get all makes
  */
-export function getMakes(req: Request, res: Response) {
+export function getMakes(_req: Request, res: Response) {
   try {
     const makes = carService.getAllMakes();
     res.json({ success: true, data: makes });
@@ -167,7 +167,7 @@ export function getSiblingConfigs(req: Request, res: Response) {
 /**
  * Get database statistics
  */
-export function getStatistics(req: Request, res: Response) {
+export function getStatistics(_req: Request, res: Response) {
   try {
     const stats = carService.getStatistics();
     res.json({ success: true, data: stats });

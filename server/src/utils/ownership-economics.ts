@@ -14,7 +14,6 @@ import {
   classifyMarketSegment,
   estimateDepreciation5Year,
   estimateMarketValue,
-  estimateNewVehicleMsrp,
   effectiveFuelType,
   type MarketValueEstimate,
 } from './vehicle-valuation.js';

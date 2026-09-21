@@ -1,4 +1,4 @@
-import type { BodyStyle, CarSpecs, FuelType } from '../types/car.types.js';
+import type { BodyStyle, CarSpecs } from '../types/car.types.js';
 
 export type VehicleCategory = 'car' | 'suv' | 'truck' | 'van';
 
