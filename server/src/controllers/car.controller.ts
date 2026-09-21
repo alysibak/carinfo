@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import * as carService from '../services/car.service.js';
 import * as dashboardService from '../services/dashboard.service.js';
-import { normalizeSearchQuery } from '../utils/search-validation.js';
+import { normalizeSearchQuery, parseSearchQueryString } from '../utils/search-validation.js';
 
 /**
  * Get all makes
@@ -34,6 +34,21 @@ export function getModelsByMake(req: Request, res: Response) {
 export function searchCars(req: Request, res: Response) {
   try {
     const query = normalizeSearchQuery(req.body);
+    const results = carService.searchCars(query);
+    res.json({ success: true, data: results });
+  } catch (error) {
+    console.error('Search error:', error);
+    res.status(500).json({ success: false, error: 'Failed to search cars' });
+  }
+}
+
+/**
+ * GET mirror of searchCars. Same engine, filters read from the query string,
+ * so the response is CDN-cacheable and the search is a shareable URL.
+ */
+export function searchCarsViaQuery(req: Request, res: Response) {
+  try {
+    const query = parseSearchQueryString(req.query as Record<string, unknown>);
     const results = carService.searchCars(query);
     res.json({ success: true, data: results });
   } catch (error) {

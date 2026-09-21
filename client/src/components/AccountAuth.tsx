@@ -107,11 +107,15 @@ export function AuthHeaderControls({ onNavigate }: { onNavigate?: () => void }) 
   );
 }
 
-/** Soft CTA when Clerk is not configured / user is anonymous. */
+/**
+ * Soft CTA for anonymous visitors.
+ *
+ * The key check used to live here, above the hook calls — a rules-of-hooks
+ * violation that only stayed benign because import.meta.env is frozen at build
+ * time. SignInPromptSlot owns that check now, so every hook below runs
+ * unconditionally.
+ */
 export function SignInPromptBanner() {
-  const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-  if (!publishableKey) return null;
-
   const { isSignedIn, isLoaded } = useAuth();
   const { openSignIn } = useClerk();
   const syncMode = useGarageStore((s) => s.syncMode);

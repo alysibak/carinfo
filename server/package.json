@@ -7,34 +7,36 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "fetch-nhtsa": "tsx scripts/fetch-nhtsa-real-data.ts",
-    "generate-db": "tsx scripts/generate-massive-database.ts",
-    "generate-portfolio-db": "tsx scripts/generate-portfolio-database.ts",
     "build-verified-db": "tsx scripts/build-verified-database.ts",
     "build-verified-db:fast": "tsx scripts/build-verified-database.ts --skip-nhtsa",
     "build-enrichment": "tsx scripts/build-content-enrichment.ts",
     "build-runtime-db": "tsx scripts/build-runtime-database.ts",
     "build-nhtsa-backfill": "tsx scripts/build-nhtsa-backfill.ts --",
     "build-horsepower": "tsx scripts/build-horsepower-enrichment.ts",
-    "test": "vitest run --config vitest.config.ts"
+    "test": "vitest run --config vitest.config.ts",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.scripts.json"
   },
   "dependencies": {
     "@clerk/backend": "^3.15.0",
-    "axios": "^1.6.2",
+    "axios": "^1.20.0",
+    "compression": "^1.8.2",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "express": "^4.18.2",
+    "express": "^4.22.3",
+    "express-rate-limit": "^8.7.0",
+    "helmet": "^8.3.0",
     "pg": "^8.22.0",
     "stripe": "^22.4.0"
   },
   "devDependencies": {
+    "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/node": "^20.10.5",
     "@types/pg": "^8.20.3",
-    "csv-parse": "^5.6.0",
+    "csv-parse": "^7.0.2",
+    "exceljs": "^4.4.0",
     "tsx": "^4.7.0",
-    "typescript": "5.9.3",
-    "xlsx": "^0.18.5"
+    "typescript": "5.9.3"
   }
 }

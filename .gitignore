@@ -1,8 +1,10 @@
 # EPA/NHTSA raw ingestion cache
 server/data/raw/
 
-# Runtime site visit counter (local / deploy ephemeral OK)
+# Runtime site visit counter (local / deploy ephemeral OK).
+# The doubled path is an artifact of running from server/ — see utils/data-paths.ts.
 server/data/site-stats.json
+server/server/
 
 # Logs
 logs

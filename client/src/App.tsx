@@ -4,6 +4,7 @@ import Landing from './pages/Landing';
 import Layout from './components/Layout';
 import ScrollToTop from './components/ScrollToTop';
 import ErrorBoundary from './components/ErrorBoundary';
+import AuthProvider from './components/AuthProvider';
 
 const Explore = lazy(() => import('./pages/Explore'));
 const VehicleGrid = lazy(() => import('./pages/VehicleGrid'));
@@ -42,23 +43,27 @@ function App() {
           <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<Landing />} />
-              <Route element={<Layout />}>
-                <Route path="/browse" element={<Browse />} />
-                <Route path="/explore/:category" element={<Explore />} />
-                <Route path="/vehicles/:category/:subcategory" element={<VehicleGrid />} />
-                <Route path="/car/:id" element={<CarDetail />} />
-                <Route path="/home" element={<Home />} />
-                <Route path="/compare" element={<Compare />} />
-                <Route path="/collection/:collectionId" element={<Collection />} />
-                <Route path="/smart-search" element={<SmartSearch />} />
-                <Route path="/garage" element={<DreamGarage />} />
-                <Route path="/shared-garage" element={<SharedGarage />} />
-                <Route path="/battle" element={<BattleMode />} />
-                <Route path="/value-matrix" element={<ValueMatrix />} />
-                <Route path="/vin" element={<VinDecoder />} />
-                <Route path="/methodology" element={<Methodology />} />
-                <Route path="/account" element={<Account />} />
-                <Route path="*" element={<NotFound />} />
+              {/* Auth is scoped to the app shell; the landing route above
+                  never loads the Clerk chunk. */}
+              <Route element={<AuthProvider />}>
+                <Route element={<Layout />}>
+                  <Route path="/browse" element={<Browse />} />
+                  <Route path="/explore/:category" element={<Explore />} />
+                  <Route path="/vehicles/:category/:subcategory" element={<VehicleGrid />} />
+                  <Route path="/car/:id" element={<CarDetail />} />
+                  <Route path="/home" element={<Home />} />
+                  <Route path="/compare" element={<Compare />} />
+                  <Route path="/collection/:collectionId" element={<Collection />} />
+                  <Route path="/smart-search" element={<SmartSearch />} />
+                  <Route path="/garage" element={<DreamGarage />} />
+                  <Route path="/shared-garage" element={<SharedGarage />} />
+                  <Route path="/battle" element={<BattleMode />} />
+                  <Route path="/value-matrix" element={<ValueMatrix />} />
+                  <Route path="/vin" element={<VinDecoder />} />
+                  <Route path="/methodology" element={<Methodology />} />
+                  <Route path="/account" element={<Account />} />
+                  <Route path="*" element={<NotFound />} />
+                </Route>
               </Route>
             </Routes>
           </Suspense>

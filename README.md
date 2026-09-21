@@ -850,10 +850,16 @@ Body-type PNGs: `sedan` · `suv` · `truck` · `coupe` · `hatchback` · `wagon`
 | `audit-valuation-integrity.mjs` | Audit |
 | `verify-valuation-fixes.mjs` | Audit |
 | `measure-value-shift.mjs` | Audit |
-| `generate-massive-database.ts` | **Deprecated** |
-| `generate-portfolio-database.ts` | **Deprecated** |
-| `generate-comprehensive-database.cjs` | **Deprecated** |
-| `fetch-nhtsa-real-data.ts` | **Deprecated** |
+| `build-runtime-database.ts` | **Production** (pre-enriches for deploy) |
+
+> Four deprecated generators — `generate-massive-database.ts`,
+> `generate-portfolio-database.ts`, `generate-comprehensive-database.cjs` and
+> `fetch-nhtsa-real-data.ts` — were removed. They synthesised horsepower,
+> 0–60 times, dimensions and MSRP with `Math.random()` and wrote the results
+> into `cars.json` with no provenance marker, which is the opposite of what
+> this project promises. They were still wired to `npm run generate-db`, so
+> running that command silently replaced the verified EPA database with
+> invented numbers.
 
 ---
 
@@ -1006,8 +1012,8 @@ No `.env` required for local development of the public catalog.
 | `build-horsepower` | Test car list HP |
 | `build-enrichment` | EPA extras + NHTSA indexes |
 | `build-nhtsa-backfill` | NHTSA API backfill |
-| `fetch-nhtsa` | deprecated fetch |
-| `generate-db` | deprecated synthetic |
+| `build-runtime-db` | Pre-enrich `cars-ready.json` for deploy |
+| `typecheck` | Typecheck `src/` and `scripts/` |
 
 ### npm scripts — client
 

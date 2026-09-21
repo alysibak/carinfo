@@ -1,10 +1,19 @@
-import { FREE_GARAGE_LIMIT, type AccountUser, type UserPlan } from '../types/account.types.js';
+import {
+  FREE_GARAGE_LIMIT,
+  PRO_GARAGE_LIMIT,
+  type AccountUser,
+  type UserPlan,
+} from '../types/account.types.js';
 import { ensureSchema, getPool, isDatabaseConfigured } from './pool.js';
 
 export class GarageLimitError extends Error {
   readonly limit: number;
-  constructor(limit: number) {
-    super(`Free plan allows up to ${limit} saved vehicles. Upgrade to Pro for unlimited garage.`);
+  constructor(limit: number, plan: UserPlan = 'free') {
+    super(
+      plan === 'pro'
+        ? `A garage can hold up to ${limit} vehicles.`
+        : `Free plan allows up to ${limit} saved vehicles. Upgrade to Pro for unlimited garage.`,
+    );
     this.name = 'GarageLimitError';
     this.limit = limit;
   }
@@ -102,18 +111,28 @@ export async function setGarageIds(
 ): Promise<string[]> {
   await ensureSchema();
   const unique = Array.from(new Set(carIds.filter(Boolean)));
+
   if (plan !== 'pro' && unique.length > FREE_GARAGE_LIMIT) {
     throw new GarageLimitError(FREE_GARAGE_LIMIT);
+  }
+  // "Unlimited" is a plan promise, not an invitation to hold a pool connection
+  // open while we insert a hundred thousand rows. Pro still gets a hard ceiling.
+  if (unique.length > PRO_GARAGE_LIMIT) {
+    throw new GarageLimitError(PRO_GARAGE_LIMIT, 'pro');
   }
 
   const client = await getPool().connect();
   try {
     await client.query('BEGIN');
     await client.query(`DELETE FROM garage_items WHERE user_id = $1`, [userId]);
-    for (const carId of unique) {
+    if (unique.length > 0) {
+      // One statement instead of one round trip per car. A 200-car pro garage
+      // went from 201 queries to 2.
       await client.query(
-        `INSERT INTO garage_items (user_id, car_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-        [userId, carId],
+        `INSERT INTO garage_items (user_id, car_id)
+         SELECT $1, car_id FROM unnest($2::text[]) AS car_id
+         ON CONFLICT DO NOTHING`,
+        [userId, unique],
       );
     }
     await client.query('COMMIT');

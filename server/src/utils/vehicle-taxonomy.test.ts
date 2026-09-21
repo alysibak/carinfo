@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { CarSpecs } from '../types/car.types.js';
+import type { Car, CarSpecs } from '../types/car.types.js';
 import {
   canonicalizeDisplayModel,
   classifyShoppingSegment,
@@ -7,7 +7,7 @@ import {
 } from '../utils/vehicle-taxonomy.js';
 import { findCar } from '../__tests__/helpers/loadCars.js';
 
-function minimalCar(overrides: Partial<CarSpecs> & Pick<CarSpecs, 'make' | 'model'>): CarSpecs {
+function minimalCar(overrides: Partial<Car> & Pick<CarSpecs, 'make' | 'model'>): Car {
   return {
     id: 'test',
     year: 2020,

@@ -34,7 +34,8 @@ import axios from 'axios';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+import { parse as parseCsv } from 'csv-parse/sync';
 import type { Car } from '../src/types/car.types.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -235,10 +236,67 @@ function pushVariant(map: Map<string, Variant[]>, key: string, variant: Variant)
   else map.set(key, [variant]);
 }
 
-function parseTestCarFile(path: string, idx: Indexes): number {
-  const wb = XLSX.readFile(path, { raw: true });
-  const ws = wb.Sheets[wb.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: '' });
+/** Header-keyed rows from an EPA CSV export. */
+function readCsvRows(path: string): Record<string, unknown>[] {
+  return parseCsv(readFileSync(path), {
+    columns: (header: string[]) => header.map((h) => String(h ?? '').trim()),
+    skip_empty_lines: true,
+    relax_column_count: true,
+    bom: true,
+  }) as Record<string, unknown>[];
+}
+
+/**
+ * Read the first worksheet as an array of header-keyed row objects.
+ *
+ * Replaces SheetJS's `sheet_to_json`. The npm `xlsx` package carries an
+ * unpatched prototype-pollution and ReDoS advisory with no fix available —
+ * SheetJS moved distribution off npm and the published package is frozen at
+ * the vulnerable version.
+ */
+async function readSheetRows(path: string): Promise<Record<string, unknown>[]> {
+  // EPA publishes older model years as CSV and newer ones as xlsx. SheetJS
+  // sniffed the format; ExcelJS does not, so the split is explicit.
+  if (/\.csv$/i.test(path)) return readCsvRows(path);
+
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.readFile(path);
+  const sheet = workbook.worksheets[0];
+  if (!sheet) return [];
+
+  const headerRow = sheet.getRow(1);
+  const headers: string[] = [];
+  headerRow.eachCell({ includeEmpty: true }, (cell, col) => {
+    headers[col] = String(cell.value ?? '').trim();
+  });
+  if (headers.filter(Boolean).length === 0) return [];
+
+  const rows: Record<string, unknown>[] = [];
+  sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+    if (rowNumber === 1) return;
+    const record: Record<string, unknown> = {};
+    for (let col = 1; col < headers.length; col += 1) {
+      const key = headers[col];
+      if (!key) continue;
+      const value = row.getCell(col).value;
+      // ExcelJS returns rich objects for formulas and hyperlinks; the test-car
+      // sheets only need the displayed scalar.
+      if (value !== null && typeof value === 'object') {
+        if ('result' in value) record[key] = (value as { result: unknown }).result ?? '';
+        else if ('text' in value) record[key] = (value as { text: unknown }).text ?? '';
+        else record[key] = String(value);
+      } else {
+        record[key] = value ?? '';
+      }
+    }
+    rows.push(record);
+  });
+
+  return rows;
+}
+
+async function parseTestCarFile(path: string, idx: Indexes): Promise<number> {
+  const rows = await readSheetRows(path);
   if (rows.length === 0) return 0;
 
   const ex = buildExtractor(Object.keys(rows[0]));
@@ -393,7 +451,7 @@ async function main(): Promise<void> {
   const idx: Indexes = { byMakeYear: new Map(), byEngineYear: new Map() };
   let totalRows = 0;
   for (const file of files) {
-    const n = parseTestCarFile(file, idx);
+    const n = await parseTestCarFile(file, idx);
     totalRows += n;
     console.log(`  ${file.split(/[\\/]/).pop()}: ${n} rows with horsepower`);
   }

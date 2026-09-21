@@ -10,8 +10,11 @@ import {
   removeGarageId,
   setGarageIds,
 } from '../db/user-store.js';
-import { FREE_GARAGE_LIMIT } from '../types/account.types.js';
+import { FREE_GARAGE_LIMIT, PRO_GARAGE_LIMIT } from '../types/account.types.js';
 import { isClerkConfigured } from '../middleware/auth.js';
+
+/** Hard ceiling on one sync payload, checked before any database work. */
+const MAX_GARAGE_PAYLOAD = PRO_GARAGE_LIMIT;
 
 function storageUnavailable(res: Response): boolean {
   if (!isAccountsStorageReady()) {
@@ -93,13 +96,27 @@ export async function putMyGarage(req: Request, res: Response) {
     if (storageUnavailable(res)) return;
     const auth = req.authUser!;
     const user = await ensureUser(auth.userId, auth.email);
-    const carIds = Array.isArray(req.body?.carIds)
-      ? (req.body.carIds as unknown[]).map(String)
-      : null;
-    if (!carIds) {
+    if (!Array.isArray(req.body?.carIds)) {
       res.status(400).json({ success: false, error: 'carIds array required' });
       return;
     }
+
+    // Reject oversized payloads before touching the database, and drop IDs that
+    // do not name a real vehicle. POST /garage/items already validated its one
+    // ID; this path used to accept anything, so a sync could plant junk rows
+    // that then failed to resolve on every subsequent read.
+    const raw = req.body.carIds as unknown[];
+    if (raw.length > MAX_GARAGE_PAYLOAD) {
+      res.status(413).json({
+        success: false,
+        error: `A garage sync may contain at most ${MAX_GARAGE_PAYLOAD} vehicles.`,
+      });
+      return;
+    }
+
+    const carIds = raw
+      .filter((id): id is string => typeof id === 'string' && id.length > 0 && id.length <= 128)
+      .filter((id) => carService.getCarById(id) != null);
 
     try {
       const ids = await setGarageIds(user.id, carIds, user.plan);

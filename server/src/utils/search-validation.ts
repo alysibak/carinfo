@@ -72,3 +72,71 @@ export function normalizeSearchQuery(body: unknown): SearchQuery {
 
   return query;
 }
+
+// ─── Query-string form ────────────────────────────────────────────────────────
+// GET /api/cars/search?q=…&make=toyota,honda&priceMin=20000&sort=price:asc
+//
+// A GET mirror of the POST body above. Worth having for two reasons: CDNs cache
+// GET and not POST, and a search becomes a URL you can link, bookmark and share.
+
+function csv(value: unknown): string[] | undefined {
+  if (typeof value !== 'string' || !value.trim()) return undefined;
+  const parts = value
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return parts.length ? parts : undefined;
+}
+
+function num(value: unknown): number | undefined {
+  if (typeof value !== 'string' || !value.trim()) return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function range(min: unknown, max: unknown): { min?: number; max?: number } | undefined {
+  const lo = num(min);
+  const hi = num(max);
+  if (lo == null && hi == null) return undefined;
+  return { min: lo, max: hi };
+}
+
+/** Coerce Express's `req.query` into the same SearchQuery shape as the POST body. */
+export function parseSearchQueryString(q: Record<string, unknown>): SearchQuery {
+  const query: SearchQuery = {
+    query: typeof q.q === 'string' && q.q.trim() ? q.q.trim() : undefined,
+    limit: num(q.limit),
+    offset: num(q.offset),
+  };
+
+  if (q.collapse === '1' || q.collapse === 'true') query.collapseByModel = true;
+  else if (q.collapse === '0' || q.collapse === 'false') query.collapseByModel = false;
+
+  const filters = {
+    make: csv(q.make),
+    model: csv(q.model),
+    bodyStyle: csv(q.bodyStyle),
+    fuelType: csv(q.fuelType),
+    transmission: csv(q.transmission),
+    driveType: csv(q.driveType),
+    countryOfOrigin: csv(q.country),
+    year: range(q.yearMin, q.yearMax),
+    horsepower: range(q.hpMin, q.hpMax),
+    displacement: range(q.dispMin, q.dispMax),
+    fuelEconomy: range(q.mpgMin, q.mpgMax),
+    price: range(q.priceMin, q.priceMax),
+  };
+  if (Object.values(filters).some((v) => v !== undefined)) {
+    query.filters = filters;
+  }
+
+  // `sort=price:asc` — one param instead of two, so links stay readable.
+  if (typeof q.sort === 'string') {
+    const [field, order = 'desc'] = q.sort.split(':');
+    if (SORT_FIELDS.has(field) && (order === 'asc' || order === 'desc')) {
+      query.sort = { field: field as NonNullable<SearchQuery['sort']>['field'], order };
+    }
+  }
+
+  return query;
+}

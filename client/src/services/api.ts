@@ -52,32 +52,31 @@ export async function getSearchSuggestions(q = '', limit = 8): Promise<SearchSug
   return response.data.data;
 }
 
-export async function getSiteVisitCount(): Promise<number> {
+export interface SiteVisitStats {
+  visits: number;
+  /** False when the server cannot persist the count across restarts. */
+  durable: boolean;
+}
+
+function toVisitStats(payload: unknown): SiteVisitStats {
+  const data = (payload ?? {}) as { visits?: unknown; durable?: unknown };
+  return {
+    visits: Number(data.visits) || 0,
+    // Absent `durable` means an older server; assume not durable rather than
+    // presenting a number we cannot stand behind.
+    durable: data.durable === true,
+  };
+}
+
+export async function getSiteVisitCount(): Promise<SiteVisitStats> {
   const response = await api.get('/stats/site');
-  return Number(response.data?.data?.visits) || 0;
+  return toVisitStats(response.data?.data);
 }
 
 /** Record one visit for this browser session; returns updated total. */
-export async function recordSiteVisit(): Promise<number> {
+export async function recordSiteVisit(): Promise<SiteVisitStats> {
   const response = await api.post('/stats/visit');
-  return Number(response.data?.data?.visits) || 0;
-}
-
-/**
- * Fetch every match for a query by paginating past the server's per-request
- * limit (500). Capped at maxRecords to avoid hammering the API.
- */
-export async function searchAllCars(query: SearchQuery, maxRecords = 3000): Promise<SearchResults> {
-  const PAGE = 500;
-  const first = await searchCars({ ...query, limit: PAGE, offset: 0 });
-  const all = [...first.results];
-  const target = Math.min(first.total, maxRecords);
-  while (all.length < target) {
-    const page = await searchCars({ ...query, limit: PAGE, offset: all.length });
-    if (page.results.length === 0) break;
-    all.push(...page.results);
-  }
-  return { results: all, total: first.total, hasMore: all.length < first.total };
+  return toVisitStats(response.data?.data);
 }
 
 /**
