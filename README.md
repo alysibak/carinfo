@@ -779,6 +779,35 @@ Landing detects 17-char VIN in search → redirects to `/vin`.
 
 ---
 
+## Search engines and link previews
+
+The site is a single-page app, so before this existed every URL served the
+same empty `<div id="root">` with a generic title. Link unfurlers (Slack,
+iMessage, X, Facebook) never run JavaScript, so a shared vehicle link always
+previewed as "CarInfo".
+
+`server/src/seo/` now renders the HTML shell for the pages that get shared and
+indexed. The SPA is unchanged — it boots from the same `index.html` and replaces
+the server-rendered content on mount.
+
+| Route | What the server adds |
+|-------|---------------------|
+| `/car/:id` | Title, description, canonical, Open Graph, schema.org `Car` JSON-LD, and a readable spec summary inside `#root` (also what no-JS visitors see). Unknown ids get a real **404** with `noindex`. |
+| `/compare?cars=a,b` | "Compare: X vs Y" title and description for link previews, a normalized canonical, `noindex` (combinations of indexed pages). Fewer than two known cars serves the plain SPA shell. |
+
+Structured data deliberately has **no `offers`**: our prices are estimates, and
+schema.org `Offer` asserts a real sale price.
+
+The build writes `robots.txt` and a chunked `sitemap.xml` (every vehicle, newest
+model years first) into `client/dist`. Both need an absolute origin — set
+`SITE_URL` (or `APP_ORIGIN`; Vercel's production domain is used otherwise).
+
+On Vercel, `vercel.json` rewrites `/car/*` and `/compare` to the API function,
+and the rendered HTML is CDN-cached (`s-maxage`), so the function runs once per
+page per cache period rather than per visit.
+
+---
+
 ## Shared code between client and server
 
 The client reuses server modules through three Vite/TypeScript aliases. Each

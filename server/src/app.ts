@@ -9,6 +9,7 @@ import vinRoutes from './routes/vin.routes.js';
 import meRoutes from './routes/me.routes.js';
 import billingRoutes from './routes/billing.routes.js';
 import statsRoutes from './routes/stats.routes.js';
+import seoRoutes from './seo/seo.routes.js';
 import * as carService from './services/car.service.js';
 import * as billingController from './controllers/billing.controller.js';
 import { resolveDataFile } from './utils/data-paths.js';
@@ -92,6 +93,10 @@ app.get('/api/health', (_req, res) => {
 
 // Unknown /api/* paths get a JSON 404 rather than falling through to the SPA.
 app.use('/api', notFoundHandler);
+
+// Server-rendered shells for shareable/indexable pages (vehicle, compare).
+// Inert until the client is built; see seo/seo.routes.ts.
+app.use(seoRoutes);
 
 // Terminal error handler — must be registered last.
 app.use(errorHandler);

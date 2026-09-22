@@ -4,8 +4,23 @@ const DEFAULT_TITLE = 'CarInfo | EPA-verified specs and honest vehicle estimates
 const DEFAULT_DESCRIPTION =
   'Search and compare 28,000+ vehicles with EPA-verified specs, NHTSA safety when available, and clearly labeled Ontario/CAD market estimates.';
 
+/** The path the document was served for; server-rendered tags describe it. */
+const INITIAL_PATH = typeof window !== 'undefined' ? window.location.pathname : '';
+
+/**
+ * Remove page-specific tags the server rendered (canonical, og:url, JSON-LD,
+ * robots noindex) once the SPA has navigated elsewhere. They describe the page
+ * the document was served for; left in place they would claim car A's
+ * canonical and structured data while showing car B.
+ */
+function dropServerTagsAfterNavigation(): void {
+  if (window.location.pathname === INITIAL_PATH) return;
+  document.querySelectorAll('[data-ssr]').forEach((el) => el.remove());
+}
+
 export function usePageMeta(title?: string, description?: string) {
   useEffect(() => {
+    dropServerTagsAfterNavigation();
     const fullTitle = title ? `${title} | CarInfo` : DEFAULT_TITLE;
     const desc = description ?? DEFAULT_DESCRIPTION;
     document.title = fullTitle;

@@ -13,7 +13,12 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "types": ["node"]
+    "types": ["node"],
+    "paths": {
+      "@carinfo/types/*": ["./src/types/*"],
+      "@carinfo/shared/*": ["./src/shared/*"],
+      "@carinfo/config/*": ["./src/config/*"]
+    }
   },
   "include": ["scripts/**/*.ts", "src/**/*.ts"]
 }
