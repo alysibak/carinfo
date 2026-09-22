@@ -1,8 +1,9 @@
 import { lazy } from 'react';
 import { Outlet } from 'react-router-dom';
+import { CLERK_PUBLISHABLE_KEY } from '../utils/authConfig';
 
 /**
- * Clerk is ~200 KB of JavaScript that the landing page has no use for.
+ * Clerk is ~80 KB of JavaScript that the landing page has no use for.
  *
  * Importing ClerkProvider in main.tsx put all of it in the entry chunk, so
  * every first-time visitor paid for the sign-in system before seeing a single
@@ -22,18 +23,12 @@ import { Outlet } from 'react-router-dom';
  */
 const ClerkShell = lazy(() => import('./ClerkShell'));
 
-const clerkKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
-
-export function isAuthConfigured(): boolean {
-  return Boolean(clerkKey);
-}
-
 /** Layout route element: nested routes, wrapped in Clerk's provider if configured. */
 export default function AuthProvider() {
-  if (!clerkKey) return <Outlet />;
+  if (!CLERK_PUBLISHABLE_KEY) return <Outlet />;
 
   return (
-    <ClerkShell publishableKey={clerkKey}>
+    <ClerkShell publishableKey={CLERK_PUBLISHABLE_KEY}>
       <Outlet />
     </ClerkShell>
   );

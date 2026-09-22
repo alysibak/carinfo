@@ -8,6 +8,7 @@ import {
   mpgToLPer100Km,
   mpgeToKwhPer100Km,
   type RegionalAssumptions,
+  type RegionId,
 } from '../config/regional-assumptions.js';
 import {
   applyValuationReliabilityGuard,
@@ -385,7 +386,7 @@ function practicalityNote(car: CarSpecs, marketMid: number): string {
 export function computeOwnershipEconomics(
   car: CarSpecs,
   _segment: CarSpecs[],
-  regionId?: import('../config/regional-assumptions.js').RegionId,
+  regionId?: RegionId,
 ): OwnershipEconomics {
   const region = getRegionalAssumptions(regionId);
   const annualMiles = annualKmToMiles(region.annualKm);

@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { isAxiosError } from 'axios';
 import type { CarDashboard, CarSpecs, SearchQuery, SearchResults } from '../types/car.types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api';
@@ -116,9 +116,38 @@ export async function compareCars(ids: string[]): Promise<CarSpecs[]> {
 }
 
 /**
+ * The server's own message for a failed request, when it sent one.
+ *
+ * Every API error body has the shape `{ success: false, error: string }`, so a
+ * 4xx carries something the user can act on ("That doesn't look like a valid
+ * VIN"). Network failures and 5xx bodies without a message return null, and the
+ * caller falls back to its own copy.
+ */
+export function apiErrorMessage(error: unknown): string | null {
+  if (!isAxiosError(error)) return null;
+  const body = error.response?.data as { error?: unknown } | undefined;
+  return typeof body?.error === 'string' && body.error.trim() ? body.error : null;
+}
+
+/** Shape of GET /cars/stats/overview (see computeStatistics on the server). */
+export interface DatabaseStatistics {
+  totalCars: number;
+  totalMakes: number;
+  totalCountries: number;
+  countries: string[];
+  yearRange: { min: number; max: number };
+  bodyStyles: Record<string, number>;
+  fuelTypes: Record<string, number>;
+  lastUpdated: string;
+  dataSources: string[];
+  provenanceCounts: { epa: number; nhtsa: number; estimated: number; curated: number };
+  coverage: { fuelEconomy: number; nhtsaSafety: number; estimatedPrice: number };
+}
+
+/**
  * Get database statistics
  */
-export async function getStatistics(): Promise<any> {
+export async function getStatistics(): Promise<DatabaseStatistics> {
   const response = await api.get('/cars/stats/overview');
   return response.data.data;
 }

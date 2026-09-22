@@ -10,7 +10,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '..');
 const CSV = path.join(root, 'data/raw/vehicles.csv');
 const CACHE = path.join(root, 'data/raw/nhtsa-enrichment-cache.json');
-const CARS = path.join(root, 'data/cars.json');
 
 // ---------- Part 3: NHTSA cache analysis (already-fetched data) ----------
 function auditNhtsaCache() {

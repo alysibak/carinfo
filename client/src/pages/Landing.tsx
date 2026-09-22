@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import PersonaQuiz, { PersonaResult } from '../components/PersonaQuiz';
+import PersonaQuiz, { type PersonaResult } from '../components/PersonaQuiz';
 import SearchBar from '../components/SearchBar';
 import SiteHeader from '../components/SiteHeader';
 import VehiclePlaceholder from '../components/VehiclePlaceholder';

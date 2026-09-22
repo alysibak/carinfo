@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react';
-import { isAuthConfigured } from './AuthProvider';
+import { isAuthConfigured } from '../utils/authConfig';
 
 // Lazy so that SiteHeader — which every app-shell page renders eagerly — does
 // not drag @clerk/clerk-react into the entry chunk. The header renders without

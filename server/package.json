@@ -14,7 +14,8 @@
     "build-nhtsa-backfill": "tsx scripts/build-nhtsa-backfill.ts --",
     "build-horsepower": "tsx scripts/build-horsepower-enrichment.ts",
     "test": "vitest run --config vitest.config.ts",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.scripts.json"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.scripts.json",
+    "validate:data": "tsx scripts/validate-data.ts"
   },
   "dependencies": {
     "@clerk/backend": "^3.15.0",

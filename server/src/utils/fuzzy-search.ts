@@ -110,7 +110,7 @@ export function modelPhraseMatches(model: string, phrase: string): boolean {
   if (family.startsWith(`${p} `)) return true;
 
   // "f 150" / "f150" vs family "f-150" — equality only (avoid cx-5 → cx-50)
-  const compact = (s: string) => s.replace(/[\s\-]/g, '');
+  const compact = (s: string) => s.replace(/[\s-]/g, '');
   return compact(family) === compact(p);
 }
 

@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react';
-import { isAuthConfigured } from './AuthProvider';
+import { isAuthConfigured } from '../utils/authConfig';
 
 const SignInPromptBanner = lazy(() =>
   import('./AccountAuth').then((m) => ({ default: m.SignInPromptBanner })),

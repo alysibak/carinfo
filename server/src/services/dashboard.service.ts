@@ -1,4 +1,5 @@
 import type { Car, CarDashboard } from '../types/car.types.js';
+import type { RegionId } from '../config/regional-assumptions.js';
 import * as carService from './car.service.js';
 import {
   getSegment,
@@ -14,7 +15,7 @@ import { findSimilarCars } from '../utils/similar-vehicles.js';
 
 export function getCarDashboard(
   id: string,
-  regionId?: import('../config/regional-assumptions.js').RegionId,
+  regionId?: RegionId,
 ): CarDashboard | null {
   const car = carService.getCarById(id);
   if (!car) return null;

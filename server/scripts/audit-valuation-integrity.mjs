@@ -16,8 +16,7 @@ const {
   effectiveFuelType,
   classifyEvRetentionTier,
 } = await import('../dist/utils/vehicle-valuation.js');
-const { computeOwnershipEconomics, calculateResaleImpact } = await import('../dist/utils/ownership-economics.js');
-const { usdAnchorToCadValue } = await import('../dist/config/regional-assumptions.js');
+const { calculateResaleImpact } = await import('../dist/utils/ownership-economics.js');
 
 const data = JSON.parse(fs.readFileSync(path.join(root, 'data/cars.json'), 'utf8'));
 const cars = data.cars;
@@ -173,12 +172,6 @@ function simulateTrimLabel(trim, model) {
 
 function auditTrimLabels() {
   console.log('\n=== PART 2: Trim label leaks ===');
-  const samples = [
-    ...cars.filter((c) => c.make === 'Porsche' && c.model === 'Macan').slice(0, 5),
-    ...cars.filter((c) => c.make === 'Toyota' && c.model.includes('Camry')).slice(0, 5),
-    ...cars.filter((c) => c.year < 2000).slice(0, 5),
-    ...cars.filter((c) => c.engine?.fuelType === 'electric').slice(0, 5),
-  ];
   const leaks = [];
   for (const c of cars) {
     const label = simulateTrimLabel(c.trim, c.model);

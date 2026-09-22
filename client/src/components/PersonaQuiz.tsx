@@ -11,11 +11,31 @@ export interface PersonaResult {
   usage: 'commute' | 'family' | 'fun' | 'work';
 }
 
+interface QuizOption<T extends string> {
+  label: string;
+  value: T;
+  desc: string;
+}
+
+const PRIORITY_OPTIONS: QuizOption<PersonaResult['priority']>[] = [
+  { label: 'Fuel economy', value: 'mpg', desc: 'Save money at the pump' },
+  { label: 'Performance', value: 'power', desc: 'Speed and acceleration' },
+  { label: 'Safety', value: 'safety', desc: 'Protect your family' },
+  { label: 'Space', value: 'space', desc: 'Room for everyone' },
+];
+
+const USAGE_OPTIONS: QuizOption<PersonaResult['usage']>[] = [
+  { label: 'Daily commute', value: 'commute', desc: 'Reliable transportation' },
+  { label: 'Family hauler', value: 'family', desc: 'Kids, cargo, adventures' },
+  { label: 'Weekend fun', value: 'fun', desc: 'Curves and open roads' },
+  { label: 'Work vehicle', value: 'work', desc: 'Towing and hauling' },
+];
+
 export default function PersonaQuiz({ onComplete }: PersonaQuizProps) {
   const [step, setStep] = useState(1);
   const [answers, setAnswers] = useState<Partial<PersonaResult>>({});
 
-  const handleAnswer = (key: keyof PersonaResult, value: any) => {
+  const handleAnswer = <K extends keyof PersonaResult>(key: K, value: PersonaResult[K]) => {
     const newAnswers = { ...answers, [key]: value };
     setAnswers(newAnswers);
 
@@ -118,12 +138,7 @@ export default function PersonaQuiz({ onComplete }: PersonaQuizProps) {
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-4xl mx-auto">
-              {[
-                { label: 'Fuel economy', value: 'mpg', desc: 'Save money at the pump' },
-                { label: 'Performance', value: 'power', desc: 'Speed and acceleration' },
-                { label: 'Safety', value: 'safety', desc: 'Protect your family' },
-                { label: 'Space', value: 'space', desc: 'Room for everyone' },
-              ].map((option) => (
+              {PRIORITY_OPTIONS.map((option) => (
                 <button
                   key={option.value}
                   onClick={() => handleAnswer('priority', option.value)}
@@ -147,12 +162,7 @@ export default function PersonaQuiz({ onComplete }: PersonaQuizProps) {
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-4xl mx-auto">
-              {[
-                { label: 'Daily commute', value: 'commute', desc: 'Reliable transportation' },
-                { label: 'Family hauler', value: 'family', desc: 'Kids, cargo, adventures' },
-                { label: 'Weekend fun', value: 'fun', desc: 'Curves and open roads' },
-                { label: 'Work vehicle', value: 'work', desc: 'Towing and hauling' },
-              ].map((option) => (
+              {USAGE_OPTIONS.map((option) => (
                 <button
                   key={option.value}
                   onClick={() => handleAnswer('usage', option.value)}

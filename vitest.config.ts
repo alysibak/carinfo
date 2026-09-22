@@ -6,6 +6,13 @@ const configDir = path.resolve(__dirname, 'server/src/config');
 
 export default defineConfig({
   test: {
+    coverage: {
+      provider: 'v8',
+      reporter: ['text-summary', 'html', 'lcov'],
+      reportsDirectory: 'coverage',
+      include: ['server/src/**/*.ts', 'client/src/**/*.{ts,tsx}'],
+      exclude: ['**/*.test.{ts,tsx}', '**/__tests__/**', '**/test/**', '**/*.d.ts'],
+    },
     projects: [
       {
         extends: true,

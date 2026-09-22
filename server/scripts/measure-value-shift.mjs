@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const { estimateMarketValue, effectiveFuelType } = await import('../dist/utils/vehicle-valuation.js');
+const { estimateMarketValue } = await import('../dist/utils/vehicle-valuation.js');
 const { inferEffectiveFuelType } = await import('../dist/utils/fuel-type-inference.js');
 const { normalizeCarRecord } = await import('../dist/utils/car-normalize.js');
 
@@ -15,7 +15,6 @@ let phevReclassified = 0;
 let valueIncreased = 0;
 let valueDecreased = 0;
 let totalDelta = 0;
-const luxuryMakes = new Set(['BMW', 'Mercedes-Benz', 'Audi', 'Porsche', 'Lexus', 'Jaguar', 'Land Rover']);
 
 for (const car of cars) {
   const wasElectric = car.engine.fuelType === 'electric';

@@ -1,6 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { decodeVin, type VinDecodeResult } from '../services/api';
+import { apiErrorMessage, decodeVin, type VinDecodeResult } from '../services/api';
 import { InfoTip } from '../components/ui';
 import { searchQueryToParams } from '../utils/searchParams';
 import { usePageMeta } from '../utils/pageMeta';
@@ -57,8 +57,11 @@ export default function VinDecoder() {
     try {
       const data = await decodeVin(v);
       setResult(data);
-    } catch (e: any) {
-      setError(e?.response?.data?.error ?? 'VIN not found in NHTSA records. Check the 17-character code and try again.');
+    } catch (e: unknown) {
+      setError(
+        apiErrorMessage(e) ??
+          'VIN not found in NHTSA records. Check the 17-character code and try again.',
+      );
     } finally {
       setLoading(false);
     }

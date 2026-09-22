@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { type Request, type Response } from 'express';
 import { decodeVin } from '../services/nhtsa.service.js';
 
 // VIN charset excludes I, O, Q; allow '*' so NHTSA can decode partial VINs.

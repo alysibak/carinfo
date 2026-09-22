@@ -1,44 +1,48 @@
-import { Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
+import { HttpError } from '../middleware/error-handler.js';
 import * as carService from '../services/car.service.js';
 import * as dashboardService from '../services/dashboard.service.js';
+import { parseRegionId } from '../config/regional-assumptions.js';
 import { normalizeSearchQuery, parseSearchQueryString } from '../utils/search-validation.js';
+
+/** Compare is bounded because each id costs a full dashboard computation. */
+const MAX_COMPARE_IDS = 5;
 
 /**
  * Get all makes
  */
-export function getMakes(_req: Request, res: Response) {
+export function getMakes(_req: Request, res: Response, next: NextFunction) {
   try {
     const makes = carService.getAllMakes();
     res.json({ success: true, data: makes });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to fetch makes' });
+    next(error);
   }
 }
 
 /**
  * Get models by make
  */
-export function getModelsByMake(req: Request, res: Response) {
+export function getModelsByMake(req: Request, res: Response, next: NextFunction) {
   try {
     const { make } = req.params;
     const models = carService.getModelsByMake(make);
     res.json({ success: true, data: models });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to fetch models' });
+    next(error);
   }
 }
 
 /**
  * Search cars with filters
  */
-export function searchCars(req: Request, res: Response) {
+export function searchCars(req: Request, res: Response, next: NextFunction) {
   try {
     const query = normalizeSearchQuery(req.body);
     const results = carService.searchCars(query);
     res.json({ success: true, data: results });
   } catch (error) {
-    console.error('Search error:', error);
-    res.status(500).json({ success: false, error: 'Failed to search cars' });
+    next(error);
   }
 }
 
@@ -46,21 +50,20 @@ export function searchCars(req: Request, res: Response) {
  * GET mirror of searchCars. Same engine, filters read from the query string,
  * so the response is CDN-cacheable and the search is a shareable URL.
  */
-export function searchCarsViaQuery(req: Request, res: Response) {
+export function searchCarsViaQuery(req: Request, res: Response, next: NextFunction) {
   try {
     const query = parseSearchQueryString(req.query as Record<string, unknown>);
     const results = carService.searchCars(query);
     res.json({ success: true, data: results });
   } catch (error) {
-    console.error('Search error:', error);
-    res.status(500).json({ success: false, error: 'Failed to search cars' });
+    next(error);
   }
 }
 
 /**
  * Autocomplete suggestions for the search bar
  */
-export function getSearchSuggestions(req: Request, res: Response) {
+export function getSearchSuggestions(req: Request, res: Response, next: NextFunction) {
   try {
     const q = typeof req.query.q === 'string' ? req.query.q : '';
     const limitRaw = req.query.limit != null ? Number(req.query.limit) : 8;
@@ -68,91 +71,82 @@ export function getSearchSuggestions(req: Request, res: Response) {
     const suggestions = carService.getSearchSuggestions(q, limit);
     res.json({ success: true, data: suggestions });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to fetch suggestions' });
+    next(error);
   }
 }
 
 /**
  * Debug pipeline dump: raw cars.json, after enrichment, after normalization.
  */
-export function getCarRawDebug(req: Request, res: Response) {
+export function getCarRawDebug(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
     const pipeline = carService.getCarPipelineDebug(id);
-    if (!pipeline) {
-      return res.status(404).json({ success: false, error: 'Car not found' });
-    }
+    if (!pipeline) throw new HttpError(404, 'Car not found');
     res.json({ success: true, data: pipeline });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to fetch raw car debug' });
+    next(error);
   }
 }
 
 /**
  * Get car by ID
  */
-export function getCarById(req: Request, res: Response) {
+export function getCarById(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
     const car = carService.getCarById(id);
 
-    if (!car) {
-      return res.status(404).json({ success: false, error: 'Car not found' });
-    }
+    if (!car) throw new HttpError(404, 'Car not found');
 
     res.json({ success: true, data: car });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to fetch car' });
+    next(error);
   }
 }
 
 /**
  * Compare multiple cars
  */
-export function compareCars(req: Request, res: Response) {
+export function compareCars(req: Request, res: Response, next: NextFunction) {
   try {
     const { ids } = req.body;
 
     if (!Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ success: false, error: 'Invalid car IDs' });
+      throw new HttpError(400, 'Invalid car IDs');
     }
-
-    if (ids.length > 5) {
-      return res.status(400).json({ success: false, error: 'Maximum 5 cars can be compared' });
+    if (ids.length > MAX_COMPARE_IDS) {
+      throw new HttpError(400, `Maximum ${MAX_COMPARE_IDS} cars can be compared`);
     }
 
     const { cars, notFound } = carService.getCarsByIds(ids);
     res.json({ success: true, data: cars, notFound });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to compare cars' });
+    next(error);
   }
 }
-
-import { parseRegionId } from '../config/regional-assumptions.js';
 
 /**
  * Get car dashboard with analytics and provenance
  */
-export function getCarDashboard(req: Request, res: Response) {
+export function getCarDashboard(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
     const region = parseRegionId(req.query.region);
     const dashboard = dashboardService.getCarDashboard(id, region);
 
-    if (!dashboard) {
-      return res.status(404).json({ success: false, error: 'Car not found' });
-    }
+    if (!dashboard) throw new HttpError(404, 'Car not found');
 
     res.json({ success: true, data: dashboard });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to fetch car dashboard' });
+    next(error);
   }
 }
 
 /**
  * Get similar / cross-shopped vehicles for a car
  */
-export function getSimilarCars(req: Request, res: Response) {
+export function getSimilarCars(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
     const limitRaw = req.query.limit != null ? Number(req.query.limit) : 6;
@@ -160,14 +154,14 @@ export function getSimilarCars(req: Request, res: Response) {
     const cars = dashboardService.getSimilarCars(id, limit);
     res.json({ success: true, data: cars });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to fetch similar cars' });
+    next(error);
   }
 }
 
 /**
  * Same make/model/year EPA configurations (trims, transmissions).
  */
-export function getSiblingConfigs(req: Request, res: Response) {
+export function getSiblingConfigs(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
     const limitRaw = req.query.limit != null ? Number(req.query.limit) : 24;
@@ -175,26 +169,26 @@ export function getSiblingConfigs(req: Request, res: Response) {
     const cars = dashboardService.getSiblingConfigs(id, limit);
     res.json({ success: true, data: cars });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to fetch sibling configs' });
+    next(error);
   }
 }
 
 /**
  * Get database statistics
  */
-export function getStatistics(_req: Request, res: Response) {
+export function getStatistics(_req: Request, res: Response, next: NextFunction) {
   try {
     const stats = carService.getStatistics();
     res.json({ success: true, data: stats });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to fetch statistics' });
+    next(error);
   }
 }
 
 /**
  * 2D density grid for value matrix (full fleet, not sampled).
  */
-export function getChartDensity(req: Request, res: Response) {
+export function getChartDensity(req: Request, res: Response, next: NextFunction) {
   try {
     const priceMin = req.query.priceMin != null ? Number(req.query.priceMin) : undefined;
     const priceMax = req.query.priceMax != null ? Number(req.query.priceMax) : undefined;
@@ -218,14 +212,14 @@ export function getChartDensity(req: Request, res: Response) {
 
     res.json({ success: true, data: density });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to fetch chart density' });
+    next(error);
   }
 }
 
 /**
  * Chart points for value matrix (server-side sampling).
  */
-export function getChartPoints(req: Request, res: Response) {
+export function getChartPoints(req: Request, res: Response, next: NextFunction) {
   try {
     const priceMin = req.query.priceMin != null ? Number(req.query.priceMin) : undefined;
     const priceMax = req.query.priceMax != null ? Number(req.query.priceMax) : undefined;
@@ -247,6 +241,6 @@ export function getChartPoints(req: Request, res: Response) {
 
     res.json({ success: true, data: result });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to fetch chart points' });
+    next(error);
   }
 }

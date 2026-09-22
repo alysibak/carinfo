@@ -21,7 +21,14 @@
     "start": "npm run start --workspace=server",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "npm run typecheck --workspace=server && npm run typecheck --workspace=client",
+    "verify": "npm run lint && npm run typecheck && npm test",
+    "validate:data": "npm run validate:data --workspace=server"
   },
   "keywords": [
     "cars",
@@ -34,8 +41,16 @@
     "@playwright/test": "^1.57.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
+    "@vitest/coverage-v8": "4.1.9",
     "concurrently": "^8.2.2",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^9.1.2",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.26",
+    "globals": "^15.15.0",
     "jsdom": "^29.1.1",
+    "prettier": "^3.9.8",
+    "typescript-eslint": "^8.70.0",
     "vitest": "^4.1.9"
   },
   "overrides": {

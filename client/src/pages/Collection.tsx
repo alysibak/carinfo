@@ -77,6 +77,10 @@ export default function Collection() {
     };
   }, [collectionId, collection, scoreFn, shortlistSize]);
 
+  // Hooks must run in the same order on every render, so this sits above the
+  // early returns below rather than next to the JSX that consumes it.
+  const shortlistDiff = useMemo(() => differentiateCars(cars), [cars]);
+
   if (!collection) {
     return (
       <ErrorState
@@ -112,7 +116,6 @@ export default function Collection() {
   ).toString()}`;
 
   const moreInSearch = Math.max(0, totalMatching - cars.length);
-  const shortlistDiff = useMemo(() => differentiateCars(cars), [cars]);
 
   return (
     <PageShell>

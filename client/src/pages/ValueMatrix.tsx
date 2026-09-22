@@ -218,7 +218,7 @@ export default function ValueMatrix() {
       setDensityData(density);
       setTotalMatched(density.total);
 
-      let filtered = pointsResult.points.filter((car) => {
+      const filtered = pointsResult.points.filter((car) => {
         if (axisMode === 'mpg') return car.mpg > 0;
         if (axisMode === 'displacement') return car.displacement > 0;
         return car.co2 > 0;
