@@ -1,0 +1,6 @@
+# Mechanical formatting commits. `git blame` skips these when configured with:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+# GitHub's blame view reads this file automatically.
+
+# Apply Prettier formatting across the codebase
+633549640abe500070cd98438945f35c9279bc31
