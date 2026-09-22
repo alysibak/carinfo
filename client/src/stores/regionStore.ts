@@ -1,7 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type ClientRegionId = 'ontario' | 'british-columbia';
+import type { RegionId } from '@carinfo/config/regional-assumptions';
+
+/** Same union the API accepts; defined once in server/src/config. */
+export type ClientRegionId = RegionId;
 
 interface RegionStore {
   region: ClientRegionId;

@@ -1,4 +1,4 @@
-import type { Car, SearchQuery } from '../types/car.types.js';
+import type { Car, SearchQuery, SearchResults } from '../types/car.types.js';
 import { readFileSync } from 'fs';
 import { computeEvScore } from '../utils/ev-scoring.js';
 import { normalizeCarRecord } from '../utils/car-normalize.js';
@@ -311,11 +311,7 @@ export function getCarPipelineDebug(id: string): {
  * 3. Sort only the matching results
  * 4. Paginate
  */
-export function searchCars(query: SearchQuery): {
-  results: Car[];
-  total: number;
-  hasMore: boolean;
-} {
+export function searchCars(query: SearchQuery): SearchResults {
   ensureDatabase();
   const originalText = query.query?.trim() ?? '';
   const enriched = enrichSearchQuery(query);

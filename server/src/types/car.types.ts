@@ -170,6 +170,13 @@ export interface SearchQuery {
   collapseByModel?: boolean;
 }
 
+/** Response body of the search endpoints. */
+export interface SearchResults {
+  results: Car[];
+  total: number;
+  hasMore: boolean;
+}
+
 export interface OwnershipAssumptions {
   annualKm: string;
   annualMiles: number;

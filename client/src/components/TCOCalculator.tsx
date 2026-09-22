@@ -1,95 +1,162 @@
-import { useState } from 'react';
-import type { CarSpecs } from '../types/car.types';
-import { calculateCostPerMile } from '../utils/marketIntelligence';
-import { getRegionalAssumptions } from '@carinfo/config/regional-assumptions';
+import { useEffect, useId, useMemo, useState } from 'react';
+import type { CarSpecs, OwnershipEconomics } from '../types/car.types';
+import type { RegionId } from '@carinfo/config/regional-assumptions';
 import { DISPLAY_CURRENCY } from '../utils/currency';
 import { usesMpge } from '../utils/fuelDisplay';
-
-const REGION = getRegionalAssumptions();
+import { useModalFocus } from '../hooks/useModalFocus';
+import { computeTco, defaultTcoInputs, type TcoInputs } from '../utils/tco';
 
 interface TCOCalculatorProps {
   car: CarSpecs;
+  /** The dossier's ownership economics — the calculator starts from these. */
+  ownership?: OwnershipEconomics | null;
+  region: RegionId;
   onClose: () => void;
 }
 
-export default function TCOCalculator({ car, onClose }: TCOCalculatorProps) {
-  const [yearsOwned, setYearsOwned] = useState(5);
-  const [kmPerYear, setKmPerYear] = useState(REGION.annualKm);
-  const [gasPrice, setGasPrice] = useState(REGION.gasPriceCadPerL);
-  const [electricityPrice, setElectricityPrice] = useState(REGION.electricityRateCadPerKwh);
-  const [insuranceRate, setInsuranceRate] = useState(0.01);
-  const [maintenancePerYear, setMaintenancePerYear] = useState(REGION.maintenance.base);
-  const [downPayment, setDownPayment] = useState(0);
-  const [loanRate, setLoanRate] = useState(0.05);
+const money = (n: number) => `$${Math.round(n).toLocaleString()}`;
+
+function NumberField({
+  label,
+  value,
+  onChange,
+  step = 1,
+  min = 0,
+  max,
+  suffix,
+  hint,
+}: {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+  step?: number;
+  min?: number;
+  max?: number;
+  suffix?: string;
+  hint?: string;
+}) {
+  const id = useId();
+  const hintId = hint ? `${id}-hint` : undefined;
+  return (
+    <div>
+      <label htmlFor={id} className="block text-xs tracking-widest text-zinc-300 mb-2 uppercase">
+        {label}
+        {suffix && <span className="text-zinc-500 normal-case tracking-normal"> ({suffix})</span>}
+      </label>
+      <input
+        id={id}
+        type="number"
+        inputMode="decimal"
+        value={Number.isFinite(value) ? value : ''}
+        step={step}
+        min={min}
+        max={max}
+        aria-describedby={hintId}
+        onChange={(e) => {
+          const next = e.target.valueAsNumber;
+          // An empty field mid-edit is not a value; keep the last good one.
+          if (Number.isFinite(next))
+            onChange(Math.max(min, max != null ? Math.min(max, next) : next));
+        }}
+        className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-lg font-bold tabular-nums focus:outline-none focus:border-zinc-500 transition-colors"
+      />
+      {hint && (
+        <p id={hintId} className="mt-1.5 text-xs text-zinc-500">
+          {hint}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div className="flex justify-between items-baseline gap-4 pb-3 border-b border-zinc-900">
+      <dt className="tracking-widest text-zinc-300 uppercase text-xs">{label}</dt>
+      <dd
+        className={`tabular-nums ${strong ? 'text-lg font-bold text-white' : 'text-lg font-bold'}`}
+      >
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+export default function TCOCalculator({ car, ownership, region, onClose }: TCOCalculatorProps) {
+  const titleId = useId();
+  const defaults = useMemo(
+    () => defaultTcoInputs(car, ownership, region),
+    [car, ownership, region],
+  );
+  const [inputs, setInputs] = useState<TcoInputs>(defaults);
+  const containerRef = useModalFocus(true, onClose);
+
+  // Background scroll would move the page behind a full-screen dialog.
+  useEffect(() => {
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, []);
+
+  const set =
+    <K extends keyof TcoInputs>(key: K) =>
+    (value: TcoInputs[K]) =>
+      setInputs((current) => ({ ...current, [key]: value }));
+
+  const result = useMemo(() => computeTco(car, inputs, ownership), [car, inputs, ownership]);
+  const atDefaults = JSON.stringify(inputs) === JSON.stringify(defaults);
 
   const fuelType = car.engine.fuelType;
   const isElectric = fuelType === 'electric';
   const isHydrogen = fuelType === 'hydrogen';
-  const isPlugInHybrid = fuelType === 'plug-in hybrid';
-  const showElectricityInput = isElectric || isPlugInHybrid;
-  const showGasInput = !isElectric && !isHydrogen;
+  const isPlugIn = fuelType === 'plug-in hybrid';
+  // Hydrogen is priced from EPA's own annual cost, so neither price input applies.
+  const showGas = !isElectric && !isHydrogen;
+  const showElectricity = isElectric || isPlugIn;
 
-  const msrp = car.price?.msrp || 35000;
-  const mpg = car.fuelEconomy.combined || 25;
-
-  const costResult = calculateCostPerMile(car, {
-    gasPriceCadPerL: gasPrice,
-    electricityPriceCadPerKwh: electricityPrice,
-  });
-  const costPerKm = costResult.costPerKm;
-
-  // Calculate TCO components
-  const purchasePrice = msrp;
-  const downPaymentAmount = downPayment;
-  const loanAmount = purchasePrice - downPaymentAmount;
-  const monthlyPayment =
-    loanAmount > 0
-      ? (loanAmount * (loanRate / 12)) / (1 - Math.pow(1 + loanRate / 12, -yearsOwned * 12))
-      : 0;
-  const totalLoanPayments = monthlyPayment * yearsOwned * 12;
-  const totalInterestPaid = totalLoanPayments - loanAmount;
-
-  const fuelCostPerYear = costPerKm * kmPerYear;
-  const totalFuelCost = fuelCostPerYear * yearsOwned;
-
-  const insuranceCostPerYear = purchasePrice * insuranceRate;
-  const totalInsuranceCost = insuranceCostPerYear * yearsOwned;
-
-  const totalMaintenanceCost = maintenancePerYear * yearsOwned;
-
-  // Depreciation (simplified - cars lose ~15-20% first year, then ~10% per year)
-  const yearOneDepreciation = purchasePrice * 0.2;
-  const subsequentYearDepreciation = (purchasePrice - yearOneDepreciation) * 0.1 * (yearsOwned - 1);
-  const totalDepreciation = yearOneDepreciation + subsequentYearDepreciation;
-  const estimatedResaleValue = Math.max(0, purchasePrice - totalDepreciation);
-
-  const totalCostOfOwnership =
-    purchasePrice +
-    totalInterestPaid +
-    totalFuelCost +
-    totalInsuranceCost +
-    totalMaintenanceCost -
-    estimatedResaleValue;
-
-  const monthlyTCO = totalCostOfOwnership / (yearsOwned * 12);
-
-  const fuelLabel = isElectric ? 'Energy (electric)' : isPlugInHybrid ? 'Fuel & Energy' : 'Fuel';
-
+  const efficiency = car.fuelEconomy?.combined;
   const efficiencyLabel = usesMpge(fuelType) ? 'MPGe' : 'MPG';
+  const energyLabel = isElectric ? 'Electricity' : isPlugIn ? 'Fuel & electricity' : 'Fuel';
+  const years = inputs.yearsOwned;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center p-8 overflow-y-auto">
-      <div className="max-w-5xl w-full bg-black border border-zinc-800 p-8 md:p-12">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8 pb-8 border-b border-zinc-900">
+    <div
+      className="fixed inset-0 bg-black/95 z-50 flex items-start md:items-center justify-center p-4 md:p-8 overflow-y-auto"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="max-w-5xl w-full bg-black border border-zinc-800 p-6 md:p-12 my-4"
+      >
+        <div className="flex items-start justify-between gap-4 mb-8 pb-8 border-b border-zinc-900">
           <div>
-            <h2 className="text-3xl font-black tracking-tighter mb-2">TOTAL COST OF OWNERSHIP</h2>
+            <h2 id={titleId} className="text-2xl md:text-3xl font-black tracking-tighter mb-2">
+              TOTAL COST OF OWNERSHIP
+            </h2>
             <p className="text-sm tracking-wider text-zinc-400 uppercase">
               {car.year} {car.make} {car.model}
             </p>
           </div>
-          <button onClick={onClose} className="text-zinc-400 hover:text-white transition-colors">
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close cost calculator"
+            className="text-zinc-400 hover:text-white transition-colors p-1"
+          >
+            <svg
+              aria-hidden
+              className="w-8 h-8"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -100,232 +167,214 @@ export default function TCOCalculator({ car, onClose }: TCOCalculatorProps) {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Left Column: Inputs */}
-          <div>
-            <h3 className="text-xl font-black tracking-tight mb-6 uppercase">
-              Customize Your Assumptions
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12">
+          <form onSubmit={(e) => e.preventDefault()} aria-label="Assumptions">
+            <div className="flex items-baseline justify-between gap-4 mb-6">
+              <h3 className="text-xl font-black tracking-tight uppercase">Your assumptions</h3>
+              <button
+                type="button"
+                onClick={() => setInputs(defaults)}
+                disabled={atDefaults}
+                className="text-xs uppercase tracking-widest text-zinc-400 hover:text-white disabled:opacity-40 disabled:hover:text-zinc-400"
+              >
+                Reset
+              </button>
+            </div>
+
+            <div className="space-y-5">
+              <NumberField
+                label="Years owned"
+                value={inputs.yearsOwned}
+                onChange={set('yearsOwned')}
+                min={1}
+                max={15}
+              />
+              <NumberField
+                label="Purchase price"
+                suffix={DISPLAY_CURRENCY}
+                value={inputs.purchasePrice}
+                onChange={set('purchasePrice')}
+                step={500}
+                hint={ownership ? 'Starts at the dossier’s estimated market value.' : undefined}
+              />
+              <NumberField
+                label="Distance per year"
+                suffix="km"
+                value={inputs.annualKm}
+                onChange={set('annualKm')}
+                step={1000}
+              />
+              {showGas && (
+                <NumberField
+                  label="Gas price"
+                  suffix={`${DISPLAY_CURRENCY}/L`}
+                  value={inputs.gasPriceCadPerL}
+                  onChange={set('gasPriceCadPerL')}
+                  step={0.01}
+                />
+              )}
+              {showElectricity && (
+                <NumberField
+                  label="Electricity rate"
+                  suffix={`${DISPLAY_CURRENCY}/kWh`}
+                  value={inputs.electricityRateCadPerKwh}
+                  onChange={set('electricityRateCadPerKwh')}
+                  step={0.01}
+                />
+              )}
+              <NumberField
+                label="Insurance"
+                suffix={`${DISPLAY_CURRENCY}/yr`}
+                value={inputs.insurancePerYear}
+                onChange={set('insurancePerYear')}
+                step={100}
+              />
+              <NumberField
+                label="Maintenance"
+                suffix={`${DISPLAY_CURRENCY}/yr`}
+                value={inputs.maintenancePerYear}
+                onChange={set('maintenancePerYear')}
+                step={100}
+              />
+
+              <fieldset className="border border-zinc-900 p-4">
+                <legend className="px-1">
+                  <label className="flex items-center gap-2 text-xs tracking-widest text-zinc-300 uppercase cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={inputs.financed}
+                      onChange={(e) => set('financed')(e.target.checked)}
+                      className="accent-white"
+                    />
+                    Financed
+                  </label>
+                </legend>
+                {inputs.financed ? (
+                  <div className="space-y-5 mt-2">
+                    <NumberField
+                      label="Down payment"
+                      suffix={DISPLAY_CURRENCY}
+                      value={inputs.downPayment}
+                      onChange={set('downPayment')}
+                      step={1000}
+                    />
+                    <NumberField
+                      label="Interest rate"
+                      suffix="% APR"
+                      value={Math.round(inputs.loanRate * 10000) / 100}
+                      onChange={(pct) => set('loanRate')(pct / 100)}
+                      step={0.1}
+                      max={30}
+                      hint={`Loan term matches years owned (${years * 12} months).`}
+                    />
+                  </div>
+                ) : (
+                  <p className="text-xs text-zinc-500 mt-1">
+                    Cash purchase, as in the dossier estimate. Tick to add loan interest.
+                  </p>
+                )}
+              </fieldset>
+            </div>
+          </form>
+
+          <section aria-labelledby={`${titleId}-results`}>
+            <h3
+              id={`${titleId}-results`}
+              className="text-xl font-black tracking-tight mb-6 uppercase"
+            >
+              Your total cost
             </h3>
 
-            <div className="space-y-6">
-              {/* Years Owned */}
-              <div>
-                <label className="block text-xs tracking-widest text-zinc-300 mb-2">
-                  YEARS OWNED
-                </label>
-                <input
-                  type="number"
-                  value={yearsOwned}
-                  onChange={(e) => setYearsOwned(parseInt(e.target.value) || 5)}
-                  min="1"
-                  max="15"
-                  className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-lg font-bold focus:outline-none focus:border-zinc-600 transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs tracking-widest text-zinc-300 mb-2">
-                  KM PER YEAR
-                </label>
-                <input
-                  type="number"
-                  value={kmPerYear}
-                  onChange={(e) => setKmPerYear(parseInt(e.target.value) || REGION.annualKm)}
-                  step="1000"
-                  className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-lg font-bold focus:outline-none focus:border-zinc-600 transition-colors"
-                />
-              </div>
-
-              {showGasInput && (
-                <div>
-                  <label className="block text-xs tracking-widest text-zinc-300 mb-2">
-                    GAS PRICE ($/L {DISPLAY_CURRENCY})
-                  </label>
-                  <input
-                    type="number"
-                    value={gasPrice}
-                    onChange={(e) =>
-                      setGasPrice(parseFloat(e.target.value) || REGION.gasPriceCadPerL)
-                    }
-                    step="0.01"
-                    className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-lg font-bold focus:outline-none focus:border-zinc-600 transition-colors"
-                  />
-                </div>
-              )}
-
-              {showElectricityInput && (
-                <div>
-                  <label className="block text-xs tracking-widest text-zinc-300 mb-2">
-                    ELECTRICITY PRICE ($/KWH {DISPLAY_CURRENCY})
-                  </label>
-                  <input
-                    type="number"
-                    value={electricityPrice}
-                    onChange={(e) =>
-                      setElectricityPrice(
-                        parseFloat(e.target.value) || REGION.electricityRateCadPerKwh,
-                      )
-                    }
-                    step="0.01"
-                    className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-lg font-bold focus:outline-none focus:border-zinc-600 transition-colors"
-                  />
-                </div>
-              )}
-
-              {/* Down Payment */}
-              <div>
-                <label className="block text-xs tracking-widest text-zinc-300 mb-2">
-                  DOWN PAYMENT ($)
-                </label>
-                <input
-                  type="number"
-                  value={downPayment}
-                  onChange={(e) => setDownPayment(parseInt(e.target.value) || 0)}
-                  step="1000"
-                  className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-lg font-bold focus:outline-none focus:border-zinc-600 transition-colors"
-                />
-              </div>
-
-              {/* Loan Rate */}
-              <div>
-                <label className="block text-xs tracking-widest text-zinc-300 mb-2">
-                  LOAN INTEREST RATE (%)
-                </label>
-                <input
-                  type="number"
-                  value={loanRate * 100}
-                  onChange={(e) => setLoanRate((parseFloat(e.target.value) || 5) / 100)}
-                  step="0.1"
-                  className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-lg font-bold focus:outline-none focus:border-zinc-600 transition-colors"
-                />
-              </div>
-
-              {/* Insurance Rate */}
-              <div>
-                <label className="block text-xs tracking-widest text-zinc-300 mb-2">
-                  INSURANCE (% OF PRICE)
-                </label>
-                <input
-                  type="number"
-                  value={insuranceRate * 100}
-                  onChange={(e) => setInsuranceRate((parseFloat(e.target.value) || 1) / 100)}
-                  step="0.1"
-                  className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-lg font-bold focus:outline-none focus:border-zinc-600 transition-colors"
-                />
-              </div>
-
-              {/* Maintenance */}
-              <div>
-                <label className="block text-xs tracking-widest text-zinc-300 mb-2">
-                  MAINTENANCE ($/YEAR)
-                </label>
-                <input
-                  type="number"
-                  value={maintenancePerYear}
-                  onChange={(e) => setMaintenancePerYear(parseInt(e.target.value) || 1000)}
-                  step="100"
-                  className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-lg font-bold focus:outline-none focus:border-zinc-600 transition-colors"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column: Results */}
-          <div>
-            <h3 className="text-xl font-black tracking-tight mb-6 uppercase">Your Total Cost</h3>
-
-            {/* Total TCO - Prominent */}
-            <div className="bg-white text-black p-8 mb-8">
+            <div
+              className="bg-white text-black p-6 md:p-8 mb-6"
+              aria-live="polite"
+              aria-atomic="true"
+            >
               <p className="text-xs tracking-[0.3em] font-bold uppercase mb-2">
-                {yearsOwned}-Year Total Cost
+                {years}-year total
               </p>
-              <p className="text-5xl font-black tracking-tighter mb-4">
-                ${Math.round(totalCostOfOwnership).toLocaleString()}
+              <p className="text-4xl md:text-5xl font-black tracking-tighter mb-4 tabular-nums">
+                {money(result.total)}
               </p>
               <div className="h-px bg-black mb-4" />
-              <p className="text-sm tracking-wider uppercase">
-                ${Math.round(monthlyTCO).toLocaleString()} per month
+              <p className="text-sm tracking-wider uppercase tabular-nums">
+                {money(result.monthly)} per month
               </p>
             </div>
 
-            {/* Breakdown */}
-            <div className="space-y-4 text-sm">
-              <div className="flex justify-between items-center pb-3 border-b border-zinc-900">
-                <span className="tracking-widest text-zinc-300 uppercase">Purchase Price</span>
-                <span className="text-lg font-bold">
-                  ${Math.round(purchasePrice).toLocaleString()}
-                </span>
-              </div>
+            {atDefaults && ownership && (
+              <p className="text-xs text-zinc-500 mb-6">
+                At these starting assumptions this matches the dossier’s estimate. Change any field
+                to see your own number.
+              </p>
+            )}
 
-              {loanAmount > 0 && (
-                <div className="flex justify-between items-center pb-3 border-b border-zinc-900">
-                  <span className="tracking-widest text-zinc-300 uppercase">Loan Interest</span>
-                  <span className="text-lg font-bold">
-                    ${Math.round(totalInterestPaid).toLocaleString()}
-                  </span>
+            <dl className="space-y-3 text-sm">
+              <Row label="Value lost (depreciation)" value={money(result.depreciation)} strong />
+              <Row
+                label={`${energyLabel} (${years} yr)`}
+                value={result.energy ? money(result.energy.total) : 'Not on file'}
+              />
+              <Row label={`Insurance (${years} yr)`} value={money(result.insurance)} />
+              <Row label={`Maintenance (${years} yr)`} value={money(result.maintenance)} />
+              <Row
+                label={`Tires & registration (${years} yr)`}
+                value={money(result.tires + result.registration)}
+              />
+              {inputs.financed && <Row label="Loan interest" value={money(result.interest)} />}
+            </dl>
+
+            <div className="mt-6 space-y-2 text-xs text-zinc-500">
+              {!result.energy && (
+                <p>
+                  This record has no fuel-economy figure, so fuel/energy is left out of the total
+                  rather than guessed.
+                </p>
+              )}
+              {result.energy?.basis === 'epa-annual-cost' && (
+                <p>
+                  {isHydrogen ? 'Hydrogen' : 'Fuel'} cost uses EPA’s own annual estimate, scaled to
+                  your distance. It does not change with the price inputs above.
+                </p>
+              )}
+              {!result.depreciationFromDossier && (
+                <p>Depreciation uses a generic ~15%/year curve because the dossier did not load.</p>
+              )}
+            </div>
+
+            <div className="mt-8 pt-8 border-t border-zinc-900 grid grid-cols-2 gap-4">
+              <div className="bg-zinc-950 border border-zinc-900 p-4">
+                <p className="text-xs tracking-widest text-zinc-300 mb-2 uppercase">
+                  Resale after {years} yr
+                </p>
+                <p className="text-2xl font-black tabular-nums">{money(result.resaleValue)}</p>
+              </div>
+              <div className="bg-zinc-950 border border-zinc-900 p-4">
+                <p className="text-xs tracking-widest text-zinc-300 mb-2 uppercase">
+                  {efficiencyLabel}
+                </p>
+                <p className="text-2xl font-black tabular-nums">{efficiency ? efficiency : '—'}</p>
+              </div>
+              {result.energy && (
+                <div className="bg-zinc-950 border border-zinc-900 p-4">
+                  <p className="text-xs tracking-widest text-zinc-300 mb-2 uppercase">
+                    {energyLabel} / yr
+                  </p>
+                  <p className="text-2xl font-black tabular-nums">{money(result.energy.annual)}</p>
                 </div>
               )}
-
-              <div className="flex justify-between items-center pb-3 border-b border-zinc-900">
-                <span className="tracking-widest text-zinc-300 uppercase">
-                  {fuelLabel} ({yearsOwned} years)
-                </span>
-                <span className="text-lg font-bold">
-                  ${Math.round(totalFuelCost).toLocaleString()}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center pb-3 border-b border-zinc-900">
-                <span className="tracking-widest text-zinc-300 uppercase">
-                  Insurance ({yearsOwned} years)
-                </span>
-                <span className="text-lg font-bold">
-                  ${Math.round(totalInsuranceCost).toLocaleString()}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center pb-3 border-b border-zinc-900">
-                <span className="tracking-widest text-zinc-300 uppercase">
-                  Maintenance ({yearsOwned} years)
-                </span>
-                <span className="text-lg font-bold">
-                  ${Math.round(totalMaintenanceCost).toLocaleString()}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center pb-3 border-b border-zinc-900 text-white">
-                <span className="tracking-widest uppercase">Resale Value</span>
-                <span className="text-lg font-bold">
-                  -${Math.round(estimatedResaleValue).toLocaleString()}
-                </span>
-              </div>
-            </div>
-
-            {/* Key Metrics */}
-            <div className="mt-8 pt-8 border-t border-zinc-900">
-              <h4 className="text-xs tracking-[0.3em] text-zinc-300 mb-4 uppercase">Key Metrics</h4>
-              <div className="grid grid-cols-2 gap-4">
+              {inputs.financed && (
                 <div className="bg-zinc-950 border border-zinc-900 p-4">
-                  <p className="text-xs tracking-widest text-zinc-300 mb-2">ENERGY COST/YR</p>
-                  <p className="text-2xl font-black">
-                    ${Math.round(fuelCostPerYear).toLocaleString()}
+                  <p className="text-xs tracking-widest text-zinc-300 mb-2 uppercase">
+                    Loan payment
+                  </p>
+                  <p className="text-2xl font-black tabular-nums">
+                    {money(result.monthlyLoanPayment)}/mo
                   </p>
                 </div>
-                <div className="bg-zinc-950 border border-zinc-900 p-4">
-                  <p className="text-xs tracking-widest text-zinc-300 mb-2">{efficiencyLabel}</p>
-                  <p className="text-2xl font-black">{mpg}</p>
-                </div>
-                <div className="bg-zinc-950 border border-zinc-900 p-4">
-                  <p className="text-xs tracking-widest text-zinc-300 mb-2">DEPRECIATION</p>
-                  <p className="text-2xl font-black">${Math.round(totalDepreciation / 1000)}K</p>
-                </div>
-                <div className="bg-zinc-950 border border-zinc-900 p-4">
-                  <p className="text-xs tracking-widest text-zinc-300 mb-2">MONTHLY</p>
-                  <p className="text-2xl font-black">${Math.round(monthlyTCO).toLocaleString()}</p>
-                </div>
-              </div>
+              )}
             </div>
-          </div>
+          </section>
         </div>
       </div>
     </div>

@@ -425,7 +425,7 @@ Loaded once at startup into memory:
 
 **Fallback:** 2 hardcoded cars (Camry, Mustang) if `cars.json` missing (Vercel safety net).
 
-**Client pagination:** `searchAllCars()` in `api.ts` pages at 500, cap 3000.
+**Pagination:** the server caps `limit` at 500 per request; clients page with `offset`. Search is also available as `GET /api/cars/search?q=…&make=…&sort=price:asc`, which is CDN-cacheable and linkable.
 
 ---
 
@@ -547,10 +547,6 @@ Queries for fuel / power / safety insights. `isLandingShowcaseEligible()` requir
 
 Topic labels: Engine & displacement · Horsepower · NHTSA safety · Fuel economy
 
-### `HeroDossierPreview.tsx`
-
-Live dossier card with glance metrics (filters unavailable), fuel bar, link to `/car/:id`
-
 ### `AboutData.tsx`
 
 Modal explaining EPA vs estimated data. Dismissible per session (`sessionStorage`).
@@ -618,10 +614,9 @@ Best value highlighted when 2+ cars have numeric data. Missing cells use `UNAVAI
 
 ### Behavior
 
-- Loads up to 3,000 cars via `searchAllCars()`
+- Fetches a bounded candidate pool with `searchCars()` (widening the query if the first pass is thin), then ranks it client-side
 - Client-side fuel type filter + persona defaults
-- `getDealRating()` always null (UI may still reference deal badges elsewhere)
-- `AggregateStats` bar, infinite scroll (50 per page)
+- Shows the top-ranked picks, not an infinite list
 
 ---
 
@@ -649,7 +644,7 @@ Best value highlighted when 2+ cars have numeric data. Missing cells use `UNAVAI
 
 **File:** `client/src/utils/specGlossary.ts`
 
-Click `?` via `SpecExplain.tsx` · body via `SpecTipBody.tsx` (what + why)
+Click `?` via `SpecExplain.tsx` (what + why from `getSpecEntry`)
 
 ### Keys
 
@@ -722,7 +717,7 @@ Insurance by body style + luxury multipliers · maintenance by fuel type + age �
 
 ### 0–60 prediction
 
-`predictZeroToSixty()` — server `market-intelligence.ts` + client mirror; method `predicted` with confidence string
+`predictZeroToSixty()` — server `market-intelligence.ts` only; method `predicted` with confidence string. (A divergent client copy that returned a fabricated 0.0 s when data was missing was removed — it had no callers.)
 
 ---
 
@@ -781,7 +776,27 @@ Landing detects 17-char VIN in search → redirects to `/vin`.
 
 **Dossier:** omit slots silently  
 **Compare:** show "Not on file", drop all-empty rows  
-**HeroDossierPreview:** filters metrics matching unavailable patterns
+
+---
+
+## Shared code between client and server
+
+The client reuses server modules through three Vite/TypeScript aliases. Each
+points at a directory whose modules must stay **pure** (no Node APIs, no I/O):
+
+| Alias | Directory | Holds |
+|-------|-----------|-------|
+| `@carinfo/types` | `server/src/types` | The API contract. `client/src/types/car.types.ts` only re-exports it. |
+| `@carinfo/config` | `server/src/config` | Regional assumptions (prices, km, insurance tiers), model-year slugs. |
+| `@carinfo/shared` | `server/src/shared` | Logic both sides run: `energy-cost.ts`, the single fuel/energy cost engine. |
+
+Two ESLint rules keep the boundary honest: the client may not import server code
+by relative path, and `server/src/shared` may not import Node built-ins or
+server-only modules (it is bundled into the browser).
+
+This replaced hand-maintained copies that had drifted: the client's types were
+an 18-line-diff copy of the server's, and its cost function priced hydrogen as
+gasoline, so the dossier and its own TCO calculator showed different totals.
 
 ---
 
@@ -803,11 +818,11 @@ Landing detects 17-char VIN in search → redirects to `/vin`.
 
 ### Client — components (30)
 
-`AboutData` · `AggregateStats` · `BodyTypeIllustration` · `CarCard` · `DataValue` · `FilterPills` · `FilterSidebar` · `GlanceMetricCell` · `GlanceRow` · `HeroDossierPreview` · `KeySpecs` · `Layout` · `PageHeader` · `PersonaQuiz` · `ProvenanceChip` · `ScrollToTop` · `SearchBar` · `SimilarCars` · `SiteHeader` · `SpecExplain` · `SpecTipBody` · `TCOCalculator` · `ui` · `ValuationLinks` · `VehiclePlaceholder`
+`AboutData` · `BodyTypeIllustration` · `CarCard` · `DataValue` · `FilterPills` · `FilterSidebar` · `GlanceMetricCell` · `GlanceRow` · `KeySpecs` · `Layout` · `PageHeader` · `PersonaQuiz` · `ProvenanceChip` · `ScrollToTop` · `SearchBar` · `SimilarCars` · `SiteHeader` · `SpecExplain` · `TCOCalculator` · `ui` · `ValuationLinks` · `VehiclePlaceholder`
 
 ### Client — utils (18)
 
-`carImages` · `collectionCuration` · `currency` · `dataValue` · `epaContent` · `filterState` · `fuelDisplay` · `fuelEconomyUnits` · `fuelLabels` · `glanceMetrics` · `landingShowcase` · `marketIntelligence` · `searchParams` · `specGlossary` · `trimLabel`
+`carImages` · `collectionCuration` · `currency` · `dataValue` · `epaContent` · `filterState` · `fuelDisplay` · `fuelEconomyUnits` · `fuelLabels` · `glanceMetrics` · `landingShowcase` · `searchParams` · `tco` · `specGlossary` · `trimLabel`
 
 ### Client — config (2)
 
@@ -882,7 +897,7 @@ Body-type PNGs: `sedan` · `suv` · `truck` · `coupe` · `hatchback` · `wagon`
 
 | File | Key exports |
 |------|-------------|
-| `marketIntelligence.ts` | `calculateCostPerMile`, `calculateReliabilityScore`, `getSegment`, `getDealRating` (null), `predictZeroToSixty`, `calculateAggregateStats`, `filterCarsByFuelType`, `estimatePrice`, `generateMatchReasons` |
+| `tco.ts` | `computeTco`, `defaultTcoInputs`, `monthlyPayment` — the Custom TCO calculator; reproduces the dossier's 5-year figure at default inputs |
 | `epaContent.ts` | `ghgFraming`, `phevModes`, `fiveYearFuelSavings`, `fuelSavingsSentence` |
 | `fuelLabels.ts` | `efficiencyUnit`, `annualFuelCostDetail` |
 | `fuelDisplay.ts` | `formatFuelBadge`, `formatPowertrainLabel`, `usesMpge` |

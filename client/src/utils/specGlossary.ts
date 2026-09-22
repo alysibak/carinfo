@@ -279,9 +279,3 @@ export function getSpecEntry(key: SpecGlossaryKey): SpecGlossaryEntry {
 export function getSpecPlain(key: SpecGlossaryKey): string {
   return SPEC_GLOSSARY[key].plain;
 }
-
-/** @deprecated Prefer getSpecEntry + SpecTipBody for structured tooltips. */
-export function getSpecTip(key: SpecGlossaryKey): string {
-  const { what, why } = SPEC_GLOSSARY[key];
-  return why ? `${what} ${why}` : what;
-}

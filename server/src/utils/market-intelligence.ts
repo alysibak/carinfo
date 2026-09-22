@@ -1,75 +1,14 @@
 import type { CarSpecs } from '../types/car.types.js';
-import {
-  annualKmToMiles,
-  EPA_ANNUAL_MILES,
-  getRegionalAssumptions,
-  mpgToLPer100Km,
-  mpgeToKwhPer100Km,
-} from '../config/regional-assumptions.js';
-import { computeOwnershipEconomics, estimatePriceMsrp } from './ownership-economics.js';
 
-const REGION = getRegionalAssumptions();
-
-export function calculateCostPerMile(
-  car: CarSpecs,
-  prices = {
-    gasPriceCadPerL: REGION.gasPriceCadPerL,
-    electricityPriceCadPerKwh: REGION.electricityRateCadPerKwh,
-  },
-): number | null {
-  const mpg = car.fuelEconomy.combined || 0;
-  const fuelType = car.engine.fuelType;
-  const annualMiles = annualKmToMiles(REGION.annualKm);
-
-  if (fuelType === 'hydrogen') {
-    const annualUsd = car.epa?.annualFuelCost;
-    if (annualUsd != null && annualUsd > 0) {
-      const annualCad =
-        annualUsd * REGION.cadUsdExchangeRate * (REGION.annualKm / (EPA_ANNUAL_MILES * 1.609344));
-      return annualCad / annualMiles;
-    }
-    return null;
-  }
-
-  if (fuelType === 'electric') {
-    const kwhPer100Km =
-      mpg > 0
-        ? mpgeToKwhPer100Km(mpg)
-        : car.epa?.kWhPer100Mi != null && car.epa.kWhPer100Mi >= 15
-          ? car.epa.kWhPer100Mi / 1.609344
-          : null;
-    if (kwhPer100Km != null && kwhPer100Km > 0) {
-      const annualCad = (REGION.annualKm / 100) * kwhPer100Km * prices.electricityPriceCadPerKwh;
-      return annualCad / annualMiles;
-    }
-    return null;
-  }
-
-  if (fuelType === 'plug-in hybrid') {
-    if (mpg <= 0) return null;
-    const gasAnnual =
-      (REGION.annualKm / 100) *
-      mpgToLPer100Km(mpg) *
-      prices.gasPriceCadPerL *
-      REGION.phev.gasMileFraction;
-    const elecAnnual =
-      (REGION.annualKm / 100) *
-      mpgeToKwhPer100Km(mpg) *
-      prices.electricityPriceCadPerKwh *
-      REGION.phev.electricMileFraction;
-    return (gasAnnual + elecAnnual) / annualMiles;
-  }
-
-  if (fuelType === 'hybrid' || fuelType === 'gasoline' || fuelType === 'diesel') {
-    if (mpg <= 0) return null;
-    const annualCad = (REGION.annualKm / 100) * mpgToLPer100Km(mpg) * prices.gasPriceCadPerL;
-    return annualCad / annualMiles;
-  }
-
-  return null;
-}
-
-export { estimatePriceMsrp };
+/**
+ * Segment peers and 0–60 prediction for the vehicle dossier.
+ *
+ * This module used to also carry calculateCostPerMile, calculateMarketPosition,
+ * calculateValueScore, getDealRating (stubbed to always return null) and an
+ * estimateTco5Year that shadowed the live one in ownership-economics. None had
+ * a caller. Fuel/energy cost now lives in shared/energy-cost.ts, the single
+ * engine both server and client use.
+ */
 
 export function getSegment<T extends CarSpecs>(car: CarSpecs, allCars: T[]): T[] {
   const price = car.price?.msrp || 0;
@@ -88,50 +27,6 @@ export function getSegment<T extends CarSpecs>(car: CarSpecs, allCars: T[]): T[]
     }
     return true;
   });
-}
-
-export function calculateMarketPosition(car: CarSpecs, segment: CarSpecs[]) {
-  const price = car.price?.msrp;
-  const hp = car.engine.horsepower;
-  const mpg = car.fuelEconomy.combined;
-  const valueScore = calculateValueScore(car);
-
-  const percentile = (value: number | undefined, values: number[], higherIsBetter = true) => {
-    const filtered = values.filter((v) => v > 0);
-    if (!value || filtered.length === 0) return undefined;
-    const sorted = [...filtered].sort((a, b) => a - b);
-    const rank = sorted.filter((v) => (higherIsBetter ? v <= value : v >= value)).length;
-    return Math.round((rank / sorted.length) * 100);
-  };
-
-  const prices = segment.map((c) => c.price?.msrp).filter((v): v is number => v != null && v > 0);
-  const hps = segment
-    .map((c) => c.engine.horsepower)
-    .filter((v): v is number => v != null && v > 0);
-  const mpgs = segment
-    .map((c) => c.fuelEconomy.combined)
-    .filter((v): v is number => v != null && v > 0);
-  const values = segment.map((c) => calculateValueScore(c)).filter((v) => v > 0);
-
-  return {
-    pricePercentile: percentile(price, prices, false),
-    hpPercentile: percentile(hp, hps, true),
-    mpgPercentile: percentile(mpg, mpgs, true),
-    valuePercentile: percentile(valueScore, values, true),
-  };
-}
-
-export function calculateValueScore(car: CarSpecs): number {
-  const price = car.price?.msrp || 0;
-  const mpg = car.fuelEconomy.combined || 0;
-  if (price <= 0 || mpg <= 0) return 0;
-  return (mpg * 100) / (price / 10000);
-}
-
-export type DealRating = 'great-deal' | 'good-deal' | 'fair' | 'overpriced';
-
-export function getDealRating(_car: CarSpecs, _segment: CarSpecs[]): DealRating | null {
-  return null;
 }
 
 export function predictZeroToSixty(car: CarSpecs): {
@@ -171,10 +66,4 @@ export function predictZeroToSixty(car: CarSpecs): {
     confidence: car.engine.fuelType === 'electric' ? 'high' : 'medium',
     method: 'predicted',
   };
-}
-
-export function estimateTco5Year(car: CarSpecs): number | null {
-  const econ = computeOwnershipEconomics(car, [car]);
-  if (!econ.tco5Year) return null;
-  return Math.round((econ.tco5Year.low + econ.tco5Year.high) / 2);
 }

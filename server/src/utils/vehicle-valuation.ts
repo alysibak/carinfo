@@ -517,10 +517,23 @@ export function applyValuationReliabilityGuard(
   const resaleHigh = Math.round(adjustedMarket.high * 0.72);
   const resaleMid = Math.round((resaleLow + resaleHigh) / 2);
 
+  // The loss must be derived from the same replacement band. It used to keep
+  // the pre-guard figure, so the dossier showed value − resale ≠ loss (2021
+  // Kandi K27: $11,750 − $6,135 against a displayed $11,257 loss), and the
+  // 5-year TCO was built on the implausible projection this guard exists to
+  // replace. A larger resale means a smaller loss, so the bounds cross over.
+  const valueMid = adjustedMarket.mid;
+  const estimatedLoss5Year = {
+    low: Math.max(0, valueMid - resaleHigh),
+    mid: Math.max(0, valueMid - resaleMid),
+    high: Math.max(0, valueMid - resaleLow),
+  };
+
   return {
     market: adjustedMarket,
     resale: {
       ...resale,
+      estimatedLoss5Year,
       currentValue: {
         low: adjustedMarket.low,
         high: adjustedMarket.high,

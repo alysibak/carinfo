@@ -2,7 +2,8 @@ import path from 'path';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
-const configDir = path.resolve(__dirname, '../server/src/config');
+const serverSrc = path.resolve(__dirname, '../server/src');
+const configDir = path.join(serverSrc, 'config');
 
 export default defineConfig({
   root: __dirname,
@@ -11,6 +12,8 @@ export default defineConfig({
     alias: {
       '@carinfo/config/regional-assumptions': path.join(configDir, 'regional-assumptions.ts'),
       '@carinfo/config': configDir,
+      '@carinfo/shared': path.join(serverSrc, 'shared'),
+      '@carinfo/types': path.join(serverSrc, 'types'),
     },
   },
   test: {

@@ -81,6 +81,58 @@ export default tseslint.config(
       // gate CI on judgement calls.
       'react-hooks/exhaustive-deps': 'warn',
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      // The client may reuse server code only through the three aliases whose
+      // modules are guaranteed pure (config, shared, types). A relative path
+      // into server/ would pull in fs, pg or Express and break the bundle —
+      // and it is how the duplicated types and cost functions started.
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/server/**', '../../server/*', '../../../server/*'],
+              message:
+                'Import shared server code via @carinfo/config, @carinfo/shared or @carinfo/types only.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // ─── Shared modules must stay pure ──────────────────────────────────────────
+  // server/src/shared is bundled into the browser. Node built-ins or
+  // server-only packages here would break the client build.
+  {
+    files: ['server/src/shared/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: ['fs', 'path', 'crypto', 'pg', 'express', 'axios', 'stripe', '@clerk/backend'].map(
+            (name) => ({
+              name,
+              message: 'server/src/shared is bundled into the client; keep it pure.',
+            }),
+          ),
+          patterns: [
+            {
+              group: ['node:*'],
+              message: 'server/src/shared is bundled into the client; keep it pure.',
+            },
+            {
+              group: [
+                '../services/*',
+                '../db/*',
+                '../middleware/*',
+                '../controllers/*',
+                '../routes/*',
+              ],
+              message: 'server/src/shared may depend only on config/, types/ and pure utils/.',
+            },
+          ],
+        },
+      ],
     },
   },
 

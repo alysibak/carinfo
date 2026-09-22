@@ -2,7 +2,6 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import * as api from '../services/api';
 import type { CarSpecs, SearchQuery } from '../types/car.types';
-import { type FuelTypeFilter } from '../utils/marketIntelligence';
 import SelectMenu from '../components/SelectMenu';
 import ToolPageHeader from '../components/ToolPageHeader';
 import PageShell, { PageBody } from '../components/PageShell';
@@ -13,6 +12,8 @@ import { displayModelLabel } from '../utils/trimLabel';
 import { searchQueryToParams } from '../utils/searchParams';
 import { differentiateCars } from '../utils/differentiateCars';
 import { usePageMeta } from '../utils/pageMeta';
+
+type FuelTypeFilter = 'all' | 'gasoline' | 'hybrid' | 'electric' | 'gasoline-only';
 
 type RankBy = 'match' | 'efficiency' | 'value' | 'power';
 

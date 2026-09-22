@@ -4,7 +4,10 @@ import type { CarSpecs } from '../types/car.types';
 import * as accountApi from '../services/accountApi';
 import { isGarageLimitError } from '../services/accountApi';
 
-export const FREE_GARAGE_LIMIT = 10;
+// Defined once, alongside the server's enforcement of it. Re-exported so the
+// existing `from '../stores/garageStore'` imports keep working.
+import { FREE_GARAGE_LIMIT } from '@carinfo/types/account.types';
+export { FREE_GARAGE_LIMIT };
 
 type AddResult =
   { ok: true } | { ok: false; reason: 'duplicate' | 'limit'; limit?: number; message?: string };

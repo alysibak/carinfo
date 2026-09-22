@@ -1,12 +1,10 @@
 import type { CarSpecs } from '../types/car.types.js';
+import { estimateAnnualEnergyCost } from '../shared/energy-cost.js';
 import {
   annualKmToMiles,
-  EPA_ANNUAL_MILES,
   formatOntarioEnergyAssumptionNote,
   formatOntarioRegionNote,
   getRegionalAssumptions,
-  mpgToLPer100Km,
-  mpgeToKwhPer100Km,
   type RegionalAssumptions,
   type RegionId,
 } from '../config/regional-assumptions.js';
@@ -206,53 +204,12 @@ function tiresAnnual(car: CarSpecs, tires = REGION.tires): number {
   return tires.default;
 }
 
-function gasolineAnnualCostCad(mpg: number, region: RegionalAssumptions = REGION): number {
-  const litresPer100Km = mpgToLPer100Km(mpg);
-  return Math.round((region.annualKm / 100) * litresPer100Km * region.gasPriceCadPerL);
-}
-
-function electricAnnualCostCad(mpge: number, region: RegionalAssumptions = REGION): number {
-  const kwhPer100Km = mpgeToKwhPer100Km(mpge);
-  return Math.round((region.annualKm / 100) * kwhPer100Km * region.electricityRateCadPerKwh);
-}
-
+/**
+ * Annual fuel/energy cost in CAD. Delegates to the shared engine so the
+ * dashboard and the client-side TCO calculator can never disagree.
+ */
 function energyAnnualCost(car: CarSpecs, region: RegionalAssumptions = REGION): number | null {
-  const mpg = roundEfficiency(car.fuelEconomy.combined) ?? 0;
-  const ft = effectiveFuelType(car);
-  const annualKm = region.annualKm;
-
-  if (ft === 'hydrogen') {
-    const epaAnnualUsd = car.epa?.annualFuelCost;
-    if (epaAnnualUsd != null && epaAnnualUsd > 0) {
-      const epaCad = epaAnnualUsd * region.cadUsdExchangeRate;
-      return Math.round(epaCad * (annualKm / (EPA_ANNUAL_MILES * 1.609344)));
-    }
-    return null;
-  }
-
-  if (ft === 'electric' && mpg > 0) {
-    return electricAnnualCostCad(mpg, region);
-  }
-
-  if (ft === 'plug-in hybrid' && mpg > 0) {
-    const gasMpg = car.epa?.phev?.gasMpg ?? mpg;
-    const electricMpge = car.epa?.phev?.electricMpge ?? mpg;
-    const gas = gasolineAnnualCostCad(gasMpg, region) * region.phev.gasMileFraction;
-    const electric = electricAnnualCostCad(electricMpge, region) * region.phev.electricMileFraction;
-    return Math.round(gas + electric);
-  }
-
-  if (mpg > 0) {
-    return gasolineAnnualCostCad(mpg, region);
-  }
-
-  const epaAnnualUsd = car.epa?.annualFuelCost;
-  if (epaAnnualUsd != null && epaAnnualUsd > 0) {
-    const epaCad = epaAnnualUsd * region.cadUsdExchangeRate;
-    return Math.round(epaCad * (annualKm / (EPA_ANNUAL_MILES * 1.609344)));
-  }
-
-  return null;
+  return estimateAnnualEnergyCost(car, {}, region)?.annualCad ?? null;
 }
 
 /** Usage-based fuel/energy $/mi — the only directly mileage-linked cost. */
@@ -353,10 +310,16 @@ export function estimateTco5Year(
   car: CarSpecs,
   market: MarketValueEstimate,
   annual: AnnualCostBreakdown,
+  /**
+   * The loss the dossier displays. Passing it keeps the TCO on the same
+   * number as "Est. value loss"; recomputing here could disagree whenever the
+   * reliability guard has replaced the projection.
+   */
+  depreciation?: { low: number; mid: number; high: number },
 ): TcoEstimate | null {
   if (annual.total == null && car.engine.fuelType === 'hydrogen') return null;
 
-  const dep = estimateDepreciation5Year(car, market);
+  const dep = depreciation ?? estimateDepreciation5Year(car, market);
   const operating5 = (annual.total ?? 0) * 5;
   const beater = isBeaterTier(car, market.mid);
 
@@ -426,7 +389,7 @@ export function computeOwnershipEconomics(
     resaleImpact.estimatedLoss5Year.mid,
     car,
   );
-  const tco5Year = estimateTco5Year(car, market, annualCost);
+  const tco5Year = estimateTco5Year(car, market, annualCost, resaleImpact.estimatedLoss5Year);
 
   const warnings: string[] = [];
   if (isBeaterTier(car, market.mid)) {
@@ -482,9 +445,4 @@ export function computeOwnershipEconomics(
 
 export function estimatePriceMsrp(car: CarSpecs): number {
   return estimateMarketValue(car).mid;
-}
-
-// Legacy compat for market-intelligence energy helpers
-export function energyCostPerMile(car: CarSpecs): number | null {
-  return fuelCostPerMile(car);
 }

@@ -819,7 +819,14 @@ export default function CarDetail() {
 
       <SimilarCars car={car} />
 
-      {showTCO && <TCOCalculator car={car} onClose={() => setShowTCO(false)} />}
+      {showTCO && (
+        <TCOCalculator
+          car={car}
+          ownership={dashboard?.ownership}
+          region={region}
+          onClose={() => setShowTCO(false)}
+        />
+      )}
     </div>
   );
 }
