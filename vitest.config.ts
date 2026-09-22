@@ -23,6 +23,9 @@ export default defineConfig({
           environment: 'node',
           include: ['src/**/*.test.ts'],
           testTimeout: 120_000,
+          // Suites fire many requests from one IP; limits are exercised
+          // explicitly in app.production.test.ts instead.
+          env: { DISABLE_RATE_LIMIT: 'true' },
         },
       },
       {

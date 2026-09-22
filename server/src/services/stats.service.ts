@@ -47,7 +47,11 @@ async function ensureStatsSchema(): Promise<void> {
   if (!statsSchemaReady) {
     statsSchemaReady = (async () => {
       await getPool().query(SCHEMA_SQL);
-    })();
+    })().catch((err) => {
+      // Never cache a failure — retry on the next request instead.
+      statsSchemaReady = null;
+      throw err;
+    });
   }
   await statsSchemaReady;
 }

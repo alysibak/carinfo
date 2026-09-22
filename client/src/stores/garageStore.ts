@@ -30,6 +30,22 @@ interface GarageStore {
   detachCloud: () => void;
 }
 
+/**
+ * Bumped on sign-out. A sync that started under an earlier generation discards
+ * its result: otherwise a sync still in flight when someone signs out would
+ * land afterwards and write that account's garage back into the store — on a
+ * shared device, the next person would see it.
+ */
+let syncGeneration = 0;
+
+/** Put `car` back at (or near) the index it was removed from. */
+function reinsert(cars: CarSpecs[], car: CarSpecs, index: number): CarSpecs[] {
+  if (cars.some((c) => c.id === car.id)) return cars;
+  const next = [...cars];
+  next.splice(Math.min(index, next.length), 0, car);
+  return next;
+}
+
 function effectiveLimit(plan: 'free' | 'pro', garageLimit: number | null): number | null {
   if (plan === 'pro') return null;
   return garageLimit ?? FREE_GARAGE_LIMIT;
@@ -48,13 +64,15 @@ export const useGarageStore = create<GarageStore>()(
 
       setPlan: (plan, garageLimit) => set({ plan, garageLimit }),
 
-      detachCloud: () =>
+      detachCloud: () => {
+        syncGeneration += 1;
         set({
           syncMode: 'local',
           plan: 'free',
           garageLimit: FREE_GARAGE_LIMIT,
           lastSyncError: null,
-        }),
+        });
+      },
 
       add: async (car) => {
         const state = get();
@@ -104,14 +122,20 @@ export const useGarageStore = create<GarageStore>()(
       },
 
       remove: async (carId) => {
-        const prev = get().cars;
-        set({ cars: prev.filter((c) => c.id !== carId), lastSyncError: null });
+        const before = get().cars;
+        const index = before.findIndex((c) => c.id === carId);
+        if (index === -1) return;
+        const removed = before[index];
+        set({ cars: before.filter((c) => c.id !== carId), lastSyncError: null });
         if (get().syncMode === 'cloud') {
           try {
             await accountApi.removeMyGarageItem(carId);
           } catch {
+            // Put back only this car. Restoring the whole earlier snapshot would
+            // undo any add or remove that happened while this request was in
+            // flight — resurrecting one car or dropping another.
             set({
-              cars: prev,
+              cars: reinsert(get().cars, removed, index),
               lastSyncError: 'Could not sync removal. Try again when online.',
             });
           }
@@ -125,8 +149,10 @@ export const useGarageStore = create<GarageStore>()(
           try {
             await accountApi.putMyGarage([]);
           } catch {
+            // Keep anything added since, and restore what the clear removed.
+            const added = get().cars.filter((c) => !prev.some((p) => p.id === c.id));
             set({
-              cars: prev,
+              cars: [...prev, ...added],
               lastSyncError: 'Could not clear cloud garage. Try again when online.',
             });
           }
@@ -140,10 +166,13 @@ export const useGarageStore = create<GarageStore>()(
       },
 
       syncFromCloud: async () => {
+        const generation = syncGeneration;
+        const stale = () => generation !== syncGeneration;
         const localIds = get().cars.map((c) => c.id);
         try {
           // Pull server first to know plan limits, then merge local → server
           const remote = await accountApi.getMyGarage();
+          if (stale()) return;
           set({
             plan: remote.plan,
             garageLimit: remote.garageLimit,
@@ -156,6 +185,7 @@ export const useGarageStore = create<GarageStore>()(
             limit != null && mergedIds.length > limit ? mergedIds.slice(0, limit) : mergedIds;
 
           const saved = await accountApi.putMyGarage(capped);
+          if (stale()) return;
           const cars =
             saved.cars && saved.cars.length > 0
               ? saved.cars
@@ -175,17 +205,28 @@ export const useGarageStore = create<GarageStore>()(
             .map((id) => byId.get(id))
             .filter((c): c is CarSpecs => c != null);
 
+          // Cars that did not fit under the free cap exist only on this device.
+          // Keep them here rather than discarding them: replacing local state
+          // with the capped cloud list used to delete them for good, while the
+          // message told the user that upgrading would keep them.
+          const synced = ordered.length > 0 ? ordered : cars;
+          const syncedIds = new Set(synced.map((c) => c.id));
+          const cutByCap = new Set(mergedIds.slice(capped.length));
+          const deviceOnly = get().cars.filter((c) => cutByCap.has(c.id) && !syncedIds.has(c.id));
+          const overflow = deviceOnly.length;
+
           set({
-            cars: ordered.length > 0 ? ordered : cars,
+            cars: [...synced, ...deviceOnly],
             plan: saved.plan,
             garageLimit: saved.garageLimit,
             syncMode: 'cloud',
             lastSyncError:
-              limit != null && mergedIds.length > limit
-                ? `Synced ${limit} of ${mergedIds.length} vehicles (free plan limit). Upgrade to Pro to keep them all.`
+              overflow > 0
+                ? `${overflow} vehicle${overflow === 1 ? ' is' : 's are'} saved on this device only (free plan limit is ${limit}). Upgrade to Pro to sync ${overflow === 1 ? 'it' : 'them'} to your account.`
                 : null,
           });
         } catch (error) {
+          if (stale()) return;
           console.error('[garage] syncFromCloud failed:', error);
           set({
             lastSyncError: 'Could not sync with your account. Using this device for now.',
@@ -200,3 +241,8 @@ export const useGarageStore = create<GarageStore>()(
     },
   ),
 );
+
+/** Test seam: forget the in-memory sync generation between tests. */
+export function __resetGarageSyncForTests(): void {
+  syncGeneration = 0;
+}

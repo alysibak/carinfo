@@ -6,5 +6,6 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/*.test.ts'],
     testTimeout: 120_000,
+    env: { DISABLE_RATE_LIMIT: 'true' },
   },
 });

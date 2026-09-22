@@ -42,6 +42,23 @@ jobs:
     name: Unit tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Real Postgres for the user-store and Stripe webhook suites. They skip
+    # without TEST_DATABASE_URL, so local runs work with no database.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: carinfo
+          POSTGRES_PASSWORD: carinfo
+          POSTGRES_DB: carinfo_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U carinfo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://carinfo:carinfo@localhost:5432/carinfo_test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
