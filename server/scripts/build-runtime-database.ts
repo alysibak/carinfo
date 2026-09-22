@@ -10,6 +10,7 @@ import { readFileSync } from 'fs';
 import { enrichCar } from '../src/services/content-enrichment.js';
 import { normalizeCarRecord } from '../src/utils/car-normalize.js';
 import { resolveDataFile } from '../src/utils/data-paths.js';
+import { ensureUniqueIds } from '../src/utils/unique-ids.js';
 import type { Car } from '../src/types/car.types.js';
 
 interface CarDatabase {
@@ -29,7 +30,17 @@ console.log(`[build-runtime-db] Reading ${dbPath}...`);
 const db = JSON.parse(readFileSync(dbPath, 'utf-8')) as CarDatabase;
 console.log(`[build-runtime-db] Enriching + normalizing ${db.cars.length.toLocaleString()} cars...`);
 
-const cars = db.cars.map((car) => normalizeCarRecord(enrichCar(car)));
+const normalized = db.cars.map((car) => normalizeCarRecord(enrichCar(car)));
+
+// Slug collisions made some vehicles unreachable by ID — see utils/unique-ids.ts.
+const { cars, report } = ensureUniqueIds(normalized);
+if (report.mergedDuplicates.length || report.renamed.length) {
+  console.log(
+    `[build-runtime-db] ID collisions: merged ${report.mergedDuplicates.length} duplicate listing(s), ` +
+      `disambiguated ${report.renamed.length} distinct vehicle(s).`,
+  );
+  for (const { from, to } of report.renamed) console.log(`  ${from} -> ${to}`);
+}
 const out = {
   cars,
   lastUpdated: db.lastUpdated,

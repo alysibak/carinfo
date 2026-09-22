@@ -4,17 +4,59 @@ import {
   inferEffectiveFuelType,
   isLikelyMisclassifiedPhev,
 } from '../utils/fuel-type-inference.js';
-import { findCar, loadRawCars } from '../__tests__/helpers/loadCars.js';
+import { findCar, findEnrichedCar, loadEnrichedCars } from '../__tests__/helpers/loadCars.js';
 
 const CAYENNE_ID = 'porsche-cayenne-e-hybrid-2019-cayenne-automatic-s8';
 
 describe('fuel-type-inference', () => {
-  it('corrects exactly 437 raw electric records to plug-in hybrid (includes series/EREV hybrids with gas displacement)', () => {
-    const cars = loadRawCars();
-    const misclassified = cars.filter(
+  it('corrects exactly 426 enriched electric records to plug-in hybrid (includes series/EREV hybrids with gas displacement)', () => {
+    // Was pinned at 437 against raw records. That count included 11 genuine
+    // BEVs — Honda Clarity EV and Volvo XC40/C40 Recharge — that the name rules
+    // wrongly demoted, and it measured raw records although inference runs on
+    // enriched ones (enrichment supplies the range the rules depend on).
+    const misclassified = loadEnrichedCars().filter(
       (c) => c.engine.fuelType === 'electric' && inferEffectiveFuelType(c) === 'plug-in hybrid',
     );
-    expect(misclassified).toHaveLength(437);
+    expect(misclassified).toHaveLength(426);
+  });
+
+  it('never classifies a vehicle with no combustion engine as a plug-in hybrid', () => {
+    // A PHEV has an engine by definition. This invariant is what the 11
+    // demoted BEVs violated.
+    const engineless = loadEnrichedCars().filter(
+      (c) =>
+        c.engine.fuelType === 'electric' &&
+        !(c.engine.displacement && c.engine.displacement > 0) &&
+        (c.epa?.rangeMiles ?? 0) >= 50,
+    );
+    expect(engineless.length).toBeGreaterThan(0);
+    for (const car of engineless) {
+      expect(inferEffectiveFuelType(car), `${car.year} ${car.make} ${car.model}`).toBe('electric');
+    }
+  });
+
+  it.each([
+    ['Honda', 'Clarity EV'],
+    ['Volvo', 'XC40 Recharge'],
+    ['Volvo', 'XC40 Recharge twin'],
+    ['Volvo', 'C40 Recharge'],
+    ['Volvo', 'C40 Recharge twin'],
+  ])('keeps the %s %s as electric despite a PHEV-associated name', (make, model) => {
+    const car = findEnrichedCar((c) => c.make === make && c.model === model);
+    expect(car, `${make} ${model} should exist in the corpus`).toBeDefined();
+    expect(inferEffectiveFuelType(car!)).toBe('electric');
+  });
+
+  it.each([
+    ['Honda', 'Clarity Plug-in Hybrid'],
+    ['Volvo', 'XC60 T8 AWD Recharge'],
+    ['Volvo', 'XC90 T8 AWD Recharge'],
+  ])('still reclassifies the %s %s, which shares that name and has an engine', (make, model) => {
+    const car = findEnrichedCar(
+      (c) => c.make === make && c.model === model && c.engine.fuelType === 'electric',
+    );
+    expect(car, `${make} ${model} should exist in the corpus`).toBeDefined();
+    expect(inferEffectiveFuelType(car!)).toBe('plug-in hybrid');
   });
 
   it('reclassifies Cayenne e-Hybrid from electric to plug-in hybrid', () => {

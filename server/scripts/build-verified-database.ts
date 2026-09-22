@@ -13,6 +13,7 @@ import { parse } from 'csv-parse';
 import type { BodyStyle, Car, DriveType, FuelType, Provenance, ProvenanceSource } from '../src/types/car.types.js';
 import { estimatePriceMsrp } from '../src/utils/ownership-economics.js';
 import { canonicalizeDisplayModel, resolveNhtsaSafety } from '../src/utils/vehicle-taxonomy.js';
+import { ensureUniqueIds } from '../src/utils/unique-ids.js';
 
 const EPA_CSV_URL = 'https://fueleconomy.gov/feg/epadata/vehicles.csv';
 const EPA_ZIP_URL = 'https://fueleconomy.gov/feg/epadata/vehicles.csv.zip';
@@ -549,6 +550,9 @@ async function main(): Promise<void> {
 
   console.log(`Mapped ${cars.length} passenger vehicles (${MIN_YEAR}–${CURRENT_YEAR})`);
   cars = dedupeCars(cars);
+  // dedupeCars keys on the raw model string, but IDs slugify it — rows that
+  // differ only by whitespace/case survive dedupe yet share an ID.
+  cars = ensureUniqueIds(cars).cars;
   console.log(`After deduplication: ${cars.length}`);
 
   applyPricing(cars);

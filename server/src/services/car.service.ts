@@ -12,6 +12,7 @@ import {
   normalizeSearchToken,
 } from '../utils/fuzzy-search.js';
 import { enrichCar } from './content-enrichment.js';
+import { ensureUniqueIds } from '../utils/unique-ids.js';
 
 function resolveDbPath(): string | null {
   return resolveDataFile('cars.json');
@@ -144,7 +145,7 @@ function initDatabase(): void {
       );
     } else {
       // Dev / missing ready file: enrich + normalize at load (slow on large DBs).
-      cachedCars = db.cars.map(enrichCar).map(normalizeCarRecord);
+      cachedCars = ensureUniqueIds(db.cars.map(enrichCar).map(normalizeCarRecord)).cars;
       rawIdIndex = new Map(db.cars.map((car) => [car.id, car]));
       console.log(
         `[car.service] Loaded + enriched DB: ${cachedCars.length.toLocaleString()} cars in ${((Date.now() - started) / 1000).toFixed(1)}s`,
@@ -583,9 +584,9 @@ function expandGluedMakeTokens(tokens: string[]): string[] {
 
   for (const token of tokens) {
     let split = false;
-    const compactToken = token.replace(/[\s\-]/g, '');
+    const compactToken = token.replace(/[\s-]/g, '');
     for (const make of makes) {
-      const compactMake = make.replace(/[\s\-]/g, '');
+      const compactMake = make.replace(/[\s-]/g, '');
       if (
         compactToken.startsWith(compactMake) &&
         compactToken.length > compactMake.length
@@ -818,7 +819,7 @@ function getCandidateSet(query: SearchQuery): Car[] {
 
   // Start with the smallest index filter
   const first = indexFilters[0];
-  let resultSet: Set<Car> = new Set();
+  const resultSet: Set<Car> = new Set();
   for (const key of first.keys) {
     const bucket = first.index.get(key);
     if (bucket) {

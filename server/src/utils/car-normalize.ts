@@ -43,6 +43,20 @@ function applyMarketValue(normalized: Car): Car {
   };
 }
 
+/**
+ * EPA stores `displ = 0` for some battery-electric rows (e.g. Mitsubishi
+ * i-MiEV). Zero is not "unknown", it is a claim — a 0.0 L engine — and any
+ * consumer that does not special-case EVs will print it. An engineless
+ * vehicle's displacement is absent, not zero.
+ */
+function dropPhantomDisplacement(car: Car): Car {
+  const { fuelType, displacement } = car.engine;
+  if (displacement !== 0) return car;
+  if (fuelType !== 'electric' && fuelType !== 'hydrogen') return car;
+  const { displacement: _dropped, ...engine } = car.engine;
+  return { ...car, engine };
+}
+
 export function normalizeCarRecord(car: Car): Car {
   let normalized = car;
 
@@ -62,6 +76,7 @@ export function normalizeCarRecord(car: Car): Car {
   }
 
   normalized = applyVehicleTaxonomy(normalized);
+  normalized = dropPhantomDisplacement(normalized);
 
   return applyMarketValue(normalized);
 }

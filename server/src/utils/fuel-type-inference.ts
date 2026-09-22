@@ -10,6 +10,9 @@ const BEV_NAME_RE = /\b(bolt ev|leaf|model [3sxy]|model y|i[34]\b|ioniq 5|ioniq 
 /** Short EPA electric-only range (mi) — signature of PHEV mislabeled as BEV. */
 const PHEV_RANGE_THRESHOLD_MI = 50;
 
+/** A standalone "EV"/"Electric" token in the model name ("Clarity EV", "Kona Electric"). */
+const EXPLICIT_BEV_TOKEN_RE = /\b(ev|electric)\b/i;
+
 /**
  * Infer corrected fuel type from EPA fields + naming patterns.
  * Used at normalization and in valuation (effectiveFuelType).
@@ -24,6 +27,19 @@ export function inferEffectiveFuelType(car: CarSpecs): FuelType {
 
   if (stored === 'plug-in hybrid' || stored === 'hybrid') return stored;
   if (stored === 'hydrogen' || stored === 'diesel' || stored === 'gasoline') return stored;
+
+  // Physical evidence outranks naming. A plug-in hybrid has a combustion engine
+  // by definition, so an EPA "electric" row with no displacement and a real
+  // battery range is a BEV whatever its name says.
+  //
+  // Without this guard the name rules below demoted 11 genuine BEVs: "Clarity"
+  // is shared by Honda's BEV, PHEV and fuel-cell cars, and Volvo sells both
+  // its EVs (XC40/C40 Recharge, ~225–300 mi) and its PHEVs as "Recharge". Every
+  // real PHEV in the corpus reports displacement >= 0.6 L, so it is unaffected.
+  if (stored === 'electric' && displacement <= 0) {
+    if (range >= PHEV_RANGE_THRESHOLD_MI) return 'electric';
+    if (EXPLICIT_BEV_TOKEN_RE.test(car.model)) return 'electric';
+  }
 
   // Explicit PHEV naming — safe to correct even without range.
   if (PHEV_NAME_RE.test(key)) return 'plug-in hybrid';
