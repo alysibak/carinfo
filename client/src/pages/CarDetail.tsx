@@ -33,16 +33,20 @@ import { buildGlanceMetrics } from '../utils/glanceMetrics';
 import { efficiencyUnit } from '../utils/fuelLabels';
 import { formatFuelBadge } from '../utils/fuelDisplay';
 import { efficiencySecondaryLine, formatKwhPer100KmFromMi } from '../utils/fuelEconomyUnits';
-import { ghgFraming, phevModes, fiveYearFuelSavings, fuelSavingsSentence, type PhevModes } from '../utils/epaContent';
+import {
+  ghgFraming,
+  phevModes,
+  fiveYearFuelSavings,
+  fuelSavingsSentence,
+  type PhevModes,
+} from '../utils/epaContent';
 import type { AnnualCostBreakdown } from '../types/car.types';
 import { TIER_HELPER } from '../utils/visualTiers';
 import { usePageMeta } from '../utils/pageMeta';
 
 function Subheading({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[10px] tracking-widest text-zinc-400 uppercase pt-2 pb-1">
-      {children}
-    </p>
+    <p className="text-[10px] tracking-widest text-zinc-400 uppercase pt-2 pb-1">{children}</p>
   );
 }
 
@@ -50,7 +54,10 @@ function Subheading({ children }: { children: React.ReactNode }) {
 const FUEL_BAR_SCALE_MAX = 60;
 
 const ANNUAL_COST_SEGMENTS: {
-  key: keyof Pick<AnnualCostBreakdown, 'energy' | 'insurance' | 'maintenance' | 'tires' | 'registration'>;
+  key: keyof Pick<
+    AnnualCostBreakdown,
+    'energy' | 'insurance' | 'maintenance' | 'tires' | 'registration'
+  >;
   label: string;
   color: string;
 }[] = [
@@ -135,7 +142,9 @@ function PhevDualModeBlock({ modes }: { modes: PhevModes }) {
       {hasNumericValue(modes.electricMpge) && (
         <div>
           <div className="flex items-baseline justify-between gap-4">
-            <span className="text-[10px] tracking-[0.25em] text-zinc-300 uppercase">Electric mode</span>
+            <span className="text-[10px] tracking-[0.25em] text-zinc-300 uppercase">
+              Electric mode
+            </span>
             <span className="text-sm font-bold text-white">
               {modes.electricMpge} MPGe
               {hasNumericValue(modes.electricRangeMi) ? ` · ${modes.electricRangeMi} mi` : ''}
@@ -143,8 +152,10 @@ function PhevDualModeBlock({ modes }: { modes: PhevModes }) {
           </div>
           <p className="text-[11px] text-zinc-400 leading-relaxed mt-1">
             Drives on battery power
-            {hasNumericValue(modes.electricRangeMi) ? ` for about ${modes.electricRangeMi} miles` : ''} after a full
-            charge, like an EV, then switches to gas automatically.
+            {hasNumericValue(modes.electricRangeMi)
+              ? ` for about ${modes.electricRangeMi} miles`
+              : ''}{' '}
+            after a full charge, like an EV, then switches to gas automatically.
           </p>
         </div>
       )}
@@ -155,7 +166,8 @@ function PhevDualModeBlock({ modes }: { modes: PhevModes }) {
             <span className="text-sm font-bold text-white">{modes.gasMpg} MPG</span>
           </div>
           <p className="text-[11px] text-zinc-400 leading-relaxed mt-1">
-            Once the battery is used up it runs like a regular hybrid on gasoline. No plugging in required.
+            Once the battery is used up it runs like a regular hybrid on gasoline. No plugging in
+            required.
           </p>
         </div>
       )}
@@ -253,8 +265,15 @@ export default function CarDetail() {
   }
 
   const { car, ownership, evCharge } = dashboard;
-  const { marketValue, annualCost, resaleImpact, derivedComparison, assumptions, warnings, practicalityNote } =
-    ownership;
+  const {
+    marketValue,
+    annualCost,
+    resaleImpact,
+    derivedComparison,
+    assumptions,
+    warnings,
+    practicalityNote,
+  } = ownership;
   const isHydrogen = car.engine.fuelType === 'hydrogen';
   const efficiencyLabel = efficiencyUnit(car);
   const isInCompare = comparedCars.some((c) => c.id === car.id);
@@ -264,8 +283,7 @@ export default function CarDetail() {
   const ghg = ghgFraming(car);
   const hasFuelData = hasFuelEconomyData(car);
   const hasEconomics = annualCost.total != null;
-  const hasMarketValue =
-    hasNumericValue(marketValue.low) && hasNumericValue(marketValue.high);
+  const hasMarketValue = hasNumericValue(marketValue.low) && hasNumericValue(marketValue.high);
 
   const hasEmissionsData =
     car.epa?.co2 != null ||
@@ -393,8 +411,8 @@ export default function CarDetail() {
       {isHydrogen && (
         <div className="border-b border-amber-900/50 bg-amber-950/20">
           <div className="page-wrap py-4 text-sm text-amber-200/90 leading-relaxed">
-            <strong className="text-amber-100">Hydrogen fuel cell (FCEV).</strong> MPGe is from EPA tests, not
-            gasoline MPG. Fuel costs here do not reflect Ontario H₂ availability.
+            <strong className="text-amber-100">Hydrogen fuel cell (FCEV).</strong> MPGe is from EPA
+            tests, not gasoline MPG. Fuel costs here do not reflect Ontario H₂ availability.
           </div>
         </div>
       )}
@@ -409,9 +427,7 @@ export default function CarDetail() {
               <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight mb-1 break-words">
                 {displayVehicleTitle(car)}
               </h1>
-              {trimLabel && (
-                <p className="text-sm text-zinc-500 mb-1.5 sm:mb-2">{trimLabel}</p>
-              )}
+              {trimLabel && <p className="text-sm text-zinc-500 mb-1.5 sm:mb-2">{trimLabel}</p>}
               <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-zinc-400">
                 {car.bodyStyle && <span className="capitalize">{car.bodyStyle}</span>}
                 {car.driveType && <span>{car.driveType}</span>}
@@ -473,7 +489,10 @@ export default function CarDetail() {
                         label={`Highway ${efficiencyLabel}`}
                         value={car.fuelEconomy.highway}
                         max={FUEL_BAR_SCALE_MAX}
-                        secondary={efficiencySecondaryLine(car.fuelEconomy.highway, efficiencyLabel)}
+                        secondary={efficiencySecondaryLine(
+                          car.fuelEconomy.highway,
+                          efficiencyLabel,
+                        )}
                       />
                     </>
                   )}
@@ -505,56 +524,60 @@ export default function CarDetail() {
                 </div>
               )}
 
-              {hasSafetyBreakdown && (() => {
-                const scores = [
-                  hasNumericValue(car.safetyRating?.frontal, { allowZero: false }) && {
-                    key: 'frontal',
-                    label: 'Frontal',
-                    value: car.safetyRating!.frontal!,
-                  },
-                  hasNumericValue(car.safetyRating?.side, { allowZero: false }) && {
-                    key: 'side',
-                    label: 'Side',
-                    value: car.safetyRating!.side!,
-                  },
-                  hasNumericValue(car.safetyRating?.rollover, { allowZero: false }) && {
-                    key: 'rollover',
-                    label: 'Rollover',
-                    value: car.safetyRating!.rollover!,
-                  },
-                ].filter(Boolean) as { key: string; label: string; value: number }[];
+              {hasSafetyBreakdown &&
+                (() => {
+                  const scores = [
+                    hasNumericValue(car.safetyRating?.frontal, { allowZero: false }) && {
+                      key: 'frontal',
+                      label: 'Frontal',
+                      value: car.safetyRating!.frontal!,
+                    },
+                    hasNumericValue(car.safetyRating?.side, { allowZero: false }) && {
+                      key: 'side',
+                      label: 'Side',
+                      value: car.safetyRating!.side!,
+                    },
+                    hasNumericValue(car.safetyRating?.rollover, { allowZero: false }) && {
+                      key: 'rollover',
+                      label: 'Rollover',
+                      value: car.safetyRating!.rollover!,
+                    },
+                  ].filter(Boolean) as { key: string; label: string; value: number }[];
 
-                return (
-                  <div className="min-w-0 self-start">
-                    <h2 className="text-base font-bold tracking-tight mb-1">Crash tests</h2>
-                    <p className="text-xs text-zinc-500 mb-3 leading-relaxed">
-                      Overall is above. NHTSA tests specific configurations — scores may apply to
-                      closely related trims of the same model year.
-                    </p>
-                    <div
-                      className={`grid gap-px bg-zinc-800 ${
-                        scores.length >= 3
-                          ? 'grid-cols-3'
-                          : scores.length === 2
-                            ? 'grid-cols-2'
-                            : 'grid-cols-1'
-                      }`}
-                    >
-                      {scores.map((score) => (
-                        <div key={score.key} className="bg-black px-2 sm:px-3 py-3.5 sm:py-4 text-center min-w-0">
-                          <p className="text-[9px] uppercase tracking-wider text-zinc-500 mb-1 break-words">
-                            {score.label}
-                          </p>
-                          <p className="text-lg sm:text-xl font-bold tabular-nums">
-                            {score.value}
-                            <span className="text-[10px] text-zinc-500">/5</span>
-                          </p>
-                        </div>
-                      ))}
+                  return (
+                    <div className="min-w-0 self-start">
+                      <h2 className="text-base font-bold tracking-tight mb-1">Crash tests</h2>
+                      <p className="text-xs text-zinc-500 mb-3 leading-relaxed">
+                        Overall is above. NHTSA tests specific configurations — scores may apply to
+                        closely related trims of the same model year.
+                      </p>
+                      <div
+                        className={`grid gap-px bg-zinc-800 ${
+                          scores.length >= 3
+                            ? 'grid-cols-3'
+                            : scores.length === 2
+                              ? 'grid-cols-2'
+                              : 'grid-cols-1'
+                        }`}
+                      >
+                        {scores.map((score) => (
+                          <div
+                            key={score.key}
+                            className="bg-black px-2 sm:px-3 py-3.5 sm:py-4 text-center min-w-0"
+                          >
+                            <p className="text-[9px] uppercase tracking-wider text-zinc-500 mb-1 break-words">
+                              {score.label}
+                            </p>
+                            <p className="text-lg sm:text-xl font-bold tabular-nums">
+                              {score.value}
+                              <span className="text-[10px] text-zinc-500">/5</span>
+                            </p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                );
-              })()}
+                  );
+                })()}
 
               {hasEmissionsData && (
                 <div className="min-w-0">
@@ -563,10 +586,19 @@ export default function CarDetail() {
                     EPA figures for this configuration.
                   </p>
                   {car.epa?.co2 != null && (
-                    <DataRow label="CO₂" value={`${car.epa.co2} g/mi`} allowZero glossaryKey="co2" />
+                    <DataRow
+                      label="CO₂"
+                      value={`${car.epa.co2} g/mi`}
+                      allowZero
+                      glossaryKey="co2"
+                    />
                   )}
                   {ghg && (
-                    <DataRow label="Emissions score" value={`${ghg.score}/10`} glossaryKey="ghgScore" />
+                    <DataRow
+                      label="Emissions score"
+                      value={`${ghg.score}/10`}
+                      glossaryKey="ghgScore"
+                    />
                   )}
                   {hasNumericValue(car.epa?.barrelsPerYear) && (
                     <DataRow
@@ -722,7 +754,9 @@ export default function CarDetail() {
               {hasEconomics && (
                 <div className="min-w-0">
                   <Subheading>After five years</Subheading>
-                  <p className="text-xs text-zinc-500 leading-relaxed py-1 mb-1">{resaleImpact.note}</p>
+                  <p className="text-xs text-zinc-500 leading-relaxed py-1 mb-1">
+                    {resaleImpact.note}
+                  </p>
                   <DataRow
                     label="Projected resale"
                     value={formatCurrencyRange(
@@ -744,7 +778,9 @@ export default function CarDetail() {
                   {ownership.tco5Year && (
                     <DataRow
                       label={
-                        ownership.tco5Year.mode === 'operating' ? 'Annual running cost' : '5-year total'
+                        ownership.tco5Year.mode === 'operating'
+                          ? 'Annual running cost'
+                          : '5-year total'
                       }
                       value={formatCurrencyRange(ownership.tco5Year.low, ownership.tco5Year.high)}
                       valueTier={2}
@@ -784,7 +820,6 @@ export default function CarDetail() {
       <SimilarCars car={car} />
 
       {showTCO && <TCOCalculator car={car} onClose={() => setShowTCO(false)} />}
-
     </div>
   );
 }

@@ -1,7 +1,6 @@
 import type { CarSpecs } from '../types/car.types';
 
-const FCEV_NAME_RE =
-  /\b(fuel\s*cell|fcv|fcev|mirai|nexo)\b/i;
+const FCEV_NAME_RE = /\b(fuel\s*cell|fcv|fcev|mirai|nexo)\b/i;
 
 /** Client-side mirror of server fuel-cell detection (API data is normalized, but guards stale cache). */
 export function isFuelCellVehicle(car: CarSpecs): boolean {

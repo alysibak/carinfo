@@ -164,7 +164,12 @@ export default function SearchBar({
         viewBox="0 0 24 24"
         aria-hidden
       >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+        />
       </svg>
       <input
         ref={inputRef}
@@ -245,7 +250,9 @@ export default function SearchBar({
       {size === 'hero' && showButton ? (
         <div className="flex flex-col sm:flex-row border border-zinc-700 rounded-none min-w-0">
           {inputEl}
-          <div className="border-t sm:border-t-0 sm:border-l border-zinc-700 shrink-0">{buttonEl}</div>
+          <div className="border-t sm:border-t-0 sm:border-l border-zinc-700 shrink-0">
+            {buttonEl}
+          </div>
         </div>
       ) : (
         <div className={`flex gap-3 ${showButton ? 'flex-col sm:flex-row' : ''}`}>

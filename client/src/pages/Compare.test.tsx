@@ -12,7 +12,7 @@ vi.mock('../services/api', () => ({
   compareCars: vi.fn(),
 }));
 
-function mockCompareStore(comparedCars: typeof trustDashboard.car[]) {
+function mockCompareStore(comparedCars: (typeof trustDashboard.car)[]) {
   vi.mocked(useCarStore).mockReturnValue({
     comparedCars,
     removeCarFromComparison: vi.fn(),

@@ -55,7 +55,11 @@ export default function PersonaQuiz({ onComplete }: PersonaQuizProps) {
       type = 'work';
     } else if (answers.priority === 'power' || answers.usage === 'fun') {
       type = 'gearhead';
-    } else if (answers.priority === 'safety' || answers.priority === 'space' || answers.usage === 'family') {
+    } else if (
+      answers.priority === 'safety' ||
+      answers.priority === 'space' ||
+      answers.usage === 'family'
+    ) {
       type = 'family';
     } else if (answers.priority === 'mpg' || answers.usage === 'commute') {
       type = 'commuter';
@@ -93,9 +97,7 @@ export default function PersonaQuiz({ onComplete }: PersonaQuizProps) {
               />
             ))}
           </div>
-          <p className="text-center text-xs tracking-[0.2em] text-zinc-400">
-            Step {step} of 3
-          </p>
+          <p className="text-center text-xs tracking-[0.2em] text-zinc-400">Step {step} of 3</p>
         </div>
 
         {step === 1 && (
@@ -144,7 +146,9 @@ export default function PersonaQuiz({ onComplete }: PersonaQuizProps) {
                   onClick={() => handleAnswer('priority', option.value)}
                   className="bg-zinc-950 border border-zinc-800 hover:border-white px-4 py-5 sm:p-8 transition-colors text-left"
                 >
-                  <p className="text-lg sm:text-2xl font-bold tracking-tight mb-1">{option.label}</p>
+                  <p className="text-lg sm:text-2xl font-bold tracking-tight mb-1">
+                    {option.label}
+                  </p>
                   <p className="text-sm text-zinc-500">{option.desc}</p>
                 </button>
               ))}
@@ -157,9 +161,7 @@ export default function PersonaQuiz({ onComplete }: PersonaQuizProps) {
             <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-3 sm:mb-6">
               How will you use it?
             </h2>
-            <p className="text-sm sm:text-lg text-zinc-400 mb-8 sm:mb-12">
-              Primary use case
-            </p>
+            <p className="text-sm sm:text-lg text-zinc-400 mb-8 sm:mb-12">Primary use case</p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-4xl mx-auto">
               {USAGE_OPTIONS.map((option) => (
@@ -168,7 +170,9 @@ export default function PersonaQuiz({ onComplete }: PersonaQuizProps) {
                   onClick={() => handleAnswer('usage', option.value)}
                   className="bg-zinc-950 border border-zinc-800 hover:border-white px-4 py-5 sm:p-8 transition-colors text-left"
                 >
-                  <p className="text-lg sm:text-2xl font-bold tracking-tight mb-1">{option.label}</p>
+                  <p className="text-lg sm:text-2xl font-bold tracking-tight mb-1">
+                    {option.label}
+                  </p>
                   <p className="text-sm text-zinc-500">{option.desc}</p>
                 </button>
               ))}

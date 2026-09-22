@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGarageStore, FREE_GARAGE_LIMIT } from '../stores/garageStore';
-import { cardStatClass, formatEngineForCard, formatMpgForCard, formatPriceShort } from '../utils/dataValue';
+import {
+  cardStatClass,
+  formatEngineForCard,
+  formatMpgForCard,
+  formatPriceShort,
+} from '../utils/dataValue';
 import SignInPromptSlot from '../components/SignInPromptSlot';
 import ToolPageHeader from '../components/ToolPageHeader';
 import { ConfirmDialog, Modal, StatusToast } from '../components/ui';
@@ -43,13 +48,17 @@ export default function DreamGarage() {
   };
 
   const totalValue = garage.reduce((sum, car) => sum + (car.price?.msrp || 0), 0);
-  const formattedValue = totalValue >= 1_000_000
-    ? `$${(totalValue / 1_000_000).toFixed(2)}M`
-    : `$${Math.round(totalValue / 1000)}k`;
+  const formattedValue =
+    totalValue >= 1_000_000
+      ? `$${(totalValue / 1_000_000).toFixed(2)}M`
+      : `$${Math.round(totalValue / 1000)}k`;
   const uniqueMakes = new Set(garage.map((car) => car.make)).size;
-  const avgMPG = garage.length > 0
-    ? Math.round(garage.reduce((sum, car) => sum + (car.fuelEconomy.combined || 0), 0) / garage.length)
-    : 0;
+  const avgMPG =
+    garage.length > 0
+      ? Math.round(
+          garage.reduce((sum, car) => sum + (car.fuelEconomy.combined || 0), 0) / garage.length,
+        )
+      : 0;
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -138,7 +147,9 @@ export default function DreamGarage() {
             {/* Garage Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-zinc-800 border border-zinc-800 mb-12">
               <div className="bg-zinc-950 p-4">
-                <p className="text-[10px] uppercase tracking-widest text-zinc-400 mb-2">Est. total value</p>
+                <p className="text-[10px] uppercase tracking-widest text-zinc-400 mb-2">
+                  Est. total value
+                </p>
                 <p className="text-3xl font-bold tabular-nums text-white">{formattedValue}</p>
               </div>
               <div className="bg-zinc-950 p-4">
@@ -192,8 +203,18 @@ export default function DreamGarage() {
                     onClick={() => removeFromGarage(car.id)}
                     className="absolute top-4 right-4 w-10 h-10 bg-zinc-950 border border-zinc-800 flex items-center justify-center hover:bg-red-600 hover:border-red-600 transition-all group/remove"
                   >
-                    <svg className="w-5 h-5 text-zinc-300 group-hover/remove:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M6 18L18 6M6 6l12 12" />
+                    <svg
+                      className="w-5 h-5 text-zinc-300 group-hover/remove:text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                   </button>
 
@@ -221,7 +242,11 @@ export default function DreamGarage() {
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     <div>
                       <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">Engine</p>
-                      <p className={cardStatClass(formatEngineForCard(car.engine.fuelType, car.engine.displacement))}>
+                      <p
+                        className={cardStatClass(
+                          formatEngineForCard(car.engine.fuelType, car.engine.displacement),
+                        )}
+                      >
                         {formatEngineForCard(car.engine.fuelType, car.engine.displacement)}
                       </p>
                     </div>
@@ -232,7 +257,9 @@ export default function DreamGarage() {
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">Est. Value</p>
+                      <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">
+                        Est. Value
+                      </p>
                       <p className={cardStatClass(formatPriceShort(car.price?.msrp))}>
                         {formatPriceShort(car.price?.msrp)}
                       </p>
@@ -249,8 +276,18 @@ export default function DreamGarage() {
                     className="w-full flex items-center justify-center gap-2 text-xs tracking-widest text-zinc-300 group-hover:text-white transition-all py-2 border border-zinc-900 group-hover:border-zinc-700"
                   >
                     <span>VIEW DETAILS</span>
-                    <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    <svg
+                      className="w-4 h-4 group-hover:translate-x-1 transition-transform"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1}
+                        d="M17 8l4 4m0 0l-4 4m4-4H3"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -260,7 +297,11 @@ export default function DreamGarage() {
         )}
       </div>
 
-      <Modal open={showShareModal} onClose={() => setShowShareModal(false)} title="Share your garage">
+      <Modal
+        open={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        title="Share your garage"
+      >
         <p className="text-sm tracking-wide text-zinc-400 mb-6">
           Anyone with this link can view your saved vehicles and add them to their own garage.
         </p>

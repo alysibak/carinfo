@@ -24,12 +24,7 @@ function PreviewFuelBar({ dashboard }: { dashboard: CarDashboard }) {
 
   const unit = efficiencyUnit(car);
   const label = unit === 'MPGe' ? 'MPGe' : 'MPG';
-  const max = Math.max(
-    car.fuelEconomy.city ?? 0,
-    car.fuelEconomy.highway ?? 0,
-    combined ?? 0,
-    1,
-  );
+  const max = Math.max(car.fuelEconomy.city ?? 0, car.fuelEconomy.highway ?? 0, combined ?? 0, 1);
   const pct = Math.min(100, (combined! / max) * 100);
   const secondary = efficiencySecondaryLine(combined, label);
 
@@ -40,7 +35,9 @@ function PreviewFuelBar({ dashboard }: { dashboard: CarDashboard }) {
           Combined {label}
         </span>
         <div className="text-right">
-          <span className="text-2xl font-bold tabular-nums text-white">{Math.round(combined!)}</span>
+          <span className="text-2xl font-bold tabular-nums text-white">
+            {Math.round(combined!)}
+          </span>
           {secondary && <p className="text-xs text-zinc-400 mt-0.5">{secondary}</p>}
         </div>
       </div>
@@ -54,8 +51,8 @@ function PreviewFuelBar({ dashboard }: { dashboard: CarDashboard }) {
 export default function HeroDossierPreview({ dashboard }: { dashboard: CarDashboard }) {
   const { car } = dashboard;
   const subtitle = displayListingSubtitle(car);
-  const metrics = buildGlanceMetrics(dashboard).cells
-    .filter(isPreviewMetric)
+  const metrics = buildGlanceMetrics(dashboard)
+    .cells.filter(isPreviewMetric)
     .filter((m) => m.id !== 'power')
     .slice(0, 4);
 
@@ -66,7 +63,9 @@ export default function HeroDossierPreview({ dashboard }: { dashboard: CarDashbo
     >
       <div className="relative">
         <div className="p-4 border-b border-zinc-800">
-          <p className="text-[10px] tracking-widest text-zinc-400 uppercase mb-2">Vehicle dossier</p>
+          <p className="text-[10px] tracking-widest text-zinc-400 uppercase mb-2">
+            Vehicle dossier
+          </p>
           <p className="text-xs text-zinc-400 uppercase tracking-wider mb-0.5">
             {car.year} {car.make}
           </p>

@@ -20,7 +20,10 @@ function stripEpaModelNoise(model: string): string {
     prev = cleaned;
     cleaned = cleaned.replace(EPA_MODEL_PAREN, '').replace(TECHNICAL_PAREN, '').trim();
   }
-  cleaned = cleaned.replace(/\s*\(FFV\)/gi, '').replace(EPA_MODEL_SUFFIX, '').trim();
+  cleaned = cleaned
+    .replace(/\s*\(FFV\)/gi, '')
+    .replace(EPA_MODEL_SUFFIX, '')
+    .trim();
   return cleaned.replace(/\s{2,}/g, ' ');
 }
 
@@ -78,9 +81,7 @@ export function displayModelFamilyLabel(car: ModelCar): string {
 }
 
 /** Year + make + family, e.g. "2026 Mazda 3". */
-export function displayVehicleTitle(
-  car: Pick<CarSpecs, 'year' | 'make'> & ModelCar,
-): string {
+export function displayVehicleTitle(car: Pick<CarSpecs, 'year' | 'make'> & ModelCar): string {
   return `${car.year} ${car.make} ${displayModelFamilyLabel(car)}`;
 }
 
@@ -89,16 +90,50 @@ export function displayModelConfigRemainder(car: ModelCar): string | null {
   const full = displayModelLabel(car);
   const family = displayModelFamilyLabel(car);
   if (full.toLowerCase() === family.toLowerCase()) return null;
-  const rest = full.slice(family.length).trim().replace(/^[\s/_-]+/, '');
+  const rest = full
+    .slice(family.length)
+    .trim()
+    .replace(/^[\s/_-]+/, '');
   return rest || null;
 }
 
 /** EPA / slug tokens that are not consumer-facing trim names. */
 const TRIM_NOISE = new Set([
-  'automatic', 'manual', 'auto', 'cvt', 'spd', 'mode', 'clkup', 'av', 'at', 'mt',
-  's6', 's7', 's8', 's10', 'pm', 'sil', 'ems', 'dct', 'pdk', 'tiptronic',
-  '4wd', '2wd', 'awd', 'fwd', 'rwd', '4x4', '2x4',
-  'cmode', 'vmode', 'lkup', 'variable', 'gear', 'ratios', 'lockup', 'creeper',
+  'automatic',
+  'manual',
+  'auto',
+  'cvt',
+  'spd',
+  'mode',
+  'clkup',
+  'av',
+  'at',
+  'mt',
+  's6',
+  's7',
+  's8',
+  's10',
+  'pm',
+  'sil',
+  'ems',
+  'dct',
+  'pdk',
+  'tiptronic',
+  '4wd',
+  '2wd',
+  'awd',
+  'fwd',
+  'rwd',
+  '4x4',
+  '2x4',
+  'cmode',
+  'vmode',
+  'lkup',
+  'variable',
+  'gear',
+  'ratios',
+  'lockup',
+  'creeper',
 ]);
 
 /**
@@ -113,16 +148,47 @@ const TRIM_NOISE_PATTERNS = [/^[a-z]{0,2}\d*(?:mode|lkup)$/, /^am\d+$/, /^s\d+$/
  * already shown beside the label, so they carry nothing on their own.
  */
 const GENERIC_MODEL_WORDS = new Set([
-  'series', 'class', 'pickup', 'golf', 'wagon', 'sedan', 'coupe', 'van',
-  'truck', 'convertible', 'hatchback', 'roadster',
+  'series',
+  'class',
+  'pickup',
+  'golf',
+  'wagon',
+  'sedan',
+  'coupe',
+  'van',
+  'truck',
+  'convertible',
+  'hatchback',
+  'roadster',
 ]);
 
 /** Short tokens that are ordinary words, not model codes — "John", not "JOHN". */
 const TITLE_CASE_WORDS = new Set(['john', 'am', 'can']);
 
 const MEANINGFUL_SHORT = new Set([
-  'gti', 'gt', 'rs', 'se', 'le', 'ex', 'lx', 'si', 'xse', 'xle', 'sr', 'trd', 'gr',
-  'st', 'rt', 'ss', 'svt', 'sho', 'sti', 'type', 'r', 's', 'm',
+  'gti',
+  'gt',
+  'rs',
+  'se',
+  'le',
+  'ex',
+  'lx',
+  'si',
+  'xse',
+  'xle',
+  'sr',
+  'trd',
+  'gr',
+  'st',
+  'rt',
+  'ss',
+  'svt',
+  'sho',
+  'sti',
+  'type',
+  'r',
+  's',
+  'm',
 ]);
 
 function titleToken(token: string): string {
@@ -154,12 +220,20 @@ export function displayTrimLabel(car: Pick<CarSpecs, 'trim' | 'model'>): string 
     return cleaned;
   }
 
-  const modelSlug = model.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const modelSlug = model
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
   let rest = trim;
   if (rest.startsWith(`${modelSlug}-`)) rest = rest.slice(modelSlug.length + 1);
   else if (rest === modelSlug) return null;
 
-  const modelTokens = new Set(model.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean));
+  const modelTokens = new Set(
+    model
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter(Boolean),
+  );
   const tokens = rest.split('-').filter(Boolean);
   const meaningful = tokens.filter((t, i) => {
     const lower = t.toLowerCase();

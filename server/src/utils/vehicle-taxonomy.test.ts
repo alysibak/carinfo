@@ -30,7 +30,9 @@ describe('vehicle-taxonomy', () => {
     const truck = minimalCar({ make: 'Ford', model: 'F-150', bodyStyle: 'truck' });
     expect(classifyShoppingSegment(truck, truck.model, 'truck')).toBe('truck');
 
-    const camry = findCar((c) => c.make === 'Toyota' && c.model.includes('Camry') && c.year === 2020);
+    const camry = findCar(
+      (c) => c.make === 'Toyota' && c.model.includes('Camry') && c.year === 2020,
+    );
     expect(camry).toBeDefined();
     const camryDisplay = canonicalizeDisplayModel(camry!);
     const camryBody = inferBodyStyle(camry!, camryDisplay);
@@ -39,10 +41,7 @@ describe('vehicle-taxonomy', () => {
 
   it('corrects EPA hatchback mislabels (Golf stored as sedan)', () => {
     const golf = findCar(
-      (c) =>
-        c.make === 'Volkswagen' &&
-        /^golf$/i.test(c.model) &&
-        c.bodyStyle === 'sedan',
+      (c) => c.make === 'Volkswagen' && /^golf$/i.test(c.model) && c.bodyStyle === 'sedan',
     );
     expect(golf).toBeDefined();
     const display = canonicalizeDisplayModel(golf!);

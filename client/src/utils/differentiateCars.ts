@@ -102,7 +102,7 @@ const METRICS: MetricDef[] = [
     key: 'range',
     get: (car) =>
       car.engine.fuelType === 'electric' || car.engine.fuelType === 'plug-in hybrid'
-        ? car.epa?.rangeMiles ?? null
+        ? (car.epa?.rangeMiles ?? null)
         : null,
     higherIsBetter: true,
     minAbsDelta: 20,
@@ -113,11 +113,7 @@ const METRICS: MetricDef[] = [
   },
 ];
 
-function meaningfulSpread(
-  values: number[],
-  minAbs: number,
-  minRel?: number,
-): boolean {
+function meaningfulSpread(values: number[], minAbs: number, minRel?: number): boolean {
   if (values.length < 2) return false;
   const hi = Math.max(...values);
   const lo = Math.min(...values);
@@ -154,7 +150,8 @@ function categoricalEdge(car: CarSpecs, set: CarSpecs[]): string | null {
     const othersAwd = set.some(
       (c) => c.id !== car.id && (c.driveType === 'AWD' || c.driveType === '4WD'),
     );
-    if (awdish && !othersAwd) return `Only ${car.driveType} here — better for snow / light off-road`;
+    if (awdish && !othersAwd)
+      return `Only ${car.driveType} here — better for snow / light off-road`;
     if (!awdish && othersAwd && set.filter((c) => c.driveType === car.driveType).length === 1) {
       return `${car.driveType} — usually simpler and more efficient than AWD`;
     }
@@ -306,7 +303,10 @@ export function differentiateCars(cars: CarSpecs[]): DiffResult {
 /**
  * How each alternative differs from the car you're viewing.
  */
-export function differentiateVsAnchor(anchor: CarSpecs, others: CarSpecs[]): Record<string, string> {
+export function differentiateVsAnchor(
+  anchor: CarSpecs,
+  others: CarSpecs[],
+): Record<string, string> {
   const out: Record<string, string> = {};
   for (const other of others) {
     const pair = differentiateCars([anchor, other]);

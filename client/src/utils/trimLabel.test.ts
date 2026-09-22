@@ -60,7 +60,9 @@ describe('displayTrimLabel', () => {
   it('keeps genuine trim names', () => {
     expect(label('Golf', 'golf-gti-manual-6-spd')).toBe('GTI');
     expect(label('Impreza', 'impreza-outback-sport-manual-5-spd')).toBe('Outback Sport');
-    expect(label('JCW Countryman All4', 'john-cooper-works-manual-6-spd')).toBe('John Cooper Works');
+    expect(label('JCW Countryman All4', 'john-cooper-works-manual-6-spd')).toBe(
+      'John Cooper Works',
+    );
     expect(label('Express 1500/2500 2WD', 'express-passenger-clkup-automatic-4-spd')).toBe(
       'Passenger',
     );

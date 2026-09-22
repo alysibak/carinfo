@@ -5,15 +5,62 @@ type ListingCar = Pick<CarSpecs, 'trim' | 'model' | 'transmission'>;
 
 /** EPA / slug tokens that are not consumer-facing trim names. */
 const TRIM_NOISE = new Set([
-  'automatic', 'manual', 'auto', 'cvt', 'spd', 'mode', 'clkup', 'av', 'at', 'mt',
-  's6', 's7', 's8', 's10', 'am', 'pm', 'sil', 'ems', 'dct', 'pdk', 'tiptronic',
-  '4wd', '2wd', 'awd', 'fwd', 'rwd', '4x4', '2x4',
+  'automatic',
+  'manual',
+  'auto',
+  'cvt',
+  'spd',
+  'mode',
+  'clkup',
+  'av',
+  'at',
+  'mt',
+  's6',
+  's7',
+  's8',
+  's10',
+  'am',
+  'pm',
+  'sil',
+  'ems',
+  'dct',
+  'pdk',
+  'tiptronic',
+  '4wd',
+  '2wd',
+  'awd',
+  'fwd',
+  'rwd',
+  '4x4',
+  '2x4',
 ]);
 
 /** Meaningful short trim tokens — do not strip even if ≤4 chars. */
 const MEANINGFUL_SHORT = new Set([
-  'gti', 'gt', 'rs', 'se', 'le', 'ex', 'lx', 'si', 'xse', 'xle', 'sr', 'trd', 'gr',
-  'st', 'rt', 'ss', 'rs', 'svt', 'sho', 'sti', 'type', 'r', 's', 'm',
+  'gti',
+  'gt',
+  'rs',
+  'se',
+  'le',
+  'ex',
+  'lx',
+  'si',
+  'xse',
+  'xle',
+  'sr',
+  'trd',
+  'gr',
+  'st',
+  'rt',
+  'ss',
+  'rs',
+  'svt',
+  'sho',
+  'sti',
+  'type',
+  'r',
+  's',
+  'm',
 ]);
 
 function titleToken(token: string): string {
@@ -44,12 +91,20 @@ export function displayTrimLabel(car: Pick<CarSpecs, 'trim' | 'model'>): string 
     return cleaned;
   }
 
-  const modelSlug = model.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const modelSlug = model
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
   let rest = trim;
   if (rest.startsWith(`${modelSlug}-`)) rest = rest.slice(modelSlug.length + 1);
   else if (rest === modelSlug) return null;
 
-  const modelTokens = new Set(model.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean));
+  const modelTokens = new Set(
+    model
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter(Boolean),
+  );
   const tokens = rest.split('-').filter(Boolean);
   const meaningful = tokens.filter((t) => {
     const lower = t.toLowerCase();

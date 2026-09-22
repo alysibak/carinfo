@@ -16,16 +16,11 @@ function getStripe(): Stripe | null {
 }
 
 function isBillingConfigured(): boolean {
-  return Boolean(
-    process.env.STRIPE_SECRET_KEY?.trim() && process.env.STRIPE_PRICE_ID?.trim(),
-  );
+  return Boolean(process.env.STRIPE_SECRET_KEY?.trim() && process.env.STRIPE_PRICE_ID?.trim());
 }
 
 function appOrigin(req: Request): string {
-  return (
-    process.env.APP_ORIGIN?.replace(/\/$/, '') ||
-    `${req.protocol}://${req.get('host')}`
-  );
+  return process.env.APP_ORIGIN?.replace(/\/$/, '') || `${req.protocol}://${req.get('host')}`;
 }
 
 export async function createCheckoutSession(req: Request, res: Response) {
@@ -145,10 +140,7 @@ export async function handleStripeWebhook(req: Request, res: Response) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
-        const userId =
-          session.client_reference_id ||
-          session.metadata?.clerkUserId ||
-          null;
+        const userId = session.client_reference_id || session.metadata?.clerkUserId || null;
         const customerId =
           typeof session.customer === 'string' ? session.customer : session.customer?.id;
         if (userId) {
@@ -164,9 +156,7 @@ export async function handleStripeWebhook(req: Request, res: Response) {
         const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id;
         const user =
           (await findUserByStripeCustomerId(customerId)) ||
-          (sub.metadata?.clerkUserId
-            ? await getUser(sub.metadata.clerkUserId)
-            : null);
+          (sub.metadata?.clerkUserId ? await getUser(sub.metadata.clerkUserId) : null);
         if (user) {
           const active =
             event.type === 'customer.subscription.updated' &&

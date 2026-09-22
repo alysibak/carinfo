@@ -63,9 +63,7 @@ export function DataRow({
   const row = (
     <div
       className={`flex py-2 border-b border-zinc-900 last:border-b-0 min-w-0 ${
-        isPrimaryPair
-          ? 'flex-col gap-0.5 items-start'
-          : 'items-baseline justify-between gap-3'
+        isPrimaryPair ? 'flex-col gap-0.5 items-start' : 'items-baseline justify-between gap-3'
       } ${total ? 'border-t border-zinc-700 mt-2 pt-3' : ''}`}
     >
       <span className={`${labelClass} shrink-0 max-w-[45%]`}>

@@ -10,7 +10,14 @@ import { createReadStream, existsSync, mkdirSync, readFileSync, writeFileSync } 
 import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { parse } from 'csv-parse';
-import type { BodyStyle, Car, DriveType, FuelType, Provenance, ProvenanceSource } from '../src/types/car.types.js';
+import type {
+  BodyStyle,
+  Car,
+  DriveType,
+  FuelType,
+  Provenance,
+  ProvenanceSource,
+} from '../src/types/car.types.js';
 import { estimatePriceMsrp } from '../src/utils/ownership-economics.js';
 import { canonicalizeDisplayModel, resolveNhtsaSafety } from '../src/utils/vehicle-taxonomy.js';
 import { ensureUniqueIds } from '../src/utils/unique-ids.js';
@@ -92,9 +99,15 @@ function mapVClassToBodyStyle(vclass: string, model = ''): BodyStyle | null {
   if (v.includes('pickup')) return 'truck';
   if (v.includes('station wagon') || v.includes('wagon')) return 'wagon';
   if (v.includes('minivan')) return 'minivan';
-  if (v.includes('cargo van') || v.includes('passenger van') || (v.includes('van') && !v.includes('minivan'))) return 'van';
+  if (
+    v.includes('cargo van') ||
+    v.includes('passenger van') ||
+    (v.includes('van') && !v.includes('minivan'))
+  )
+    return 'van';
   if (v.includes('two-seater') || v.includes('two seaters')) return 'coupe';
-  if (/\b(gti|golf r|e-golf|hatchback|leaf|bolt|prius|veloster|fit|yaris)\b/.test(m)) return 'hatchback';
+  if (/\b(gti|golf r|e-golf|hatchback|leaf|bolt|prius|veloster|fit|yaris)\b/.test(m))
+    return 'hatchback';
   if (v.includes('car')) return 'sedan';
   return 'sedan';
 }
@@ -111,7 +124,11 @@ function mapDrive(drive: string): DriveType {
   return 'FWD';
 }
 
-function mapTransmission(trany: string): { type: Car['transmission']['type']; speeds?: number; description: string } {
+function mapTransmission(trany: string): {
+  type: Car['transmission']['type'];
+  speeds?: number;
+  description: string;
+} {
   const t = trany.toLowerCase();
   const speedMatch = trany.match(/(\d+)[-\s]?spd/i);
   const avMatch = trany.match(/(?:AV|AM)-S(\d+)/i);
@@ -121,8 +138,10 @@ function mapTransmission(trany: string): { type: Car['transmission']['type']; sp
   if (!speeds && parenS) speeds = parseInt(parenS[1], 10);
   if (speeds != null && (speeds < 1 || speeds > 12)) speeds = undefined;
   if (t.includes('manual')) return { type: 'manual', speeds, description: trany };
-  if (t.includes('variable gear') || t.includes('cvt')) return { type: 'cvt', speeds, description: trany };
-  if (t.includes('dual') || t.includes('dct')) return { type: 'dual-clutch', speeds, description: trany };
+  if (t.includes('variable gear') || t.includes('cvt'))
+    return { type: 'cvt', speeds, description: trany };
+  if (t.includes('dual') || t.includes('dct'))
+    return { type: 'dual-clutch', speeds, description: trany };
   return { type: 'automatic', speeds, description: trany };
 }
 
@@ -155,11 +174,13 @@ function parseNum(value: string | undefined): number | undefined {
 }
 
 function slugify(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80) || 'base';
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 80) || 'base'
+  );
 }
 
 function setProv(provenance: Provenance, field: string, source: ProvenanceSource): void {
@@ -167,14 +188,43 @@ function setProv(provenance: Provenance, field: string, source: ProvenanceSource
 }
 
 const MAKE_COUNTRY: Record<string, string> = {
-  acura: 'Japan', 'alfa romeo': 'Italy', audi: 'Germany', bmw: 'Germany', buick: 'USA',
-  cadillac: 'USA', chevrolet: 'USA', chrysler: 'USA', dodge: 'USA', ferrari: 'Italy',
-  fiat: 'Italy', ford: 'USA', genesis: 'South Korea', gmc: 'USA', honda: 'Japan',
-  hyundai: 'South Korea', infiniti: 'Japan', jaguar: 'UK', jeep: 'USA', kia: 'South Korea',
-  lamborghini: 'Italy', 'land rover': 'UK', lexus: 'Japan', lincoln: 'USA', maserati: 'Italy',
-  mazda: 'Japan', 'mercedes-benz': 'Germany', mini: 'UK', mitsubishi: 'Japan', nissan: 'Japan',
-  porsche: 'Germany', ram: 'USA', subaru: 'Japan', tesla: 'USA', toyota: 'Japan',
-  volkswagen: 'Germany', volvo: 'Sweden',
+  acura: 'Japan',
+  'alfa romeo': 'Italy',
+  audi: 'Germany',
+  bmw: 'Germany',
+  buick: 'USA',
+  cadillac: 'USA',
+  chevrolet: 'USA',
+  chrysler: 'USA',
+  dodge: 'USA',
+  ferrari: 'Italy',
+  fiat: 'Italy',
+  ford: 'USA',
+  genesis: 'South Korea',
+  gmc: 'USA',
+  honda: 'Japan',
+  hyundai: 'South Korea',
+  infiniti: 'Japan',
+  jaguar: 'UK',
+  jeep: 'USA',
+  kia: 'South Korea',
+  lamborghini: 'Italy',
+  'land rover': 'UK',
+  lexus: 'Japan',
+  lincoln: 'USA',
+  maserati: 'Italy',
+  mazda: 'Japan',
+  'mercedes-benz': 'Germany',
+  mini: 'UK',
+  mitsubishi: 'Japan',
+  nissan: 'Japan',
+  porsche: 'Germany',
+  ram: 'USA',
+  subaru: 'Japan',
+  tesla: 'USA',
+  toyota: 'Japan',
+  volkswagen: 'Germany',
+  volvo: 'Sweden',
 };
 
 function lookupCountry(make: string): string | undefined {
@@ -371,7 +421,12 @@ function applyPricing(cars: Car[]): void {
     }
 
     const msrp = estimatePriceMsrp(car);
-    car.price = { msrp, min: Math.round(msrp * 0.9), max: Math.round(msrp * 1.1), isEstimated: true };
+    car.price = {
+      msrp,
+      min: Math.round(msrp * 0.9),
+      max: Math.round(msrp * 1.1),
+      isEstimated: true,
+    };
     setProv(car.provenance, 'price.msrp', 'estimated');
   }
 }
@@ -414,7 +469,9 @@ async function fetchNhtsaSafety(make: string, model: string, year: number) {
   const vehicleId = results[0].VehicleId;
   if (!vehicleId) return undefined;
 
-  const detailRes = await axios.get(`https://api.nhtsa.gov/SafetyRatings/VehicleId/${vehicleId}`, { timeout: 15000 });
+  const detailRes = await axios.get(`https://api.nhtsa.gov/SafetyRatings/VehicleId/${vehicleId}`, {
+    timeout: 15000,
+  });
   const detail = detailRes.data?.Results?.[0];
   if (!detail) return undefined;
 
@@ -473,8 +530,10 @@ async function enrichWithNhtsa(cars: Car[]): Promise<void> {
 
   saveNhtsaCache(cache);
 
-  const safetyIndex: Record<string, { overall: number; frontal?: number; side?: number; rollover?: number }> =
-    {};
+  const safetyIndex: Record<
+    string,
+    { overall: number; frontal?: number; side?: number; rollover?: number }
+  > = {};
   for (const [key, entry] of Object.entries(cache)) {
     if (entry.safetyRating?.overall) {
       safetyIndex[key] = entry.safetyRating as { overall: number };
@@ -525,12 +584,18 @@ function reportCoverage(cars: Car[]): void {
   console.log('\n=== Build Summary ===');
   console.log(`Total records: ${cars.length}`);
   console.log(`With EPA MPG: ${withEpaMpg} (${((withEpaMpg / cars.length) * 100).toFixed(1)}%)`);
-  console.log(`With safety ratings: ${withSafety} (${((withSafety / cars.length) * 100).toFixed(1)}%)`);
-  console.log(`With country (estimated): ${withCountry} (${((withCountry / cars.length) * 100).toFixed(1)}%)`);
+  console.log(
+    `With safety ratings: ${withSafety} (${((withSafety / cars.length) * 100).toFixed(1)}%)`,
+  );
+  console.log(
+    `With country (estimated): ${withCountry} (${((withCountry / cars.length) * 100).toFixed(1)}%)`,
+  );
   console.log(`With price: ${withPrice} (${((withPrice / cars.length) * 100).toFixed(1)}%)`);
   console.log(`Estimated prices: ${estimatedPrice}`);
   console.log('Cars with at least one source tag:', provenanceCounts);
-  console.log(`Year range: ${Math.min(...cars.map((c) => c.year))}–${Math.max(...cars.map((c) => c.year))}`);
+  console.log(
+    `Year range: ${Math.min(...cars.map((c) => c.year))}–${Math.max(...cars.map((c) => c.year))}`,
+  );
   console.log(`Makes: ${new Set(cars.map((c) => c.make)).size}`);
 }
 

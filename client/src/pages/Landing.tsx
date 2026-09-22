@@ -7,11 +7,7 @@ import VehiclePlaceholder from '../components/VehiclePlaceholder';
 import * as api from '../services/api';
 import type { CarSpecs } from '../types/car.types';
 import { COLLECTIONS } from '../config/collections';
-import {
-  LIFESTYLE_PRESETS,
-  POPULAR_SEARCHES,
-  presetToSearchQuery,
-} from '../config/browseTaxonomy';
+import { LIFESTYLE_PRESETS, POPULAR_SEARCHES, presetToSearchQuery } from '../config/browseTaxonomy';
 import { searchQueryToParams } from '../utils/searchParams';
 import { formatFuelBadge, usesMpge } from '../utils/fuelDisplay';
 import { displayModelLabel, displayListingSubtitle } from '../utils/trimLabel';
@@ -60,8 +56,7 @@ export default function Landing() {
   const [showcase, setShowcase] = useState<ShowcaseItem[]>([]);
   const navigate = useNavigate();
   const compareCount = useCarStore((s) => s.comparedCars.length);
-  const trayPad =
-    compareCount > 0 ? 'pb-[calc(4.25rem+env(safe-area-inset-bottom))]' : '';
+  const trayPad = compareCount > 0 ? 'pb-[calc(4.25rem+env(safe-area-inset-bottom))]' : '';
 
   const handleHeroSearch = (q: string) => {
     const trimmed = q.trim();
@@ -114,7 +109,6 @@ export default function Landing() {
       );
       setShowcase(items);
     })();
-
   }, []);
 
   const situationPresets = LIFESTYLE_PRESETS.slice(0, 4);
@@ -141,8 +135,8 @@ export default function Landing() {
               CarInfo
             </h1>
             <p className="text-base md:text-lg text-zinc-400 leading-relaxed mb-6 md:mb-8 animate-hero-rise [animation-delay:40ms]">
-              Specs you can trust — EPA, NHTSA when on file, and labeled Ontario estimates.
-              Look up a car, or answer three questions.
+              Specs you can trust — EPA, NHTSA when on file, and labeled Ontario estimates. Look up
+              a car, or answer three questions.
             </p>
 
             <div className="animate-hero-rise [animation-delay:80ms]">
@@ -222,7 +216,10 @@ export default function Landing() {
             <p className="text-sm font-semibold text-white">I have a VIN</p>
             <p className="text-sm text-zinc-400 leading-relaxed">
               Drop it in the search above, or use{' '}
-              <Link to="/vin" className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700">
+              <Link
+                to="/vin"
+                className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700"
+              >
                 VIN lookup
               </Link>{' '}
               if you want the scanner.
@@ -285,9 +282,7 @@ export default function Landing() {
                 </p>
                 <p className="text-sm text-zinc-400 mt-0.5 line-clamp-2">{c.subtitle}</p>
               </div>
-              <p className="text-xs text-zinc-500 whitespace-nowrap shrink-0">
-                Picks →
-              </p>
+              <p className="text-xs text-zinc-500 whitespace-nowrap shrink-0">Picks →</p>
             </Link>
           ))}
         </div>
@@ -302,8 +297,12 @@ export default function Landing() {
             </p>
           </div>
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-zinc-500">
-            <Link to="/vin" className="hover:text-white">VIN lookup</Link>
-            <Link to="/methodology" className="hover:text-white">Methodology</Link>
+            <Link to="/vin" className="hover:text-white">
+              VIN lookup
+            </Link>
+            <Link to="/methodology" className="hover:text-white">
+              Methodology
+            </Link>
             <VisitCounter className="text-zinc-500" />
             <span>© {new Date().getFullYear()}</span>
           </div>
@@ -408,14 +407,18 @@ function ShowcaseCard({
               <span className="text-3xl sm:text-4xl font-bold text-white leading-none tabular-nums">
                 {primaryMetric.value}
               </span>
-              <span className="text-sm uppercase text-zinc-500 tracking-wider shrink-0">{primaryMetric.unit}</span>
+              <span className="text-sm uppercase text-zinc-500 tracking-wider shrink-0">
+                {primaryMetric.unit}
+              </span>
             </div>
           ) : (
             <p className="text-2xl font-bold text-white leading-tight tabular-nums">
               {primaryMetric.value}
             </p>
           )}
-          {secondaryLine && <p className="text-xs text-zinc-500 mt-1.5 truncate">{secondaryLine}</p>}
+          {secondaryLine && (
+            <p className="text-xs text-zinc-500 mt-1.5 truncate">{secondaryLine}</p>
+          )}
           <p className="text-xs text-zinc-500 mt-1 truncate">{tertiary}</p>
         </div>
       </div>

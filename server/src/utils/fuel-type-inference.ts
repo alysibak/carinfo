@@ -5,7 +5,8 @@ import { isFuelCellVehicle } from './fuel-cell-detection.js';
 const PHEV_NAME_RE =
   /\b(e-hybrid|ehybrid|plug-?in|phev|prime|energi|clarity|volt|i3 rex|t8\b|xdrive\d{2}e|recharge|4xe|e4|e-tron sportback phev)\b/i;
 
-const BEV_NAME_RE = /\b(bolt ev|leaf|model [3sxy]|model y|i[34]\b|ioniq 5|ioniq 6|ev6|mach-e|id\.4|id4|kona electric|niro ev|e-golf|500e|i-miev|focus electric|spark ev|hummer ev|rivian|lucid air)\b/i;
+const BEV_NAME_RE =
+  /\b(bolt ev|leaf|model [3sxy]|model y|i[34]\b|ioniq 5|ioniq 6|ev6|mach-e|id\.4|id4|kona electric|niro ev|e-golf|500e|i-miev|focus electric|spark ev|hummer ev|rivian|lucid air)\b/i;
 
 /** Short EPA electric-only range (mi) — signature of PHEV mislabeled as BEV. */
 const PHEV_RANGE_THRESHOLD_MI = 50;
@@ -70,7 +71,9 @@ export function inferEffectiveFuelType(car: CarSpecs): FuelType {
   // Short range without displacement but strong PHEV model family (Porsche hybrids, Panamera, etc.)
   if (range > 0 && range < PHEV_RANGE_THRESHOLD_MI) {
     if (
-      /\b(e-hybrid|s e-hybrid|tfsi e|t8|xdrive\d{2}e|recharge|4xe|outlander phev|wrangler 4xe)\b/i.test(key) ||
+      /\b(e-hybrid|s e-hybrid|tfsi e|t8|xdrive\d{2}e|recharge|4xe|outlander phev|wrangler 4xe)\b/i.test(
+        key,
+      ) ||
       (car.make === 'Porsche' && /hybrid|e-hybrid/i.test(`${car.model}`))
     ) {
       return 'plug-in hybrid';

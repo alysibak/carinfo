@@ -10,7 +10,14 @@ import {
 
 const REGION = getRegionalAssumptions();
 
-export { isFuelCellVehicle, usesMpge, formatFuelTypeLabel, formatFuelBadge, formatPowertrainLabel, formatEngineSystem } from './fuelDisplay';
+export {
+  isFuelCellVehicle,
+  usesMpge,
+  formatFuelTypeLabel,
+  formatFuelBadge,
+  formatPowertrainLabel,
+  formatEngineSystem,
+} from './fuelDisplay';
 
 export function efficiencyUnit(car: CarSpecs): 'MPG' | 'MPGe' {
   return usesMpge(car.engine.fuelType) ? 'MPGe' : 'MPG';
@@ -21,7 +28,9 @@ function gasolineAnnualCostCad(mpg: number): number {
 }
 
 function electricAnnualCostCad(mpge: number): number {
-  return Math.round((REGION.annualKm / 100) * mpgeToKwhPer100Km(mpge) * REGION.electricityRateCadPerKwh);
+  return Math.round(
+    (REGION.annualKm / 100) * mpgeToKwhPer100Km(mpge) * REGION.electricityRateCadPerKwh,
+  );
 }
 
 function estimatedAnnualFuelCostCad(car: CarSpecs): number | null {

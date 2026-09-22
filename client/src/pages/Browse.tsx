@@ -37,7 +37,11 @@ export default function Browse() {
       <section className="page-wrap pb-10 sm:pb-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 md:gap-x-10">
           {LIFESTYLE_PRESETS.map((preset) => (
-            <Link key={preset.id} to={homeLink(presetToSearchQuery(preset))} className="list-row group">
+            <Link
+              key={preset.id}
+              to={homeLink(presetToSearchQuery(preset))}
+              className="list-row group"
+            >
               <div className="min-w-0">
                 <p className="font-semibold text-white group-hover:text-zinc-200">{preset.label}</p>
                 <p className="text-sm text-zinc-500 mt-0.5">{preset.description}</p>
@@ -51,7 +55,9 @@ export default function Browse() {
       <section className="border-t border-zinc-900">
         <div className="page-wrap section-y">
           <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2">Or a body style</h2>
-          <p className="text-sm text-zinc-500 mb-6 md:mb-8">What the vehicle is, before the badge.</p>
+          <p className="text-sm text-zinc-500 mb-6 md:mb-8">
+            What the vehicle is, before the badge.
+          </p>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-zinc-800">
             {BODY_TYPES.map((type) => (
               <Link
@@ -78,7 +84,11 @@ export default function Browse() {
             <p className="text-sm text-zinc-500 mb-6">Estimated CAD value, not asking price.</p>
             <div className="flex flex-col">
               {PRICE_BUCKETS.map((bucket) => (
-                <Link key={bucket.id} to={filterLink(bucket.filters)} className="list-row text-sm text-zinc-300 hover:text-white">
+                <Link
+                  key={bucket.id}
+                  to={filterLink(bucket.filters)}
+                  className="list-row text-sm text-zinc-300 hover:text-white"
+                >
                   {bucket.label}
                 </Link>
               ))}
@@ -89,7 +99,11 @@ export default function Browse() {
             <p className="text-sm text-zinc-500 mb-6">Current gen, last decade, or older.</p>
             <div className="flex flex-col">
               {YEAR_BUCKETS.map((bucket) => (
-                <Link key={bucket.id} to={filterLink(bucket.filters)} className="list-row text-sm text-zinc-300 hover:text-white">
+                <Link
+                  key={bucket.id}
+                  to={filterLink(bucket.filters)}
+                  className="list-row text-sm text-zinc-300 hover:text-white"
+                >
                   {bucket.label}
                 </Link>
               ))}

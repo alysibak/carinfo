@@ -64,4 +64,3 @@ describe('KeySpecs long values', () => {
     expect(row?.className).not.toContain('flex-col');
   });
 });
-

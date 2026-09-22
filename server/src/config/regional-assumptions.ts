@@ -205,11 +205,15 @@ export function usdAnchorToCadValue(
   return usdAmount * region.cadUsdExchangeRate * region.canadianUsedMarketFactor;
 }
 
-export function formatOntarioEnergyAssumptionNote(region: RegionalAssumptions = getRegionalAssumptions()): string {
+export function formatOntarioEnergyAssumptionNote(
+  region: RegionalAssumptions = getRegionalAssumptions(),
+): string {
   return `${region.label} ~$${region.gasPriceCadPerL.toFixed(2)}/L gas, ~$${region.electricityRateCadPerKwh.toFixed(3)}/kWh home electricity @ ~${region.annualKm.toLocaleString()} km/yr`;
 }
 
-export function formatOntarioRegionNote(region: RegionalAssumptions = getRegionalAssumptions()): string {
+export function formatOntarioRegionNote(
+  region: RegionalAssumptions = getRegionalAssumptions(),
+): string {
   return `${region.label}-baseline estimates in ${region.displayCurrency}. Condition, mileage, and local demand still cause real variation`;
 }
 

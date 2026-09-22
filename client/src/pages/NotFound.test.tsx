@@ -12,8 +12,14 @@ describe('NotFound', () => {
     );
 
     expect(screen.getByRole('heading', { name: /doesn't exist/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /start from a situation/i })).toHaveAttribute('href', '/browse');
-    expect(screen.getByRole('link', { name: /value chart/i })).toHaveAttribute('href', '/value-matrix');
+    expect(screen.getByRole('link', { name: /start from a situation/i })).toHaveAttribute(
+      'href',
+      '/browse',
+    );
+    expect(screen.getByRole('link', { name: /value chart/i })).toHaveAttribute(
+      'href',
+      '/value-matrix',
+    );
     expect(screen.getByRole('link', { name: /back to home/i })).toHaveAttribute('href', '/');
   });
 });

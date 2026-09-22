@@ -71,7 +71,10 @@ export function normalizeCarRecord(car: Car): Car {
     };
   }
 
-  if (isLikelyMisclassifiedPhev(normalized) || inferEffectiveFuelType(normalized) !== normalized.engine.fuelType) {
+  if (
+    isLikelyMisclassifiedPhev(normalized) ||
+    inferEffectiveFuelType(normalized) !== normalized.engine.fuelType
+  ) {
     normalized = applyFuelTypeCorrection(normalized);
   }
 

@@ -1,18 +1,11 @@
 export type ProvenanceSource = 'epa' | 'nhtsa' | 'estimated' | 'curated';
 export type Provenance = Record<string, ProvenanceSource>;
 
-export type FuelType = 'gasoline' | 'diesel' | 'electric' | 'hybrid' | 'plug-in hybrid' | 'hydrogen';
+export type FuelType =
+  'gasoline' | 'diesel' | 'electric' | 'hybrid' | 'plug-in hybrid' | 'hydrogen';
 export type DriveType = 'FWD' | 'RWD' | 'AWD' | '4WD';
 export type BodyStyle =
-  | 'sedan'
-  | 'suv'
-  | 'coupe'
-  | 'convertible'
-  | 'hatchback'
-  | 'wagon'
-  | 'truck'
-  | 'van'
-  | 'minivan';
+  'sedan' | 'suv' | 'coupe' | 'convertible' | 'hatchback' | 'wagon' | 'truck' | 'van' | 'minivan';
 
 export type VehicleCategory = 'car' | 'suv' | 'truck' | 'van';
 

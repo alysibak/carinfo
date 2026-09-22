@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Trust UI smoke path', () => {
-  test('methodology, search, dossier, and compare show provenance affordances', async ({ page }) => {
+  test('methodology, search, dossier, and compare show provenance affordances', async ({
+    page,
+  }) => {
     await page.goto('/methodology');
     await expect(page.getByRole('heading', { name: /methodology/i })).toBeVisible();
     await expect(page.getByText('EPA', { exact: true }).first()).toBeVisible();

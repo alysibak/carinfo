@@ -17,10 +17,7 @@ describe('car-normalize', () => {
 
   it('leaves confirmed BEV fuel type unchanged after normalize', () => {
     const raw = findCar(
-      (c) =>
-        c.make === 'Tesla' &&
-        c.model.includes('Model 3 Long Range') &&
-        c.year === 2022,
+      (c) => c.make === 'Tesla' && c.model.includes('Model 3 Long Range') && c.year === 2022,
     );
     expect(raw).toBeDefined();
 

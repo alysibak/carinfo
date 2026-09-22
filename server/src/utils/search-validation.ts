@@ -20,7 +20,17 @@ function asRange(obj: unknown): { min?: number; max?: number } | undefined {
   return { min, max };
 }
 
-const SORT_FIELDS = new Set(['make', 'model', 'year', 'horsepower', 'price', 'fuelEconomy', 'range', 'evScore', 'relevance']);
+const SORT_FIELDS = new Set([
+  'make',
+  'model',
+  'year',
+  'horsepower',
+  'price',
+  'fuelEconomy',
+  'range',
+  'evScore',
+  'relevance',
+]);
 
 /**
  * Coerce and validate a search request body. Invalid filter shapes are dropped
@@ -28,9 +38,10 @@ const SORT_FIELDS = new Set(['make', 'model', 'year', 'horsepower', 'price', 'fu
  */
 export function normalizeSearchQuery(body: unknown): SearchQuery {
   const raw = body && typeof body === 'object' ? (body as Record<string, unknown>) : {};
-  const filtersRaw = raw.filters && typeof raw.filters === 'object'
-    ? (raw.filters as Record<string, unknown>)
-    : undefined;
+  const filtersRaw =
+    raw.filters && typeof raw.filters === 'object'
+      ? (raw.filters as Record<string, unknown>)
+      : undefined;
 
   const query: SearchQuery = {
     query: typeof raw.query === 'string' ? raw.query : undefined,

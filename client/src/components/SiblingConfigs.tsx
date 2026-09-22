@@ -5,7 +5,11 @@ import type { CarSpecs } from '../types/car.types';
 import { differentiateVsAnchor } from '../utils/differentiateCars';
 import { formatMpgForCard } from '../utils/dataValue';
 import { usesMpge } from '../utils/fuelDisplay';
-import { displayListingSubtitle, displayModelLabel, formatTransmissionLabel } from '../utils/trimLabel';
+import {
+  displayListingSubtitle,
+  displayModelLabel,
+  formatTransmissionLabel,
+} from '../utils/trimLabel';
 
 /** Other EPA configs of the same year/make/model — with how each differs from this one. */
 export default function SiblingConfigs({ car }: { car: CarSpecs }) {
@@ -49,27 +53,22 @@ export default function SiblingConfigs({ car }: { car: CarSpecs }) {
             const mpg = formatMpgForCard(sib.fuelEconomy.combined);
             return (
               <li key={sib.id}>
-                <Link
-                  to={`/car/${sib.id}`}
-                  className="block px-3 py-2.5 text-sm hover:bg-zinc-950"
-                >
+                <Link to={`/car/${sib.id}`} className="block px-3 py-2.5 text-sm hover:bg-zinc-950">
                   <div className="flex items-baseline justify-between gap-3">
                     <span className="min-w-0 truncate text-zinc-200">
                       {displayModelLabel(sib)}
                       {subtitle ? <span className="text-zinc-500"> · {subtitle}</span> : null}
                     </span>
                     <span className="shrink-0 text-xs text-zinc-500 tabular-nums">
-                      {[
-                        trans,
-                        sib.driveType,
-                        mpg !== 'Not on file' ? `${mpg} ${mpgLabel}` : null,
-                      ]
+                      {[trans, sib.driveType, mpg !== 'Not on file' ? `${mpg} ${mpgLabel}` : null]
                         .filter(Boolean)
                         .join(' · ')}
                     </span>
                   </div>
                   {edges[sib.id] && (
-                    <p className="text-sm text-zinc-100 font-medium mt-1.5 leading-snug">{edges[sib.id]}</p>
+                    <p className="text-sm text-zinc-100 font-medium mt-1.5 leading-snug">
+                      {edges[sib.id]}
+                    </p>
                   )}
                 </Link>
               </li>

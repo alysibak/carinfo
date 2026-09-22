@@ -2,14 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { getCarById, searchCars } from '../services/car.service.js';
 
 describe('car.service search smoke', () => {
-  it(
-    'loads the full committed database (not fallback-only)',
-    () => {
-      const { total } = searchCars({ limit: 1 });
-      expect(total).toBeGreaterThan(25_000);
-    },
-    120_000,
-  );
+  it('loads the full committed database (not fallback-only)', () => {
+    const { total } = searchCars({ limit: 1 });
+    expect(total).toBeGreaterThan(25_000);
+  }, 120_000);
 
   it('filters by make using indexes', () => {
     const { results, total } = searchCars({

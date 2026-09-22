@@ -5,8 +5,7 @@
  * that to hot-swap them).
  */
 export const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as
-  | string
-  | undefined;
+  string | undefined;
 
 export function isAuthConfigured(): boolean {
   return Boolean(CLERK_PUBLISHABLE_KEY);

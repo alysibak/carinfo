@@ -266,4 +266,3 @@ export async function getChartDensity(params: {
   const response = await api.get(`/cars/stats/chart-density?${query.toString()}`);
   return response.data.data;
 }
-

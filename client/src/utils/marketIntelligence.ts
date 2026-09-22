@@ -40,7 +40,9 @@ export function calculateCostPerMile(car: CarSpecs, customPrices?: EnergyPrices)
         : car.epa?.kWhPer100Mi != null && car.epa.kWhPer100Mi >= 15
           ? car.epa.kWhPer100Mi / 1.609344
           : 20;
-    const annualCost = Math.round((REGION.annualKm / 100) * kwhPer100Km * prices.electricityPriceCadPerKwh);
+    const annualCost = Math.round(
+      (REGION.annualKm / 100) * kwhPer100Km * prices.electricityPriceCadPerKwh,
+    );
     const costPerMile = annualCost / annualMiles;
     return {
       costPerMile: Math.round(costPerMile * 1000) / 1000,
@@ -54,12 +56,17 @@ export function calculateCostPerMile(car: CarSpecs, customPrices?: EnergyPrices)
   if (fuelType === 'hybrid' || fuelType === 'plug-in hybrid') {
     const gasAnnual =
       mpg > 0
-        ? (REGION.annualKm / 100) * mpgToLPer100Km(mpg) * prices.gasPriceCadPerL *
+        ? (REGION.annualKm / 100) *
+          mpgToLPer100Km(mpg) *
+          prices.gasPriceCadPerL *
           (fuelType === 'plug-in hybrid' ? REGION.phev.gasMileFraction : 1)
         : 0;
     const elecAnnual =
       fuelType === 'plug-in hybrid' && mpg > 0
-        ? (REGION.annualKm / 100) * mpgeToKwhPer100Km(mpg) * prices.electricityPriceCadPerKwh * REGION.phev.electricMileFraction
+        ? (REGION.annualKm / 100) *
+          mpgeToKwhPer100Km(mpg) *
+          prices.electricityPriceCadPerKwh *
+          REGION.phev.electricMileFraction
         : 0;
     const annualCost = Math.round(gasAnnual + elecAnnual);
     const costPerMile = annualCost / annualMiles;
@@ -73,7 +80,9 @@ export function calculateCostPerMile(car: CarSpecs, customPrices?: EnergyPrices)
   }
 
   const annualCost =
-    mpg > 0 ? Math.round((REGION.annualKm / 100) * mpgToLPer100Km(mpg) * prices.gasPriceCadPerL) : 0;
+    mpg > 0
+      ? Math.round((REGION.annualKm / 100) * mpgToLPer100Km(mpg) * prices.gasPriceCadPerL)
+      : 0;
   const costPerMile = annualCost / annualMiles;
   return {
     costPerMile: Math.round(costPerMile * 1000) / 1000,
@@ -91,10 +100,11 @@ export function calculateEfficiencyScore(car: CarSpecs): number {
   // Lower cost per mile = higher score
   // Typical range: $0.03 (Tesla) to $0.20 (truck)
   // Scale to 0-100
-  const maxCost = 0.20;
+  const maxCost = 0.2;
   const minCost = 0.03;
 
-  const normalizedScore = 100 * (1 - (Math.min(costPerMile, maxCost) - minCost) / (maxCost - minCost));
+  const normalizedScore =
+    100 * (1 - (Math.min(costPerMile, maxCost) - minCost) / (maxCost - minCost));
 
   return Math.max(0, Math.min(100, normalizedScore));
 }
@@ -106,17 +116,44 @@ export function calculateReliabilityScore(car: CarSpecs): number {
   // Brand reliability scores (0-100) based on industry data
   const brandScores: Record<string, number> = {
     // Top Tier (85-95)
-    'toyota': 92, 'lexus': 95, 'mazda': 88, 'honda': 90, 'acura': 88, 'subaru': 87, 'porsche': 85,
+    toyota: 92,
+    lexus: 95,
+    mazda: 88,
+    honda: 90,
+    acura: 88,
+    subaru: 87,
+    porsche: 85,
     // High Tier (75-84)
-    'hyundai': 82, 'kia': 80, 'genesis': 78, 'buick': 81, 'mini': 76, 'nissan': 78, 'infiniti': 76,
+    hyundai: 82,
+    kia: 80,
+    genesis: 78,
+    buick: 81,
+    mini: 76,
+    nissan: 78,
+    infiniti: 76,
     // Mid Tier (65-74)
-    'chevrolet': 72, 'ford': 70, 'volkswagen': 68, 'audi': 70, 'bmw': 68, 'mercedes-benz': 67,
-    'volvo': 73, 'cadillac': 69,
+    chevrolet: 72,
+    ford: 70,
+    volkswagen: 68,
+    audi: 70,
+    bmw: 68,
+    'mercedes-benz': 67,
+    volvo: 73,
+    cadillac: 69,
     // Lower Tier (55-64)
-    'chrysler': 62, 'dodge': 60, 'jeep': 58, 'ram': 61, 'gmc': 65, 'lincoln': 64, 'alfa romeo': 56,
-    'jaguar': 55, 'land rover': 52, 'tesla': 65,
+    chrysler: 62,
+    dodge: 60,
+    jeep: 58,
+    ram: 61,
+    gmc: 65,
+    lincoln: 64,
+    'alfa romeo': 56,
+    jaguar: 55,
+    'land rover': 52,
+    tesla: 65,
     // Economy (70-80)
-    'mitsubishi': 75, 'suzuki': 78,
+    mitsubishi: 75,
+    suzuki: 78,
   };
 
   let score = brandScores[make] || 70;
@@ -131,7 +168,8 @@ export function calculateReliabilityScore(car: CarSpecs): number {
   if (car.driveType === 'AWD' || car.driveType === '4WD') score -= 3;
 
   // Fuel type adjustments
-  if (car.engine.fuelType === 'electric') score += 8; // Fewer moving parts
+  if (car.engine.fuelType === 'electric')
+    score += 8; // Fewer moving parts
   else if (car.engine.fuelType === 'hybrid' || car.engine.fuelType === 'plug-in hybrid') score -= 5;
 
   // Engine stress
@@ -185,9 +223,8 @@ export function calculateDerivedMetrics(car: CarSpecs): DerivedMetrics {
 
   // NEW VALUE FORMULA: (Performance × Efficiency × Reliability) / Price
   // Higher score = better value
-  const valueScore = price > 0
-    ? (performanceScore * efficiencyScore * reliabilityScore) / (price / 100)
-    : 0;
+  const valueScore =
+    price > 0 ? (performanceScore * efficiencyScore * reliabilityScore) / (price / 100) : 0;
 
   return {
     powerDensity,
@@ -214,10 +251,7 @@ export interface MarketPosition {
   overallRating: 'excellent' | 'good' | 'average' | 'below-average';
 }
 
-export function calculateMarketPosition(
-  car: CarSpecs,
-  segment: CarSpecs[]
-): MarketPosition {
+export function calculateMarketPosition(car: CarSpecs, segment: CarSpecs[]): MarketPosition {
   if (segment.length === 0) {
     return {
       pricePercentile: 50,
@@ -231,9 +265,9 @@ export function calculateMarketPosition(
     };
   }
 
-  const prices = segment.map(c => c.price?.msrp || 0).filter(p => p > 0);
-  const hps = segment.map(c => c.engine.horsepower ?? 0).filter(hp => hp > 0);
-  const mpgs = segment.map(c => c.fuelEconomy.combined || 0).filter(mpg => mpg > 0);
+  const prices = segment.map((c) => c.price?.msrp || 0).filter((p) => p > 0);
+  const hps = segment.map((c) => c.engine.horsepower ?? 0).filter((hp) => hp > 0);
+  const mpgs = segment.map((c) => c.fuelEconomy.combined || 0).filter((mpg) => mpg > 0);
 
   const avgPrice = mean(prices);
   const avgHp = mean(hps);
@@ -248,7 +282,7 @@ export function calculateMarketPosition(
   const mpgPercentile = calculatePercentile(carMpg, mpgs);
 
   // Value percentile: Use NEW value formula (Performance × Efficiency × Reliability) / Price
-  const valueScores = segment.map(c => calculateDerivedMetrics(c).valueScore);
+  const valueScores = segment.map((c) => calculateDerivedMetrics(c).valueScore);
   const carValueScore = calculateDerivedMetrics(car).valueScore;
   const valuePercentile = calculatePercentile(carValueScore, valueScores);
 
@@ -310,7 +344,7 @@ export function getDealRatingLabel(rating: DealRating): string {
 
 // Get segment (similar cars for comparison)
 export function getSegment(car: CarSpecs, allCars: CarSpecs[]): CarSpecs[] {
-  return allCars.filter(c => {
+  return allCars.filter((c) => {
     // Same body style
     const sameBodyStyle = c.bodyStyle === car.bodyStyle;
 
@@ -338,7 +372,7 @@ function calculatePercentile(value: number, dataset: number[]): number {
   if (dataset.length === 0) return 50;
 
   const sorted = [...dataset].sort((a, b) => a - b);
-  const index = sorted.findIndex(v => v >= value);
+  const index = sorted.findIndex((v) => v >= value);
 
   if (index === -1) return 100;
   if (index === 0) return 0;
@@ -347,7 +381,10 @@ function calculatePercentile(value: number, dataset: number[]): number {
 }
 
 // Format percentage with sign and color
-export function formatPercentage(value: number, higherIsBetter: boolean = true): {
+export function formatPercentage(
+  value: number,
+  higherIsBetter: boolean = true,
+): {
   text: string;
   color: string;
   icon: string;
@@ -419,11 +456,11 @@ export function calculateAggregateStats(cars: CarSpecs[]): AggregateStats {
     };
   }
 
-  const prices = cars.map(c => c.price?.msrp || 0).filter(p => p > 0);
+  const prices = cars.map((c) => c.price?.msrp || 0).filter((p) => p > 0);
   const avgPrice = mean(prices);
-  const avgHorsepower = mean(cars.map(c => c.engine.horsepower ?? 0).filter(h => h > 0));
-  const avgMpg = mean(cars.map(c => c.fuelEconomy.combined || 0).filter(m => m > 0));
-  const avgTorque = mean(cars.map(c => c.engine.torque ?? 0).filter(t => t > 0));
+  const avgHorsepower = mean(cars.map((c) => c.engine.horsepower ?? 0).filter((h) => h > 0));
+  const avgMpg = mean(cars.map((c) => c.fuelEconomy.combined || 0).filter((m) => m > 0));
+  const avgTorque = mean(cars.map((c) => c.engine.torque ?? 0).filter((t) => t > 0));
 
   // Best value: highest value score
   const bestValue = cars.reduce((best, car) => {
@@ -434,11 +471,12 @@ export function calculateAggregateStats(cars: CarSpecs[]): AggregateStats {
 
   // Highest power — null when no car in the set has horsepower data
   const carsWithHp = cars.filter((c) => (c.engine.horsepower ?? 0) > 0);
-  const highestPower = carsWithHp.length > 0
-    ? carsWithHp.reduce((max, car) =>
-        (car.engine.horsepower ?? 0) > (max.engine.horsepower ?? 0) ? car : max
-      )
-    : null;
+  const highestPower =
+    carsWithHp.length > 0
+      ? carsWithHp.reduce((max, car) =>
+          (car.engine.horsepower ?? 0) > (max.engine.horsepower ?? 0) ? car : max,
+        )
+      : null;
 
   // Best economy
   const bestEconomy = cars.reduce((max, car) => {
@@ -449,7 +487,7 @@ export function calculateAggregateStats(cars: CarSpecs[]): AggregateStats {
 
   // Body style breakdown
   const bodyStyleBreakdown: Record<string, number> = {};
-  cars.forEach(car => {
+  cars.forEach((car) => {
     bodyStyleBreakdown[car.bodyStyle] = (bodyStyleBreakdown[car.bodyStyle] || 0) + 1;
   });
 
@@ -552,7 +590,10 @@ export function predictZeroToSixty(car: CarSpecs): ZeroToSixtyPrediction {
 // Fuel-type-aware filtering helpers
 export type FuelTypeFilter = 'all' | 'gasoline' | 'hybrid' | 'electric' | 'gasoline-only';
 
-export function shouldIncludeInFuelEconomySearch(car: CarSpecs, fuelTypeFilter: FuelTypeFilter): boolean {
+export function shouldIncludeInFuelEconomySearch(
+  car: CarSpecs,
+  fuelTypeFilter: FuelTypeFilter,
+): boolean {
   const fuelType = car.engine.fuelType;
 
   // If searching for fuel economy (MPG), exclude EVs by default unless explicitly requested
@@ -591,7 +632,7 @@ export function filterCarsByFuelType(cars: CarSpecs[], fuelTypeFilter: FuelTypeF
     return cars;
   }
 
-  return cars.filter(car => shouldIncludeInFuelEconomySearch(car, fuelTypeFilter));
+  return cars.filter((car) => shouldIncludeInFuelEconomySearch(car, fuelTypeFilter));
 }
 
 // Price Reality Mode: Estimate market value based on depreciation
@@ -618,7 +659,16 @@ export function estimatePrice(car: CarSpecs, mode: PriceMode): PriceEstimate {
   }
 
   // Depreciation curve (varies by segment)
-  const isLuxury = ['BMW', 'Mercedes-Benz', 'Audi', 'Lexus', 'Porsche', 'Jaguar', 'Land Rover', 'Cadillac'].includes(car.make);
+  const isLuxury = [
+    'BMW',
+    'Mercedes-Benz',
+    'Audi',
+    'Lexus',
+    'Porsche',
+    'Jaguar',
+    'Land Rover',
+    'Cadillac',
+  ].includes(car.make);
   const isEV = car.engine.fuelType === 'electric';
   const isReliable = ['Toyota', 'Honda', 'Lexus', 'Mazda', 'Subaru'].includes(car.make);
 
@@ -627,9 +677,9 @@ export function estimatePrice(car: CarSpecs, mode: PriceMode): PriceEstimate {
   if (isLuxury && !isEV) {
     depreciationRate = age <= 5 ? 0.15 : 0.08; // Luxury depreciates fast
   } else if (isEV) {
-    depreciationRate = age <= 3 ? 0.12 : 0.10; // EVs moderate depreciation
+    depreciationRate = age <= 3 ? 0.12 : 0.1; // EVs moderate depreciation
   } else if (isReliable) {
-    depreciationRate = age <= 5 ? 0.10 : 0.06; // Reliable holds value
+    depreciationRate = age <= 5 ? 0.1 : 0.06; // Reliable holds value
   } else {
     depreciationRate = age <= 5 ? 0.12 : 0.07; // Average
   }
@@ -658,7 +708,7 @@ export function estimatePrice(car: CarSpecs, mode: PriceMode): PriceEstimate {
   // Used market (assume 15k miles/year average wear)
   if (mode === 'used') {
     const mileagePenalty = age * 0.02; // -2% per year for mileage
-    estimatedPrice *= (1 - mileagePenalty);
+    estimatedPrice *= 1 - mileagePenalty;
 
     // Floor price (cars don't depreciate to zero)
     const floorPrice = msrp * 0.15; // Minimum 15% of MSRP
@@ -687,12 +737,15 @@ export interface MatchReason {
   type: 'positive' | 'neutral' | 'highlight';
 }
 
-export function generateMatchReasons(car: CarSpecs, filters?: {
-  maxPrice?: number;
-  minMpg?: number;
-  minHp?: number;
-  bodyStyle?: string[];
-}): MatchReason[] {
+export function generateMatchReasons(
+  car: CarSpecs,
+  filters?: {
+    maxPrice?: number;
+    minMpg?: number;
+    minHp?: number;
+    bodyStyle?: string[];
+  },
+): MatchReason[] {
   const reasons: MatchReason[] = [];
   const derivedMetrics = calculateDerivedMetrics(car);
   const mpg = car.fuelEconomy.combined || 0;

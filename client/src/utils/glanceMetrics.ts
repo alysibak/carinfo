@@ -1,9 +1,5 @@
 import type { CarDashboard, CarSpecs } from '../types/car.types';
-import {
-  formatCurrencyRangeOrFallback,
-  formatOrFallback,
-  hasNumericValue,
-} from './dataValue';
+import { formatCurrencyRangeOrFallback, formatOrFallback, hasNumericValue } from './dataValue';
 import { annualFuelCostDetail, efficiencyUnit } from './fuelLabels';
 import { formatEngineForDetail } from './dataValue';
 import { phevModes } from './epaContent';
@@ -27,8 +23,18 @@ type Profile = 'ev' | 'performance' | 'efficient' | 'standard';
 
 /** Marques where the car's character (not its running cost) is the headline. */
 const PERFORMANCE_MARQUES = new Set([
-  'Porsche', 'Ferrari', 'Lamborghini', 'Aston Martin', 'McLaren', 'Maserati',
-  'Bentley', 'Rolls-Royce', 'Lotus', 'Alfa Romeo', 'Jaguar', 'Dodge',
+  'Porsche',
+  'Ferrari',
+  'Lamborghini',
+  'Aston Martin',
+  'McLaren',
+  'Maserati',
+  'Bentley',
+  'Rolls-Royce',
+  'Lotus',
+  'Alfa Romeo',
+  'Jaguar',
+  'Dodge',
 ]);
 
 /** Plain engine descriptor from the fields EPA actually carries (displacement + layout). */
@@ -62,7 +68,15 @@ const PROFILE_PRIORITY: Record<Profile, GlanceMetricId[]> = {
 };
 
 /** Backfill order — technical specs before money metrics. */
-const FILL_ORDER: GlanceMetricId[] = ['power', 'engine', 'mpg', 'range', 'safety', 'value', 'running'];
+const FILL_ORDER: GlanceMetricId[] = [
+  'power',
+  'engine',
+  'mpg',
+  'range',
+  'safety',
+  'value',
+  'running',
+];
 
 function buildMpgMetric(car: CarSpecs): GlanceMetric | null {
   if (!hasNumericValue(car.fuelEconomy.combined)) return null;
@@ -96,7 +110,10 @@ function buildMpgMetric(car: CarSpecs): GlanceMetric | null {
  * Pick the at-a-glance metrics that best fit a given car, ordered by what a
  * shopper for *that kind of car* cares about first. Returns up to four cells.
  */
-export function buildGlanceMetrics(dashboard: CarDashboard): { cells: GlanceMetric[]; note: string | null } {
+export function buildGlanceMetrics(dashboard: CarDashboard): {
+  cells: GlanceMetric[];
+  note: string | null;
+} {
   const { car, ownership, evCharge, annualRunningCost } = dashboard;
   const { marketValue } = ownership;
 
@@ -124,8 +141,9 @@ export function buildGlanceMetrics(dashboard: CarDashboard): { cells: GlanceMetr
           ? 'Manufacturer-rated motor output'
           : hpProv === 'curated'
             ? 'EPA test-car rated hp'
-            : engine ?? (car.driveType ? `${car.driveType} drivetrain` : undefined),
-      trustSource: hpProv === 'estimated' ? 'estimated' : hpProv === 'curated' ? 'curated' : undefined,
+            : (engine ?? (car.driveType ? `${car.driveType} drivetrain` : undefined)),
+      trustSource:
+        hpProv === 'estimated' ? 'estimated' : hpProv === 'curated' ? 'curated' : undefined,
     };
   }
 

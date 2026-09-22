@@ -108,7 +108,8 @@ async function discoverFileUrls(): Promise<Map<number, string[]>> {
     const html = res.data;
     // Filenames start with the 2-digit model year, then "tstcar"/"testcar", e.g.
     //   .../2026-01/26-testcar-2026-01-21.xlsx   .../2016-07/16tstcar.csv
-    const re = /href="(https:\/\/www\.epa\.gov\/[^"]+\/(\d{2})-?t(?:e)?stcar[^"/]*\.(?:xlsx|csv))"/gi;
+    const re =
+      /href="(https:\/\/www\.epa\.gov\/[^"]+\/(\d{2})-?t(?:e)?stcar[^"/]*\.(?:xlsx|csv))"/gi;
     let m: RegExpExecArray | null;
     while ((m = re.exec(html)) !== null) {
       const url = m[1];
@@ -119,7 +120,9 @@ async function discoverFileUrls(): Promise<Map<number, string[]>> {
     }
     console.log(`Discovered EPA test-car files for ${map.size} model years.`);
   } catch (err) {
-    console.warn(`Could not fetch EPA index page (${(err as Error).message}). Falling back to cached files.`);
+    console.warn(
+      `Could not fetch EPA index page (${(err as Error).message}). Falling back to cached files.`,
+    );
   }
   return map;
 }
@@ -205,7 +208,15 @@ function buildExtractor(keys: string[]): Extractor | null {
     const model = find(/represented test veh model/i) ?? find(/\bcarline\b/i) ?? find(/\bmodel\b/i);
     const year = find(/model\s*year/i);
     if (make && model && year) {
-      return { year, make, model, displ: find(/displacement/i), cyl: find(/cylinders/i), hp: modernHp, displIsCid: false };
+      return {
+        year,
+        make,
+        model,
+        displ: find(/displacement/i),
+        cyl: find(/cylinders/i),
+        hp: modernHp,
+        displIsCid: false,
+      };
     }
   }
 
@@ -394,7 +405,7 @@ function matchHorsepower(car: Car, idx: Indexes): MatchResult | null {
   const cyl = car.engine.cylinders != null ? String(car.engine.cylinders) : null;
 
   const makeBucket = idx.byMakeYear.get(`${make}|${year}`) ?? [];
-  const engineBucket = displ && cyl ? idx.byEngineYear.get(`${displ}|${cyl}|${year}`) ?? [] : [];
+  const engineBucket = displ && cyl ? (idx.byEngineYear.get(`${displ}|${cyl}|${year}`) ?? []) : [];
 
   const related = (epaModel: string) =>
     carlineRelated(model, epaModel) || carlineRelated(combined, epaModel);
@@ -455,7 +466,9 @@ async function main(): Promise<void> {
     totalRows += n;
     console.log(`  ${file.split(/[\\/]/).pop()}: ${n} rows with horsepower`);
   }
-  console.log(`Indexed ${totalRows} engine readings across ${idx.byMakeYear.size} make/year groups.\n`);
+  console.log(
+    `Indexed ${totalRows} engine readings across ${idx.byMakeYear.size} make/year groups.\n`,
+  );
 
   const db = JSON.parse(readFileSync(CARS_PATH, 'utf-8')) as { cars: Car[] };
   const output: Record<string, number> = {};

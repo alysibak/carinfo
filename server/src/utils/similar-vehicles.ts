@@ -4,8 +4,18 @@ import { segmentAffinity, type ShoppingSegment } from './vehicle-taxonomy.js';
 
 /** True exotics — never cross-shopped against mainstream cars. */
 const EXOTIC_MAKES = new Set([
-  'Ferrari', 'Lamborghini', 'Aston Martin', 'McLaren', 'Bentley', 'Rolls-Royce',
-  'Maserati', 'Lotus', 'Bugatti', 'Koenigsegg', 'Pagani', 'Maybach',
+  'Ferrari',
+  'Lamborghini',
+  'Aston Martin',
+  'McLaren',
+  'Bentley',
+  'Rolls-Royce',
+  'Maserati',
+  'Lotus',
+  'Bugatti',
+  'Koenigsegg',
+  'Pagani',
+  'Maybach',
 ]);
 
 /** Collapse trim noise so one entry per make+model. */
@@ -46,7 +56,11 @@ export { baseModelKeyLocal as baseModelKey };
  * Deliberately de-prioritizes same-make family cars (Jetta, Passat) in favor of
  * segment peers (Civic Si, Golf R, WRX, etc.).
  */
-export function scoreCrossShopCandidate(anchor: Car, candidate: Car, candidatePrice: number): number {
+export function scoreCrossShopCandidate(
+  anchor: Car,
+  candidate: Car,
+  candidatePrice: number,
+): number {
   const anchorPrice = priceMid(anchor);
   const anchorSeg = (anchor.shoppingSegment ?? 'mainstream') as ShoppingSegment;
   const candSeg = (candidate.shoppingSegment ?? 'mainstream') as ShoppingSegment;
@@ -57,7 +71,11 @@ export function scoreCrossShopCandidate(anchor: Car, candidate: Car, candidatePr
   if (anchorSeg === candSeg) score += 4;
 
   if (candidate.bodyStyle === anchor.bodyStyle) score += 3;
-  else if (anchor.bodyStyle === 'hatchback' && candidate.bodyStyle === 'sedan' && candSeg === 'sport-sedan') {
+  else if (
+    anchor.bodyStyle === 'hatchback' &&
+    candidate.bodyStyle === 'sedan' &&
+    candSeg === 'sport-sedan'
+  ) {
     score += 1.5;
   }
 
@@ -88,7 +106,8 @@ export function scoreCrossShopCandidate(anchor: Car, candidate: Car, candidatePr
   // Direct platform siblings get a small boost (Golf R for GTI).
   const anchorModel = anchor.model.toLowerCase();
   const candModel = candidate.model.toLowerCase();
-  if (anchor.make === candidate.make && anchorModel.includes('gti') && candModel.includes('golf r')) score += 3;
+  if (anchor.make === candidate.make && anchorModel.includes('gti') && candModel.includes('golf r'))
+    score += 3;
 
   return score;
 }
@@ -111,7 +130,9 @@ export function findSimilarCars(anchor: Car, all: Car[], limit = 6): Car[] {
 
       const price = priceMid(c);
       const ratio =
-        anchorPrice > 0 && price > 0 ? Math.min(anchorPrice, price) / Math.max(anchorPrice, price) : 0;
+        anchorPrice > 0 && price > 0
+          ? Math.min(anchorPrice, price) / Math.max(anchorPrice, price)
+          : 0;
       if (minPriceRatio > 0 && ratio > 0 && ratio < minPriceRatio) continue;
 
       const score = scoreCrossShopCandidate(anchor, c, price);

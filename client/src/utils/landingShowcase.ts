@@ -196,7 +196,9 @@ export const DOSSIER_EXAMPLE_QUERIES: { question: string; query: SearchQuery }[]
 
 export function pickDossierExample(results: CarSpecs[]): CarSpecs | null {
   const withSafety = results.find(
-    (c) => isLandingShowcaseEligible(c) || ((c.price?.msrp ?? 0) > 0 && (c.fuelEconomy?.combined ?? 0) > 0),
+    (c) =>
+      isLandingShowcaseEligible(c) ||
+      ((c.price?.msrp ?? 0) > 0 && (c.fuelEconomy?.combined ?? 0) > 0),
   );
   return withSafety ?? results[0] ?? null;
 }

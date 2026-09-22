@@ -33,12 +33,12 @@ describe('onePerModel URL params', () => {
   });
 
   it('honors explicit onePerModel override', () => {
-    expect(paramsToSearchQuery(new URLSearchParams('q=mazda+3&onePerModel=1')).query.collapseByModel).toBe(
-      true,
-    );
-    expect(paramsToSearchQuery(new URLSearchParams('q=mazda&onePerModel=0')).query.collapseByModel).toBe(
-      false,
-    );
+    expect(
+      paramsToSearchQuery(new URLSearchParams('q=mazda+3&onePerModel=1')).query.collapseByModel,
+    ).toBe(true);
+    expect(
+      paramsToSearchQuery(new URLSearchParams('q=mazda&onePerModel=0')).query.collapseByModel,
+    ).toBe(false);
   });
 
   it('only writes onePerModel when it differs from the heuristic', () => {

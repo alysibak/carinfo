@@ -5,7 +5,8 @@ import { inferEffectiveFuelType } from './fuel-type-inference.js';
 const REFERENCE_YEAR = new Date().getFullYear();
 
 export type EvRetentionTier = 'A' | 'B' | 'C';
-export type MarketSegment = 'economy' | 'mainstream' | 'luxury' | 'performance' | 'utility' | 'exotic';
+export type MarketSegment =
+  'economy' | 'mainstream' | 'luxury' | 'performance' | 'utility' | 'exotic';
 export type Confidence = 'low' | 'medium' | 'high';
 
 export interface BatteryHealthEstimate {
@@ -34,10 +35,29 @@ export interface MarketValueEstimate {
 }
 
 const LUXURY_MAKES = new Set([
-  'BMW', 'Mercedes-Benz', 'Audi', 'Porsche', 'Lexus', 'Jaguar', 'Land Rover',
-  'Infiniti', 'Acura', 'Cadillac', 'Lincoln', 'Genesis', 'Maserati', 'Ferrari',
-  'Lamborghini', 'Bentley', 'Rolls-Royce', 'Alfa Romeo', 'GMC',
-  'Lucid', 'Rivian', 'Polestar', 'Fisker',
+  'BMW',
+  'Mercedes-Benz',
+  'Audi',
+  'Porsche',
+  'Lexus',
+  'Jaguar',
+  'Land Rover',
+  'Infiniti',
+  'Acura',
+  'Cadillac',
+  'Lincoln',
+  'Genesis',
+  'Maserati',
+  'Ferrari',
+  'Lamborghini',
+  'Bentley',
+  'Rolls-Royce',
+  'Alfa Romeo',
+  'GMC',
+  'Lucid',
+  'Rivian',
+  'Polestar',
+  'Fisker',
 ]);
 
 const EXOTIC_MAKES = new Set(['Ferrari', 'Lamborghini', 'Bentley', 'Rolls-Royce', 'Maserati']);
@@ -63,48 +83,150 @@ interface ModelMsrpRule {
 }
 
 const MODEL_MSRP_RULES: ModelMsrpRule[] = [
-  { test: (c) => c.make === 'Tesla' && c.model.toLowerCase().includes('model s'), msrp: (c) => (c.year >= 2021 ? 95000 : c.year >= 2016 ? 85000 : 75000) },
-  { test: (c) => c.make === 'Tesla' && c.model.toLowerCase().includes('model 3'), msrp: (c) => (c.year >= 2021 ? 48000 : 42000) },
-  { test: (c) => c.make === 'Tesla' && c.model.toLowerCase().includes('model x'), msrp: (c) => (c.year >= 2021 ? 105000 : 90000) },
-  { test: (c) => c.make === 'Tesla' && c.model.toLowerCase().includes('model y'), msrp: (c) => (c.year >= 2021 ? 55000 : 50000) },
-  { test: (c) => c.make === 'Nissan' && c.model.toLowerCase().includes('leaf'), msrp: (c) => (c.year >= 2018 ? 35000 : c.year >= 2013 ? 32000 : 28000) },
-  { test: (c) => c.make === 'Chevrolet' && c.model.toLowerCase().includes('volt'), msrp: (c) => (c.year >= 2016 ? 36000 : 34000) },
+  {
+    test: (c) => c.make === 'Tesla' && c.model.toLowerCase().includes('model s'),
+    msrp: (c) => (c.year >= 2021 ? 95000 : c.year >= 2016 ? 85000 : 75000),
+  },
+  {
+    test: (c) => c.make === 'Tesla' && c.model.toLowerCase().includes('model 3'),
+    msrp: (c) => (c.year >= 2021 ? 48000 : 42000),
+  },
+  {
+    test: (c) => c.make === 'Tesla' && c.model.toLowerCase().includes('model x'),
+    msrp: (c) => (c.year >= 2021 ? 105000 : 90000),
+  },
+  {
+    test: (c) => c.make === 'Tesla' && c.model.toLowerCase().includes('model y'),
+    msrp: (c) => (c.year >= 2021 ? 55000 : 50000),
+  },
+  {
+    test: (c) => c.make === 'Nissan' && c.model.toLowerCase().includes('leaf'),
+    msrp: (c) => (c.year >= 2018 ? 35000 : c.year >= 2013 ? 32000 : 28000),
+  },
+  {
+    test: (c) => c.make === 'Chevrolet' && c.model.toLowerCase().includes('volt'),
+    msrp: (c) => (c.year >= 2016 ? 36000 : 34000),
+  },
   { test: (c) => c.make === 'Fiat' && c.model.toLowerCase().includes('500e'), msrp: 33000 },
-  { test: (c) => c.make === 'BMW' && c.model.toLowerCase().includes('i3'), msrp: (c) => (c.year >= 2018 ? 45000 : 43000) },
-  { test: (c) => c.make === 'Chevrolet' && c.model.toLowerCase().includes('bolt'), msrp: (c) => (c.year >= 2022 ? 32000 : 28000) },
+  {
+    test: (c) => c.make === 'BMW' && c.model.toLowerCase().includes('i3'),
+    msrp: (c) => (c.year >= 2018 ? 45000 : 43000),
+  },
+  {
+    test: (c) => c.make === 'Chevrolet' && c.model.toLowerCase().includes('bolt'),
+    msrp: (c) => (c.year >= 2022 ? 32000 : 28000),
+  },
   { test: (c) => `${c.make} ${c.model}`.toLowerCase().includes('hummer ev'), msrp: 105000 },
-  { test: (c) => c.model.toLowerCase().includes('lc 500') || c.model.toLowerCase().startsWith('lc'), msrp: 105000 },
+  {
+    test: (c) => c.model.toLowerCase().includes('lc 500') || c.model.toLowerCase().startsWith('lc'),
+    msrp: 105000,
+  },
   { test: (c) => c.model.toLowerCase().includes('mirai'), msrp: 52000 },
-  { test: (c) => c.make === 'Rivian', msrp: (c) => (c.model.toLowerCase().includes('r1t') ? 79000 : 78000) },
-  { test: (c) => c.make === 'Volkswagen' && /gti/i.test(c.model), msrp: (c) => (c.year >= 2022 ? 32000 : c.year >= 2018 ? 29000 : c.year >= 2015 ? 26500 : 25000) },
-  { test: (c) => c.make === 'Volkswagen' && /golf r/i.test(c.model), msrp: (c) => (c.year >= 2022 ? 45000 : c.year >= 2016 ? 40000 : 36000) },
-  { test: (c) => c.make === 'Honda' && /civic si/i.test(c.model), msrp: (c) => (c.year >= 2022 ? 29000 : 24000) },
-  { test: (c) => c.make === 'Honda' && /type r/i.test(c.model), msrp: (c) => (c.year >= 2023 ? 44000 : 36000) },
-  { test: (c) => c.make === 'Subaru' && /wrx/i.test(c.model), msrp: (c) => (c.year >= 2022 ? 32000 : c.year >= 2015 ? 28000 : 26000) },
+  {
+    test: (c) => c.make === 'Rivian',
+    msrp: (c) => (c.model.toLowerCase().includes('r1t') ? 79000 : 78000),
+  },
+  {
+    test: (c) => c.make === 'Volkswagen' && /gti/i.test(c.model),
+    msrp: (c) => (c.year >= 2022 ? 32000 : c.year >= 2018 ? 29000 : c.year >= 2015 ? 26500 : 25000),
+  },
+  {
+    test: (c) => c.make === 'Volkswagen' && /golf r/i.test(c.model),
+    msrp: (c) => (c.year >= 2022 ? 45000 : c.year >= 2016 ? 40000 : 36000),
+  },
+  {
+    test: (c) => c.make === 'Honda' && /civic si/i.test(c.model),
+    msrp: (c) => (c.year >= 2022 ? 29000 : 24000),
+  },
+  {
+    test: (c) => c.make === 'Honda' && /type r/i.test(c.model),
+    msrp: (c) => (c.year >= 2023 ? 44000 : 36000),
+  },
+  {
+    test: (c) => c.make === 'Subaru' && /wrx/i.test(c.model),
+    msrp: (c) => (c.year >= 2022 ? 32000 : c.year >= 2015 ? 28000 : 26000),
+  },
   { test: (c) => c.make === 'Ford' && /focus st|fiesta st/i.test(c.model), msrp: 26000 },
-  { test: (c) => c.make === 'Hyundai' && /elantra n|veloster n/i.test(c.model), msrp: (c) => (c.year >= 2022 ? 34000 : 28000) },
-  { test: (c) => c.make === 'Lucid' && /grand touring|g touring|dream/i.test(c.model), msrp: (c) => (c.year >= 2023 ? 139000 : 125000) },
-  { test: (c) => c.make === 'Lucid' && /touring/i.test(c.model), msrp: (c) => (c.year >= 2024 ? 95000 : 87500) },
-  { test: (c) => c.make === 'Lucid', msrp: (c) => (c.year >= 2024 ? 82000 : c.year >= 2022 ? 77400 : 70000) },
-  { test: (c) => c.make === 'Porsche' && c.model.toLowerCase().includes('taycan'), msrp: (c) => (c.year >= 2022 ? 96000 : 86000) },
-  { test: (c) => c.make === 'Mercedes-Benz' && /eqs/i.test(c.model), msrp: (c) => (c.year >= 2022 ? 105000 : 95000) },
-  { test: (c) => c.make === 'Mercedes-Benz' && /eqe/i.test(c.model), msrp: (c) => (c.year >= 2023 ? 78000 : 72000) },
-  { test: (c) => c.make === 'Hyundai' && c.model.toLowerCase().includes('ioniq 6'), msrp: (c) => (c.year >= 2024 ? 52000 : 48000) },
-  { test: (c) => c.make === 'Hyundai' && c.model.toLowerCase().includes('ioniq 5'), msrp: (c) => (c.year >= 2024 ? 50000 : 45000) },
-  { test: (c) => c.make === 'Ford' && c.model.toLowerCase().includes('f-150 lightning'), msrp: (c) => (c.year >= 2022 ? 68000 : 62000) },
-  { test: (c) => c.make === 'Ford' && c.model.toLowerCase().includes('mustang mach-e'), msrp: (c) => (c.year >= 2022 ? 52000 : 48000) },
+  {
+    test: (c) => c.make === 'Hyundai' && /elantra n|veloster n/i.test(c.model),
+    msrp: (c) => (c.year >= 2022 ? 34000 : 28000),
+  },
+  {
+    test: (c) => c.make === 'Lucid' && /grand touring|g touring|dream/i.test(c.model),
+    msrp: (c) => (c.year >= 2023 ? 139000 : 125000),
+  },
+  {
+    test: (c) => c.make === 'Lucid' && /touring/i.test(c.model),
+    msrp: (c) => (c.year >= 2024 ? 95000 : 87500),
+  },
+  {
+    test: (c) => c.make === 'Lucid',
+    msrp: (c) => (c.year >= 2024 ? 82000 : c.year >= 2022 ? 77400 : 70000),
+  },
+  {
+    test: (c) => c.make === 'Porsche' && c.model.toLowerCase().includes('taycan'),
+    msrp: (c) => (c.year >= 2022 ? 96000 : 86000),
+  },
+  {
+    test: (c) => c.make === 'Mercedes-Benz' && /eqs/i.test(c.model),
+    msrp: (c) => (c.year >= 2022 ? 105000 : 95000),
+  },
+  {
+    test: (c) => c.make === 'Mercedes-Benz' && /eqe/i.test(c.model),
+    msrp: (c) => (c.year >= 2023 ? 78000 : 72000),
+  },
+  {
+    test: (c) => c.make === 'Hyundai' && c.model.toLowerCase().includes('ioniq 6'),
+    msrp: (c) => (c.year >= 2024 ? 52000 : 48000),
+  },
+  {
+    test: (c) => c.make === 'Hyundai' && c.model.toLowerCase().includes('ioniq 5'),
+    msrp: (c) => (c.year >= 2024 ? 50000 : 45000),
+  },
+  {
+    test: (c) => c.make === 'Ford' && c.model.toLowerCase().includes('f-150 lightning'),
+    msrp: (c) => (c.year >= 2022 ? 68000 : 62000),
+  },
+  {
+    test: (c) => c.make === 'Ford' && c.model.toLowerCase().includes('mustang mach-e'),
+    msrp: (c) => (c.year >= 2022 ? 52000 : 48000),
+  },
   { test: (c) => c.model.toLowerCase().includes('escalade'), msrp: 85000 },
   { test: (c) => c.make === 'Mitsubishi' && c.model.toLowerCase().includes('i-miev'), msrp: 30000 },
-  { test: (c) => c.make === 'Ford' && c.model.toLowerCase().includes('focus electric'), msrp: 32000 },
+  {
+    test: (c) => c.make === 'Ford' && c.model.toLowerCase().includes('focus electric'),
+    msrp: 32000,
+  },
   { test: (c) => c.make === 'Chevrolet' && c.model.toLowerCase().includes('spark'), msrp: 26000 },
-  { test: (c) => c.make === 'Toyota' && c.model.toLowerCase().includes('prius prime'), msrp: 34000 },
+  {
+    test: (c) => c.make === 'Toyota' && c.model.toLowerCase().includes('prius prime'),
+    msrp: 34000,
+  },
   { test: (c) => c.make === 'Honda' && c.model.toLowerCase().includes('clarity'), msrp: 36000 },
-  { test: (c) => c.make === 'Porsche' && c.model.toLowerCase().includes('cayenne'), msrp: (c) => (c.year >= 2020 ? 98000 : c.year >= 2016 ? 88000 : 78000) },
-  { test: (c) => c.make === 'Porsche' && c.model === 'Macan', msrp: (c) => (c.year >= 2022 ? 72000 : 65000) },
-  { test: (c) => c.make === 'Porsche' && c.model.toLowerCase().includes('panamera'), msrp: (c) => (c.year >= 2020 ? 105000 : 95000) },
-  { test: (c) => c.make === 'BMW' && c.model.toLowerCase().startsWith('x5'), msrp: (c) => (c.year >= 2020 ? 72000 : 65000) },
-  { test: (c) => c.make === 'BMW' && c.model.toLowerCase().startsWith('x3'), msrp: (c) => (c.year >= 2020 ? 52000 : 46000) },
-  { test: (c) => c.make === 'Mercedes-Benz' && c.model.toLowerCase().includes('gle'), msrp: (c) => (c.year >= 2020 ? 78000 : 70000) },
+  {
+    test: (c) => c.make === 'Porsche' && c.model.toLowerCase().includes('cayenne'),
+    msrp: (c) => (c.year >= 2020 ? 98000 : c.year >= 2016 ? 88000 : 78000),
+  },
+  {
+    test: (c) => c.make === 'Porsche' && c.model === 'Macan',
+    msrp: (c) => (c.year >= 2022 ? 72000 : 65000),
+  },
+  {
+    test: (c) => c.make === 'Porsche' && c.model.toLowerCase().includes('panamera'),
+    msrp: (c) => (c.year >= 2020 ? 105000 : 95000),
+  },
+  {
+    test: (c) => c.make === 'BMW' && c.model.toLowerCase().startsWith('x5'),
+    msrp: (c) => (c.year >= 2020 ? 72000 : 65000),
+  },
+  {
+    test: (c) => c.make === 'BMW' && c.model.toLowerCase().startsWith('x3'),
+    msrp: (c) => (c.year >= 2020 ? 52000 : 46000),
+  },
+  {
+    test: (c) => c.make === 'Mercedes-Benz' && c.model.toLowerCase().includes('gle'),
+    msrp: (c) => (c.year >= 2020 ? 78000 : 70000),
+  },
 ];
 
 function modelKey(car: CarSpecs): string {
@@ -126,7 +248,11 @@ function isHeavyEvTruck(car: CarSpecs): boolean {
 
 function isLuxuryPerformance(car: CarSpecs): boolean {
   const m = car.model.toLowerCase();
-  return (car.bodyStyle === 'coupe' && LUXURY_MAKES.has(car.make)) || m.includes('lc ') || m.startsWith('lc');
+  return (
+    (car.bodyStyle === 'coupe' && LUXURY_MAKES.has(car.make)) ||
+    m.includes('lc ') ||
+    m.startsWith('lc')
+  );
 }
 
 export function classifyMarketSegment(car: CarSpecs): MarketSegment {
@@ -326,7 +452,10 @@ export { roundMoney };
 export type MsrpAnchorSource = 'model-rule' | 'curated-price' | 'segment-inferred';
 
 /** How the MSRP anchor was derived — drives valuation confidence (not the dollar value). */
-export function assessMsrpAnchor(car: CarSpecs): { source: MsrpAnchorSource; confidence: Confidence } {
+export function assessMsrpAnchor(car: CarSpecs): {
+  source: MsrpAnchorSource;
+  confidence: Confidence;
+} {
   if (MODEL_MSRP_RULES.some((r) => r.test(car))) {
     return { source: 'model-rule', confidence: 'high' };
   }
@@ -334,9 +463,7 @@ export function assessMsrpAnchor(car: CarSpecs): { source: MsrpAnchorSource; con
     return { source: 'curated-price', confidence: 'high' };
   }
   const hasBrandCalibration =
-    LUXURY_MAKES.has(car.make) ||
-    EXOTIC_MAKES.has(car.make) ||
-    BRAND_RETENTION[car.make] != null;
+    LUXURY_MAKES.has(car.make) || EXOTIC_MAKES.has(car.make) || BRAND_RETENTION[car.make] != null;
   if (!hasBrandCalibration) {
     return { source: 'segment-inferred', confidence: 'low' };
   }
@@ -400,8 +527,7 @@ export function applyValuationReliabilityGuard(
         mid: adjustedMarket.mid,
       },
       projectedResale5Year: { low: resaleLow, mid: resaleMid, high: resaleHigh },
-      note:
-        'Depreciation is realized when you sell, not a per-mile driving expense. Resale projection assumes typical condition. High uncertainty for this vehicle; resale band is illustrative only.',
+      note: 'Depreciation is realized when you sell, not a per-mile driving expense. Resale projection assumes typical condition. High uncertainty for this vehicle; resale band is illustrative only.',
     },
   };
 }
@@ -495,7 +621,10 @@ export function estimateMarketValue(car: CarSpecs): MarketValueEstimate {
 }
 
 /** 5-year depreciation from time-based curves (not linear per-mile). */
-export function estimateDepreciation5Year(car: CarSpecs, market: MarketValueEstimate): { low: number; mid: number; high: number } {
+export function estimateDepreciation5Year(
+  car: CarSpecs,
+  market: MarketValueEstimate,
+): { low: number; mid: number; high: number } {
   const msrp = market.msrpAnchor;
   const age = Math.max(0, REFERENCE_YEAR - car.year);
   const segment = classifyMarketSegment(car);

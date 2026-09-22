@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Car } from '../types/car.types.js';
-import {
-  inferEffectiveFuelType,
-  isLikelyMisclassifiedPhev,
-} from '../utils/fuel-type-inference.js';
+import { inferEffectiveFuelType, isLikelyMisclassifiedPhev } from '../utils/fuel-type-inference.js';
 import { findCar, findEnrichedCar, loadEnrichedCars } from '../__tests__/helpers/loadCars.js';
 
 const CAYENNE_ID = 'porsche-cayenne-e-hybrid-2019-cayenne-automatic-s8';
@@ -69,10 +66,7 @@ describe('fuel-type-inference', () => {
 
   it('keeps Tesla Model 3 Long Range as electric', () => {
     const model3 = findCar(
-      (c) =>
-        c.make === 'Tesla' &&
-        c.model.includes('Model 3 Long Range') &&
-        c.year === 2022,
+      (c) => c.make === 'Tesla' && c.model.includes('Model 3 Long Range') && c.year === 2022,
     );
     expect(model3).toBeDefined();
     expect(inferEffectiveFuelType(model3!)).toBe('electric');
@@ -100,9 +94,7 @@ describe('fuel-type-inference', () => {
   });
 
   it('reclassifies Karma GS-6 series hybrid from electric to plug-in hybrid', () => {
-    const karma = findCar(
-      (c) => c.make === 'Karma' && c.model.includes('GS-6') && c.year === 2021,
-    );
+    const karma = findCar((c) => c.make === 'Karma' && c.model.includes('GS-6') && c.year === 2021);
     expect(karma).toBeDefined();
     expect(karma!.engine.fuelType).toBe('electric');
     expect(inferEffectiveFuelType(karma!)).toBe('plug-in hybrid');

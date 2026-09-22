@@ -24,11 +24,7 @@ export default function NotFound() {
 
         <div className="grid sm:grid-cols-2 gap-3 text-left mb-10">
           {QUICK_LINKS.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              className="explore-card p-4 hover:border-zinc-500"
-            >
+            <Link key={item.to} to={item.to} className="explore-card p-4 hover:border-zinc-500">
               <p className="text-sm font-semibold text-white">{item.label}</p>
               <p className="text-xs text-zinc-500 mt-1 leading-relaxed">{item.desc}</p>
             </Link>

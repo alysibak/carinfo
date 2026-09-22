@@ -89,7 +89,10 @@ function MethodologyModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4 mb-4">
-          <h2 id="methodology-title" className="text-sm font-black tracking-[0.2em] uppercase text-white">
+          <h2
+            id="methodology-title"
+            className="text-sm font-black tracking-[0.2em] uppercase text-white"
+          >
             How these estimates work
           </h2>
           <button
@@ -126,8 +129,8 @@ function MethodologyBody({
   return (
     <div className="text-xs text-zinc-400 leading-relaxed space-y-4">
       <p>
-        {CURRENCY_METHODOLOGY_NOTE} Individual condition, mileage, and local demand still move real prices. Check
-        marketplaces when you are ready to buy or sell.
+        {CURRENCY_METHODOLOGY_NOTE} Individual condition, mileage, and local demand still move real
+        prices. Check marketplaces when you are ready to buy or sell.
       </p>
       {practicalityNote && (
         <p className="text-zinc-400 border-l-2 border-zinc-800 pl-3">{practicalityNote}</p>
@@ -146,7 +149,9 @@ function MethodologyBody({
       )}
       {derivedComparison && (
         <div className="space-y-2">
-          <p className="text-[10px] tracking-[0.2em] text-zinc-400 uppercase">Derived comparison only</p>
+          <p className="text-[10px] tracking-[0.2em] text-zinc-400 uppercase">
+            Derived comparison only
+          </p>
           <p className="text-zinc-400">{derivedComparison.disclaimer}</p>
           {derivedComparison.fuelCostPerMile != null && (
             <p>Fuel / energy per km: {formatCostPerKm(derivedComparison.fuelCostPerMile)}</p>

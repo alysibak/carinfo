@@ -2,7 +2,11 @@ import { readFileSync } from 'fs';
 import type { Car } from '../types/car.types.js';
 import { resolveDataFile } from '../utils/data-paths.js';
 import { estimateEvHorsepower } from '../utils/ev-power-estimates.js';
-import { canonicalizeDisplayModel, resolveNhtsaCountry, resolveNhtsaSafety } from '../utils/vehicle-taxonomy.js';
+import {
+  canonicalizeDisplayModel,
+  resolveNhtsaCountry,
+  resolveNhtsaSafety,
+} from '../utils/vehicle-taxonomy.js';
 
 /**
  * Load-time enrichment from offline companion files (no network calls):
@@ -93,8 +97,7 @@ export function enrichCar(car: Car): Car {
 
   const epaEntry = car.epaId != null ? epaEnrichment[String(car.epaId)] : undefined;
   const displayModel = canonicalizeDisplayModel(car);
-  const safety =
-    nhtsaByCarId[car.id] ?? resolveNhtsaSafety(car, nhtsaSafety, displayModel);
+  const safety = nhtsaByCarId[car.id] ?? resolveNhtsaSafety(car, nhtsaSafety, displayModel);
   const hp = car.epaId != null ? horsepower[String(car.epaId)] : undefined;
   const evHpCandidate = estimateEvHorsepower(car);
   const nhtsaCountry = car.countryOfOrigin
@@ -109,7 +112,9 @@ export function enrichCar(car: Car): Car {
     next.epa = {
       ...(car.epa ?? {}),
       ...(epaEntry.ghgScore != null ? { ghgScore: epaEntry.ghgScore } : {}),
-      ...(epaEntry.fuelSavings5yrUsd != null ? { fuelSavings5yrUsd: epaEntry.fuelSavings5yrUsd } : {}),
+      ...(epaEntry.fuelSavings5yrUsd != null
+        ? { fuelSavings5yrUsd: epaEntry.fuelSavings5yrUsd }
+        : {}),
       ...(epaEntry.barrelsPerYear != null ? { barrelsPerYear: epaEntry.barrelsPerYear } : {}),
       ...(epaEntry.phev ? { phev: epaEntry.phev } : {}),
     };

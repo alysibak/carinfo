@@ -50,12 +50,7 @@ function isBodyParserError(err: unknown): err is { status: number; type: string 
  * can name a table, a file path or a library version, and none of that belongs
  * in a public response. The request ID bridges the two.
  */
-export function errorHandler(
-  err: unknown,
-  req: Request,
-  res: Response,
-  _next: NextFunction,
-): void {
+export function errorHandler(err: unknown, req: Request, res: Response, _next: NextFunction): void {
   if (res.headersSent) return;
 
   if (err instanceof HttpError) {

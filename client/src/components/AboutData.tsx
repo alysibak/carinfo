@@ -58,13 +58,19 @@ export default function AboutData({ compact = false }: { compact?: boolean }) {
       <div className="max-w-3xl mx-auto mb-10 border border-zinc-900 bg-zinc-950 px-6 py-5 text-left">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] tracking-[0.3em] text-zinc-400 uppercase mb-2">About the data</p>
+            <p className="text-[10px] tracking-[0.3em] text-zinc-400 uppercase mb-2">
+              About the data
+            </p>
             <p className="text-sm text-zinc-400 leading-relaxed">
-              Fuel economy and engine specs from <strong className="text-zinc-200 font-medium">EPA</strong>.
-              Crash safety from <strong className="text-zinc-200 font-medium">NHTSA</strong> when we find a match
+              Fuel economy and engine specs from{' '}
+              <strong className="text-zinc-200 font-medium">EPA</strong>. Crash safety from{' '}
+              <strong className="text-zinc-200 font-medium">NHTSA</strong> when we find a match
               (~13% of vehicles on file). Horsepower from the EPA test-car list when matched (~71%).
-              Market value and running costs are <strong className="text-zinc-200 font-medium">Ontario-baseline
-              estimates in CAD</strong>, always labeled, never live listing prices.
+              Market value and running costs are{' '}
+              <strong className="text-zinc-200 font-medium">
+                Ontario-baseline estimates in CAD
+              </strong>
+              , always labeled, never live listing prices.
             </p>
           </div>
           <button
@@ -114,24 +120,25 @@ function AboutDataModal({ onClose }: { onClose: () => void }) {
             FuelEconomy.gov bulk data.
           </p>
           <p>
-            <span className="text-white font-bold">Sourced (NHTSA)</span>: Crash-test star ratings when
-            NHTSA has tested that make/model/year. NHTSA tests far fewer configurations than EPA lists,
-            so most vehicles show no rating. That is expected, not a lookup failure.
+            <span className="text-white font-bold">Sourced (NHTSA)</span>: Crash-test star ratings
+            when NHTSA has tested that make/model/year. NHTSA tests far fewer configurations than
+            EPA lists, so most vehicles show no rating. That is expected, not a lookup failure.
           </p>
           <p>
-            <span className="text-white font-bold">Curated (EPA test car)</span>: Rated horsepower when
-            matched to an EPA test-car record. EV motor output may be estimated when no test-car match exists.
+            <span className="text-white font-bold">Curated (EPA test car)</span>: Rated horsepower
+            when matched to an EPA test-car record. EV motor output may be estimated when no
+            test-car match exists.
           </p>
           <p>
-            <span className="text-white font-bold">Estimated (Ontario CAD)</span>: Market value uses a
-            depreciation model with USD MSRP anchors converted to CAD. Running costs use Ontario gas,
-            electricity, insurance, and registration baselines at ~15,000 km/yr. Every estimate shows a
-            confidence label.
+            <span className="text-white font-bold">Estimated (Ontario CAD)</span>: Market value uses
+            a depreciation model with USD MSRP anchors converted to CAD. Running costs use Ontario
+            gas, electricity, insurance, and registration baselines at ~15,000 km/yr. Every estimate
+            shows a confidence label.
           </p>
           <p>
-            <span className="text-white font-semibold">Not included</span>: Live dealer listing prices,
-            dimensions, torque, real 0-60 times, or listing photos. Body-type illustrations only.
-            We omit uncertain fields rather than invent them.
+            <span className="text-white font-semibold">Not included</span>: Live dealer listing
+            prices, dimensions, torque, real 0-60 times, or listing photos. Body-type illustrations
+            only. We omit uncertain fields rather than invent them.
           </p>
         </div>
         <Link

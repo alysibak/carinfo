@@ -210,7 +210,7 @@ function buildIndexes(): void {
 
   // Pre-compute sorted makes list
   cachedMakes = Array.from(makeIndex.keys())
-    .map(k => {
+    .map((k) => {
       // Return the original-case version from the first car in the bucket
       const cars = makeIndex.get(k)!;
       return cars[0].make;
@@ -244,7 +244,7 @@ export function getModelsByMake(make: string): string[] {
   const cars = makeIndex.get(make.toLowerCase());
   if (!cars) return [];
 
-  const models = new Set(cars.map(car => car.model));
+  const models = new Set(cars.map((car) => car.model));
   return Array.from(models).sort();
 }
 
@@ -400,7 +400,12 @@ export interface SearchSuggestion {
 }
 
 const POPULAR_SUGGESTIONS: SearchSuggestion[] = [
-  { id: 'pop-camry', label: '2024 Toyota Camry', sublabel: 'Sedan · EPA verified', query: '2024 camry' },
+  {
+    id: 'pop-camry',
+    label: '2024 Toyota Camry',
+    sublabel: 'Sedan · EPA verified',
+    query: '2024 camry',
+  },
   { id: 'pop-civic', label: 'Honda Civic', sublabel: 'Compact · all years', query: 'honda civic' },
   { id: 'pop-f150', label: 'Ford F-150', sublabel: 'Truck · work & haul', query: 'ford f-150' },
   { id: 'pop-rav4', label: 'Toyota RAV4', sublabel: 'SUV · daily driver', query: 'toyota rav4' },
@@ -472,14 +477,20 @@ export function getSearchSuggestions(rawQuery: string, limit = 8): SearchSuggest
   }
 
   for (const p of POPULAR_SUGGESTIONS) {
-    if (p.label.toLowerCase().includes(q) || p.query.includes(q) || bestFuzzyScore(q, p.query) <= 2) {
+    if (
+      p.label.toLowerCase().includes(q) ||
+      p.query.includes(q) ||
+      bestFuzzyScore(q, p.query) <= 2
+    ) {
       add(p, 60);
     }
   }
 
   ranked.sort((a, b) => b.score - a.score);
 
-  const results: SearchSuggestion[] = ranked.slice(0, Math.max(0, limit - 1)).map(({ score: _s, ...s }) => s);
+  const results: SearchSuggestion[] = ranked
+    .slice(0, Math.max(0, limit - 1))
+    .map(({ score: _s, ...s }) => s);
   results.push({
     id: `raw-${qRaw}`,
     label: `Search “${rawQuery.trim()}”`,
@@ -500,9 +511,7 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
   if (!raw) return query;
 
   const filters = { ...(query.filters || {}) };
-  const tokens = expandGluedMakeTokens(
-    normalizeSearchQuery(raw).split(/\s+/).filter(Boolean),
-  );
+  const tokens = expandGluedMakeTokens(normalizeSearchQuery(raw).split(/\s+/).filter(Boolean));
   const textTokens: string[] = [];
 
   for (const token of tokens) {
@@ -577,9 +586,7 @@ function parseYearToken(token: string): { min: number; max: number } | null {
 
 /** Split tokens like "mazda3" when aliasing missed them. */
 function expandGluedMakeTokens(tokens: string[]): string[] {
-  const makes = cachedMakes
-    .map((m) => m.toLowerCase())
-    .sort((a, b) => b.length - a.length);
+  const makes = cachedMakes.map((m) => m.toLowerCase()).sort((a, b) => b.length - a.length);
   const out: string[] = [];
 
   for (const token of tokens) {
@@ -587,10 +594,7 @@ function expandGluedMakeTokens(tokens: string[]): string[] {
     const compactToken = token.replace(/[\s-]/g, '');
     for (const make of makes) {
       const compactMake = make.replace(/[\s-]/g, '');
-      if (
-        compactToken.startsWith(compactMake) &&
-        compactToken.length > compactMake.length
-      ) {
+      if (compactToken.startsWith(compactMake) && compactToken.length > compactMake.length) {
         const rest = compactToken.slice(compactMake.length);
         if (/^[a-z0-9]/i.test(rest)) {
           out.push(make, normalizeSearchToken(rest));
@@ -668,9 +672,7 @@ function resolveModelsForPhrase(make: string, phrase: string): string[] {
   return fuzzy.length === 1 ? fuzzy : [];
 }
 
-function resolveModelsAcrossMakes(
-  phrase: string,
-): { models: string[]; makes: string[] } {
+function resolveModelsAcrossMakes(phrase: string): { models: string[]; makes: string[] } {
   const models = new Set<string>();
   const makes = new Set<string>();
 
@@ -770,7 +772,7 @@ function getCandidateSet(query: SearchQuery): Car[] {
     if (filters.make?.length) {
       indexFilters.push({
         index: makeIndex,
-        keys: filters.make.map(m => m.toLowerCase()),
+        keys: filters.make.map((m) => m.toLowerCase()),
       });
     }
     if (filters.bodyStyle?.length) {
@@ -861,7 +863,9 @@ function singlePassFilter(cars: Car[], query: SearchQuery): Car[] {
   const filters = query.filters;
   const searchTerm = query.query ? normalizeSearchQuery(query.query) : '';
   // Tokenize so multi-word queries like "2024 camry" match across fields
-  const searchTokens = searchTerm ? searchTerm.split(/\s+/).filter(Boolean).map(normalizeSearchToken) : [];
+  const searchTokens = searchTerm
+    ? searchTerm.split(/\s+/).filter(Boolean).map(normalizeSearchToken)
+    : [];
 
   // If nothing to filter, return as-is
   const hasTextSearch = searchTokens.length > 0;
@@ -877,18 +881,26 @@ function singlePassFilter(cars: Car[], query: SearchQuery): Car[] {
   const hasPriceMin = filters?.price?.min != null;
   const hasPriceMax = filters?.price?.max != null;
 
-  const needsFiltering = hasTextSearch || hasModel || hasYearMin || hasYearMax ||
-    hasHpMin || hasHpMax || hasDispMin || hasDispMax ||
-    hasFuelEcoMin || hasFuelEcoMax || hasPriceMin || hasPriceMax;
+  const needsFiltering =
+    hasTextSearch ||
+    hasModel ||
+    hasYearMin ||
+    hasYearMax ||
+    hasHpMin ||
+    hasHpMax ||
+    hasDispMin ||
+    hasDispMax ||
+    hasFuelEcoMin ||
+    hasFuelEcoMax ||
+    hasPriceMin ||
+    hasPriceMax;
 
   if (!needsFiltering) {
     return cars;
   }
 
   // Pre-compute lowercase model set for fast lookup
-  const modelSet = hasModel
-    ? new Set(filters!.model!.map(m => m.toLowerCase()))
-    : null;
+  const modelSet = hasModel ? new Set(filters!.model!.map((m) => m.toLowerCase())) : null;
 
   const yearMin = filters?.year?.min;
   const yearMax = filters?.year?.max;
@@ -985,9 +997,12 @@ function sortResultsInPlace(cars: Car[], field: string, order: 'asc' | 'desc'): 
 
 function getSortValue(car: Car, field: string): number | string | null {
   switch (field) {
-    case 'make': return car.make;
-    case 'model': return car.model;
-    case 'year': return car.year;
+    case 'make':
+      return car.make;
+    case 'model':
+      return car.model;
+    case 'year':
+      return car.year;
     case 'horsepower':
       return car.engine.horsepower ?? null;
     case 'price':
@@ -1231,12 +1246,22 @@ export function getChartDensity(
   const ySpan = Math.max(yMax - yMin, 0.01);
   const grid = new Map<
     string,
-    { count: number; priceMin: number; priceMax: number; yMin: number; yMax: number; bodyStyles: Map<string, number> }
+    {
+      count: number;
+      priceMin: number;
+      priceMax: number;
+      yMin: number;
+      yMax: number;
+      bodyStyles: Map<string, number>;
+    }
   >();
 
   for (const row of rows) {
     const y = yValueForMetric(row, metric);
-    const pi = Math.min(priceBinCount - 1, Math.floor(((row.price - priceMin) / priceSpan) * priceBinCount));
+    const pi = Math.min(
+      priceBinCount - 1,
+      Math.floor(((row.price - priceMin) / priceSpan) * priceBinCount),
+    );
     const yi = Math.min(yBinCount - 1, Math.floor(((y - yMin) / ySpan) * yBinCount));
     const key = `${pi}:${yi}`;
     const cellPriceMin = priceMin + (pi / priceBinCount) * priceSpan;
@@ -1247,7 +1272,10 @@ export function getChartDensity(
     const existing = grid.get(key);
     if (existing) {
       existing.count += 1;
-      existing.bodyStyles.set(row.car.bodyStyle, (existing.bodyStyles.get(row.car.bodyStyle) ?? 0) + 1);
+      existing.bodyStyles.set(
+        row.car.bodyStyle,
+        (existing.bodyStyles.get(row.car.bodyStyle) ?? 0) + 1,
+      );
     } else {
       const bodyStyles = new Map<string, number>();
       bodyStyles.set(row.car.bodyStyle, 1);
@@ -1298,9 +1326,11 @@ export function getChartDensity(
 }
 
 /** Lightweight scatter-plot points computed server-side (avoids shipping full DB to browser). */
-export function getChartPoints(
-  query: ChartPointsQuery = {},
-): { points: ChartPoint[]; total: number; returned: number } {
+export function getChartPoints(query: ChartPointsQuery = {}): {
+  points: ChartPoint[];
+  total: number;
+  returned: number;
+} {
   const limit = Math.min(Math.max(query.limit ?? 3000, 1), 5000);
   const rows = filterChartCars(query);
 
@@ -1330,4 +1360,3 @@ export function getChartPoints(
   }
   return { points: sampled, total, returned: sampled.length };
 }
-

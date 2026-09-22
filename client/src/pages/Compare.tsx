@@ -50,7 +50,8 @@ const ALL_SPECS: SpecRow[] = [
     key: 'horsepower',
     label: 'POWER',
     provenanceKey: 'engine.horsepower',
-    getValue: (car) => (car.engine.horsepower != null ? `${car.engine.horsepower} HP` : UNAVAILABLE_LABEL),
+    getValue: (car) =>
+      car.engine.horsepower != null ? `${car.engine.horsepower} HP` : UNAVAILABLE_LABEL,
     getNumeric: (car) => car.engine.horsepower ?? null,
     higherIsBetter: true,
   },
@@ -68,11 +69,16 @@ const ALL_SPECS: SpecRow[] = [
   {
     key: 'torque',
     label: 'TORQUE',
-    getValue: (car) => (car.engine.torque != null ? `${car.engine.torque} LB-FT` : UNAVAILABLE_LABEL),
+    getValue: (car) =>
+      car.engine.torque != null ? `${car.engine.torque} LB-FT` : UNAVAILABLE_LABEL,
     getNumeric: (car) => car.engine.torque ?? null,
     higherIsBetter: true,
   },
-  { key: 'fuelType', label: 'FUEL', getValue: (car) => formatFuelTypeLabel(car.engine.fuelType).toUpperCase() },
+  {
+    key: 'fuelType',
+    label: 'FUEL',
+    getValue: (car) => formatFuelTypeLabel(car.engine.fuelType).toUpperCase(),
+  },
   {
     key: 'transmission',
     label: 'TRANS',
@@ -166,7 +172,8 @@ const ALL_SPECS: SpecRow[] = [
 export default function Compare() {
   usePageMeta('Compare', 'Side-by-side EPA specs and labeled estimates for up to five vehicles.');
   const [searchParams, setSearchParams] = useSearchParams();
-  const { comparedCars, removeCarFromComparison, clearComparison, replaceComparison } = useCarStore();
+  const { comparedCars, removeCarFromComparison, clearComparison, replaceComparison } =
+    useCarStore();
   const [dashboards, setDashboards] = useState<CarDashboard[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -378,8 +385,9 @@ export default function Compare() {
           </div>
           {loadError && <p className="text-xs text-amber-300/90 mt-3">{loadError}</p>}
           <p className="text-[10px] text-zinc-500 mt-3 leading-relaxed">
-            Estimated values use your cost region ({region === 'british-columbia' ? 'B.C.' : 'Ontario'}), CAD.
-            EPA fuel $/yr is a US-dollar reference from EPA tests.{' '}
+            Estimated values use your cost region (
+            {region === 'british-columbia' ? 'B.C.' : 'Ontario'}), CAD. EPA fuel $/yr is a US-dollar
+            reference from EPA tests.{' '}
             <Link to="/methodology" className="underline underline-offset-2 hover:text-zinc-300">
               Methodology
             </Link>
@@ -391,7 +399,9 @@ export default function Compare() {
         {loading ? (
           <div className="text-center py-12" role="status">
             <div className="inline-block w-10 h-10 border-2 border-zinc-800 border-t-zinc-500 mb-3 animate-spin" />
-            <p className="text-[10px] tracking-widest text-zinc-400 uppercase">Loading comparison data</p>
+            <p className="text-[10px] tracking-widest text-zinc-400 uppercase">
+              Loading comparison data
+            </p>
           </div>
         ) : (
           <div className="max-w-7xl mx-auto min-w-0">
@@ -413,9 +423,7 @@ export default function Compare() {
                       <span className="text-zinc-500">
                         {car.year} {car.make} {displayModelLabel(car)} —{' '}
                       </span>
-                      <span className="text-white font-medium">
-                        {diff.byCarId[car.id]?.edge}
-                      </span>
+                      <span className="text-white font-medium">{diff.byCarId[car.id]?.edge}</span>
                     </li>
                   ))}
                 </ul>
@@ -426,19 +434,40 @@ export default function Compare() {
                 <thead>
                   <tr className="border-b border-zinc-700">
                     <th className="px-2 sm:px-4 py-3 sm:py-4 text-left sticky left-0 bg-black z-10 min-w-[68px] sm:min-w-[100px]">
-                      <span className="text-[10px] sm:text-xs uppercase tracking-widest text-zinc-400">Spec</span>
+                      <span className="text-[10px] sm:text-xs uppercase tracking-widest text-zinc-400">
+                        Spec
+                      </span>
                     </th>
                     {pairs.map(({ car }) => (
-                      <th key={car.id} className="px-2 sm:px-4 py-3 sm:py-4 min-w-[120px] sm:min-w-[180px] border-l border-zinc-800 align-top">
-                        <Link to={`/car/${car.id}`} className="block text-center group/col hover:opacity-90 transition-opacity">
+                      <th
+                        key={car.id}
+                        className="px-2 sm:px-4 py-3 sm:py-4 min-w-[120px] sm:min-w-[180px] border-l border-zinc-800 align-top"
+                      >
+                        <Link
+                          to={`/car/${car.id}`}
+                          className="block text-center group/col hover:opacity-90 transition-opacity"
+                        >
                           <div className="relative h-10 sm:h-12 mb-2 border border-zinc-800 overflow-hidden mx-auto max-w-[100px] sm:max-w-[120px]">
-                            <VehiclePlaceholder car={car} compact hideCaption className="!absolute inset-0" />
+                            <VehiclePlaceholder
+                              car={car}
+                              compact
+                              hideCaption
+                              className="!absolute inset-0"
+                            />
                           </div>
-                          <p className="text-lg sm:text-2xl md:text-3xl font-black text-zinc-300 tabular-nums group-hover/col:text-white transition-colors">{car.year}</p>
-                          <h3 className="text-xs sm:text-base font-black tracking-tight uppercase mt-1 sm:mt-2 group-hover/col:underline underline-offset-4 decoration-zinc-600 break-words">{car.make}</h3>
-                          <p className="text-xs sm:text-sm font-medium text-zinc-400 break-words">{displayModelLabel(car)}</p>
+                          <p className="text-lg sm:text-2xl md:text-3xl font-black text-zinc-300 tabular-nums group-hover/col:text-white transition-colors">
+                            {car.year}
+                          </p>
+                          <h3 className="text-xs sm:text-base font-black tracking-tight uppercase mt-1 sm:mt-2 group-hover/col:underline underline-offset-4 decoration-zinc-600 break-words">
+                            {car.make}
+                          </h3>
+                          <p className="text-xs sm:text-sm font-medium text-zinc-400 break-words">
+                            {displayModelLabel(car)}
+                          </p>
                           {displayListingSubtitle(car) && (
-                            <p className="text-xs text-zinc-500 mt-1 line-clamp-2">{displayListingSubtitle(car)}</p>
+                            <p className="text-xs text-zinc-500 mt-1 line-clamp-2">
+                              {displayListingSubtitle(car)}
+                            </p>
                           )}
                         </Link>
                         <button
@@ -456,7 +485,9 @@ export default function Compare() {
                   {specs.map((spec) => (
                     <tr key={spec.key} className="border-b border-zinc-900">
                       <td className="px-2 sm:px-4 py-3 sticky left-0 z-10 bg-black border-r border-zinc-800">
-                        <span className="text-xs tracking-widest text-zinc-400 uppercase block">{spec.label}</span>
+                        <span className="text-xs tracking-widest text-zinc-400 uppercase block">
+                          {spec.label}
+                        </span>
                         {spec.isEstimatedRow && (
                           <span className="text-[10px] text-zinc-600 mt-0.5 block">est.</span>
                         )}
@@ -464,7 +495,10 @@ export default function Compare() {
                       {pairs.map(({ car, dashboard }) => {
                         if (!dashboard) {
                           return (
-                            <td key={car.id} className="px-2 sm:px-4 py-3 text-center border-l border-zinc-800 text-zinc-400 text-xs">
+                            <td
+                              key={car.id}
+                              className="px-2 sm:px-4 py-3 text-center border-l border-zinc-800 text-zinc-400 text-xs"
+                            >
                               …
                             </td>
                           );

@@ -213,7 +213,8 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
 
       <div className="shrink-0 bg-black border-t border-zinc-800 px-5 py-4 flex items-center justify-between gap-4">
         <p className="text-[11px] text-zinc-400 leading-relaxed">
-          Point at the VIN barcode — driver&rsquo;s door sticker or the plate at the base of the windshield.
+          Point at the VIN barcode — driver&rsquo;s door sticker or the plate at the base of the
+          windshield.
         </p>
         <button
           type="button"

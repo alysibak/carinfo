@@ -7,11 +7,7 @@ import SelectMenu from '../components/SelectMenu';
 import ToolPageHeader from '../components/ToolPageHeader';
 import PageShell, { PageBody } from '../components/PageShell';
 import { ErrorState, LoadingScreen } from '../components/ui';
-import {
-  formatMpgForCard,
-  formatPowerForCard,
-  formatPriceShort,
-} from '../utils/dataValue';
+import { formatMpgForCard, formatPowerForCard, formatPriceShort } from '../utils/dataValue';
 import { formatFuelBadge, usesMpge } from '../utils/fuelDisplay';
 import { displayModelLabel } from '../utils/trimLabel';
 import { searchQueryToParams } from '../utils/searchParams';
@@ -73,7 +69,10 @@ function buildQuizFilters(
 }
 
 export default function SmartSearch() {
-  usePageMeta('Three picks for you', 'Quiz results: three cars to compare, not a scrolling catalog.');
+  usePageMeta(
+    'Three picks for you',
+    'Quiz results: three cars to compare, not a scrolling catalog.',
+  );
   const [searchParams] = useSearchParams();
   const [allCars, setAllCars] = useState<CarSpecs[]>([]);
   const [loading, setLoading] = useState(true);
@@ -153,9 +152,7 @@ export default function SmartSearch() {
       const price = car.price?.msrp || 50000;
       const mpg = car.fuelEconomy.combined || 20;
       const safety =
-        car.safetyRating?.overall && car.safetyRating.overall > 0
-          ? car.safetyRating.overall
-          : 3;
+        car.safetyRating?.overall && car.safetyRating.overall > 0 ? car.safetyRating.overall : 3;
       const yearBoost = Math.max(0, car.year - 2005) / 20;
       const power =
         car.engine.horsepower ??
@@ -163,7 +160,9 @@ export default function SmartSearch() {
 
       switch (rankBy) {
         case 'efficiency':
-          return mpg * (car.engine.fuelType === 'electric' || car.engine.fuelType === 'hybrid' ? 1.2 : 1);
+          return (
+            mpg * (car.engine.fuelType === 'electric' || car.engine.fuelType === 'hybrid' ? 1.2 : 1)
+          );
         case 'power':
           return power / (price / 1000);
         case 'value':
@@ -222,9 +221,7 @@ export default function SmartSearch() {
   ).toString()}`;
 
   const compareHref =
-    picks.length >= 2
-      ? `/compare?cars=${picks.map((c) => c.id).join(',')}`
-      : null;
+    picks.length >= 2 ? `/compare?cars=${picks.map((c) => c.id).join(',')}` : null;
 
   const answerLine = [
     persona,
@@ -330,10 +327,16 @@ export default function SmartSearch() {
           <div className="py-12">
             <p className="text-base text-zinc-300 mb-3">Nothing matched those answers.</p>
             <div className="flex flex-wrap gap-4 text-xs">
-              <Link to="/?quiz=1" className="underline underline-offset-4 text-zinc-400 hover:text-white">
+              <Link
+                to="/?quiz=1"
+                className="underline underline-offset-4 text-zinc-400 hover:text-white"
+              >
                 Retake quiz
               </Link>
-              <Link to={catalogHref} className="underline underline-offset-4 text-zinc-400 hover:text-white">
+              <Link
+                to={catalogHref}
+                className="underline underline-offset-4 text-zinc-400 hover:text-white"
+              >
                 Open Search anyway
               </Link>
             </div>
@@ -353,7 +356,11 @@ export default function SmartSearch() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="text-[10px] uppercase tracking-wider text-zinc-600 mb-1">
-                        {i === 0 ? 'Start here' : i === 1 ? 'Strong alternative' : 'Also worth a look'}
+                        {i === 0
+                          ? 'Start here'
+                          : i === 1
+                            ? 'Strong alternative'
+                            : 'Also worth a look'}
                       </p>
                       <Link to={`/car/${car.id}`} className="group block">
                         <h2
@@ -411,7 +418,10 @@ export default function SmartSearch() {
                 Change answers
               </Link>
               {moreCount > 0 && (
-                <Link to={catalogHref} className="text-xs text-zinc-500 hover:text-white sm:ml-auto">
+                <Link
+                  to={catalogHref}
+                  className="text-xs text-zinc-500 hover:text-white sm:ml-auto"
+                >
                   {moreCount}+ more in Search →
                 </Link>
               )}

@@ -9,9 +9,8 @@ export type CollectionRankBy = 'best-value' | 'daily-driver';
 export function calculateCollectionScore(car: CarSpecs, rankBy: CollectionRankBy): number {
   const price = car.price?.msrp || 50000;
   const mpg = car.fuelEconomy.combined || 20;
-  const safety = car.safetyRating?.overall && car.safetyRating.overall > 0
-    ? car.safetyRating.overall
-    : 3;
+  const safety =
+    car.safetyRating?.overall && car.safetyRating.overall > 0 ? car.safetyRating.overall : 3;
   const yearBoost = Math.max(0, car.year - 2005) / 20;
 
   if (rankBy === 'daily-driver') {
@@ -22,10 +21,7 @@ export function calculateCollectionScore(car: CarSpecs, rankBy: CollectionRankBy
 }
 
 /** Keep the highest-scoring trim per make+model. */
-export function dedupeByModel(
-  cars: CarSpecs[],
-  scoreFn: (car: CarSpecs) => number,
-): CarSpecs[] {
+export function dedupeByModel(cars: CarSpecs[], scoreFn: (car: CarSpecs) => number): CarSpecs[] {
   const best = new Map<string, CarSpecs>();
 
   for (const car of cars) {

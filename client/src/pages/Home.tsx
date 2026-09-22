@@ -16,27 +16,21 @@ import {
   searchQueryToParams,
 } from '../utils/searchParams';
 import { isElectricOnlyBrowse } from '../utils/filterState';
-import {
-  LIFESTYLE_PRESETS,
-  POPULAR_SEARCHES,
-} from '../config/browseTaxonomy';
+import { LIFESTYLE_PRESETS, POPULAR_SEARCHES } from '../config/browseTaxonomy';
 import type { CarFilter } from '../types/car.types';
 import { usePageMeta } from '../utils/pageMeta';
 
 const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/i;
 
 export default function Home() {
-  usePageMeta('Search', 'Filter and search 28,000+ vehicles by make, fuel type, body style, and price.');
+  usePageMeta(
+    'Search',
+    'Filter and search 28,000+ vehicles by make, fuel type, body style, and price.',
+  );
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const {
-    searchResults,
-    searchQuery,
-    setSearchQuery,
-    performSearch,
-    isSearching,
-    searchError,
-  } = useCarStore();
+  const { searchResults, searchQuery, setSearchQuery, performSearch, isSearching, searchError } =
+    useCarStore();
 
   const [searchText, setSearchText] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
@@ -149,7 +143,7 @@ export default function Home() {
       collapseByModel,
       sort: text
         ? { field: 'relevance', order: 'desc' }
-        : searchQuery.sort ?? { field: 'year', order: 'desc' },
+        : (searchQuery.sort ?? { field: 'year', order: 'desc' }),
       offset: 0,
     });
   };
@@ -269,10 +263,7 @@ export default function Home() {
               <FilterSidebar
                 onFiltersApplied={() => {
                   const q = useCarStore.getState().searchQuery;
-                  const params = searchQueryToParams(
-                    { ...q, query: searchText || undefined },
-                    1,
-                  );
+                  const params = searchQueryToParams({ ...q, query: searchText || undefined }, 1);
                   setSearchParams(params);
                   setHasSearched(true);
                   // Keep the mobile filter panel open so people can stack filters.
@@ -295,7 +286,9 @@ export default function Home() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 pt-1">
                 <div>
                   <h1 className="text-xl font-bold tracking-tight mb-1">I know the name</h1>
-                  <p className="text-sm text-zinc-500 mb-5">Type above, or jump to a common search.</p>
+                  <p className="text-sm text-zinc-500 mb-5">
+                    Type above, or jump to a common search.
+                  </p>
                   <div className="flex flex-col">
                     {POPULAR_SEARCHES.map((item) => (
                       <button
@@ -331,7 +324,9 @@ export default function Home() {
                       >
                         <span>
                           <span className="block text-sm text-zinc-200">{item.label}</span>
-                          <span className="block text-xs text-zinc-500 mt-0.5">{item.description}</span>
+                          <span className="block text-xs text-zinc-500 mt-0.5">
+                            {item.description}
+                          </span>
                         </span>
                       </button>
                     ))}

@@ -15,9 +15,29 @@ export function isLikelyVin(text: string): boolean {
 }
 
 const TRANSLITERATION: Record<string, number> = {
-  A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, H: 8,
-  J: 1, K: 2, L: 3, M: 4, N: 5, P: 7, R: 9,
-  S: 2, T: 3, U: 4, V: 5, W: 6, X: 7, Y: 8, Z: 9,
+  A: 1,
+  B: 2,
+  C: 3,
+  D: 4,
+  E: 5,
+  F: 6,
+  G: 7,
+  H: 8,
+  J: 1,
+  K: 2,
+  L: 3,
+  M: 4,
+  N: 5,
+  P: 7,
+  R: 9,
+  S: 2,
+  T: 3,
+  U: 4,
+  V: 5,
+  W: 6,
+  X: 7,
+  Y: 8,
+  Z: 9,
 };
 
 const WEIGHTS = [8, 7, 6, 5, 4, 3, 2, 10, 0, 9, 8, 7, 6, 5, 4, 3, 2];
@@ -65,10 +85,5 @@ export function extractVinFromScan(raw: string): string | null {
 
   // Prefer any candidate that passes the check digit; fall back to an
   // exact-length read (some non-North-American VINs don't comply).
-  return (
-    exactReads.find(vinCheckDigitValid) ??
-    windowed[0] ??
-    exactReads[0] ??
-    null
-  );
+  return exactReads.find(vinCheckDigitValid) ?? windowed[0] ?? exactReads[0] ?? null;
 }

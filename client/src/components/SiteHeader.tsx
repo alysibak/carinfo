@@ -157,18 +157,39 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
             onClick={() => setMenuOpen((o) => !o)}
           >
             {menuOpen ? (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             ) : (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
               </svg>
             )}
           </button>
         </div>
       </div>
-
     </header>
   );
 
@@ -223,10 +244,18 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
             <AuthHeaderSlot onNavigate={() => setMenuOpen(false)} />
           </div>
           <div className="py-4 flex flex-col gap-3 text-xs uppercase tracking-widest text-zinc-500">
-            <NavLink to="/value-matrix" onClick={() => setMenuOpen(false)} className="hover:text-white">
+            <NavLink
+              to="/value-matrix"
+              onClick={() => setMenuOpen(false)}
+              className="hover:text-white"
+            >
               Value chart
             </NavLink>
-            <NavLink to="/methodology" onClick={() => setMenuOpen(false)} className="hover:text-white">
+            <NavLink
+              to="/methodology"
+              onClick={() => setMenuOpen(false)}
+              className="hover:text-white"
+            >
               Methodology
             </NavLink>
           </div>

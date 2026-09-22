@@ -36,7 +36,9 @@ export default function VehiclePlaceholder({
       />
       <div
         className="absolute inset-0"
-        style={{ background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.7) 100%)' }}
+        style={{
+          background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.7) 100%)',
+        }}
       />
       {bodyTypeImg ? (
         <img
@@ -62,7 +64,9 @@ export default function VehiclePlaceholder({
           <p className="text-sm font-bold text-white truncate">
             {car.make} {displayModelLabel(car)}
           </p>
-          <p className="text-[9px] tracking-wider text-zinc-400 mt-1 uppercase">Body-type illustration</p>
+          <p className="text-[9px] tracking-wider text-zinc-400 mt-1 uppercase">
+            Body-type illustration
+          </p>
         </div>
       )}
     </div>

@@ -4,11 +4,7 @@ import * as api from '../services/api';
 import type { CarSpecs } from '../types/car.types';
 import { calculateCollectionScore, dedupeByModel } from '../utils/collectionCuration';
 import { COLLECTIONS } from '../config/collections';
-import {
-  formatMpgForCard,
-  formatPowerForCard,
-  formatPriceShort,
-} from '../utils/dataValue';
+import { formatMpgForCard, formatPowerForCard, formatPriceShort } from '../utils/dataValue';
 import { usesMpge } from '../utils/fuelDisplay';
 import { displayModelLabel } from '../utils/trimLabel';
 import { searchQueryToParams } from '../utils/searchParams';
@@ -38,10 +34,7 @@ export default function Collection() {
 
   const rankBy = collection?.display?.rankBy ?? 'best-value';
   const shortlistSize = collection?.display?.shortlistSize ?? 12;
-  const scoreFn = useMemo(
-    () => (car: CarSpecs) => calculateCollectionScore(car, rankBy),
-    [rankBy],
-  );
+  const scoreFn = useMemo(() => (car: CarSpecs) => calculateCollectionScore(car, rankBy), [rankBy]);
 
   useEffect(() => {
     if (!collection) return;
@@ -98,12 +91,7 @@ export default function Collection() {
 
   if (loadError) {
     return (
-      <ErrorState
-        title="Shortlist unavailable"
-        message={loadError}
-        backTo="/"
-        backLabel="Home"
-      />
+      <ErrorState title="Shortlist unavailable" message={loadError} backTo="/" backLabel="Home" />
     );
   }
 
@@ -155,7 +143,10 @@ export default function Collection() {
         {cars.length === 0 ? (
           <div className="py-16 border-t border-zinc-900">
             <p className="text-base text-zinc-300 mb-3">Nothing matched this shortlist.</p>
-            <Link to={searchHref} className="text-xs text-zinc-400 underline underline-offset-4 hover:text-white">
+            <Link
+              to={searchHref}
+              className="text-xs text-zinc-400 underline underline-offset-4 hover:text-white"
+            >
               Open filters in Search
             </Link>
           </div>

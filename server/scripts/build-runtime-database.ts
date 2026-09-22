@@ -28,7 +28,9 @@ if (!dbPath) {
 
 console.log(`[build-runtime-db] Reading ${dbPath}...`);
 const db = JSON.parse(readFileSync(dbPath, 'utf-8')) as CarDatabase;
-console.log(`[build-runtime-db] Enriching + normalizing ${db.cars.length.toLocaleString()} cars...`);
+console.log(
+  `[build-runtime-db] Enriching + normalizing ${db.cars.length.toLocaleString()} cars...`,
+);
 
 const normalized = db.cars.map((car) => normalizeCarRecord(enrichCar(car)));
 

@@ -22,7 +22,9 @@ export default function AggregateStats({ cars, title = 'MARKET OVERVIEW' }: Aggr
       <div className="space-y-3 mb-6 divide-y divide-zinc-900">
         <div className="flex justify-between items-baseline py-2">
           <span className="text-xs tracking-widest text-zinc-400 uppercase">Vehicles</span>
-          <span className="text-2xl font-bold tabular-nums text-white">{stats.count.toLocaleString()}</span>
+          <span className="text-2xl font-bold tabular-nums text-white">
+            {stats.count.toLocaleString()}
+          </span>
         </div>
 
         <div className="flex justify-between items-baseline py-2">
@@ -35,7 +37,9 @@ export default function AggregateStats({ cars, title = 'MARKET OVERVIEW' }: Aggr
         {stats.avgHorsepower > 0 && (
           <div className="flex justify-between items-baseline py-2">
             <span className="text-xs tracking-widest text-zinc-400 uppercase">Avg power</span>
-            <span className="text-2xl font-bold tabular-nums text-white">{stats.avgHorsepower} HP</span>
+            <span className="text-2xl font-bold tabular-nums text-white">
+              {stats.avgHorsepower} HP
+            </span>
           </div>
         )}
 

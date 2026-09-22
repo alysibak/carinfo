@@ -7,8 +7,7 @@ import { isGarageLimitError } from '../services/accountApi';
 export const FREE_GARAGE_LIMIT = 10;
 
 type AddResult =
-  | { ok: true }
-  | { ok: false; reason: 'duplicate' | 'limit'; limit?: number; message?: string };
+  { ok: true } | { ok: false; reason: 'duplicate' | 'limit'; limit?: number; message?: string };
 
 interface GarageStore {
   cars: CarSpecs[];
@@ -92,7 +91,8 @@ export const useGarageStore = create<GarageStore>()(
               };
             }
             set({
-              lastSyncError: 'Could not sync garage to your account. Saved on this device only for now.',
+              lastSyncError:
+                'Could not sync garage to your account. Saved on this device only for now.',
             });
           }
         }
@@ -157,7 +157,10 @@ export const useGarageStore = create<GarageStore>()(
             saved.cars && saved.cars.length > 0
               ? saved.cars
               : capped
-                  .map((id) => get().cars.find((c) => c.id === id) || remote.cars?.find((c) => c.id === id))
+                  .map(
+                    (id) =>
+                      get().cars.find((c) => c.id === id) || remote.cars?.find((c) => c.id === id),
+                  )
                   .filter((c): c is CarSpecs => c != null);
 
           // Prefer server-hydrated cars; fall back to local specs for any missing
@@ -165,7 +168,9 @@ export const useGarageStore = create<GarageStore>()(
           for (const c of get().cars) byId.set(c.id, c);
           if (remote.cars) for (const c of remote.cars) byId.set(c.id, c);
           if (saved.cars) for (const c of saved.cars) byId.set(c.id, c);
-          const ordered = saved.ids.map((id) => byId.get(id)).filter((c): c is CarSpecs => c != null);
+          const ordered = saved.ids
+            .map((id) => byId.get(id))
+            .filter((c): c is CarSpecs => c != null);
 
           set({
             cars: ordered.length > 0 ? ordered : cars,

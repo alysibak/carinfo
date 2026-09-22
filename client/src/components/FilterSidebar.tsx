@@ -25,9 +25,7 @@ import {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="text-xs tracking-[0.2em] text-zinc-300 uppercase mb-3 font-bold">
-      {children}
-    </h3>
+    <h3 className="text-xs tracking-[0.2em] text-zinc-300 uppercase mb-3 font-bold">{children}</h3>
   );
 }
 
@@ -99,7 +97,10 @@ export default function FilterSidebar({ onFiltersApplied }: { onFiltersApplied?:
   const [filters, setFilters] = useState<CarFilter>(searchQuery.filters || {});
   const [countries, setCountries] = useState<string[]>([]);
   const [makeSearch, setMakeSearch] = useState('');
-  const [facetCounts, setFacetCounts] = useState<{ bodyStyles?: Record<string, number>; fuelTypes?: Record<string, number> }>({});
+  const [facetCounts, setFacetCounts] = useState<{
+    bodyStyles?: Record<string, number>;
+    fuelTypes?: Record<string, number>;
+  }>({});
 
   useEffect(() => {
     setFilters(searchQuery.filters || {});
@@ -107,14 +108,17 @@ export default function FilterSidebar({ onFiltersApplied }: { onFiltersApplied?:
 
   useEffect(() => {
     loadMakes();
-    api.getStatistics().then((stats) => {
-      if (Array.isArray(stats.countries) && stats.countries.length > 0) {
-        setCountries(stats.countries);
-      }
-      setFacetCounts({ bodyStyles: stats.bodyStyles, fuelTypes: stats.fuelTypes });
-    }).catch(() => {
-      setCountries(['USA', 'Japan', 'Germany', 'Italy', 'South Korea', 'UK', 'Sweden']);
-    });
+    api
+      .getStatistics()
+      .then((stats) => {
+        if (Array.isArray(stats.countries) && stats.countries.length > 0) {
+          setCountries(stats.countries);
+        }
+        setFacetCounts({ bodyStyles: stats.bodyStyles, fuelTypes: stats.fuelTypes });
+      })
+      .catch(() => {
+        setCountries(['USA', 'Japan', 'Germany', 'Italy', 'South Korea', 'UK', 'Sweden']);
+      });
   }, [loadMakes]);
 
   const commitFilters = useCallback(
@@ -141,7 +145,9 @@ export default function FilterSidebar({ onFiltersApplied }: { onFiltersApplied?:
   );
 
   const activeMpgBucket = useMemo(
-    () => MPG_BUCKETS.find((b) => bucketMatches(filters.fuelEconomy, b.filters.fuelEconomy))?.id ?? null,
+    () =>
+      MPG_BUCKETS.find((b) => bucketMatches(filters.fuelEconomy, b.filters.fuelEconomy))?.id ??
+      null,
     [filters.fuelEconomy],
   );
 
@@ -229,7 +235,11 @@ export default function FilterSidebar({ onFiltersApplied }: { onFiltersApplied?:
       <div>
         <SectionLabel>Shop by need</SectionLabel>
         <FilterPills
-          options={LIFESTYLE_PRESETS.map((p) => ({ id: p.id, label: p.label, description: p.description }))}
+          options={LIFESTYLE_PRESETS.map((p) => ({
+            id: p.id,
+            label: p.label,
+            description: p.description,
+          }))}
           activeIds={activeLifestyle ? [activeLifestyle] : []}
           onToggle={toggleLifestyle}
           compact
@@ -239,7 +249,11 @@ export default function FilterSidebar({ onFiltersApplied }: { onFiltersApplied?:
       <div>
         <SectionLabel>Budget</SectionLabel>
         <FilterPills
-          options={PRICE_BUCKETS.map((b) => ({ id: b.id, label: b.label, description: b.description }))}
+          options={PRICE_BUCKETS.map((b) => ({
+            id: b.id,
+            label: b.label,
+            description: b.description,
+          }))}
           activeIds={activePriceBucket ? [activePriceBucket] : []}
           onToggle={togglePriceBucket}
           compact
@@ -249,7 +263,11 @@ export default function FilterSidebar({ onFiltersApplied }: { onFiltersApplied?:
       <div>
         <SectionLabel>Model year</SectionLabel>
         <FilterPills
-          options={YEAR_BUCKETS.map((b) => ({ id: b.id, label: b.label, description: b.description }))}
+          options={YEAR_BUCKETS.map((b) => ({
+            id: b.id,
+            label: b.label,
+            description: b.description,
+          }))}
           activeIds={activeYearBucket ? [activeYearBucket] : []}
           onToggle={toggleYearBucket}
           compact
@@ -259,7 +277,11 @@ export default function FilterSidebar({ onFiltersApplied }: { onFiltersApplied?:
       <div>
         <SectionLabel>Efficiency</SectionLabel>
         <FilterPills
-          options={MPG_BUCKETS.map((b) => ({ id: b.id, label: b.label, description: b.description }))}
+          options={MPG_BUCKETS.map((b) => ({
+            id: b.id,
+            label: b.label,
+            description: b.description,
+          }))}
           activeIds={activeMpgBucket ? [activeMpgBucket] : []}
           onToggle={toggleMpgBucket}
           compact

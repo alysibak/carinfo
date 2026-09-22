@@ -61,14 +61,18 @@ function auditCompleteness() {
 
   console.log('\n=== PART 3: Field completeness ===');
   console.log(`Total records: ${n}`);
-  console.log(`Missing horsepower: ${pct(miss((c) => !c.engine?.horsepower))} (${miss((c) => !c.engine?.horsepower)}/${n})`);
+  console.log(
+    `Missing horsepower: ${pct(miss((c) => !c.engine?.horsepower))} (${miss((c) => !c.engine?.horsepower)}/${n})`,
+  );
   console.log(`Missing NHTSA overall: ${pct(miss((c) => !c.safetyRating?.overall))}`);
   console.log(`Missing/zero price.msrp: ${pct(miss((c) => !c.price?.msrp || c.price.msrp <= 0))}`);
   console.log(`Displacement types:`, dispTypes);
   console.log(`Missing country: ${pct(miss((c) => !c.countryOfOrigin))}`);
   console.log(`Missing driveType: ${pct(miss((c) => !c.driveType))}`);
   console.log(`Fuel type distribution:`, fuelTypes);
-  console.log(`price.msrp unique rounded values (÷100): ${uniqueMsrp} across ${msrpVals.length} non-zero records`);
+  console.log(
+    `price.msrp unique rounded values (÷100): ${uniqueMsrp} across ${msrpVals.length} non-zero records`,
+  );
 
   // PHEV misclassification
   const electric = cars.filter((c) => c.engine?.fuelType === 'electric');
@@ -87,18 +91,52 @@ function auditCompleteness() {
 
 // --- Part 1 sample matrix ---
 const SAMPLE_IDS = [
-  { label: 'Economy sedan', find: (c) => c.make === 'Toyota' && c.model === 'Corolla' && c.year === 2020 },
-  { label: 'Economy SUV', find: (c) => c.make === 'Toyota' && c.model === 'RAV4' && c.year === 2020 && c.engine.fuelType === 'gasoline' },
-  { label: 'Luxury sedan', find: (c) => c.make === 'BMW' && c.model.includes('530') && c.year === 2019 },
+  {
+    label: 'Economy sedan',
+    find: (c) => c.make === 'Toyota' && c.model === 'Corolla' && c.year === 2020,
+  },
+  {
+    label: 'Economy SUV',
+    find: (c) =>
+      c.make === 'Toyota' &&
+      c.model === 'RAV4' &&
+      c.year === 2020 &&
+      c.engine.fuelType === 'gasoline',
+  },
+  {
+    label: 'Luxury sedan',
+    find: (c) => c.make === 'BMW' && c.model.includes('530') && c.year === 2019,
+  },
   { label: 'Macan', find: (c) => c.make === 'Porsche' && c.model === 'Macan' && c.year === 2023 },
-  { label: 'Luxury SUV (X5)', find: (c) => c.make === 'BMW' && c.model.startsWith('X5') && c.year === 2020 },
-  { label: 'Sports coupe', find: (c) => c.make === 'Chevrolet' && c.model === 'Corvette' && c.year === 2019 },
+  {
+    label: 'Luxury SUV (X5)',
+    find: (c) => c.make === 'BMW' && c.model.startsWith('X5') && c.year === 2020,
+  },
+  {
+    label: 'Sports coupe',
+    find: (c) => c.make === 'Chevrolet' && c.model === 'Corvette' && c.year === 2019,
+  },
   { label: 'Pickup', find: (c) => c.make === 'Ford' && c.model === 'F-150' && c.year === 2020 },
-  { label: 'BEV (Model 3)', find: (c) => c.make === 'Tesla' && c.model.includes('Model 3 Long Range') && c.year === 2022 },
-  { label: 'Cayenne e-Hybrid', find: (c) => c.id === 'porsche-cayenne-e-hybrid-2019-cayenne-automatic-s8' },
-  { label: 'Prius Prime', find: (c) => c.make === 'Toyota' && c.model.includes('Prius Prime') && c.year === 2020 },
-  { label: 'Hybrid (Camry)', find: (c) => c.make === 'Toyota' && c.model.includes('Camry Hybrid') && c.year === 2020 },
-  { label: '1990s vehicle', find: (c) => c.make === 'Honda' && c.model === 'Civic' && c.year === 1998 },
+  {
+    label: 'BEV (Model 3)',
+    find: (c) => c.make === 'Tesla' && c.model.includes('Model 3 Long Range') && c.year === 2022,
+  },
+  {
+    label: 'Cayenne e-Hybrid',
+    find: (c) => c.id === 'porsche-cayenne-e-hybrid-2019-cayenne-automatic-s8',
+  },
+  {
+    label: 'Prius Prime',
+    find: (c) => c.make === 'Toyota' && c.model.includes('Prius Prime') && c.year === 2020,
+  },
+  {
+    label: 'Hybrid (Camry)',
+    find: (c) => c.make === 'Toyota' && c.model.includes('Camry Hybrid') && c.year === 2020,
+  },
+  {
+    label: '1990s vehicle',
+    find: (c) => c.make === 'Honda' && c.model === 'Civic' && c.year === 1998,
+  },
   { label: 'Camry XSE 2018', find: (c) => c.id === 'toyota-camry-xse-2018-camry-automatic-s8' },
 ];
 
@@ -149,7 +187,17 @@ function runSampleMatrix() {
 // --- Part 2: trim label simulation ---
 function simulateTrimLabel(trim, model) {
   const TRIM_NOISE = new Set([
-    'automatic', 'manual', 'auto', 'cvt', 'spd', 'mode', 'clkup', 'av', 's6', 's8', 's10',
+    'automatic',
+    'manual',
+    'auto',
+    'cvt',
+    'spd',
+    'mode',
+    'clkup',
+    'av',
+    's6',
+    's8',
+    's10',
   ]);
   function titleToken(token) {
     if (/^\d/.test(token)) return token.toUpperCase();
@@ -159,13 +207,23 @@ function simulateTrimLabel(trim, model) {
   if (!trim || trim === 'base') return null;
   const isSlug = /^[a-z0-9]+(-[a-z0-9]+)+$/.test(trim);
   if (!isSlug) return trim;
-  const modelSlug = model.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const modelSlug = model
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
   let rest = trim;
   if (rest.startsWith(`${modelSlug}-`)) rest = rest.slice(modelSlug.length + 1);
   else if (rest === modelSlug) return null;
-  const modelTokens = new Set(model.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean));
+  const modelTokens = new Set(
+    model
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter(Boolean),
+  );
   const tokens = rest.split('-').filter(Boolean);
-  const meaningful = tokens.filter((t) => !TRIM_NOISE.has(t) && !/^s\d+$/.test(t) && !modelTokens.has(t));
+  const meaningful = tokens.filter(
+    (t) => !TRIM_NOISE.has(t) && !/^s\d+$/.test(t) && !modelTokens.has(t),
+  );
   if (meaningful.length === 0) return null;
   return meaningful.map(titleToken).join(' ');
 }
@@ -175,7 +233,10 @@ function auditTrimLabels() {
   const leaks = [];
   for (const c of cars) {
     const label = simulateTrimLabel(c.trim, c.model);
-    if (label && (/^[A-Z]{1,3}$/.test(label) || label.includes('-') || /automatic|manual/i.test(label))) {
+    if (
+      label &&
+      (/^[A-Z]{1,3}$/.test(label) || label.includes('-') || /automatic|manual/i.test(label))
+    ) {
       leaks.push({ id: c.id, trim: c.trim, label, model: c.model });
     }
   }
@@ -206,7 +267,9 @@ function auditResaleFloor() {
       }
     }
   }
-  console.log(`Records with degenerate $Xk-$Xk resale (mid < ~5k rounded): ${degenerate} / ${cars.length}`);
+  console.log(
+    `Records with degenerate $Xk-$Xk resale (mid < ~5k rounded): ${degenerate} / ${cars.length}`,
+  );
   console.table(examples);
   return degenerate;
 }

@@ -41,7 +41,12 @@ export function BackLink({ to, label = 'Back' }: { to: string; label?: string })
         viewBox="0 0 24 24"
         aria-hidden
       >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1}
+          d="M7 16l-4-4m0 0l4-4m-4 4h18"
+        />
       </svg>
       <span className="hidden sm:inline">{label}</span>
     </Link>
@@ -52,7 +57,10 @@ export function LoadingScreen({ label = 'Loading' }: { label?: string }) {
   return (
     <div className="min-h-[40vh] bg-black flex items-center justify-center py-16">
       <div className="text-center" role="status" aria-live="polite">
-        <div className="inline-block w-12 h-12 border-2 border-zinc-800 border-t-zinc-500 mb-4 opacity-60 animate-spin" aria-hidden />
+        <div
+          className="inline-block w-12 h-12 border-2 border-zinc-800 border-t-zinc-500 mb-4 opacity-60 animate-spin"
+          aria-hidden
+        />
         <p className="text-xs tracking-[0.3em] text-zinc-300 uppercase">{label}</p>
       </div>
     </div>
@@ -79,7 +87,11 @@ export function ErrorState({
         <p className="text-sm tracking-wide text-zinc-400 mb-6">{message}</p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           {onRetry && (
-            <button type="button" onClick={onRetry} className="btn-primary text-xs tracking-[0.25em]">
+            <button
+              type="button"
+              onClick={onRetry}
+              className="btn-primary text-xs tracking-[0.25em]"
+            >
               Try again
             </button>
           )}
@@ -131,8 +143,19 @@ export function Modal({
             className="text-zinc-400 hover:text-white transition-colors shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center -mr-2"
             aria-label="Close"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -187,7 +210,11 @@ export function ConfirmDialog({
         </h2>
         <p className="text-sm text-zinc-400 leading-relaxed mb-6">{message}</p>
         <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
-          <button type="button" onClick={onClose} className="btn-secondary text-xs tracking-[0.2em]">
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-secondary text-xs tracking-[0.2em]"
+          >
             {cancelLabel}
           </button>
           <button
@@ -336,7 +363,9 @@ export function ExpandableSection({
         className="w-full px-4 py-3.5 flex items-center gap-4 text-left hover:bg-zinc-950/80 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/25"
       >
         <div className="flex-1 min-w-0">
-          <span className="text-xs font-bold tracking-widest text-white uppercase block break-words">{title}</span>
+          <span className="text-xs font-bold tracking-widest text-white uppercase block break-words">
+            {title}
+          </span>
           {summary && !open && (
             <p className="text-[11px] text-zinc-400 mt-1 leading-snug normal-case tracking-normal truncate">
               {summary}

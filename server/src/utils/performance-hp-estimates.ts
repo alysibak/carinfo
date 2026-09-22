@@ -7,14 +7,29 @@ interface HpRule {
 }
 
 const HP_RULES: HpRule[] = [
-  { test: (_, m) => m === 'Golf GTI', hp: (c) => (c.year >= 2022 ? 241 : c.year >= 2018 ? 228 : c.year >= 2015 ? 210 : 200) },
-  { test: (_, m) => m === 'Golf R', hp: (c) => (c.year >= 2022 ? 315 : c.year >= 2016 ? 292 : 256) },
+  {
+    test: (_, m) => m === 'Golf GTI',
+    hp: (c) => (c.year >= 2022 ? 241 : c.year >= 2018 ? 228 : c.year >= 2015 ? 210 : 200),
+  },
+  {
+    test: (_, m) => m === 'Golf R',
+    hp: (c) => (c.year >= 2022 ? 315 : c.year >= 2016 ? 292 : 256),
+  },
   { test: (_, m) => m === 'Golf', hp: (c) => ((c.engine.displacement ?? 0) >= 2 ? 150 : 170) },
-  { test: (_, m) => m === 'Civic Type R', hp: (c) => (c.year >= 2023 ? 315 : c.year >= 2017 ? 306 : 305) },
-  { test: (_, m) => m === 'Civic Si', hp: (c) => (c.year >= 2022 ? 200 : c.year >= 2017 ? 205 : 201) },
+  {
+    test: (_, m) => m === 'Civic Type R',
+    hp: (c) => (c.year >= 2023 ? 315 : c.year >= 2017 ? 306 : 305),
+  },
+  {
+    test: (_, m) => m === 'Civic Si',
+    hp: (c) => (c.year >= 2022 ? 200 : c.year >= 2017 ? 205 : 201),
+  },
   { test: (c) => c.make === 'Ford' && /focus st/i.test(c.model), hp: 252 },
   { test: (c) => c.make === 'Ford' && /fiesta st/i.test(c.model), hp: 197 },
-  { test: (c) => c.make === 'Subaru' && /wrx/i.test(c.model), hp: (c) => (c.year >= 2022 ? 271 : c.year >= 2015 ? 268 : 265) },
+  {
+    test: (c) => c.make === 'Subaru' && /wrx/i.test(c.model),
+    hp: (c) => (c.year >= 2022 ? 271 : c.year >= 2015 ? 268 : 265),
+  },
   { test: (c) => c.make === 'Hyundai' && /elantra n/i.test(c.model), hp: 276 },
   { test: (c) => c.make === 'Hyundai' && /veloster n/i.test(c.model), hp: 275 },
   { test: (c) => c.make === 'Mazda' && /mazdaspeed3/i.test(c.model), hp: 263 },

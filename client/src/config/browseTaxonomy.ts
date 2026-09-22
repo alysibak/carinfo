@@ -90,7 +90,12 @@ export const LIFESTYLE_PRESETS: BrowsePreset[] = [
 ];
 
 export const PRICE_BUCKETS: BucketOption[] = [
-  { id: 'under-15', label: 'Under $15k', description: 'Budget picks', filters: { price: { max: 15000 } } },
+  {
+    id: 'under-15',
+    label: 'Under $15k',
+    description: 'Budget picks',
+    filters: { price: { max: 15000 } },
+  },
   { id: '15-25', label: '$15k-$25k', filters: { price: { min: 15000, max: 25000 } } },
   { id: '25-40', label: '$25k-$40k', filters: { price: { min: 25000, max: 40000 } } },
   { id: '40-60', label: '$40k-$60k', filters: { price: { min: 40000, max: 60000 } } },
@@ -103,14 +108,24 @@ export const YEAR_BUCKETS: BucketOption[] = [
   { id: '2015s', label: '2015+', filters: { year: { min: 2015 } } },
   { id: '2010s', label: '2010-2019', filters: { year: { min: 2010, max: 2019 } } },
   { id: '2000s', label: '2000-2009', filters: { year: { min: 2000, max: 2009 } } },
-  { id: 'classic', label: '1995-1999', description: 'Classic era', filters: { year: { min: 1995, max: 1999 } } },
+  {
+    id: 'classic',
+    label: '1995-1999',
+    description: 'Classic era',
+    filters: { year: { min: 1995, max: 1999 } },
+  },
 ];
 
 export const MPG_BUCKETS: BucketOption[] = [
   { id: 'mpg-25', label: '25+ MPG', filters: { fuelEconomy: { min: 25 } } },
   { id: 'mpg-35', label: '35+ MPG', filters: { fuelEconomy: { min: 35 } } },
   { id: 'mpg-45', label: '45+ MPG', filters: { fuelEconomy: { min: 45 } } },
-  { id: 'mpg-100', label: '100+ MPGe', description: 'EVs & plug-in hybrids', filters: { fuelEconomy: { min: 100 } } },
+  {
+    id: 'mpg-100',
+    label: '100+ MPGe',
+    description: 'EVs & plug-in hybrids',
+    filters: { fuelEconomy: { min: 100 } },
+  },
 ];
 
 export const BODY_TYPES: { id: string; label: string; description: string }[] = [
@@ -136,8 +151,22 @@ export const FUEL_TYPES: { id: string; label: string; description: string }[] = 
 export const DRIVE_TYPES = ['FWD', 'RWD', 'AWD', '4WD'] as const;
 
 export const TOP_MAKES = [
-  'Toyota', 'Honda', 'Ford', 'Chevrolet', 'BMW', 'Mercedes-Benz',
-  'Audi', 'Tesla', 'Nissan', 'Hyundai', 'Kia', 'Subaru', 'Mazda', 'Lexus', 'Jeep', 'Ram',
+  'Toyota',
+  'Honda',
+  'Ford',
+  'Chevrolet',
+  'BMW',
+  'Mercedes-Benz',
+  'Audi',
+  'Tesla',
+  'Nissan',
+  'Hyundai',
+  'Kia',
+  'Subaru',
+  'Mazda',
+  'Lexus',
+  'Jeep',
+  'Ram',
 ];
 
 export const POPULAR_SEARCHES = [

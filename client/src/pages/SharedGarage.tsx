@@ -3,7 +3,12 @@ import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import * as api from '../services/api';
 import type { CarSpecs } from '../types/car.types';
 import { useGarageStore } from '../stores/garageStore';
-import { cardStatClass, formatEngineForCard, formatMpgForCard, formatPriceShort } from '../utils/dataValue';
+import {
+  cardStatClass,
+  formatEngineForCard,
+  formatMpgForCard,
+  formatPriceShort,
+} from '../utils/dataValue';
 import ToolPageHeader from '../components/ToolPageHeader';
 import { ErrorState, LoadingScreen, StatusToast } from '../components/ui';
 
@@ -17,7 +22,10 @@ export default function SharedGarage() {
 
   useEffect(() => {
     const raw = searchParams.get('cars') || '';
-    const ids = raw.split(',').map(id => id.trim()).filter(Boolean);
+    const ids = raw
+      .split(',')
+      .map((id) => id.trim())
+      .filter(Boolean);
 
     if (ids.length === 0) {
       setError('This shared garage link is empty or invalid.');
@@ -76,12 +84,7 @@ export default function SharedGarage() {
 
   if (error) {
     return (
-      <ErrorState
-        title="Shared garage unavailable"
-        message={error}
-        backTo="/"
-        backLabel="Home"
-      />
+      <ErrorState title="Shared garage unavailable" message={error} backTo="/" backLabel="Home" />
     );
   }
 
@@ -157,7 +160,11 @@ export default function SharedGarage() {
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     <div>
                       <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">Engine</p>
-                      <p className={cardStatClass(formatEngineForCard(car.engine.fuelType, car.engine.displacement))}>
+                      <p
+                        className={cardStatClass(
+                          formatEngineForCard(car.engine.fuelType, car.engine.displacement),
+                        )}
+                      >
                         {formatEngineForCard(car.engine.fuelType, car.engine.displacement)}
                       </p>
                     </div>
@@ -168,7 +175,9 @@ export default function SharedGarage() {
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">Est. Value</p>
+                      <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">
+                        Est. Value
+                      </p>
                       <p className={cardStatClass(formatPriceShort(car.price?.msrp))}>
                         {formatPriceShort(car.price?.msrp)}
                       </p>
@@ -185,8 +194,18 @@ export default function SharedGarage() {
                     className="w-full flex items-center justify-center gap-2 text-xs tracking-widest text-zinc-300 group-hover:text-white transition-all py-2 border border-zinc-900 group-hover:border-zinc-700"
                   >
                     <span>VIEW DETAILS</span>
-                    <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    <svg
+                      className="w-4 h-4 group-hover:translate-x-1 transition-transform"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1}
+                        d="M17 8l4 4m0 0l-4 4m4-4H3"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -198,4 +217,3 @@ export default function SharedGarage() {
     </div>
   );
 }
-

@@ -25,7 +25,8 @@ export function applyVehicleTaxonomy(car: Car): Car {
       engine: { ...next.engine, horsepower: perfHp },
       provenance: {
         ...next.provenance,
-        'engine.horsepower': currentHp != null ? 'estimated' : (next.provenance['engine.horsepower'] ?? 'estimated'),
+        'engine.horsepower':
+          currentHp != null ? 'estimated' : (next.provenance['engine.horsepower'] ?? 'estimated'),
       },
     };
   }

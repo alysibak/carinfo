@@ -10,7 +10,10 @@ function joinList(values?: string[]): string | undefined {
 
 function splitList(value: string | null): string[] | undefined {
   if (!value) return undefined;
-  const list = value.split(',').map((v) => v.trim()).filter(Boolean);
+  const list = value
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean);
   return list.length ? list : undefined;
 }
 
@@ -53,9 +56,23 @@ export function defaultCollapseByModel(queryText?: string, filters?: CarFilter):
 export function hasActiveSearch(params: URLSearchParams): boolean {
   if (params.get('q')) return true;
   const filterKeys = [
-    'make', 'model', 'body', 'fuel', 'drive', 'trans', 'country',
-    'yearMin', 'yearMax', 'priceMin', 'priceMax', 'mpgMin', 'mpgMax',
-    'dispMin', 'dispMax', 'hpMin', 'hpMax',
+    'make',
+    'model',
+    'body',
+    'fuel',
+    'drive',
+    'trans',
+    'country',
+    'yearMin',
+    'yearMax',
+    'priceMin',
+    'priceMax',
+    'mpgMin',
+    'mpgMax',
+    'dispMin',
+    'dispMax',
+    'hpMin',
+    'hpMax',
   ];
   return filterKeys.some((k) => params.get(k));
 }
@@ -97,7 +114,10 @@ export function paramsToSearchQuery(params: URLSearchParams): { query: SearchQue
   const hasFilters = Object.values(filters).some((v) => {
     if (v == null) return false;
     if (Array.isArray(v)) return v.length > 0;
-    return (v as { min?: number; max?: number }).min != null || (v as { min?: number; max?: number }).max != null;
+    return (
+      (v as { min?: number; max?: number }).min != null ||
+      (v as { min?: number; max?: number }).max != null
+    );
   });
 
   const sortField =
@@ -108,11 +128,7 @@ export function paramsToSearchQuery(params: URLSearchParams): { query: SearchQue
   const resolvedFilters = hasFilters ? filters : {};
   const onePer = params.get('onePerModel');
   const collapseByModel =
-    onePer === '0'
-      ? false
-      : onePer === '1'
-        ? true
-        : defaultCollapseByModel(qText, resolvedFilters);
+    onePer === '0' ? false : onePer === '1' ? true : defaultCollapseByModel(qText, resolvedFilters);
 
   return {
     page,
@@ -222,11 +238,7 @@ export function describeActiveFilters(filters: CarFilter = {}): { key: string; l
     chips.push({
       key: 'hp',
       label:
-        min != null && max != null
-          ? `${min}-${max} hp`
-          : min != null
-            ? `${min}+ hp`
-            : `≤${max} hp`,
+        min != null && max != null ? `${min}-${max} hp` : min != null ? `${min}+ hp` : `≤${max} hp`,
     });
   }
 
@@ -260,4 +272,3 @@ export function removeActiveFilterChip(filters: CarFilter, chipKey: string): Car
 
   return next;
 }
-

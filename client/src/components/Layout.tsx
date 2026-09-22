@@ -60,7 +60,10 @@ export default function Layout() {
               VIN lookup
             </Link>
             <span aria-hidden="true"> · </span>
-            <Link to="/methodology" className="text-zinc-400 hover:text-white underline underline-offset-2">
+            <Link
+              to="/methodology"
+              className="text-zinc-400 hover:text-white underline underline-offset-2"
+            >
               Methodology &amp; data policy
             </Link>
             <span aria-hidden="true"> · </span>

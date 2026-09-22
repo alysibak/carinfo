@@ -107,7 +107,9 @@ export default function CarCard({ car, showCompare = true }: CarCardProps) {
             )}
           </div>
         </div>
-        {variantLabel && <p className="text-[11px] text-zinc-500 mt-0.5 truncate">{variantLabel}</p>}
+        {variantLabel && (
+          <p className="text-[11px] text-zinc-500 mt-0.5 truncate">{variantLabel}</p>
+        )}
 
         <div className="grid grid-cols-2 gap-px bg-zinc-900 border border-zinc-900 mt-2.5">
           <div className="bg-black px-2.5 py-2">
@@ -115,7 +117,9 @@ export default function CarCard({ car, showCompare = true }: CarCardProps) {
               {isAltPowertrain && hasRange ? 'Range' : mpgLabel}
             </p>
             {isAltPowertrain && hasRange ? (
-              <p className="text-lg font-bold tabular-nums text-white leading-tight">{rangeValue}</p>
+              <p className="text-lg font-bold tabular-nums text-white leading-tight">
+                {rangeValue}
+              </p>
             ) : hasMpg ? (
               <p className="text-lg font-bold tabular-nums text-white leading-tight">{mpgValue}</p>
             ) : (

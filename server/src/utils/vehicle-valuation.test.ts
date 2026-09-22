@@ -7,10 +7,7 @@ import {
   isImplausibleResaleProjection,
   LOW_VOLUME_CONFIDENCE_LABEL,
 } from './vehicle-valuation.js';
-import {
-  calculateResaleImpact,
-  computeOwnershipEconomics,
-} from './ownership-economics.js';
+import { calculateResaleImpact, computeOwnershipEconomics } from './ownership-economics.js';
 import { inferEffectiveFuelType } from './fuel-type-inference.js';
 import { normalizeCarRecord } from '../utils/car-normalize.js';
 import { findCar, loadRawCars } from '../__tests__/helpers/loadCars.js';
@@ -36,9 +33,7 @@ function normalized(find: (c: Car) => boolean) {
 
 describe('vehicle-valuation (Ontario/CAD)', () => {
   it('Corolla 2020 lands in corrected economy-sedan band', () => {
-    const car = normalized(
-      (c) => c.make === 'Toyota' && c.model === 'Corolla' && c.year === 2020,
-    );
+    const car = normalized((c) => c.make === 'Toyota' && c.model === 'Corolla' && c.year === 2020);
     const mv = estimateMarketValue(car);
     assertValueBand(mv.low, mv.mid, mv.high, 22_000, 30_000);
   });
@@ -56,9 +51,7 @@ describe('vehicle-valuation (Ontario/CAD)', () => {
   });
 
   it('Macan 2023 lands in corrected luxury SUV band', () => {
-    const car = normalized(
-      (c) => c.make === 'Porsche' && c.model === 'Macan' && c.year === 2023,
-    );
+    const car = normalized((c) => c.make === 'Porsche' && c.model === 'Macan' && c.year === 2023);
     const mv = estimateMarketValue(car);
     assertValueBand(mv.low, mv.mid, mv.high, 64_000, 90_000);
   });
@@ -83,10 +76,7 @@ describe('vehicle-valuation (Ontario/CAD)', () => {
 
   it('Model 3 Long Range 2022 BEV retains battery health label', () => {
     const car = normalized(
-      (c) =>
-        c.make === 'Tesla' &&
-        c.model.includes('Model 3 Long Range') &&
-        c.year === 2022,
+      (c) => c.make === 'Tesla' && c.model.includes('Model 3 Long Range') && c.year === 2022,
     );
     const mv = estimateMarketValue(car);
     assertValueBand(mv.low, mv.mid, mv.high, 42_000, 60_000);
@@ -106,9 +96,7 @@ describe('vehicle-valuation (Ontario/CAD)', () => {
   });
 
   it('flags low-volume Karma GS-6 with honest low confidence and plausible resale band', () => {
-    const raw = findCar(
-      (c) => c.make === 'Karma' && c.model.includes('GS-6') && c.year === 2021,
-    );
+    const raw = findCar((c) => c.make === 'Karma' && c.model.includes('GS-6') && c.year === 2021);
     expect(raw).toBeDefined();
     const car = normalized(
       (c) => c.make === 'Karma' && c.model.includes('GS-6') && c.year === 2021,
@@ -124,7 +112,9 @@ describe('vehicle-valuation (Ontario/CAD)', () => {
     const beforeMarket = estimateMarketValue(bevSim);
     const beforeResale = calculateResaleImpact(bevSim, beforeMarket);
     expect(beforeMarket.mid).toBeLessThan(15_000);
-    expect(isImplausibleResaleProjection(beforeMarket, beforeResale.projectedResale5Year)).toBe(true);
+    expect(isImplausibleResaleProjection(beforeMarket, beforeResale.projectedResale5Year)).toBe(
+      true,
+    );
     expect(beforeResale.projectedResale5Year.high).toBeLessThan(1_000);
     expect(inferEffectiveFuelType(car)).toBe('plug-in hybrid');
 
@@ -138,9 +128,9 @@ describe('vehicle-valuation (Ontario/CAD)', () => {
 
     const { mid: resaleMid, high: resaleHigh } = econ.resaleImpact.projectedResale5Year;
     expect(resaleHigh).toBeGreaterThanOrEqual(500);
-    expect(isImplausibleResaleProjection(econ.marketValue, econ.resaleImpact.projectedResale5Year)).toBe(
-      false,
-    );
+    expect(
+      isImplausibleResaleProjection(econ.marketValue, econ.resaleImpact.projectedResale5Year),
+    ).toBe(false);
     expect(resaleMid).toBeGreaterThanOrEqual(econ.marketValue.mid * 0.05);
   });
 
@@ -166,8 +156,8 @@ describe('vehicle-valuation (Ontario/CAD)', () => {
     expect(guarded.market.confidence).toBe('low');
     expect(guarded.market.confidenceLabel).toBe(LOW_VOLUME_CONFIDENCE_LABEL);
     expect(guarded.resale.projectedResale5Year.high).toBeGreaterThanOrEqual(500);
-    expect(
-      guarded.resale.projectedResale5Year.mid / guarded.market.mid,
-    ).toBeGreaterThanOrEqual(0.05);
+    expect(guarded.resale.projectedResale5Year.mid / guarded.market.mid).toBeGreaterThanOrEqual(
+      0.05,
+    );
   });
 });

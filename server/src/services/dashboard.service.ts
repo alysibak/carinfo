@@ -1,10 +1,7 @@
 import type { Car, CarDashboard } from '../types/car.types.js';
 import type { RegionId } from '../config/regional-assumptions.js';
 import * as carService from './car.service.js';
-import {
-  getSegment,
-  predictZeroToSixty,
-} from '../utils/market-intelligence.js';
+import { getSegment, predictZeroToSixty } from '../utils/market-intelligence.js';
 import {
   computeOwnershipEconomics,
   correctedKWhPer100Mi,
@@ -13,10 +10,7 @@ import {
 } from '../utils/ownership-economics.js';
 import { findSimilarCars } from '../utils/similar-vehicles.js';
 
-export function getCarDashboard(
-  id: string,
-  regionId?: RegionId,
-): CarDashboard | null {
+export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard | null {
   const car = carService.getCarById(id);
   if (!car) return null;
 
@@ -67,13 +61,14 @@ export function getCarDashboard(
     segmentCount: segment.length,
     ownership,
     dealRating: null,
-    annualRunningCost: ownership.annualCost.total != null
-      ? {
-          low: ownership.annualCost.totalLow ?? ownership.annualCost.total,
-          high: ownership.annualCost.totalHigh ?? ownership.annualCost.total,
-          mid: ownership.annualCost.total,
-        }
-      : null,
+    annualRunningCost:
+      ownership.annualCost.total != null
+        ? {
+            low: ownership.annualCost.totalLow ?? ownership.annualCost.total,
+            high: ownership.annualCost.totalHigh ?? ownership.annualCost.total,
+            mid: ownership.annualCost.total,
+          }
+        : null,
     tco5Year: ownership.tco5Year
       ? {
           low: ownership.tco5Year.low,

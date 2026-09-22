@@ -16,9 +16,27 @@ import { readFileSync } from 'fs';
 import { resolveDataFile } from '../src/utils/data-paths.js';
 import type { Car } from '../src/types/car.types.js';
 
-const BODY_STYLES = new Set(['sedan', 'suv', 'truck', 'coupe', 'wagon', 'van', 'minivan', 'hatchback', 'convertible']);
+const BODY_STYLES = new Set([
+  'sedan',
+  'suv',
+  'truck',
+  'coupe',
+  'wagon',
+  'van',
+  'minivan',
+  'hatchback',
+  'convertible',
+]);
 const DRIVE_TYPES = new Set(['FWD', 'RWD', 'AWD', '4WD']);
-const FUEL_TYPES = new Set(['gasoline', 'diesel', 'hybrid', 'plug-in hybrid', 'electric', 'hydrogen', 'flex-fuel']);
+const FUEL_TYPES = new Set([
+  'gasoline',
+  'diesel',
+  'hybrid',
+  'plug-in hybrid',
+  'electric',
+  'hydrogen',
+  'flex-fuel',
+]);
 const TRANSMISSIONS = new Set(['automatic', 'manual', 'cvt', 'dual-clutch']);
 const PROVENANCE_SOURCES = new Set(['epa', 'nhtsa', 'estimated', 'curated']);
 
@@ -72,7 +90,8 @@ if (!db.lastUpdated || Number.isNaN(Date.parse(db.lastUpdated))) {
 const seen = new Map<string, number>();
 for (const car of cars) seen.set(car.id, (seen.get(car.id) ?? 0) + 1);
 for (const [id, count] of seen) {
-  if (count > 1) fail('unique-id', { id }, `shared by ${count} rows — all but one are unreachable by ID`);
+  if (count > 1)
+    fail('unique-id', { id }, `shared by ${count} rows — all but one are unreachable by ID`);
 }
 
 // ─── Per-record ───────────────────────────────────────────────────────────────
@@ -127,7 +146,8 @@ for (const car of cars) {
   if (!fe) {
     fail('fuelEconomy', car, 'missing fuelEconomy');
   } else {
-    const ceiling = car.engine?.fuelType === 'electric' || car.engine?.fuelType === 'hydrogen' ? 200 : 120;
+    const ceiling =
+      car.engine?.fuelType === 'electric' || car.engine?.fuelType === 'hydrogen' ? 200 : 120;
     for (const key of ['city', 'highway', 'combined'] as const) {
       const v = fe[key];
       if (v == null) continue;
@@ -161,7 +181,8 @@ for (const car of cars) {
     if (!isFiniteNumber(car.price.msrp) || car.price.msrp <= 0) {
       fail('price', car, `price.msrp = ${car.price.msrp}`);
     }
-    const estimated = car.price.isEstimated === true || car.provenance?.['price.msrp'] === 'estimated';
+    const estimated =
+      car.price.isEstimated === true || car.provenance?.['price.msrp'] === 'estimated';
     if (!estimated && car.provenance?.['price.msrp'] !== 'curated') {
       warn('price-provenance', car, 'price has no estimated/curated marker');
     }

@@ -189,7 +189,10 @@ code {
       linear-gradient(to bottom, transparent 55%, var(--surface) 100%),
       linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
       linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-    background-size: 100% 100%, 48px 48px, 48px 48px;
+    background-size:
+      100% 100%,
+      48px 48px,
+      48px 48px;
   }
 
   .mesh-hero::before {

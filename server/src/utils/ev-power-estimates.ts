@@ -8,22 +8,52 @@ interface EvPowerRule {
 
 /** Manufacturer-rated motor output when EPA omits horsepower (common on EVs). */
 const EV_POWER_RULES: EvPowerRule[] = [
-  { test: (c) => c.make === 'Tesla' && c.model.toLowerCase().includes('model 3') && /performance|perf/i.test(c.model), hp: 450 },
-  { test: (c) => c.make === 'Tesla' && c.model.toLowerCase().includes('model 3') && /long range|long-range/i.test(c.model), hp: 346 },
+  {
+    test: (c) =>
+      c.make === 'Tesla' &&
+      c.model.toLowerCase().includes('model 3') &&
+      /performance|perf/i.test(c.model),
+    hp: 450,
+  },
+  {
+    test: (c) =>
+      c.make === 'Tesla' &&
+      c.model.toLowerCase().includes('model 3') &&
+      /long range|long-range/i.test(c.model),
+    hp: 346,
+  },
   { test: (c) => c.make === 'Tesla' && c.model.toLowerCase().includes('model 3'), hp: 283 },
-  { test: (c) => c.make === 'Tesla' && c.model.toLowerCase().includes('model y') && /performance|perf/i.test(c.model), hp: 456 },
+  {
+    test: (c) =>
+      c.make === 'Tesla' &&
+      c.model.toLowerCase().includes('model y') &&
+      /performance|perf/i.test(c.model),
+    hp: 456,
+  },
   { test: (c) => c.make === 'Tesla' && c.model.toLowerCase().includes('model y'), hp: 384 },
   { test: (c) => c.make === 'Tesla' && c.model.toLowerCase().includes('model s'), hp: 670 },
   { test: (c) => c.make === 'Tesla' && c.model.toLowerCase().includes('model x'), hp: 670 },
   { test: (c) => c.make === 'Lucid' && /grand touring|g touring|dream/i.test(c.model), hp: 819 },
   { test: (c) => c.make === 'Lucid' && /touring/i.test(c.model), hp: 620 },
   { test: (c) => c.make === 'Lucid', hp: 480 },
-  { test: (c) => c.make === 'Rivian' && /r1t|r1s/i.test(c.model) && /quad|max/i.test(c.model), hp: 835 },
+  {
+    test: (c) => c.make === 'Rivian' && /r1t|r1s/i.test(c.model) && /quad|max/i.test(c.model),
+    hp: 835,
+  },
   { test: (c) => c.make === 'Rivian', hp: 533 },
-  { test: (c) => c.make === 'Hyundai' && c.model.toLowerCase().includes('ioniq 6') && /long range|long-range/i.test(c.model), hp: 225 },
+  {
+    test: (c) =>
+      c.make === 'Hyundai' &&
+      c.model.toLowerCase().includes('ioniq 6') &&
+      /long range|long-range/i.test(c.model),
+    hp: 225,
+  },
   { test: (c) => c.make === 'Hyundai' && c.model.toLowerCase().includes('ioniq 6'), hp: 149 },
   { test: (c) => c.make === 'Hyundai' && c.model.toLowerCase().includes('ioniq 5'), hp: 320 },
-  { test: (c) => c.make === 'Hyundai' && c.model.toLowerCase().includes('ioniq electric'), hp: 118 },
+  {
+    test: (c) => c.make === 'Hyundai' && c.model.toLowerCase().includes('ioniq electric'),
+    hp: 118,
+  },
   { test: (c) => c.make === 'Kia' && c.model.toLowerCase().includes('ev6'), hp: 320 },
   { test: (c) => c.make === 'Kia' && c.model.toLowerCase().includes('niro ev'), hp: 201 },
   { test: (c) => c.make === 'Chevrolet' && c.model.toLowerCase().includes('bolt'), hp: 200 },

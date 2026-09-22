@@ -107,9 +107,25 @@ export interface OwnershipEconomics {
 }
 
 const LUXURY_MAKES = new Set([
-  'BMW', 'Mercedes-Benz', 'Audi', 'Porsche', 'Lexus', 'Jaguar', 'Land Rover',
-  'Infiniti', 'Acura', 'Cadillac', 'Lincoln', 'Genesis', 'Maserati', 'Ferrari',
-  'Lamborghini', 'Bentley', 'Rolls-Royce', 'Alfa Romeo', 'GMC',
+  'BMW',
+  'Mercedes-Benz',
+  'Audi',
+  'Porsche',
+  'Lexus',
+  'Jaguar',
+  'Land Rover',
+  'Infiniti',
+  'Acura',
+  'Cadillac',
+  'Lincoln',
+  'Genesis',
+  'Maserati',
+  'Ferrari',
+  'Lamborghini',
+  'Bentley',
+  'Rolls-Royce',
+  'Alfa Romeo',
+  'GMC',
 ]);
 
 function isHeavyEvTruck(car: CarSpecs): boolean {
@@ -122,7 +138,11 @@ function isHeavyEvTruck(car: CarSpecs): boolean {
 
 function isLuxuryPerformance(car: CarSpecs): boolean {
   const m = car.model.toLowerCase();
-  return (car.bodyStyle === 'coupe' && LUXURY_MAKES.has(car.make)) || m.includes('lc ') || m.startsWith('lc');
+  return (
+    (car.bodyStyle === 'coupe' && LUXURY_MAKES.has(car.make)) ||
+    m.includes('lc ') ||
+    m.startsWith('lc')
+  );
 }
 
 function vehicleAge(car: CarSpecs): number {
@@ -163,7 +183,8 @@ function maintenanceAnnual(car: CarSpecs, marketMid: number, maint = REGION.main
   else if (LUXURY_MAKES.has(car.make)) base = maint.luxury;
   else if (car.engine.fuelType === 'electric') base = maint.electric;
   else if (car.engine.fuelType === 'hydrogen') base = maint.hydrogen;
-  else if (car.engine.fuelType === 'hybrid' || car.engine.fuelType === 'plug-in hybrid') base = maint.hybrid;
+  else if (car.engine.fuelType === 'hybrid' || car.engine.fuelType === 'plug-in hybrid')
+    base = maint.hybrid;
 
   if (age > 8 && car.engine.fuelType !== 'electric') {
     base += Math.min(age - 8, maint.ageIncrementCapYears) * maint.ageIncrementPerYear;
@@ -284,7 +305,8 @@ export function calculateResaleImpact(car: CarSpecs, market: MarketValueEstimate
   const projectedMid = Math.max(0, market.mid - dep.mid);
   const age = Math.max(0, new Date().getFullYear() - car.year);
   const ft = effectiveFuelType(car);
-  const spread = ft === 'hydrogen' || classifyMarketSegment(car) === 'exotic' ? 0.2 : age > 12 ? 0.18 : 0.14;
+  const spread =
+    ft === 'hydrogen' || classifyMarketSegment(car) === 'exotic' ? 0.2 : age > 12 ? 0.18 : 0.14;
 
   let low = Math.round(projectedMid * (1 - spread));
   let high = Math.round(projectedMid * (1 + spread));
@@ -327,7 +349,11 @@ function buildDerivedComparison(
   };
 }
 
-export function estimateTco5Year(car: CarSpecs, market: MarketValueEstimate, annual: AnnualCostBreakdown): TcoEstimate | null {
+export function estimateTco5Year(
+  car: CarSpecs,
+  market: MarketValueEstimate,
+  annual: AnnualCostBreakdown,
+): TcoEstimate | null {
   if (annual.total == null && car.engine.fuelType === 'hydrogen') return null;
 
   const dep = estimateDepreciation5Year(car, market);
@@ -345,7 +371,8 @@ export function estimateTco5Year(car: CarSpecs, market: MarketValueEstimate, ann
       tires: annual.tires,
       registration: annual.registration,
       mode: 'operating',
-      disclaimer: 'Annual running cost for an aged/low-value vehicle. Repair spikes may exceed this baseline.',
+      disclaimer:
+        'Annual running cost for an aged/low-value vehicle. Repair spikes may exceed this baseline.',
     };
   }
 
@@ -394,7 +421,11 @@ export function computeOwnershipEconomics(
   const annualCost = calculateAnnualCosts(car, market, region);
   let resaleImpact = calculateResaleImpact(car, market);
   ({ market, resale: resaleImpact } = applyValuationReliabilityGuard(market, resaleImpact));
-  const derivedComparison = buildDerivedComparison(annualCost, resaleImpact.estimatedLoss5Year.mid, car);
+  const derivedComparison = buildDerivedComparison(
+    annualCost,
+    resaleImpact.estimatedLoss5Year.mid,
+    car,
+  );
   const tco5Year = estimateTco5Year(car, market, annualCost);
 
   const warnings: string[] = [];
@@ -402,13 +433,19 @@ export function computeOwnershipEconomics(
     warnings.push('Beater-tier vehicle: maintenance baseline may not capture sudden repair bills.');
   }
   if (car.engine.fuelType === 'hydrogen') {
-    warnings.push('Hydrogen fuel costs and infrastructure vary sharply. Energy costs may be incomplete.');
+    warnings.push(
+      'Hydrogen fuel costs and infrastructure vary sharply. Energy costs may be incomplete.',
+    );
   }
   if (effectiveFuelType(car) === 'electric' && market.batteryHealth) {
-    warnings.push(`Battery health estimate: ${market.batteryHealth.label}. ${market.batteryHealth.chemistryNote}`);
+    warnings.push(
+      `Battery health estimate: ${market.batteryHealth.label}. ${market.batteryHealth.chemistryNote}`,
+    );
   }
   if (isHeavyEvTruck(car)) {
-    warnings.push('Heavy EV trucks carry high insurance, tire, and depreciation costs beyond efficiency alone.');
+    warnings.push(
+      'Heavy EV trucks carry high insurance, tire, and depreciation costs beyond efficiency alone.',
+    );
   }
 
   const depNote =

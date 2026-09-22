@@ -107,7 +107,8 @@ export function canonicalizeDisplayModel(car: CarSpecs): string {
   }
 
   if (make === 'Mini' && /\bcooper s\b/.test(h)) return 'Cooper S';
-  if (make === 'Subaru' && /\bwrx\b|\bsti\b/.test(h)) return car.model.match(/WRX|STI/i)?.[0] ?? car.model;
+  if (make === 'Subaru' && /\bwrx\b|\bsti\b/.test(h))
+    return car.model.match(/WRX|STI/i)?.[0] ?? car.model;
 
   return stripEpaModelNoise(car.model.trim());
 }
@@ -124,7 +125,12 @@ function stripEpaModelNoise(model: string): string {
     prev = cleaned;
     cleaned = cleaned.replace(EPA_MODEL_PAREN, '').replace(TECHNICAL_PAREN, '').trim();
   }
-  return cleaned.replace(/\s*\(FFV\)/gi, '').replace(/\s{2,}/g, ' ').trim() || model.trim();
+  return (
+    cleaned
+      .replace(/\s*\(FFV\)/gi, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim() || model.trim()
+  );
 }
 
 export function inferBodyStyle(car: CarSpecs, displayModel?: string): BodyStyle {
@@ -132,10 +138,12 @@ export function inferBodyStyle(car: CarSpecs, displayModel?: string): BodyStyle 
   const model = (displayModel ?? car.model).toLowerCase();
 
   if (/sportwagen|sport wagen/.test(h)) return 'wagon';
-  if (/\bconvertible\b|\bcabriolet\b|\broadster\b|\bspider\b|\bspyder\b/.test(h)) return 'convertible';
+  if (/\bconvertible\b|\bcabriolet\b|\broadster\b|\bspider\b|\bspyder\b/.test(h))
+    return 'convertible';
   if (/\bcoupe\b/.test(h) && !/sport utility|suv/.test(h)) return 'coupe';
   if (/pickup|\bf-150\b|\bsilverado\b|\bram 1500\b|\btundra\b|\btitan\b/.test(h)) return 'truck';
-  if (/sport utility|\bsuv\b|\brav4\b|\bcrv\b|\bxt\d\b|\bexplorer\b|\btahoe\b/.test(h)) return 'suv';
+  if (/sport utility|\bsuv\b|\brav4\b|\bcrv\b|\bxt\d\b|\bexplorer\b|\btahoe\b/.test(h))
+    return 'suv';
   if (/minivan|\bsienna\b|\bodyssey\b|\bpacifica\b|\bcarnival\b/.test(h)) return 'minivan';
   if (/\bvan\b|\btransit\b|\bsprinter\b|\bpromaster\b/.test(h)) return 'van';
   if (/station wagon|\bwagon\b|\bavant\b|\btouring\b|\bestate\b/.test(h)) return 'wagon';
@@ -148,7 +156,11 @@ export function inferBodyStyle(car: CarSpecs, displayModel?: string): BodyStyle 
   return car.bodyStyle;
 }
 
-export function classifyShoppingSegment(car: CarSpecs, displayModel: string, bodyStyle: BodyStyle): ShoppingSegment {
+export function classifyShoppingSegment(
+  car: CarSpecs,
+  displayModel: string,
+  bodyStyle: BodyStyle,
+): ShoppingSegment {
   const h = `${displayModel} ${car.make}`.toLowerCase();
   const ft = car.engine.fuelType;
   const hp = car.engine.horsepower ?? 0;
@@ -158,13 +170,20 @@ export function classifyShoppingSegment(car: CarSpecs, displayModel: string, bod
   if (bodyStyle === 'truck') return 'truck';
   if (bodyStyle === 'suv' || bodyStyle === 'van' || bodyStyle === 'minivan') return 'utility';
 
-  if (HOT_HATCH_PATTERN.test(h) || (bodyStyle === 'hatchback' && hp >= 200 && disp >= 1.8)) return 'hot-hatch';
-  if (SPORT_SEDAN_PATTERN.test(h) || (bodyStyle === 'sedan' && hp >= 250 && disp >= 2)) return 'sport-sedan';
+  if (HOT_HATCH_PATTERN.test(h) || (bodyStyle === 'hatchback' && hp >= 200 && disp >= 1.8))
+    return 'hot-hatch';
+  if (SPORT_SEDAN_PATTERN.test(h) || (bodyStyle === 'sedan' && hp >= 250 && disp >= 2))
+    return 'sport-sedan';
   if (bodyStyle === 'coupe' || bodyStyle === 'convertible') {
     if (hp >= 400 || disp >= 5) return 'muscle';
     return 'sports-car';
   }
-  if (['BMW', 'Mercedes-Benz', 'Audi', 'Lexus', 'Porsche', 'Genesis', 'Infiniti', 'Acura'].includes(car.make) && (car.price?.msrp ?? 0) > 55000) {
+  if (
+    ['BMW', 'Mercedes-Benz', 'Audi', 'Lexus', 'Porsche', 'Genesis', 'Infiniti', 'Acura'].includes(
+      car.make,
+    ) &&
+    (car.price?.msrp ?? 0) > 55000
+  ) {
     return 'luxury';
   }
   if (bodyStyle === 'hatchback' && hp >= 150) return 'sport-compact';
@@ -172,8 +191,14 @@ export function classifyShoppingSegment(car: CarSpecs, displayModel: string, bod
   return 'mainstream';
 }
 
-function ownershipProfileFor(segment: ShoppingSegment, displayModel: string): OwnershipProfile | undefined {
-  if (segment === 'hot-hatch' || (segment === 'sport-compact' && /gti|si|type r|st\b|n\b/i.test(displayModel))) {
+function ownershipProfileFor(
+  segment: ShoppingSegment,
+  displayModel: string,
+): OwnershipProfile | undefined {
+  if (
+    segment === 'hot-hatch' ||
+    (segment === 'sport-compact' && /gti|si|type r|st\b|n\b/i.test(displayModel))
+  ) {
     return {
       label: 'Sport Compact',
       tags: ['Daily Driver', 'Enthusiast Favorite'],
@@ -226,7 +251,9 @@ export function segmentAffinity(a: ShoppingSegment, b: ShoppingSegment): number 
 }
 
 export function isHotHatch(car: CarSpecs, taxonomy?: VehicleTaxonomy): boolean {
-  const seg = taxonomy?.shoppingSegment ?? classifyShoppingSegment(car, canonicalizeDisplayModel(car), inferBodyStyle(car));
+  const seg =
+    taxonomy?.shoppingSegment ??
+    classifyShoppingSegment(car, canonicalizeDisplayModel(car), inferBodyStyle(car));
   return seg === 'hot-hatch' || seg === 'sport-compact';
 }
 

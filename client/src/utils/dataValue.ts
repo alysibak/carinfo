@@ -53,7 +53,10 @@ export function formatOrFallback(
   return `${n}${options.suffix ?? ''}`;
 }
 
-export function formatCurrencyOrFallback(value: number | null | undefined, isEstimated = false): string {
+export function formatCurrencyOrFallback(
+  value: number | null | undefined,
+  isEstimated = false,
+): string {
   if (!hasNumericValue(value)) return UNAVAILABLE_LABEL;
   const formatted = `$${Math.round(value!).toLocaleString()}`;
   if (isEstimated) return `${formatted} ${DISPLAY_CURRENCY} (est.)`;

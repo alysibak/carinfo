@@ -1,29 +1,13 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   darkMode: 'class',
   theme: {
     extend: {
       fontFamily: {
-        sans: [
-          'Archivo',
-          '"IBM Plex Sans"',
-          'sans-serif',
-        ],
-        mono: [
-          '"IBM Plex Mono"',
-          'ui-monospace',
-          'Menlo',
-          'monospace',
-        ],
-        display: [
-          'Archivo',
-          '"IBM Plex Sans"',
-          'sans-serif',
-        ],
+        sans: ['Archivo', '"IBM Plex Sans"', 'sans-serif'],
+        mono: ['"IBM Plex Mono"', 'ui-monospace', 'Menlo', 'monospace'],
+        display: ['Archivo', '"IBM Plex Sans"', 'sans-serif'],
       },
       colors: {
         // Remap pure black/white so existing bg-black / text-white soften app-wide
@@ -69,9 +53,9 @@ export default {
         'hero-rise': 'heroRise 0.4s ease-out both',
         'slide-up': 'slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both',
         'scale-in': 'scaleIn 0.3s ease-out',
-        'float': 'float 7s ease-in-out infinite',
+        float: 'float 7s ease-in-out infinite',
         'float-slow': 'float 11s ease-in-out infinite',
-        'shimmer': 'shimmer 2.4s linear infinite',
+        shimmer: 'shimmer 2.4s linear infinite',
         'grow-x': 'growX 1.1s cubic-bezier(0.16, 1, 0.3, 1) both',
       },
       keyframes: {
@@ -107,4 +91,4 @@ export default {
     },
   },
   plugins: [],
-}
+};

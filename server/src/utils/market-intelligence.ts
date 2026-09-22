@@ -24,7 +24,8 @@ export function calculateCostPerMile(
   if (fuelType === 'hydrogen') {
     const annualUsd = car.epa?.annualFuelCost;
     if (annualUsd != null && annualUsd > 0) {
-      const annualCad = annualUsd * REGION.cadUsdExchangeRate * (REGION.annualKm / (EPA_ANNUAL_MILES * 1.609344));
+      const annualCad =
+        annualUsd * REGION.cadUsdExchangeRate * (REGION.annualKm / (EPA_ANNUAL_MILES * 1.609344));
       return annualCad / annualMiles;
     }
     return null;
@@ -47,9 +48,15 @@ export function calculateCostPerMile(
   if (fuelType === 'plug-in hybrid') {
     if (mpg <= 0) return null;
     const gasAnnual =
-      (REGION.annualKm / 100) * mpgToLPer100Km(mpg) * prices.gasPriceCadPerL * REGION.phev.gasMileFraction;
+      (REGION.annualKm / 100) *
+      mpgToLPer100Km(mpg) *
+      prices.gasPriceCadPerL *
+      REGION.phev.gasMileFraction;
     const elecAnnual =
-      (REGION.annualKm / 100) * mpgeToKwhPer100Km(mpg) * prices.electricityPriceCadPerKwh * REGION.phev.electricMileFraction;
+      (REGION.annualKm / 100) *
+      mpgeToKwhPer100Km(mpg) *
+      prices.electricityPriceCadPerKwh *
+      REGION.phev.electricMileFraction;
     return (gasAnnual + elecAnnual) / annualMiles;
   }
 
@@ -98,8 +105,12 @@ export function calculateMarketPosition(car: CarSpecs, segment: CarSpecs[]) {
   };
 
   const prices = segment.map((c) => c.price?.msrp).filter((v): v is number => v != null && v > 0);
-  const hps = segment.map((c) => c.engine.horsepower).filter((v): v is number => v != null && v > 0);
-  const mpgs = segment.map((c) => c.fuelEconomy.combined).filter((v): v is number => v != null && v > 0);
+  const hps = segment
+    .map((c) => c.engine.horsepower)
+    .filter((v): v is number => v != null && v > 0);
+  const mpgs = segment
+    .map((c) => c.fuelEconomy.combined)
+    .filter((v): v is number => v != null && v > 0);
   const values = segment.map((c) => calculateValueScore(c)).filter((v) => v > 0);
 
   return {
@@ -150,7 +161,10 @@ export function predictZeroToSixty(car: CarSpecs): {
   else if (car.transmission.type === 'cvt') transmissionFactor = 1.05;
 
   const electricBonus = car.engine.fuelType === 'electric' ? 0.7 : 1.0;
-  const predicted = Math.max(2, Math.min(15, (700 / powerToWeight) * drivetrainFactor * transmissionFactor * electricBonus));
+  const predicted = Math.max(
+    2,
+    Math.min(15, (700 / powerToWeight) * drivetrainFactor * transmissionFactor * electricBonus),
+  );
 
   return {
     predicted: Math.round(predicted * 10) / 10,

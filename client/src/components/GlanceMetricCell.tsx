@@ -35,10 +35,7 @@ export default function GlanceMetricCell({ metric, size = 'default' }: GlanceMet
   const unavailable = metric.unavailable;
   const { number, unit } = parseInstrument(metric);
   const longValue = number.length > 8;
-  const numSize =
-    size === 'compact' || longValue
-      ? 'text-base sm:text-lg'
-      : 'text-xl sm:text-2xl';
+  const numSize = size === 'compact' || longValue ? 'text-base sm:text-lg' : 'text-xl sm:text-2xl';
   const glossaryKey = GLANCE_GLOSSARY[metric.id];
   const estimated = metric.estimated === true || metric.trustSource === 'estimated';
 
@@ -62,9 +59,7 @@ export default function GlanceMetricCell({ metric, size = 'default' }: GlanceMet
           </span>
         )}
       </div>
-      {estimated && !unavailable && (
-        <p className="text-[9px] text-zinc-600 mt-0.5">est.</p>
-      )}
+      {estimated && !unavailable && <p className="text-[9px] text-zinc-600 mt-0.5">est.</p>}
       {metric.detail && !unavailable && !estimated && (
         <p className="text-[10px] text-zinc-500 mt-1 leading-snug normal-case break-words whitespace-normal">
           {metric.detail}

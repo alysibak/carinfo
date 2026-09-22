@@ -157,7 +157,9 @@ function buildEpaEnrichment(usedEpaIds: Set<number>): Record<string, EpaEnrichme
     if (Object.keys(entry).length > 0) out[String(id)] = entry;
   }
 
-  console.log(`EPA enrichment: ${Object.keys(out).length} records (${phevCount} with PHEV dual-mode)`);
+  console.log(
+    `EPA enrichment: ${Object.keys(out).length} records (${phevCount} with PHEV dual-mode)`,
+  );
   return out;
 }
 

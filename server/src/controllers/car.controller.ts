@@ -192,14 +192,17 @@ export function getChartDensity(req: Request, res: Response, next: NextFunction)
   try {
     const priceMin = req.query.priceMin != null ? Number(req.query.priceMin) : undefined;
     const priceMax = req.query.priceMax != null ? Number(req.query.priceMax) : undefined;
-    const bodyStyles = typeof req.query.bodyStyles === 'string' && req.query.bodyStyles
-      ? req.query.bodyStyles.split(',').map((s) => s.trim()).filter(Boolean)
-      : undefined;
+    const bodyStyles =
+      typeof req.query.bodyStyles === 'string' && req.query.bodyStyles
+        ? req.query.bodyStyles
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : undefined;
     const yearMin = req.query.yearMin != null ? Number(req.query.yearMin) : undefined;
     const yearMax = req.query.yearMax != null ? Number(req.query.yearMax) : undefined;
-    const metric = req.query.metric === 'displacement' || req.query.metric === 'co2'
-      ? req.query.metric
-      : 'mpg';
+    const metric =
+      req.query.metric === 'displacement' || req.query.metric === 'co2' ? req.query.metric : 'mpg';
 
     const density = carService.getChartDensity({
       priceMin: Number.isFinite(priceMin) ? priceMin : undefined,
@@ -223,9 +226,13 @@ export function getChartPoints(req: Request, res: Response, next: NextFunction) 
   try {
     const priceMin = req.query.priceMin != null ? Number(req.query.priceMin) : undefined;
     const priceMax = req.query.priceMax != null ? Number(req.query.priceMax) : undefined;
-    const bodyStyles = typeof req.query.bodyStyles === 'string' && req.query.bodyStyles
-      ? req.query.bodyStyles.split(',').map((s) => s.trim()).filter(Boolean)
-      : undefined;
+    const bodyStyles =
+      typeof req.query.bodyStyles === 'string' && req.query.bodyStyles
+        ? req.query.bodyStyles
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : undefined;
     const yearMin = req.query.yearMin != null ? Number(req.query.yearMin) : undefined;
     const yearMax = req.query.yearMax != null ? Number(req.query.yearMax) : undefined;
     const limit = req.query.limit != null ? Number(req.query.limit) : undefined;

@@ -9,7 +9,9 @@ const VIN_RE = /^[A-HJ-NPR-Z0-9*]{11,17}$/;
  * (engine horsepower included when NHTSA has it).
  */
 export async function decodeVinHandler(req: Request, res: Response) {
-  const raw = String(req.params.vin ?? '').trim().toUpperCase();
+  const raw = String(req.params.vin ?? '')
+    .trim()
+    .toUpperCase();
   if (!raw) {
     return res.status(400).json({ success: false, error: 'A VIN is required.' });
   }
@@ -32,6 +34,9 @@ export async function decodeVinHandler(req: Request, res: Response) {
     res.json({ success: true, data: result });
   } catch (error) {
     console.error(`VIN decode failed for ${raw}:`, error);
-    res.status(502).json({ success: false, error: 'NHTSA VIN service is unavailable right now. Please try again.' });
+    res.status(502).json({
+      success: false,
+      error: 'NHTSA VIN service is unavailable right now. Please try again.',
+    });
   }
 }

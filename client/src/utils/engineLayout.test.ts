@@ -28,10 +28,22 @@ describe('engineLayoutLabel', () => {
   });
 
   it('reaches the card and detail formatters', () => {
-    expect(formatEngineDetailForCard({ fuelType: 'gasoline', displacement: 3, configuration: 'I6', cylinders: 6 }))
-      .toBe('3L 6-cyl');
-    expect(formatEngineDetailForCard({ fuelType: 'gasoline', displacement: 1.8, configuration: 'I4', cylinders: 4 }))
-      .toBe('1.8L I4');
+    expect(
+      formatEngineDetailForCard({
+        fuelType: 'gasoline',
+        displacement: 3,
+        configuration: 'I6',
+        cylinders: 6,
+      }),
+    ).toBe('3L 6-cyl');
+    expect(
+      formatEngineDetailForCard({
+        fuelType: 'gasoline',
+        displacement: 1.8,
+        configuration: 'I4',
+        cylinders: 4,
+      }),
+    ).toBe('1.8L I4');
     expect(formatEngineSystem('gasoline', 3, 'I6', 6)).toBe('3L 6-cyl');
     expect(formatEngineSystem('electric', undefined, undefined, undefined)).toBe('Electric Motor');
   });

@@ -23,7 +23,9 @@ export function PageHeader({
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-semibold text-white tracking-tight">{title}</h1>
-          {subtitle && <p className="text-sm text-zinc-400 mt-1.5 max-w-2xl leading-relaxed">{subtitle}</p>}
+          {subtitle && (
+            <p className="text-sm text-zinc-400 mt-1.5 max-w-2xl leading-relaxed">{subtitle}</p>
+          )}
         </div>
         {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
       </div>

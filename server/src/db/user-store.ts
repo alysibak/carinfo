@@ -83,10 +83,9 @@ export async function findUserByStripeCustomerId(
   stripeCustomerId: string,
 ): Promise<AccountUser | null> {
   await ensureSchema();
-  const { rows } = await getPool().query(
-    `SELECT id FROM users WHERE stripe_customer_id = $1`,
-    [stripeCustomerId],
-  );
+  const { rows } = await getPool().query(`SELECT id FROM users WHERE stripe_customer_id = $1`, [
+    stripeCustomerId,
+  ]);
   if (!rows[0]) return null;
   return getUser(rows[0].id);
 }

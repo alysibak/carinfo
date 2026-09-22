@@ -66,7 +66,9 @@ export default function SimilarCars({ car }: { car: CarSpecs }) {
                         {alt.year} {alt.make} {displayModelLabel(alt)}
                       </p>
                       {edges[alt.id] && (
-                        <p className="text-base text-white font-medium mt-1.5 leading-snug">{edges[alt.id]}</p>
+                        <p className="text-base text-white font-medium mt-1.5 leading-snug">
+                          {edges[alt.id]}
+                        </p>
                       )}
                       <p className="text-xs text-zinc-500 mt-1.5">
                         {[
