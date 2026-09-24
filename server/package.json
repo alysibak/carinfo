@@ -13,6 +13,7 @@
     "build-runtime-db": "tsx scripts/build-runtime-database.ts",
     "build-nhtsa-backfill": "tsx scripts/build-nhtsa-backfill.ts --",
     "build-horsepower": "tsx scripts/build-horsepower-enrichment.ts",
+    "reconcile-fuel-types": "tsx scripts/reconcile-fuel-types.ts",
     "test": "vitest run --config vitest.config.ts",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.scripts.json",
     "validate:data": "tsx scripts/validate-data.ts",

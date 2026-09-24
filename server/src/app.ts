@@ -35,10 +35,21 @@ app.use(requestContext);
 
 app.use(
   helmet({
-    // The API serves JSON only; a CSP here would apply to error pages alone and
-    // the SPA's policy is set on the static host. Frameguard/HSTS/nosniff etc.
-    // are the useful parts.
-    contentSecurityPolicy: false,
+    // Baseline CSP, matching vercel.json, for the HTML this server renders
+    // (vehicle and compare pages, and the SPA under `npm start`). It leaves
+    // script sources open: restricting them means allowlisting the Clerk
+    // Frontend API host for the deployment's key. No upgrade-insecure-requests
+    // here: `npm start` over plain http://localhost would break.
+    contentSecurityPolicy: {
+      useDefaults: false,
+      directives: {
+        // Deliberately no default-src: it would restrict scripts and styles.
+        defaultSrc: helmet.contentSecurityPolicy.dangerouslyDisableDefaultSrc,
+        baseUri: ["'self'"],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+      },
+    },
     crossOriginEmbedderPolicy: false,
     // Allow the SPA on another origin to read API responses.
     crossOriginResourcePolicy: { policy: 'cross-origin' },

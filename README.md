@@ -53,19 +53,31 @@ A full-stack car discovery and comparison platform. **Specs-first** — EPA fuel
 
 ## Quick start
 
+Requires **Node 24** (see `.nvmrc`; 22 also works) and npm.
+
 ```bash
-npm install
+npm ci
 npm run dev          # client :3000, server :5000 (Vite proxies /api)
 ```
 
-Production:
+Production locally:
 
 ```bash
-npm run build        # client + server
-npm run start        # Express serves API + built SPA
+npm run build        # server, prebuilt cars-ready.json, client, sitemap
+npm run start        # Express serves the API and the built SPA on :5000
 ```
 
-Fresh clone with no `server/data/raw/` cache? Run the [database build](#build-the-database) first.
+Before pushing, run what CI runs:
+
+```bash
+npm run verify           # lint + typecheck + unit tests
+npm run format:check
+npm run validate:data    # corpus invariants over cars-ready.json
+npm run test:e2e         # Playwright: trust path + axe accessibility sweep
+```
+
+The Postgres-backed suites (accounts, billing webhook) run when `TEST_DATABASE_URL`
+points at a scratch database and skip otherwise.
 
 ### Reading source files (not diffs)
 
@@ -123,9 +135,12 @@ This README quotes **actual source** in [Code reference](#code-reference). To re
 
 ### Fuel types
 
-**In raw `cars.json`:** gasoline 24,469 · diesel 278 · hybrid 1,687 · electric 1,844
-
-PHEV and hydrogen are **not stored** in raw JSON — reclassified at runtime via `fuel-type-inference.ts` and `car-normalize.ts`.
+Stored in `cars.json` as EPA classifies them (`scripts/reconcile-fuel-types.ts`
+re-derives them from EPA's `vehicles.csv`): gasoline, diesel, hybrid, plug-in
+hybrid, electric, hydrogen, and natural gas (dedicated CNG, e.g. the Civic GX).
+Bi-fuel and flex-fuel vehicles are gasoline, since their EPA figures are
+gasoline figures. The runtime rules in `fuel-type-inference.ts` remain as a
+second line of defense and agree with EPA on every record (a test pins that).
 
 ### Field coverage in raw `cars.json`
 
@@ -976,41 +991,40 @@ npm run start    # Express on :5000 serves API + client/dist
 
 ### Vercel
 
-```json
-{
-  "buildCommand": "npm run build --workspace=server && npm run build --workspace=client",
-  "outputDirectory": "client/dist",
-  "routes": [
-    { "src": "/api(?:/(.*))?", "dest": "/api/index" },
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
-  ],
-  "functions": {
-    "api/index.ts": {
-      "includeFiles": "server/data/**",
-      "maxDuration": 60,
-      "memory": 1024
-    }
-  }
-}
-```
+`vercel.json` uses `rewrites` (not the legacy `routes`, which Vercel does not
+allow alongside `headers`):
+
+- `/api/*`, `/car/:id` and `/compare` go to the Express function (`api/index.ts`),
+  which server-renders the vehicle and compare pages for crawlers and link
+  previews; everything else is the SPA shell. Missing `/assets/*` files are real
+  404s, never the HTML shell.
+- The function bundles only `cars-ready.json` and `client/dist/index.html`
+  (about 31 MB); raw inputs such as `cars.json` are excluded.
+- Hashed assets are cached for a year; security headers (HSTS, nosniff, frame
+  denial, a baseline CSP) apply to every response.
+- Node is pinned by `engines` (`>=22 <25`, so Vercel runs 24 and never jumps a
+  major unannounced).
 
 ### Environment variables
 
+[`.env.example`](.env.example) is the annotated source of truth. In summary:
+
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `PORT` | `5000` | Server port |
-| `VITE_API_BASE_URL` | `/api` | Client API base URL |
-| `VITE_CLERK_PUBLISHABLE_KEY` | — | Clerk publishable key (enables Sign in UI) |
-| `CLERK_SECRET_KEY` | — | Clerk secret (verifies session JWTs on `/api/me/*`) |
-| `DATABASE_URL` | — | Postgres connection string for users + garage_items |
-| `DATABASE_SSL` | (on) | Set `false` for local Postgres without SSL |
-| `STRIPE_SECRET_KEY` | — | Stripe secret key |
-| `STRIPE_WEBHOOK_SECRET` | — | Stripe webhook signing secret |
-| `STRIPE_PRICE_ID` | — | Recurring Price ID for CarInfo Pro |
-| `APP_ORIGIN` | request host | Public origin for Checkout / portal return URLs |
+| `SITE_URL` | `APP_ORIGIN`, then Vercel's production domain | Public origin for canonical URLs, Open Graph, sitemap, robots.txt. Without one, absolute URLs are omitted rather than guessed. |
+| `APP_ORIGIN` | — | Public origin for Stripe return URLs and the CORS allowlist. **Required in production.** |
+| `ADDITIONAL_ORIGINS` | — | Extra browser origins allowed to call the API (comma-separated) |
+| `VITE_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` | — | Enable sign-in and cloud garage sync |
+| `DATABASE_URL` | — | Postgres for users and garages; tables are created on first use |
+| `DATABASE_SSL` | unset: TLS **without** certificate verification (warns in production) | Set `verify` in production (plus `DATABASE_CA_CERT` for a private CA); `false` for local Postgres |
+| `DATABASE_POOL_MAX` / `DATABASE_CONNECT_TIMEOUT_MS` | `5` / `5000` | Per-instance pool size and connect timeout |
+| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` / `STRIPE_PRICE_ID` | — | CarInfo Pro billing |
+| `VITE_API_BASE_URL` / `VITE_API_TIMEOUT_MS` | `/api` / `60000` | Client API origin and request timeout |
+| `SLOW_REQUEST_MS` | `1000` | Log requests slower than this |
+| `DISABLE_RATE_LIMIT` | `false` | Tests and load tests only |
+| `PORT` | `5000` | `npm start` port |
 
-See [`.env.example`](.env.example). Core browse/dossier works without these; account sync and billing need Clerk + Postgres (+ Stripe for Pro).
+The public catalog needs none of these.
 
 ### Enabling accounts
 
@@ -1036,144 +1050,103 @@ No `.env` required for local development of the public catalog.
 
 ### Root
 
-| Script | Command |
-|--------|---------|
-| `dev` | concurrently client + server |
-| `dev:client` | vite |
-| `dev:server` | tsx watch |
-| `build` | client build + server build |
-| `start` | node server dist |
-| `test` | vitest run (server + client unit tests) |
-| `test:watch` | vitest watch |
-| `test:e2e` | playwright test |
+| Script | What it does |
+|--------|--------------|
+| `dev` | Client (:3000) and server (:5000) together |
+| `build` | Server, prebuilt `cars-ready.json`, client, sitemap |
+| `start` | Express serves the API and `client/dist` |
+| `verify` | `lint` + `typecheck` + `test` |
+| `lint` / `lint:fix` | ESLint (CI fails on any warning) |
+| `format` / `format:check` | Prettier |
+| `typecheck` | Server `src/` and `scripts/`, and the client |
+| `test` / `test:watch` | Vitest (server `node` + client `jsdom` projects) |
+| `test:e2e` | Playwright: trust path and axe accessibility sweep |
+| `validate:data` | Corpus invariants over what ships (`cars-ready.json`) |
+| `build:sitemap` | `sitemap.xml` + `robots.txt` for `SITE_URL` |
 
-### npm scripts — server
+### Server data pipeline
 
-| Script | Command |
-|--------|---------|
-| `build-verified-db` | EPA + NHTSA build |
-| `build-verified-db:fast` | EPA only |
-| `build-horsepower` | Test car list HP |
-| `build-enrichment` | EPA extras + NHTSA indexes |
-| `build-nhtsa-backfill` | NHTSA API backfill |
-| `build-runtime-db` | Pre-enrich `cars-ready.json` for deploy |
-| `typecheck` | Typecheck `src/` and `scripts/` |
-
-### npm scripts — client
-
-| Script | Command |
-|--------|---------|
-| `dev` | vite |
-| `build` | tsc && vite build |
-| `preview` | vite preview |
-
----
+| Script | What it does |
+|--------|--------------|
+| `build-verified-db` (`:fast` skips NHTSA) | Rebuild `cars.json` from EPA (+ NHTSA). Needs network access to EPA and NHTSA. |
+| `build-horsepower` | Horsepower from EPA's Test Car List, with placeholder ratings filtered out |
+| `build-enrichment` | EPA extras (GHG, PHEV modes) and NHTSA indexes |
+| `build-nhtsa-backfill` | NHTSA safety backfill |
+| `reconcile-fuel-types` | Re-derive fuel types from EPA's `vehicles.csv` and fix `cars.json` in place (`-- --write`) |
+| `build-runtime-db` | Enrich + normalize into `cars-ready.json` (format 2: provenance maps interned) |
 
 ## Dependencies
 
-### Root
-
-`express`, `cors`, `dotenv`, `concurrently`
-
-### Dev (root)
-
-`vitest`, `jsdom`, `@testing-library/react`, `@testing-library/jest-dom`, `@playwright/test`
-
-### Client
-
-`react`, `react-dom`, `react-router-dom`, `axios`, `zustand`, `recharts`
-
-### Server
-
-`express`, `cors`, `dotenv`, `axios`, `csv-parse`, `xlsx`, `tsx`, `typescript`
-
-**Not included:** ESLint, Prettier, Docker
-
----
+- **Client:** React 18, React Router 7, Zustand, Recharts (Value Matrix only), Clerk
+  (lazy, app shell only), `@zxing` (VIN scanner, lazy), self-hosted `@fontsource`
+  fonts. HTTP is a small typed wrapper over `fetch` (`services/http.ts`).
+- **Server:** Express, helmet, express-rate-limit, compression, `pg`, Stripe,
+  Clerk backend. Data scripts use `csv-parse` and `exceljs`, and `fetch` for
+  downloads.
+- **Tooling:** TypeScript 5.9, Vite 6, Vitest 4 (+ coverage), Playwright,
+  axe-core, ESLint 9, Prettier.
 
 ## Testing
 
-**Runner:** Vitest (root `vitest.config.ts`, server `node` + client `jsdom` projects)
+**Runner:** Vitest (root `vitest.config.ts`; server `node` and client `jsdom`
+projects). **CI** (`.github/workflows/ci.yml`, Node 24): static checks (lint,
+typecheck, format), unit tests with a Postgres service and coverage, build with
+the bundle budget and `validate:data`, Playwright E2E, and `npm audit`.
 
-**CI:** `.github/workflows/ci.yml` runs `npm run build`, `npm test`, and Playwright E2E smoke.
-
-### Characterization tests (server)
+Highlights:
 
 | Suite | Pins |
 |-------|------|
-| `fuel-type-inference.test.ts` | **419** raw `electric` → `plug-in hybrid`; Cayenne transition; Tesla stays BEV |
-| `car-normalize.test.ts` | PHEV correction + `engine.fuelType: 'estimated'` provenance |
-| `vehicle-valuation.test.ts` | Ontario/CAD bands (Corolla, RAV4, Macan, Cayenne, Camry XSE, Model 3); **0** degenerate resale |
-| `content-enrichment.test.ts` | EV MPGe correction; curated HP; no fabrication |
-| `vehicle-taxonomy.test.ts` | Segment rules; Golf hatchback correction |
-| `search-validation.test.ts` | Malformed POST bodies dropped safely |
-| `car.service.search.test.ts` | Full DB load; make/PHEV filters |
-
-### Client unit tests
-
-| Suite | Covers |
-|-------|--------|
-| `glanceMetrics.test.ts` | Dossier omit-when-empty |
-| `KeySpecs.test.tsx` | No "Not on file" rows when data absent |
-| `DataTrustPanel.test.tsx` | Provenance panel + filters |
-| `Compare.test.tsx` | Dashboard provenance rendering |
-| `Methodology.test.tsx` | Methodology page trust copy |
-
-### E2E
-
-`e2e/trust-flow.spec.ts`: search → dossier (`DataTrustPanel`) → compare (provenance chips).
-
----
+| `fuel-type-inference.test.ts` | Rules agree with EPA on every record; stale-label corrections (Cayenne, Karma, i3 REx) |
+| `validate-data.ts` (CI) | IDs, enums, physics: CO₂ × MPG vs fuel, BEVs without engines, plausible horsepower |
+| `energy-cost.test.ts` / `tco.test.ts` | One cost engine for dossier and calculator; natural gas and hydrogen from EPA's figure |
+| `runtime-db.test.ts` | `cars-ready.json` format 2 round-trip; shared provenance frozen |
+| `seo.test.ts` | Server-rendered shells, JSON-LD, escaping, real 404s |
+| `billing.webhook.test.ts`, `user-store.test.ts`, `me.controller.test.ts` | Real Postgres, per-file schema |
+| `carStore.test.ts`, `SearchBar.test.tsx`, `garageStore.test.ts` | Latest-wins search, suggestion cancellation, garage sync rollback |
+| `e2e/accessibility.spec.ts` | Zero WCAG 2.1 A/AA axe violations on 11 pages, desktop and phone |
+| `e2e/trust-flow.spec.ts` | Search → dossier → compare, provenance labels throughout |
 
 ## Client bundle
 
-Production build code-splits route pages and isolates Recharts to the Value Matrix chunk.
-
-| Asset (approx.) | Size |
-|-----------------|------|
-| Main `index-*.js` | ~286 KB (~95 KB gzip) |
-| `ValueMatrix-*.js` (Recharts) | ~400 KB (on demand) |
-
-Landing stays eager; other layout routes lazy-load via `React.lazy`.
-
----
+Route pages are code-split; Clerk, Recharts and the VIN scanner load only where
+used. `scripts/check-bundle-size.mjs` fails CI if the critical path (entry chunk
+plus modulepreloads) exceeds **95 KB gzip**; it is ~84 KB today. After a deploy,
+a tab still running the previous build reloads once instead of failing on a
+renamed chunk (`utils/staleBuildRecovery.ts`).
 
 ## Known limitations
 
 | Gap | Detail |
 |-----|--------|
 | NHTSA safety | ~13% per-car; NHTSA tests far fewer configs than EPA |
-| Horsepower | ~71%; EVs estimated; shared carlines share HP |
-| Dimensions / weight | 0 records — not in EPA bulk |
-| Torque / real 0–60 | Not in EPA — predicted only on dossier |
+| Horsepower | ~71% coverage; EVs estimated. 31 placeholder ratings (999, 1, 11 hp…) were dropped and show nothing until `build-horsepower` is re-run against EPA's files. |
+| Dimensions / weight / torque / real 0–60 | Not in EPA bulk data; 0–60 is predicted |
+| Diesel fuel cost | Priced at the regional gasoline price (no sourced diesel price yet) |
+| Hydrogen and natural gas fuel cost | EPA's own annual figure, converted to CAD; the calculator's price inputs do not apply |
+| Rate limits | In-memory per instance; on serverless each instance counts separately |
+| CSP | Baseline only (`base-uri`, `object-src`, `frame-ancestors`); `script-src` would need the Clerk Frontend API host allowlisted |
 | Photos | Body-type illustrations only (documented on `/methodology`) |
-| PHEV in raw JSON | Runtime reclassification required (419 records; pinned by test) |
-| Hydrogen fuel cost | Not modeled (price varies too widely) |
-| `server/data/raw/` | Gitignored — rebuild needed on fresh clone |
-| Vercel cold start | Full 28k JSON loaded into memory on first request (sharding deferred) |
-| Deal rating | Disabled (`getDealRating` returns null); UI removed |
-
----
+| `server/data/raw/` | Gitignored; the data pipeline needs network access to EPA and NHTSA |
 
 ## Outstanding work
 
 ### Data
 
-- [ ] Run full NHTSA backfill without limit → `build-enrichment`
-- [ ] New source for dimensions/weight/torque
-- [ ] IIHS or other safety sources (not started)
-- [ ] **Deferred (hard stop):** shard `cars.json` by make for Vercel cold start
+- [ ] Re-run `build-horsepower` to restore correct ratings for the 31 dropped placeholders
+- [ ] A sourced regional diesel price
+- [ ] Full NHTSA backfill → `build-enrichment`
+- [ ] A source for dimensions, weight and torque
 
-### Product
+### Product and platform
 
-- Battle Mode and Value Matrix surface EPA vs estimated provenance on playful views (shipped).
-- Optional `manual-prices.json` is a build-time override, not a required data file.
-
----
+- [ ] Model-year landing pages (`config/modelYearSlug.ts` exists but is unwired)
+- [ ] `script-src` CSP with the deployment's Clerk host
+- [ ] Shared rate-limit store if abuse appears on serverless
 
 ## Git & deployment notes
 
-CI runs on push/PR via GitHub Actions. Commit `nhtsa-by-car-id.json` and enrichment scripts so NHTSA per-car resolution works in production.
+CI runs on pushes to `main`, on pull requests, and on manual dispatch.
 
 ---
 

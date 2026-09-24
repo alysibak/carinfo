@@ -234,3 +234,12 @@ describe('account API without configuration', () => {
     }
   });
 });
+
+describe('security headers', () => {
+  it('sends the baseline Content-Security-Policy', async () => {
+    const res = await request(app).get('/api/health');
+    expect(res.headers['content-security-policy']).toBe(
+      "base-uri 'self';object-src 'none';frame-ancestors 'none'",
+    );
+  });
+});
