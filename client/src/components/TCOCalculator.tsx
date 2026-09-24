@@ -110,11 +110,14 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
 
   const fuelType = car.engine.fuelType;
   const isElectric = fuelType === 'electric';
-  const isHydrogen = fuelType === 'hydrogen';
   const isPlugIn = fuelType === 'plug-in hybrid';
-  // Hydrogen is priced from EPA's own annual cost, so neither price input applies.
-  const showGas = !isElectric && !isHydrogen;
-  const showElectricity = isElectric || isPlugIn;
+  // Offer only the price inputs that move this car's estimate. Hydrogen and
+  // natural gas are priced from EPA's own annual cost, so neither applies.
+  const basis = result.energy?.basis;
+  const showGas = basis === 'gasoline' || basis === 'plug-in hybrid';
+  const showElectricity = basis === 'electric' || basis === 'plug-in hybrid';
+  const fuelNoun =
+    fuelType === 'hydrogen' ? 'Hydrogen' : fuelType === 'natural gas' ? 'Natural gas' : 'Fuel';
 
   const efficiency = car.fuelEconomy?.combined;
   const efficiencyLabel = usesMpge(fuelType) ? 'MPGe' : 'MPG';
@@ -333,8 +336,8 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
               )}
               {result.energy?.basis === 'epa-annual-cost' && (
                 <p>
-                  {isHydrogen ? 'Hydrogen' : 'Fuel'} cost uses EPA’s own annual estimate, scaled to
-                  your distance. It does not change with the price inputs above.
+                  {fuelNoun} cost uses EPA’s own annual estimate, scaled to your distance. It does
+                  not change with the price inputs above.
                 </p>
               )}
               {!result.depreciationFromDossier && (

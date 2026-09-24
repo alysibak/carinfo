@@ -1,14 +1,6 @@
 import type { CarSpecs } from '../types/car.types';
 import { DISPLAY_CURRENCY } from './currency';
 import { usesMpge } from './fuelDisplay';
-import {
-  EPA_ANNUAL_MILES,
-  getRegionalAssumptions,
-  mpgToLPer100Km,
-  mpgeToKwhPer100Km,
-} from '@carinfo/config/regional-assumptions';
-
-const REGION = getRegionalAssumptions();
 
 export {
   isFuelCellVehicle,
@@ -23,62 +15,26 @@ export function efficiencyUnit(car: CarSpecs): 'MPG' | 'MPGe' {
   return usesMpge(car.engine.fuelType) ? 'MPGe' : 'MPG';
 }
 
-function gasolineAnnualCostCad(mpg: number): number {
-  return Math.round((REGION.annualKm / 100) * mpgToLPer100Km(mpg) * REGION.gasPriceCadPerL);
+/**
+ * An annual fuel/energy cost for display. Takes the figure the server computed
+ * for the viewer's cost region (the dashboard's `ownership.annualCost.energy`)
+ * rather than working one out here: this file used to carry its own copy of
+ * the cost engine, fixed to the default region, so choosing B.C. changed the
+ * "Cost to keep" section while the glance row and spec list kept Ontario prices.
+ */
+export function formatAnnualEnergyCost(annualCad: number | null | undefined): string | null {
+  if (annualCad == null || !(annualCad > 0)) return null;
+  return `$${Math.round(annualCad).toLocaleString()} ${DISPLAY_CURRENCY}/yr (est.)`;
 }
 
-function electricAnnualCostCad(mpge: number): number {
-  return Math.round(
-    (REGION.annualKm / 100) * mpgeToKwhPer100Km(mpge) * REGION.electricityRateCadPerKwh,
-  );
-}
-
-function estimatedAnnualFuelCostCad(car: CarSpecs): number | null {
-  const mpg = car.fuelEconomy.combined ?? 0;
-  const ft = car.engine.fuelType;
-
-  if (ft === 'hydrogen') {
-    const epaUsd = car.epa?.annualFuelCost;
-    if (epaUsd != null && epaUsd > 0) {
-      const epaCad = epaUsd * REGION.cadUsdExchangeRate;
-      return Math.round(epaCad * (REGION.annualKm / (EPA_ANNUAL_MILES * 1.609344)));
-    }
-    return null;
-  }
-
-  if (ft === 'electric' && mpg > 0) return electricAnnualCostCad(mpg);
-
-  if (ft === 'plug-in hybrid' && mpg > 0) {
-    const gasMpg = car.epa?.phev?.gasMpg ?? mpg;
-    const electricMpge = car.epa?.phev?.electricMpge ?? mpg;
-    const gas = gasolineAnnualCostCad(gasMpg) * REGION.phev.gasMileFraction;
-    const electric = electricAnnualCostCad(electricMpge) * REGION.phev.electricMileFraction;
-    return Math.round(gas + electric);
-  }
-
-  if (mpg > 0) return gasolineAnnualCostCad(mpg);
-
-  const epaUsd = car.epa?.annualFuelCost;
-  if (epaUsd != null && epaUsd > 0) {
-    const epaCad = epaUsd * REGION.cadUsdExchangeRate;
-    return Math.round(epaCad * (REGION.annualKm / (EPA_ANNUAL_MILES * 1.609344)));
-  }
-
-  return null;
-}
-
-export function annualFuelCostDetail(car: CarSpecs): string | undefined {
-  const formatted = formatAnnualFuelCostCadDisplay(car);
+export function annualFuelCostDetail(
+  car: CarSpecs,
+  annualCad: number | null | undefined,
+): string | undefined {
+  const formatted = formatAnnualEnergyCost(annualCad);
   if (formatted) return formatted;
   if (car.engine.fuelType === 'hydrogen') {
     return 'H₂ cost not rated by EPA; varies by station';
   }
   return undefined;
-}
-
-/** Ontario/CAD annual fuel or energy cost for UI display (matches ownership energy model). */
-export function formatAnnualFuelCostCadDisplay(car: CarSpecs): string | null {
-  const cost = estimatedAnnualFuelCostCad(car);
-  if (cost == null || cost <= 0) return null;
-  return `$${cost.toLocaleString()} ${DISPLAY_CURRENCY}/yr (est.)`;
 }

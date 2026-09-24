@@ -5,7 +5,7 @@ import { engineLayoutLabel, formatFuelTypeLabel } from '../utils/fuelDisplay';
 import { displayTrimLabel, formatTransmissionLabel } from '../utils/trimLabel';
 import { efficiencyUnit } from '../utils/fuelLabels';
 import { fiveYearFuelSavings, fuelSavingsShort, phevModes } from '../utils/epaContent';
-import { formatAnnualFuelCostCadDisplay } from '../utils/fuelLabels';
+import { formatAnnualEnergyCost } from '../utils/fuelLabels';
 import type { SpecGlossaryKey } from '../utils/specGlossary';
 import { TIER1_SPEC_EMPHASIS, TIER2_VALUE, TIER3_LABEL } from '../utils/visualTiers';
 import { SpecLabel } from './SpecExplain';
@@ -50,7 +50,7 @@ function pushIf(rows: SpecRow[], row: SpecRow | null) {
 }
 
 function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
-  const { car, zeroToSixty, evCharge } = dashboard;
+  const { car, zeroToSixty, evCharge, ownership } = dashboard;
   const isEv = car.engine.fuelType === 'electric';
   const isFcev = car.engine.fuelType === 'hydrogen';
   const isPhev = car.engine.fuelType === 'plug-in hybrid';
@@ -302,7 +302,8 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
       glossary: 'charge120',
     });
   }
-  const annualFuelCad = formatAnnualFuelCostCadDisplay(car);
+  // The server's figure for the viewer's cost region, as in "Cost to keep".
+  const annualFuelCad = formatAnnualEnergyCost(ownership.annualCost.energy);
   if (annualFuelCad) {
     pushIf(fuel, {
       key: 'annualFuel',

@@ -2,7 +2,14 @@ export type ProvenanceSource = 'epa' | 'nhtsa' | 'estimated' | 'curated';
 export type Provenance = Record<string, ProvenanceSource>;
 
 export type FuelType =
-  'gasoline' | 'diesel' | 'electric' | 'hybrid' | 'plug-in hybrid' | 'hydrogen';
+  | 'gasoline'
+  | 'diesel'
+  | 'electric'
+  | 'hybrid'
+  | 'plug-in hybrid'
+  | 'hydrogen'
+  /** Dedicated compressed natural gas (EPA atvType "CNG"); economy is per gasoline-gallon equivalent. */
+  | 'natural gas';
 export type DriveType = 'FWD' | 'RWD' | 'AWD' | '4WD';
 export type BodyStyle =
   'sedan' | 'suv' | 'coupe' | 'convertible' | 'hatchback' | 'wagon' | 'truck' | 'van' | 'minivan';

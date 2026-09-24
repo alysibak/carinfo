@@ -1,7 +1,7 @@
 import type { CarDashboard, CarSpecs, Provenance, ProvenanceSource } from '../types/car.types';
 import type { SpecGlossaryKey } from './specGlossary';
 import { hasNumericValue, hasTextValue } from './dataValue';
-import { formatAnnualFuelCostCadDisplay } from './fuelLabels';
+import { formatAnnualEnergyCost } from './fuelLabels';
 
 export type TrustFilter = 'all' | 'verified' | 'estimated';
 
@@ -111,7 +111,8 @@ function provenanceFieldHasValue(dashboard: CarDashboard, key: string): boolean 
       return hasNumericValue(car.fuelEconomy.combined);
     case 'epa.annualFuelCost':
       return (
-        formatAnnualFuelCostCadDisplay(car) != null || hasNumericValue(car.epa?.annualFuelCost)
+        formatAnnualEnergyCost(ownership.annualCost.energy) != null ||
+        hasNumericValue(car.epa?.annualFuelCost)
       );
     case 'epa.charge120Hours':
       return hasNumericValue(evCharge?.charge120Hours ?? car.epa?.charge120Hours);

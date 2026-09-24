@@ -22,7 +22,7 @@ const FUEL_LABEL: Record<string, string> = {
   'plug-in hybrid': 'Plug-in hybrid',
   electric: 'Electric',
   hydrogen: 'Hydrogen fuel cell',
-  'flex-fuel': 'Flex-fuel',
+  'natural gas': 'Natural gas (CNG)',
 };
 
 /** schema.org wants a URL or free text; these are the closest standard terms. */
@@ -33,7 +33,7 @@ const SCHEMA_FUEL: Record<string, string> = {
   'plug-in hybrid': 'Plug-in hybrid electric',
   electric: 'Electricity',
   hydrogen: 'Hydrogen',
-  'flex-fuel': 'Flexible-fuel',
+  'natural gas': 'Compressed natural gas',
 };
 
 const DRIVE_SCHEMA: Record<string, string> = {

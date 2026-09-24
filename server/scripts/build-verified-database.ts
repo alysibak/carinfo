@@ -13,13 +13,13 @@ import type {
   BodyStyle,
   Car,
   DriveType,
-  FuelType,
   Provenance,
   ProvenanceSource,
 } from '../src/types/car.types.js';
 import { estimatePriceMsrp } from '../src/utils/ownership-economics.js';
 import { canonicalizeDisplayModel, resolveNhtsaSafety } from '../src/utils/vehicle-taxonomy.js';
 import { ensureUniqueIds } from '../src/utils/unique-ids.js';
+import { mapEpaFuelType } from './lib/epa-fuel-type.js';
 import { fetchBuffer } from './lib/fetch.js';
 import { fetchNhtsaSafety } from './lib/nhtsa-safety.js';
 
@@ -144,28 +144,6 @@ function mapTransmission(trany: string): {
   if (t.includes('dual') || t.includes('dct'))
     return { type: 'dual-clutch', speeds, description: trany };
   return { type: 'automatic', speeds, description: trany };
-}
-
-function mapFuelType(row: EpaRow): FuelType {
-  const atv = (row.atvType || '').toLowerCase();
-  const ft = (row.fuelType || row.fuelType1 || '').toLowerCase();
-  const model = (row.model || '').toLowerCase();
-  if (
-    atv.includes('fcv') ||
-    atv.includes('efcv') ||
-    ft.includes('hydrogen') ||
-    model.includes('fuel cell') ||
-    model.includes('mirai') ||
-    model.includes('nexo')
-  ) {
-    return 'hydrogen';
-  }
-  // PHEV before electricity — "Premium Gas or Electricity" contains "electricity".
-  if (atv.includes('plug-in hybrid') || atv.includes('phev')) return 'plug-in hybrid';
-  if (atv.includes('ev') || ft.includes('electricity')) return 'electric';
-  if (atv.includes('hybrid') || ft.includes('hybrid')) return 'hybrid';
-  if (ft.includes('diesel')) return 'diesel';
-  return 'gasoline';
 }
 
 function parseNum(value: string | undefined): number | undefined {
@@ -297,7 +275,7 @@ function mapEpaRow(row: EpaRow): Car | null {
   const bodyStyle = mapVClassToBodyStyle(row.VClass || '', row.model || '');
   if (!bodyStyle) return null;
 
-  const fuelType = mapFuelType(row);
+  const fuelType = mapEpaFuelType(row);
   const provenance: Provenance = {};
   const trim = buildTrim(row);
   const id = `${slugify(row.make)}-${slugify(row.model)}-${year}-${trim}`;

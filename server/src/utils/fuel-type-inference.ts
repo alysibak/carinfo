@@ -3,7 +3,7 @@ import { isFuelCellVehicle } from './fuel-cell-detection.js';
 
 /** EPA rows that include "electricity" in fuelType string before PHEV check — runtime correction. */
 const PHEV_NAME_RE =
-  /\b(e-hybrid|ehybrid|plug-?in|phev|prime|energi|clarity|volt|i3 rex|t8\b|xdrive\d{2}e|recharge|4xe|e4|e-tron sportback phev)\b/i;
+  /\b(e-hybrid|ehybrid|plug-?in|phev|prime|energi|clarity|volt|i3 rex|range extender|t8\b|xdrive\d{2}e|recharge|4xe|e4|e-tron sportback phev)\b/i;
 
 const BEV_NAME_RE =
   /\b(bolt ev|leaf|model [3sxy]|model y|i[34]\b|ioniq 5|ioniq 6|ev6|mach-e|id\.4|id4|kona electric|niro ev|e-golf|500e|i-miev|focus electric|spark ev|hummer ev|rivian|lucid air)\b/i;
@@ -27,7 +27,14 @@ export function inferEffectiveFuelType(car: CarSpecs): FuelType {
   const displacement = car.engine.displacement ?? 0;
 
   if (stored === 'plug-in hybrid' || stored === 'hybrid') return stored;
-  if (stored === 'hydrogen' || stored === 'diesel' || stored === 'gasoline') return stored;
+  if (
+    stored === 'hydrogen' ||
+    stored === 'diesel' ||
+    stored === 'gasoline' ||
+    stored === 'natural gas'
+  ) {
+    return stored;
+  }
 
   // Physical evidence outranks naming. A plug-in hybrid has a combustion engine
   // by definition, so an EPA "electric" row with no displacement and a real
@@ -57,14 +64,12 @@ export function inferEffectiveFuelType(car: CarSpecs): FuelType {
 
   if (stored !== 'electric') return stored;
 
-  // Series / range-extender PHEVs (gas generator, electric drive) store gas-engine
-  // displacement on EPA rows labeled "electric". Any meaningful displacement → PHEV.
-  if (displacement >= 1.0) {
-    return 'plug-in hybrid';
-  }
-
-  // Gas displacement + short electric range → PHEV mislabel.
-  if (displacement >= 1.5 && range > 0 && range < PHEV_RANGE_THRESHOLD_MI) {
+  // A combustion engine means it is not a BEV. Series / range-extender PHEVs
+  // (gas generator, electric drive) carry the engine's displacement on rows
+  // labeled "electric". The threshold used to be 1.0 L, which missed the BMW
+  // i3 with Range Extender (0.6 L) — and its name then matched the BEV rule
+  // below, so its 31 MPG gas figure was shown as 31 MPGe (EPA: 100 MPGe).
+  if (displacement > 0) {
     return 'plug-in hybrid';
   }
 

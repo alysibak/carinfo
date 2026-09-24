@@ -42,9 +42,10 @@ export type EnergyCostBasis =
   | 'plug-in hybrid'
   /**
    * EPA's own annual fuel cost, converted to CAD and scaled to the driving
-   * distance. Used for hydrogen (whose price is not one of the inputs) and as a
-   * last resort when a vehicle has no efficiency figure. It does not respond to
-   * the gas or electricity price.
+   * distance. Used for hydrogen and compressed natural gas (whose prices are
+   * not among the inputs, and for which we hold no regional price) and as a
+   * last resort when a vehicle has no efficiency figure. It does not respond
+   * to the gas or electricity price.
    */
   | 'epa-annual-cost';
 
@@ -100,7 +101,7 @@ export function estimateAnnualEnergyCost(
     return { annualCad, perKmCad: annualCad / region.annualKm, basis };
   };
 
-  if (fuelType === 'hydrogen') {
+  if (fuelType === 'hydrogen' || fuelType === 'natural gas') {
     return result(epaAnnualCostCad(car, region), 'epa-annual-cost');
   }
 

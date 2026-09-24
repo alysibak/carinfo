@@ -78,7 +78,7 @@ const FILL_ORDER: GlanceMetricId[] = [
   'running',
 ];
 
-function buildMpgMetric(car: CarSpecs): GlanceMetric | null {
+function buildMpgMetric(car: CarSpecs, annualEnergyCad: number | null): GlanceMetric | null {
   if (!hasNumericValue(car.fuelEconomy.combined)) return null;
 
   const modes = phevModes(car);
@@ -87,7 +87,7 @@ function buildMpgMetric(car: CarSpecs): GlanceMetric | null {
     const detail =
       modes.electricRangeMi != null
         ? `+${modes.electricRangeMi} mi electric`
-        : annualFuelCostDetail(car) || undefined;
+        : annualFuelCostDetail(car, annualEnergyCad) || undefined;
     return {
       id: 'mpg',
       label: 'Gas-mode MPG',
@@ -101,7 +101,7 @@ function buildMpgMetric(car: CarSpecs): GlanceMetric | null {
     id: 'mpg',
     label: `Combined ${efficiencyUnit(car)}`,
     value: formatOrFallback(car.fuelEconomy.combined),
-    detail: annualFuelCostDetail(car) || undefined,
+    detail: annualFuelCostDetail(car, annualEnergyCad) || undefined,
     trustSource: 'epa',
   };
 }
@@ -157,7 +157,8 @@ export function buildGlanceMetrics(dashboard: CarDashboard): {
     };
   }
 
-  const mpgMetric = buildMpgMetric(car);
+  // The server's figure for the viewer's cost region, as in "Cost to keep".
+  const mpgMetric = buildMpgMetric(car, ownership.annualCost.energy);
   if (mpgMetric) candidates.mpg = mpgMetric;
 
   const rangeMi = evCharge?.rangeMiles ?? car.epa?.rangeMiles;

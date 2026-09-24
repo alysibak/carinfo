@@ -52,6 +52,8 @@ export function formatFuelTypeLabel(fuelType: string): string {
       return 'Diesel';
     case 'hybrid':
       return 'Hybrid';
+    case 'natural gas':
+      return 'Natural Gas (CNG)';
     default:
       return fuelType.charAt(0).toUpperCase() + fuelType.slice(1);
   }

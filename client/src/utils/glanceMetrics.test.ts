@@ -31,3 +31,26 @@ describe('glanceMetrics omit-when-empty', () => {
     expect(cells.length).toBeGreaterThan(0);
   });
 });
+
+describe('glanceMetrics fuel cost', () => {
+  const withEnergy = (energy: number | null) => ({
+    ...sparseDashboard,
+    ownership: {
+      ...sparseDashboard.ownership,
+      annualCost: { ...sparseDashboard.ownership.annualCost, energy },
+    },
+  });
+
+  it('shows the server’s figure for the viewer’s cost region', () => {
+    // Regression: this line was computed client-side at Ontario prices, so
+    // choosing B.C. updated "Cost to keep" but not the glance row.
+    const mpg = buildGlanceMetrics(withEnergy(2345)).cells.find((c) => c.id === 'mpg');
+    expect(mpg?.detail).toBe('$2,345 CAD/yr (est.)');
+  });
+
+  it('shows no cost when the server has none, rather than inventing one', () => {
+    const mpg = buildGlanceMetrics(withEnergy(null)).cells.find((c) => c.id === 'mpg');
+    expect(mpg).toBeDefined();
+    expect(mpg?.detail).toBeUndefined();
+  });
+});

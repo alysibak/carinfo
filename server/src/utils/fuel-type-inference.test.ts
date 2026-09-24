@@ -5,16 +5,27 @@ import { findCar, findEnrichedCar, loadEnrichedCars } from '../__tests__/helpers
 
 const CAYENNE_ID = 'porsche-cayenne-e-hybrid-2019-cayenne-automatic-s8';
 
+/**
+ * The label older pipeline runs wrote: EPA's combined fuel string ("Premium
+ * Gas or Electricity") read as electric. cars.json now matches EPA (see
+ * scripts/reconcile-fuel-types.ts), so the correction rules are exercised by
+ * putting that stale label back.
+ */
+const asStaleElectric = (car: Car): Car => ({
+  ...car,
+  engine: { ...car.engine, fuelType: 'electric' },
+});
+
 describe('fuel-type-inference', () => {
-  it('corrects exactly 426 enriched electric records to plug-in hybrid (includes series/EREV hybrids with gas displacement)', () => {
-    // Was pinned at 437 against raw records. That count included 11 genuine
-    // BEVs — Honda Clarity EV and Volvo XC40/C40 Recharge — that the name rules
-    // wrongly demoted, and it measured raw records although inference runs on
-    // enriched ones (enrichment supplies the range the rules depend on).
-    const misclassified = loadEnrichedCars().filter(
-      (c) => c.engine.fuelType === 'electric' && inferEffectiveFuelType(c) === 'plug-in hybrid',
+  it('agrees with EPA on every vehicle in the corpus', () => {
+    // cars.json carries EPA's classification for all 28k records, so any
+    // disagreement here would be a rule overriding the source of truth. Before
+    // the reconciliation the source was stale and the rules corrected 426
+    // records (after an earlier bug where they also demoted 11 genuine BEVs).
+    const overridden = loadEnrichedCars().filter(
+      (c) => inferEffectiveFuelType(c) !== c.engine.fuelType,
     );
-    expect(misclassified).toHaveLength(426);
+    expect(overridden.map((c) => `${c.year} ${c.make} ${c.model}`)).toEqual([]);
   });
 
   it('never classifies a vehicle with no combustion engine as a plug-in hybrid', () => {
@@ -50,18 +61,40 @@ describe('fuel-type-inference', () => {
     ['Volvo', 'XC90 T8 AWD Recharge'],
   ])('still reclassifies the %s %s, which shares that name and has an engine', (make, model) => {
     const car = findEnrichedCar(
-      (c) => c.make === make && c.model === model && c.engine.fuelType === 'electric',
+      (c) => c.make === make && c.model === model && c.engine.fuelType === 'plug-in hybrid',
     );
     expect(car, `${make} ${model} should exist in the corpus`).toBeDefined();
-    expect(inferEffectiveFuelType(car!)).toBe('plug-in hybrid');
+    expect(inferEffectiveFuelType(asStaleElectric(car!))).toBe('plug-in hybrid');
+  });
+
+  it.each([
+    ['i3 with Range Extender', 2019],
+    ['i3s with Range Extender', 2021],
+    ['i3 (94Ah) with Range Extender', 2018],
+  ])('reclassifies the BMW %s (%i), a 0.6 L range extender, as a plug-in hybrid', (model, year) => {
+    // Regression: the displacement rule started at 1.0 L and "i3" matched the
+    // BEV name rule, so these showed their 31 MPG gas figure as 31 MPGe.
+    const car = findEnrichedCar((c) => c.make === 'BMW' && c.model === model && c.year === year);
+    expect(car, `${year} BMW ${model} should exist in the corpus`).toBeDefined();
+    expect(car!.engine.displacement).toBe(0.6);
+    expect(inferEffectiveFuelType(asStaleElectric(car!))).toBe('plug-in hybrid');
+  });
+
+  it('keeps natural gas vehicles as natural gas', () => {
+    const civic = findEnrichedCar(
+      (c) => c.make === 'Honda' && c.year === 2012 && c.engine.fuelType === 'natural gas',
+    );
+    expect(civic, '2012 Honda Civic Natural Gas should exist in the corpus').toBeDefined();
+    expect(inferEffectiveFuelType(civic!)).toBe('natural gas');
   });
 
   it('reclassifies Cayenne e-Hybrid from electric to plug-in hybrid', () => {
     const cayenne = findCar((c) => c.id === CAYENNE_ID);
     expect(cayenne).toBeDefined();
-    expect(cayenne!.engine.fuelType).toBe('electric');
-    expect(inferEffectiveFuelType(cayenne!)).toBe('plug-in hybrid');
-    expect(isLikelyMisclassifiedPhev(cayenne!)).toBe(true);
+    expect(cayenne!.engine.fuelType).toBe('plug-in hybrid');
+    const stale = asStaleElectric(cayenne!);
+    expect(inferEffectiveFuelType(stale)).toBe('plug-in hybrid');
+    expect(isLikelyMisclassifiedPhev(stale)).toBe(true);
   });
 
   it('keeps Tesla Model 3 Long Range as electric', () => {
@@ -96,9 +129,10 @@ describe('fuel-type-inference', () => {
   it('reclassifies Karma GS-6 series hybrid from electric to plug-in hybrid', () => {
     const karma = findCar((c) => c.make === 'Karma' && c.model.includes('GS-6') && c.year === 2021);
     expect(karma).toBeDefined();
-    expect(karma!.engine.fuelType).toBe('electric');
-    expect(inferEffectiveFuelType(karma!)).toBe('plug-in hybrid');
-    expect(isLikelyMisclassifiedPhev(karma!)).toBe(true);
+    expect(karma!.engine.fuelType).toBe('plug-in hybrid');
+    const stale = asStaleElectric(karma!);
+    expect(inferEffectiveFuelType(stale)).toBe('plug-in hybrid');
+    expect(isLikelyMisclassifiedPhev(stale)).toBe(true);
   });
 
   it('short-range + displacement signature drives PHEV correction', () => {

@@ -36,7 +36,7 @@ const FUEL_TYPES = new Set([
   'plug-in hybrid',
   'electric',
   'hydrogen',
-  'flex-fuel',
+  'natural gas',
 ]);
 const TRANSMISSIONS = new Set(['automatic', 'manual', 'cvt', 'dual-clutch']);
 const PROVENANCE_SOURCES = new Set(['epa', 'nhtsa', 'estimated', 'curated']);
@@ -188,6 +188,38 @@ for (const car of cars) {
     }
     if (car.price.min != null && car.price.max != null && car.price.min > car.price.max) {
       fail('price-range', car, `price.min ${car.price.min} > price.max ${car.price.max}`);
+    }
+  }
+
+  // Powertrain physics. The fuel type decides units (MPG vs MPGe) and which
+  // price a fuel cost uses, so a wrong one is a wrong number on the page.
+  const fuel = car.engine?.fuelType;
+  if (fuel === 'electric' && disp != null && disp > 0) {
+    // A combustion engine means a plug-in hybrid (e.g. the BMW i3 with Range
+    // Extender, whose gas MPG was shown as MPGe while it was labeled electric).
+    fail('bev-has-engine', car, `electric but engine.displacement = ${disp} L`);
+  }
+  if (fuel === 'plug-in hybrid' && !(disp != null && disp > 0)) {
+    fail('phev-without-engine', car, 'plug-in hybrid with no combustion engine');
+  }
+
+  // Burning a gallon of gasoline emits ~8,887 g of CO₂ (diesel ~10,180 g), so
+  // EPA's tailpipe CO₂ and combined MPG must agree: co2 × mpg ≈ that constant.
+  // Too low means the vehicle burns something else — the Civic Natural Gas
+  // (ratio ~0.76) was labeled gasoline. Too high has so far only been EPA
+  // source quirks, so it warns.
+  const co2 = car.epa?.co2;
+  const mpg = car.fuelEconomy?.combined;
+  if ((fuel === 'gasoline' || fuel === 'diesel') && isFiniteNumber(co2) && co2 > 0 && mpg) {
+    const ratio = (co2 * mpg) / (fuel === 'diesel' ? 10_180 : 8_887);
+    if (ratio < 0.85) {
+      fail(
+        'co2-mpg-physics',
+        car,
+        `CO₂ ${co2} g/mi at ${mpg} MPG is ${ratio.toFixed(2)}× what ${fuel} emits; check the fuel type`,
+      );
+    } else if (ratio > 1.15) {
+      warn('co2-mpg-physics', car, `CO₂ ${co2} g/mi at ${mpg} MPG is ${ratio.toFixed(2)}× ${fuel}`);
     }
   }
 
