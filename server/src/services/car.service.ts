@@ -13,6 +13,7 @@ import {
 } from '../utils/fuzzy-search.js';
 import { enrichCar } from './content-enrichment.js';
 import { ensureUniqueIds } from '../utils/unique-ids.js';
+import { type RuntimeDatabaseFile, unpackRuntimeDatabase } from './runtime-db.js';
 
 function resolveDbPath(): string | null {
   return resolveDataFile('cars.json');
@@ -134,12 +135,12 @@ function initDatabase(): void {
 
     const started = Date.now();
     const raw = readFileSync(dbPath, 'utf-8');
-    const db: CarDatabase = JSON.parse(raw);
+    const db = JSON.parse(raw) as CarDatabase | RuntimeDatabaseFile;
 
     if (db.ready || readyPath) {
       // Pre-built at deploy time — skip enrich/normalize (the cold-start killer).
-      cachedCars = db.cars;
-      rawIdIndex = new Map(db.cars.map((car) => [car.id, car]));
+      cachedCars = unpackRuntimeDatabase(db);
+      rawIdIndex = new Map(cachedCars.map((car) => [car.id, car]));
       console.log(
         `[car.service] Loaded ready DB: ${cachedCars.length.toLocaleString()} cars in ${((Date.now() - started) / 1000).toFixed(1)}s`,
       );

@@ -1,5 +1,9 @@
 # EPA/NHTSA raw ingestion cache
 server/data/raw/
+# The scripts download raw EPA files into server/data/raw/. A copy once landed
+# at the repo root, where Vercel's file tracing shipped it (21 MB) inside the
+# API function; keep it out.
+/data/
 
 # Runtime site visit counter (local / deploy ephemeral OK).
 # The doubled path is an artifact of running from server/ — see utils/data-paths.ts.

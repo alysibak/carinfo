@@ -11,6 +11,7 @@ import { enrichCar } from '../src/services/content-enrichment.js';
 import { normalizeCarRecord } from '../src/utils/car-normalize.js';
 import { resolveDataFile } from '../src/utils/data-paths.js';
 import { ensureUniqueIds } from '../src/utils/unique-ids.js';
+import { packRuntimeDatabase } from '../src/services/runtime-db.js';
 import type { Car } from '../src/types/car.types.js';
 
 interface CarDatabase {
@@ -43,13 +44,14 @@ if (report.mergedDuplicates.length || report.renamed.length) {
   );
   for (const { from, to } of report.renamed) console.log(`  ${from} -> ${to}`);
 }
-const out = {
-  cars,
+const out = packRuntimeDatabase(cars, {
   lastUpdated: db.lastUpdated,
   sources: db.sources?.length ? db.sources : ['epa'],
-  ready: true as const,
   builtAt: new Date().toISOString(),
-};
+});
+console.log(
+  `[build-runtime-db] Interned provenance: ${out.provenance.length} distinct maps across ${cars.length.toLocaleString()} cars.`,
+);
 
 const outPath = resolve(dbPath, '..', 'cars-ready.json');
 const payload = JSON.stringify(out);

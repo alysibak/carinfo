@@ -15,6 +15,7 @@
 import { readFileSync } from 'fs';
 import { resolveDataFile } from '../src/utils/data-paths.js';
 import type { Car } from '../src/types/car.types.js';
+import { unpackRuntimeDatabase } from '../src/services/runtime-db.js';
 
 const BODY_STYLES = new Set([
   'sedan',
@@ -62,8 +63,12 @@ if (!path) {
   process.exit(1);
 }
 
-const db = JSON.parse(readFileSync(path, 'utf8')) as { cars: Car[]; lastUpdated?: string };
-const cars = db.cars;
+const db = JSON.parse(readFileSync(path, 'utf8')) as Parameters<typeof unpackRuntimeDatabase>[0];
+if (!Array.isArray(db?.cars)) {
+  console.error(`${path}: "cars" is not an array.`);
+  process.exit(1);
+}
+const cars = unpackRuntimeDatabase(db);
 const violations: Violation[] = [];
 const warnings: Violation[] = [];
 
@@ -73,11 +78,6 @@ const warn = (rule: string, car: Pick<Car, 'id'>, detail: string) =>
   warnings.push({ rule, id: car.id, detail });
 
 // ─── Corpus-level ─────────────────────────────────────────────────────────────
-
-if (!Array.isArray(cars)) {
-  console.error(`${path}: "cars" is not an array.`);
-  process.exit(1);
-}
 
 if (cars.length < MIN_EXPECTED_CARS) {
   fail('corpus-size', undefined, `only ${cars.length} cars (expected >= ${MIN_EXPECTED_CARS})`);

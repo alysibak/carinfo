@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 env:
-  NODE_VERSION: '20'
+  NODE_VERSION: '24'
   # Rate limits would throttle the e2e suite's own traffic.
   DISABLE_RATE_LIMIT: 'true'
 

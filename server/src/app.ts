@@ -70,7 +70,8 @@ app.use('/api/stats', statsRoutes);
 app.get('/api/health', (_req, res) => {
   try {
     const results = carService.searchCars({ limit: 1 });
-    const dbPath = resolveDataFile('cars.json');
+    // Production ships only the prebuilt corpus; development reads cars.json.
+    const dbPath = resolveDataFile('cars-ready.json') ?? resolveDataFile('cars.json');
     res.setHeader('Cache-Control', 'no-store');
     res.json({
       status: 'ok',
