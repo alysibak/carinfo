@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCarStore } from '../stores/carStore';
 import FilterSidebar from '../components/FilterSidebar';
 import CarCard from '../components/CarCard';
@@ -29,6 +29,7 @@ export default function Home() {
   );
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { searchResults, searchQuery, setSearchQuery, performSearch, isSearching, searchError } =
     useCarStore();
 
@@ -83,6 +84,12 @@ export default function Home() {
     if (VIN_PATTERN.test(trimmed)) return;
 
     const timer = window.setTimeout(() => {
+      // The user may already be leaving: React Router commits navigations in a
+      // transition, so this page stays mounted (and this timer alive) while
+      // the next page's chunk loads, though the URL has already changed.
+      // Writing search params now would replace that URL and bounce them back
+      // here — clicking a result within 280 ms of typing used to do exactly that.
+      if (window.location.pathname !== pathname) return;
       const params = new URLSearchParams(window.location.search);
       const current = useCarStore.getState().searchQuery;
       const existingQ = params.get('q') ?? '';
@@ -120,7 +127,7 @@ export default function Home() {
     }, 280);
 
     return () => window.clearTimeout(timer);
-  }, [searchText, pushSearch, setSearchParams]);
+  }, [searchText, pathname, pushSearch, setSearchParams]);
 
   const handleTextSearch = (text: string) => {
     const trimmed = text.trim();

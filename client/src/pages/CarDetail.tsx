@@ -384,7 +384,7 @@ export default function CarDetail() {
             onClick={() => navigate(-1)}
             className="text-xs text-zinc-500 hover:text-white transition-colors shrink-0 min-h-[44px] min-w-[44px] inline-flex items-center"
           >
-            ← <span className="hidden sm:inline">Back</span>
+            <span aria-hidden>←</span> <span className="sr-only sm:not-sr-only">Back</span>
           </button>
           <p className="hidden sm:block text-sm font-semibold tracking-tight truncate text-center min-w-0 px-1">
             {car.year} {car.make} {car.model}

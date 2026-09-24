@@ -48,7 +48,9 @@ export function BackLink({ to, label = 'Back' }: { to: string; label?: string })
           d="M7 16l-4-4m0 0l4-4m-4 4h18"
         />
       </svg>
-      <span className="hidden sm:inline">{label}</span>
+      {/* Visually hidden on phones, never removed: with the arrow aria-hidden,
+          `hidden` left the link with no accessible name at mobile widths. */}
+      <span className="sr-only sm:not-sr-only">{label}</span>
     </Link>
   );
 }

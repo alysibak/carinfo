@@ -48,6 +48,19 @@ export default {
           'text-secondary': '#8f8f98',
         },
       },
+      // WCAG 2.1 AA (1.4.3) requires 4.5:1 for body text. On this palette's
+      // backgrounds zinc-500 measured 3.6–4.0:1 and zinc-600 2.3–2.5:1 — and
+      // zinc-600 is what the "est." / "Est. CAD" labels used, so the site's
+      // estimate disclosures were its least legible text. #82828b is the
+      // smallest lift that clears 4.5:1 on every background in use (page,
+      // card, raised card). Text only: borders and fills keep the original
+      // shades.
+      textColor: {
+        zinc: { 500: '#82828b', 600: '#82828b' },
+      },
+      placeholderColor: {
+        zinc: { 500: '#82828b', 600: '#82828b' },
+      },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
         'hero-rise': 'heroRise 0.4s ease-out both',

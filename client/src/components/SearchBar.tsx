@@ -8,6 +8,8 @@ interface SearchBarProps {
   onChange: (value: string) => void;
   onSubmit: (value: string) => void;
   placeholder?: string;
+  /** Accessible name; the placeholder is only a hint. */
+  ariaLabel?: string;
   autoFocus?: boolean;
   size?: 'default' | 'large' | 'hero';
   showButton?: boolean;
@@ -30,6 +32,7 @@ export default function SearchBar({
   onChange,
   onSubmit,
   placeholder = 'Search make, model, or year, e.g. 2024 Camry',
+  ariaLabel = 'Search vehicles',
   autoFocus = false,
   size = 'default',
   showButton = true,
@@ -179,6 +182,9 @@ export default function SearchBar({
         aria-controls={listId}
         aria-autocomplete="list"
         autoFocus={autoFocus}
+        // A placeholder is not a label: it disappears as soon as you type, and
+        // it was the input's only accessible name.
+        aria-label={ariaLabel}
         placeholder={placeholder}
         className={inputClass}
         value={value}

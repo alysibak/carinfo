@@ -1,5 +1,13 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
+/**
+ * The core trust path: methodology → search → dossier → compare, checking
+ * that provenance labels ("EPA", "Est.") survive every step.
+ *
+ * Rewritten for the current search UI. The previous version still targeted a
+ * "Search" heading and submit button that a3a7e28 replaced with a type-ahead
+ * box; it had been failing unnoticed because CI never got past `npm ci`.
+ */
 test.describe('Trust UI smoke path', () => {
   test('methodology, search, dossier, and compare show provenance affordances', async ({
     page,
@@ -9,27 +17,35 @@ test.describe('Trust UI smoke path', () => {
     await expect(page.getByText('EPA', { exact: true }).first()).toBeVisible();
 
     await page.goto('/home');
-    await expect(page.getByRole('heading', { name: 'Search', exact: true })).toBeVisible();
-
-    const searchInput = page.getByPlaceholder(/search make, model, or year/i);
-    await searchInput.fill('toyota');
-    await page.getByRole('button', { name: 'Search' }).click();
+    const search = page.getByRole('combobox', { name: 'Search vehicles' });
+    await search.fill('toyota');
+    await search.press('Enter');
 
     const firstResult = page.locator('article').first();
     await expect(firstResult).toBeVisible({ timeout: 60_000 });
-    await firstResult.click();
+    await firstResult.getByRole('link').first().click();
 
-    await expect(page.getByText('Data sources')).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByText('Specifications')).toBeVisible();
+    await expect(page).toHaveURL(/\/car\//);
+    await expect(page.getByRole('heading', { level: 1, name: /toyota/i })).toBeVisible({
+      timeout: 30_000,
+    });
+    // Stay on the dossier: a debounced search-param write used to replace this
+    // URL and bounce the user back to the results.
+    await expect(page).toHaveURL(/\/car\//);
+    await expect(page.getByRole('button', { name: /data sources/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Cost to keep' })).toBeVisible();
 
-    const compareBtn = page.getByRole('button', { name: /add to compare|\+ compare/i }).first();
-    await compareBtn.click();
+    await page
+      .getByRole('button', { name: /\+ compare/i })
+      .first()
+      .click();
     await expect(page.getByRole('button', { name: /in compare/i }).first()).toBeVisible();
 
-    await page.locator('a[href="/compare"]').first().click();
+    await page.getByRole('navigation').getByRole('link', { name: 'Compare' }).click();
     await expect(page.getByRole('heading', { name: 'Compare', exact: true })).toBeVisible();
     await expect(page.getByText('Loading comparison data')).toBeHidden({ timeout: 60_000 });
-    await expect(page.getByText('EPA', { exact: true }).first()).toBeVisible();
-    await expect(page.getByText('Est.', { exact: true }).first()).toBeVisible();
+    // Measured and modeled numbers stay distinguishable side by side.
+    await expect(page.getByText(/USD \(EPA\)$/).first()).toBeVisible();
+    await expect(page.getByText(/CAD \(est\.\)$/).first()).toBeVisible();
   });
 });

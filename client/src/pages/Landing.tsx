@@ -117,176 +117,185 @@ export default function Landing() {
     <div className={`min-h-screen bg-black text-white selection:bg-white/20 ${trayPad}`}>
       {showQuiz && <PersonaQuiz onComplete={handleQuizComplete} />}
 
+      {/* The landing page renders outside Layout, so it carries its own skip
+          link and main landmark — without them keyboard users had to tab
+          through the whole header, and screen readers found no main region. */}
+      <a href="#main-content" className="skip-link">
+        Skip to content
+      </a>
+
       <SiteHeader transparentUntilScroll />
 
-      <section className="mesh-hero">
-        {heroCar && (
-          <div className="hero-plane hidden lg:block" aria-hidden>
-            <div className="absolute inset-y-0 right-0 w-[58%] opacity-50">
-              <VehiclePlaceholder car={heroCar} hideCaption className="h-full" />
+      <main id="main-content" tabIndex={-1} className="focus:outline-none">
+        <section className="mesh-hero">
+          {heroCar && (
+            <div className="hero-plane hidden lg:block" aria-hidden>
+              <div className="absolute inset-y-0 right-0 w-[58%] opacity-50">
+                <VehiclePlaceholder car={heroCar} hideCaption className="h-full" />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-black via-black/85 to-transparent" />
             </div>
-            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/85 to-transparent" />
+          )}
+
+          <div className="hero-content page-wrap pt-10 pb-10 md:pt-16 md:pb-16 lg:pt-20 lg:pb-20">
+            <div className="max-w-xl min-w-0">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05] mb-4 animate-hero-rise">
+                CarInfo
+              </h1>
+              <p className="text-base md:text-lg text-zinc-400 leading-relaxed mb-6 md:mb-8 animate-hero-rise [animation-delay:40ms]">
+                Specs you can trust — EPA, NHTSA when on file, and labeled Ontario estimates. Look
+                up a car, or answer three questions.
+              </p>
+
+              <div className="animate-hero-rise [animation-delay:80ms]">
+                <SearchBar
+                  value={heroQuery}
+                  onChange={setHeroQuery}
+                  onSubmit={handleHeroSearch}
+                  size="hero"
+                  placeholder="Make, model, or VIN"
+                />
+                <p className="mt-3 text-sm text-zinc-500">
+                  Paste a 17-character VIN in the same box.{' '}
+                  <button
+                    type="button"
+                    onClick={() => setShowQuiz(true)}
+                    className="text-zinc-300 hover:text-white transition-colors underline underline-offset-4 decoration-zinc-700"
+                  >
+                    Or answer 3 questions
+                  </button>
+                </p>
+              </div>
+            </div>
           </div>
-        )}
+        </section>
 
-        <div className="hero-content page-wrap pt-10 pb-10 md:pt-16 md:pb-16 lg:pt-20 lg:pb-20">
-          <div className="max-w-xl min-w-0">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05] mb-4 animate-hero-rise">
-              CarInfo
-            </h1>
-            <p className="text-base md:text-lg text-zinc-400 leading-relaxed mb-6 md:mb-8 animate-hero-rise [animation-delay:40ms]">
-              Specs you can trust — EPA, NHTSA when on file, and labeled Ontario estimates. Look up
-              a car, or answer three questions.
-            </p>
+        <section className="page-wrap section-y border-t border-zinc-900">
+          <h2 className="section-title mb-2">How do you want to start?</h2>
+          <p className="text-sm text-zinc-400 mb-6 md:mb-8 max-w-xl leading-relaxed">
+            Most people arrive with one of these in mind. Pick the path that matches.
+          </p>
 
-            <div className="animate-hero-rise [animation-delay:80ms]">
-              <SearchBar
-                value={heroQuery}
-                onChange={setHeroQuery}
-                onSubmit={handleHeroSearch}
-                size="hero"
-                placeholder="Make, model, or VIN"
-              />
-              <p className="mt-3 text-sm text-zinc-500">
-                Paste a 17-character VIN in the same box.{' '}
+          <div>
+            <div className="intent-row">
+              <p className="text-sm font-semibold text-white">I know the car</p>
+              <div className="flex flex-wrap gap-x-4 gap-y-2.5 text-sm">
+                {POPULAR_SEARCHES.map((s) => (
+                  <Link
+                    key={s.query}
+                    to={`/home?${new URLSearchParams({ q: s.query, sort: 'relevance' }).toString()}`}
+                    className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 py-1"
+                  >
+                    {s.label}
+                  </Link>
+                ))}
+                <Link to="/home" className="text-zinc-500 hover:text-zinc-300 py-1">
+                  Open search →
+                </Link>
+              </div>
+            </div>
+
+            <div className="intent-row">
+              <p className="text-sm font-semibold text-white">I&apos;m still deciding</p>
+              <div className="flex flex-wrap gap-x-4 gap-y-2.5 text-sm">
                 <button
                   type="button"
                   onClick={() => setShowQuiz(true)}
-                  className="text-zinc-300 hover:text-white transition-colors underline underline-offset-4 decoration-zinc-700"
+                  className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 py-1"
                 >
-                  Or answer 3 questions
+                  3-question quiz
                 </button>
+                {situationPresets.map((preset) => (
+                  <Link
+                    key={preset.id}
+                    to={homeLinkFromPreset(preset)}
+                    className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 py-1"
+                  >
+                    {preset.label}
+                  </Link>
+                ))}
+                <Link to="/browse" className="text-zinc-500 hover:text-zinc-300 py-1">
+                  All guides →
+                </Link>
+              </div>
+            </div>
+
+            <div className="intent-row">
+              <p className="text-sm font-semibold text-white">I have a VIN</p>
+              <p className="text-sm text-zinc-400 leading-relaxed">
+                Drop it in the search above, or use{' '}
+                <Link
+                  to="/vin"
+                  className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700"
+                >
+                  VIN lookup
+                </Link>{' '}
+                if you want the scanner.
               </p>
             </div>
-          </div>
-        </div>
-      </section>
 
-      <section className="page-wrap section-y border-t border-zinc-900">
-        <h2 className="section-title mb-2">How do you want to start?</h2>
-        <p className="text-sm text-zinc-400 mb-6 md:mb-8 max-w-xl leading-relaxed">
-          Most people arrive with one of these in mind. Pick the path that matches.
-        </p>
-
-        <div>
-          <div className="intent-row">
-            <p className="text-sm font-semibold text-white">I know the car</p>
-            <div className="flex flex-wrap gap-x-4 gap-y-2.5 text-sm">
-              {POPULAR_SEARCHES.map((s) => (
+            <div className="intent-row border-b-0">
+              <p className="text-sm font-semibold text-white">I&apos;m comparing options</p>
+              <div className="flex flex-wrap gap-x-4 gap-y-2.5 text-sm">
                 <Link
-                  key={s.query}
-                  to={`/home?${new URLSearchParams({ q: s.query, sort: 'relevance' }).toString()}`}
+                  to="/compare"
                   className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 py-1"
                 >
-                  {s.label}
+                  Side-by-side compare
                 </Link>
-              ))}
-              <Link to="/home" className="text-zinc-500 hover:text-zinc-300 py-1">
-                Open search →
-              </Link>
-            </div>
-          </div>
-
-          <div className="intent-row">
-            <p className="text-sm font-semibold text-white">I&apos;m still deciding</p>
-            <div className="flex flex-wrap gap-x-4 gap-y-2.5 text-sm">
-              <button
-                type="button"
-                onClick={() => setShowQuiz(true)}
-                className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 py-1"
-              >
-                3-question quiz
-              </button>
-              {situationPresets.map((preset) => (
                 <Link
-                  key={preset.id}
-                  to={homeLinkFromPreset(preset)}
+                  to="/value-matrix"
                   className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 py-1"
                 >
-                  {preset.label}
+                  Value chart
                 </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {showcase.length > 0 && (
+          <section className="border-t border-zinc-900">
+            <div className="page-wrap pt-10 md:pt-14 pb-6 md:pb-8">
+              <h2 className="section-title mb-2">What a dossier looks like</h2>
+              <p className="text-sm text-zinc-400 max-w-xl leading-relaxed">
+                Every vehicle page leads with the numbers people actually weigh: efficiency, safety,
+                and estimated value.
+              </p>
+            </div>
+            <div className="grid sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-zinc-800 border-y border-zinc-800">
+              {showcase.map(({ car, insight }, index) => (
+                <ShowcaseCard
+                  key={`${car.id}-${insight}`}
+                  car={car}
+                  insight={insight}
+                  style={{ animationDelay: `${index * 80}ms` }}
+                />
               ))}
-              <Link to="/browse" className="text-zinc-500 hover:text-zinc-300 py-1">
-                All guides →
-              </Link>
             </div>
-          </div>
+          </section>
+        )}
 
-          <div className="intent-row">
-            <p className="text-sm font-semibold text-white">I have a VIN</p>
-            <p className="text-sm text-zinc-400 leading-relaxed">
-              Drop it in the search above, or use{' '}
-              <Link
-                to="/vin"
-                className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700"
-              >
-                VIN lookup
-              </Link>{' '}
-              if you want the scanner.
-            </p>
-          </div>
-
-          <div className="intent-row border-b-0">
-            <p className="text-sm font-semibold text-white">I&apos;m comparing options</p>
-            <div className="flex flex-wrap gap-x-4 gap-y-2.5 text-sm">
-              <Link
-                to="/compare"
-                className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 py-1"
-              >
-                Side-by-side compare
+        <section className="page-wrap section-y border-t border-zinc-900">
+          <h2 className="section-title mb-2">Curated shortlists</h2>
+          <p className="text-sm text-zinc-400 mb-6 max-w-xl leading-relaxed">
+            A few ranked picks for common situations — not every matching trim in the archive.
+          </p>
+          <div>
+            {Object.values(COLLECTIONS).map((c) => (
+              <Link key={c.id} to={`/collection/${c.id}`} className="list-row group">
+                <div className="min-w-0 pr-4">
+                  <p className="text-base font-semibold text-white tracking-tight group-hover:text-zinc-300 transition-colors">
+                    {c.title}
+                  </p>
+                  <p className="text-sm text-zinc-400 mt-0.5 line-clamp-2">{c.subtitle}</p>
+                </div>
+                <p className="text-xs text-zinc-500 whitespace-nowrap shrink-0">Picks →</p>
               </Link>
-              <Link
-                to="/value-matrix"
-                className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 py-1"
-              >
-                Value chart
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {showcase.length > 0 && (
-        <section className="border-t border-zinc-900">
-          <div className="page-wrap pt-10 md:pt-14 pb-6 md:pb-8">
-            <h2 className="section-title mb-2">What a dossier looks like</h2>
-            <p className="text-sm text-zinc-400 max-w-xl leading-relaxed">
-              Every vehicle page leads with the numbers people actually weigh: efficiency, safety,
-              and estimated value.
-            </p>
-          </div>
-          <div className="grid sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-zinc-800 border-y border-zinc-800">
-            {showcase.map(({ car, insight }, index) => (
-              <ShowcaseCard
-                key={`${car.id}-${insight}`}
-                car={car}
-                insight={insight}
-                style={{ animationDelay: `${index * 80}ms` }}
-              />
             ))}
           </div>
         </section>
-      )}
-
-      <section className="page-wrap section-y border-t border-zinc-900">
-        <h2 className="section-title mb-2">Curated shortlists</h2>
-        <p className="text-sm text-zinc-400 mb-6 max-w-xl leading-relaxed">
-          A few ranked picks for common situations — not every matching trim in the archive.
-        </p>
-        <div>
-          {Object.values(COLLECTIONS).map((c) => (
-            <Link key={c.id} to={`/collection/${c.id}`} className="list-row group">
-              <div className="min-w-0 pr-4">
-                <p className="text-base font-semibold text-white tracking-tight group-hover:text-zinc-300 transition-colors">
-                  {c.title}
-                </p>
-                <p className="text-sm text-zinc-400 mt-0.5 line-clamp-2">{c.subtitle}</p>
-              </div>
-              <p className="text-xs text-zinc-500 whitespace-nowrap shrink-0">Picks →</p>
-            </Link>
-          ))}
-        </div>
-      </section>
+      </main>
 
       <footer className="border-t border-zinc-900">
         <div className="page-wrap py-8 sm:py-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">

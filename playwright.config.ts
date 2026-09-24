@@ -11,10 +11,25 @@ export default defineConfig({
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        // Point at a pre-installed browser when the environment provides one
+        // whose version differs from @playwright/test's; CI installs its own.
+        ...(process.env.PLAYWRIGHT_CHROMIUM_PATH
+          ? { launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH } }
+          : {}),
+      },
+    },
+  ],
   webServer: [
     {
       command: 'npm run start --workspace=server',
+      // One browser loads dozens of pages a minute here (the accessibility
+      // sweep alone is 22), which the per-IP limits for real clients would 429.
+      env: { DISABLE_RATE_LIMIT: 'true' },
       url: 'http://localhost:5000/api/health',
       reuseExistingServer: !process.env.CI,
       timeout: 180_000,

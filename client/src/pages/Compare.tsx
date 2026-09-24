@@ -152,9 +152,9 @@ const ALL_SPECS: SpecRow[] = [
   },
   {
     key: 'price',
+    // The label already says "EST."; no separate row marker.
     label: `EST. VALUE (${DISPLAY_CURRENCY})`,
     provenanceKey: 'price.msrp',
-    isEstimatedRow: true,
     getValue: (car, dash) => {
       const mid = dash.ownership.marketValue.mid;
       if (mid > 0) {
@@ -458,9 +458,9 @@ export default function Compare() {
                           <p className="text-lg sm:text-2xl md:text-3xl font-black text-zinc-300 tabular-nums group-hover/col:text-white transition-colors">
                             {car.year}
                           </p>
-                          <h3 className="text-xs sm:text-base font-black tracking-tight uppercase mt-1 sm:mt-2 group-hover/col:underline underline-offset-4 decoration-zinc-600 break-words">
+                          <h2 className="text-xs sm:text-base font-black tracking-tight uppercase mt-1 sm:mt-2 group-hover/col:underline underline-offset-4 decoration-zinc-600 break-words">
                             {car.make}
-                          </h3>
+                          </h2>
                           <p className="text-xs sm:text-sm font-medium text-zinc-400 break-words">
                             {displayModelLabel(car)}
                           </p>
@@ -535,9 +535,12 @@ export default function Compare() {
                                   </span>
                                 )}
                               </span>
-                              {prov === 'estimated' && !missing && (
-                                <span className="text-[10px] text-zinc-600">est.</span>
-                              )}
+                              {prov === 'estimated' &&
+                                !missing &&
+                                // Values that carry their own "(est.)" need no second mark.
+                                !String(raw).endsWith('(est.)') && (
+                                  <span className="text-[10px] text-zinc-600">est.</span>
+                                )}
                             </span>
                           </td>
                         );
