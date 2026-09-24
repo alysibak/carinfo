@@ -1,40 +1,39 @@
-import axios, { isAxiosError } from 'axios';
 import type { CarDashboard, CarSpecs, SearchQuery, SearchResults } from '../types/car.types';
+import {
+  API_BASE_URL,
+  API_TIMEOUT_MS,
+  createApiClient,
+  isHttpError,
+  type RequestOptions,
+} from './http';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api';
+const api = createApiClient({ baseUrl: API_BASE_URL, timeoutMs: API_TIMEOUT_MS });
 
-const API_TIMEOUT_MS = Number(import.meta.env.VITE_API_TIMEOUT_MS) || 60_000;
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: API_TIMEOUT_MS,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+/** Car IDs are slugs today; encode anyway so an odd one cannot reshape the path. */
+const carPath = (id: string) => `/cars/${encodeURIComponent(id)}`;
 
 /**
  * Get all makes
  */
 export async function getMakes(): Promise<string[]> {
-  const response = await api.get('/cars/makes');
-  return response.data.data;
+  return api.get('/cars/makes');
 }
 
 /**
  * Get models by make
  */
 export async function getModelsByMake(make: string): Promise<string[]> {
-  const response = await api.get(`/cars/makes/${encodeURIComponent(make)}/models`);
-  return response.data.data;
+  return api.get(`/cars/makes/${encodeURIComponent(make)}/models`);
 }
 
 /**
  * Search cars with filters
  */
-export async function searchCars(query: SearchQuery): Promise<SearchResults> {
-  const response = await api.post('/cars/search', query);
-  return response.data.data;
+export async function searchCars(
+  query: SearchQuery,
+  options?: RequestOptions,
+): Promise<SearchResults> {
+  return api.post('/cars/search', query, options);
 }
 
 export interface SearchSuggestion {
@@ -44,12 +43,15 @@ export interface SearchSuggestion {
   query: string;
 }
 
-export async function getSearchSuggestions(q = '', limit = 8): Promise<SearchSuggestion[]> {
+export async function getSearchSuggestions(
+  q = '',
+  limit = 8,
+  options?: RequestOptions,
+): Promise<SearchSuggestion[]> {
   const params = new URLSearchParams();
   if (q) params.set('q', q);
   params.set('limit', String(limit));
-  const response = await api.get(`/cars/search/suggestions?${params.toString()}`);
-  return response.data.data;
+  return api.get(`/cars/search/suggestions?${params.toString()}`, options);
 }
 
 export interface SiteVisitStats {
@@ -69,50 +71,43 @@ function toVisitStats(payload: unknown): SiteVisitStats {
 }
 
 export async function getSiteVisitCount(): Promise<SiteVisitStats> {
-  const response = await api.get('/stats/site');
-  return toVisitStats(response.data?.data);
+  return toVisitStats(await api.get('/stats/site'));
 }
 
 /** Record one visit for this browser session; returns updated total. */
 export async function recordSiteVisit(): Promise<SiteVisitStats> {
-  const response = await api.post('/stats/visit');
-  return toVisitStats(response.data?.data);
+  return toVisitStats(await api.post('/stats/visit'));
 }
 
 /**
  * Get car by ID
  */
 export async function getCarById(id: string): Promise<CarSpecs> {
-  const response = await api.get(`/cars/${id}`);
-  return response.data.data;
+  return api.get(carPath(id));
 }
 
 export async function getCarDashboard(id: string, region?: string): Promise<CarDashboard> {
   const params = region ? `?region=${encodeURIComponent(region)}` : '';
-  const response = await api.get(`/cars/${id}/dashboard${params}`);
-  return response.data.data;
+  return api.get(`${carPath(id)}/dashboard${params}`);
 }
 
 /**
  * Get similar / cross-shopped vehicles for a car
  */
 export async function getSimilarCars(id: string, limit = 6): Promise<CarSpecs[]> {
-  const response = await api.get(`/cars/${id}/similar?limit=${limit}`);
-  return response.data.data;
+  return api.get(`${carPath(id)}/similar?limit=${limit}`);
 }
 
 /** Same year/make/model EPA configs (other trims/transmissions). */
 export async function getSiblingConfigs(id: string, limit = 24): Promise<CarSpecs[]> {
-  const response = await api.get(`/cars/${id}/siblings?limit=${limit}`);
-  return response.data.data;
+  return api.get(`${carPath(id)}/siblings?limit=${limit}`);
 }
 
 /**
  * Compare multiple cars
  */
 export async function compareCars(ids: string[]): Promise<CarSpecs[]> {
-  const response = await api.post('/cars/compare', { ids });
-  return response.data.data;
+  return api.post('/cars/compare', { ids });
 }
 
 /**
@@ -124,8 +119,8 @@ export async function compareCars(ids: string[]): Promise<CarSpecs[]> {
  * caller falls back to its own copy.
  */
 export function apiErrorMessage(error: unknown): string | null {
-  if (!isAxiosError(error)) return null;
-  const body = error.response?.data as { error?: unknown } | undefined;
+  if (!isHttpError(error)) return null;
+  const body = error.body as { error?: unknown } | null;
   return typeof body?.error === 'string' && body.error.trim() ? body.error : null;
 }
 
@@ -148,8 +143,7 @@ export interface DatabaseStatistics {
  * Get database statistics
  */
 export async function getStatistics(): Promise<DatabaseStatistics> {
-  const response = await api.get('/cars/stats/overview');
-  return response.data.data;
+  return api.get('/cars/stats/overview');
 }
 
 export interface ChartPoint {
@@ -204,8 +198,7 @@ export interface VinDecodeResult {
 /** Decode a VIN against NHTSA's free vPIC database. */
 export async function decodeVin(vin: string, year?: number): Promise<VinDecodeResult> {
   const q = year ? `?year=${year}` : '';
-  const response = await api.get(`/vin/${encodeURIComponent(vin.trim())}${q}`);
-  return response.data.data;
+  return api.get(`/vin/${encodeURIComponent(vin.trim())}${q}`);
 }
 
 export async function getChartPoints(params: {
@@ -223,8 +216,7 @@ export async function getChartPoints(params: {
   if (params.yearMin != null) query.set('yearMin', String(params.yearMin));
   if (params.yearMax != null) query.set('yearMax', String(params.yearMax));
   if (params.limit != null) query.set('limit', String(params.limit));
-  const response = await api.get(`/cars/stats/chart-points?${query.toString()}`);
-  return response.data.data;
+  return api.get(`/cars/stats/chart-points?${query.toString()}`);
 }
 
 export interface ChartDensityCell {
@@ -263,6 +255,5 @@ export async function getChartDensity(params: {
   if (params.yearMin != null) query.set('yearMin', String(params.yearMin));
   if (params.yearMax != null) query.set('yearMax', String(params.yearMax));
   if (params.metric) query.set('metric', params.metric);
-  const response = await api.get(`/cars/stats/chart-density?${query.toString()}`);
-  return response.data.data;
+  return api.get(`/cars/stats/chart-density?${query.toString()}`);
 }

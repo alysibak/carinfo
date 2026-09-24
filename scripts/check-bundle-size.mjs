@@ -9,7 +9,7 @@
  * total against a budget. Lazy route chunks are reported but not gated: they
  * only cost the pages that use them.
  *
- * Usage: node scripts/check-bundle-size.mjs [--budget-kb=110]
+ * Usage: node scripts/check-bundle-size.mjs [--budget-kb=95]
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -19,9 +19,10 @@ const DIST = resolve(process.cwd(), 'client', 'dist');
 const ASSETS = join(DIST, 'assets');
 
 const budgetArg = process.argv.find((a) => a.startsWith('--budget-kb='));
-// Entry chunk is ~93 KB gzip today. The budget leaves headroom for normal
-// growth while still catching a whole SDK landing on the critical path.
-const BUDGET_KB = budgetArg ? Number(budgetArg.split('=')[1]) : 110;
+// Entry chunk is ~84 KB gzip today (it was ~103 KB before axios gave way to
+// fetch). The budget leaves headroom for normal growth while still catching a
+// whole SDK or HTTP library landing on the critical path.
+const BUDGET_KB = budgetArg ? Number(budgetArg.split('=')[1]) : 95;
 
 function gzipKb(path) {
   return gzipSync(readFileSync(path), { level: 9 }).length / 1024;

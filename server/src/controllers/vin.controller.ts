@@ -24,8 +24,11 @@ export async function decodeVinHandler(req: Request, res: Response) {
   }
 
   const yearRaw = req.query.year != null ? Number(req.query.year) : undefined;
+  // 17-character VINs start in 1981; model years run up to a year ahead of the
+  // calendar (a fixed ceiling here would have silently expired).
+  const maxModelYear = new Date().getFullYear() + 2;
   const modelYear =
-    yearRaw != null && Number.isFinite(yearRaw) && yearRaw >= 1981 && yearRaw <= 2030
+    yearRaw != null && Number.isInteger(yearRaw) && yearRaw >= 1981 && yearRaw <= maxModelYear
       ? yearRaw
       : undefined;
 

@@ -6,12 +6,12 @@
  * Usage:
  *   tsx scripts/build-nhtsa-backfill.ts [--from=2008] [--limit=N] [--refresh]
  */
-import axios from 'axios';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import type { Car } from '../src/types/car.types.js';
 import { canonicalizeDisplayModel } from '../src/utils/vehicle-taxonomy.js';
+import { fetchNhtsaSafety } from './lib/nhtsa-safety.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = resolve(__dirname, '..', 'data');
@@ -31,40 +31,6 @@ interface CacheEntry {
     rollover?: number;
   };
   fetchedAt?: string;
-}
-
-function parseStar(value: string | undefined): number | undefined {
-  if (!value || value === 'Not Rated' || value === 'N/A') return undefined;
-  const n = parseInt(value, 10);
-  return Number.isNaN(n) ? undefined : n;
-}
-
-async function fetchNhtsaSafety(make: string, model: string, year: number) {
-  const listRes = await axios.get(
-    `https://api.nhtsa.gov/SafetyRatings/modelyear/${year}/make/${encodeURIComponent(make)}/model/${encodeURIComponent(model)}`,
-    { timeout: 15000 },
-  );
-  const results = listRes.data?.Results;
-  if (!Array.isArray(results) || results.length === 0) return undefined;
-
-  const vehicleId = results[0].VehicleId;
-  if (!vehicleId) return undefined;
-
-  const detailRes = await axios.get(`https://api.nhtsa.gov/SafetyRatings/VehicleId/${vehicleId}`, {
-    timeout: 15000,
-  });
-  const detail = detailRes.data?.Results?.[0];
-  if (!detail) return undefined;
-
-  const safety = {
-    overall: parseStar(detail.OverallRating),
-    frontal: parseStar(detail.OverallFrontCrashRating),
-    side: parseStar(detail.OverallSideCrashRating),
-    rollover: parseStar(detail.RolloverRating),
-  };
-
-  if (!safety.overall && !safety.frontal && !safety.side && !safety.rollover) return undefined;
-  return safety;
 }
 
 function loadCache(): Record<string, CacheEntry> {

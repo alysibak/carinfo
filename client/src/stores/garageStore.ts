@@ -107,8 +107,8 @@ export const useGarageStore = create<GarageStore>()(
               return {
                 ok: false,
                 reason: 'limit',
-                limit: error.response.data.limit ?? FREE_GARAGE_LIMIT,
-                message: error.response.data.error,
+                limit: error.body.limit ?? FREE_GARAGE_LIMIT,
+                message: error.body.error,
               };
             }
             set({

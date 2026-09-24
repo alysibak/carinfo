@@ -21,7 +21,7 @@ export default defineConfig({
           name: 'server',
           root: './server',
           environment: 'node',
-          include: ['src/**/*.test.ts'],
+          include: ['src/**/*.test.ts', 'scripts/**/*.test.ts'],
           testTimeout: 120_000,
           // Suites fire many requests from one IP; limits are exercised
           // explicitly in app.production.test.ts instead.

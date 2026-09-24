@@ -1,15 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CarSpecs } from '../types/car.types';
+import { HttpError } from '../services/http';
+import type * as AccountApi from '../services/accountApi';
 
-vi.mock('../services/accountApi', () => ({
+// Network calls are mocked; the error classifier is the real one, so these
+// tests pin the contract between the store and what the API actually throws.
+vi.mock('../services/accountApi', async (importOriginal) => ({
+  ...(await importOriginal<typeof AccountApi>()),
   addMyGarageItem: vi.fn(),
   removeMyGarageItem: vi.fn(),
   putMyGarage: vi.fn(),
   getMyGarage: vi.fn(),
-  isGarageLimitError: (e: unknown) =>
-    Boolean(
-      (e as { response?: { data?: { code?: string } } })?.response?.data?.code === 'GARAGE_LIMIT',
-    ),
 }));
 
 const accountApi = await import('../services/accountApi');
@@ -96,11 +97,21 @@ describe('cloud garage', () => {
   });
 
   it('surfaces the server’s cap as a limit result', async () => {
-    api.addMyGarageItem.mockRejectedValueOnce({
-      response: { data: { code: 'GARAGE_LIMIT', limit: 10, error: 'Free plan allows up to 10' } },
-    });
+    api.addMyGarageItem.mockRejectedValueOnce(
+      new HttpError('Free plan allows up to 10', 403, {
+        success: false,
+        code: 'GARAGE_LIMIT',
+        limit: 10,
+        error: 'Free plan allows up to 10',
+      }),
+    );
     const result = await useGarageStore.getState().add(car('a'));
-    expect(result).toMatchObject({ ok: false, reason: 'limit', limit: 10 });
+    expect(result).toEqual({
+      ok: false,
+      reason: 'limit',
+      limit: 10,
+      message: 'Free plan allows up to 10',
+    });
     expect(ids()).toEqual([]);
   });
 

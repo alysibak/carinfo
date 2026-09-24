@@ -1,14 +1,5 @@
 import type { CarSpecs } from '../types/car.types';
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api';
-
-/** Separate axios instance so we can attach Clerk tokens without affecting public car APIs. */
-const accountApi = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: Number(import.meta.env.VITE_API_TIMEOUT_MS) || 60_000,
-  headers: { 'Content-Type': 'application/json' },
-});
+import { API_BASE_URL, API_TIMEOUT_MS, createApiClient, isHttpError, type HttpError } from './http';
 
 let tokenGetter: (() => Promise<string | null>) | null = null;
 
@@ -16,14 +7,14 @@ export function setAccountAuthTokenGetter(getter: (() => Promise<string | null>)
   tokenGetter = getter;
 }
 
-accountApi.interceptors.request.use(async (config) => {
-  if (tokenGetter) {
-    const token = await tokenGetter();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  }
-  return config;
+/** Its own client so Clerk tokens ride only on account calls, never public car APIs. */
+const accountApi = createApiClient({
+  baseUrl: API_BASE_URL,
+  timeoutMs: API_TIMEOUT_MS,
+  headers: async (): Promise<Record<string, string>> => {
+    const token = tokenGetter ? await tokenGetter() : null;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  },
 });
 
 export interface AccountCapabilities {
@@ -57,51 +48,47 @@ export interface GarageResponse {
 }
 
 export async function getAccountStatus(): Promise<AccountCapabilities> {
-  const response = await accountApi.get('/me/status');
-  return response.data.data;
+  return accountApi.get('/me/status');
 }
 
 export async function getMe(): Promise<MeResponse> {
-  const response = await accountApi.get('/me');
-  return response.data.data;
+  return accountApi.get('/me');
 }
 
 export async function getMyGarage(): Promise<GarageResponse> {
-  const response = await accountApi.get('/me/garage');
-  return response.data.data;
+  return accountApi.get('/me/garage');
 }
 
 export async function putMyGarage(carIds: string[]): Promise<GarageResponse> {
-  const response = await accountApi.put('/me/garage', { carIds });
-  return response.data.data;
+  return accountApi.put('/me/garage', { carIds });
 }
 
 export async function addMyGarageItem(carId: string): Promise<GarageResponse> {
-  const response = await accountApi.post('/me/garage/items', { carId });
-  return response.data.data;
+  return accountApi.post('/me/garage/items', { carId });
 }
 
 export async function removeMyGarageItem(carId: string): Promise<GarageResponse> {
-  const response = await accountApi.delete(`/me/garage/items/${encodeURIComponent(carId)}`);
-  return response.data.data;
+  return accountApi.delete(`/me/garage/items/${encodeURIComponent(carId)}`);
 }
 
 export async function createCheckoutSession(): Promise<{ url: string }> {
-  const response = await accountApi.post('/billing/checkout');
-  return response.data.data;
+  return accountApi.post('/billing/checkout');
 }
 
 export async function createPortalSession(): Promise<{ url: string }> {
-  const response = await accountApi.post('/billing/portal');
-  return response.data.data;
+  return accountApi.post('/billing/portal');
 }
 
-export function isGarageLimitError(error: unknown): error is {
-  response: { status: number; data: { code?: string; error?: string; limit?: number } };
-} {
+export interface GarageLimitBody {
+  code: 'GARAGE_LIMIT';
+  error?: string;
+  limit?: number;
+}
+
+export function isGarageLimitError(error: unknown): error is HttpError & { body: GarageLimitBody } {
   return (
-    axios.isAxiosError(error) &&
-    error.response?.status === 403 &&
-    error.response.data?.code === 'GARAGE_LIMIT'
+    isHttpError(error) &&
+    error.status === 403 &&
+    (error.body as { code?: unknown } | null)?.code === 'GARAGE_LIMIT'
   );
 }

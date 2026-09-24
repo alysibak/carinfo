@@ -1,5 +1,3 @@
-import axios from 'axios';
-
 const NHTSA_BASE_URL = 'https://vpic.nhtsa.dot.gov/api/vehicles';
 
 export interface VinEngine {
@@ -125,6 +123,18 @@ function mapVinResponse(vin: string, r: Record<string, unknown>): VinDecodeResul
   };
 }
 
+const UPSTREAM_TIMEOUT_MS = 12_000;
+
+async function fetchVinValues(url: string): Promise<{ Results?: unknown[] } | null> {
+  const res = await fetch(url, {
+    headers: { Accept: 'application/json' },
+    signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+  });
+  // A failed upstream must not be cached as an empty decode.
+  if (!res.ok) throw new Error(`vPIC answered ${res.status}`);
+  return (await res.json()) as { Results?: unknown[] } | null;
+}
+
 /**
  * Decode a VIN against NHTSA's free vPIC database (no key required).
  * Returns curated fields incl. engine horsepower when NHTSA has it.
@@ -143,10 +153,9 @@ export async function decodeVin(vinRaw: string, modelYear?: number): Promise<Vin
     modelYear ? `&modelyear=${modelYear}` : ''
   }`;
 
-  const request = axios
-    .get(url, { timeout: 12_000 })
-    .then((response) => {
-      const raw = (response.data?.Results || [])[0] || {};
+  const request = fetchVinValues(url)
+    .then((body) => {
+      const raw = (body?.Results || [])[0] || {};
       const result = mapVinResponse(vin, raw as Record<string, unknown>);
       cacheSet(cacheKey, result);
       return result;

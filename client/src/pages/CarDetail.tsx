@@ -1,7 +1,7 @@
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 import * as api from '../services/api';
+import { isHttpError } from '../services/http';
 import type { CarDashboard, CarSpecs } from '../types/car.types';
 import {
   displayListingSubtitle,
@@ -210,7 +210,7 @@ export default function CarDetail() {
       .getCarDashboard(id, region)
       .then(setDashboard)
       .catch((err) => {
-        if (axios.isAxiosError(err) && err.response?.status === 404) {
+        if (isHttpError(err) && err.status === 404) {
           setError('not-found');
         } else {
           setError('load-failed');

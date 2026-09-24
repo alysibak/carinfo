@@ -36,6 +36,14 @@ interface CarStore {
   loadModels: (make: string) => Promise<void>;
 }
 
+/**
+ * The search in flight. Live search fires as people type, and a broad query
+ * ("toy") can answer after a narrower one ("toyota") sent later; without this
+ * the stale response would overwrite the current one. Each search cancels its
+ * predecessor, and only the latest may write results.
+ */
+let latestSearch: AbortController | null = null;
+
 export const useCarStore = create<CarStore>()(
   persist(
     (set, get) => ({
@@ -62,13 +70,21 @@ export const useCarStore = create<CarStore>()(
       },
 
       performSearch: async () => {
+        latestSearch?.abort();
+        const request = new AbortController();
+        latestSearch = request;
         set({ isSearching: true, searchError: null });
         try {
-          const results = await api.searchCars(get().searchQuery);
+          const results = await api.searchCars(get().searchQuery, { signal: request.signal });
+          if (latestSearch !== request) return;
           set({ searchResults: results, isSearching: false, searchError: null });
         } catch (error) {
+          // Superseded: the newer search owns the loading and error state.
+          if (latestSearch !== request) return;
           console.error('Search failed:', error);
           set({ isSearching: false, searchError: 'Search failed. Please try again.' });
+        } finally {
+          if (latestSearch === request) latestSearch = null;
         }
       },
 

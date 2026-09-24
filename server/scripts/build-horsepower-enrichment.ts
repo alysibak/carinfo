@@ -30,13 +30,13 @@
  *   tsx scripts/build-horsepower-enrichment.ts --refresh   # ignore cached downloads
  */
 
-import axios from 'axios';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import ExcelJS from 'exceljs';
 import { parse as parseCsv } from 'csv-parse/sync';
 import type { Car } from '../src/types/car.types.js';
+import { fetchBuffer, fetchText } from './lib/fetch.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = resolve(__dirname, '..', 'data');
@@ -104,8 +104,7 @@ function extractYear(value: unknown): number {
 async function discoverFileUrls(): Promise<Map<number, string[]>> {
   const map = new Map<number, string[]>();
   try {
-    const res = await axios.get<string>(INDEX_URL, { responseType: 'text', timeout: 30000 });
-    const html = res.data;
+    const html = await fetchText(INDEX_URL, 30_000);
     // Filenames start with the 2-digit model year, then "tstcar"/"testcar", e.g.
     //   .../2026-01/26-testcar-2026-01-21.xlsx   .../2016-07/16tstcar.csv
     const re =
@@ -128,8 +127,7 @@ async function discoverFileUrls(): Promise<Map<number, string[]>> {
 }
 
 async function downloadFile(url: string, dest: string): Promise<void> {
-  const res = await axios.get(url, { responseType: 'arraybuffer', timeout: 60000 });
-  writeFileSync(dest, Buffer.from(res.data));
+  writeFileSync(dest, await fetchBuffer(url, 60_000));
 }
 
 /** Ensure files for [fromYear, toYear] are present locally; return their paths. */

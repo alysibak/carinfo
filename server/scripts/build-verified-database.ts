@@ -5,7 +5,6 @@
  *   tsx scripts/build-verified-database.ts [--skip-nhtsa] [--nhtsa-from=2011] [--limit=N]
  */
 
-import axios from 'axios';
 import { createReadStream, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -21,6 +20,8 @@ import type {
 import { estimatePriceMsrp } from '../src/utils/ownership-economics.js';
 import { canonicalizeDisplayModel, resolveNhtsaSafety } from '../src/utils/vehicle-taxonomy.js';
 import { ensureUniqueIds } from '../src/utils/unique-ids.js';
+import { fetchBuffer } from './lib/fetch.js';
+import { fetchNhtsaSafety } from './lib/nhtsa-safety.js';
 
 const EPA_CSV_URL = 'https://fueleconomy.gov/feg/epadata/vehicles.csv';
 const EPA_ZIP_URL = 'https://fueleconomy.gov/feg/epadata/vehicles.csv.zip';
@@ -243,21 +244,22 @@ function completenessScore(car: Car): number {
   return score;
 }
 
+/** The full EPA file is tens of megabytes; allow a slow link, not a hung one. */
+const DOWNLOAD_TIMEOUT_MS = 5 * 60_000;
+
 async function ensureEpaCsv(): Promise<void> {
   mkdirSync(RAW_DIR, { recursive: true });
   if (existsSync(CSV_PATH)) return;
 
   console.log('Downloading EPA vehicles.csv...');
   try {
-    const response = await axios.get(EPA_CSV_URL, { responseType: 'arraybuffer' });
-    writeFileSync(CSV_PATH, Buffer.from(response.data));
+    writeFileSync(CSV_PATH, await fetchBuffer(EPA_CSV_URL, DOWNLOAD_TIMEOUT_MS));
     return;
   } catch {
     console.log('Direct CSV unavailable, trying zip...');
   }
 
-  const zipResponse = await axios.get(EPA_ZIP_URL, { responseType: 'arraybuffer' });
-  writeFileSync(ZIP_PATH, Buffer.from(zipResponse.data));
+  writeFileSync(ZIP_PATH, await fetchBuffer(EPA_ZIP_URL, DOWNLOAD_TIMEOUT_MS));
 
   const { execSync } = await import('child_process');
   const isWin = process.platform === 'win32';
@@ -450,40 +452,6 @@ function loadNhtsaCache(): NhtsaCache {
 
 function saveNhtsaCache(cache: NhtsaCache): void {
   writeFileSync(NHTSA_CACHE_PATH, JSON.stringify(cache, null, 2));
-}
-
-function parseStar(value: string | undefined): number | undefined {
-  if (!value || value === 'Not Rated' || value === 'N/A') return undefined;
-  const n = parseInt(value, 10);
-  return Number.isNaN(n) ? undefined : n;
-}
-
-async function fetchNhtsaSafety(make: string, model: string, year: number) {
-  const listRes = await axios.get(
-    `https://api.nhtsa.gov/SafetyRatings/modelyear/${year}/make/${encodeURIComponent(make)}/model/${encodeURIComponent(model)}`,
-    { timeout: 15000 },
-  );
-  const results = listRes.data?.Results;
-  if (!Array.isArray(results) || results.length === 0) return undefined;
-
-  const vehicleId = results[0].VehicleId;
-  if (!vehicleId) return undefined;
-
-  const detailRes = await axios.get(`https://api.nhtsa.gov/SafetyRatings/VehicleId/${vehicleId}`, {
-    timeout: 15000,
-  });
-  const detail = detailRes.data?.Results?.[0];
-  if (!detail) return undefined;
-
-  const safety = {
-    overall: parseStar(detail.OverallRating),
-    frontal: parseStar(detail.OverallFrontCrashRating),
-    side: parseStar(detail.OverallSideCrashRating),
-    rollover: parseStar(detail.RolloverRating),
-  };
-
-  if (!safety.overall && !safety.frontal && !safety.side && !safety.rollover) return undefined;
-  return safety;
 }
 
 async function enrichWithNhtsa(cars: Car[]): Promise<void> {

@@ -60,24 +60,32 @@ export default function SearchBar({
     });
   }, []);
 
-  const loadSuggestions = useCallback(async (q: string) => {
+  const loadSuggestions = useCallback(async (q: string, signal: AbortSignal) => {
     setFetching(true);
     try {
-      const data = await api.getSearchSuggestions(q);
+      const data = await api.getSearchSuggestions(q, 8, { signal });
+      if (signal.aborted) return;
       setSuggestions(data);
       setActiveIndex(-1);
     } catch {
+      if (signal.aborted) return;
       setSuggestions([]);
     } finally {
-      setFetching(false);
+      if (!signal.aborted) setFetching(false);
     }
   }, []);
 
   useEffect(() => {
     if (!open) return;
     updateListPosition();
-    const timer = setTimeout(() => loadSuggestions(value), value ? 120 : 0);
-    return () => clearTimeout(timer);
+    // Each keystroke cancels the previous lookup, so a slow answer for "ca"
+    // can never replace the suggestions for "camry".
+    const request = new AbortController();
+    const timer = setTimeout(() => loadSuggestions(value, request.signal), value ? 120 : 0);
+    return () => {
+      clearTimeout(timer);
+      request.abort();
+    };
   }, [value, open, loadSuggestions, updateListPosition]);
 
   useEffect(() => {
@@ -192,10 +200,9 @@ export default function SearchBar({
           onChange(e.target.value);
           setOpen(true);
         }}
-        onFocus={() => {
-          setOpen(true);
-          if (suggestions.length === 0) loadSuggestions(value);
-        }}
+        // Opening runs the suggestions effect; fetching here too sent every
+        // focus's request twice.
+        onFocus={() => setOpen(true)}
         onKeyDown={handleKeyDown}
       />
     </div>
