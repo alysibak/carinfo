@@ -36,6 +36,7 @@ import { fileURLToPath } from 'url';
 import ExcelJS from 'exceljs';
 import { parse as parseCsv } from 'csv-parse/sync';
 import type { Car } from '../src/types/car.types.js';
+import { isPlausibleRatedHorsepower } from '../src/utils/horsepower-plausibility.js';
 import { fetchBuffer, fetchText } from './lib/fetch.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -329,6 +330,9 @@ async function parseTestCarFile(path: string, idx: Indexes): Promise<number> {
     let displNum = ex.displ ? Number(row[ex.displ]) : NaN;
     if (ex.displIsCid && !Number.isNaN(displNum)) displNum *= CID_TO_LITRES;
     const displ = Number.isNaN(displNum) || displNum <= 0 ? '' : displNum.toFixed(1);
+    // Placeholder and mis-keyed ratings (999, 1, 11 hp from 2.0 L) exist in
+    // the source; drop them here rather than match them to a car.
+    if (!isPlausibleRatedHorsepower(hp, displ ? Number(displ) : undefined)) continue;
 
     const cylNum = ex.cyl ? parseInt(String(row[ex.cyl]), 10) : NaN;
     const cyl = Number.isNaN(cylNum) || cylNum <= 0 ? '' : String(cylNum);

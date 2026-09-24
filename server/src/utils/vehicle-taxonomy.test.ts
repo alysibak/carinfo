@@ -4,8 +4,9 @@ import {
   canonicalizeDisplayModel,
   classifyShoppingSegment,
   inferBodyStyle,
+  resolveVehicleTaxonomy,
 } from '../utils/vehicle-taxonomy.js';
-import { findCar } from '../__tests__/helpers/loadCars.js';
+import { findCar, findEnrichedCar } from '../__tests__/helpers/loadCars.js';
 
 function minimalCar(overrides: Partial<Car> & Pick<CarSpecs, 'make' | 'model'>): Car {
   return {
@@ -66,5 +67,54 @@ describe('vehicle-taxonomy', () => {
       bodyStyle: 'sedan',
     });
     expect(canonicalizeDisplayModel(base)).toBe('Golf');
+  });
+});
+
+describe('shopping segments', () => {
+  const segmentOf = (predicate: (c: Car) => boolean, label: string) => {
+    const car = findEnrichedCar(predicate);
+    expect(car, `${label} should exist in the corpus`).toBeDefined();
+    return resolveVehicleTaxonomy(car!).shoppingSegment;
+  };
+  const named = (make: string, model: string, year: number) => (c: Car) =>
+    c.make === make && c.model === model && c.year === year;
+
+  it.each([
+    ['Rolls-Royce', 'Phantom', 2021],
+    ['Bentley', 'Continental GT', 2020],
+    ['Lexus', 'LS 500', 2022],
+    ['BMW', '740i', 2015],
+    ['Lincoln', 'Town Car', 2008],
+  ])('puts the %s %s (%i) in luxury, not sport sedan or muscle', (make, model, year) => {
+    // Regression: the horsepower rule for sport sedans ran first and claimed
+    // them ("Sport Sedan · Enthusiast" on a Phantom); luxury held 14 cars.
+    expect(segmentOf(named(make, model, year), `${year} ${make} ${model}`)).toBe('luxury');
+  });
+
+  it.each([
+    ['Audi', 'S8', 2021],
+    ['BMW', 'M3', 1997],
+    ['Audi', 'RS 7', 2023],
+  ])('recognizes the %s %s (%i) as a sport sedan by its badge', (make, model, year) => {
+    // Without a horsepower figure (the S8's was a "999 hp" placeholder, now
+    // dropped) these fell to "mainstream".
+    expect(segmentOf(named(make, model, year), `${year} ${make} ${model}`)).toBe('sport-sedan');
+  });
+
+  it('keeps performance flagships sporty and SUVs utility', () => {
+    expect(
+      segmentOf((c) => c.make === 'Mercedes-Benz' && /^S63 AMG/.test(c.model), 'S63 AMG'),
+    ).toBe('sport-sedan');
+    expect(
+      segmentOf(
+        (c) => c.make === 'Rolls-Royce' && c.model === 'Cullinan' && c.bodyStyle === 'suv',
+        'Cullinan SUV',
+      ),
+    ).toBe('utility');
+  });
+
+  it('leaves badge-named coupes to the sports-car / muscle split', () => {
+    const seg = segmentOf(named('BMW', 'M4 Coupe', 2019), '2019 BMW M4 Coupe');
+    expect(['sports-car', 'muscle']).toContain(seg);
   });
 });

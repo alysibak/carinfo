@@ -16,6 +16,7 @@ import { readFileSync } from 'fs';
 import { resolveDataFile } from '../src/utils/data-paths.js';
 import type { Car } from '../src/types/car.types.js';
 import { unpackRuntimeDatabase } from '../src/services/runtime-db.js';
+import { isPlausibleRatedHorsepower } from '../src/utils/horsepower-plausibility.js';
 
 const BODY_STYLES = new Set([
   'sedan',
@@ -163,6 +164,9 @@ for (const car of cars) {
   const hp = car.engine?.horsepower;
   if (hp != null && (!isFiniteNumber(hp) || hp <= 0 || hp > 2000)) {
     fail('horsepower', car, `engine.horsepower = ${hp}`);
+  } else if (hp != null && !isPlausibleRatedHorsepower(hp, disp)) {
+    // Placeholders from EPA's Test Car List ("999 hp", "1 hp") once reached the page.
+    fail('horsepower-plausible', car, `${hp} hp from ${disp ?? '?'} L is not a real rating`);
   }
 
   // Provenance is the product: every record must say where its values came from.

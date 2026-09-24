@@ -7,6 +7,7 @@ import {
   resolveNhtsaCountry,
   resolveNhtsaSafety,
 } from '../utils/vehicle-taxonomy.js';
+import { isPlausibleRatedHorsepower } from '../utils/horsepower-plausibility.js';
 
 /**
  * Load-time enrichment from offline companion files (no network calls):
@@ -157,7 +158,11 @@ export function enrichCar(car: Car): Car {
 
   // EPA Test Car List "Rated Horsepower" — a separate EPA dataset from FuelEconomy.gov.
   // Provenance 'curated' keeps the FuelEconomy.gov "EPA" badge off this field (see ProvenanceChip).
-  if (hp != null && car.engine.horsepower == null) {
+  if (
+    hp != null &&
+    car.engine.horsepower == null &&
+    isPlausibleRatedHorsepower(hp, car.engine.displacement)
+  ) {
     next.engine = { ...next.engine, horsepower: hp };
     next.provenance = { ...next.provenance, 'engine.horsepower': 'curated' };
   }

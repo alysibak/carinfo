@@ -76,6 +76,43 @@ const HOT_HATCH_PATTERN =
 const SPORT_SEDAN_PATTERN =
   /\b(wrx|sti|si\b|civic si|accord sport|camry trd|altima sr|model 3 performance|340i|m340|amg|c63|s4|s5|rs3|giulia)\b/i;
 
+/**
+ * Factory performance badges: Audi S / RS / TT RS, BMW M. These identify a
+ * performance car on their own. Relying on a horsepower figure instead let a
+ * placeholder rating decide: the 2020-22 Audi S8 was a sport sedan only by
+ * virtue of a bogus "999 hp", and dropping that figure made it "mainstream".
+ */
+const PERFORMANCE_BADGE_PATTERN = /\b(s[3-8]|rs ?[3-7]|tt ?rs|tts|m[2-8])\b/i;
+
+/** Marques where every car is a luxury car. */
+const LUXURY_MARQUES = new Set(['Rolls-Royce', 'Bentley', 'Maybach', 'Mercedes-Maybach']);
+
+/**
+ * Flagship luxury nameplates, by make. These make 250+ hp, so the horsepower
+ * rule for sport sedans used to claim them first: a Rolls-Royce Phantom or a
+ * Lexus LS was a "Sport Sedan" tagged "Enthusiast", older ones fell to
+ * "mainstream" (the luxury rule keys off the estimated value), and the luxury
+ * segment held 14 cars in the entire corpus.
+ */
+const LUXURY_FLAGSHIPS: Record<string, RegExp> = {
+  'Mercedes-Benz': /^(s ?\d{3}|s-class|maybach)/i,
+  BMW: /^(7\d\d|alpina b7)/i,
+  Audi: /^a8\b/i,
+  Lexus: /^ls\b/i,
+  Jaguar: /^(xj|vanden plas)/i,
+  Genesis: /^g90\b/i,
+  Hyundai: /^equus\b/i,
+  Cadillac: /^(ct6|xts|dts|deville)\b/i,
+  Lincoln: /^(continental|town car)\b/i,
+  Maserati: /^quattroporte\b/i,
+  Volkswagen: /^phaeton\b/i,
+};
+
+function isLuxuryFlagship(car: CarSpecs, displayModel: string): boolean {
+  if (LUXURY_MARQUES.has(car.make)) return true;
+  return LUXURY_FLAGSHIPS[car.make]?.test(displayModel) ?? false;
+}
+
 function categoryFromBody(body: BodyStyle): VehicleCategory {
   if (body === 'suv' || body === 'minivan') return 'suv';
   if (body === 'truck') return 'truck';
@@ -172,8 +209,16 @@ export function classifyShoppingSegment(
 
   if (HOT_HATCH_PATTERN.test(h) || (bodyStyle === 'hatchback' && hp >= 200 && disp >= 1.8))
     return 'hot-hatch';
-  if (SPORT_SEDAN_PATTERN.test(h) || (bodyStyle === 'sedan' && hp >= 250 && disp >= 2))
+  // Performance badges first (an S63 AMG or an Audi S8 is a sport sedan), then
+  // flagships (a Phantom is not), then the horsepower rule for everything else.
+  // Coupes and convertibles fall through to their own sports-car / muscle split.
+  if (
+    SPORT_SEDAN_PATTERN.test(h) ||
+    ((bodyStyle === 'sedan' || bodyStyle === 'wagon') && PERFORMANCE_BADGE_PATTERN.test(h))
+  )
     return 'sport-sedan';
+  if (isLuxuryFlagship(car, displayModel)) return 'luxury';
+  if (bodyStyle === 'sedan' && hp >= 250 && disp >= 2) return 'sport-sedan';
   if (bodyStyle === 'coupe' || bodyStyle === 'convertible') {
     if (hp >= 400 || disp >= 5) return 'muscle';
     return 'sports-car';
