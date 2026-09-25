@@ -1,0 +1,19 @@
+{
+  "name": "CarInfo",
+  "short_name": "CarInfo",
+  "description": "EPA-verified vehicle specs, NHTSA safety, and clearly labeled Canadian cost estimates.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0c0c0e",
+  "theme_color": "#0c0c0e",
+  "icons": [
+    { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512" },
+    {
+      "src": "/icon-maskable-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ]
+}
