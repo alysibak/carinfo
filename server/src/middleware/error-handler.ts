@@ -23,11 +23,16 @@ export const notFound = (message = 'Not found') => new HttpError(404, message);
 export const serviceUnavailable = (message: string, code?: string) =>
   new HttpError(503, message, { code });
 
+/** Longest request path echoed back in a 404, so a huge URL is not reflected whole. */
+const MAX_ECHOED_PATH = 200;
+
 /** JSON 404 for unmatched /api routes, so the SPA fallback never swallows them. */
 export function notFoundHandler(req: Request, res: Response): void {
+  const path =
+    req.path.length > MAX_ECHOED_PATH ? `${req.path.slice(0, MAX_ECHOED_PATH)}…` : req.path;
   res.status(404).json({
     success: false,
-    error: `No API route matches ${req.method} ${req.path}`,
+    error: `No API route matches ${req.method} ${path}`,
     requestId: req.requestId,
   });
 }
@@ -59,6 +64,17 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
       error: err.message,
       ...(err.code ? { code: err.code } : {}),
       ...(err.details !== undefined ? { details: err.details } : {}),
+      requestId: req.requestId,
+    });
+    return;
+  }
+
+  // Express marks a URL it cannot decode (a stray "%" in a route parameter)
+  // as a URIError with status 400. It is the client's mistake, not a crash.
+  if (err instanceof URIError && (err as URIError & { status?: unknown }).status === 400) {
+    res.status(400).json({
+      success: false,
+      error: 'The request URL has a malformed percent-encoding.',
       requestId: req.requestId,
     });
     return;

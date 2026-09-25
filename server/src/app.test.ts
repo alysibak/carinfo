@@ -50,6 +50,24 @@ describe('cross-cutting behavior', () => {
     expect(res.body).toMatchObject({ success: false, requestId: expect.any(String) });
   });
 
+  it('treats a malformed percent-escape in a path as a 400, not a crash', async () => {
+    for (const path of [
+      '/api/cars/%ZZ',
+      '/api/cars/%ZZ/dashboard',
+      '/api/cars/makes/%E0%A4%A/models',
+    ]) {
+      const res = await request(app).get(path);
+      expect(res.status, path).toBe(400);
+      expect(res.body.error).toMatch(/malformed percent-encoding/);
+    }
+  });
+
+  it('does not echo an enormous unknown path back whole', async () => {
+    const res = await request(app).get(`/api/${'a'.repeat(5000)}`);
+    expect(res.status).toBe(404);
+    expect(res.body.error.length).toBeLessThan(260);
+  });
+
   it('rejects malformed JSON with a 400 and a readable message', async () => {
     const res = await request(app)
       .post('/api/cars/search')
