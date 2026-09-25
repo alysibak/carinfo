@@ -272,3 +272,15 @@ export function removeActiveFilterChip(filters: CarFilter, chipKey: string): Car
 
   return next;
 }
+
+/** Tokens the search API reads as model years: 2019, 199 (the 1990s), 19 and 20. */
+const YEAR_TOKEN = /^(19|20)\d{0,2}$/;
+
+/** The typed query without its year tokens: "1985 corvette" → "corvette". */
+export function withoutYearTokens(text: string): string {
+  return text
+    .trim()
+    .split(/\s+/)
+    .filter((token) => !YEAR_TOKEN.test(token))
+    .join(' ');
+}

@@ -5,6 +5,7 @@ import {
   describeActiveFilters,
   paramsToSearchQuery,
   searchQueryToParams,
+  withoutYearTokens,
 } from './searchParams';
 import type { CarFilter } from '../types/car.types';
 
@@ -76,5 +77,20 @@ describe('removeActiveFilterChip', () => {
   it('describeActiveFilters includes horsepower chips', () => {
     const chips = describeActiveFilters({ horsepower: { min: 300 } });
     expect(chips.some((c) => c.key === 'hp' && c.label.includes('300'))).toBe(true);
+  });
+});
+
+describe('withoutYearTokens', () => {
+  it('drops the tokens the API reads as years', () => {
+    expect(withoutYearTokens('1985 corvette')).toBe('corvette');
+    expect(withoutYearTokens('  corvette 198  ')).toBe('corvette');
+    expect(withoutYearTokens('20 honda civic')).toBe('honda civic');
+    expect(withoutYearTokens('1985')).toBe('');
+  });
+
+  it('keeps model names that merely contain digits', () => {
+    expect(withoutYearTokens('chrysler 300')).toBe('chrysler 300');
+    expect(withoutYearTokens('bmw 330i 2010')).toBe('bmw 330i');
+    expect(withoutYearTokens('mazda3')).toBe('mazda3');
   });
 });

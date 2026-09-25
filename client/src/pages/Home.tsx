@@ -14,6 +14,7 @@ import {
   paramsToSearchQuery,
   removeActiveFilterChip,
   searchQueryToParams,
+  withoutYearTokens,
 } from '../utils/searchParams';
 import { isElectricOnlyBrowse } from '../utils/filterState';
 import { LIFESTYLE_PRESETS, POPULAR_SEARCHES } from '../config/browseTaxonomy';
@@ -172,6 +173,17 @@ export default function Home() {
     // The CSS reduced-motion rule cannot reach a scroll requested from script.
     const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+  };
+
+  // Only an empty result can carry this: the searched years are all off file.
+  const yearCoverage = searchResults?.total === 0 ? searchResults.yearCoverage : undefined;
+  const textWithoutYears = withoutYearTokens(searchText);
+
+  const searchEveryYear = () => {
+    const filters = { ...searchQuery.filters };
+    delete filters.year;
+    setSearchText(textWithoutYears);
+    pushSearch({ ...searchQuery, query: textWithoutYears, filters, offset: 0 });
   };
 
   const removeChip = (chipKey: string) => {
@@ -470,10 +482,23 @@ export default function Home() {
                         : 'No vehicles matched these filters.'}
                     </p>
                     <p className="text-sm text-zinc-400 mb-5">
-                      {searchText.trim()
-                        ? 'Try a different spelling, or clear filters if any are on.'
-                        : 'Try widening the year range or removing a filter.'}
+                      {yearCoverage
+                        ? `Model years ${yearCoverage.min}–${yearCoverage.max} are on file, and the year you asked for is outside that range.`
+                        : searchText.trim()
+                          ? 'Try a different spelling, or clear filters if any are on.'
+                          : 'Try widening the year range or removing a filter.'}
                     </p>
+                    {yearCoverage && (textWithoutYears || searchQuery.filters?.year) && (
+                      <button
+                        type="button"
+                        onClick={searchEveryYear}
+                        className="min-h-[44px] mr-6 text-xs tracking-widest text-zinc-200 hover:text-white underline underline-offset-4"
+                      >
+                        {textWithoutYears
+                          ? `Search “${textWithoutYears}” in every year`
+                          : 'Remove the year filter'}
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => {

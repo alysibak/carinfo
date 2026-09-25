@@ -182,6 +182,12 @@ export interface SearchResults {
   results: Car[];
   total: number;
   hasMore: boolean;
+  /**
+   * Set only on an empty result whose requested years (typed, like "1985
+   * corvette", or filtered) fall wholly outside the model years on file, so
+   * the UI can say so instead of suggesting a spelling problem.
+   */
+  yearCoverage?: { min: number; max: number };
 }
 
 export interface OwnershipAssumptions {

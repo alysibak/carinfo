@@ -219,4 +219,20 @@ describe('car.service natural language search', () => {
     expect(total).toBeGreaterThan(0);
     expect(results[0].make.toLowerCase()).toContain('land');
   });
+  it('says which model years are on file when a searched year is not', () => {
+    const typed = searchCars({ query: '1985 corvette', limit: 5 });
+    expect(typed.total).toBe(0);
+    expect(typed.yearCoverage).toEqual({ min: 1995, max: expect.any(Number) });
+    expect(typed.yearCoverage!.max).toBeGreaterThanOrEqual(2026);
+
+    const filtered = searchCars({ filters: { year: { min: 1980, max: 1990 } }, limit: 5 });
+    expect(filtered.yearCoverage?.min).toBe(1995);
+  });
+
+  it('adds no year note when the years are covered or the miss is something else', () => {
+    expect(searchCars({ query: '2019 civic', limit: 1 }).yearCoverage).toBeUndefined();
+    const misspelt = searchCars({ query: '2019 zzqxv', limit: 1 });
+    expect(misspelt.total).toBe(0);
+    expect(misspelt.yearCoverage).toBeUndefined();
+  });
 });

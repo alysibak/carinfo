@@ -351,11 +351,19 @@ export function searchCars(query: SearchQuery): SearchResults {
   const limit = Math.min(Math.max(enriched.limit || 50, 1), 500);
   const offset = Math.max(enriched.offset || 0, 0);
 
-  return {
+  const results: SearchResults = {
     results: candidates.slice(offset, offset + limit),
     total,
     hasMore: offset + limit < total,
   };
+  if (total === 0) {
+    const covered = getStatistics().yearRange;
+    const wanted = enriched.filters?.year;
+    const before = wanted?.max != null && wanted.max < covered.min;
+    const after = wanted?.min != null && wanted.min > covered.max;
+    if (before || after) results.yearCoverage = { min: covered.min, max: covered.max };
+  }
+  return results;
 }
 
 /**
