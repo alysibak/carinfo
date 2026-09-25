@@ -1,7 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 
 /**
- * Automated WCAG 2.1 A/AA checks with axe-core, at desktop and phone widths.
+ * Automated WCAG 2.2 A/AA checks with axe-core, at desktop and phone widths
+ * (2.2 adds the 24px minimum touch-target size, which matters on phones).
  *
  * Every page passes today. Before this suite existed, an audit found 210+
  * violations: body-text contrast below 4.5:1 site-wide (the "est." labels were
@@ -15,7 +16,7 @@ import { expect, test, type Page } from '@playwright/test';
 // Specs compile to CommonJS here, so require.resolve is available directly.
 const AXE_PATH = require.resolve('axe-core/axe.min.js');
 
-const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
+const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
 interface AxeViolation {
   id: string;
