@@ -33,8 +33,10 @@ export default function Home() {
   const { searchResults, searchQuery, setSearchQuery, performSearch, isSearching, searchError } =
     useCarStore();
 
-  const [searchText, setSearchText] = useState('');
-  const [hasSearched, setHasSearched] = useState(false);
+  // Seeded from the URL so a shared search renders its filter row on the first
+  // paint instead of one effect later, which shifted the results down.
+  const [searchText, setSearchText] = useState(() => searchParams.get('q') ?? '');
+  const [hasSearched, setHasSearched] = useState(() => hasActiveSearch(searchParams));
   const [filtersOpen, setFiltersOpen] = useState(false);
   const pageSize = getDefaultPageSize();
 
@@ -195,7 +197,7 @@ export default function Home() {
   return (
     <PageShell className="pb-12">
       <div className="sticky top-[var(--header-height)] z-20 bg-black/90 border-b border-zinc-900 backdrop-blur-md">
-        <div className="page-wrap py-3 sm:py-4 space-y-2.5">
+        <div className="page-wrap py-3 sm:py-4 space-y-2.5 relative">
           <SearchBar
             value={searchText}
             onChange={setSearchText}
@@ -205,9 +207,15 @@ export default function Home() {
             showButton={false}
             placeholder="Keep typing — typos are OK (e.g. toyata camry)"
           />
-          {isSearching && searchText.trim().length >= 2 && (
-            <p className="text-[10px] uppercase tracking-wider text-zinc-600">Updating results…</p>
-          )}
+          {/* Overlaid rather than inserted: mounting this line pushed the whole
+              results list down on every keystroke. Always present so screen
+              readers hear the status change. */}
+          <p
+            role="status"
+            className="absolute right-4 sm:right-6 bottom-0.5 text-[10px] uppercase tracking-wider text-zinc-600 pointer-events-none"
+          >
+            {isSearching && searchText.trim().length >= 2 ? 'Updating results…' : ''}
+          </p>
 
           {(activeFilterChips.length > 0 || searchQuery.collapseByModel) && (
             <div className="flex flex-wrap gap-2 items-center">

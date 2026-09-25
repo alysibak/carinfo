@@ -22,7 +22,14 @@ export default function Layout() {
       </a>
       <SiteHeader />
 
-      <main id="main-content" className="flex-1" tabIndex={-1}>
+      {/* At least one screen tall, so the footer starts below the fold. While a
+          page loads its data the footer used to sit on screen and then jump
+          down when content arrived: most of the dossier's layout shift. */}
+      <main
+        id="main-content"
+        className="flex-1 min-h-[calc(100svh-var(--header-height))]"
+        tabIndex={-1}
+      >
         <Outlet />
       </main>
 

@@ -1,12 +1,12 @@
 import type { BodyStyle } from '../types/car.types';
-import sedanImg from '../assets/body-types/sedan.png';
-import suvImg from '../assets/body-types/suv.png';
-import truckImg from '../assets/body-types/truck.png';
-import coupeImg from '../assets/body-types/coupe.png';
-import hatchbackImg from '../assets/body-types/hatchback.png';
-import wagonImg from '../assets/body-types/wagon.png';
-import minivanImg from '../assets/body-types/minivan.png';
-import vanImg from '../assets/body-types/van.png';
+import sedanImg from '../assets/body-types/sedan.webp';
+import suvImg from '../assets/body-types/suv.webp';
+import truckImg from '../assets/body-types/truck.webp';
+import coupeImg from '../assets/body-types/coupe.webp';
+import hatchbackImg from '../assets/body-types/hatchback.webp';
+import wagonImg from '../assets/body-types/wagon.webp';
+import minivanImg from '../assets/body-types/minivan.webp';
+import vanImg from '../assets/body-types/van.webp';
 
 /** Cropped silhouettes for each browse body type. */
 export const BODY_TYPE_IMAGES: Partial<Record<BodyStyle, string>> = {

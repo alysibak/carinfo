@@ -1140,7 +1140,12 @@ renamed chunk (`utils/staleBuildRecovery.ts`).
 
 ### Product and platform
 
-- [ ] Model-year landing pages (`config/modelYearSlug.ts` exists but is unwired)
+- [ ] Model-year landing pages. `config/modelYearSlug.ts` is built and tested but unwired, and
+      should stay that way until models are grouped into families: EPA names are so granular
+      ("Civic 4Dr", "Civic 5Dr") that it yields 17,409 pages for 28,276 cars, a median of one
+      configuration per page, and 9,818 pages that would duplicate a single dossier. Group by
+      model family first (without merging, say, Mustang Mach-E into Mustang), then publish only
+      pages with several configurations.
 - [ ] `script-src` CSP with the deployment's Clerk host
 - [ ] Shared rate-limit store if abuse appears on serverless
 
