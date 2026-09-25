@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ChartDensityCell, ChartDensityResult } from '../services/api';
 import { DISPLAY_CURRENCY } from '../utils/currency';
 
@@ -29,6 +29,20 @@ function formatY(v: number, metric: ChartDensityResult['metric']): string {
   return `${Math.round(v)}`;
 }
 
+function metricUnit(metric: ChartDensityResult['metric']): string {
+  if (metric === 'mpg') return ' MPG';
+  if (metric === 'co2') return ' g/mi';
+  return '';
+}
+
+/** "$20k–$30k · 25–30 MPG" */
+function describeCell(cell: ChartDensityCell, metric: ChartDensityResult['metric']): string {
+  return `${formatPrice(cell.priceMin)}–${formatPrice(cell.priceMax)} · ${formatY(cell.yMin, metric)}–${formatY(cell.yMax, metric)}${metricUnit(metric)}`;
+}
+
+/** How many of the densest cells to offer as buttons under the chart. */
+const BUSIEST_CELLS = 6;
+
 export default function ValueMatrixHeatmap({
   density,
   height,
@@ -39,6 +53,19 @@ export default function ValueMatrixHeatmap({
   const containerRef = useRef<HTMLDivElement>(null);
   const [hovered, setHovered] = useState<ChartDensityCell | null>(null);
   const [width, setWidth] = useState(640);
+
+  // The canvas is mouse-only, and hover never happens on a phone. The busiest
+  // cells, as buttons, give keyboard, screen-reader and touch users the same
+  // zoom, and tell everyone where the market is thickest.
+  const busiest = useMemo(
+    () => [...density.cells].sort((a, b) => b.count - a.count).slice(0, BUSIEST_CELLS),
+    [density.cells],
+  );
+  const summary =
+    `Heat map of ${density.total.toLocaleString()} vehicles by estimated value and ${yLabel}.` +
+    (busiest[0]
+      ? ` Busiest area: ${describeCell(busiest[0], density.metric)}, ${busiest[0].count.toLocaleString()} vehicles.`
+      : '');
 
   useEffect(() => {
     const el = containerRef.current;
@@ -193,6 +220,8 @@ export default function ValueMatrixHeatmap({
     <div ref={containerRef} className="relative w-full">
       <canvas
         ref={canvasRef}
+        role="img"
+        aria-label={summary}
         className="w-full cursor-crosshair"
         onMouseMove={(e) => setHovered(hitTest(e.clientX, e.clientY))}
         onMouseLeave={() => setHovered(null)}
@@ -204,11 +233,7 @@ export default function ValueMatrixHeatmap({
       {hovered && (
         <div className="absolute top-3 right-3 bg-zinc-950 border border-zinc-600 px-3 py-2 text-xs pointer-events-none">
           <p className="text-white font-semibold">{hovered.count.toLocaleString()} vehicles</p>
-          <p className="text-zinc-400 mt-1">
-            {formatPrice(hovered.priceMin)}–{formatPrice(hovered.priceMax)} ·{' '}
-            {formatY(hovered.yMin, density.metric)}–{formatY(hovered.yMax, density.metric)}{' '}
-            {density.metric === 'mpg' ? 'MPG' : density.metric === 'co2' ? 'g/mi' : ''}
-          </p>
+          <p className="text-zinc-400 mt-1">{describeCell(hovered, density.metric)}</p>
           <p className="text-zinc-500 mt-1 capitalize">Mostly {hovered.dominantBodyStyle}</p>
           <p className="text-zinc-500 mt-1">Click to zoom in</p>
         </div>
@@ -226,6 +251,29 @@ export default function ValueMatrixHeatmap({
         </div>
         <span>High density</span>
       </div>
+      {busiest.length > 0 && (
+        <div className="mt-4">
+          <p className="text-[10px] tracking-[0.2em] uppercase text-zinc-500 mb-2">
+            Busiest areas · select to zoom in
+          </p>
+          <ul className="grid gap-1 sm:grid-cols-2">
+            {busiest.map((cell) => (
+              <li key={`${cell.priceMin}:${cell.yMin}`}>
+                <button
+                  type="button"
+                  onClick={() => onCellSelect(cell)}
+                  className="w-full min-h-[44px] flex items-center justify-between gap-3 px-3 py-2 border border-zinc-800 hover:border-zinc-500 text-left text-xs transition-colors"
+                >
+                  <span className="text-zinc-200">{describeCell(cell, density.metric)}</span>
+                  <span className="text-zinc-400 shrink-0 tabular-nums">
+                    {cell.count.toLocaleString()} · mostly {cell.dominantBodyStyle}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
