@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { Car } from '../types/car.types.js';
 import { getAllCars } from '../services/car.service.js';
+import { getRegionalAssumptions } from '../config/regional-assumptions.js';
 import { computeOwnershipEconomics } from './ownership-economics.js';
-import { applyValuationReliabilityGuard } from './vehicle-valuation.js';
+import { applyValuationReliabilityGuard, estimateNewVehicleMsrp } from './vehicle-valuation.js';
 
 // Price the corpus exactly as the API serves it (car.service loads the prebuilt
 // cars-ready.json when present), once for the whole file.
@@ -81,5 +82,47 @@ describe('applyValuationReliabilityGuard', () => {
     expect(r.estimatedLoss5Year.high).toBe(r.currentValue.mid - r.projectedResale5Year.low);
     expect(r.estimatedLoss5Year.low).toBeLessThanOrEqual(r.estimatedLoss5Year.mid);
     expect(r.estimatedLoss5Year.mid).toBeLessThanOrEqual(r.estimatedLoss5Year.high);
+  });
+});
+
+describe('regions', () => {
+  const sample = (): Car[] => {
+    const cars = getAllCars();
+    const pick = (make: string, model: RegExp) =>
+      cars.find((c) => c.make === make && model.test(c.model));
+    return [
+      pick('Honda', /^Civic/),
+      pick('Toyota', /^Mirai/), // hydrogen: its own practicality note
+      pick('Porsche', /^911/),
+      cars.find((c) => c.year <= 2002), // beater tier
+    ].filter((c): c is Car => c !== undefined);
+  };
+
+  it('never describes a British Columbia estimate as Ontario', () => {
+    // The dossier used to value B.C. cars with Ontario's sticker-price ratio
+    // and label them "Ontario-baseline".
+    expect(sample().length).toBeGreaterThanOrEqual(3);
+    for (const car of sample()) {
+      const text = JSON.stringify(computeOwnershipEconomics(car, [], 'british-columbia'));
+      expect(text, car.id).not.toMatch(/Ontario/);
+    }
+  });
+
+  it("prices each region's new-car anchor at its own sticker ratio", () => {
+    const car = sample()[0];
+    const on = getRegionalAssumptions('ontario');
+    const bc = getRegionalAssumptions('british-columbia');
+    const usd = estimateNewVehicleMsrp(car);
+    expect(computeOwnershipEconomics(car, [], 'ontario').marketValue.msrpAnchor).toBe(
+      Math.round(usd * on.vehiclePriceCadPerUsd),
+    );
+    expect(computeOwnershipEconomics(car, [], 'british-columbia').marketValue.msrpAnchor).toBe(
+      Math.round(usd * bc.vehiclePriceCadPerUsd),
+    );
+  });
+
+  it('charges no Ontario plate renewal fee', () => {
+    const [car] = sample();
+    expect(computeOwnershipEconomics(car, [], 'ontario').annualCost.registration).toBe(0);
   });
 });

@@ -147,8 +147,8 @@ function vehicleAge(car: CarSpecs): number {
   return Math.max(0, REFERENCE_YEAR - car.year);
 }
 
-function isBeaterTier(car: CarSpecs, marketMid: number): boolean {
-  return vehicleAge(car) >= 20 || marketMid < REGION.beaterValueThresholdCad;
+function isBeaterTier(car: CarSpecs, marketMid: number, region = REGION): boolean {
+  return vehicleAge(car) >= 20 || marketMid < region.beaterValueThresholdCad;
 }
 
 function insuranceAnnual(car: CarSpecs, marketMid: number, ins = REGION.insurance): number {
@@ -173,7 +173,8 @@ function insuranceAnnual(car: CarSpecs, marketMid: number, ins = REGION.insuranc
   return Math.round(base);
 }
 
-function maintenanceAnnual(car: CarSpecs, marketMid: number, maint = REGION.maintenance): number {
+function maintenanceAnnual(car: CarSpecs, marketMid: number, region = REGION): number {
+  const maint = region.maintenance;
   const age = vehicleAge(car);
   let base = maint.base;
   if (isHeavyEvTruck(car)) base = maint.heavyEvTruck;
@@ -188,7 +189,7 @@ function maintenanceAnnual(car: CarSpecs, marketMid: number, maint = REGION.main
     base += Math.min(age - 8, maint.ageIncrementCapYears) * maint.ageIncrementPerYear;
   }
 
-  if (isBeaterTier(car, marketMid)) {
+  if (isBeaterTier(car, marketMid, region)) {
     base = Math.min(base, Math.max(450, Math.round(marketMid * 0.12)));
   }
 
@@ -226,7 +227,7 @@ export function calculateAnnualCosts(
 ): AnnualCostBreakdown {
   const energy = energyAnnualCost(car, region);
   const insurance = insuranceAnnual(car, market.mid, region.insurance);
-  const maintenance = maintenanceAnnual(car, market.mid, region.maintenance);
+  const maintenance = maintenanceAnnual(car, market.mid, region);
   const tires = tiresAnnual(car, region.tires);
   const registration = region.registrationCadPerYear;
 
@@ -316,12 +317,13 @@ export function estimateTco5Year(
    * reliability guard has replaced the projection.
    */
   depreciation?: { low: number; mid: number; high: number },
+  region: RegionalAssumptions = REGION,
 ): TcoEstimate | null {
   if (annual.total == null && car.engine.fuelType === 'hydrogen') return null;
 
   const dep = depreciation ?? estimateDepreciation5Year(car, market);
   const operating5 = (annual.total ?? 0) * 5;
-  const beater = isBeaterTier(car, market.mid);
+  const beater = isBeaterTier(car, market.mid, region);
 
   if (beater) {
     return {
@@ -354,12 +356,12 @@ export function estimateTco5Year(
   };
 }
 
-function practicalityNote(car: CarSpecs, marketMid: number): string {
-  if (isBeaterTier(car, marketMid)) {
+function practicalityNote(car: CarSpecs, marketMid: number, region: RegionalAssumptions): string {
+  if (isBeaterTier(car, marketMid, region)) {
     return 'Very aged or low-value vehicle. Repair costs can spike unpredictably. Annual baseline understates tail-risk.';
   }
   if (car.engine.fuelType === 'hydrogen') {
-    return 'Hydrogen fueling is sparse outside a few regions. High fuel and resale uncertainty for Ontario.';
+    return `Hydrogen fueling is sparse outside a few regions. High fuel and resale uncertainty for ${region.label}.`;
   }
   if (isHeavyEvTruck(car)) {
     return 'Large EV truck. Plan for home charging, tire wear, and higher insurance.';
@@ -380,7 +382,7 @@ export function computeOwnershipEconomics(
 ): OwnershipEconomics {
   const region = getRegionalAssumptions(regionId);
   const annualMiles = annualKmToMiles(region.annualKm);
-  let market = estimateMarketValue(car);
+  let market = estimateMarketValue(car, region);
   const annualCost = calculateAnnualCosts(car, market, region);
   let resaleImpact = calculateResaleImpact(car, market);
   ({ market, resale: resaleImpact } = applyValuationReliabilityGuard(market, resaleImpact));
@@ -389,10 +391,17 @@ export function computeOwnershipEconomics(
     resaleImpact.estimatedLoss5Year.mid,
     car,
   );
-  const tco5Year = estimateTco5Year(car, market, annualCost, resaleImpact.estimatedLoss5Year);
+  const tco5Year = estimateTco5Year(
+    car,
+    market,
+    annualCost,
+    resaleImpact.estimatedLoss5Year,
+    region,
+  );
+  const beater = isBeaterTier(car, market.mid, region);
 
   const warnings: string[] = [];
-  if (isBeaterTier(car, market.mid)) {
+  if (beater) {
     warnings.push('Beater-tier vehicle: maintenance baseline may not capture sudden repair bills.');
   }
   if (car.engine.fuelType === 'hydrogen') {
@@ -428,7 +437,7 @@ export function computeOwnershipEconomics(
       annualKm: `~${region.annualKm.toLocaleString()} km / year`,
       annualMiles,
       energyPriceNote: formatOntarioEnergyAssumptionNote(region),
-      insuranceTier: isBeaterTier(car, market.mid)
+      insuranceTier: beater
         ? `Aged vehicle / liability-focused ${region.label} estimate`
         : isHeavyEvTruck(car)
           ? `Heavy EV / truck (${region.label} baseline)`
@@ -439,7 +448,7 @@ export function computeOwnershipEconomics(
       regionNote: formatOntarioRegionNote(region),
     },
     warnings,
-    practicalityNote: practicalityNote(car, market.mid),
+    practicalityNote: practicalityNote(car, market.mid, region),
   };
 }
 

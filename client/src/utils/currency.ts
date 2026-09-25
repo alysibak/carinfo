@@ -1,8 +1,10 @@
-/** Currency used by the ownership / valuation model (Ontario-baseline, CAD). */
+/** Currency used by the ownership / valuation model (every region is Canadian). */
 export const DISPLAY_CURRENCY = 'CAD';
 
-export const CURRENCY_SECTION_NOTE =
-  'All figures are Ontario-baseline model estimates in CAD. Actual quotes, condition, and local demand still vary.';
+export function currencySectionNote(regionName: string): string {
+  return `All figures are ${regionName}-baseline model estimates in CAD, not live listing quotes. Actual quotes, condition, and local demand still vary.`;
+}
 
-export const CURRENCY_METHODOLOGY_NOTE =
-  'Cost and value estimates are built for Ontario drivers in CAD, using EPA fuel-economy ratings with Ontario energy prices, insurance baselines, and a CAD-adjusted depreciation model.';
+export function currencyMethodologyNote(regionName: string): string {
+  return `Cost and value estimates are built for ${regionName} drivers in CAD, using EPA fuel-economy ratings with ${regionName} energy prices, insurance baselines, and a CAD-adjusted depreciation model.`;
+}

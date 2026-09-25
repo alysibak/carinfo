@@ -714,7 +714,7 @@ Group order: Powertrain → Vehicle → Market → Fuel → Safety → Performan
 
 **Files:** `ownership-economics.ts`, `vehicle-valuation.ts`, `regional-assumptions.ts`
 
-### Outputs (all CAD, Ontario baseline)
+### Outputs (all CAD; Ontario by default, B.C. selectable)
 
 - **Market value** — low/high/mid, confidence, condition bands, battery health (EV), retention tier
 - **Annual cost** — energy, insurance, maintenance, tires, registration, total range
@@ -725,6 +725,8 @@ Group order: Powertrain → Vehicle → Market → Fuel → Safety → Performan
 ### Regional assumptions include
 
 Insurance by body style + luxury multipliers · maintenance by fuel type + age · tire costs · registration · energy prices (gas, diesel, electricity, hydrogen note) · depreciation tiers A/B/C · CAD FX from USD EPA fuel costs
+
+Calibration sources are cited next to each figure in `regional-assumptions.ts`: Statistics Canada pump prices, FSRA (Ontario) and ICBC (B.C.) average premiums, and the AAA/CAA driving-cost studies for maintenance and tires. Ontario registration is $0 (plate renewal fees ended March 2022); B.C.'s licence-fee figure has not been re-checked against the weight-based fee regulation.
 
 ### Disabled
 

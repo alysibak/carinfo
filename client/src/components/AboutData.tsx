@@ -1,10 +1,13 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { useModalFocus } from '../hooks/useModalFocus';
+import { getRegionalAssumptions } from '@carinfo/config/regional-assumptions';
+import { useRegionStore } from '../stores/regionStore';
 
 const DISMISSED_KEY = 'carinfo-about-data-dismissed';
 
 export default function AboutData({ compact = false }: { compact?: boolean }) {
+  const region = getRegionalAssumptions(useRegionStore((s) => s.region));
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState(() => {
     try {
@@ -68,7 +71,7 @@ export default function AboutData({ compact = false }: { compact?: boolean }) {
               (~13% of vehicles on file). Horsepower from the EPA test-car list when matched (~71%).
               Market value and running costs are{' '}
               <strong className="text-zinc-200 font-medium">
-                Ontario-baseline estimates in CAD
+                {region.label}-baseline estimates in CAD
               </strong>
               , always labeled, never live listing prices.
             </p>
@@ -96,6 +99,7 @@ export default function AboutData({ compact = false }: { compact?: boolean }) {
 
 function AboutDataModal({ onClose }: { onClose: () => void }) {
   const containerRef = useModalFocus(true, onClose);
+  const region = getRegionalAssumptions(useRegionStore((s) => s.region));
 
   return (
     <div
@@ -130,10 +134,10 @@ function AboutDataModal({ onClose }: { onClose: () => void }) {
             test-car match exists.
           </p>
           <p>
-            <span className="text-white font-bold">Estimated (Ontario CAD)</span>: Market value uses
-            a depreciation model with USD MSRP anchors converted to CAD. Running costs use Ontario
-            gas, electricity, insurance, and registration baselines at ~15,000 km/yr. Every estimate
-            shows a confidence label.
+            <span className="text-white font-bold">Estimated ({region.label}, CAD)</span>: Market
+            value uses a depreciation model with USD MSRP anchors converted to CAD. Running costs
+            use {region.label} gas, electricity, insurance, and registration baselines at ~
+            {region.annualKm.toLocaleString()} km/yr. Every estimate shows a confidence label.
           </p>
           <p>
             <span className="text-white font-semibold">Not included</span>: Live dealer listing

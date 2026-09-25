@@ -74,13 +74,13 @@ export default function Methodology() {
 
         <section>
           <h2 className="text-xs font-black tracking-[0.25em] uppercase text-white mb-4">
-            Ontario / CAD valuation model
+            Canadian (CAD) valuation model
           </h2>
           <p className="text-sm text-zinc-400 leading-relaxed mb-4">
             Market value, running cost, resale, and TCO are{' '}
             <strong className="text-zinc-200 font-medium">always estimated</strong> in Canadian
-            dollars with an Ontario baseline (~15,000 km/yr). They are not live listing prices and
-            never presented as MSRP facts.
+            dollars for the region you pick: Ontario (~15,000 km/yr) or British Columbia (~14,000
+            km/yr). They are not live listing prices and never presented as MSRP facts.
           </p>
           <ul className="space-y-2 text-sm text-zinc-400 leading-relaxed list-disc list-inside marker:text-zinc-400">
             <li>
@@ -96,7 +96,13 @@ export default function Methodology() {
               Depreciation tiers by segment, age, fuel type, and retention class (A/B/C for EVs).
             </li>
             <li>
-              Insurance, maintenance, tires, and registration scaled by body style and fuel type.
+              Insurance starts from each province&rsquo;s average premium (FSRA in Ontario, ICBC in
+              B.C.), then scales with body style, luxury make, value and age. Your own quote depends
+              on your record and postal code far more than on the car.
+            </li>
+            <li>
+              Maintenance and tires follow AAA and CAA driving-cost studies, by fuel type and age.
+              Ontario charges no plate renewal fee (since 2022).
             </li>
             <li>
               Energy costs from your region&rsquo;s gas, diesel and home-electricity prices (recent

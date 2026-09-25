@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useModalFocus } from '../hooks/useModalFocus';
 import type { DerivedComparisonMetric, OwnershipAssumptions } from '../types/car.types';
 import { formatCostPerKm } from '../utils/dataValue';
-import { CURRENCY_METHODOLOGY_NOTE } from '../utils/currency';
+import { currencyMethodologyNote } from '../utils/currency';
+import { regionName, useRegionStore } from '../stores/regionStore';
 
 interface ValuationLinksProps {
   compact?: boolean;
@@ -24,16 +25,13 @@ export default function ValuationLinks({
   if (compact) {
     return (
       <>
-        <p className="text-xs text-zinc-400 leading-relaxed">
-          Market values are Ontario-baseline model estimates in CAD, not live listing quotes.{' '}
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            className="text-zinc-300 underline underline-offset-2 hover:text-white transition-colors"
-          >
-            How these estimates work
-          </button>
-        </p>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="inline-flex items-center min-h-6 self-start text-xs text-zinc-300 underline underline-offset-2 hover:text-white transition-colors"
+        >
+          How these estimates work
+        </button>
         {open && (
           <MethodologyModal
             onClose={() => setOpen(false)}
@@ -126,11 +124,12 @@ function MethodologyBody({
   warnings?: string[];
   practicalityNote?: string;
 }) {
+  const region = regionName(useRegionStore((s) => s.region));
   return (
     <div className="text-xs text-zinc-400 leading-relaxed space-y-4">
       <p>
-        {CURRENCY_METHODOLOGY_NOTE} Individual condition, mileage, and local demand still move real
-        prices. Check marketplaces when you are ready to buy or sell.
+        {currencyMethodologyNote(region)} Individual condition, mileage, and local demand still move
+        real prices. Check marketplaces when you are ready to buy or sell.
       </p>
       {practicalityNote && (
         <p className="text-zinc-400 border-l-2 border-zinc-800 pl-3">{practicalityNote}</p>

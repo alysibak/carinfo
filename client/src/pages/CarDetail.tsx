@@ -15,10 +15,10 @@ import {
   hasNumericValue,
   NHTSA_CHIP_UNAVAILABLE,
 } from '../utils/dataValue';
-import { CURRENCY_SECTION_NOTE } from '../utils/currency';
+import { currencySectionNote } from '../utils/currency';
 import { useCarStore } from '../stores/carStore';
 import { useGarageStore } from '../stores/garageStore';
-import { useRegionStore } from '../stores/regionStore';
+import { regionName, useRegionStore } from '../stores/regionStore';
 import TCOCalculator from '../components/TCOCalculator';
 import { StatusToast } from '../components/ui';
 import ValuationLinks from '../components/ValuationLinks';
@@ -650,7 +650,9 @@ export default function CarDetail() {
             <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2 mb-4">
               <div className="min-w-0">
                 <h2 className="text-base font-bold tracking-tight mb-1">Cost to keep</h2>
-                <p className="text-xs text-zinc-500 leading-relaxed">{CURRENCY_SECTION_NOTE}</p>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  {currencySectionNote(regionName(region))}
+                </p>
               </div>
               <ValuationLinks
                 compact
@@ -728,7 +730,11 @@ export default function CarDetail() {
                     />
                     <DataRow
                       label="Registration"
-                      value={formatCurrency(annualCost.registration, true)}
+                      value={
+                        annualCost.registration === 0
+                          ? 'No renewal fee'
+                          : formatCurrency(annualCost.registration, true)
+                      }
                       valueTier={2}
                       pairLayout
                     />

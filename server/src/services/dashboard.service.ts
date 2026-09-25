@@ -14,6 +14,8 @@ export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard |
   const car = carService.getCarById(id);
   if (!car) return null;
 
+  // Peers are ranked on their stored prices, which use the default region, so
+  // this car's price for ranking does too, whatever region the reader chose.
   const market = estimateMarketValue(car);
   const carForSegment = {
     ...car,

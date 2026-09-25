@@ -3,13 +3,12 @@ import SiteHeader from './SiteHeader';
 import CompareTray from './CompareTray';
 import VisitCounter from './VisitCounter';
 import { useCarStore } from '../stores/carStore';
-import { useRegionStore } from '../stores/regionStore';
+import { regionName, useRegionStore } from '../stores/regionStore';
 
 export default function Layout() {
   const location = useLocation();
   const compareCount = useCarStore((s) => s.comparedCars.length);
-  const region = useRegionStore((s) => s.region);
-  const regionLabel = region === 'british-columbia' ? 'British Columbia' : 'Ontario';
+  const regionLabel = regionName(useRegionStore((s) => s.region));
   const trayPad =
     compareCount > 0 && location.pathname !== '/compare'
       ? 'pb-[calc(4.25rem+env(safe-area-inset-bottom))]'

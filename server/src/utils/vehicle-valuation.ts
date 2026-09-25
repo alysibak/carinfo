@@ -1,5 +1,9 @@
 import type { CarSpecs, FuelType } from '../types/car.types.js';
-import { usdAnchorToCadValue } from '../config/regional-assumptions.js';
+import {
+  getRegionalAssumptions,
+  usdAnchorToCadValue,
+  type RegionalAssumptions,
+} from '../config/regional-assumptions.js';
 import { inferEffectiveFuelType } from './fuel-type-inference.js';
 
 const REFERENCE_YEAR = new Date().getFullYear();
@@ -639,8 +643,11 @@ function conditionMultiplier(bhf: number): { poor: number; average: number; exce
   };
 }
 
-export function estimateMarketValue(car: CarSpecs): MarketValueEstimate {
-  const msrpCad = Math.round(usdAnchorToCadValue(estimateNewVehicleMsrp(car)));
+export function estimateMarketValue(
+  car: CarSpecs,
+  region: RegionalAssumptions = getRegionalAssumptions(),
+): MarketValueEstimate {
+  const msrpCad = Math.round(usdAnchorToCadValue(estimateNewVehicleMsrp(car), region));
   const age = Math.max(0, REFERENCE_YEAR - car.year);
   const segment = classifyMarketSegment(car);
   const fuelType = effectiveFuelType(car);
@@ -681,7 +688,7 @@ export function estimateMarketValue(car: CarSpecs): MarketValueEstimate {
   if (mid > high) mid = roundMoney((low + high) / 2);
 
   let confidence: Confidence = 'medium';
-  let confidenceLabel = 'Ontario-baseline model estimate, not a live listing quote';
+  let confidenceLabel = `${region.label}-baseline model estimate, not a live listing quote`;
 
   const anchor = assessMsrpAnchor(car);
   if (anchor.confidence === 'low') {

@@ -17,7 +17,7 @@ import { usePageMeta } from '../utils/pageMeta';
 import { formatCompareIds, parseCompareIds } from '../utils/compareIds';
 import { differentiateCars } from '../utils/differentiateCars';
 import { DISPLAY_CURRENCY } from '../utils/currency';
-import { useRegionStore } from '../stores/regionStore';
+import { regionName, useRegionStore } from '../stores/regionStore';
 import { POPULAR_SEARCHES } from '../config/browseTaxonomy';
 
 function isUnavailable(value: string | number): boolean {
@@ -385,9 +385,8 @@ export default function Compare() {
           </div>
           {loadError && <p className="text-xs text-amber-300/90 mt-3">{loadError}</p>}
           <p className="text-[10px] text-zinc-500 mt-3 leading-relaxed">
-            Estimated values use your cost region (
-            {region === 'british-columbia' ? 'B.C.' : 'Ontario'}), CAD. EPA fuel $/yr is a US-dollar
-            reference from EPA tests.{' '}
+            Estimated values use your cost region ({regionName(region)}), CAD. EPA fuel $/yr is a
+            US-dollar reference from EPA tests.{' '}
             <Link to="/methodology" className="underline underline-offset-2 hover:text-zinc-300">
               Methodology
             </Link>
