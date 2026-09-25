@@ -15,7 +15,17 @@
       property="og:description"
       content="Specs-first car reference: EPA fuel economy, NHTSA safety when on file, Ontario/CAD valuation with stated confidence. No listing photos, no black-box pricing."
     />
-    <meta name="twitter:card" content="summary" />
+    <!-- Relative here; made absolute wherever the site origin is known (the
+         server-rendered pages, and dist/index.html at build time). -->
+    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="CarInfo: EPA fuel economy, NHTSA safety, and clearly labeled estimates"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="/og-image.png" />
     <meta name="twitter:title" content="CarInfo" />
     <meta
       name="twitter:description"

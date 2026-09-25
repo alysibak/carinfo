@@ -329,3 +329,61 @@ input[type='range'] {
     transition-duration: 0.01ms !important;
   }
 }
+
+/*
+ * Print. Browsers drop background colours when printing but keep text
+ * colours, so the dark theme printed its figures in near-white on white paper.
+ * Printed output is ink on paper: black text, light rules, no chrome.
+ */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  html,
+  body,
+  #root {
+    background: #fff !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    color: #000 !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border-color: #bbb !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Site chrome and controls mean nothing on paper. */
+  header,
+  footer,
+  nav,
+  button,
+  select,
+  .skip-link,
+  [role='status'],
+  [role='img'] {
+    display: none !important;
+  }
+
+  .sticky,
+  .fixed {
+    position: static !important;
+  }
+
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+
+  table,
+  tr,
+  section,
+  li {
+    break-inside: avoid;
+  }
+}

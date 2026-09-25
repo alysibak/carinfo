@@ -4,7 +4,7 @@ import type { Car } from '../types/car.types.js';
 import app from '../app.js';
 import { getAllCars } from '../services/car.service.js';
 import { escapeHtml, serializeJsonLd } from './html.js';
-import { __setTemplateForTests, renderShell } from './html-shell.js';
+import { __setTemplateForTests, absolutizeShareImage, renderShell } from './html-shell.js';
 import { vehicleSeo } from './vehicle-seo.js';
 
 const TEMPLATE = `<!doctype html>
@@ -221,5 +221,31 @@ describe('SEO routes', () => {
     } finally {
       __setTemplateForTests(TEMPLATE);
     }
+  });
+});
+
+describe('share image', () => {
+  const withImage = TEMPLATE.replace(
+    '</head>',
+    '<meta property="og:image" content="/og-image.png" />\n' +
+      '<meta name="twitter:image" content="/og-image.png" />\n</head>',
+  );
+
+  it('is absolute on server-rendered pages when the origin is known', () => {
+    const saved = process.env.SITE_URL;
+    process.env.SITE_URL = 'https://carinfo.example';
+    try {
+      const html = renderShell(withImage, vehicleSeo(car()));
+      expect(html).toContain('property="og:image" content="https://carinfo.example/og-image.png"');
+      expect(html).toContain('name="twitter:image" content="https://carinfo.example/og-image.png"');
+    } finally {
+      process.env.SITE_URL = saved;
+    }
+  });
+
+  it('stays relative without an origin, and rewriting twice changes nothing', () => {
+    expect(absolutizeShareImage(withImage, null)).toBe(withImage);
+    const once = absolutizeShareImage(withImage, 'https://carinfo.example');
+    expect(absolutizeShareImage(once, 'https://carinfo.example')).toBe(once);
   });
 });

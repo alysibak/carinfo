@@ -10,7 +10,7 @@
  *
  * Usage: npm run build:sitemap
  */
-import { mkdirSync, rmSync, writeFileSync } from 'fs';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { dirname, join, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { getAllCars, getStatistics } from '../src/services/car.service.js';
@@ -23,6 +23,7 @@ import {
   type SitemapEntry,
 } from '../src/seo/sitemap.js';
 import { siteUrl } from '../src/seo/site.js';
+import { absolutizeShareImage } from '../src/seo/html-shell.js';
 import { COLLECTIONS } from '../../client/src/config/collections.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -31,6 +32,11 @@ const CHUNK_DIR = join(DIST, 'sitemaps');
 
 const origin = siteUrl();
 writeFileSync(join(DIST, 'robots.txt'), renderRobots(origin));
+
+// The static pages (landing, search, …) are served straight from this file,
+// so their share image needs its absolute URL written in at build time.
+const indexPath = join(DIST, 'index.html');
+writeFileSync(indexPath, absolutizeShareImage(readFileSync(indexPath, 'utf8'), origin));
 
 if (!origin) {
   console.warn(

@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { join, resolve } from 'path';
 import { escapeHtml, serializeJsonLd } from './html.js';
-import { absoluteUrl } from './site.js';
+import { absoluteUrl, siteUrl } from './site.js';
 import type { PageSeo } from './vehicle-seo.js';
 
 const SITE_NAME = 'CarInfo';
@@ -44,6 +44,20 @@ const REPLACED_TAGS = [
   /<link\b[^>]*\brel="canonical"[^>]*>/gi,
 ];
 
+/** The site-wide link-preview image, shipped from client/public. */
+export const SHARE_IMAGE_PATH = '/og-image.png';
+
+/**
+ * Link unfurlers (Facebook, LinkedIn, X) require an absolute og:image URL, but
+ * the static shell can only carry a relative one. Rewrite it wherever the
+ * origin is known. Without an origin the relative URL stays, which Slack and
+ * iMessage still resolve.
+ */
+export function absolutizeShareImage(html: string, origin: string | null): string {
+  if (!origin) return html;
+  return html.replaceAll(`content="${SHARE_IMAGE_PATH}"`, `content="${origin}${SHARE_IMAGE_PATH}"`);
+}
+
 export function renderShell(template: string, seo: PageSeo): string {
   const fullTitle = `${seo.title} | ${SITE_NAME}`;
   const canonical = absoluteUrl(seo.canonicalPath);
@@ -68,7 +82,7 @@ export function renderShell(template: string, seo: PageSeo): string {
     .map((tag) => `    ${tag}`)
     .join('\n');
 
-  let html = template;
+  let html = absolutizeShareImage(template, siteUrl());
   for (const pattern of REPLACED_TAGS) html = html.replace(pattern, '');
   // Tidy the blank lines the removals leave behind.
   html = html.replace(/\n(\s*\n)+/g, '\n');

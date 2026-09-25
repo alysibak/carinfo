@@ -169,7 +169,9 @@ export default function Home() {
   const goToPage = (page: number) => {
     const clamped = Math.min(Math.max(1, page), totalPages);
     pushSearch(searchQuery, clamped);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // The CSS reduced-motion rule cannot reach a scroll requested from script.
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
   };
 
   const removeChip = (chipKey: string) => {
