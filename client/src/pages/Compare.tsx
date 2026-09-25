@@ -156,6 +156,7 @@ const ALL_SPECS: SpecRow[] = [
     label: `EST. VALUE (${DISPLAY_CURRENCY})`,
     provenanceKey: 'price.msrp',
     getValue: (car, dash) => {
+      if (dash.ownership.collector) return 'Collector car: not valued';
       const mid = dash.ownership.marketValue.mid;
       if (mid > 0) {
         return `$${Math.round(mid).toLocaleString()} ${DISPLAY_CURRENCY} (est.)`;
@@ -164,7 +165,8 @@ const ALL_SPECS: SpecRow[] = [
         ? `$${Math.round(car.price.msrp).toLocaleString()} ${DISPLAY_CURRENCY} (est.)`
         : UNAVAILABLE_LABEL;
     },
-    getNumeric: (car, dash) => dash.ownership.marketValue.mid || car.price?.msrp || null,
+    getNumeric: (car, dash) =>
+      dash.ownership.collector ? null : dash.ownership.marketValue.mid || car.price?.msrp || null,
     higherIsBetter: false,
   },
 ];

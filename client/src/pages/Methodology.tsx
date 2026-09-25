@@ -91,8 +91,18 @@ export default function Methodology() {
               1.2, not the exchange rate), then depreciated by age.
             </li>
             <li>
-              Checked against average Canadian asking prices for reference vehicles; expect
-              individual estimates to be within about 25%.
+              Checked against average Canadian asking prices for reference vehicles, including
+              performance cars; expect individual estimates to be within about 25%.
+            </li>
+            <li>
+              Performance versions EPA lists under the base model&rsquo;s name (a Mustang GT, a
+              Camaro ZL1, a Civic Type R) are priced by their engine, and cars known to hold value
+              unusually well are depreciated more gently.
+            </li>
+            <li>
+              Collector cars are not valued: a first-generation NSX, a Supra Turbo, an air-cooled
+              911, a Viper or a supercar trades on auction results and condition, and is often worth
+              more than when new.
             </li>
             <li>
               Depreciation tiers by segment, age, fuel type, and retention class (A/B/C for EVs).

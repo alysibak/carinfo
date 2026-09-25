@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { isPlausibleRatedHorsepower } from './horsepower-plausibility.js';
+import type { Car } from '../types/car.types.js';
+import {
+  dropInductionMismatchedHorsepower,
+  isPlausibleRatedHorsepower,
+} from './horsepower-plausibility.js';
 
 describe('isPlausibleRatedHorsepower', () => {
   it.each([
@@ -30,5 +34,42 @@ describe('isPlausibleRatedHorsepower', () => {
   it('judges by the absolute floor when displacement is unknown', () => {
     expect(isPlausibleRatedHorsepower(150, undefined)).toBe(true);
     expect(isPlausibleRatedHorsepower(1, undefined)).toBe(false);
+  });
+});
+
+describe('dropInductionMismatchedHorsepower', () => {
+  const car = (id: string, hp: number, aspiration?: 'turbocharged', displacement = 2.5) =>
+    ({
+      id,
+      make: 'Subaru',
+      model: 'Legacy AWD',
+      year: 2005,
+      provenance: { 'engine.horsepower': 'curated' },
+      engine: { fuelType: 'gasoline', displacement, horsepower: hp, aspiration },
+      fuelEconomy: { combined: 22 },
+      transmission: { type: 'manual' },
+      driveType: 'AWD',
+      bodyStyle: 'sedan',
+    }) as Car;
+
+  it("drops a turbo car's rating when it merely repeats the non-turbo sibling's", () => {
+    const { cars, dropped } = dropInductionMismatchedHorsepower([
+      car('2.5i', 168),
+      car('gt', 168, 'turbocharged'),
+    ]);
+    expect(dropped).toBe(1);
+    expect(cars[0].engine.horsepower).toBe(168);
+    expect(cars[1].engine.horsepower).toBeUndefined();
+    expect(cars[1].provenance['engine.horsepower']).toBeUndefined();
+  });
+
+  it('keeps a turbo rating above the non-turbo one, or with no sibling to compare', () => {
+    const { cars, dropped } = dropInductionMismatchedHorsepower([
+      car('2.5i', 168),
+      car('gt', 250, 'turbocharged'),
+      car('2.0t', 243, 'turbocharged', 2),
+    ]);
+    expect(dropped).toBe(0);
+    expect(cars.map((c) => c.engine.horsepower)).toEqual([168, 250, 243]);
   });
 });

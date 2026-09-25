@@ -68,6 +68,40 @@ describe('vehicle-taxonomy', () => {
     });
     expect(canonicalizeDisplayModel(base)).toBe('Golf');
   });
+
+  it('files two-door cars EPA calls "small cars" as coupes', () => {
+    // EPA's size classes made the Mustang, Camaro and Challenger sedans, so
+    // the coupe filter missed them and valuation used an economy car's curve.
+    const body = (make: string, model: string) =>
+      inferBodyStyle(minimalCar({ make, model }), model);
+    for (const [make, model] of [
+      ['Ford', 'Mustang'],
+      ['Chevrolet', 'Camaro'],
+      ['Dodge', 'Challenger SRT'],
+      ['Subaru', 'BRZ'],
+      ['Toyota', 'GR 86'],
+      ['Lexus', 'RC 350 AWD'],
+      ['Honda', 'Civic 2Dr'],
+      ['Dodge', 'Charger 2-Dr Daytona R/T AWD 18in'],
+      ['Toyota', 'Supra'],
+      ['Hyundai', 'Tiburon'],
+      ['Mercedes-Benz', 'CLK350'],
+      ['Audi', 'TT'],
+    ]) {
+      expect(body(make, model), `${make} ${model}`).toBe('coupe');
+    }
+    expect(body('Ford', 'Mustang Convertible')).toBe('convertible');
+    // Not every name that starts the same way.
+    expect(body('Dodge', 'Charger')).toBe('sedan');
+    expect(body('Mitsubishi', 'Eclipse Cross')).toBe('sedan');
+    // Five doors and MINI's hardtop are hatchbacks.
+    expect(body('Honda', 'Civic 5Dr')).toBe('hatchback');
+    expect(body('MINI', 'Cooper Hardtop 2 door')).toBe('hatchback');
+    // A two-door SUV stays an SUV.
+    expect(
+      inferBodyStyle(minimalCar({ make: 'Jeep', model: 'Wrangler 2dr 4WD', bodyStyle: 'suv' })),
+    ).toBe('suv');
+  });
 });
 
 describe('shopping segments', () => {

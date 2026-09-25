@@ -190,8 +190,65 @@ export function inferBodyStyle(car: CarSpecs, displayModel?: string): BodyStyle 
   // Golf without qualifier is a hatchback (not sedan).
   if (car.make === 'Volkswagen' && /^golf$/i.test(model)) return 'hatchback';
 
+  // EPA files cars by interior volume, so these arrive as "sedan".
+  if (car.bodyStyle === 'sedan') {
+    const name = `${car.make} ${car.model}`.toLowerCase();
+    // MINI's "Hardtop 2 door" is its three-door hatch.
+    if (car.make.toLowerCase() === 'mini' && /hardtop|\b2 door\b/.test(name)) return 'hatchback';
+    if (FIVE_DOOR_CAR.test(name)) return 'hatchback';
+    if (COUPE_NAMES.test(name) || TWO_DOOR_CAR.test(name)) return 'coupe';
+  }
+
   return car.bodyStyle;
 }
+
+/**
+ * Two-door cars with no "coupe" in their EPA name. They read as sedans, so the
+ * coupe filter missed the Mustang, Camaro and Challenger (about 800 listings)
+ * and valuation priced a Mustang with a subcompact's anchor and curve.
+ */
+const COUPE_NAMES = new RegExp(
+  [
+    'mustang(?!\\s*mach)',
+    'camaro',
+    'challenger',
+    'brz',
+    'gr 86',
+    'fr-s',
+    'toyota 86',
+    'toyota supra',
+    'celica',
+    'prelude',
+    'q60',
+    'rc (?:200t|300|350|f)',
+    'eclipse(?!\\s*cross)',
+    'forte koup',
+    'scion tc',
+    '300zx',
+    '3000 ?gt',
+    'stealth',
+    'rx-8',
+    '240sx',
+    'talon',
+    'probe',
+    'mercury cougar',
+    'tiburon',
+    'monte carlo',
+    'lexus sc',
+    'rsx',
+    'firebird',
+    'thunderbird',
+    'paseo',
+    'saturn sc',
+    'clk\\d+',
+    'audi tts?',
+  ]
+    .map((name) => `\\b${name}\\b`)
+    .join('|'),
+);
+const TWO_DOOR_CAR = /\b2[ -]?dr\b|\b2[ -]door\b/;
+/** "Civic 5Dr", "Mazda 3 5-Door": a five-door car is a hatchback. */
+const FIVE_DOOR_CAR = /\b5[ -]?dr\b|\b5[ -]door\b/;
 
 export function classifyShoppingSegment(
   car: CarSpecs,

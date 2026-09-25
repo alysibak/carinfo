@@ -40,14 +40,17 @@ export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard |
       highway: roundEfficiency(car.fuelEconomy.highway),
       combined: roundEfficiency(car.fuelEconomy.combined),
     },
-    price: {
-      msrp: ownership.marketValue.mid,
-      min: ownership.marketValue.low,
-      max: ownership.marketValue.high,
-      isEstimated: true,
-      confidence: ownership.marketValue.confidence,
-      confidenceLabel: ownership.marketValue.confidenceLabel,
-    },
+    // A collector car has no price to show (see utils/collector-cars.ts).
+    price: ownership.collector
+      ? undefined
+      : {
+          msrp: ownership.marketValue.mid,
+          min: ownership.marketValue.low,
+          max: ownership.marketValue.high,
+          isEstimated: true,
+          confidence: ownership.marketValue.confidence,
+          confidenceLabel: ownership.marketValue.confidenceLabel,
+        },
     ...(car.epa
       ? {
           epa: {

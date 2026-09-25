@@ -147,7 +147,10 @@ export function buildGlanceMetrics(dashboard: CarDashboard): {
     };
   }
 
-  if (hasNumericValue(marketValue.low) && hasNumericValue(marketValue.high)) {
+  // A collector car's value and running cost are not modeled (see Cost to keep).
+  const collector = Boolean(ownership.collector);
+
+  if (!collector && hasNumericValue(marketValue.low) && hasNumericValue(marketValue.high)) {
     candidates.value = {
       id: 'value',
       label: 'Est. value',
@@ -172,7 +175,7 @@ export function buildGlanceMetrics(dashboard: CarDashboard): {
     };
   }
 
-  if (annualRunningCost && hasNumericValue(annualRunningCost.mid)) {
+  if (!collector && annualRunningCost && hasNumericValue(annualRunningCost.mid)) {
     candidates.running = {
       id: 'running',
       label: 'Running cost',

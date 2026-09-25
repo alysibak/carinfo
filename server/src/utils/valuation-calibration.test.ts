@@ -107,6 +107,43 @@ const REFERENCES: Reference[] = [
     observedCad: 32_600,
     source: 'CarGurus Canada average (all trims), August 2026',
   },
+  // Performance cars. EPA filed the Mustang as a small sedan, so it took an
+  // economy car's price and curve (-44%); the Corvette and Type R hold value
+  // far better than any segment curve (-46%, -45% before).
+  {
+    label: '2020 Ford Mustang EcoBoost coupe',
+    find: (c) =>
+      c.make === 'Ford' &&
+      c.model === 'Mustang' &&
+      c.year === 2020 &&
+      c.engine.displacement === 2.3,
+    observedCad: 25_000,
+    source: 'CarGurus Canada average, EcoBoost Coupe RWD, September 2026',
+  },
+  {
+    label: '2020 Ford Mustang GT coupe',
+    find: (c) =>
+      c.make === 'Ford' && c.model === 'Mustang' && c.year === 2020 && c.engine.displacement === 5,
+    observedCad: 33_500,
+    source: 'CarGurus Canada average, GT Premium Coupe RWD, September 2026',
+  },
+  {
+    label: '2021 Chevrolet Corvette',
+    find: named('Chevrolet', /^Corvette$/, 2021),
+    observedCad: 91_200,
+    source: 'CarGurus Canada average (all trims), September 2026',
+  },
+  {
+    label: '2020 Honda Civic Type R',
+    find: (c) =>
+      c.make === 'Honda' &&
+      c.model === 'Civic 5Dr' &&
+      c.year === 2020 &&
+      c.engine.aspiration === 'turbocharged' &&
+      c.engine.displacement === 2,
+    observedCad: 49_900,
+    source: 'CarGurus Canada average, September 2026',
+  },
 ];
 
 describe('valuation calibration against observed Canadian prices', () => {

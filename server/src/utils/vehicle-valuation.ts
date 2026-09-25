@@ -115,6 +115,200 @@ interface ModelMsrpRule {
   msrp: number | ((car: CarSpecs) => number);
 }
 
+/**
+ * EPA names it "Civic Type R" only for 2017–18; since then it is a "Civic 5Dr"
+ * with the 2.0-litre turbo and a manual, which no other Civic has.
+ */
+function isCivicTypeR(c: CarSpecs): boolean {
+  return (
+    c.make === 'Honda' &&
+    /^civic/i.test(c.model) &&
+    c.year >= 2017 &&
+    c.engine.displacement === 2 &&
+    c.engine.aspiration === 'turbocharged' &&
+    c.transmission.type === 'manual'
+  );
+}
+
+const cyl = (c: CarSpecs) => c.engine.cylinders ?? 0;
+const litres = (c: CarSpecs) => c.engine.displacement ?? 0;
+
+/**
+ * Performance versions EPA files under the base model's name, told apart by
+ * engine. A Mustang GT, a Camaro ZL1 or a Challenger Hellcat used to be priced
+ * as the base car, half or a third of its sticker. US list prices by era.
+ */
+const PERFORMANCE_VARIANT_RULES: ModelMsrpRule[] = [
+  // Ford Mustang (not the Mach-E)
+  {
+    test: (c) => c.make === 'Ford' && /mustang/i.test(c.model) && /gtd/i.test(c.model),
+    msrp: 325000,
+  },
+  {
+    test: (c) =>
+      c.make === 'Ford' &&
+      /mustang/i.test(c.model) &&
+      (/gt500/i.test(c.model) || (c.engine.aspiration === 'supercharged' && c.year <= 2014)),
+    msrp: (c) => (c.year >= 2020 ? 73000 : 55000),
+  },
+  { test: (c) => c.make === 'Ford' && /gt350/i.test(c.model), msrp: 60000 },
+  { test: (c) => c.make === 'Ford' && /mustang dark horse/i.test(c.model), msrp: 60000 },
+  { test: (c) => c.make === 'Ford' && /mustang bullitt/i.test(c.model), msrp: 47000 },
+  {
+    test: (c) =>
+      c.make === 'Ford' && /^mustang/i.test(c.model) && !/mach-e/i.test(c.model) && cyl(c) >= 8,
+    msrp: (c) =>
+      (c.year >= 2024 ? 44000 : c.year >= 2018 ? 37000 : c.year >= 2011 ? 32000 : 27000) +
+      (/convertible/i.test(c.model) ? 5000 : 0),
+  },
+  {
+    test: (c) => c.make === 'Ford' && /^mustang/i.test(c.model) && !/mach-e/i.test(c.model),
+    msrp: (c) =>
+      (c.year >= 2024 ? 32000 : c.year >= 2015 ? 28000 : c.year >= 2011 ? 24000 : 20000) +
+      (/convertible/i.test(c.model) ? 5000 : 0), // EcoBoost / V6
+  },
+  // Chevrolet Camaro
+  {
+    test: (c) => c.make === 'Chevrolet' && /^camaro/i.test(c.model) && litres(c) >= 7,
+    msrp: 75000, // Z/28
+  },
+  {
+    test: (c) =>
+      c.make === 'Chevrolet' && /^camaro/i.test(c.model) && c.engine.aspiration === 'supercharged',
+    msrp: (c) => (c.year >= 2017 ? 64000 : 56000), // ZL1
+  },
+  {
+    test: (c) => c.make === 'Chevrolet' && /^camaro/i.test(c.model) && cyl(c) >= 8,
+    msrp: (c) => (c.year >= 2016 ? 38000 : c.year >= 2010 ? 33000 : 26000), // SS
+  },
+  {
+    test: (c) => c.make === 'Chevrolet' && /^camaro/i.test(c.model),
+    msrp: (c) =>
+      (c.year >= 2016 ? 27000 : c.year >= 2010 ? 24000 : 20000) +
+      (/convertible/i.test(c.model) ? 6000 : 0), // 2.0T / V6
+  },
+  // Chevrolet Corvette
+  { test: (c) => c.make === 'Chevrolet' && /corvette zr1x/i.test(c.model), msrp: 208000 },
+  {
+    test: (c) => c.make === 'Chevrolet' && /corvette zr1/i.test(c.model),
+    msrp: (c) => (c.year >= 2025 ? 175000 : 120000),
+  },
+  {
+    test: (c) =>
+      c.make === 'Chevrolet' &&
+      /^corvette/i.test(c.model) &&
+      (/z06/i.test(c.model) || c.engine.aspiration === 'supercharged'),
+    msrp: (c) => (c.year >= 2023 ? 110000 : 80000),
+  },
+  { test: (c) => c.make === 'Chevrolet' && /corvette e-ray/i.test(c.model), msrp: 105000 },
+  {
+    test: (c) => c.make === 'Chevrolet' && /^corvette/i.test(c.model),
+    msrp: (c) => (c.year >= 2020 ? 68000 : c.year >= 2014 ? 56000 : 48000),
+  },
+  // Dodge Challenger / Charger
+  { test: (c) => c.make === 'Dodge' && /demon/i.test(c.model), msrp: 100000 },
+  {
+    test: (c) =>
+      c.make === 'Dodge' &&
+      /^(challenger|charger)/i.test(c.model) &&
+      c.engine.aspiration === 'supercharged',
+    msrp: 70000, // SRT Hellcat
+  },
+  {
+    test: (c) => c.make === 'Dodge' && /^(challenger|charger)/i.test(c.model) && litres(c) === 6.4,
+    msrp: (c) => (/widebody/i.test(c.model) ? 50000 : 44000), // SRT 392 / Scat Pack
+  },
+  {
+    test: (c) => c.make === 'Dodge' && /^(challenger|charger)/i.test(c.model) && litres(c) === 5.7,
+    msrp: 37000, // R/T
+  },
+  {
+    test: (c) => c.make === 'Dodge' && /^challenger/i.test(c.model),
+    msrp: (c) => (c.year >= 2015 ? 30000 : 26000), // SXT / GT (V6)
+  },
+  {
+    test: (c) => c.make === 'Dodge' && /^charger (?:2-dr )?daytona/i.test(c.model),
+    msrp: (c) => (/scat pack/i.test(c.model) ? 73000 : 59000), // electric
+  },
+  {
+    test: (c) =>
+      c.make === 'Dodge' &&
+      /^charger/i.test(c.model) &&
+      c.year >= 2025 &&
+      c.engine.aspiration === 'turbocharged',
+    msrp: (c) => (/scat pack/i.test(c.model) ? 55000 : 50000), // Sixpack I6
+  },
+  // Other two-doors EPA files as small cars (see vehicle-taxonomy COUPE_NAMES):
+  // without a rule they would take the generic $42,000 coupe anchor.
+  {
+    test: (c) => /^(subaru brz|toyota (gr )?86|scion fr-s)/i.test(`${c.make} ${c.model}`),
+    msrp: (c) => (c.year >= 2022 ? 30000 : 27000),
+  },
+  {
+    test: (c) => c.make === 'Lexus' && /^rc /i.test(c.model),
+    msrp: (c) => (/\brc f\b/i.test(c.model) ? 68000 : 46000),
+  },
+  {
+    test: (c) => c.make === 'Infiniti' && /^q60/i.test(c.model),
+    msrp: (c) => (/red sport/i.test(c.model) ? 58000 : 44000),
+  },
+  { test: (c) => c.make === 'Honda' && /^civic 2dr/i.test(c.model), msrp: 23000 },
+  { test: (c) => c.make === 'Kia' && /forte koup/i.test(c.model), msrp: 21000 },
+  { test: (c) => c.make === 'Toyota' && /^celica/i.test(c.model), msrp: 22000 },
+  { test: (c) => c.make === 'Honda' && /^prelude/i.test(c.model), msrp: 26000 },
+  { test: (c) => c.make === 'Mitsubishi' && /^eclipse(?! cross)/i.test(c.model), msrp: 24000 },
+  { test: (c) => c.make === 'Scion' && /^tc\b/i.test(c.model), msrp: 20000 },
+  // Luxury flagships the cylinder table would undersell.
+  { test: (c) => c.make === 'Acura' && /^nsx/i.test(c.model) && c.year >= 2016, msrp: 157000 },
+  { test: (c) => c.make === 'Mercedes-Benz' && /amg gt\b/i.test(c.model), msrp: 130000 },
+  {
+    test: (c) => c.make === 'Mercedes-Benz' && /^(amg )?sl ?\d/i.test(c.model),
+    msrp: (c) => (cyl(c) >= 8 ? 115000 : 90000),
+  },
+  { test: (c) => c.make === 'BMW' && /^m8\b/i.test(c.model), msrp: 133000 },
+  {
+    test: (c) => c.make === 'BMW' && /^(m850i|840i)/i.test(c.model),
+    msrp: (c) => (/m850i/i.test(c.model) ? 112000 : 90000),
+  },
+  // Two-seaters (EPA "Two Seaters" has no size class to price from).
+  {
+    test: (c) => c.make === 'Mazda' && /^mx-5/i.test(c.model),
+    msrp: (c) => (c.year >= 2016 ? 30000 : 25000),
+  },
+  {
+    test: (c) => c.make === 'Nissan' && /^(350z|370z|z)\b/i.test(c.model),
+    msrp: (c) => (c.year >= 2023 ? 42000 : c.year >= 2009 ? 33000 : 30000),
+  },
+  {
+    test: (c) => c.make === 'Audi' && /^tt/i.test(c.model),
+    msrp: (c) => (/tt ?rs/i.test(c.model) ? 72000 : /tts/i.test(c.model) ? 55000 : 48000),
+  },
+  { test: (c) => /^(pontiac solstice|saturn sky)/i.test(`${c.make} ${c.model}`), msrp: 25000 },
+  { test: (c) => c.make === 'Toyota' && /^mr2/i.test(c.model), msrp: 25000 },
+  { test: (c) => c.make === 'Fiat' && /124 spider/i.test(c.model), msrp: 27000 },
+  // Trucks and SUVs with a performance engine
+  {
+    test: (c) => c.make === 'Ford' && /f150 raptor r/i.test(c.model),
+    msrp: 110000,
+  },
+  {
+    test: (c) => c.make === 'Ford' && /raptor/i.test(c.model),
+    msrp: (c) => (c.year >= 2021 ? 70000 : c.year >= 2017 ? 52000 : 45000),
+  },
+  { test: (c) => c.make === 'Ram' && /trx/i.test(c.model), msrp: 80000 },
+  {
+    test: (c) =>
+      c.make === 'Jeep' &&
+      /grand cherokee/i.test(c.model) &&
+      c.engine.aspiration === 'supercharged',
+    msrp: 87000, // Trackhawk
+  },
+  {
+    test: (c) => c.make === 'Jeep' && /grand cherokee/i.test(c.model) && litres(c) === 6.4,
+    msrp: 67000, // SRT
+  },
+];
+
 const MODEL_MSRP_RULES: ModelMsrpRule[] = [
   {
     test: (c) => c.make === 'Tesla' && c.model.toLowerCase().includes('model s'),
@@ -172,9 +366,11 @@ const MODEL_MSRP_RULES: ModelMsrpRule[] = [
     msrp: (c) => (c.year >= 2022 ? 29000 : 24000),
   },
   {
-    test: (c) => c.make === 'Honda' && /type r/i.test(c.model),
+    test: (c) => c.make === 'Honda' && (/type r/i.test(c.model) || isCivicTypeR(c)),
     msrp: (c) => (c.year >= 2023 ? 44000 : 36000),
   },
+  ...PERFORMANCE_VARIANT_RULES,
+  { test: (c) => c.make === 'Subaru' && /wrx sti|\bsti\b/i.test(c.model), msrp: 38000 },
   {
     test: (c) => c.make === 'Subaru' && /wrx/i.test(c.model),
     msrp: (c) => (c.year >= 2022 ? 32000 : c.year >= 2015 ? 28000 : 26000),
@@ -367,23 +563,49 @@ export function estimateNewVehicleMsrp(car: CarSpecs): number {
     van: 38000,
   };
 
-  // Coupes and convertibles keep their body-style anchor: EPA files a Mustang
-  // as "Subcompact", and a size-class price would value it like a Versa.
+  // A two-door costs a little more than its size class suggests (an Accord
+  // Coupe over the sedan). The Mustang and its rivals, which EPA files as
+  // "Subcompact", have model rules; two-seaters have no size class and keep
+  // the body-style anchor. Coupes used to keep that $42,000 anchor whatever
+  // their class, which priced a Tiburon like a Mustang GT.
   const sporty = car.bodyStyle === 'coupe' || car.bodyStyle === 'convertible';
-  let price = (!sporty && classAnchorUsd(car)) || baseByStyle[car.bodyStyle] || 34000;
+  const luxuryTwoDoor = sporty && LUXURY_MAKES.has(car.make);
   const marque = MARQUE_ANCHORS_USD[car.make];
-  if (marque != null) price = marque;
-  else if (LUXURY_MAKES.has(car.make)) price *= 1.55;
+  let price: number;
+  if (marque != null) {
+    price = marque;
+  } else if (luxuryTwoDoor) {
+    price = luxuryTwoDoorAnchorUsd(car);
+  } else {
+    const classAnchor = classAnchorUsd(car);
+    price =
+      (classAnchor != null ? classAnchor * (sporty ? 1.1 : 1) : null) ||
+      baseByStyle[car.bodyStyle] ||
+      34000;
+    if (LUXURY_MAKES.has(car.make)) price *= 1.55;
+  }
   if (isHeavyEvTruck(car)) price = Math.max(price, 95000);
-  if (isLuxuryPerformance(car)) price = Math.max(price, 92000);
 
   const ft = car.engine.fuelType;
   if (ft === 'electric') price *= 1.12;
   else if (ft === 'plug-in hybrid') price *= 1.06;
   else if (ft === 'hydrogen') price *= 1.15;
-  if (car.engine.displacement && car.engine.displacement >= 4.5) price *= 1.22;
+  // The cylinder table already prices a luxury V8.
+  if (!luxuryTwoDoor && car.engine.displacement && car.engine.displacement >= 4.5) price *= 1.22;
 
   return Math.round(price);
+}
+
+/**
+ * Luxury coupes and convertibles by engine. EPA files most as "Subcompact"
+ * (interior volume), which says nothing about their price, and every one of
+ * them used to be floored at $92,000: a BMW 230i (about $37,000 new) at the
+ * same anchor as an M6, while an Audi R8 sat below its sticker.
+ */
+function luxuryTwoDoorAnchorUsd(car: CarSpecs): number {
+  const cylinders = car.engine.cylinders ?? 0;
+  const base = cylinders >= 10 ? 165000 : cylinders >= 8 ? 95000 : cylinders >= 6 ? 60000 : 45000;
+  return car.bodyStyle === 'convertible' ? base * 1.08 : base;
 }
 
 export function classifyEvRetentionTier(car: CarSpecs): EvRetentionTier | null {
@@ -507,7 +729,10 @@ function retentionFraction(
     economy: 0.115,
     mainstream: 0.094,
     luxury: 0.122,
-    performance: 0.108,
+    // Two-door, non-luxury cars (Mustang, Camaro, Miata, BRZ). Listings hold
+    // about three-quarters of the sticker at six years (CarGurus.ca, 2026:
+    // 2020 Mustang EcoBoost ~$25,000, GT ~$33,500 CAD); 0.108 gave ~57%.
+    performance: 0.075,
     utility: 0.086,
     exotic: 0.144,
   };
@@ -524,11 +749,39 @@ function retentionFraction(
   const floorFrac = segmentFloor[segment];
   const ageCurve = floorFrac + (1 - floorFrac) * Math.exp(-k * age);
 
-  let modifier = brand;
+  let modifier = brand * enthusiastRetention(car);
   if (fuelType === 'hybrid') modifier *= 1.03;
   if (age > 12) modifier *= 0.92;
 
   return Math.min(0.97, ageCurve * modifier);
+}
+
+/**
+ * Halo cars that hold value far better than their segment: 2026 listings put
+ * a 2020 Civic Type R and a 2021 Corvette above their original sticker
+ * (CarGurus.ca averages ~$49,900 and ~$91,200 CAD). The 0.97 cap above still
+ * holds, so these read as "close to sticker", never as appreciating.
+ */
+const ENTHUSIAST_MODELS: Array<(c: CarSpecs) => boolean> = [
+  (c) => c.make === 'Chevrolet' && /^corvette/i.test(c.model) && c.year >= 2014,
+  (c) =>
+    c.make === 'Chevrolet' &&
+    /^camaro/i.test(c.model) &&
+    (litres(c) >= 7 || c.engine.aspiration === 'supercharged'),
+  (c) => c.make === 'Honda' && (/type r/i.test(c.model) || isCivicTypeR(c)),
+  (c) => c.make === 'Ford' && /shelby|gt350|gt500|dark horse/i.test(c.model),
+  (c) => c.make === 'Ford' && /raptor/i.test(c.model),
+  (c) =>
+    c.make === 'Dodge' &&
+    /^(challenger|charger)/i.test(c.model) &&
+    c.engine.aspiration === 'supercharged',
+  (c) => c.make === 'Ram' && /trx/i.test(c.model),
+  (c) => c.make === 'Nissan' && /gt-r/i.test(c.model),
+  (c) => c.make === 'Toyota' && /gr supra/i.test(c.model),
+];
+
+function enthusiastRetention(car: CarSpecs): number {
+  return ENTHUSIAST_MODELS.some((test) => test(car)) ? 1.5 : 1;
 }
 
 function roundMoney(n: number): number {

@@ -1,4 +1,5 @@
 import type { CarSpecs } from '../types/car.types.js';
+import { COLLECTOR_NOTE, isCollectorCar } from './collector-cars.js';
 import { estimateAnnualEnergyCost } from '../shared/energy-cost.js';
 import {
   annualKmToMiles,
@@ -102,6 +103,8 @@ export interface OwnershipEconomics {
   assumptions: OwnershipAssumptions;
   warnings: string[];
   practicalityNote: string;
+  /** Collector cars: the figures are computed but must not be shown as its value or cost. */
+  collector?: { note: string };
 }
 
 const LUXURY_MAKES = new Set([
@@ -449,6 +452,7 @@ export function computeOwnershipEconomics(
     },
     warnings,
     practicalityNote: practicalityNote(car, market.mid, region),
+    ...(isCollectorCar(car) ? { collector: { note: COLLECTOR_NOTE } } : {}),
   };
 }
 

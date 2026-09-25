@@ -305,11 +305,15 @@ export default function CarDetail() {
     hasNumericValue(car.safetyRating?.frontal, { allowZero: false }) ||
     hasNumericValue(car.safetyRating?.side, { allowZero: false }) ||
     hasNumericValue(car.safetyRating?.rollover, { allowZero: false });
+  // A collector car's figures are computed but not shown (see the server's
+  // utils/collector-cars.ts): its price follows auctions, not depreciation.
+  const collector = ownership.collector;
   const showOwnership =
-    hasEconomics ||
-    Boolean(marketValue.batteryHealth) ||
-    (marketValue.conditionBands?.length ?? 0) > 0 ||
-    (hasMarketValue && !glanceIds.has('value'));
+    !collector &&
+    (hasEconomics ||
+      Boolean(marketValue.batteryHealth) ||
+      (marketValue.conditionBands?.length ?? 0) > 0 ||
+      (hasMarketValue && !glanceIds.has('value')));
 
   const specOmitKeys = [
     'mpgCity',
@@ -813,6 +817,15 @@ export default function CarDetail() {
                 Custom TCO calculator
               </button>
             )}
+          </div>
+        </section>
+      )}
+
+      {collector && (
+        <section className="border-b border-zinc-900">
+          <div className="page-wrap-wide section-y-tight">
+            <h2 className="text-base font-bold tracking-tight mb-1">Value and costs</h2>
+            <p className="text-sm text-zinc-400 leading-relaxed max-w-2xl">{collector.note}</p>
           </div>
         </section>
       )}

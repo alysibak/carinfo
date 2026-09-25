@@ -128,12 +128,19 @@ function provenanceFieldHasValue(dashboard: CarDashboard, key: string): boolean 
       return hasTextValue(car.countryOfOrigin);
     case 'safetyRating':
       return hasNumericValue(car.safetyRating?.overall, { allowZero: false });
+    // A collector car is not valued, so its figures are not "on file".
     case 'price.msrp':
-      return hasNumericValue(car.price?.msrp) || hasNumericValue(ownership.marketValue.mid);
+      return (
+        !ownership.collector &&
+        (hasNumericValue(car.price?.msrp) || hasNumericValue(ownership.marketValue.mid))
+      );
     case 'analytics.annualCost':
-      return ownership.annualCost.total != null || ownership.annualCost.energy != null;
+      return (
+        !ownership.collector &&
+        (ownership.annualCost.total != null || ownership.annualCost.energy != null)
+      );
     case 'analytics.tco5Year':
-      return ownership.tco5Year != null;
+      return !ownership.collector && ownership.tco5Year != null;
     case 'performance.zeroToSixty':
       return zeroToSixty != null && hasNumericValue(zeroToSixty.value);
     default:

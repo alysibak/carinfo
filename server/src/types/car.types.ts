@@ -278,6 +278,11 @@ export interface OwnershipEconomics {
   assumptions: OwnershipAssumptions;
   warnings: string[];
   practicalityNote: string;
+  /**
+   * Set for collector cars (utils/collector-cars.ts): the figures above are
+   * computed but must not be shown as the car's value or cost.
+   */
+  collector?: { note: string };
 }
 
 export interface AnnualCostRange {

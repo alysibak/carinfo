@@ -9,6 +9,7 @@ import { resolve } from 'path';
 import { readFileSync } from 'fs';
 import { enrichCar } from '../src/services/content-enrichment.js';
 import { normalizeCarRecord } from '../src/utils/car-normalize.js';
+import { dropInductionMismatchedHorsepower } from '../src/utils/horsepower-plausibility.js';
 import { resolveDataFile } from '../src/utils/data-paths.js';
 import { ensureUniqueIds } from '../src/utils/unique-ids.js';
 import { packRuntimeDatabase } from '../src/services/runtime-db.js';
@@ -33,7 +34,15 @@ console.log(
   `[build-runtime-db] Enriching + normalizing ${db.cars.length.toLocaleString()} cars...`,
 );
 
-const normalized = db.cars.map((car) => normalizeCarRecord(enrichCar(car)));
+const enriched = dropInductionMismatchedHorsepower(
+  db.cars.map((car) => normalizeCarRecord(enrichCar(car))),
+);
+if (enriched.dropped) {
+  console.log(
+    `[build-runtime-db] Dropped ${enriched.dropped} horsepower rating(s) borrowed from a non-turbo sibling.`,
+  );
+}
+const normalized = enriched.cars;
 
 // Slug collisions made some vehicles unreachable by ID — see utils/unique-ids.ts.
 const { cars, report } = ensureUniqueIds(normalized);
