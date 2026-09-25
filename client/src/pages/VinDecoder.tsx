@@ -107,12 +107,16 @@ export default function VinDecoder() {
           don’t carry it in the VIN record. We show it honestly when it’s there.
         </p>
 
-        <div className="flex flex-col sm:flex-row border border-zinc-700 rounded-none max-w-2xl min-w-0">
+        {/* The input drops its own outline, so the frame shows where focus is. */}
+        <div className="flex flex-col sm:flex-row border border-zinc-700 focus-within:border-zinc-300 transition-colors rounded-none max-w-2xl min-w-0">
           <input
             value={vin}
             onChange={(e) => setVin(e.target.value.toUpperCase().slice(0, 17))}
             onKeyDown={(e) => e.key === 'Enter' && run(vin)}
+            aria-label="Vehicle identification number (VIN)"
             placeholder="e.g. 1HGCM82633A004352"
+            autoComplete="off"
+            autoCapitalize="characters"
             spellCheck={false}
             className="flex-1 min-w-0 h-12 sm:h-14 bg-zinc-950 border-0 px-3 sm:px-4 text-sm sm:text-base font-mono tracking-normal sm:tracking-widest text-white placeholder:text-zinc-500 focus:outline-none uppercase rounded-none"
           />

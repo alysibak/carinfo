@@ -262,7 +262,8 @@ export default function SearchBar({
   return (
     <div ref={rootRef} className="relative w-full">
       {size === 'hero' && showButton ? (
-        <div className="flex flex-col sm:flex-row border border-zinc-700 rounded-none min-w-0">
+        // The input drops its own outline, so the frame shows where focus is.
+        <div className="flex flex-col sm:flex-row border border-zinc-700 focus-within:border-zinc-300 transition-colors rounded-none min-w-0">
           {inputEl}
           <div className="border-t sm:border-t-0 sm:border-l border-zinc-700 shrink-0">
             {buttonEl}
