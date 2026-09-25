@@ -420,6 +420,10 @@ Base: `/api` (Vite proxies to `:5000` in dev; Vercel routes to `api/index.ts`)
 
 **Natural language:** `"2024 camry"`, `"toyota rav4"` → parsed into filters (user filters win over parsed)
 
+**Names EPA does not use** (`utils/fuzzy-search.ts`): model matching ignores hyphens and spaces (`f150`, `f 150` and `f-150` all find EPA's "F150 Pickup" and "F-150 Lightning"); lineup names resolve to the models that follow them (`3 series` → 318i…M340i, M3; `c class` → C300, AMG C43; `g wagon` → the G-Class); renamed models map to their family (`miata` → MX-5, `silverado 1500` → every half-ton Silverado). A make typo must be a near miss of a whole word of the make, so `gle` means the Mercedes GLE, not Eagle.
+
+**Years outside the data:** an empty search whose years are all off file returns `yearCoverage: { min, max }`, and the results page offers the same search in every year.
+
 ### Chart points query params
 
 `priceMin`, `priceMax`, `bodyStyles` (comma-separated), `yearMin`, `yearMax`, `limit`
@@ -534,7 +538,7 @@ Defined in `client/src/config/browseTaxonomy.ts`.
 - **Fuel types:** gasoline, hybrid, plug-in hybrid, electric, hydrogen, diesel
 - **Drive types:** FWD, RWD, AWD, 4WD
 - **Top makes:** Toyota, Honda, Ford, Chevrolet, BMW, Mercedes-Benz, Audi, Tesla, Nissan, Hyundai, Kia, Subaru, Mazda, Lexus, Jeep, Ram
-- **Popular searches:** 2024 Camry, Honda Civic, Ford F-150, Toyota RAV4
+- **Popular searches:** newest-year Camry (from `LATEST_MODEL_YEAR`), Honda Civic, Ford F-150, Toyota RAV4
 
 ---
 
