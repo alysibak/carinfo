@@ -289,4 +289,47 @@ describe('car.service natural language search', () => {
     // "Toyota Camry" searches every Camry, so it leads the trims.
     expect(getSearchSuggestions('camry', 6)[0].label).toBe('Toyota Camry');
   });
+  it('resolves BMW series and Mercedes classes to their EPA model names', () => {
+    const all = (query: string) => searchCars({ query, limit: 500 }).results;
+    const threeSeries = all('bmw 3 series');
+    expect(threeSeries.length).toBeGreaterThan(50);
+    expect(
+      threeSeries.every((c) => c.make === 'BMW' && /^(M?3\d\d|M3|ActiveHybrid 3)/.test(c.model)),
+    ).toBe(true);
+
+    for (const query of ['c class', 'mercedes c-class']) {
+      const cClass = all(query);
+      expect(cClass.length, query).toBeGreaterThan(20);
+      expect(
+        cClass.every((c) => /^(AMG )?C ?\d/.test(c.model)),
+        query,
+      ).toBe(true);
+    }
+    expect(all('g wagon').every((c) => /^(AMG )?G ?\d/.test(c.model))).toBe(true);
+    expect(getSearchSuggestions('3 series', 4)[0].label).toBe('BMW 3 Series');
+  });
+
+  it('never reads a fragment of a make as a typo of it', () => {
+    // "gle" is inside "eagle"; it used to filter the search down to Eagles.
+    const { results } = searchCars({ query: 'gle', limit: 50 });
+    expect(results.length).toBeGreaterThan(0);
+    expect(results.every((c) => c.make === 'Mercedes-Benz')).toBe(true);
+
+    // Real typos still resolve.
+    expect(searchCars({ query: 'toyata camry', limit: 5 }).results[0].make).toBe('Toyota');
+    expect(searchCars({ query: 'land rovr', limit: 5 }).results[0].make).toBe('Land Rover');
+  });
+  it('leads each model family with its newest year', () => {
+    // The Camry is hybrid-only since 2025 ("Camry HEV …"); the plain name
+    // stopped at 2024 and used to represent the family.
+    for (const query of ['camry', 'corolla', 'accord', 'civic']) {
+      const [top] = searchCars({
+        query,
+        collapseByModel: true,
+        sort: { field: 'relevance', order: 'desc' },
+        limit: 1,
+      }).results;
+      expect(top.year, query).toBe(LATEST_MODEL_YEAR);
+    }
+  });
 });

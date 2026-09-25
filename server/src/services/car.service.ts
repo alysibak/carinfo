@@ -5,7 +5,10 @@ import { normalizeCarRecord } from '../utils/car-normalize.js';
 import { dataFileCandidates, resolveDataFile } from '../utils/data-paths.js';
 import {
   bestFuzzyScore,
+  editDistance,
   fuzzyTokenMatch,
+  lineupForToken,
+  maxEditsForToken,
   modelFamilyName,
   modelPhraseMatches,
   normalizeSearchQuery,
@@ -436,6 +439,22 @@ export function getSearchSuggestions(rawQuery: string, limit = 8): SearchSuggest
     ranked.push({ ...s, score });
   };
 
+  // "3 series", "bmw 3 series", "c class": offer the lineup itself, since no
+  // EPA model is called that.
+  const lastToken = q.split(' ').at(-1) ?? '';
+  const lineup = resolveLineup(lastToken, undefined);
+  if (lineup && (q === lastToken || q === `${lineup.make.toLowerCase()} ${lastToken}`)) {
+    add(
+      {
+        id: `lineup-${lastToken}`,
+        label: `${lineup.make} ${lineup.label}`,
+        sublabel: `Lineup · ${lineup.models.length} EPA model names`,
+        query: `${lineup.make.toLowerCase()} ${lineup.label.toLowerCase()}`,
+      },
+      99,
+    );
+  }
+
   for (const make of cachedMakes) {
     const lower = make.toLowerCase();
     const dist = bestFuzzyScore(q, lower);
@@ -545,6 +564,15 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
     if (makeHit) {
       filters.make = [makeHit.make];
       textTokens.splice(makeHit.index, makeHit.consumed);
+    }
+  }
+
+  if (!filters.model?.length && textTokens.length === 1) {
+    const lineup = resolveLineup(textTokens[0], filters.make);
+    if (lineup) {
+      filters.make = [lineup.make];
+      filters.model = lineup.models;
+      textTokens.length = 0;
     }
   }
 
@@ -674,8 +702,31 @@ function findFuzzyMake(label: string): string | null {
   // Multi-word labels like "mazda 3" are within edit distance of "mazda"
   // and would steal the model token if allowed here.
   if (!lower || /\s/.test(lower)) return null;
-  const fuzzyMakes = cachedMakes.filter((m) => fuzzyTokenMatch(m.toLowerCase(), lower));
+  // A typo of a whole word of the make ("toyata", "rovr"), never a fragment
+  // of one: "gle" sits inside "eagle" but means the Mercedes GLE, and used to
+  // filter every search for it down to Eagles.
+  const maxEdits = maxEditsForToken(lower);
+  const fuzzyMakes = cachedMakes.filter((m) =>
+    m
+      .toLowerCase()
+      .split(/[\s-]+/)
+      .some((word) => editDistance(word, lower, maxEdits) <= maxEdits),
+  );
   return fuzzyMakes.length === 1 ? fuzzyMakes[0] : null;
+}
+
+/** The models a lineup token ("3-series", "c-class") stands for, if any. */
+function resolveLineup(
+  token: string,
+  makes: string[] | undefined,
+): { make: string; label: string; models: string[] } | null {
+  const lineup = lineupForToken(token);
+  if (!lineup) return null;
+  if (makes?.length && !makes.some((m) => m.toLowerCase() === lineup.make.toLowerCase())) {
+    return null;
+  }
+  const models = getModelsByMake(lineup.make).filter((m) => lineup.pattern.test(m));
+  return models.length ? { make: lineup.make, label: lineup.label, models } : null;
 }
 
 /** All EPA model strings for a make that shoppers mean by `phrase` (e.g. "3"). */
@@ -705,9 +756,13 @@ function resolveModelsAcrossMakes(phrase: string): { models: string[]; makes: st
   }
 
   // If the phrase only matched one family name, expand to every EPA variant.
+  // A prefix-only match ("gle" → GLE350, GLE450…) has no family to expand, so
+  // keep what matched rather than falling back to a substring search that
+  // also finds "wran-gle-r".
   if (models.size > 0 && makes.size === 1) {
     const make = Array.from(makes)[0];
-    return { models: resolveModelsForPhrase(make, phrase), makes: [make] };
+    const expanded = resolveModelsForPhrase(make, phrase);
+    return { models: expanded.length ? expanded : Array.from(models), makes: [make] };
   }
 
   return {
@@ -752,8 +807,11 @@ function scoreRelevance(car: Car, tokens: string[]): number {
 
     if (makeLower === token) score += 50;
     else if (makeLower.startsWith(token)) score += 35;
-    else if (family === token || modelLower === token) score += 48;
-    else if (modelPhraseMatches(car.model, token)) score += 42;
+    // "camry" names the "Camry HEV …" family as much as the plain "Camry":
+    // scoring them alike lets the newest year lead (the Camry is hybrid-only
+    // since 2025, so the plain name stops at 2024).
+    else if (family === token || modelLower === token || modelPhraseMatches(car.model, token))
+      score += 48;
     // A word of the model name ("gti" in "Golf GTI") beats a hit only in the
     // trim: EPA files the Golf R under a "golf-gti" base model.
     else if (modelLower.split(/[\s-]+/).includes(token)) score += 36;

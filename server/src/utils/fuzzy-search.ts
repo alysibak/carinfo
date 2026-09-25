@@ -63,7 +63,53 @@ const ALIASES: Record<string, string> = {
  * "C10/K10" in 2019 and plain "Silverado" since, so "silverado 1500" matched
  * only the oldest. It now means the whole family (EPA rates no heavy-duty).
  */
-const PHRASE_ALIASES: [RegExp, string][] = [[/\b(silverado|sierra) 1500\b/g, '$1']];
+const PHRASE_ALIASES: [RegExp, string][] = [
+  [/\b(silverado|sierra) 1500\b/g, '$1'],
+  // Lineup names EPA never uses, folded into one token that search resolves
+  // to the models: "3 series" → "3-series" (BMW 330i, M340i…), "c class" →
+  // "c-class" (Mercedes C300, AMG C43…).
+  [/\b([1-8]) series\b/g, '$1-series'],
+  [/\bg[ -]?wagon\b/g, 'g-class'],
+  [
+    /\b(a|b|c|e|g|m|r|s|cl|cla|cle|clk|cls|gl|gla|glb|glc|gle|glk|gls|sl|slc|slk) class\b/g,
+    '$1-class',
+  ],
+];
+
+/** A BMW series or Mercedes class, and the pattern its EPA model names follow. */
+export interface Lineup {
+  make: string;
+  label: string;
+  pattern: RegExp;
+}
+
+export function lineupForToken(token: string): Lineup | null {
+  const series = /^([1-8])-series$/.exec(token);
+  if (series) {
+    const n = series[1];
+    return {
+      make: 'BMW',
+      label: `${n} Series`,
+      // 318i … 340i, M340i, the M3 itself, ActiveHybrid 3.
+      pattern: new RegExp(`^(?:m?${n}\\d\\d[a-z]*|m${n}|activehybrid ${n})\\b`, 'i'),
+    };
+  }
+  const klass = /^([a-z]{1,3})-class$/.exec(token);
+  if (klass) {
+    // The M-Class is filed as ML350 and so on.
+    const letters = klass[1] === 'm' ? 'ml' : klass[1];
+    return {
+      make: 'Mercedes-Benz',
+      label: `${klass[1].toUpperCase()}-Class`,
+      // C300, AMG C43, Maybach S580, "G 550", the B-Class Electric Drive.
+      pattern: new RegExp(
+        `^(?:(?:amg|maybach) )?${letters} ?\\d{2,3}[a-z]*\\b|^${letters}-class\\b`,
+        'i',
+      ),
+    };
+  }
+  return null;
+}
 
 /** Drive / door / config tokens that are not part of the shopper-facing model name. */
 const CONFIG_SUFFIX =

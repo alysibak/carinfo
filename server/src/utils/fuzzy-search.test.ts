@@ -3,6 +3,7 @@ import {
   editDistance,
   fuzzyTokenMatch,
   modelFamilyName,
+  lineupForToken,
   modelPhraseMatches,
   normalizeSearchQuery,
   normalizeSearchToken,
@@ -55,5 +56,34 @@ describe('fuzzy-search', () => {
     expect(normalizeSearchQuery('chevy silverado 1500 4wd')).toBe('chevrolet silverado 4wd');
     expect(normalizeSearchQuery('gmc sierra 1500')).toBe('gmc sierra');
     expect(normalizeSearchQuery('ram 1500')).toBe('ram 1500');
+  });
+  it('folds lineup names into one token', () => {
+    expect(normalizeSearchQuery('BMW 3 Series')).toBe('bmw 3-series');
+    expect(normalizeSearchQuery('mercedes c class')).toBe('mercedes-benz c-class');
+    expect(normalizeSearchQuery('G wagon')).toBe('g-class');
+    expect(normalizeSearchQuery('gle class')).toBe('gle-class');
+    // Only Mercedes class letters: ordinary words are left alone.
+    expect(normalizeSearchQuery('world class')).toBe('world class');
+  });
+
+  it('recognises the EPA names inside a lineup, and nothing next to it', () => {
+    const three = lineupForToken('3-series')!.pattern;
+    for (const model of ['330i Sedan', 'M340i xDrive', '325i/325is', 'M3', 'ActiveHybrid 3']) {
+      expect(three.test(model), model).toBe(true);
+    }
+    for (const model of ['X3', '430i Coupe', 'M4', '3 Wheeler']) {
+      expect(three.test(model), model).toBe(false);
+    }
+
+    const c = lineupForToken('c-class')!.pattern;
+    for (const model of ['C300', 'AMG C43 4matic', 'C350e', 'C63 AMG']) {
+      expect(c.test(model), model).toBe(true);
+    }
+    for (const model of ['CLA250', 'CLS550', 'CLK350', 'GLC300']) {
+      expect(c.test(model), model).toBe(false);
+    }
+    expect(lineupForToken('m-class')!.pattern.test('ML350 4matic')).toBe(true);
+    expect(lineupForToken('g-class')!.pattern.test('G 580 with EQ Technology')).toBe(true);
+    expect(lineupForToken('camry')).toBeNull();
   });
 });
