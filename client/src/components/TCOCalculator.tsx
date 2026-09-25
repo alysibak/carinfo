@@ -115,6 +115,7 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
   // natural gas are priced from EPA's own annual cost, so neither applies.
   const basis = result.energy?.basis;
   const showGas = basis === 'gasoline' || basis === 'plug-in hybrid';
+  const showDiesel = basis === 'diesel';
   const showElectricity = basis === 'electric' || basis === 'plug-in hybrid';
   const fuelNoun =
     fuelType === 'hydrogen' ? 'Hydrogen' : fuelType === 'natural gas' ? 'Natural gas' : 'Fuel';
@@ -213,6 +214,15 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
                   suffix={`${DISPLAY_CURRENCY}/L`}
                   value={inputs.gasPriceCadPerL}
                   onChange={set('gasPriceCadPerL')}
+                  step={0.01}
+                />
+              )}
+              {showDiesel && (
+                <NumberField
+                  label="Diesel price"
+                  suffix={`${DISPLAY_CURRENCY}/L`}
+                  value={inputs.dieselPriceCadPerL}
+                  onChange={set('dieselPriceCadPerL')}
                   step={0.01}
                 />
               )}

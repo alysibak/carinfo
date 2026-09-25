@@ -8,6 +8,7 @@ import {
   LOW_VOLUME_CONFIDENCE_LABEL,
 } from './vehicle-valuation.js';
 import { calculateResaleImpact, computeOwnershipEconomics } from './ownership-economics.js';
+import { getRegionalAssumptions } from '../config/regional-assumptions.js';
 import { inferEffectiveFuelType } from './fuel-type-inference.js';
 import { normalizeCarRecord } from '../utils/car-normalize.js';
 import { findCar, loadRawCars } from '../__tests__/helpers/loadCars.js';
@@ -46,11 +47,13 @@ describe('vehicle-valuation (Ontario/CAD)', () => {
     expect(mv.batteryHealth).toBeUndefined();
   });
 
-  it('prices a 2018 Camry XSE’s fuel at the expected annual energy cost', () => {
+  it('prices a 2018 Camry XSE’s fuel from its EPA economy and the regional pump price', () => {
     const car = normalized((c) => c.id === 'toyota-camry-xse-2018-camry-automatic-s8');
     const econ = computeOwnershipEconomics(car, []);
-    expect(econ.annualCost.energy).toBeGreaterThanOrEqual(2_050);
-    expect(econ.annualCost.energy).toBeLessThanOrEqual(2_150);
+    const region = getRegionalAssumptions();
+    const litresPer100Km = 235.215 / Math.round(car.fuelEconomy.combined!);
+    const expected = (region.annualKm / 100) * litresPer100Km * region.gasPriceCadPerL;
+    expect(econ.annualCost.energy).toBeCloseTo(expected, -1);
   });
 
   it('labels battery health on a used BEV (Model 3 Long Range 2022)', () => {

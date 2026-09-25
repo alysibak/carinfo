@@ -227,7 +227,7 @@ Types live in `client/src/types/car.types.ts` and `server/src/types/car.types.ts
 
 ### Enums
 
-**FuelType:** `gasoline` · `diesel` · `electric` · `hybrid` · `plug-in hybrid` · `hydrogen`
+**FuelType:** `gasoline` · `diesel` · `electric` · `hybrid` · `plug-in hybrid` · `hydrogen` · `natural gas`
 
 **BodyStyle:** `sedan` · `suv` · `coupe` · `convertible` · `hatchback` · `wagon` · `truck` · `van` · `minivan`
 
@@ -1123,7 +1123,6 @@ renamed chunk (`utils/staleBuildRecovery.ts`).
 | Horsepower | ~71% coverage; EVs estimated. 31 placeholder ratings (999, 1, 11 hp…) were dropped and show nothing until `build-horsepower` is re-run against EPA's files. |
 | Dimensions / weight / torque / real 0–60 | Not in EPA bulk data; 0–60 is predicted |
 | Market value | Calibrated against Canadian MSRPs and listing averages (`valuation-calibration.test.ts`, RMS error ~13% on 13 references). Size class is a coarse price signal, trims are not distinguished, and exotic values are marque-level guesses labelled low confidence. |
-| Diesel fuel cost | Priced at the regional gasoline price (no sourced diesel price yet) |
 | Hydrogen and natural gas fuel cost | EPA's own annual figure, converted to CAD; the calculator's price inputs do not apply |
 | Rate limits | In-memory per instance; on serverless each instance counts separately |
 | CSP | Baseline only (`base-uri`, `object-src`, `frame-ancestors`); `script-src` would need the Clerk Frontend API host allowlisted |
@@ -1135,7 +1134,6 @@ renamed chunk (`utils/staleBuildRecovery.ts`).
 ### Data
 
 - [ ] Re-run `build-horsepower` to restore correct ratings for the 31 dropped placeholders
-- [ ] A sourced regional diesel price
 - [ ] Full NHTSA backfill → `build-enrichment`
 - [ ] A source for dimensions, weight and torque
 

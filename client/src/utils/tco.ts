@@ -85,6 +85,7 @@ export function defaultTcoInputs(
     region,
     annualKm: assumptions.annualKm,
     gasPriceCadPerL: assumptions.gasPriceCadPerL,
+    dieselPriceCadPerL: assumptions.dieselPriceCadPerL,
     electricityRateCadPerKwh: assumptions.electricityRateCadPerKwh,
     yearsOwned: 5,
     purchasePrice: Math.round(ownership?.marketValue?.mid ?? car.price?.msrp ?? 0),
@@ -137,6 +138,7 @@ export function computeTco(
     {
       annualKm: inputs.annualKm,
       gasPriceCadPerL: inputs.gasPriceCadPerL,
+      dieselPriceCadPerL: inputs.dieselPriceCadPerL,
       electricityRateCadPerKwh: inputs.electricityRateCadPerKwh,
     },
     getRegionalAssumptions(inputs.region),

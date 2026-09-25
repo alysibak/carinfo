@@ -99,8 +99,9 @@ export default function Methodology() {
               Insurance, maintenance, tires, and registration scaled by body style and fuel type.
             </li>
             <li>
-              Energy costs from Ontario gas, diesel, and electricity baselines (hydrogen not
-              modeled).
+              Energy costs from your region&rsquo;s gas, diesel and home-electricity prices (recent
+              Statistics Canada averages). Hydrogen and natural gas use EPA&rsquo;s own annual
+              fuel-cost figure, converted to CAD.
             </li>
             <li>Output: low / mid / high band plus a confidence label (low, medium, high).</li>
           </ul>

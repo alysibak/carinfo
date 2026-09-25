@@ -30,12 +30,15 @@ const KM_PER_MILE = 1.609344;
 export interface EnergyPriceInputs {
   annualKm: number;
   gasPriceCadPerL: number;
+  dieselPriceCadPerL: number;
   electricityRateCadPerKwh: number;
 }
 
 export type EnergyCostBasis =
   /** Litres/100 km from EPA MPG × the gas price. */
   | 'gasoline'
+  /** Litres/100 km from EPA MPG × the diesel price. */
+  | 'diesel'
   /** kWh/100 km from EPA MPGe × the electricity rate. */
   | 'electric'
   /** Separate gas and electric figures, weighted by the regional utility split. */
@@ -61,6 +64,11 @@ function round(n: number): number {
 
 function gasolineAnnualCad(mpg: number, region: RegionalAssumptions): number {
   return (region.annualKm / 100) * mpgToLPer100Km(mpg) * region.gasPriceCadPerL;
+}
+
+/** EPA rates diesel economy per gallon of diesel, so this is the same arithmetic at the pump price for diesel. */
+function dieselAnnualCad(mpg: number, region: RegionalAssumptions): number {
+  return (region.annualKm / 100) * mpgToLPer100Km(mpg) * region.dieselPriceCadPerL;
 }
 
 function electricAnnualCad(mpge: number, region: RegionalAssumptions): number {
@@ -116,6 +124,10 @@ export function estimateAnnualEnergyCost(
     const electric =
       round(electricAnnualCad(electricMpge, region)) * region.phev.electricMileFraction;
     return result(gas + electric, 'plug-in hybrid');
+  }
+
+  if (fuelType === 'diesel' && mpg > 0) {
+    return result(dieselAnnualCad(mpg, region), 'diesel');
   }
 
   if (mpg > 0) {

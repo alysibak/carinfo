@@ -60,8 +60,13 @@ export interface RegionalAssumptions {
    * every value by roughly a quarter before depreciation even started.
    */
   vehiclePriceCadPerUsd: number;
-  /** Ontario retail gasoline — multi-month average ~$1.45–1.65/L (review periodically). */
+  /** Regular gasoline, recent multi-month retail average (review periodically). */
   gasPriceCadPerL: number;
+  /**
+   * Diesel, same basis. Diesel cars used to be priced at the gasoline price;
+   * diesel ran about 10–15% higher through 2026.
+   */
+  dieselPriceCadPerL: number;
   /** Blended Ontario residential rate for home charging (~TOU mid-tier average). */
   electricityRateCadPerKwh: number;
   annualKm: number;
@@ -80,7 +85,10 @@ export const REGIONAL_ASSUMPTIONS: Record<RegionId, RegionalAssumptions> = {
     displayCurrency: 'CAD',
     cadUsdExchangeRate: 1.38,
     vehiclePriceCadPerUsd: 1.2,
-    gasPriceCadPerL: 1.55,
+    // Statistics Canada, Toronto self-serve regular: 176.6¢ (Apr 2026), 165.8¢
+    // (Jun); national 174¢ (Aug). Diesel, Toronto: 186.9¢ (Jun), 205.0¢ (Jul).
+    gasPriceCadPerL: 1.7,
+    dieselPriceCadPerL: 1.95,
     electricityRateCadPerKwh: 0.155,
     annualKm: 15000,
     registrationCadPerYear: 150,
@@ -129,7 +137,10 @@ export const REGIONAL_ASSUMPTIONS: Record<RegionId, RegionalAssumptions> = {
     displayCurrency: 'CAD',
     cadUsdExchangeRate: 1.38,
     vehiclePriceCadPerUsd: 1.22,
-    gasPriceCadPerL: 1.72,
+    // Statistics Canada, Vancouver: regular 207¢ (Aug 2026); diesel 222.9¢
+    // (Jun), 235.4¢ (Jul). Province-wide prices run a little under Vancouver's.
+    gasPriceCadPerL: 1.98,
+    dieselPriceCadPerL: 2.25,
     electricityRateCadPerKwh: 0.12,
     annualKm: 14000,
     registrationCadPerYear: 180,
@@ -214,7 +225,7 @@ export function usdAnchorToCadValue(
 export function formatOntarioEnergyAssumptionNote(
   region: RegionalAssumptions = getRegionalAssumptions(),
 ): string {
-  return `${region.label} ~$${region.gasPriceCadPerL.toFixed(2)}/L gas, ~$${region.electricityRateCadPerKwh.toFixed(3)}/kWh home electricity @ ~${region.annualKm.toLocaleString()} km/yr`;
+  return `${region.label} ~$${region.gasPriceCadPerL.toFixed(2)}/L gas, ~$${region.dieselPriceCadPerL.toFixed(2)}/L diesel, ~$${region.electricityRateCadPerKwh.toFixed(3)}/kWh home electricity @ ~${region.annualKm.toLocaleString()} km/yr`;
 }
 
 export function formatOntarioRegionNote(
