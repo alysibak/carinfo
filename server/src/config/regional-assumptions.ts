@@ -52,8 +52,14 @@ export interface RegionalAssumptions {
   displayCurrency: 'CAD';
   /** Approximate CAD per USD — review periodically (mid-2025 planning rate). */
   cadUsdExchangeRate: number;
-  /** Canadian used-vehicle values often sit above a straight USD→CAD conversion. */
-  canadianUsedMarketFactor: number;
+  /**
+   * Canadian vehicle prices per US dollar of US price. Not the exchange rate:
+   * manufacturers price Canada well below FX parity (a Civic lists at about
+   * 1.15x its US price, an F-150 about 1.25x), so converting at FX, as the
+   * model once did (x1.38, then x1.08 for "the Canadian market"), overstated
+   * every value by roughly a quarter before depreciation even started.
+   */
+  vehiclePriceCadPerUsd: number;
   /** Ontario retail gasoline — multi-month average ~$1.45–1.65/L (review periodically). */
   gasPriceCadPerL: number;
   /** Blended Ontario residential rate for home charging (~TOU mid-tier average). */
@@ -73,7 +79,7 @@ export const REGIONAL_ASSUMPTIONS: Record<RegionId, RegionalAssumptions> = {
     label: 'Ontario',
     displayCurrency: 'CAD',
     cadUsdExchangeRate: 1.38,
-    canadianUsedMarketFactor: 1.08,
+    vehiclePriceCadPerUsd: 1.2,
     gasPriceCadPerL: 1.55,
     electricityRateCadPerKwh: 0.155,
     annualKm: 15000,
@@ -122,7 +128,7 @@ export const REGIONAL_ASSUMPTIONS: Record<RegionId, RegionalAssumptions> = {
     label: 'British Columbia',
     displayCurrency: 'CAD',
     cadUsdExchangeRate: 1.38,
-    canadianUsedMarketFactor: 1.1,
+    vehiclePriceCadPerUsd: 1.22,
     gasPriceCadPerL: 1.72,
     electricityRateCadPerKwh: 0.12,
     annualKm: 14000,
@@ -202,7 +208,7 @@ export function usdAnchorToCadValue(
   usdAmount: number,
   region: RegionalAssumptions = getRegionalAssumptions(),
 ): number {
-  return usdAmount * region.cadUsdExchangeRate * region.canadianUsedMarketFactor;
+  return usdAmount * region.vehiclePriceCadPerUsd;
 }
 
 export function formatOntarioEnergyAssumptionNote(

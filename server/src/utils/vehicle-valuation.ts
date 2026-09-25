@@ -60,7 +60,34 @@ const LUXURY_MAKES = new Set([
   'Fisker',
 ]);
 
-const EXOTIC_MAKES = new Set(['Ferrari', 'Lamborghini', 'Bentley', 'Rolls-Royce', 'Maserati']);
+/**
+ * Typical current US MSRP by marque, for makers whose cars no size class can
+ * price. Anchoring them on a class with a multiplier valued a Bugatti Chiron
+ * at $50,500, an Aston Martin DB12 at $21,250 and a Koenigsegg at $36,000.
+ * These are still thin-market guesses, and are labelled low confidence.
+ */
+const MARQUE_ANCHORS_USD: Record<string, number> = {
+  Bugatti: 3_500_000,
+  'Bugatti Rimac': 3_500_000,
+  Pagani: 3_200_000,
+  Koenigsegg: 3_000_000,
+  'Rolls-Royce': 420_000,
+  Maybach: 400_000,
+  'RUF Automobile': 300_000,
+  Ferrari: 330_000,
+  Lamborghini: 280_000,
+  'McLaren Automotive': 280_000,
+  Bentley: 250_000,
+  Spyker: 250_000,
+  Vector: 250_000,
+  'Aston Martin': 230_000,
+  Lotus: 110_000,
+  Maserati: 110_000,
+};
+
+const EXOTIC_MAKES = new Set(
+  Object.keys(MARQUE_ANCHORS_USD).filter((make) => make !== 'Lotus' && make !== 'Maserati'),
+);
 
 const BRAND_RETENTION: Record<string, number> = {
   Toyota: 1.08,
@@ -69,7 +96,9 @@ const BRAND_RETENTION: Record<string, number> = {
   Mazda: 1.04,
   Subaru: 1.03,
   Porsche: 1.12,
-  Tesla: 1.14,
+  // Was 1.14. Tesla's 2023–25 price cuts took residuals down with them: a 2022
+  // Model 3 lists around $32,600 CAD in 2026, about 55% of its original price.
+  Tesla: 1.0,
   Ford: 1.0,
   Chevrolet: 0.98,
   Nissan: 0.96,
@@ -197,7 +226,17 @@ const MODEL_MSRP_RULES: ModelMsrpRule[] = [
     test: (c) => c.make === 'Ford' && c.model.toLowerCase().includes('focus electric'),
     msrp: 32000,
   },
-  { test: (c) => c.make === 'Chevrolet' && c.model.toLowerCase().includes('spark'), msrp: 26000 },
+  // Subcompact nameplates. EPA files several as "Compact" by interior volume
+  // (the Versa), which would anchor them at a Corolla's price. The Spark rule
+  // used to say $26,000; it listed around $14,000.
+  { test: (c) => c.make === 'Chevrolet' && c.model.toLowerCase().includes('spark'), msrp: 14000 },
+  {
+    test: (c) =>
+      /^(nissan (versa|micra)|mitsubishi mirage|kia rio|hyundai accent|chevrolet (sonic|aveo)|toyota yaris|honda fit|ford fiesta)\b/i.test(
+        `${c.make} ${c.model}`,
+      ) && !/\bst\b/i.test(c.model),
+    msrp: 17500,
+  },
   {
     test: (c) => c.make === 'Toyota' && c.model.toLowerCase().includes('prius prime'),
     msrp: 34000,
@@ -207,6 +246,11 @@ const MODEL_MSRP_RULES: ModelMsrpRule[] = [
     test: (c) => c.make === 'Porsche' && c.model.toLowerCase().includes('cayenne'),
     msrp: (c) => (c.year >= 2020 ? 98000 : c.year >= 2016 ? 88000 : 78000),
   },
+  {
+    test: (c) => c.make === 'Porsche' && /^911\b/.test(c.model),
+    msrp: (c) => (/turbo|gt2|gt3|dakar|s\/t/i.test(c.model) ? 220000 : 135000),
+  },
+  { test: (c) => c.make === 'Porsche' && /^718\b/.test(c.model), msrp: 80000 },
   {
     test: (c) => c.make === 'Porsche' && c.model === 'Macan',
     msrp: (c) => (c.year >= 2022 ? 72000 : 65000),
@@ -261,8 +305,41 @@ export function classifyMarketSegment(car: CarSpecs): MarketSegment {
   if (car.bodyStyle === 'truck' || car.bodyStyle === 'van') return 'utility';
   if (car.bodyStyle === 'coupe' || car.bodyStyle === 'convertible') return 'performance';
   const msrp = estimateNewVehicleMsrp(car);
-  if (msrp < 28000) return 'economy';
+  // Subcompacts (Versa, Mirage, Rio). Compacts anchor above this and depreciate
+  // on the mainstream curve, as their listings show.
+  if (msrp < 23000) return 'economy';
   return 'mainstream';
+}
+
+/**
+ * Typical current US MSRP by EPA size class, mainstream brands, mid trims.
+ *
+ * Every sedan used to anchor at the same $32,000, so an Elantra and a Camry
+ * were the same car to the model. EPA classes measure interior volume rather
+ * than price (the Elantra is "Midsize", the Versa "Compact"), so this is a
+ * coarse signal; model rules above take precedence where they exist.
+ */
+const CLASS_ANCHORS_USD: Array<[RegExp, number]> = [
+  [/^minicompact|^subcompact/i, 22_000],
+  [/^compact/i, 24_000],
+  [/^midsize-large station/i, 36_000],
+  [/^midsize station/i, 31_000],
+  [/^midsize/i, 27_000],
+  [/^large/i, 34_000],
+  [/^small station/i, 26_000],
+  [/^small sport utility/i, 30_000],
+  [/^standard sport utility/i, 45_000],
+  [/^sport utility/i, 33_000],
+  [/^small pickup/i, 32_000],
+  [/^standard pickup/i, 48_000],
+  [/^minivan/i, 38_000],
+  [/^vans/i, 44_000],
+];
+
+function classAnchorUsd(car: CarSpecs): number | null {
+  const vClass = car.epa?.vClass;
+  if (!vClass) return null;
+  return CLASS_ANCHORS_USD.find(([pattern]) => pattern.test(vClass))?.[1] ?? null;
 }
 
 /** Original MSRP anchor — model-specific when possible. */
@@ -286,8 +363,12 @@ export function estimateNewVehicleMsrp(car: CarSpecs): number {
     van: 38000,
   };
 
-  let price = baseByStyle[car.bodyStyle] || 34000;
-  if (EXOTIC_MAKES.has(car.make)) price *= 4;
+  // Coupes and convertibles keep their body-style anchor: EPA files a Mustang
+  // as "Subcompact", and a size-class price would value it like a Versa.
+  const sporty = car.bodyStyle === 'coupe' || car.bodyStyle === 'convertible';
+  let price = (!sporty && classAnchorUsd(car)) || baseByStyle[car.bodyStyle] || 34000;
+  const marque = MARQUE_ANCHORS_USD[car.make];
+  if (marque != null) price = marque;
   else if (LUXURY_MAKES.has(car.make)) price *= 1.55;
   if (isHeavyEvTruck(car)) price = Math.max(price, 95000);
   if (isLuxuryPerformance(car)) price = Math.max(price, 92000);
@@ -413,13 +494,18 @@ function retentionFraction(
     return Math.min(0.9, (0.06 + 0.94 * Math.exp(-k * age)) * brand * infraPenalty);
   }
 
+  // Calibrated against Canadian listing averages in 2026 relative to today's
+  // MSRP (see valuation-calibration.test.ts): about 0.85 at 3 years, 0.65 at 6,
+  // 0.55 at 8 and 0.35 at 13 for a mainstream car. The previous rates (0.13
+  // for mainstream) were steeper, and only landed near real prices because the
+  // anchors they multiplied were inflated.
   const segmentK: Record<MarketSegment, number> = {
-    economy: 0.16,
-    mainstream: 0.13,
-    luxury: 0.17,
-    performance: 0.15,
-    utility: 0.12,
-    exotic: 0.2,
+    economy: 0.115,
+    mainstream: 0.094,
+    luxury: 0.122,
+    performance: 0.108,
+    utility: 0.086,
+    exotic: 0.144,
   };
   const segmentFloor: Record<MarketSegment, number> = {
     economy: 0.06,

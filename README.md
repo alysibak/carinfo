@@ -1122,6 +1122,7 @@ renamed chunk (`utils/staleBuildRecovery.ts`).
 | NHTSA safety | ~13% per-car; NHTSA tests far fewer configs than EPA |
 | Horsepower | ~71% coverage; EVs estimated. 31 placeholder ratings (999, 1, 11 hp…) were dropped and show nothing until `build-horsepower` is re-run against EPA's files. |
 | Dimensions / weight / torque / real 0–60 | Not in EPA bulk data; 0–60 is predicted |
+| Market value | Calibrated against Canadian MSRPs and listing averages (`valuation-calibration.test.ts`, RMS error ~13% on 13 references). Size class is a coarse price signal, trims are not distinguished, and exotic values are marque-level guesses labelled low confidence. |
 | Diesel fuel cost | Priced at the regional gasoline price (no sourced diesel price yet) |
 | Hydrogen and natural gas fuel cost | EPA's own annual figure, converted to CAD; the calculator's price inputs do not apply |
 | Rate limits | In-memory per instance; on serverless each instance counts separately |

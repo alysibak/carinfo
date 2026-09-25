@@ -435,7 +435,7 @@ export function computeOwnershipEconomics(
           : isLuxuryPerformance(car)
             ? `Luxury coupe (${region.label} baseline)`
             : `${car.bodyStyle} baseline (${region.label})`,
-      depreciationNote: `${depNote}; USD MSRP anchors × ${region.cadUsdExchangeRate} FX × ${region.canadianUsedMarketFactor} Canadian market factor`,
+      depreciationNote: `${depNote}; US MSRP anchors × ${region.vehiclePriceCadPerUsd} (Canadian vs US sticker prices)`,
       regionNote: formatOntarioRegionNote(region),
     },
     warnings,

@@ -32,54 +32,34 @@ function normalized(find: (c: Car) => boolean) {
 }
 
 describe('vehicle-valuation (Ontario/CAD)', () => {
-  it('Corolla 2020 lands in corrected economy-sedan band', () => {
-    const car = normalized((c) => c.make === 'Toyota' && c.model === 'Corolla' && c.year === 2020);
-    const mv = estimateMarketValue(car);
-    assertValueBand(mv.low, mv.mid, mv.high, 22_000, 30_000);
-  });
+  // Dollar accuracy is pinned against observed Canadian prices in
+  // valuation-calibration.test.ts. These hand-set bands were retired there:
+  // they had been tuned to an over-high model (a 2020 Corolla at $22–30k when
+  // listings average $18.6k). What stays here is behaviour, not dollars.
 
-  it('RAV4 2020 gasoline lands in corrected SUV band', () => {
-    const car = normalized(
-      (c) =>
-        c.make === 'Toyota' &&
-        c.model === 'RAV4' &&
-        c.year === 2020 &&
-        c.engine.fuelType === 'gasoline',
-    );
-    const mv = estimateMarketValue(car);
-    assertValueBand(mv.low, mv.mid, mv.high, 28_000, 40_000);
-  });
-
-  it('Macan 2023 lands in corrected luxury SUV band', () => {
-    const car = normalized((c) => c.make === 'Porsche' && c.model === 'Macan' && c.year === 2023);
-    const mv = estimateMarketValue(car);
-    assertValueBand(mv.low, mv.mid, mv.high, 64_000, 90_000);
-  });
-
-  it('Cayenne e-Hybrid after PHEV correction lands in expected band', () => {
+  it('keeps battery health off a plug-in hybrid after the PHEV correction', () => {
     const car = normalized((c) => c.id === 'porsche-cayenne-e-hybrid-2019-cayenne-automatic-s8');
     expect(car.engine.fuelType).toBe('plug-in hybrid');
     const mv = estimateMarketValue(car);
-    assertValueBand(mv.low, mv.mid, mv.high, 52_000, 72_000);
+    // Launched at C$91,700; comparable US listings run US$44–46k in 2026.
+    assertValueBand(mv.low, mv.mid, mv.high, 40_000, 70_000);
     expect(mv.batteryHealth).toBeUndefined();
   });
 
-  it('Camry XSE 2018 lands in corrected band with expected annual energy cost', () => {
+  it('prices a 2018 Camry XSE’s fuel at the expected annual energy cost', () => {
     const car = normalized((c) => c.id === 'toyota-camry-xse-2018-camry-automatic-s8');
-    const mv = estimateMarketValue(car);
-    assertValueBand(mv.low, mv.mid, mv.high, 17_000, 24_000);
-
     const econ = computeOwnershipEconomics(car, []);
     expect(econ.annualCost.energy).toBeGreaterThanOrEqual(2_050);
     expect(econ.annualCost.energy).toBeLessThanOrEqual(2_150);
   });
 
-  it('Model 3 Long Range 2022 BEV retains battery health label', () => {
+  it('labels battery health on a used BEV (Model 3 Long Range 2022)', () => {
     const car = normalized(
       (c) => c.make === 'Tesla' && c.model.includes('Model 3 Long Range') && c.year === 2022,
     );
     const mv = estimateMarketValue(car);
-    assertValueBand(mv.low, mv.mid, mv.high, 42_000, 60_000);
+    expect(mv.low).toBeLessThanOrEqual(mv.mid);
+    expect(mv.mid).toBeLessThanOrEqual(mv.high);
     expect(mv.batteryHealth?.label).toBeTruthy();
   });
 

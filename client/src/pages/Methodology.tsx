@@ -84,7 +84,13 @@ export default function Methodology() {
           </p>
           <ul className="space-y-2 text-sm text-zinc-400 leading-relaxed list-disc list-inside marker:text-zinc-400">
             <li>
-              USD EPA anchors converted via a fixed CAD exchange rate in regional assumptions.
+              Value starts from a typical current US sticker price for the vehicle&rsquo;s model,
+              maker or size class, converted at the ratio of Canadian to US sticker prices (about
+              1.2, not the exchange rate), then depreciated by age.
+            </li>
+            <li>
+              Checked against average Canadian asking prices for reference vehicles; expect
+              individual estimates to be within about 25%.
             </li>
             <li>
               Depreciation tiers by segment, age, fuel type, and retention class (A/B/C for EVs).
