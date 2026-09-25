@@ -17,7 +17,10 @@ import { canonicalizeDisplayModel, resolveNhtsaSafety } from '../src/utils/vehic
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = resolve(__dirname, '..', 'data');
-const CSV_PATH = join(DATA_DIR, 'raw', 'vehicles.csv');
+const csvArg = process.argv.find((a) => a.startsWith('--csv='));
+const CSV_PATH = csvArg
+  ? resolve(csvArg.slice('--csv='.length))
+  : join(DATA_DIR, 'raw', 'vehicles.csv');
 const CACHE_PATH = join(DATA_DIR, 'raw', 'nhtsa-enrichment-cache.json');
 const CARS_PATH = join(DATA_DIR, 'cars.json');
 const EPA_OUT = join(DATA_DIR, 'epa-enrichment.json');
@@ -176,6 +179,15 @@ export interface SafetyEntry {
 
 function buildNhtsaSafety(): Record<string, SafetyEntry> {
   if (!existsSync(CACHE_PATH)) {
+    // Without the raw cache, keep the committed ratings rather than writing an
+    // empty file over them (and re-resolve them onto the current cars).
+    if (existsSync(NHTSA_OUT)) {
+      const kept = JSON.parse(readFileSync(NHTSA_OUT, 'utf8')) as Record<string, SafetyEntry>;
+      console.warn(
+        `No NHTSA cache found — reusing ${Object.keys(kept).length} committed make|model|year ratings.`,
+      );
+      return kept;
+    }
     console.warn('No NHTSA cache found — skipping safety enrichment.');
     return {};
   }

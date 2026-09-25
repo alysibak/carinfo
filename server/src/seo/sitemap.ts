@@ -2,7 +2,7 @@ import { escapeHtml } from './html.js';
 
 /**
  * Sitemap protocol limits are 50,000 URLs and 50 MB per file. The corpus is
- * ~28k vehicles today, which would fit in one file, but chunking keeps a data
+ * ~36k vehicles today, which would fit in one file, but chunking keeps a data
  * rebuild that grows the corpus from silently producing an invalid sitemap.
  */
 export const URLS_PER_SITEMAP = 10_000;

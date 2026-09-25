@@ -38,7 +38,7 @@ function homeLinkFromPreset(preset: (typeof LIFESTYLE_PRESETS)[number]) {
 export default function Landing() {
   usePageMeta(
     'Car reference with verified specs',
-    'Browse 28,000+ vehicles with EPA fuel economy, NHTSA safety when on file, and labeled Ontario/CAD market estimates.',
+    'Browse 35,000+ vehicles with EPA fuel economy, NHTSA safety when on file, and labeled Ontario/CAD market estimates.',
   );
   const [showQuiz, setShowQuiz] = useState(false);
 

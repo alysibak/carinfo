@@ -26,7 +26,7 @@ const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/i;
 export default function Home() {
   usePageMeta(
     'Search',
-    'Filter and search 28,000+ vehicles by make, fuel type, body style, and price.',
+    'Filter and search 35,000+ vehicles by make, fuel type, body style, and price.',
   );
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();

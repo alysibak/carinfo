@@ -42,7 +42,7 @@ const html = `<!doctype html><html><head><style>
     <p>Specs you can trust: EPA fuel economy, NHTSA safety, and clearly labeled estimates.</p>
   </div>
   <div class="rule"></div>
-  <div class="foot">28,000+ vehicles · 1995–2026 · Canadian costs</div>
+  <div class="foot">35,000+ vehicles · 1995–2027 · Canadian costs</div>
 </body></html>`;
 
 const browser = await chromium.launch(

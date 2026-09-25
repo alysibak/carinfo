@@ -47,4 +47,23 @@ describe('engineLayoutLabel', () => {
     expect(formatEngineSystem('gasoline', 3, 'I6', 6)).toBe('3L 6-cyl');
     expect(formatEngineSystem('electric', undefined, undefined, undefined)).toBe('Electric Motor');
   });
+
+  it('names forced induction, so a Type R no longer reads like the base 2.0L', () => {
+    const typeR = {
+      fuelType: 'gasoline',
+      displacement: 2,
+      configuration: 'I4',
+      cylinders: 4,
+      aspiration: 'turbocharged' as const,
+    };
+    expect(formatEngineDetailForCard(typeR)).toBe('2L I4 Turbo');
+    expect(formatEngineSystem('gasoline', 6.2, 'V8', 8, 'supercharged')).toBe(
+      '6.2L V8 Supercharged',
+    );
+    expect(formatEngineSystem('gasoline', 5, 'V8', 8)).toBe('5L V8');
+    // No engine size on file: say nothing rather than a lone "Turbo".
+    expect(formatEngineSystem('gasoline', undefined, undefined, undefined, 'turbocharged')).toBe(
+      'Not on file',
+    );
+  });
 });

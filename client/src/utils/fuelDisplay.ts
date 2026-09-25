@@ -98,11 +98,23 @@ export function engineLayoutLabel(configuration?: string, cylinders?: number): s
   return null;
 }
 
+const ASPIRATION_LABELS: Record<NonNullable<CarSpecs['engine']['aspiration']>, string> = {
+  turbocharged: 'Turbo',
+  supercharged: 'Supercharged',
+  'turbocharged and supercharged': 'Turbo + supercharged',
+};
+
+/** "Turbo", "Supercharged"; null for a naturally aspirated or electric car. */
+export function aspirationLabel(aspiration?: CarSpecs['engine']['aspiration']): string | null {
+  return aspiration ? ASPIRATION_LABELS[aspiration] : null;
+}
+
 export function formatEngineSystem(
   fuelType: string,
   displacement?: number | null,
   configuration?: string,
   cylinders?: number,
+  aspiration?: CarSpecs['engine']['aspiration'],
 ): string {
   if (fuelType === 'hydrogen') return 'Hydrogen Fuel Cell System';
   if (fuelType === 'electric') return 'Electric Motor';
@@ -111,5 +123,8 @@ export function formatEngineSystem(
   if (displacement != null && displacement > 0) parts.push(`${displacement}L`);
   const layout = engineLayoutLabel(configuration, cylinders);
   if (layout) parts.push(layout);
+  // "2.0L I4 Turbo": without it a Civic Type R read like the base 2.0L.
+  const induction = aspirationLabel(aspiration);
+  if (induction && parts.length) parts.push(induction);
   return parts.join(' ') || 'Not on file';
 }

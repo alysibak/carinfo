@@ -18,7 +18,7 @@ const asStaleElectric = (car: Car): Car => ({
 
 describe('fuel-type-inference', () => {
   it('agrees with EPA on every vehicle in the corpus', () => {
-    // cars.json carries EPA's classification for all 28k records, so any
+    // cars.json carries EPA's classification for every record, so any
     // disagreement here would be a rule overriding the source of truth. Before
     // the reconciliation the source was stale and the rules corrected 426
     // records (after an earlier bug where they also demoted 11 genuine BEVs).

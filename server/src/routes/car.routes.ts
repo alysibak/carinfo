@@ -7,7 +7,7 @@ const router = Router();
 
 // The vehicle corpus only changes on deploy, so every GET below is served with
 // a dataset-fingerprint ETag and long CDN TTLs. Repeat traffic becomes 304s and
-// edge hits, which is what keeps a 28k-row dataset cheap to serve.
+// edge hits, which is what keeps a 36k-row dataset cheap to serve.
 const cacheData = dataCache(CACHE_IMMUTABLE_DATA);
 
 // Get all makes

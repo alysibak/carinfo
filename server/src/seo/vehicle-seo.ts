@@ -57,6 +57,27 @@ function efficiencyPhrase(car: Car): string | null {
   return `${Math.round(combined)} ${isElectrified(car) ? 'MPGe' : 'MPG'} combined`;
 }
 
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/**
+ * "5.0L V8", "2.0L 4-cylinder turbo": configurations of one model and year
+ * often differ only here, and each has its own page.
+ */
+function engineSummary(car: Car): string | null {
+  const { displacement, configuration, cylinders, aspiration } = car.engine;
+  if (!displacement) return null;
+  const layout = configuration ?? (cylinders ? `${cylinders}-cylinder` : null);
+  const induction =
+    aspiration === 'turbocharged'
+      ? 'turbo'
+      : aspiration === 'supercharged'
+        ? 'supercharged'
+        : aspiration
+          ? 'turbo + supercharged'
+          : null;
+  return [`${displacement}L`, layout, induction].filter(Boolean).join(' ');
+}
+
 /**
  * Title and description mirror what CarDetail's usePageMeta sets once the SPA
  * loads, so a crawler and a user see the same page identity.
@@ -66,7 +87,12 @@ export function vehicleSeo(car: Car): PageSeo {
   const fuel = FUEL_LABEL[car.engine.fuelType] ?? car.engine.fuelType;
   const efficiency = efficiencyPhrase(car);
 
-  const facts = [efficiency, `${fuel.toLowerCase()} ${car.bodyStyle}`, car.driveType]
+  const facts = [
+    engineSummary(car),
+    efficiency,
+    `${fuel.toLowerCase()} ${car.bodyStyle}`,
+    car.driveType,
+  ]
     .filter(Boolean)
     .join(', ');
 
@@ -105,6 +131,7 @@ export function vehicleSeo(car: Car): PageSeo {
           vehicleEngine: {
             '@type': 'EngineSpecification',
             fuelType: SCHEMA_FUEL[car.engine.fuelType] ?? car.engine.fuelType,
+            ...(car.engine.aspiration ? { engineType: capitalize(car.engine.aspiration) } : {}),
             ...(car.engine.displacement
               ? {
                   engineDisplacement: {
@@ -162,6 +189,7 @@ function vehicleSummaryHtml(car: Car, efficiency: string | null, fuel: string): 
   }
   if (car.engine.displacement) rows.push(['Displacement', `${car.engine.displacement} L`]);
   if (car.engine.cylinders) rows.push(['Cylinders', String(car.engine.cylinders)]);
+  if (car.engine.aspiration) rows.push(['Induction', capitalize(car.engine.aspiration)]);
   if (car.engine.horsepower) rows.push(['Horsepower', `${car.engine.horsepower} hp`]);
   if (car.transmission?.type) {
     rows.push([

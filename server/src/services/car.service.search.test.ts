@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { FIRST_MODEL_YEAR, LATEST_MODEL_YEAR } from '../config/model-years.js';
+import {
+  FIRST_MODEL_YEAR,
+  LATEST_FULL_MODEL_YEAR,
+  LATEST_MODEL_YEAR,
+} from '../config/model-years.js';
 import {
   getCarById,
   getSearchSuggestions,
@@ -231,6 +235,20 @@ describe('car.service natural language search', () => {
     expect(getStatistics().yearRange).toEqual({ min: FIRST_MODEL_YEAR, max: LATEST_MODEL_YEAR });
   });
 
+  it('calls a year "full" only while the next one is still partial', () => {
+    // Examples ("2026 Camry") and the newest-year chip use the full year. Once
+    // EPA has certified most of the next year's lineup, bump the constant.
+    const count = (year: number) =>
+      searchCars({ filters: { year: { min: year, max: year } }, limit: 1 }).total;
+    expect(count(LATEST_FULL_MODEL_YEAR)).toBeGreaterThan(1000);
+    if (LATEST_MODEL_YEAR > LATEST_FULL_MODEL_YEAR) {
+      expect(count(LATEST_MODEL_YEAR)).toBeLessThan(count(LATEST_FULL_MODEL_YEAR) / 2);
+    }
+    expect(
+      searchCars({ query: `${LATEST_FULL_MODEL_YEAR} camry`, limit: 1 }).total,
+    ).toBeGreaterThan(0);
+  });
+
   it('says which model years are on file when a searched year is not', () => {
     const typed = searchCars({ query: '1985 corvette', limit: 5 });
     expect(typed.total).toBe(0);
@@ -268,9 +286,9 @@ describe('car.service natural language search', () => {
   it('reaches current half-tons and roadsters by their familiar names', () => {
     const newest = (query: string) =>
       Math.max(...searchCars({ query, limit: 500 }).results.map((c) => c.year));
-    expect(newest('silverado 1500')).toBe(LATEST_MODEL_YEAR);
-    expect(newest('sierra 1500')).toBe(LATEST_MODEL_YEAR);
-    expect(newest('miata')).toBe(LATEST_MODEL_YEAR);
+    expect(newest('silverado 1500')).toBe(LATEST_FULL_MODEL_YEAR);
+    expect(newest('sierra 1500')).toBe(LATEST_FULL_MODEL_YEAR);
+    expect(newest('miata')).toBe(LATEST_FULL_MODEL_YEAR);
   });
 
   it('ranks a model-name match above a trim-only match', () => {
@@ -329,7 +347,7 @@ describe('car.service natural language search', () => {
         sort: { field: 'relevance', order: 'desc' },
         limit: 1,
       }).results;
-      expect(top.year, query).toBe(LATEST_MODEL_YEAR);
+      expect(top.year, query).toBeGreaterThanOrEqual(LATEST_FULL_MODEL_YEAR);
     }
   });
 });

@@ -2,7 +2,7 @@
 
 A full-stack car discovery and comparison platform. **Specs-first** — EPA fuel economy, engine, emissions, and safety (when available) — with clearly labeled **estimated** market value, running cost, and TCO analytics.
 
-- **~28,278 vehicles** (1995–2026) across **90 makes**
+- **~35,800 vehicles** (1995–2027) across **92 makes**
 - Primary data: [EPA FuelEconomy.gov](https://fueleconomy.gov)
 - Secondary: NHTSA safety (when enriched), EPA Test Car List horsepower, heuristic valuation
 - Default regional model: **Ontario, CAD**
@@ -112,26 +112,28 @@ This README quotes **actual source** in [Code reference](#code-reference). To re
 
 | Metric | Count |
 |--------|-------|
-| Total vehicles | 28,278 |
-| Year range | 1995–2026 |
-| Makes | 90 |
-| EPA enrichment records | 28,278 |
-| Horsepower enrichment keys | 20,074 (~71%) |
+| Total vehicles | 35,825 (35,823 after ID merges) |
+| Year range | 1995–2027 (2027 partial) |
+| Makes | 92 |
+| EPA enrichment records | 35,825 |
+| Horsepower enrichment keys | 20,043 (~56%) |
 | NHTSA combo ratings | 1,025 `make\|model\|year` |
-| NHTSA per-car index | 3,753 (13.3%) |
+| NHTSA per-car index | 4,518 (12.6%) |
+| Turbocharged / supercharged | 11,369 |
 | NHTSA cache lookups attempted | 13,842 |
 
 ### Body style breakdown
 
 | Body style | Count |
 |------------|-------|
-| sedan | 13,603 |
-| suv | 7,898 |
-| truck | 2,503 |
-| coupe | 1,870 |
-| wagon | 1,506 |
-| van | 522 |
-| minivan | 376 |
+| sedan | 16,264 |
+| suv | 10,141 |
+| truck | 4,095 |
+| coupe | 2,013 |
+| wagon | 1,816 |
+| van | 889 |
+| minivan | 586 |
+| hatchback | 21 |
 
 ### Fuel types
 
@@ -146,12 +148,13 @@ second line of defense and agree with EPA on every record (a test pins that).
 
 | Field | Records |
 |-------|---------|
-| trim | 28,278 |
-| engine.configuration | 26,826 |
-| transmission.speeds | 15,178 |
-| countryOfOrigin | 25,570 |
-| epa.co2 | 14,818 |
-| epa.charge240Hours | 1,824 |
+| trim | 35,825 |
+| engine.configuration | 31,428 |
+| engine.aspiration | 11,369 |
+| transmission.speeds | 22,489 |
+| countryOfOrigin | 32,457 |
+| epa.co2 | 17,859 |
+| epa.charge240Hours | 1,874 |
 | epa.charge120Hours | 1 |
 | dimensions | 0 |
 | performance | 0 |
@@ -262,7 +265,15 @@ npm run build-enrichment --workspace=server
 ### `build-verified-database.ts`
 
 - Downloads `https://fueleconomy.gov/feg/epadata/vehicles.csv`
-- Maps EPA `VClass` → bodyStyle (sedan, suv, truck, wagon, minivan, van, coupe)
+- Row mapping lives in `scripts/lib/epa-row.ts`, shared with the backfill below
+- Maps EPA `VClass` → bodyStyle (sedan, suv, truck, wagon, minivan, van, coupe); EPA's
+  "Special Purpose Vehicle" class (most 1990s–2000s SUVs and minivans) is read from the
+  model name, and hearse, limousine, livery, taxi and postal conversions are left out
+- Keeps one listing per configuration (`configurationKey`: engine, aspiration, fuel, drive,
+  transmission). The first listing for a make-model-year-trim keeps the plain ID; another
+  engine with the same transmission gets EPA's row ID appended (`…-epa41953`)
+- Records turbo/supercharger (`engine.aspiration`) from EPA's flags
+- Includes next model year's early certifications (years up to the calendar year + 1)
 - Infers fuel type from EPA `fuelType`, `atvType`, `fuelType1`
 - Estimates MSRP via `estimatePriceMsrp()` when not in EPA
 - Optionally fetches NHTSA country + safety into cache
@@ -386,7 +397,7 @@ Reclassifies mislabeled EPA records:
 
 **`buildNhtsaCarIndex()`** precomputes results per `car.id` → `nhtsa-by-car-id.json`.
 
-Reality: NHTSA tests ~1,025 make/model/year combos vs 28k EPA configs. Fuzzy matching gets ~13% per-car coverage.
+Reality: NHTSA tests ~1,025 make/model/year combos vs 36k EPA configs. Fuzzy matching gets ~13% per-car coverage.
 
 ---
 
@@ -1079,6 +1090,7 @@ No `.env` required for local development of the public catalog.
 | `build-enrichment` | EPA extras (GHG, PHEV modes) and NHTSA indexes |
 | `build-nhtsa-backfill` | NHTSA safety backfill |
 | `reconcile-fuel-types` | Re-derive fuel types from EPA's `vehicles.csv` and fix `cars.json` in place (`-- --write`) |
+| `backfill-epa-variants` | Add EPA listings `cars.json` is missing (other engines, Special Purpose SUVs/minivans, next model year) without touching existing IDs, and record aspiration. `-- path/to/vehicles.csv [--dry-run]`; then run `build-enrichment -- --csv=…` and `build-runtime-db` |
 | `build-runtime-db` | Enrich + normalize into `cars-ready.json` (format 2: provenance maps interned) |
 
 ## Dependencies

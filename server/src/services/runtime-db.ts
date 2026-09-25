@@ -5,7 +5,7 @@ import type { Car, Provenance } from '../types/car.types.js';
  * on every cold start.
  *
  * Format 2 interns provenance maps. Every car carries one (which source each
- * field came from), yet across 28,000 cars fewer than a hundred distinct maps
+ * field came from), yet across 36,000 cars only about 150 distinct maps
  * exist, and writing each out in full made them over a third of the file.
  * Format 2 stores each distinct map once, and every car holds an index into
  * that table. Loading puts `car.provenance` back as a shared, frozen object:
@@ -67,7 +67,7 @@ function isFormat2(db: RuntimeDatabaseFile | LegacyDatabaseFile): db is RuntimeD
 
 /**
  * The cars in a parsed cars-ready.json (either format), with provenance
- * restored. Rewrites the parsed records in place rather than copying 28,000
+ * restored. Rewrites the parsed records in place rather than copying 36,000
  * objects: the parsed JSON is not used for anything else.
  */
 export function unpackRuntimeDatabase(db: RuntimeDatabaseFile | LegacyDatabaseFile): Car[] {

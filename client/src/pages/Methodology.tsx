@@ -33,7 +33,7 @@ export default function Methodology() {
           <ol className="space-y-4 text-sm text-zinc-400 leading-relaxed list-decimal list-inside marker:text-zinc-400">
             <li>
               <strong className="text-zinc-200 font-medium">Raw master record</strong> (
-              <code className="text-zinc-400 text-xs">cars.json</code>): ~28,000 EPA FuelEconomy.gov
+              <code className="text-zinc-400 text-xs">cars.json</code>): ~35,800 EPA FuelEconomy.gov
               configurations ({FIRST_MODEL_YEAR}–{LATEST_MODEL_YEAR}). Deliberately omits
               horsepower, GHG score, NHTSA ratings, dimensions, and runtime-only fuel types (PHEV,
               hydrogen).

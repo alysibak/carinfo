@@ -1,6 +1,9 @@
 export type ProvenanceSource = 'epa' | 'nhtsa' | 'estimated' | 'curated';
 export type Provenance = Record<string, ProvenanceSource>;
 
+/** Forced induction. Naturally aspirated engines carry no value. */
+export type Aspiration = 'turbocharged' | 'supercharged' | 'turbocharged and supercharged';
+
 export type FuelType =
   | 'gasoline'
   | 'diesel'
@@ -53,6 +56,11 @@ export interface CarSpecs {
     fuelType: FuelType;
     cylinders?: number;
     configuration?: string;
+    /**
+     * Forced induction, from EPA's turbo/supercharger flags. Absent means
+     * naturally aspirated (or electric), or a record from before the field.
+     */
+    aspiration?: Aspiration;
   };
 
   performance?: {
