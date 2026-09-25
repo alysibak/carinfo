@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { usePageMeta } from '../utils/pageMeta';
 import ProvenanceChip from '../components/ProvenanceChip';
+import { FIRST_MODEL_YEAR, LATEST_MODEL_YEAR } from '@carinfo/config/model-years';
 
 export default function Methodology() {
   usePageMeta(
@@ -33,8 +34,9 @@ export default function Methodology() {
             <li>
               <strong className="text-zinc-200 font-medium">Raw master record</strong> (
               <code className="text-zinc-400 text-xs">cars.json</code>): ~28,000 EPA FuelEconomy.gov
-              configurations (1995-2026). Deliberately omits horsepower, GHG score, NHTSA ratings,
-              dimensions, and runtime-only fuel types (PHEV, hydrogen).
+              configurations ({FIRST_MODEL_YEAR}–{LATEST_MODEL_YEAR}). Deliberately omits
+              horsepower, GHG score, NHTSA ratings, dimensions, and runtime-only fuel types (PHEV,
+              hydrogen).
             </li>
             <li>
               <strong className="text-zinc-200 font-medium">Load-time enrichment</strong>: companion

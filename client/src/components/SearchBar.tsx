@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { LATEST_MODEL_YEAR } from '@carinfo/config/model-years';
 import * as api from '../services/api';
 import type { SearchSuggestion } from '../services/api';
 
@@ -31,7 +32,7 @@ export default function SearchBar({
   value,
   onChange,
   onSubmit,
-  placeholder = 'Search make, model, or year, e.g. 2024 Camry',
+  placeholder = `Search make, model, or year, e.g. ${LATEST_MODEL_YEAR} Camry`,
   ariaLabel = 'Search vehicles',
   autoFocus = false,
   size = 'default',

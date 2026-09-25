@@ -14,6 +14,7 @@ import {
 import { enrichCar } from './content-enrichment.js';
 import { ensureUniqueIds } from '../utils/unique-ids.js';
 import { type RuntimeDatabaseFile, unpackRuntimeDatabase } from './runtime-db.js';
+import { LATEST_MODEL_YEAR } from '../config/model-years.js';
 
 function resolveDbPath(): string | null {
   return resolveDataFile('cars.json');
@@ -407,9 +408,9 @@ export interface SearchSuggestion {
 const POPULAR_SUGGESTIONS: SearchSuggestion[] = [
   {
     id: 'pop-camry',
-    label: '2024 Toyota Camry',
+    label: `${LATEST_MODEL_YEAR} Toyota Camry`,
     sublabel: 'Sedan · EPA verified',
-    query: '2024 camry',
+    query: `${LATEST_MODEL_YEAR} camry`,
   },
   { id: 'pop-civic', label: 'Honda Civic', sublabel: 'Compact · all years', query: 'honda civic' },
   { id: 'pop-f150', label: 'Ford F-150', sublabel: 'Truck · work & haul', query: 'ford f-150' },

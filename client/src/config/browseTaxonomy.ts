@@ -1,3 +1,4 @@
+import { LATEST_MODEL_YEAR } from '@carinfo/config/model-years';
 import type { CarFilter, SearchQuery } from '../types/car.types';
 import { filtersMatchExactly } from '../utils/filterState';
 
@@ -103,7 +104,11 @@ export const PRICE_BUCKETS: BucketOption[] = [
 ];
 
 export const YEAR_BUCKETS: BucketOption[] = [
-  { id: '2024', label: '2024', filters: { year: { min: 2024, max: 2024 } } },
+  {
+    id: 'latest',
+    label: String(LATEST_MODEL_YEAR),
+    filters: { year: { min: LATEST_MODEL_YEAR, max: LATEST_MODEL_YEAR } },
+  },
   { id: '2020s', label: '2020+', description: 'Current gen', filters: { year: { min: 2020 } } },
   { id: '2015s', label: '2015+', filters: { year: { min: 2015 } } },
   { id: '2010s', label: '2010-2019', filters: { year: { min: 2010, max: 2019 } } },
@@ -170,7 +175,7 @@ export const TOP_MAKES = [
 ];
 
 export const POPULAR_SEARCHES = [
-  { label: '2024 Camry', query: '2024 camry' },
+  { label: `${LATEST_MODEL_YEAR} Camry`, query: `${LATEST_MODEL_YEAR} camry` },
   { label: 'Honda Civic', query: 'honda civic' },
   { label: 'Ford F-150', query: 'ford f-150' },
   { label: 'Toyota RAV4', query: 'toyota rav4' },
