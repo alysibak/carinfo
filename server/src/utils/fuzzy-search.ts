@@ -53,7 +53,17 @@ const ALIASES: Record<string, string> = {
   cx30: 'cx-30',
   cx70: 'cx-70',
   cx90: 'cx-90',
+  // EPA dropped "Miata" from the name after 2005; every year is an MX-5.
+  miata: 'mx-5',
 };
+
+/**
+ * Names shoppers use for a model whose EPA name changed between generations.
+ * The half-ton Silverado is "Silverado 1500" to 2006, "C15/K15" to 2018,
+ * "C10/K10" in 2019 and plain "Silverado" since, so "silverado 1500" matched
+ * only the oldest. It now means the whole family (EPA rates no heavy-duty).
+ */
+const PHRASE_ALIASES: [RegExp, string][] = [[/\b(silverado|sierra) 1500\b/g, '$1']];
 
 /** Drive / door / config tokens that are not part of the shopper-facing model name. */
 const CONFIG_SUFFIX =
@@ -67,7 +77,7 @@ export function normalizeSearchToken(token: string): string {
 export function normalizeSearchQuery(query: string): string {
   // Alias first (cx5 → cx-5, mazda3 → mazda 3), then re-tokenize so
   // multi-word expansions and human spacing both work.
-  return query
+  const tokens = query
     .toLowerCase()
     .trim()
     .split(/[\s,/]+/)
@@ -77,6 +87,7 @@ export function normalizeSearchQuery(query: string): string {
     .split(/\s+/)
     .filter(Boolean)
     .join(' ');
+  return PHRASE_ALIASES.reduce((text, [pattern, to]) => text.replace(pattern, to), tokens);
 }
 
 /**
@@ -109,9 +120,19 @@ export function modelPhraseMatches(model: string, phrase: string): boolean {
   if (family === p) return true;
   if (family.startsWith(`${p} `)) return true;
 
-  // "f 150" / "f150" vs family "f-150" — equality only (avoid cx-5 → cx-50)
-  const compact = (s: string) => s.replace(/[\s-]/g, '');
-  return compact(family) === compact(p);
+  // Hyphens and spaces differ between EPA generations ("F150 Pickup 2WD" but
+  // "F-150 Lightning") and between shoppers ("f 150", "f150", "f-150"). Match
+  // when the squashed phrase equals the family's first words squashed: "f150"
+  // finds both trucks, while "cx-5" still stops short of "cx-50".
+  const squash = (s: string) => s.replace(/[\s-]/g, '');
+  const target = squash(p);
+  let prefix = '';
+  for (const word of family.split(' ')) {
+    prefix += squash(word);
+    if (prefix === target) return true;
+    if (prefix.length >= target.length) return false;
+  }
+  return false;
 }
 
 /** Levenshtein distance with early exit when over maxDist. */

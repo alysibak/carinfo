@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { FIRST_MODEL_YEAR, LATEST_MODEL_YEAR } from '../config/model-years.js';
-import { getCarById, getStatistics, searchCars } from '../services/car.service.js';
+import {
+  getCarById,
+  getSearchSuggestions,
+  getStatistics,
+  searchCars,
+} from '../services/car.service.js';
 
 describe('car.service search smoke', () => {
   it('loads the full committed database (not fallback-only)', () => {
@@ -240,5 +245,48 @@ describe('car.service natural language search', () => {
     const misspelt = searchCars({ query: '2019 zzqxv', limit: 1 });
     expect(misspelt.total).toBe(0);
     expect(misspelt.yearCoverage).toBeUndefined();
+  });
+  it('finds the regular F-150, not just the electric one', () => {
+    // The regular truck is filed as "F150 Pickup"; the alias for "f150" is
+    // "f-150", which used to match only "F-150 Lightning" (36 results).
+    for (const query of ['f150', 'ford f-150', 'f 150']) {
+      const { results, total } = searchCars({ query, limit: 500 });
+      expect(total, query).toBeGreaterThan(200);
+      expect(
+        results.some((c) => c.model.startsWith('F150 Pickup')),
+        query,
+      ).toBe(true);
+    }
+  });
+
+  it('keeps "cx-5" from matching the CX-50', () => {
+    const { results } = searchCars({ query: 'cx-5', limit: 500 });
+    expect(results.length).toBeGreaterThan(0);
+    expect(results.every((c) => /^CX-5\b(?!0)/.test(c.model))).toBe(true);
+  });
+
+  it('reaches current half-tons and roadsters by their familiar names', () => {
+    const newest = (query: string) =>
+      Math.max(...searchCars({ query, limit: 500 }).results.map((c) => c.year));
+    expect(newest('silverado 1500')).toBe(LATEST_MODEL_YEAR);
+    expect(newest('sierra 1500')).toBe(LATEST_MODEL_YEAR);
+    expect(newest('miata')).toBe(LATEST_MODEL_YEAR);
+  });
+
+  it('ranks a model-name match above a trim-only match', () => {
+    // EPA files the Golf R under a "golf-gti" base model, so both mention GTI.
+    const [top] = searchCars({
+      query: 'gti',
+      sort: { field: 'relevance', order: 'desc' },
+      limit: 1,
+    }).results;
+    expect(top.model).toBe('Golf GTI');
+  });
+  it('suggests the regular F-150 and puts whole-model suggestions first', () => {
+    const f150 = getSearchSuggestions('f150', 6).map((s) => s.label);
+    expect(f150[0]).toMatch(/^Ford F150 Pickup/);
+
+    // "Toyota Camry" searches every Camry, so it leads the trims.
+    expect(getSearchSuggestions('camry', 6)[0].label).toBe('Toyota Camry');
   });
 });

@@ -460,8 +460,17 @@ export function getSearchSuggestions(rawQuery: string, limit = 8): SearchSuggest
     const label = `${car.make} ${car.model}`;
     const labelLower = label.toLowerCase();
     const modelLower = car.model.toLowerCase();
+    const makePrefix = `${car.make.toLowerCase()} `;
+    const phrase = q.startsWith(makePrefix) ? q.slice(makePrefix.length) : q;
     let score = -1;
-    if (modelKey.startsWith(q) || modelKey.includes(q) || labelLower.includes(q)) {
+    // Same hyphen/space-blind match the search uses: "f150" names both the
+    // "F150 Pickup" and the "F-150 Lightning".
+    if (modelLower === phrase) {
+      // "Toyota Camry" searches every Camry, so it beats any one trim.
+      score = 98;
+    } else if (modelPhraseMatches(car.model, phrase)) {
+      score = 95;
+    } else if (modelKey.startsWith(q) || modelKey.includes(q) || labelLower.includes(q)) {
       score = modelKey.startsWith(q) ? 95 : 75;
     } else {
       const dModel = bestFuzzyScore(q, modelLower);
@@ -470,6 +479,8 @@ export function getSearchSuggestions(rawQuery: string, limit = 8): SearchSuggest
       if (d <= 2) score = 70 - d * 12;
     }
     if (score >= 40) {
+      // Among equal matches, list models still on sale before long-gone ones.
+      const latestYear = cars.reduce((latest, c) => Math.max(latest, c.year), 0);
       add(
         {
           id: `model-${car.make}-${car.model}`,
@@ -477,7 +488,7 @@ export function getSearchSuggestions(rawQuery: string, limit = 8): SearchSuggest
           sublabel: score < 70 ? `Close match · ${car.bodyStyle ?? 'Model'}` : 'Model',
           query: `${car.make.toLowerCase()} ${car.model.toLowerCase()}`,
         },
-        score,
+        score + Math.max(0, latestYear - 1990) * 0.05,
       );
     }
   }
@@ -743,6 +754,9 @@ function scoreRelevance(car: Car, tokens: string[]): number {
     else if (makeLower.startsWith(token)) score += 35;
     else if (family === token || modelLower === token) score += 48;
     else if (modelPhraseMatches(car.model, token)) score += 42;
+    // A word of the model name ("gti" in "Golf GTI") beats a hit only in the
+    // trim: EPA files the Golf R under a "golf-gti" base model.
+    else if (modelLower.split(/[\s-]+/).includes(token)) score += 36;
     else if (modelLower.startsWith(token)) score += 30;
     else if (haystack.includes(token)) score += 12;
     else if (fuzzyTokenMatch(makeLower, token)) score += 28;
