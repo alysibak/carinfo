@@ -18,6 +18,21 @@ function dropServerTagsAfterNavigation(): void {
   document.querySelectorAll('[data-ssr]').forEach((el) => el.remove());
 }
 
+/**
+ * Keep a page out of search results while it is showing. The static host
+ * answers unknown paths with the app shell and a 200, so this tag is how a
+ * crawler that renders the page learns it is a "not found".
+ */
+export function useNoIndex(): void {
+  useEffect(() => {
+    const tag = document.createElement('meta');
+    tag.name = 'robots';
+    tag.content = 'noindex';
+    document.head.appendChild(tag);
+    return () => tag.remove();
+  }, []);
+}
+
 export function usePageMeta(title?: string, description?: string) {
   useEffect(() => {
     dropServerTagsAfterNavigation();

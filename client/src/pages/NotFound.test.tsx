@@ -22,4 +22,17 @@ describe('NotFound', () => {
     );
     expect(screen.getByRole('link', { name: /back to home/i })).toHaveAttribute('href', '/');
   });
+
+  it('keeps itself out of search results only while it is showing', () => {
+    // The host serves unknown paths with a 200, so crawlers need the tag.
+    const robots = () => document.head.querySelector('meta[name="robots"]');
+    const { unmount } = render(
+      <MemoryRouter>
+        <NotFound />
+      </MemoryRouter>,
+    );
+    expect(robots()).toHaveAttribute('content', 'noindex');
+    unmount();
+    expect(robots()).toBeNull();
+  });
 });

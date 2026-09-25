@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { usePageMeta } from '../utils/pageMeta';
+import { useNoIndex, usePageMeta } from '../utils/pageMeta';
 
 const QUICK_LINKS = [
   { to: '/browse', label: 'Start from a situation', desc: 'Shop by need, budget, or body type' },
@@ -10,6 +10,7 @@ const QUICK_LINKS = [
 
 export default function NotFound() {
   usePageMeta('Page not found', 'This CarInfo page does not exist.');
+  useNoIndex();
 
   return (
     <div className="min-h-screen bg-black text-white flex items-center justify-center px-6 py-16">
