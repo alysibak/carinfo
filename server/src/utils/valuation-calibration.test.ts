@@ -111,6 +111,82 @@ const REFERENCES: Reference[] = [
     observedCad: 32_600,
     source: 'CarGurus Canada average (all trims), August 2026',
   },
+  // Compact SUVs, family sedans and minivans at seven years. One brand factor
+  // for every segment had a CR-V 17% under its listings and an Escape 26%,
+  // Grand Caravan 42% over: mainstream resale splits by make far more than
+  // truck or luxury resale does.
+  {
+    label: '2019 Honda CR-V',
+    find: withEngine('Honda', /^CR-V AWD$/, 2019, 1.5),
+    observedCad: 25_560,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2019 Mazda CX-5',
+    find: withEngine('Mazda', /^CX-5 4WD$/, 2019, 2.5),
+    observedCad: 21_220,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2019 Subaru Forester',
+    find: named('Subaru', /^Forester AWD$/, 2019),
+    observedCad: 21_360,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2019 Hyundai Tucson',
+    find: withEngine('Hyundai', /^Tucson AWD$/, 2019, 2.4),
+    observedCad: 17_280,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2019 Chevrolet Equinox',
+    find: withEngine('Chevrolet', /^Equinox AWD$/, 2019, 1.5),
+    observedCad: 16_280,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2019 Nissan Rogue',
+    find: named('Nissan', /^Rogue AWD$/, 2019),
+    observedCad: 16_080,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2019 Ford Escape',
+    find: withEngine('Ford', /^Escape AWD$/, 2019, 1.5),
+    observedCad: 15_850,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2019 Nissan Altima',
+    find: named('Nissan', /^Altima$/, 2019),
+    observedCad: 16_180,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2019 Chevrolet Malibu',
+    find: withEngine('Chevrolet', /^Malibu$/, 2019, 1.5),
+    observedCad: 15_280,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2019 Dodge Charger V6',
+    find: withEngine('Dodge', /^Charger$/, 2019, 3.6),
+    observedCad: 20_280,
+    source: 'CarGurus Canada average (all trims), September 2026',
+  },
+  {
+    label: '2019 Honda Odyssey',
+    find: named('Honda', /^Odyssey$/, 2019),
+    observedCad: 28_190,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2019 Dodge Grand Caravan',
+    find: named('Dodge', /^Grand Caravan$/, 2019),
+    observedCad: 17_980,
+    source: 'CarGurus Canada average, September 2026',
+  },
   // Luxury. One luxury premium for every size class under-anchored small
   // sedans and over-anchored small SUVs, and the X5 rule's pre-2020 sticker
   // was $10,000 high (+55% before).

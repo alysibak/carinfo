@@ -109,6 +109,25 @@ describe('vehicle-valuation (Ontario/CAD)', () => {
     expect((mv.high - mv.low) / mv.mid).toBeGreaterThan((fresh.high - fresh.low) / fresh.mid);
   });
 
+  it('lets make reputation show with age, not on a new car', () => {
+    const retained = (make: string, model: RegExp, year: number) =>
+      estimateMarketValue(
+        getAllCars().find(
+          (c) =>
+            c.make === make &&
+            model.test(c.model) &&
+            c.year === year &&
+            (c.engine.fuelType === 'gasoline' || c.engine.fuelType === 'hybrid'),
+        )!,
+      ).retainedFraction;
+    // New: both keep the same share of their sticker.
+    expect(retained('Ford', /^Escape/, 2026)).toBe(retained('Toyota', /^RAV4$/, 2026));
+    // Seven years on, the Toyota keeps far more.
+    expect(retained('Toyota', /^RAV4$/, 2019)).toBeGreaterThan(
+      retained('Ford', /^Escape/, 2019) * 1.3,
+    );
+  });
+
   it('has zero degenerate resale ranges across the full dataset', () => {
     const cars = loadRawCars();
     let degenerate = 0;

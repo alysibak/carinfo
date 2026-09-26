@@ -118,6 +118,44 @@ const BRAND_RETENTION: Record<string, number> = {
   Lordstown: 0.4,
 };
 
+/**
+ * Resale by make for mainstream cars, SUVs and minivans, where it differs most.
+ * Against the same compact-SUV sticker, 2019 models list (CarGurus.ca,
+ * September 2026) at: CR-V ~$25,600, CX-5 ~$21,200, Forester ~$21,400, Tucson
+ * ~$17,300, Equinox ~$16,300, Rogue ~$16,100, Escape ~$15,800; sedans and
+ * minivans split the same way (Camry, Sienna and Odyssey high; Altima, Malibu
+ * and Grand Caravan low). With one factor for all segments, a 2019 CR-V came
+ * out 17% under its listings and an Escape 26% over. Pickups, performance and
+ * luxury cars keep BRAND_RETENTION.
+ */
+const MAINSTREAM_BRAND_RETENTION: Record<string, number> = {
+  Toyota: 1.16,
+  Honda: 1.14,
+  Subaru: 1.06,
+  Mazda: 1.05,
+  Kia: 0.92,
+  Volkswagen: 0.92,
+  Hyundai: 0.88,
+  GMC: 0.9,
+  Chrysler: 0.88,
+  Dodge: 0.86,
+  Buick: 0.85,
+  Mitsubishi: 0.85,
+  Nissan: 0.84,
+  Chevrolet: 0.83,
+  Ford: 0.82,
+  Fiat: 0.8,
+};
+
+/**
+ * A make's resale reputation shows over the first few years; a new car is
+ * worth its sticker whoever built it. Without the ramp a new Ford would have
+ * been marked 18% under its price on day one.
+ */
+function brandFactorAt(factor: number, age: number): number {
+  return 1 + (factor - 1) * Math.min(1, age / 3);
+}
+
 interface ModelMsrpRule {
   test: (car: CarSpecs) => boolean;
   msrp: number | ((car: CarSpecs) => number);
@@ -522,6 +560,12 @@ const TRUCK_SUV_RULES: ModelMsrpRule[] = [
     msrp: (c) => (c.year >= 2025 ? 45000 : 40000),
   },
   { test: (c) => c.make === 'Chrysler' && /^pacifica hybrid/i.test(c.model), msrp: 43000 },
+  // Sold on discount to fleets and families: about $30,000 transacted, not
+  // the minivan class's $38,000 (a 2019 lists at ~$18,000 on CarGurus.ca).
+  {
+    test: (c) => /^(dodge|chrysler)$/i.test(c.make) && /grand caravan|^caravan/i.test(c.model),
+    msrp: 32000,
+  },
 ];
 
 const MODEL_MSRP_RULES: ModelMsrpRule[] = [
@@ -1062,7 +1106,18 @@ function retentionFraction(
   segment: MarketSegment,
   fuelType: FuelType,
 ): number {
-  const brand = BRAND_RETENTION[car.make] ?? 1.0;
+  // The EV and plug-in curves were fitted with BRAND_RETENTION.
+  const mainstreamish =
+    (segment === 'mainstream' || segment === 'economy') &&
+    fuelType !== 'electric' &&
+    fuelType !== 'plug-in hybrid' &&
+    fuelType !== 'hydrogen';
+  const brand = brandFactorAt(
+    (mainstreamish ? MAINSTREAM_BRAND_RETENTION[car.make] : undefined) ??
+      BRAND_RETENTION[car.make] ??
+      1.0,
+    age,
+  );
 
   if (fuelType === 'electric') {
     // One curve for every EV, fitted to CarGurus Canada averages (2026): about

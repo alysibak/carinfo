@@ -91,9 +91,14 @@ export default function Methodology() {
               1.2, not the exchange rate), then depreciated by age.
             </li>
             <li>
-              Checked against average Canadian asking prices for 46 reference vehicles, from
+              Checked against average Canadian asking prices for 58 reference vehicles, from
               compacts to pickups, performance cars, plug-in hybrids and EVs; expect individual
               estimates to be within about 25%.
+            </li>
+            <li>
+              For everyday cars, SUVs and minivans the make matters from about three years on: a
+              seven-year-old Honda or Toyota keeps far more of its price than a Ford, Chevrolet or
+              Nissan of the same size.
             </li>
             <li>
               Pickups depreciate on their own curve, mid-size pickups more gently than full-size,
