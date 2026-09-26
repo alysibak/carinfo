@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { loadRawCars } from '../__tests__/helpers/loadCars.js';
 import {
   auditModelSlugVariants,
+  auditParentheticals,
   auditSlugCollisions,
   auditSlugQuality,
   buildModelYearSlug,
+  classifyParenthetical,
   groupByModelYear,
   unmappedDrivetrains,
   type VehicleIdentity,
@@ -185,6 +188,37 @@ describe('parenthetical dispositions', () => {
     expect(pathsFor('Mercedes-Benz', 2021)).toEqual([
       '/mercedes-benz/amg-e63-s-4matic-plus-sw/2021',
     ]);
+  });
+
+  it('keeps cargo and passenger van configurations', () => {
+    for (const inner of ['Cargo Van', 'Passenger Van', 'Cargo Van, LWB']) {
+      expect(classifyParenthetical(inner).disposition, inner).toBe('keep');
+    }
+  });
+});
+
+describe('audits on the full corpus', () => {
+  // The fixture above pins behaviour; this catches a data import (such as the
+  // 2026 restoration of EPA's van and SUV listings) bringing in a model name
+  // the rules have not reviewed. Every slug becomes a permanent URL.
+  const corpus: VehicleIdentity[] = loadRawCars().map((car) => ({
+    make: car.make,
+    model: car.model,
+    year: car.year,
+    drivetrain: car.driveType ?? '',
+  }));
+
+  it('has no unexplained collisions, quality warnings or slug variants', () => {
+    expect(auditSlugCollisions(corpus, 'section').filter((c) => c.cause === 'unexplained')).toEqual(
+      [],
+    );
+    expect(auditSlugQuality(corpus, 'section')).toEqual([]);
+    expect(auditModelSlugVariants(corpus, 'section')).toEqual([]);
+  });
+
+  it('classifies every parenthetical and maps every drivetrain', () => {
+    expect(auditParentheticals(corpus).filter((p) => p.disposition === 'unclassified')).toEqual([]);
+    expect(unmappedDrivetrains(corpus)).toEqual([]);
   });
 });
 

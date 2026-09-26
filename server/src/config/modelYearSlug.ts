@@ -154,6 +154,10 @@ const KEEP_PARENTHETICALS: ReadonlySet<string> = new Set([
   'station-wagon',
   'sw',
   'lwb',
+  // Metris, restored with EPA's van listings in 2026.
+  'cargo-van',
+  'cargo-van-lwb',
+  'passenger-van',
   '2-door',
   '2-doors',
   '3-door',
