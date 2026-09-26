@@ -27,4 +27,19 @@ describe('CarCard', () => {
     expect(compare.parentElement?.className).not.toContain('lg:opacity-0');
     expect(compare.parentElement?.className).not.toMatch(/(^|\s)opacity-0(\s|$)/);
   });
+
+  it('does not repeat "electric" after an EV\'s engine label', () => {
+    const ev = {
+      ...car,
+      engine: { fuelType: 'electric' as const },
+      driveType: 'AWD' as const,
+    };
+    render(
+      <MemoryRouter>
+        <CarCard car={ev} />
+      </MemoryRouter>,
+    );
+    const meta = screen.getByText(/AWD/);
+    expect(meta.textContent?.toLowerCase().match(/electric/g) ?? []).toHaveLength(1);
+  });
 });

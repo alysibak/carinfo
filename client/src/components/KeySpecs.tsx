@@ -38,11 +38,25 @@ function titleCase(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+const SEGMENT_LABELS: Record<string, string> = {
+  'hot-hatch': 'Hot hatch',
+  'sport-compact': 'Sport compact',
+  'sport-sedan': 'Sport sedan',
+  muscle: 'Muscle car',
+  'sports-car': 'Sports car',
+  luxury: 'Luxury',
+  mainstream: 'Mainstream',
+  utility: 'Utility',
+  // Title-casing the slug printed "Ev".
+  ev: 'EV',
+  truck: 'Truck',
+};
+
 function segmentLabel(segment: string): string {
-  return segment
-    .split('-')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
+  const known = SEGMENT_LABELS[segment];
+  if (known) return known;
+  const words = segment.replace(/-/g, ' ');
+  return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
 function pushIf(rows: SpecRow[], row: SpecRow | null) {

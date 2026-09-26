@@ -64,3 +64,21 @@ describe('KeySpecs long values', () => {
     expect(row?.className).not.toContain('flex-col');
   });
 });
+
+describe('KeySpecs segment label', () => {
+  it('writes EV as an initialism and other segments in sentence case', () => {
+    const ev = {
+      ...sparseDashboard,
+      car: { ...sparseDashboard.car, shoppingSegment: 'ev' as const },
+    };
+    const { unmount } = render(<KeySpecs dashboard={ev} />);
+    expect(screen.getByText('EV')).toBeInTheDocument();
+    unmount();
+    const hatch = {
+      ...sparseDashboard,
+      car: { ...sparseDashboard.car, shoppingSegment: 'hot-hatch' as const },
+    };
+    render(<KeySpecs dashboard={hatch} />);
+    expect(screen.getByText('Hot hatch')).toBeInTheDocument();
+  });
+});

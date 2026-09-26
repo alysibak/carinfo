@@ -107,6 +107,14 @@ describe('vehicle-valuation (Ontario/CAD)', () => {
       normalized((c) => c.make === 'Tesla' && c.model === 'Model 3 RWD' && c.year === 2024),
     );
     expect((mv.high - mv.low) / mv.mid).toBeGreaterThan((fresh.high - fresh.low) / fresh.mid);
+    // Bands are ordered at both ends, for a worn pack and a new one.
+    for (const bands of [mv.conditionBands!, fresh.conditionBands!]) {
+      const [p, a, e] = bands;
+      expect(p.low).toBeLessThan(a.low);
+      expect(a.low).toBeLessThan(e.low);
+      expect(p.high).toBeLessThan(a.high);
+      expect(a.high).toBeLessThan(e.high);
+    }
   });
 
   it('lets make reputation show with age, not on a new car', () => {

@@ -1337,7 +1337,7 @@ export function applyValuationReliabilityGuard(
  */
 function conditionMultiplier(bhf: number): { poor: number; excellent: number } {
   const wear = 1 - bhf;
-  return { poor: 0.85 - 0.3 * wear, excellent: 1.08 + 0.15 * wear };
+  return { poor: 0.8 - 0.3 * wear, excellent: 1.12 + 0.15 * wear };
 }
 
 export function estimateMarketValue(
@@ -1362,10 +1362,13 @@ export function estimateMarketValue(
     const mult = conditionMultiplier(batteryHealth.factor);
     const poorMid = roundMoney(mid * mult.poor);
     const excMid = roundMoney(mid * mult.excellent);
+    // Ordered bands: a worn pack tops out below the average band, and a
+    // healthy one above it. The average band used to reach higher (+10%)
+    // than the excellent band (+8%).
     conditionBands = [
-      { label: 'Low battery condition', low: poorMid, high: roundMoney(poorMid * 1.15) },
-      { label: 'Average condition', low: roundMoney(mid * 0.9), high: roundMoney(mid * 1.1) },
-      { label: 'Excellent condition', low: roundMoney(excMid * 0.92), high: excMid },
+      { label: 'Low battery condition', low: poorMid, high: roundMoney(mid * (mult.poor + 0.1)) },
+      { label: 'Average condition', low: roundMoney(mid * 0.92), high: roundMoney(mid * 1.08) },
+      { label: 'Excellent condition', low: roundMoney(mid * 1.04), high: excMid },
     ];
     low = conditionBands[0].low;
     high = conditionBands[2].high;

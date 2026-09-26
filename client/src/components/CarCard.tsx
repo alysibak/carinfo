@@ -78,7 +78,11 @@ export default function CarCard({ car, showCompare = true }: CarCardProps) {
   if (engineValue && engineValue !== 'Not on file') metaParts.push(engineValue);
   if (!isAltPowertrain && transLabel && !variantLabel) metaParts.push(transLabel);
   if (car.driveType) metaParts.push(car.driveType);
-  if (car.engine.fuelType) metaParts.push(formatFuelBadge(car.engine.fuelType));
+  // An EV's engine already reads "Electric"; don't repeat it as the fuel.
+  const fuelBadge = car.engine.fuelType ? formatFuelBadge(car.engine.fuelType) : '';
+  if (fuelBadge && !metaParts.some((part) => part.toLowerCase() === fuelBadge.toLowerCase())) {
+    metaParts.push(fuelBadge);
+  }
 
   return (
     <article className="surface-card-hover group relative flex flex-col h-full overflow-hidden focus-within:border-zinc-400 focus-within:ring-1 focus-within:ring-white/10">

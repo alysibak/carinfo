@@ -1,9 +1,11 @@
+import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
 import {
   aspirationOf,
   baseCarId,
   configurationKey,
   type EpaRow,
+  lookupCountry,
   mapEpaRow,
   mapVClassToBodyStyle,
   variantCarId,
@@ -88,5 +90,16 @@ describe('EPA row mapping', () => {
     expect(mapEpaRow(row({ year: '2027' }), 2027)).not.toBeNull();
     expect(mapEpaRow(row({ year: '2028' }), 2027)).toBeNull();
     expect(mapEpaRow(row({ year: '1994' }), 2027)).toBeNull();
+  });
+
+  it('knows the home country of every make on file', () => {
+    // 3,368 listings (Rivian, Polestar, Suzuki, Saab, Pontiac...) had none.
+    const { cars } = JSON.parse(
+      readFileSync(new URL('../../data/cars.json', import.meta.url), 'utf8'),
+    ) as { cars: Array<{ make: string }> };
+    const unknown = [...new Set(cars.map((car) => car.make))].filter(
+      (make) => !lookupCountry(make),
+    );
+    expect(unknown).toEqual([]);
   });
 });
