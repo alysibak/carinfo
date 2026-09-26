@@ -9,7 +9,10 @@ import { resolve } from 'path';
 import { readFileSync } from 'fs';
 import { enrichCar } from '../src/services/content-enrichment.js';
 import { normalizeCarRecord } from '../src/utils/car-normalize.js';
-import { dropInductionMismatchedHorsepower } from '../src/utils/horsepower-plausibility.js';
+import {
+  dropInductionMismatchedHorsepower,
+  dropRatingsSharedAcrossEngines,
+} from '../src/utils/horsepower-plausibility.js';
 import { resolveDataFile } from '../src/utils/data-paths.js';
 import { ensureUniqueIds } from '../src/utils/unique-ids.js';
 import { packRuntimeDatabase } from '../src/services/runtime-db.js';
@@ -42,7 +45,13 @@ if (enriched.dropped) {
     `[build-runtime-db] Dropped ${enriched.dropped} horsepower rating(s) borrowed from a non-turbo sibling.`,
   );
 }
-const normalized = enriched.cars;
+const shared = dropRatingsSharedAcrossEngines(enriched.cars);
+if (shared.dropped) {
+  console.log(
+    `[build-runtime-db] Dropped ${shared.dropped} horsepower rating(s) shared by two engines of one model.`,
+  );
+}
+const normalized = shared.cars;
 
 // Slug collisions made some vehicles unreachable by ID — see utils/unique-ids.ts.
 const { cars, report } = ensureUniqueIds(normalized);

@@ -295,6 +295,8 @@ npm run build-horsepower --workspace=server
 
 Flags: `--from=2010 --to=2026`, `--offline`, `--refresh`
 
+**Re-run it.** The committed file predates two fixes. Its third matching tier accepted any engine with the same cylinder count when a listing's own engine was untested, so untested engines took a sibling's rating (2013 F-150 5.0 at the 6.2's 415 hp); the tier now tolerates only displacement rounding (±0.15 L). And the 7,547 listings restored from EPA's data in 2026 have no rating yet. Until the file is rebuilt, the runtime drops a rating that two engines of one model and year share (`dropRatingsSharedAcrossEngines`, 93 listings) and a turbo rating that merely repeats the non-turbo sibling's (`dropInductionMismatchedHorsepower`, 118), so those read "not on file" rather than wrong.
+
 ### `build-content-enrichment.ts`
 
 Reads `vehicles.csv` columns:

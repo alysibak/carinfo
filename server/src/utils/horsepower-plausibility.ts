@@ -59,3 +59,59 @@ export function dropInductionMismatchedHorsepower(cars: Car[]): { cars: Car[]; d
   });
   return { cars: out, dropped };
 }
+
+/** "Tacoma 4WD" and "Tacoma 2WD" are one model family; drive and doors are not the engine. */
+function modelFamily(model: string): string {
+  return model
+    .replace(/\s*\([^)]*\)/g, '')
+    .replace(/\b(2wd|4wd|awd|fwd|rwd|4x4|ffv|\d ?dr|\d-door)\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * Drop a rating two different engines of one model and year share.
+ *
+ * The rating matcher's third tier accepted any engine with the same cylinder
+ * count when the listing's own engine was not in EPA's test-car file, so an
+ * untested engine took a tested sibling's figure: the 2013 F-150 5.0 carries
+ * the 6.2's 415 hp, a 2013 Tundra 4.6 the 5.7's 381, a 2010 Corolla 2.4 the
+ * 1.8's 132. Which of the pair is real cannot be told from the ratings, so
+ * both read "not on file" until the file is rebuilt with the fixed matcher.
+ */
+export function dropRatingsSharedAcrossEngines(cars: Car[]): { cars: Car[]; dropped: number } {
+  const key = (c: Car) =>
+    [
+      c.make,
+      modelFamily(c.model),
+      c.year,
+      c.engine.cylinders,
+      c.engine.aspiration ?? '',
+      c.engine.fuelType,
+    ].join('|');
+  const curated = (c: Car) =>
+    c.engine.horsepower != null &&
+    !!c.engine.displacement &&
+    c.provenance?.['engine.horsepower'] === 'curated';
+
+  const displacements = new Map<string, Set<number>>();
+  for (const car of cars) {
+    if (!curated(car)) continue;
+    const k = `${key(car)}|${car.engine.horsepower}`;
+    const set = displacements.get(k) ?? new Set<number>();
+    set.add(car.engine.displacement!);
+    displacements.set(k, set);
+  }
+
+  let dropped = 0;
+  const out = cars.map((car) => {
+    if (!curated(car)) return car;
+    if ((displacements.get(`${key(car)}|${car.engine.horsepower}`)?.size ?? 0) < 2) return car;
+    dropped++;
+    const { horsepower: _hp, ...engine } = car.engine;
+    const { 'engine.horsepower': _source, ...provenance } = car.provenance;
+    return { ...car, engine, provenance };
+  });
+  return { cars: out, dropped };
+}

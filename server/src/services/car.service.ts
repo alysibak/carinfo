@@ -2,7 +2,10 @@ import type { Car, SearchQuery, SearchResults } from '../types/car.types.js';
 import { readFileSync } from 'fs';
 import { computeEvScore } from '../utils/ev-scoring.js';
 import { normalizeCarRecord } from '../utils/car-normalize.js';
-import { dropInductionMismatchedHorsepower } from '../utils/horsepower-plausibility.js';
+import {
+  dropInductionMismatchedHorsepower,
+  dropRatingsSharedAcrossEngines,
+} from '../utils/horsepower-plausibility.js';
 import { dataFileCandidates, resolveDataFile } from '../utils/data-paths.js';
 import {
   bestFuzzyScore,
@@ -153,7 +156,9 @@ function initDatabase(): void {
     } else {
       // Dev / missing ready file: enrich + normalize at load (slow on large DBs).
       cachedCars = ensureUniqueIds(
-        dropInductionMismatchedHorsepower(db.cars.map(enrichCar).map(normalizeCarRecord)).cars,
+        dropRatingsSharedAcrossEngines(
+          dropInductionMismatchedHorsepower(db.cars.map(enrichCar).map(normalizeCarRecord)).cars,
+        ).cars,
       ).cars;
       rawIdIndex = new Map(db.cars.map((car) => [car.id, car]));
       console.log(

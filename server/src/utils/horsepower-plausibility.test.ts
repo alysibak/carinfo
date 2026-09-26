@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Car } from '../types/car.types.js';
 import {
   dropInductionMismatchedHorsepower,
+  dropRatingsSharedAcrossEngines,
   isPlausibleRatedHorsepower,
 } from './horsepower-plausibility.js';
 
@@ -71,5 +72,41 @@ describe('dropInductionMismatchedHorsepower', () => {
     ]);
     expect(dropped).toBe(0);
     expect(cars.map((c) => c.engine.horsepower)).toEqual([168, 250, 243]);
+  });
+});
+
+describe('dropRatingsSharedAcrossEngines', () => {
+  const f150 = (id: string, model: string, displacement: number, hp: number) =>
+    ({
+      id,
+      make: 'Ford',
+      model,
+      year: 2013,
+      provenance: { 'engine.horsepower': 'curated' },
+      engine: { fuelType: 'gasoline', displacement, cylinders: 8, horsepower: hp },
+      fuelEconomy: { combined: 16 },
+      transmission: { type: 'automatic' },
+      driveType: 'RWD',
+      bodyStyle: 'truck',
+    }) as Car;
+
+  it('drops a rating two engines of one model and year share', () => {
+    // The 5.0 took the 6.2's 415 hp; which is real cannot be told from here.
+    const { cars, dropped } = dropRatingsSharedAcrossEngines([
+      f150('5.0-2wd', 'F150 Pickup 2WD', 5, 415),
+      f150('6.2-4wd', 'F150 Pickup 4WD', 6.2, 415),
+      f150('5.0-4wd', 'F150 Pickup 4WD', 5, 415),
+    ]);
+    expect(dropped).toBe(3);
+    expect(cars.every((c) => c.engine.horsepower === undefined)).toBe(true);
+  });
+
+  it('keeps distinct ratings, and one engine rated the same across drive variants', () => {
+    const { dropped } = dropRatingsSharedAcrossEngines([
+      f150('5.0-2wd', 'F150 Pickup 2WD', 5, 360),
+      f150('5.0-4wd', 'F150 Pickup 4WD', 5, 360),
+      f150('6.2-4wd', 'F150 Pickup 4WD', 6.2, 411),
+    ]);
+    expect(dropped).toBe(0);
   });
 });

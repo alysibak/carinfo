@@ -412,7 +412,11 @@ function matchHorsepower(car: Car, idx: Indexes): MatchResult | null {
   const related = (epaModel: string) =>
     carlineRelated(model, epaModel) || carlineRelated(combined, epaModel);
   const sameEngine = (v: Variant) => v.displ === displ && v.cyl === cyl;
-  const sameCyl = (v: Variant) => v.cyl === cyl;
+  // "Rounding" means rounding: 4.95 vs 5.0, not a 5.0 V8 against a 6.2 V8.
+  // Accepting any displacement gave untested engines a tested sibling's
+  // rating (the 2013 F-150 5.0 took the 6.2's 415 hp).
+  const sameCyl = (v: Variant) =>
+    v.cyl === cyl && displ != null && Math.abs(parseFloat(v.displ) - parseFloat(displ)) <= 0.15;
 
   // Tier 1 — same make + exact engine + carline. Highest confidence (modern files).
   if (displ && cyl) {
