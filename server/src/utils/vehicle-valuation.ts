@@ -104,7 +104,6 @@ const BRAND_RETENTION: Record<string, number> = {
   Honda: 1.06,
   Mazda: 1.04,
   Subaru: 1.03,
-  Porsche: 1.12,
   // Was 1.14. Tesla's 2023–25 price cuts took residuals down with them: a 2022
   // Model 3 lists around $32,600 CAD in 2026, about 55% of its original price.
   Tesla: 1.0,
@@ -332,6 +331,144 @@ const EXOTIC_MODEL_RULES: ModelMsrpRule[] = [
   exo('Lotus', /^elise|^exige/i, 60000),
   exo('Lotus', /^(evora|emira)/i, 100000),
   exo('Nissan', /^gt-r/i, 120000),
+];
+
+const litresAtLeast = (c: CarSpecs, l: number) => (c.engine.displacement ?? 0) >= l;
+
+/**
+ * Flagships, luxury SUVs and luxury performance sedans the size-class table
+ * priced at half their sticker: an S 580 or a 750i at $52,700, a Range Rover
+ * at $69,750, a CT5-V Blackwing at $46,440 and a Maybach S 680 at $64,000.
+ * Current US list prices of each line, typical trim.
+ */
+const FLAGSHIP_RULES: ModelMsrpRule[] = [
+  // Mercedes-Benz S-Class (AMG models have their own rules) and Maybach.
+  {
+    test: (c) =>
+      c.make === 'Mercedes-Benz' && /maybach/i.test(c.model) && /\bs ?\d{3}/i.test(c.model),
+    msrp: (c) =>
+      /convertible/i.test(c.model) ? 300000 : /\bs ?6[0-8]0\b/i.test(c.model) ? 240000 : 200000,
+  },
+  { test: (c) => c.make === 'Mercedes-Benz' && /^gls ?600.*maybach/i.test(c.model), msrp: 180000 },
+  {
+    test: (c) => c.make === 'Mercedes-Benz' && /^s ?\d{3}/i.test(c.model) && !/amg/i.test(c.model),
+    msrp: (c) => {
+      const n = Number(/^s ?(\d{3})/i.exec(c.model)![1]);
+      const base = n >= 600 ? 175000 : n >= 500 ? 130000 : 118000;
+      return /coupe|convertible/i.test(c.model) ? base * 1.08 : base;
+    },
+  },
+  {
+    test: (c) => c.make === 'Mercedes-Benz' && /^cl ?\d{3}/i.test(c.model) && !/amg/i.test(c.model),
+    msrp: (c) => (/^cl ?6/i.test(c.model) ? 160000 : 115000),
+  },
+  // BMW 7 Series and X7 (the M760i and Alpinas have their own rules).
+  {
+    test: (c) => c.make === 'BMW' && /^7[1-6]\d/i.test(c.model),
+    msrp: (c) =>
+      /^760/i.test(c.model)
+        ? c.year >= 2023
+          ? 120000
+          : 140000
+        : /^750/i.test(c.model)
+          ? 110000
+          : 98000,
+  },
+  { test: (c) => c.make === 'BMW' && /^x7(?! m)/i.test(c.model), msrp: 85000 },
+  {
+    test: (c) => c.make === 'Audi' && /^a8/i.test(c.model),
+    msrp: (c) => (cyl(c) >= 12 ? 135000 : 92000),
+  },
+  {
+    test: (c) => c.make === 'Lexus' && /^ls\b/i.test(c.model),
+    msrp: (c) => (/600h/i.test(c.model) ? 120000 : 82000),
+  },
+  {
+    test: (c) => c.make === 'Genesis' && /^g90/i.test(c.model),
+    msrp: (c) => (c.year >= 2023 ? 90000 : 72000),
+  },
+  { test: (c) => c.make === 'Hyundai' && /^equus/i.test(c.model), msrp: 65000 },
+  { test: (c) => c.make === 'Kia' && /^k900/i.test(c.model), msrp: 60000 },
+  // Cadillac's flagship and V models (Blackwings by their engines).
+  {
+    test: (c) => c.make === 'Cadillac' && /^ct6/i.test(c.model),
+    msrp: (c) => (litresAtLeast(c, 4) ? 90000 : 60000),
+  },
+  {
+    test: (c) => c.make === 'Cadillac' && /^ct4[ -]?v/i.test(c.model),
+    msrp: (c) => (litresAtLeast(c, 3.5) ? 62000 : 48000),
+  },
+  {
+    test: (c) => c.make === 'Cadillac' && /^ct5[ -]?v/i.test(c.model),
+    msrp: (c) => (litresAtLeast(c, 6) ? 95000 : 52000),
+  },
+  { test: (c) => c.make === 'Cadillac' && /^cts[ -]?v/i.test(c.model), msrp: 85000 },
+  { test: (c) => c.make === 'Cadillac' && /^ats[ -]?v/i.test(c.model), msrp: 62000 },
+  // Alfa Romeo: the Quadrifoglios share a 2.9-litre V6.
+  {
+    test: (c) => c.make === 'Alfa Romeo' && /^giulia/i.test(c.model),
+    msrp: (c) => (c.engine.displacement === 2.9 ? 80000 : 46000),
+  },
+  {
+    test: (c) => c.make === 'Alfa Romeo' && /^stelvio/i.test(c.model),
+    msrp: (c) => (c.engine.displacement === 2.9 ? 90000 : 50000),
+  },
+  { test: (c) => c.make === 'Alfa Romeo' && /^4c/i.test(c.model), msrp: 70000 },
+  // Jaguar sedans and SUVs.
+  {
+    test: (c) => c.make === 'Jaguar' && /^xj(?!s)/i.test(c.model),
+    msrp: (c) => (/^xjr/i.test(c.model) ? 110000 : 80000),
+  },
+  { test: (c) => c.make === 'Jaguar' && /^xf/i.test(c.model), msrp: 50000 },
+  { test: (c) => c.make === 'Jaguar' && /^xe/i.test(c.model), msrp: 45000 },
+  {
+    test: (c) => c.make === 'Jaguar' && /^f-pace/i.test(c.model),
+    msrp: (c) => (/svr/i.test(c.model) ? 90000 : 58000),
+  },
+  { test: (c) => c.make === 'Jaguar' && /^e-pace/i.test(c.model), msrp: 50000 },
+  // Land Rover, by line.
+  {
+    test: (c) => c.make === 'Land Rover' && /^(new )?range rover sport/i.test(c.model),
+    msrp: (c) => (/\bsv/i.test(c.model) ? 135000 : 85000),
+  },
+  { test: (c) => c.make === 'Land Rover' && /^range rover velar/i.test(c.model), msrp: 65000 },
+  { test: (c) => c.make === 'Land Rover' && /evoque/i.test(c.model), msrp: 52000 },
+  { test: (c) => c.make === 'Land Rover' && /^range rover sv coupe/i.test(c.model), msrp: 250000 },
+  {
+    test: (c) => c.make === 'Land Rover' && /^(new )?range rover\b/i.test(c.model),
+    msrp: (c) => (/\bsva?\b/i.test(c.model) ? 210000 : 120000),
+  },
+  { test: (c) => c.make === 'Land Rover' && /^discovery sport/i.test(c.model), msrp: 50000 },
+  { test: (c) => c.make === 'Land Rover' && /^discovery\b/i.test(c.model), msrp: 62000 },
+  { test: (c) => c.make === 'Land Rover' && /^lr4/i.test(c.model), msrp: 55000 },
+  { test: (c) => c.make === 'Land Rover' && /^lr3/i.test(c.model), msrp: 50000 },
+  { test: (c) => c.make === 'Land Rover' && /^(lr2|freelander)/i.test(c.model), msrp: 38000 },
+  {
+    test: (c) => c.make === 'Land Rover' && /^defender/i.test(c.model),
+    msrp: (c) =>
+      litresAtLeast(c, 5)
+        ? 110000
+        : /\b130\b/.test(c.model)
+          ? 75000
+          : /\b90\b/.test(c.model)
+            ? 58000
+            : 65000,
+  },
+  // Macan trims (the base Macan and the electric ones have their own rules).
+  {
+    test: (c) =>
+      c.make === 'Porsche' &&
+      c.engine.fuelType !== 'electric' &&
+      /^macan (s|gts|turbo|t)\b/i.test(c.model),
+    msrp: (c) =>
+      /turbo/i.test(c.model)
+        ? 105000
+        : /gts/i.test(c.model)
+          ? 92000
+          : /^macan t\b/i.test(c.model)
+            ? 72000
+            : 80000,
+  },
 ];
 
 /**
@@ -709,6 +846,7 @@ const MODEL_MSRP_RULES: ModelMsrpRule[] = [
   ...EV_LINE_RULES,
   ...TRUCK_SUV_RULES,
   ...EXOTIC_MODEL_RULES,
+  ...FLAGSHIP_RULES,
   {
     test: (c) => c.make === 'Tesla' && c.model.toLowerCase().includes('model s'),
     msrp: (c) => (c.year >= 2021 ? 95000 : c.year >= 2016 ? 85000 : 75000),
@@ -1289,7 +1427,7 @@ function retentionFraction(
     // their CarGurus.ca averages (September 2026).
     const k = 0.12;
     const base = 0.08 + 0.92 * Math.exp(-k * age);
-    return Math.min(0.95, base * brand * highRetention(car));
+    return Math.min(0.95, base * brand * highRetention(car) * fastDepreciation(car, age));
   }
 
   if (fuelType === 'hydrogen') {
@@ -1331,7 +1469,7 @@ function retentionFraction(
   const floorFrac = segmentFloor[segment];
   const ageCurve = floorFrac + (1 - floorFrac) * Math.exp(-k * age);
 
-  let modifier = brand * highRetention(car);
+  let modifier = brand * highRetention(car) * fastDepreciation(car, age);
   if (segment === 'utility' && isMidsizePickup(car)) modifier *= 1.2;
   if (fuelType === 'hybrid') modifier *= 1.03;
   if (age > 12) modifier *= 0.92;
@@ -1374,8 +1512,8 @@ const HIGH_RETENTION_MODELS: Array<[(c: CarSpecs) => boolean, number]> = [
   [(c) => c.make === 'Toyota' && /^rav4 (prime|plug-in)/i.test(c.model), 1.4],
   // Porsche's sports cars: a 2018 718 Cayman lists around US$50,000–$57,000
   // against about $57,000 new (Cars.com, KBB).
-  [(c) => c.make === 'Porsche' && /\b911\b/.test(c.model), 1.5],
-  [(c) => c.make === 'Porsche' && /^(718|boxster|cayman)\b/i.test(c.model), 1.4],
+  [(c) => c.make === 'Porsche' && /\b911\b/.test(c.model), 1.7],
+  [(c) => c.make === 'Porsche' && /^(718|boxster|cayman)\b/i.test(c.model), 1.55],
   [(c) => c.make === 'Lotus' && /^(evora|emira)/i.test(c.model), 1.4],
   // The original two-door AMG GT (a 2017 ~US$72,200 on CarGurus), an RS 6
   // Avant (a 2021 ~US$94,300) and the G-Class (a 2020 AMG G 63 ~US$122,800).
@@ -1429,6 +1567,38 @@ function flatCurveRetention(car: CarSpecs): number | null {
     default:
       return null;
   }
+}
+
+/**
+ * Flagships and Range Rovers lose value faster than the luxury curve, and the
+ * gap opens with age: a 2023 S 580 lists around US$79,000 and a 2024 740i
+ * around US$61,700, about 0.7 of the curve; a 2018 S 560 ~US$37,200, a 2019
+ * 750i ~US$26,600 and a 2019 Range Rover ~US$31,400, half of it or less
+ * (Cars.com, KBB, TrueCar; September 2026). Each value is where the factor
+ * settles; it starts at 1 for a new car.
+ */
+const FAST_DEPRECIATION_MODELS: Array<[(c: CarSpecs) => boolean, number]> = [
+  [
+    (c) =>
+      c.make === 'Mercedes-Benz' &&
+      /^(s ?\d{2,3}|cl ?\d{2,3}|amg s ?\d{2})\b|maybach/i.test(c.model),
+    0.52,
+  ],
+  [(c) => c.make === 'BMW' && /^(7[1-6]\d|m760|alpina b7)/i.test(c.model), 0.5],
+  [(c) => c.make === 'Audi' && /^(a8|s8)\b/i.test(c.model), 0.55],
+  [(c) => /^(genesis|hyundai|kia)$/i.test(c.make) && /^(g90|equus|k900)\b/i.test(c.model), 0.52],
+  [(c) => c.make === 'Jaguar' && /^xj(?!s)/i.test(c.model), 0.52],
+  [(c) => c.make === 'Cadillac' && /^ct6/i.test(c.model), 0.55],
+  [(c) => c.make === 'Volkswagen' && /^phaeton/i.test(c.model), 0.52],
+  // A 2018 LS 500 keeps more (~US$39,000), as Lexus does.
+  [(c) => c.make === 'Lexus' && /^ls\b/i.test(c.model), 0.75],
+  // The Defender (2020 on) holds its value; the rest of the range does not.
+  [(c) => c.make === 'Land Rover' && !/^defender/i.test(c.model), 0.5],
+];
+
+function fastDepreciation(car: CarSpecs, age: number): number {
+  const settled = FAST_DEPRECIATION_MODELS.find(([test]) => test(car))?.[1];
+  return settled == null ? 1 : settled + (1 - settled) * Math.exp(-0.4 * age);
 }
 
 function highRetention(car: CarSpecs): number {

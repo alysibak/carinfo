@@ -12,6 +12,7 @@ import { normalizeCarRecord } from '../src/utils/car-normalize.js';
 import {
   dropInductionMismatchedHorsepower,
   dropRatingsSharedAcrossEngines,
+  dropYearOverYearOutliers,
 } from '../src/utils/horsepower-plausibility.js';
 import { resolveDataFile } from '../src/utils/data-paths.js';
 import { ensureUniqueIds } from '../src/utils/unique-ids.js';
@@ -51,7 +52,13 @@ if (shared.dropped) {
     `[build-runtime-db] Dropped ${shared.dropped} horsepower rating(s) shared by two engines of one model.`,
   );
 }
-const normalized = shared.cars;
+const yearOverYear = dropYearOverYearOutliers(shared.cars);
+if (yearOverYear.dropped) {
+  console.log(
+    `[build-runtime-db] Dropped ${yearOverYear.dropped} horsepower rating(s) out of line with the same engine's other years.`,
+  );
+}
+const normalized = yearOverYear.cars;
 
 // Slug collisions made some vehicles unreachable by ID — see utils/unique-ids.ts.
 const { cars, report } = ensureUniqueIds(normalized);

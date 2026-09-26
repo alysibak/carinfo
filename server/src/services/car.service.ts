@@ -5,6 +5,7 @@ import { normalizeCarRecord } from '../utils/car-normalize.js';
 import {
   dropInductionMismatchedHorsepower,
   dropRatingsSharedAcrossEngines,
+  dropYearOverYearOutliers,
 } from '../utils/horsepower-plausibility.js';
 import { dataFileCandidates, resolveDataFile } from '../utils/data-paths.js';
 import {
@@ -156,8 +157,10 @@ function initDatabase(): void {
     } else {
       // Dev / missing ready file: enrich + normalize at load (slow on large DBs).
       cachedCars = ensureUniqueIds(
-        dropRatingsSharedAcrossEngines(
-          dropInductionMismatchedHorsepower(db.cars.map(enrichCar).map(normalizeCarRecord)).cars,
+        dropYearOverYearOutliers(
+          dropRatingsSharedAcrossEngines(
+            dropInductionMismatchedHorsepower(db.cars.map(enrichCar).map(normalizeCarRecord)).cars,
+          ).cars,
         ).cars,
       ).cars;
       rawIdIndex = new Map(db.cars.map((car) => [car.id, car]));

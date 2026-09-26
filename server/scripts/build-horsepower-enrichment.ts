@@ -71,6 +71,11 @@ function norm(value: unknown): string {
     .replace(/[^a-z0-9]/g, '');
 }
 
+/** A model name without its drive and fuel suffixes ("F150 Pickup 2WD FFV" → "f150pickup"). */
+function carlineFamily(model: string): string {
+  return norm(model.replace(/\b(2wd|4wd|awd|fwd|rwd|4x4|ffv|\d ?dr|\d-door)\b/gi, ''));
+}
+
 function median(values: number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
   const mid = sorted.length >> 1;
@@ -179,6 +184,8 @@ interface Variant {
 interface Indexes {
   byMakeYear: Map<string, Variant[]>; // `${make}|${year}`
   byEngineYear: Map<string, Variant[]>; // `${displ}|${cyl}|${year}` (cross-make)
+  /** Normalized model names on file, by `${make}|${year}` (fueleconomy.gov side). */
+  carlines?: Map<string, string[]>;
 }
 
 interface Extractor {
@@ -440,8 +447,17 @@ function matchHorsepower(car: Car, idx: Indexes): MatchResult | null {
   }
 
   // Tier 4 — same make + exact engine, carline renamed; only a single tight cluster.
+  // A test car whose carline is another model on file is that model's, not a
+  // renamed one: the 2010 F-150 and Expedition 5.4 took the supercharged
+  // Mustang GT500's 540 hp, the only Ford 5.4 tested that year.
   if (displ && cyl) {
-    const hp = bestHp(makeBucket, sameEngine, related, model, combined, false, true);
+    const own = carlineFamily(car.model);
+    const others = (idx.carlines?.get(`${make}|${year}`) ?? []).filter(
+      (m) => m !== own && !carlineRelated(m, own),
+    );
+    const renamed = (v: Variant) =>
+      sameEngine(v) && !others.some((m) => carlineRelated(m, v.model));
+    const hp = bestHp(makeBucket, renamed, related, model, combined, false, true);
     if (hp != null) return { hp, tier: 'engine' };
   }
 
@@ -477,6 +493,14 @@ async function main(): Promise<void> {
   );
 
   const db = JSON.parse(readFileSync(CARS_PATH, 'utf-8')) as { cars: Car[] };
+  idx.carlines = new Map();
+  for (const car of db.cars) {
+    const key = `${norm(car.make)}|${car.year}`;
+    const list = idx.carlines.get(key) ?? [];
+    const family = carlineFamily(car.model);
+    if (!list.includes(family)) list.push(family);
+    idx.carlines.set(key, list);
+  }
   const output: Record<string, number> = {};
   const tierCounts: Record<MatchTier, number> = {
     'make+engine+model': 0,

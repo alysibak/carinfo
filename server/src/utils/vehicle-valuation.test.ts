@@ -157,6 +157,30 @@ describe('vehicle-valuation (Ontario/CAD)', () => {
     expect(kept('Maserati', /^Ghibli/, 2018)).toBeLessThan(0.35);
   });
 
+  it('prices flagships at their sticker and lets them lose it faster with age', () => {
+    const car = (make: string, model: RegExp, year: number) =>
+      getAllCars().find(
+        (c) =>
+          c.make === make &&
+          model.test(c.model) &&
+          c.year === year &&
+          c.engine.fuelType !== 'plug-in hybrid',
+      )!;
+    // The size-class table had a Maybach S 580 and a 760i at $52,700.
+    expect(estimateNewVehicleMsrp(car('Mercedes-Benz', /^S580 4matic Maybach$/, 2021))).toBe(
+      200_000,
+    );
+    expect(estimateNewVehicleMsrp(car('BMW', /^760i/, 2023))).toBe(120_000);
+    // New, a flagship keeps the luxury curve; by eight years it has lost far
+    // more than a C-Class (a 2018 S 560 ~US$37,200 on Cars.com).
+    const kept = (make: string, model: RegExp, year: number) =>
+      estimateMarketValue(car(make, model, year)).retainedFraction;
+    expect(kept('Mercedes-Benz', /^S580 4matic$/, 2026)).toBeGreaterThan(0.9);
+    expect(kept('Mercedes-Benz', /^S560 4matic$/, 2018)).toBeLessThan(
+      kept('Mercedes-Benz', /^C300 4matic$/, 2018) * 0.65,
+    );
+  });
+
   it('has zero degenerate resale ranges across the full dataset', () => {
     const cars = loadRawCars();
     let degenerate = 0;
