@@ -7,11 +7,12 @@ import {
   isImplausibleResaleProjection,
   LOW_VOLUME_CONFIDENCE_LABEL,
 } from './vehicle-valuation.js';
-import { calculateResaleImpact, computeOwnershipEconomics } from './ownership-economics.js';
+import { computeOwnershipEconomics } from './ownership-economics.js';
 import { getRegionalAssumptions } from '../config/regional-assumptions.js';
 import { inferEffectiveFuelType } from './fuel-type-inference.js';
 import { normalizeCarRecord } from '../utils/car-normalize.js';
 import { findCar, loadRawCars } from '../__tests__/helpers/loadCars.js';
+import { getAllCars } from '../services/car.service.js';
 
 function assertValueBand(
   low: number,
@@ -66,6 +67,48 @@ describe('vehicle-valuation (Ontario/CAD)', () => {
     expect(mv.batteryHealth?.label).toBeTruthy();
   });
 
+  it('prices EV trims apart instead of one price per line', () => {
+    const mid = (model: string, year: number, make = 'Ford') =>
+      estimateMarketValue(
+        normalized((c) => c.make === make && c.model === model && c.year === year),
+      ).mid;
+    expect(mid('Mustang Mach-E RWD', 2021)).toBeLessThan(mid('Mustang Mach-E AWD', 2021));
+    expect(mid('Mustang Mach-E AWD', 2021)).toBeLessThan(mid('Mustang Mach-E GT', 2021));
+    expect(mid('Model 3 Standard Range Plus', 2019, 'Tesla')).toBeLessThan(
+      mid('Model 3 Long Range AWD', 2019, 'Tesla'),
+    );
+    expect(mid('Taycan 4S Perf Battery', 2021, 'Porsche')).toBeLessThan(
+      mid('Taycan Turbo S', 2021, 'Porsche') / 1.5,
+    );
+  });
+
+  it('discounts early short-range EVs against long-range ones of the same age', () => {
+    // Rated range comes from the EPA enrichment the runtime database merges in.
+    const find = (make: string, model: string) =>
+      getAllCars().find((c) => c.make === make && c.model === model && c.year === 2017)!;
+    const leaf = estimateMarketValue(find('Nissan', 'Leaf'));
+    const bolt = estimateMarketValue(find('Chevrolet', 'Bolt EV'));
+    expect(leaf.batteryHealth).toBeDefined();
+    expect(leaf.retainedFraction).toBeLessThan(bolt.retainedFraction * 0.85);
+  });
+
+  it('keeps battery wear out of the EV midpoint and puts it in the condition range', () => {
+    const car = normalized((c) => c.make === 'Nissan' && c.model === 'Leaf' && c.year === 2015);
+    const mv = estimateMarketValue(car);
+    expect(Math.abs(mv.mid - mv.msrpAnchor * mv.retainedFraction)).toBeLessThan(250);
+    const [poor, average, excellent] = mv.conditionBands!;
+    expect(average.low).toBeLessThan(mv.mid);
+    expect(average.high).toBeGreaterThan(mv.mid);
+    expect(poor.high).toBeLessThan(mv.mid);
+    expect(excellent.low).toBeGreaterThan(mv.mid);
+    // A worn pack is likelier on an early Leaf, so its range is wider than a
+    // new EV's.
+    const fresh = estimateMarketValue(
+      normalized((c) => c.make === 'Tesla' && c.model === 'Model 3 RWD' && c.year === 2024),
+    );
+    expect((mv.high - mv.low) / mv.mid).toBeGreaterThan((fresh.high - fresh.low) / fresh.mid);
+  });
+
   it('has zero degenerate resale ranges across the full dataset', () => {
     const cars = loadRawCars();
     let degenerate = 0;
@@ -92,13 +135,12 @@ describe('vehicle-valuation (Ontario/CAD)', () => {
         configuration: raw!.engine.configuration,
       },
     };
+    // Misread as a battery EV, its 61-mile electric range made it an early
+    // short-range EV and priced it below the plug-in hybrid it is. (The old
+    // per-tier EV curve also collapsed its resale to under $1,000; the guard
+    // for that is tested directly below.)
     const beforeMarket = estimateMarketValue(bevSim);
-    const beforeResale = calculateResaleImpact(bevSim, beforeMarket);
     expect(beforeMarket.mid).toBeLessThan(15_000);
-    expect(isImplausibleResaleProjection(beforeMarket, beforeResale.projectedResale5Year)).toBe(
-      true,
-    );
-    expect(beforeResale.projectedResale5Year.high).toBeLessThan(1_000);
     expect(inferEffectiveFuelType(car)).toBe('plug-in hybrid');
 
     const anchor = assessMsrpAnchor(car);

@@ -105,7 +105,10 @@ export default function Methodology() {
               more than when new.
             </li>
             <li>
-              Depreciation tiers by segment, age, fuel type, and retention class (A/B/C for EVs).
+              Depreciation curves by segment, age and fuel type. Electric cars follow one curve
+              fitted to Canadian listings (about half the sticker at five years), with a steeper
+              discount for early short-range models; battery health widens the range rather than
+              lowering the average, since listing prices already reflect typical wear.
             </li>
             <li>
               Insurance starts from each province&rsquo;s average premium (FSRA in Ontario, ICBC in

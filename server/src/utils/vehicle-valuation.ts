@@ -113,11 +113,42 @@ const BRAND_RETENTION: Record<string, number> = {
   Nissan: 0.96,
   Fiat: 0.88,
   Mitsubishi: 0.9,
+  // Bankrupt makers: no dealers, software updates or assured parts. A 2023
+  // Fisker Ocean Extreme ($69,000 new) sells for about $16,000 in 2026.
+  Fisker: 0.4,
+  Lordstown: 0.4,
 };
 
 interface ModelMsrpRule {
   test: (car: CarSpecs) => boolean;
   msrp: number | ((car: CarSpecs) => number);
+  /** The price is for the core trim; scale it by evTrimFactor for the others. */
+  evTrims?: true;
+}
+
+/**
+ * Where an EV trim sits against its line's core trim, from the words EPA puts
+ * in its name. Before this, every trim of a line shared one price: a Mach-E GT
+ * Performance matched the base RWD, and a Model S Plaid a Standard Range.
+ */
+export function evTrimFactor(car: CarSpecs): number {
+  const m = car.model.toLowerCase();
+  if (/\bmaybach\b/.test(m)) return 1.7;
+  if (/\bplaid\b/.test(m)) return 1.35;
+  if (
+    /\b(performance|perf|ss|amg)\b|\bgt\b(?!-line)|\bp\d+d?\b|\bm\d0\b|^(rs|sq?\d?) |\be-tron s\b|\bn$/.test(
+      m,
+    )
+  ) {
+    return 1.2;
+  }
+  if (/\bstandard\b|\bmid range\b|\bsr\b|\blfp\b/.test(m)) return 0.9;
+  let factor = 1;
+  if (/\b(awd|4wd|dual motor|twin|e-4orce|4motion|4matic|quattro|xdrive)\b|\b\d+d\b/.test(m)) {
+    factor *= 1.07;
+  }
+  if (/\blong range\b|\bextended\b|\ber\d?\b/.test(m)) factor *= 1.04;
+  return factor;
 }
 
 /**
@@ -314,22 +345,130 @@ const PERFORMANCE_VARIANT_RULES: ModelMsrpRule[] = [
   },
 ];
 
+const isEv = (c: CarSpecs) => c.engine.fuelType === 'electric';
+const evLine = (make: string, model: RegExp) => (c: CarSpecs) =>
+  isEv(c) && c.make.toLowerCase() === make.toLowerCase() && model.test(c.model);
+
+/**
+ * Launch prices (USD, core trim) for EV lines the size-class anchor gets
+ * wrong. EPA files EVs in odd classes (the Ariya and the $340,000 Celestiq as
+ * "Small Station Wagons", the e-tron GT as "Subcompact"), so the generic path
+ * put a Celestiq at $45,000, an Ariya at $29,000 and a smart EQ at $47,000.
+ */
+const EV_LINE_RULES: ModelMsrpRule[] = [
+  { test: evLine('Acura', /^zdx/i), msrp: 65000, evTrims: true },
+  {
+    test: evLine('Audi', /e-tron gt/i),
+    msrp: (c) =>
+      /^rs.*performance/i.test(c.model)
+        ? 170000
+        : /^rs/i.test(c.model)
+          ? 143000
+          : /^s /i.test(c.model)
+            ? 126000
+            : 104000,
+  },
+  { test: evLine('Audi', /^q4\b/i), msrp: 50000, evTrims: true },
+  { test: evLine('Audi', /^s?q6\b/i), msrp: 64000, evTrims: true },
+  { test: evLine('Audi', /^s?a?6 e-tron/i), msrp: 66000, evTrims: true },
+  {
+    test: evLine('Audi', /^(s?q8 )?(sportback )?e-tron|^sq8/i),
+    msrp: (c) => (c.year >= 2024 ? 74000 : 68000),
+    evTrims: true,
+  },
+  { test: evLine('BMW', /^i4\b/i), msrp: 56000, evTrims: true },
+  { test: evLine('BMW', /^i5\b/i), msrp: 67000, evTrims: true },
+  { test: evLine('BMW', /^i7\b/i), msrp: 106000, evTrims: true },
+  { test: evLine('BMW', /^ix3\b/i), msrp: 60000, evTrims: true },
+  { test: evLine('BMW', /^ix\b/i), msrp: 80000, evTrims: true },
+  { test: evLine('Cadillac', /^celestiq/i), msrp: 340000 },
+  { test: evLine('Cadillac', /^lyriq/i), msrp: 60000, evTrims: true },
+  { test: evLine('Cadillac', /^optiq/i), msrp: 54000, evTrims: true },
+  { test: evLine('Cadillac', /^vistiq/i), msrp: 78000, evTrims: true },
+  {
+    // $56,000 at launch (2LT/RS), cut to about $45,000 for 2025.
+    test: evLine('Chevrolet', /^blazer ev/i),
+    msrp: (c) => (c.year >= 2025 ? 47000 : 54000),
+    evTrims: true,
+  },
+  { test: evLine('Chevrolet', /^equinox ev/i), msrp: 36000, evTrims: true },
+  {
+    test: evLine('Chevrolet', /^silverado ev/i),
+    msrp: (c) => (c.year >= 2026 ? 70000 : 78000),
+  },
+  { test: evLine('Chevrolet', /^spark ev/i), msrp: 27500 },
+  { test: evLine('GMC', /^sierra ev/i), msrp: (c) => (c.year >= 2026 ? 80000 : 100000) },
+  {
+    test: evLine('Fisker', /^ocean/i),
+    msrp: (c) => (/extreme|one/i.test(c.model) ? 61500 : /ultra/i.test(c.model) ? 50000 : 39000),
+  },
+  { test: evLine('Genesis', /^gv60/i), msrp: 52000, evTrims: true },
+  { test: evLine('Genesis', /gv70/i), msrp: 66000 },
+  { test: evLine('Genesis', /g80/i), msrp: 80000 },
+  { test: evLine('Honda', /^prologue/i), msrp: 48000, evTrims: true },
+  { test: evLine('Hyundai', /^ioniq 9/i), msrp: 60000, evTrims: true },
+  { test: evLine('Hyundai', /^ioniq electric/i), msrp: 32000 },
+  { test: evLine('Jaguar', /^i-pace/i), msrp: 70000 },
+  { test: evLine('Jeep', /^wagoneer s/i), msrp: 72000 },
+  { test: evLine('Kia', /^ev9/i), msrp: 56000, evTrims: true },
+  { test: evLine('Kia', /^soul (ev|electric)/i), msrp: 34000 },
+  { test: evLine('Lexus', /^rz\b/i), msrp: 57000, evTrims: true },
+  { test: evLine('Maserati', /^gran(turismo|cabrio) folgore/i), msrp: 205000 },
+  { test: evLine('Maserati', /^grecale folgore/i), msrp: 103000 },
+  { test: evLine('Mazda', /^mx-30/i), msrp: 34500 },
+  { test: evLine('MINI', /^cooper se/i), msrp: 31000 },
+  { test: evLine('MINI', /^countryman se/i), msrp: 45000 },
+  { test: evLine('Mercedes-Benz', /^eqb/i), msrp: 54000, evTrims: true },
+  { test: evLine('Mercedes-Benz', /^cla\d+/i), msrp: 48000, evTrims: true },
+  { test: evLine('Mercedes-Benz', /^g ?580/i), msrp: 162000 },
+  { test: evLine('Mercedes-Benz', /^(b-class|b250e)/i), msrp: 41500 },
+  { test: evLine('Nissan', /^ariya/i), msrp: 45000, evTrims: true },
+  { test: evLine('Polestar', /^2\b/), msrp: 48000, evTrims: true },
+  { test: evLine('Polestar', /^3\b/), msrp: 67000, evTrims: true },
+  { test: evLine('Polestar', /^4\b/), msrp: 54000, evTrims: true },
+  { test: evLine('smart', /./), msrp: 25000 },
+  { test: evLine('Subaru', /^solterra/i), msrp: 45000, evTrims: true },
+  { test: evLine('Subaru', /^(trailseeker|uncharted)/i), msrp: 40000, evTrims: true },
+  {
+    test: evLine('Tesla', /^cybertruck/i),
+    msrp: (c) =>
+      /cyberbeast/i.test(c.model) ? 100000 : /long range/i.test(c.model) ? 70000 : 80000,
+  },
+  { test: evLine('Toyota', /^bz4x/i), msrp: 42000, evTrims: true },
+  { test: evLine('Toyota', /^bz\b/i), msrp: 37000, evTrims: true },
+  { test: evLine('Toyota', /^c-hr/i), msrp: 38000, evTrims: true },
+  { test: evLine('Vinfast', /^vf ?6/i), msrp: 35000 },
+  { test: evLine('Vinfast', /^vf ?7/i), msrp: 40000 },
+  { test: evLine('Vinfast', /^vf ?8/i), msrp: 47000 },
+  { test: evLine('Vinfast', /^vf ?9/i), msrp: 76000 },
+  { test: evLine('Volkswagen', /^id\. ?buzz/i), msrp: 60000, evTrims: true },
+  { test: evLine('Volkswagen', /^e-golf/i), msrp: 31000 },
+  { test: evLine('Volvo', /^ex30/i), msrp: 40000, evTrims: true },
+  { test: evLine('Volvo', /^ex90/i), msrp: 76000, evTrims: true },
+  { test: evLine('Volvo', /^(xc40|c40|ex40|ec40)/i), msrp: 54000, evTrims: true },
+];
+
 const MODEL_MSRP_RULES: ModelMsrpRule[] = [
+  ...EV_LINE_RULES,
   {
     test: (c) => c.make === 'Tesla' && c.model.toLowerCase().includes('model s'),
     msrp: (c) => (c.year >= 2021 ? 95000 : c.year >= 2016 ? 85000 : 75000),
+    evTrims: true,
   },
   {
     test: (c) => c.make === 'Tesla' && c.model.toLowerCase().includes('model 3'),
     msrp: (c) => (c.year >= 2021 ? 48000 : 42000),
+    evTrims: true,
   },
   {
     test: (c) => c.make === 'Tesla' && c.model.toLowerCase().includes('model x'),
     msrp: (c) => (c.year >= 2021 ? 105000 : 90000),
+    evTrims: true,
   },
   {
     test: (c) => c.make === 'Tesla' && c.model.toLowerCase().includes('model y'),
     msrp: (c) => (c.year >= 2021 ? 55000 : 50000),
+    evTrims: true,
   },
   {
     test: (c) => c.make === 'Nissan' && c.model.toLowerCase().includes('leaf'),
@@ -345,8 +484,42 @@ const MODEL_MSRP_RULES: ModelMsrpRule[] = [
     msrp: (c) => (c.year >= 2018 ? 45000 : 43000),
   },
   {
+    // $36,500 at launch; cut to $31,500 for 2022 and $26,500 for 2023, and the
+    // 2027 relaunch starts near $29,000. The old rule anchored the 2017–21 cars
+    // on the post-cut price, which put a 2017 Bolt at half its asking price.
     test: (c) => c.make === 'Chevrolet' && c.model.toLowerCase().includes('bolt'),
-    msrp: (c) => (c.year >= 2022 ? 32000 : 28000),
+    msrp: (c) =>
+      c.year >= 2027 ? 29000 : c.year >= 2023 ? 27000 : c.year === 2022 ? 32000 : 36500,
+  },
+  {
+    test: (c) => c.make === 'Hyundai' && /^kona electric/i.test(c.model),
+    msrp: (c) => (c.year >= 2024 ? 34000 : 37000),
+  },
+  {
+    test: (c) => c.make === 'Kia' && /^niro (electric|ev)/i.test(c.model),
+    msrp: 40000,
+  },
+  {
+    test: (c) => c.make === 'Kia' && /^ev6/i.test(c.model),
+    msrp: (c) =>
+      /\bgt$/i.test(c.model)
+        ? 62000
+        : /standard/i.test(c.model)
+          ? 43000
+          : /awd/i.test(c.model)
+            ? 52000
+            : 47000,
+  },
+  {
+    test: (c) => c.make === 'Volkswagen' && /^id\.4/i.test(c.model),
+    msrp: (c) =>
+      /pro s/i.test(c.model)
+        ? /awd/i.test(c.model)
+          ? 48000
+          : 44500
+        : /awd|1st/i.test(c.model)
+          ? 44000
+          : 40000,
   },
   { test: (c) => `${c.make} ${c.model}`.toLowerCase().includes('hummer ev'), msrp: 105000 },
   {
@@ -354,9 +527,18 @@ const MODEL_MSRP_RULES: ModelMsrpRule[] = [
     msrp: 105000,
   },
   { test: (c) => c.model.toLowerCase().includes('mirai'), msrp: 52000 },
+  { test: (c) => c.make === 'Rivian' && /^r2\b/i.test(c.model), msrp: 50000 },
   {
+    // The 2022 launch trucks were quad-motor at this price; later lines split
+    // into Dual Standard ($69,900) through Quad ($115,900).
     test: (c) => c.make === 'Rivian',
-    msrp: (c) => (c.model.toLowerCase().includes('r1t') ? 79000 : 78000),
+    msrp: (c) => {
+      const m = c.model.toLowerCase();
+      const base = m.includes('r1t') ? 79000 : 78000;
+      const motors = /\bquad\b/.test(m) && c.year >= 2025 ? 1.4 : /\btri\b/.test(m) ? 1.25 : 1;
+      const pack = /\bmax\b/.test(m) ? 1.08 : /\bstandard\b/.test(m) ? 0.9 : 1;
+      return base * motors * pack * (/\bperformance\b/.test(m) ? 1.06 : 1);
+    },
   },
   {
     test: (c) => c.make === 'Volkswagen' && /gti/i.test(c.model),
@@ -385,8 +567,13 @@ const MODEL_MSRP_RULES: ModelMsrpRule[] = [
     test: (c) => c.make === 'Hyundai' && /elantra n|veloster n/i.test(c.model),
     msrp: (c) => (c.year >= 2022 ? 34000 : 28000),
   },
+  { test: (c) => c.make === 'Lucid' && /sapphire/i.test(c.model), msrp: 249000 },
+  { test: (c) => c.make === 'Lucid' && /^gravity/i.test(c.model), msrp: 95000 },
+  // Dream Edition (2022 only) and Grand Touring Performance.
+  { test: (c) => c.make === 'Lucid' && /dream/i.test(c.model), msrp: 169000 },
+  { test: (c) => c.make === 'Lucid' && /\bgt p\b/i.test(c.model), msrp: 155000 },
   {
-    test: (c) => c.make === 'Lucid' && /grand touring|g touring|dream/i.test(c.model),
+    test: (c) => c.make === 'Lucid' && /grand touring|g touring/i.test(c.model),
     msrp: (c) => (c.year >= 2023 ? 139000 : 125000),
   },
   {
@@ -398,32 +585,59 @@ const MODEL_MSRP_RULES: ModelMsrpRule[] = [
     msrp: (c) => (c.year >= 2024 ? 82000 : c.year >= 2022 ? 77400 : 70000),
   },
   {
+    // One price for every Taycan put a Turbo S (about $190,000) at $96,000.
     test: (c) => c.make === 'Porsche' && c.model.toLowerCase().includes('taycan'),
-    msrp: (c) => (c.year >= 2022 ? 96000 : 86000),
+    msrp: (c) => {
+      const m = c.model.toLowerCase();
+      const trim = /turbo gt/.test(m)
+        ? 231000
+        : /turbo s/.test(m)
+          ? 190000
+          : /turbo/.test(m)
+            ? 155000
+            : /gts/.test(m)
+              ? 135000
+              : /\b4s\b/.test(m)
+                ? 110000
+                : 92000;
+      return /cross turismo|sport turismo|\bst\b/.test(m) ? trim * 1.04 : trim;
+    },
   },
   {
     test: (c) => c.make === 'Mercedes-Benz' && /eqs/i.test(c.model),
     msrp: (c) => (c.year >= 2022 ? 105000 : 95000),
+    evTrims: true,
   },
   {
     test: (c) => c.make === 'Mercedes-Benz' && /eqe/i.test(c.model),
     msrp: (c) => (c.year >= 2023 ? 78000 : 72000),
+    evTrims: true,
   },
   {
     test: (c) => c.make === 'Hyundai' && c.model.toLowerCase().includes('ioniq 6'),
     msrp: (c) => (c.year >= 2024 ? 52000 : 48000),
+    evTrims: true,
   },
+  { test: (c) => c.make === 'Hyundai' && /^ioniq 5 n$/i.test(c.model), msrp: 66000 },
   {
     test: (c) => c.make === 'Hyundai' && c.model.toLowerCase().includes('ioniq 5'),
     msrp: (c) => (c.year >= 2024 ? 50000 : 45000),
+    evTrims: true,
   },
   {
+    // Every Lightning is 4WD, so the generic trim words do not apply.
     test: (c) => c.make === 'Ford' && c.model.toLowerCase().includes('f-150 lightning'),
-    msrp: (c) => (c.year >= 2022 ? 68000 : 62000),
+    msrp: (c) => {
+      const m = c.model.toLowerCase();
+      if (/platinum/.test(m)) return 90000;
+      if (/\bpro\b/.test(m)) return c.year >= 2023 ? 52000 : 42000;
+      return /extended|\ber\d?\b/.test(m) ? 76000 : 60000;
+    },
   },
   {
     test: (c) => c.make === 'Ford' && c.model.toLowerCase().includes('mustang mach-e'),
     msrp: (c) => (c.year >= 2022 ? 52000 : 48000),
+    evTrims: true,
   },
   { test: (c) => c.model.toLowerCase().includes('escalade'), msrp: 85000 },
   { test: (c) => c.make === 'Mitsubishi' && c.model.toLowerCase().includes('i-miev'), msrp: 30000 },
@@ -456,6 +670,21 @@ const MODEL_MSRP_RULES: ModelMsrpRule[] = [
     msrp: (c) => (/turbo|gt2|gt3|dakar|s\/t/i.test(c.model) ? 220000 : 135000),
   },
   { test: (c) => c.make === 'Porsche' && /^718\b/.test(c.model), msrp: 80000 },
+  {
+    test: (c) => c.make === 'Porsche' && /^macan\b.*\belectric$/i.test(c.model),
+    msrp: (c) => {
+      const m = c.model.toLowerCase();
+      return /turbo/.test(m)
+        ? 106000
+        : /gts/.test(m)
+          ? 104000
+          : /\b4s\b/.test(m)
+            ? 88000
+            : /\b4\b/.test(m)
+              ? 80000
+              : 76000;
+    },
+  },
   {
     test: (c) => c.make === 'Porsche' && c.model === 'Macan',
     msrp: (c) => (c.year >= 2022 ? 72000 : 65000),
@@ -553,7 +782,7 @@ export function estimateNewVehicleMsrp(car: CarSpecs): number {
   for (const rule of MODEL_MSRP_RULES) {
     if (rule.test(car)) {
       const v = typeof rule.msrp === 'function' ? rule.msrp(car) : rule.msrp;
-      return Math.round(v);
+      return Math.round(rule.evTrims ? v * evTrimFactor(car) : v);
     }
   }
 
@@ -593,7 +822,7 @@ export function estimateNewVehicleMsrp(car: CarSpecs): number {
   if (isHeavyEvTruck(car)) price = Math.max(price, 95000);
 
   const ft = car.engine.fuelType;
-  if (ft === 'electric') price *= 1.12;
+  if (ft === 'electric') price *= 1.12 * evTrimFactor(car);
   else if (ft === 'plug-in hybrid') price *= 1.06;
   else if (ft === 'hydrogen') price *= 1.15;
   // The cylinder table already prices a luxury V8.
@@ -686,6 +915,12 @@ export function estimateBatteryHealth(car: CarSpecs): BatteryHealthEstimate | un
   } else if (key.includes('500e') || key.includes('i-miev') || key.includes('focus electric')) {
     chemistryNote = 'Compliance-era EV. Limited range and aging chemistry';
     factor = age <= 4 ? 0.75 : age <= 8 ? 0.58 : 0.4;
+  } else if (car.make === 'Chevrolet' && key.includes('bolt') && car.year <= 2022) {
+    // NHTSA recalls 21V-560 (2017–19) and 21V-650 (2019–22 Bolt EV, 2022
+    // EUV): GM replaced battery modules, so many run newer cells than their age.
+    chemistryNote =
+      "Covered by GM's 2021 battery recall, under which many had battery modules replaced. Check the service record";
+    factor = age <= 6 ? 0.92 : 0.85;
   } else if (car.make === 'Tesla') {
     chemistryNote = 'Tesla pack. Relatively strong retention vs early EVs';
     factor = age <= 3 ? 0.96 : age <= 6 ? 0.88 : age <= 10 ? 0.78 : 0.68;
@@ -710,6 +945,18 @@ export function estimateBatteryHealth(car: CarSpecs): BatteryHealthEstimate | un
   return { factor, label, chemistryNote };
 }
 
+/**
+ * Early EVs rated under 120 miles (the 2011–17 Leaf, i-MiEV, Focus Electric,
+ * e-Golf, Soul EV) sell as second cars for short commutes, and the discount
+ * grows as their packs age: a 2015 Leaf lists around US$6,000, under a fifth
+ * of its sticker, where a 2019 Kona Electric keeps 40% at seven years.
+ */
+function shortRangeFactor(car: CarSpecs, age: number): number {
+  const range = car.epa?.rangeMiles ?? 0;
+  if (range <= 0 || range >= 120) return 1;
+  return 1 - 0.3 * Math.min(1, age / 8);
+}
+
 /** Time-based retention fraction (0–1), no dollar floor. */
 function retentionFraction(
   car: CarSpecs,
@@ -718,13 +965,16 @@ function retentionFraction(
   fuelType: FuelType,
 ): number {
   const brand = BRAND_RETENTION[car.make] ?? 1.0;
-  const tier = classifyEvRetentionTier(car);
 
-  if (fuelType === 'electric' && tier) {
-    const k = tier === 'A' ? 0.11 : tier === 'B' ? 0.15 : 0.22;
-    const floorFrac = tier === 'A' ? 0.18 : tier === 'B' ? 0.1 : 0.05;
-    const base = floorFrac + (1 - floorFrac) * Math.exp(-k * age);
-    return Math.min(0.98, base * brand);
+  if (fuelType === 'electric') {
+    // One curve for every EV, fitted to CarGurus Canada averages (2026): about
+    // 55% of the sticker at four years, 49% at five, 44% at six and 40% at
+    // seven, whether Tesla, Hyundai, Ford or Nissan (valuation-calibration
+    // test). The old per-tier curves had a 2022 Ioniq 5 21% high and a 2021
+    // Bolt 28% low. Used EVs drop fast early, with incentives and price cuts,
+    // then flatten.
+    const base = 0.2 + 0.8 * Math.exp(-0.2 * age);
+    return Math.min(0.98, base * brand * shortRangeFactor(car, age));
   }
 
   if (fuelType === 'plug-in hybrid') {
@@ -907,12 +1157,15 @@ export function applyValuationReliabilityGuard(
   };
 }
 
-function conditionMultiplier(bhf: number): { poor: number; average: number; excellent: number } {
-  return {
-    poor: Math.max(0.55, bhf - 0.18),
-    average: bhf,
-    excellent: Math.min(1.05, bhf + 0.1),
-  };
+/**
+ * How far a worn or healthy pack moves an EV from the average asking price.
+ * Listing averages already reflect typical battery wear for the age, so the
+ * midpoint is not reduced again; the likelier the pack has aged, the wider the
+ * gap between a tired one and one that has been replaced or barely used.
+ */
+function conditionMultiplier(bhf: number): { poor: number; excellent: number } {
+  const wear = 1 - bhf;
+  return { poor: 0.85 - 0.3 * wear, excellent: 1.08 + 0.15 * wear };
 }
 
 export function estimateMarketValue(
@@ -927,9 +1180,7 @@ export function estimateMarketValue(
   const batteryHealth = estimateBatteryHealth(car);
   const tier = classifyEvRetentionTier(car);
 
-  const ageValue = msrpCad * retained;
-  const bhf = batteryHealth?.factor ?? (fuelType === 'electric' ? 0.85 : 1);
-  let mid = roundMoney(ageValue * (fuelType === 'electric' ? bhf : 1));
+  let mid = roundMoney(msrpCad * retained);
 
   let low: number;
   let high: number;
@@ -937,14 +1188,11 @@ export function estimateMarketValue(
 
   if (fuelType === 'electric' && batteryHealth) {
     const mult = conditionMultiplier(batteryHealth.factor);
-    const poorMid = roundMoney(ageValue * mult.poor);
-    const avgMid = mid;
-    const excMid = roundMoney(ageValue * mult.excellent);
-    low = Math.min(poorMid, avgMid);
-    high = Math.max(excMid, avgMid);
+    const poorMid = roundMoney(mid * mult.poor);
+    const excMid = roundMoney(mid * mult.excellent);
     conditionBands = [
       { label: 'Low battery condition', low: poorMid, high: roundMoney(poorMid * 1.15) },
-      { label: 'Average condition', low: roundMoney(avgMid * 0.9), high: roundMoney(avgMid * 1.1) },
+      { label: 'Average condition', low: roundMoney(mid * 0.9), high: roundMoney(mid * 1.1) },
       { label: 'Excellent condition', low: roundMoney(excMid * 0.92), high: excMid },
     ];
     low = conditionBands[0].low;

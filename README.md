@@ -739,7 +739,7 @@ Group order: Powertrain → Vehicle → Market → Fuel → Safety → Performan
 
 ### Regional assumptions include
 
-Insurance by body style + luxury multipliers · maintenance by fuel type + age · tire costs · registration · energy prices (gas, diesel, electricity, hydrogen note) · depreciation tiers A/B/C · CAD FX from USD EPA fuel costs
+Insurance by body style + luxury multipliers · maintenance by fuel type + age · tire costs · registration · energy prices (gas, diesel, electricity, hydrogen note) · depreciation curves by segment, with one listing-fitted EV curve · CAD FX from USD EPA fuel costs
 
 Calibration sources are cited next to each figure in `regional-assumptions.ts`: Statistics Canada pump prices, FSRA (Ontario) and ICBC (B.C.) average premiums, and the AAA/CAA driving-cost studies for maintenance and tires. Ontario registration is $0 (plate renewal fees ended March 2022); B.C.'s licence-fee figure has not been re-checked against the weight-based fee regulation.
 
@@ -1140,7 +1140,7 @@ renamed chunk (`utils/staleBuildRecovery.ts`).
 | NHTSA safety | ~13% per-car; NHTSA tests far fewer configs than EPA |
 | Horsepower | ~56% coverage; EVs estimated. The 7,547 listings restored from EPA (other engines, Special Purpose SUVs/minivans) have none until `build-horsepower` is re-run against EPA's test-car files, which are keyed by EPA ID. Its matcher compares displacement and cylinders, not aspiration, so a turbo engine could take the non-turbo rating (the 2005 Legacy GT had the 2.5i's 168 hp); `dropInductionMismatchedHorsepower` drops those 118 ratings at build time, and the matcher should compare aspiration when re-run. 31 placeholder ratings (999, 1, 11 hp…) were dropped. |
 | Dimensions / weight / torque / real 0–60 | Not in EPA bulk data; 0–60 is predicted |
-| Market value | Calibrated against Canadian MSRPs and listing averages (`valuation-calibration.test.ts`, 23 references across mainstream, luxury and performance cars, all within 25%). Size class is a coarse price signal; trims are distinguished only where the engine gives them away (Mustang GT, Camaro ZL1, Challenger Hellcat, Civic Type R); exotic values are marque-level guesses labelled low confidence. Collector cars (`utils/collector-cars.ts`: first-gen NSX, MkIV Supra, air-cooled 911, Viper, Ford GT, 20-year-old Ferraris and Lamborghinis, hypercars…) are deliberately not valued. |
+| Market value | Calibrated against Canadian MSRPs and listing averages (`valuation-calibration.test.ts`, 31 references across mainstream, luxury, performance and electric cars, all within 25%). Size class is a coarse price signal; trims are distinguished only where the engine gives them away (Mustang GT, Camaro ZL1, Challenger Hellcat, Civic Type R); exotic values are marque-level guesses labelled low confidence. Collector cars (`utils/collector-cars.ts`: first-gen NSX, MkIV Supra, air-cooled 911, Viper, Ford GT, 20-year-old Ferraris and Lamborghinis, hypercars…) are deliberately not valued. |
 | Hydrogen and natural gas fuel cost | EPA's own annual figure, converted to CAD; the calculator's price inputs do not apply |
 | Rate limits | In-memory per instance; on serverless each instance counts separately |
 | CSP | Baseline only (`base-uri`, `object-src`, `frame-ancestors`); `script-src` would need the Clerk Frontend API host allowlisted |

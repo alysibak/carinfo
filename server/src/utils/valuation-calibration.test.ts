@@ -183,6 +183,57 @@ const REFERENCES: Reference[] = [
     observedCad: 49_900,
     source: 'CarGurus Canada average, September 2026',
   },
+  // Electric. Per-tier curves had these between -28% and +21%, and a battery
+  // factor lowered the midpoint again for wear the averages already include.
+  // Lines sold in several trims are compared on their core trim.
+  {
+    label: '2022 Hyundai Ioniq 5 RWD Long Range',
+    find: named('Hyundai', /^Ioniq 5 RWD \(Long Range\)$/, 2022),
+    observedCad: 28_550,
+    source: 'CarGurus Canada average (all trims), September 2026',
+  },
+  {
+    label: '2021 Ford Mustang Mach-E AWD',
+    find: named('Ford', /^Mustang Mach-E AWD$/, 2021),
+    observedCad: 28_360,
+    source: 'CarGurus Canada average (all trims), September 2026',
+  },
+  {
+    label: '2021 Tesla Model Y Long Range',
+    find: named('Tesla', /^Model Y Long Range AWD$/, 2021),
+    observedCad: 36_000,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2021 Volkswagen ID.4 AWD Pro',
+    find: named('Volkswagen', /^ID\.4 AWD Pro$/, 2021),
+    observedCad: 27_540,
+    source: 'CarGurus Canada average (all trims), September 2026',
+  },
+  {
+    label: '2021 Chevrolet Bolt EV',
+    find: named('Chevrolet', /^Bolt EV$/, 2021),
+    observedCad: 20_440,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2020 Nissan Leaf',
+    find: named('Nissan', /^Leaf$/, 2020),
+    observedCad: 18_530,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2019 Hyundai Kona Electric',
+    find: named('Hyundai', /^Kona Electric$/, 2019),
+    observedCad: 17_470,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2017 Chevrolet Bolt EV',
+    find: named('Chevrolet', /^Bolt EV$/, 2017),
+    observedCad: 16_430,
+    source: 'CarGurus Canada average, September 2026',
+  },
 ];
 
 describe('valuation calibration against observed Canadian prices', () => {

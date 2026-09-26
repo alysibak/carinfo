@@ -425,7 +425,7 @@ export function computeOwnershipEconomics(
 
   const depNote =
     effectiveFuelType(car) === 'electric'
-      ? `EV tier ${market.retentionTier ?? 'B'} curve + battery health factor`
+      ? 'EV age curve fitted to Canadian listings; battery health sets the condition range'
       : car.engine.fuelType === 'hydrogen'
         ? 'FCEV curve with infrastructure risk penalty'
         : 'Segment age curve (economy / luxury / utility)';
