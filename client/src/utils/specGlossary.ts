@@ -38,6 +38,7 @@ export type SpecGlossaryKey =
   | 'safetyRollover'
   | 'countryOfOrigin'
   | 'trim'
+  | 'variant'
   | 'shoppingSegment'
   | 'msrp'
   | 'charge120'
@@ -224,6 +225,11 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
     plain: 'This EPA configuration',
     what: 'The trim or equipment level tied to this fuel-economy record.',
     why: 'Same model year can list several trims with different engines and MPG.',
+  },
+  variant: {
+    plain: 'Named from the engine',
+    what: 'EPA leaves this trim out of the model name (a Mustang GT is just "Mustang"), so we name it from the engine and gearbox, which only this trim has in these years.',
+    why: 'It is how sellers list the car, and it moves the price far more than the model name suggests.',
   },
   shoppingSegment: {
     plain: 'What kind of buyer it targets',

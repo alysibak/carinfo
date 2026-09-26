@@ -188,6 +188,15 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
       provenanceSource: raw ? displayProvenanceSource('countryOfOrigin', raw) : null,
     });
   }
+  if (car.variant) {
+    pushIf(vehicle, {
+      key: 'variant',
+      label: 'Trim',
+      value: car.variant,
+      glossary: 'variant',
+      provenanceSource: displayProvenanceSource('variant', car.provenance?.variant ?? 'estimated'),
+    });
+  }
   if (car.shoppingSegment) {
     pushIf(vehicle, {
       key: 'segment',

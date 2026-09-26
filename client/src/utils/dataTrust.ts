@@ -16,6 +16,8 @@ export const PROVENANCE_FIELD_LABELS: Record<string, string> = {
   'engine.displacement': 'Engine displacement',
   'engine.horsepower': 'Horsepower',
   'engine.fuelType': 'Fuel type',
+  'engine.aspiration': 'Turbo / supercharger',
+  variant: 'Trim (named from the engine)',
   fuelType: 'Fuel type',
   'epa.annualFuelCost': 'Annual fuel cost',
   'epa.charge120Hours': '120V charge time',
@@ -50,6 +52,7 @@ export const PROVENANCE_GLOSSARY_KEYS: Partial<Record<string, SpecGlossaryKey>> 
   'engine.displacement': 'displacement',
   'engine.horsepower': 'horsepower',
   'engine.fuelType': 'fuel',
+  variant: 'variant',
   fuelType: 'fuel',
   'epa.annualFuelCost': 'annualFuelCost',
   'epa.charge120Hours': 'charge120',
@@ -126,6 +129,10 @@ function provenanceFieldHasValue(dashboard: CarDashboard, key: string): boolean 
       return hasNumericValue(evCharge?.kWhPer100Mi ?? car.epa?.kWhPer100Mi);
     case 'countryOfOrigin':
       return hasTextValue(car.countryOfOrigin);
+    case 'engine.aspiration':
+      return hasTextValue(car.engine.aspiration);
+    case 'variant':
+      return hasTextValue(car.variant);
     case 'safetyRating':
       return hasNumericValue(car.safetyRating?.overall, { allowZero: false });
     // A collector car is not valued, so its figures are not "on file".
