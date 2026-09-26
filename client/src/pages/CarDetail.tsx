@@ -16,6 +16,7 @@ import {
   NHTSA_CHIP_UNAVAILABLE,
 } from '../utils/dataValue';
 import { currencySectionNote } from '../utils/currency';
+import { getRegionalAssumptions } from '@carinfo/config/regional-assumptions';
 import { useCarStore } from '../stores/carStore';
 import { useGarageStore } from '../stores/garageStore';
 import { regionName, useRegionStore } from '../stores/regionStore';
@@ -275,6 +276,7 @@ export default function CarDetail() {
     practicalityNote,
   } = ownership;
   const isHydrogen = car.engine.fuelType === 'hydrogen';
+  const hydrogenPrice = getRegionalAssumptions(region).hydrogenCadPerKg;
   const efficiencyLabel = efficiencyUnit(car);
   const isInCompare = comparedCars.some((c) => c.id === car.id);
   const trimLabel = displayListingSubtitle(car) ?? displayModelConfigRemainder(car);
@@ -415,8 +417,11 @@ export default function CarDetail() {
       {isHydrogen && (
         <div className="border-b border-amber-900/50 bg-amber-950/20">
           <div className="page-wrap py-4 text-sm text-amber-200/90 leading-relaxed">
-            <strong className="text-amber-100">Hydrogen fuel cell (FCEV).</strong> MPGe is from EPA
-            tests, not gasoline MPG. Fuel costs here do not reflect Ontario H₂ availability.
+            <strong className="text-amber-100">Hydrogen fuel cell (FCEV).</strong> EPA&rsquo;s MPGe
+            reads as miles per kilogram of hydrogen.{' '}
+            {hydrogenPrice != null
+              ? `Fuel cost uses ${regionName(region)}'s posted pump price, about $${hydrogenPrice.toFixed(2)}/kg; public stations are few, so check the one you would use.`
+              : `${regionName(region)} has no posted retail hydrogen price${region === 'ontario' ? ' (its one public station is at Toronto Pearson)' : ''}, so fuel is left out of the yearly cost.`}
           </div>
         </div>
       )}
@@ -706,13 +711,22 @@ export default function CarDetail() {
                 {hasEconomics ? (
                   <>
                     <Subheading>Yearly cost</Subheading>
-                    {annualCost.energy != null && (
+                    {annualCost.energy != null ? (
                       <DataRow
                         label="Fuel / energy"
                         value={formatCurrency(annualCost.energy, true)}
                         valueTier={2}
                         pairLayout
                       />
+                    ) : (
+                      isHydrogen && (
+                        <DataRow
+                          label="Fuel / energy"
+                          value="Not included (no posted hydrogen price)"
+                          valueTier={2}
+                          pairLayout
+                        />
+                      )
                     )}
                     <DataRow
                       label="Insurance"

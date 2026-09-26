@@ -69,6 +69,11 @@ export interface RegionalAssumptions {
   dieselPriceCadPerL: number;
   /** Blended Ontario residential rate for home charging (~TOU mid-tier average). */
   electricityRateCadPerKwh: number;
+  /**
+   * Retail hydrogen, CAD per kg, where a public network posts a price; null
+   * where none does. EPA publishes no fuel cost for fuel-cell cars.
+   */
+  hydrogenCadPerKg: number | null;
   annualKm: number;
   registrationCadPerYear: number;
   beaterValueThresholdCad: number;
@@ -90,6 +95,8 @@ export const REGIONAL_ASSUMPTIONS: Record<RegionId, RegionalAssumptions> = {
     gasPriceCadPerL: 1.7,
     dieselPriceCadPerL: 1.95,
     electricityRateCadPerKwh: 0.155,
+    // One public station (Toronto Pearson) and no posted retail price.
+    hydrogenCadPerKg: null,
     annualKm: 15000,
     // Ontario stopped charging plate-sticker renewal fees for passenger
     // vehicles and light trucks in March 2022; renewal is free.
@@ -151,6 +158,9 @@ export const REGIONAL_ASSUMPTIONS: Record<RegionId, RegionalAssumptions> = {
     gasPriceCadPerL: 1.98,
     dieselPriceCadPerL: 2.25,
     electricityRateCadPerKwh: 0.12,
+    // HTEC's six light-duty stations (Metro Vancouver, Victoria, Kelowna):
+    // $16.50/kg at the pump (HTEC FAQ, 2026).
+    hydrogenCadPerKg: 16.5,
     annualKm: 14000,
     registrationCadPerYear: 180,
     beaterValueThresholdCad: 8500,
@@ -200,7 +210,9 @@ export const REGIONAL_ASSUMPTIONS: Record<RegionId, RegionalAssumptions> = {
 export const DEFAULT_REGION: RegionId = 'ontario';
 
 export function getRegionalAssumptions(region: RegionId = DEFAULT_REGION): RegionalAssumptions {
-  return REGIONAL_ASSUMPTIONS[region];
+  // Requests are validated by parseRegionId; this guards other callers, for
+  // which an unknown id used to throw deep inside the cost model.
+  return REGIONAL_ASSUMPTIONS[region] ?? REGIONAL_ASSUMPTIONS[DEFAULT_REGION];
 }
 
 export const KM_PER_MILE = 1.609344;

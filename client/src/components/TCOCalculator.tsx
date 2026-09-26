@@ -344,6 +344,12 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
                   rather than guessed.
                 </p>
               )}
+              {result.energy?.basis === 'hydrogen' && (
+                <p>
+                  Hydrogen cost reads EPA&rsquo;s MPGe as miles per kilogram, at the region&rsquo;s
+                  posted pump price. It does not change with the price inputs above.
+                </p>
+              )}
               {result.energy?.basis === 'epa-annual-cost' && (
                 <p>
                   {fuelNoun} cost uses EPA’s own annual estimate, scaled to your distance. It does

@@ -382,7 +382,7 @@ Reclassifies mislabeled EPA records:
 
 - Applies effective fuel type
 - Sets MPGe vs MPG labels
-- Hydrogen: "Not rated — hydrogen price varies by station & region" for fuel cost
+- Hydrogen: fuel cost from the region's posted pump price (B.C. ~$16.50/kg, HTEC), reading EPA MPGe as miles/kg; left out (not zero) where no price is posted (Ontario)
 - Rounds fuel economy display values
 
 ---

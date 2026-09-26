@@ -70,6 +70,25 @@ describe('estimateAnnualEnergyCost', () => {
     ).toBe(estimate?.annualCad);
   });
 
+  it('prices hydrogen where a pump price is posted, and nowhere else', () => {
+    // EPA publishes no fuel cost for fuel-cell cars (0 in the data), and its
+    // MPGe for them is miles per kilogram.
+    const mirai = car({
+      make: 'Toyota',
+      model: 'Mirai',
+      engine: { fuelType: 'hydrogen' },
+      fuelEconomy: { city: 76, highway: 71, combined: 74 },
+      epa: { annualFuelCost: 0 },
+    });
+    const bc = getRegionalAssumptions('british-columbia');
+    const estimate = estimateAnnualEnergyCost(mirai, {}, bc);
+    expect(estimate?.basis).toBe('hydrogen');
+    const kg = bc.annualKm / 1.609344 / 74;
+    expect(estimate?.annualCad).toBe(Math.round(kg * bc.hydrogenCadPerKg!));
+    // Ontario posts no price: unknown, not free.
+    expect(estimateAnnualEnergyCost(mirai, {}, ONTARIO)).toBeNull();
+  });
+
   it('says "unknown" for natural gas without an EPA cost rather than guessing', () => {
     const cng = car({ engine: { fuelType: 'natural gas' }, epa: {} });
     expect(estimateAnnualEnergyCost(cng, {}, ONTARIO)).toBeNull();

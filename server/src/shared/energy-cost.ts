@@ -44,6 +44,11 @@ export type EnergyCostBasis =
   /** Separate gas and electric figures, weighted by the regional utility split. */
   | 'plug-in hybrid'
   /**
+   * EPA's MPGe as miles per kilogram (a kilogram of hydrogen holds about a
+   * gallon of gasoline's energy) × the region's posted hydrogen price.
+   */
+  | 'hydrogen'
+  /**
    * EPA's own annual fuel cost, converted to CAD and scaled to the driving
    * distance. Used for hydrogen and compressed natural gas (whose prices are
    * not among the inputs, and for which we hold no regional price) and as a
@@ -109,6 +114,13 @@ export function estimateAnnualEnergyCost(
     return { annualCad, perKmCad: annualCad / region.annualKm, basis };
   };
 
+  if (fuelType === 'hydrogen' && region.hydrogenCadPerKg != null && mpg > 0) {
+    const kgPerYear = region.annualKm / KM_PER_MILE / mpg;
+    return result(kgPerYear * region.hydrogenCadPerKg, 'hydrogen');
+  }
+
+  // EPA leaves hydrogen unpriced (its figure is 0, read as unknown), so a
+  // region with no posted price gets no energy cost rather than a free one.
   if (fuelType === 'hydrogen' || fuelType === 'natural gas') {
     return result(epaAnnualCostCad(car, region), 'epa-annual-cost');
   }

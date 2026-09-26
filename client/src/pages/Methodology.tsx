@@ -131,8 +131,10 @@ export default function Methodology() {
             </li>
             <li>
               Energy costs from your region&rsquo;s gas, diesel and home-electricity prices (recent
-              Statistics Canada averages). Hydrogen and natural gas use EPA&rsquo;s own annual
-              fuel-cost figure, converted to CAD.
+              Statistics Canada averages). Hydrogen uses B.C.&rsquo;s posted pump price (about
+              $16.50/kg); Ontario posts none, so a fuel-cell car&rsquo;s fuel is left out there
+              rather than shown as free. Natural gas uses EPA&rsquo;s own annual fuel-cost figure,
+              converted to CAD.
             </li>
             <li>Output: low / mid / high band plus a confidence label (low, medium, high).</li>
           </ul>
