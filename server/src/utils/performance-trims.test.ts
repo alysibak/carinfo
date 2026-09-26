@@ -165,4 +165,57 @@ describe('deriveVariant', () => {
     expect(camaro(2018, 6.2, true)).toBe('ZL1');
     expect(camaro(2015, 7)).toBe('Z/28');
   });
+
+  it('names the Stinger GT, K5 GT, Sonata N Line, Taurus SHO and Wrangler 392', () => {
+    const turbo = (displacement: number, cyl: number) => ({
+      fuelType: 'gasoline' as const,
+      cylinders: cyl,
+      displacement,
+      aspiration: 'turbocharged' as const,
+    });
+    expect(
+      deriveVariant(car({ make: 'Kia', model: 'Stinger AWD', year: 2020, engine: turbo(3.3, 6) })),
+    ).toBe('GT');
+    expect(
+      deriveVariant(car({ make: 'Kia', model: 'Stinger AWD', year: 2020, engine: turbo(2, 4) })),
+    ).toBeUndefined();
+    expect(
+      deriveVariant(car({ make: 'Kia', model: 'K5', year: 2022, engine: turbo(2.5, 4) })),
+    ).toBe('GT');
+    expect(
+      deriveVariant(car({ make: 'Hyundai', model: 'Sonata', year: 2022, engine: turbo(2.5, 4) })),
+    ).toBe('N Line');
+    expect(
+      deriveVariant(car({ make: 'Ford', model: 'Taurus AWD', year: 2015, engine: turbo(3.5, 6) })),
+    ).toBe('SHO');
+    expect(
+      deriveVariant(
+        car({
+          make: 'Jeep',
+          model: 'Wrangler 4dr 4WD',
+          year: 2022,
+          engine: { fuelType: 'gasoline', cylinders: 8, displacement: 6.4 },
+        }),
+      ),
+    ).toBe('392');
+  });
+
+  it('does not call a 2000 Impala an SS because EPA flags it supercharged', () => {
+    const impala = (year: number) =>
+      deriveVariant(
+        car({
+          make: 'Chevrolet',
+          model: 'Impala',
+          year,
+          engine: {
+            fuelType: 'gasoline',
+            cylinders: 6,
+            displacement: 3.8,
+            aspiration: 'supercharged',
+          },
+        }),
+      );
+    expect(impala(2000)).toBeUndefined();
+    expect(impala(2004)).toBe('SS');
+  });
 });

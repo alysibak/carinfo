@@ -112,6 +112,60 @@ const RULES: TrimRule[] = [
       return undefined;
     },
   },
+  {
+    make: 'Kia',
+    model: /^stinger\b/i,
+    named: /\bgt\b/i,
+    name: (c) => (cylinders(c) === 6 && turbo(c) ? 'GT' : undefined),
+  },
+  {
+    make: 'Kia',
+    model: /^k5\b/i,
+    named: /\bgt\b/i,
+    name: (c) => (litres(c) === 2.5 && turbo(c) ? 'GT' : undefined),
+  },
+  {
+    make: 'Hyundai',
+    model: /^sonata\b/i,
+    named: /\bn line\b/i,
+    name: (c) => (litres(c) === 2.5 && turbo(c) ? 'N Line' : undefined),
+  },
+  {
+    // The EcoBoost 3.5 went only in the SHO (police cars are not in EPA's list).
+    make: 'Ford',
+    model: /^taurus\b/i,
+    named: /\bsho\b/i,
+    name: (c) => (litres(c) === 3.5 && turbo(c) ? 'SHO' : undefined),
+  },
+  {
+    make: 'Chevrolet',
+    model: /^impala\b/i,
+    named: /\bss\b/i,
+    // The supercharged 3.8 SS ran 2004–05; EPA also flags a 2000 Impala,
+    // which had no supercharged version.
+    name: (c) =>
+      cylinders(c) === 8 || (supercharged(c) && c.year >= 2004 && c.year <= 2005)
+        ? 'SS'
+        : undefined,
+  },
+  {
+    make: 'Chevrolet',
+    model: /^(cobalt|hhr)\b/i,
+    named: /\bss\b/i,
+    name: (c) => (turbo(c) || supercharged(c) ? 'SS' : undefined),
+  },
+  {
+    make: 'Jeep',
+    model: /\bwrangler\b/i,
+    named: /\b392\b/i,
+    name: (c) => (litres(c) >= 6 ? '392' : undefined),
+  },
+  {
+    make: 'Nissan',
+    model: /^sentra\b/i,
+    named: /\b(nismo|sr turbo)\b/i,
+    name: (c) => (litres(c) === 1.6 && turbo(c) ? 'SR Turbo' : undefined),
+  },
 ];
 
 export function deriveVariant(car: CarSpecs): string | undefined {
@@ -139,6 +193,10 @@ export const TRIM_QUERY_FORMS: ReadonlyArray<readonly string[]> = [
   ['z 28', 'z28'],
   ['r t', 'rt'],
   ['trackhawk'],
+  ['sr turbo'],
+  ['n line'],
+  ['sho'],
+  ['392'],
   ['ecoboost'],
   ['srt8'],
   ['srt'],
