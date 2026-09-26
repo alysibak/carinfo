@@ -107,6 +107,45 @@ const REFERENCES: Reference[] = [
     observedCad: 32_600,
     source: 'CarGurus Canada average (all trims), August 2026',
   },
+  // Luxury. One luxury premium for every size class under-anchored small
+  // sedans and over-anchored small SUVs, and the X5 rule's pre-2020 sticker
+  // was $10,000 high (+55% before).
+  {
+    label: '2019 Mercedes-Benz C300 4MATIC',
+    find: named('Mercedes-Benz', /^C300 4matic$/i, 2019),
+    observedCad: 30_000,
+    source: 'CarGurus Canada average, C 300 4MATIC, September 2026',
+  },
+  {
+    label: '2018 Lexus RX 350',
+    find: named('Lexus', /^RX 350$/, 2018),
+    observedCad: 32_050,
+    source: 'CarGurus Toronto average, September 2026',
+  },
+  {
+    label: '2020 Audi Q5',
+    find: named('Audi', /^Q5$/, 2020),
+    observedCad: 24_850,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2015 BMW X5',
+    find: named('BMW', /^X5 /, 2015),
+    observedCad: 16_770,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2014 Mercedes-Benz C300 4MATIC',
+    find: named('Mercedes-Benz', /^C300 4matic$/i, 2014),
+    observedCad: 12_900,
+    source: 'CarGurus Canada average (all C-Class trims), September 2026',
+  },
+  {
+    label: '2014 Lexus RX 350',
+    find: named('Lexus', /^RX 350$/, 2014),
+    observedCad: 18_640,
+    source: 'CarGurus Canada average, September 2026',
+  },
   // Performance cars. EPA filed the Mustang as a small sedan, so it took an
   // economy car's price and curve (-44%); the Corvette and Type R hold value
   // far better than any segment curve (-46%, -45% before).

@@ -95,7 +95,12 @@ const EXOTIC_MAKES = new Set(
 
 const BRAND_RETENTION: Record<string, number> = {
   Toyota: 1.08,
-  Lexus: 1.1,
+  // Lexus keeps more than the luxury curve (a 2018 RX lists ~57% of its sticker
+  // at eight years); German makes, especially their SUVs, keep less (a 2015 X5
+  // ~22% at eleven). CarGurus Canada averages, September 2026.
+  Lexus: 1.18,
+  BMW: 0.92,
+  Audi: 0.92,
   Honda: 1.06,
   Mazda: 1.04,
   Subaru: 1.03,
@@ -461,7 +466,8 @@ const MODEL_MSRP_RULES: ModelMsrpRule[] = [
   },
   {
     test: (c) => c.make === 'BMW' && c.model.toLowerCase().startsWith('x5'),
-    msrp: (c) => (c.year >= 2020 ? 72000 : 65000),
+    // xDrive40i from 2019; the 2014–18 xDrive35i listed around $55,000.
+    msrp: (c) => (c.year >= 2019 ? 62000 : c.year >= 2014 ? 55000 : 50000),
   },
   {
     test: (c) => c.make === 'BMW' && c.model.toLowerCase().startsWith('x3'),
@@ -582,7 +588,7 @@ export function estimateNewVehicleMsrp(car: CarSpecs): number {
       (classAnchor != null ? classAnchor * (sporty ? 1.1 : 1) : null) ||
       baseByStyle[car.bodyStyle] ||
       34000;
-    if (LUXURY_MAKES.has(car.make)) price *= 1.55;
+    if (LUXURY_MAKES.has(car.make)) price *= luxuryClassMultiplier(car.epa?.vClass);
   }
   if (isHeavyEvTruck(car)) price = Math.max(price, 95000);
 
@@ -594,6 +600,19 @@ export function estimateNewVehicleMsrp(car: CarSpecs): number {
   if (!luxuryTwoDoor && car.engine.displacement && car.engine.displacement >= 4.5) price *= 1.22;
 
   return Math.round(price);
+}
+
+/**
+ * How far a luxury make lists above a mainstream car of the same EPA size
+ * class. One 1.55 for all put a 330i or C300 (about $41,000 new) at $37,000
+ * and a Q5 or RDX (about $40,000) at $46,500: the premium is widest on small
+ * sedans and narrowest on small SUVs, where mainstream prices are closer.
+ */
+function luxuryClassMultiplier(vClass?: string): number {
+  if (!vClass) return 1.55;
+  if (/^(compact|midsize) cars/i.test(vClass)) return 1.72;
+  if (/^small sport utility/i.test(vClass)) return 1.38;
+  return 1.55;
 }
 
 /**
