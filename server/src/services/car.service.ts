@@ -438,8 +438,11 @@ export function getSearchSuggestions(rawQuery: string, limit = 8): SearchSuggest
   const seen = new Set<string>();
 
   const add = (s: SearchSuggestion, score: number) => {
-    if (seen.has(s.id)) return;
+    // By label too: EPA's "Civic Type R" model and the derived Type R trim.
+    const labelKey = `label:${s.label.toLowerCase()}`;
+    if (seen.has(s.id) || seen.has(labelKey)) return;
     seen.add(s.id);
+    seen.add(labelKey);
     ranked.push({ ...s, score });
   };
 
@@ -516,6 +519,29 @@ export function getSearchSuggestions(rawQuery: string, limit = 8): SearchSuggest
     }
   }
 
+  // Trims EPA leaves out of the name ("Ford Mustang GT", "Subaru WRX STI").
+  for (const trim of trimSuggestions()) {
+    const phrase = q.startsWith(`${trim.make.toLowerCase()} `) ? q.slice(trim.make.length + 1) : q;
+    if (trim.query.startsWith(phrase) || trim.label.toLowerCase().startsWith(q)) {
+      // An exact trim ("mustang gt") ranks with an exact model name, above the
+      // Mustang GTD that merely starts the same.
+      const score = trim.query === phrase ? 99 : 96;
+      add(
+        { id: `trim-${trim.label}`, label: trim.label, sublabel: 'Trim', query: trim.query },
+        score,
+      );
+    }
+  }
+
+  // "hybrid s" → Hybrid SUVs: body-style and fuel phrases the search reads.
+  if (q.length >= 3) {
+    for (const phrase of KEYWORD_SUGGESTIONS) {
+      if (phrase.query.startsWith(q) && phrase.query !== q) {
+        add({ id: `kw-${phrase.query}`, ...phrase, sublabel: 'All makes and years' }, 90);
+      }
+    }
+  }
+
   for (const p of POPULAR_SUGGESTIONS) {
     if (
       p.label.toLowerCase().includes(q) ||
@@ -539,6 +565,54 @@ export function getSearchSuggestions(rawQuery: string, limit = 8): SearchSuggest
   });
 
   return results.slice(0, limit);
+}
+
+const KEYWORD_SUGGESTIONS: Array<{ label: string; query: string }> = [
+  { label: 'Hybrid SUVs', query: 'hybrid suv' },
+  { label: 'Hybrid sedans', query: 'hybrid sedan' },
+  { label: 'Hybrid minivans', query: 'hybrid minivan' },
+  { label: 'Hybrid trucks', query: 'hybrid truck' },
+  { label: 'Plug-in hybrid SUVs', query: 'plug-in suv' },
+  { label: 'Electric SUVs', query: 'electric suv' },
+  { label: 'Electric trucks', query: 'electric truck' },
+  { label: 'Electric sedans', query: 'electric sedan' },
+  { label: 'Diesel trucks', query: 'diesel truck' },
+  { label: 'AWD sedans', query: 'awd sedan' },
+  { label: 'Minivans', query: 'minivan' },
+  { label: 'Convertibles', query: 'convertible' },
+  { label: 'Hatchbacks', query: 'hatchback' },
+  { label: 'Wagons', query: 'wagon' },
+];
+
+type TrimSuggestion = { make: string; label: string; query: string };
+let trimSuggestionCache: { source: Car[]; list: TrimSuggestion[] } | null = null;
+
+/** One suggestion per make, model family and derived trim, e.g. "Honda Civic Type R". */
+function trimSuggestions(): TrimSuggestion[] {
+  if (trimSuggestionCache?.source === cachedCars) return trimSuggestionCache.list;
+  const byLabel = new Map<string, TrimSuggestion>();
+  for (const car of cachedCars) {
+    if (!car.variant) continue;
+    // The model name up to its first config word: "Civic 5Dr" → Civic,
+    // "Challenger SRT" → Challenger, "Impreza Wagon/Outback Sport AWD" → Impreza.
+    const words = normalizeSearchQuery(car.model).split(' ');
+    const cut = words.findIndex((w) => TRIM_FILLER.test(w));
+    const family = car.model
+      .split(/[\s/]+/)
+      .slice(0, cut === -1 ? undefined : cut)
+      .join(' ');
+    if (!family) continue;
+    const label = `${car.make} ${family} ${car.variant}`;
+    if (!byLabel.has(label)) {
+      byLabel.set(label, {
+        make: car.make,
+        label,
+        query: normalizeSearchQuery(`${family} ${car.variant}`),
+      });
+    }
+  }
+  trimSuggestionCache = { source: cachedCars, list: [...byLabel.values()] };
+  return trimSuggestionCache.list;
 }
 
 /**

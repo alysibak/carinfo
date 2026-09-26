@@ -403,4 +403,14 @@ describe('car.service natural language search', () => {
     const mazda3 = searchCars({ query: 'mazda3', limit: 20 }).results;
     expect(mazda3.every((c) => c.make === 'Mazda' && /^3\b/.test(c.model))).toBe(true);
   });
+
+  it('suggests derived trims and body/fuel phrases, without duplicate labels', () => {
+    const labels = (q: string) => getSearchSuggestions(q, 8).map((s) => s.label);
+    expect(labels('mustang gt')[0]).toBe('Ford Mustang GT');
+    expect(labels('wrx st')).toContain('Subaru WRX STI');
+    expect(labels('challenger hell')).toContain('Dodge Challenger Hellcat');
+    expect(labels('hybrid s')).toContain('Hybrid SUVs');
+    const typeR = labels('civic type r');
+    expect(typeR.filter((l) => l === 'Honda Civic Type R')).toHaveLength(1);
+  });
 });
