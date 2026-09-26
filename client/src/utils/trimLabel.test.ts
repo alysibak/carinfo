@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   displayModelConfigRemainder,
   displayModelFamilyLabel,
+  displayModelLabel,
   displayTrimLabel,
   displayVehicleTitle,
 } from './trimLabel';
@@ -28,6 +29,12 @@ describe('displayVehicleTitle / model family', () => {
     expect(displayVehicleTitle(civic)).toBe('2020 Honda Civic Type R');
     const srt = { ...mazda3, make: 'Dodge', model: 'Challenger SRT', variant: 'Hellcat' };
     expect(displayVehicleTitle(srt)).toBe('2026 Dodge Challenger SRT Hellcat');
+    // Lists and compare columns tell the trims apart too, and the card
+    // subtitle does not repeat the trim the title already shows.
+    const mustang = { ...mazda3, make: 'Ford', model: 'Mustang', variant: 'GT' };
+    expect(displayModelLabel(mustang)).toBe('Mustang GT');
+    expect(displayModelLabel({ ...mustang, variant: undefined })).toBe('Mustang');
+    expect(displayModelConfigRemainder(civic)).toBeNull();
     // Named by EPA, but past the point where the family label stops.
     const named = { ...mazda3, make: 'Honda', model: 'Civic Type R', year: 2018 };
     expect(displayVehicleTitle(named)).toBe('2018 Honda Civic Type R');

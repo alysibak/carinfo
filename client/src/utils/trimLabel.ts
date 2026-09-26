@@ -2,7 +2,7 @@ import type { CarSpecs } from '../types/car.types';
 
 type TransmissionInfo = CarSpecs['transmission'];
 type ListingCar = Pick<CarSpecs, 'trim' | 'model' | 'transmission'>;
-type ModelCar = Pick<CarSpecs, 'make' | 'model' | 'trim' | 'engine'>;
+type ModelCar = Pick<CarSpecs, 'make' | 'model' | 'trim' | 'engine'> & { variant?: string };
 
 /** EPA parenthetical annotations that are not consumer-facing model names. */
 const EPA_MODEL_PAREN =
@@ -56,6 +56,16 @@ function clientCanonicalizeModel(car: ModelCar): string {
  * (e.g. "bZ (energy capacity 200 Ah)" → "bZ") and applies common disambiguation.
  */
 export function displayModelLabel(car: ModelCar): string {
+  const label = baseModelLabel(car);
+  // A trim EPA leaves out of the name ("Mustang" + GT), so a compare column
+  // or sibling list can tell a GT from an EcoBoost.
+  const variant = car.variant;
+  if (!variant || ` ${label.toLowerCase()} `.includes(` ${variant.toLowerCase()} `)) return label;
+  return `${label} ${variant}`;
+}
+
+/** The model name alone, without a derived trim. */
+function baseModelLabel(car: ModelCar): string {
   const base = clientCanonicalizeModel(car);
   const cleaned = stripEpaModelNoise(base);
   return cleaned || base || car.model.trim();
@@ -70,7 +80,7 @@ const MODEL_CONFIG_SUFFIX =
  * Keeps short tokens like Mazda 3 / 6 readable in card titles.
  */
 export function displayModelFamilyLabel(car: ModelCar): string {
-  const full = displayModelLabel(car);
+  const full = baseModelLabel(car);
   const parts = full.split(/[\s_/]+/).filter(Boolean);
   const kept: string[] = [];
   for (const part of parts) {
@@ -100,7 +110,7 @@ export function displayVehicleTitle(
 
 /** Config remainder after the family name, e.g. "4-Door 2WD" from "3 4-Door 2WD". */
 export function displayModelConfigRemainder(car: ModelCar): string | null {
-  const full = displayModelLabel(car);
+  const full = baseModelLabel(car);
   const family = displayModelFamilyLabel(car);
   if (full.toLowerCase() === family.toLowerCase()) return null;
   const rest = full
