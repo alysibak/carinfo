@@ -80,9 +80,22 @@ export function displayModelFamilyLabel(car: ModelCar): string {
   return (kept.length ? kept : parts.slice(0, 1)).join(' ') || full;
 }
 
-/** Year + make + family, e.g. "2026 Mazda 3". */
-export function displayVehicleTitle(car: Pick<CarSpecs, 'year' | 'make'> & ModelCar): string {
-  return `${car.year} ${car.make} ${displayModelFamilyLabel(car)}`;
+/**
+ * Year + make + family, e.g. "2026 Mazda 3", plus a trim EPA leaves out of the
+ * name ("2020 Honda Civic Type R", "2021 Ford Mustang GT"; the server derives
+ * it from the engine).
+ */
+export function displayVehicleTitle(
+  car: Pick<CarSpecs, 'year' | 'make' | 'variant'> & ModelCar,
+): string {
+  const family = displayModelFamilyLabel(car);
+  // The family label stops at config words, which include "Type" and "Si";
+  // a Type R or Si EPA does name ("Civic Type R", 2017–18) keeps it.
+  const trim =
+    car.variant ?? displayModelConfigRemainder(car)?.match(/^(type r|si)\b/i)?.[0] ?? undefined;
+  const suffix =
+    trim && !` ${family.toLowerCase()} `.includes(` ${trim.toLowerCase()} `) ? ` ${trim}` : '';
+  return `${car.year} ${car.make} ${family}${suffix}`;
 }
 
 /** Config remainder after the family name, e.g. "4-Door 2WD" from "3 4-Door 2WD". */

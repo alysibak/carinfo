@@ -48,7 +48,8 @@ function isElectrified(car: Car): boolean {
 }
 
 export function vehicleName(car: Car): string {
-  return `${car.year} ${car.make} ${car.model}`;
+  const variant = car.variant && !car.model.toLowerCase().includes(car.variant.toLowerCase());
+  return `${car.year} ${car.make} ${car.model}${variant ? ` ${car.variant}` : ''}`;
 }
 
 function efficiencyPhrase(car: Car): string | null {

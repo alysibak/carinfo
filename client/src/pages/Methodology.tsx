@@ -91,7 +91,7 @@ export default function Methodology() {
               1.2, not the exchange rate), then depreciated by age.
             </li>
             <li>
-              Checked against average Canadian asking prices for 58 reference vehicles, from
+              Checked against average Canadian asking prices for 59 reference vehicles, from
               compacts to pickups, performance cars, plug-in hybrids and EVs; expect individual
               estimates to be within about 25%.
             </li>

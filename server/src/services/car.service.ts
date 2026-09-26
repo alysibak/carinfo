@@ -19,6 +19,7 @@ import { enrichCar } from './content-enrichment.js';
 import { ensureUniqueIds } from '../utils/unique-ids.js';
 import { type RuntimeDatabaseFile, unpackRuntimeDatabase } from './runtime-db.js';
 import { LATEST_FULL_MODEL_YEAR } from '../config/model-years.js';
+import { TRIM_QUERY_FORMS } from '../utils/performance-trims.js';
 
 function resolveDbPath(): string | null {
   return resolveDataFile('cars.json');
@@ -562,6 +563,19 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
     }
   }
 
+  // A trailing trim comes off before the make is looked for: "STI" and "SRT"
+  // are also (tiny) EPA makes, and claimed "wrx sti" and "grand cherokee srt".
+  let trimForms: readonly string[] | undefined;
+  if (!filters.make?.length && !filters.model?.length && textTokens.length > 1) {
+    const trim = matchTrimQueryWithMake(textTokens);
+    if (trim) {
+      filters.model = trim.models;
+      if (trim.makes.length === 1) filters.make = trim.makes;
+      trimForms = trim.forms;
+      textTokens.length = 0;
+    }
+  }
+
   if (!filters.make?.length && textTokens.length > 0) {
     const makeHit = resolveMakeFromTokens(textTokens);
     if (makeHit) {
@@ -575,6 +589,18 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
     if (lineup) {
       filters.make = [lineup.make];
       filters.model = lineup.models;
+      textTokens.length = 0;
+    }
+  }
+
+  // "mustang gt", "civic type r", "subaru sti": a trim EPA may leave out of the
+  // model name (see performance-trims.ts), matched on model name + variant.
+  if (!filters.model?.length && textTokens.length > 0) {
+    const trim = matchTrimQuery(textTokens, filters.make);
+    if (trim) {
+      filters.model = trim.models;
+      if (!filters.make?.length && trim.makes.length === 1) filters.make = trim.makes;
+      trimForms = trim.forms;
       textTokens.length = 0;
     }
   }
@@ -602,13 +628,198 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
     }
   }
 
+  // Body-style, fuel and drive words ("hybrid suv", "mazda 3 hatchback",
+  // "awd sedan") once the phrase is not a model name: "RAV4 Hybrid" and
+  // "Bolt EV" resolved above and never get here.
+  if (!filters.model?.length && textTokens.length > 0) {
+    const kept = applyKeywordFilters(textTokens, filters, query.filters);
+    if (kept.length < textTokens.length) {
+      textTokens.splice(0, textTokens.length, ...kept);
+      if (kept.length > 0) {
+        const phrase = kept.join(' ');
+        const models =
+          filters.make?.length === 1
+            ? resolveModelsForPhrase(filters.make[0], phrase)
+            : resolveModelsAcrossMakes(phrase).models;
+        if (models.length) {
+          filters.model = models;
+          textTokens.length = 0;
+        }
+      }
+    }
+  }
+
   const remainingQuery = textTokens.join(' ').trim() || undefined;
 
   return {
     ...query,
     query: remainingQuery,
     filters,
+    ...(trimForms ? { trimForms } : {}),
   };
+}
+
+const trimLabels = new WeakMap<Car, string>();
+
+/** Model name plus derived variant, normalized like a query ("charger r t"). */
+function trimLabel(car: Car): string {
+  let label = trimLabels.get(car);
+  if (label === undefined) {
+    label = ` ${normalizeSearchQuery(`${car.model} ${car.variant ?? ''}`)} `;
+    trimLabels.set(car, label);
+  }
+  return label;
+}
+
+const hasWords = (label: string, words: string) => label.includes(` ${words} `);
+
+/** Words that may sit between a model and its trim: "Civic 5Dr Type R", "Charger AWD R/T". */
+const TRIM_FILLER =
+  /^(\d?dr|[245]wd|awd|fwd|rwd|4x4|coupe|convertible|sedan|hatchback|wagon|door|doors|\d|ffv|srt8?|widebody|outback|spt|sport)$/;
+
+/** The trim directly follows the base name, give or take filler words. */
+function trimFollowsBase(label: string, base: string, forms: readonly string[]): boolean {
+  const words = label.trim().split(' ');
+  const baseWords = base.split(' ');
+  for (let i = 0; i + baseWords.length <= words.length; i += 1) {
+    if (!baseWords.every((w, k) => words[i + k] === w)) continue;
+    for (let j = i + baseWords.length; j < words.length; j += 1) {
+      if (forms.some((f) => f.split(' ').every((w, k) => words[j + k] === w))) return true;
+      if (!TRIM_FILLER.test(words[j])) break;
+    }
+  }
+  return false;
+}
+
+function matchTrimQuery(
+  tokens: string[],
+  makes: string[] | undefined,
+): { models: string[]; makes: string[]; forms: readonly string[] } | null {
+  const phrase = tokens.join(' ');
+  const makeSet = makes?.length ? new Set(makes.map((m) => m.toLowerCase())) : null;
+  for (const forms of TRIM_QUERY_FORMS) {
+    for (const form of forms) {
+      if (phrase !== form && !phrase.endsWith(` ${form}`)) continue;
+      const base = phrase.slice(0, phrase.length - form.length).trim();
+      // A bare "gt" or "ss" names no vehicle.
+      if (!base && !makeSet) continue;
+      // Prefer the trim right after the model ("Mustang" + GT) over one that
+      // merely appears in the name ("Mustang Mach-E GT").
+      const strict = { models: new Set<string>(), makes: new Set<string>() };
+      const loose = { models: new Set<string>(), makes: new Set<string>() };
+      for (const car of cachedCars) {
+        if (makeSet && !makeSet.has(car.make.toLowerCase())) continue;
+        const label = trimLabel(car);
+        if (base && !hasWords(label, base)) continue;
+        if (!forms.some((f) => hasWords(label, f))) continue;
+        const bucket = !base || trimFollowsBase(label, base, forms) ? strict : loose;
+        bucket.models.add(car.model);
+        bucket.makes.add(car.make);
+      }
+      const hit = strict.models.size ? strict : loose;
+      if (hit.models.size) return { models: [...hit.models], makes: [...hit.makes], forms };
+    }
+  }
+  return null;
+}
+
+/** matchTrimQuery on a query that may also name the make ("subaru wrx sti"). */
+function matchTrimQueryWithMake(
+  tokens: string[],
+): { models: string[]; makes: string[]; forms: readonly string[] } | null {
+  const phrase = tokens.join(' ');
+  for (const forms of TRIM_QUERY_FORMS) {
+    for (const form of forms) {
+      if (!phrase.endsWith(` ${form}`)) continue;
+      const base = phrase
+        .slice(0, phrase.length - form.length)
+        .trim()
+        .split(' ');
+      const makeHit = resolveMakeFromTokens(base);
+      if (makeHit) base.splice(makeHit.index, makeHit.consumed);
+      const hit = matchTrimQuery([...base, form], makeHit ? [makeHit.make] : undefined);
+      if (hit) return hit;
+    }
+  }
+  return null;
+}
+
+const BODY_WORDS: Record<string, string> = {
+  suv: 'suv',
+  suvs: 'suv',
+  crossover: 'suv',
+  crossovers: 'suv',
+  truck: 'truck',
+  trucks: 'truck',
+  pickup: 'truck',
+  pickups: 'truck',
+  sedan: 'sedan',
+  sedans: 'sedan',
+  coupe: 'coupe',
+  coupes: 'coupe',
+  hatchback: 'hatchback',
+  hatchbacks: 'hatchback',
+  hatch: 'hatchback',
+  wagon: 'wagon',
+  wagons: 'wagon',
+  minivan: 'minivan',
+  minivans: 'minivan',
+  van: 'van',
+  vans: 'van',
+  convertible: 'convertible',
+  convertibles: 'convertible',
+  cabriolet: 'convertible',
+  roadster: 'convertible',
+};
+
+const FUEL_WORDS: Record<string, string[]> = {
+  hybrid: ['hybrid', 'plug-in hybrid'],
+  hybrids: ['hybrid', 'plug-in hybrid'],
+  phev: ['plug-in hybrid'],
+  'plug-in': ['plug-in hybrid'],
+  plugin: ['plug-in hybrid'],
+  ev: ['electric'],
+  evs: ['electric'],
+  electric: ['electric'],
+  bev: ['electric'],
+  diesel: ['diesel'],
+  hydrogen: ['hydrogen'],
+  fcev: ['hydrogen'],
+};
+
+const DRIVE_WORDS: Record<string, string[]> = {
+  awd: ['AWD', '4WD'],
+  '4wd': ['4WD', 'AWD'],
+  '4x4': ['4WD', 'AWD'],
+  fwd: ['FWD'],
+  rwd: ['RWD'],
+};
+
+/**
+ * Move body-style, fuel and drive words into filters, unless the caller set
+ * that filter explicitly. Returns the tokens left over.
+ */
+function applyKeywordFilters(
+  tokens: string[],
+  filters: NonNullable<SearchQuery['filters']>,
+  explicit: SearchQuery['filters'],
+): string[] {
+  const bodies = new Set<string>();
+  const fuels = new Set<string>();
+  const drives = new Set<string>();
+  const kept: string[] = [];
+  for (const token of tokens) {
+    if (BODY_WORDS[token] && !explicit?.bodyStyle?.length) bodies.add(BODY_WORDS[token]);
+    else if (FUEL_WORDS[token] && !explicit?.fuelType?.length) {
+      for (const f of FUEL_WORDS[token]) fuels.add(f);
+    } else if (DRIVE_WORDS[token] && !explicit?.driveType?.length) {
+      for (const d of DRIVE_WORDS[token]) drives.add(d);
+    } else kept.push(token);
+  }
+  if (bodies.size) filters.bodyStyle = [...bodies];
+  if (fuels.size) filters.fuelType = [...fuels];
+  if (drives.size) filters.driveType = [...drives];
+  return kept;
 }
 
 /**
@@ -634,18 +845,21 @@ function parseYearToken(token: string): { min: number; max: number } | null {
 
 /** Split tokens like "mazda3" when aliasing missed them. */
 function expandGluedMakeTokens(tokens: string[]): string[] {
-  const makes = cachedMakes.map((m) => m.toLowerCase()).sort((a, b) => b.length - a.length);
+  const makes = [...cachedMakes].sort((a, b) => b.length - a.length);
   const out: string[] = [];
 
   for (const token of tokens) {
     let split = false;
+    // "minivan" is not MINI + "van", nor "ramcharger" Ram + "charger": split
+    // only a keyword-free token whose remainder is one of the make's models.
+    const isKeyword = !!(BODY_WORDS[token] || FUEL_WORDS[token] || DRIVE_WORDS[token]);
     const compactToken = token.replace(/[\s-]/g, '');
-    for (const make of makes) {
-      const compactMake = make.replace(/[\s-]/g, '');
+    for (const make of isKeyword ? [] : makes) {
+      const compactMake = make.toLowerCase().replace(/[\s-]/g, '');
       if (compactToken.startsWith(compactMake) && compactToken.length > compactMake.length) {
-        const rest = compactToken.slice(compactMake.length);
-        if (/^[a-z0-9]/i.test(rest)) {
-          out.push(make, normalizeSearchToken(rest));
+        const rest = normalizeSearchToken(compactToken.slice(compactMake.length));
+        if (/^[a-z0-9]/i.test(rest) && resolveModelsForPhrase(make, rest).length > 0) {
+          out.push(make.toLowerCase(), rest);
           split = true;
           break;
         }
@@ -965,6 +1179,7 @@ function singlePassFilter(cars: Car[], query: SearchQuery): Car[] {
   const needsFiltering =
     hasTextSearch ||
     hasModel ||
+    !!query.trimForms?.length ||
     hasYearMin ||
     hasYearMax ||
     hasHpMin ||
@@ -993,13 +1208,15 @@ function singlePassFilter(cars: Car[], query: SearchQuery): Car[] {
   const fuelEcoMax = filters?.fuelEconomy?.max;
   const priceMin = filters?.price?.min;
   const priceMax = filters?.price?.max;
+  const trimForms = query.trimForms?.length ? query.trimForms : null;
 
   const result: Car[] = [];
 
   for (const car of cars) {
     // Text search: every token must match at least one field (exact or fuzzy typo)
     if (hasTextSearch) {
-      const haystack = `${car.make} ${car.model} ${car.year} ${car.trim ?? ''}`.toLowerCase();
+      const haystack =
+        `${car.make} ${car.model} ${car.year} ${car.trim ?? ''} ${car.variant ?? ''}`.toLowerCase();
       let allMatch = true;
       for (const token of searchTokens) {
         if (haystack.includes(token) || fuzzyTokenMatch(haystack, token)) continue;
@@ -1013,6 +1230,10 @@ function singlePassFilter(cars: Car[], query: SearchQuery): Car[] {
     if (modelSet && !modelSet.has(car.model.toLowerCase())) {
       continue;
     }
+
+    // A trim the query ended in ("mustang gt"): the model shares its name
+    // with the other trims, so check the model name plus derived variant.
+    if (trimForms && !trimForms.some((form) => hasWords(trimLabel(car), form))) continue;
 
     // Year range
     if (hasYearMin && car.year < yearMin!) continue;

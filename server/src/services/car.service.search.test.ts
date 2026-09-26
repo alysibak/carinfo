@@ -350,4 +350,57 @@ describe('car.service natural language search', () => {
       expect(top.year, query).toBeGreaterThanOrEqual(LATEST_FULL_MODEL_YEAR);
     }
   });
+
+  it('finds trims EPA leaves out of the model name', () => {
+    // "mustang gt": the V8 Mustang (EPA's "Mustang"), not the EcoBoost or the
+    // Mach-E GT.
+    const gt = searchCars({ query: 'mustang gt', limit: 500 }).results;
+    expect(gt.some((c) => c.make === 'Ford' && c.model === 'Mustang' && c.variant === 'GT')).toBe(
+      true,
+    );
+    expect(gt.some((c) => c.variant === 'EcoBoost')).toBe(false);
+    expect(gt.some((c) => /mach-e/i.test(c.model))).toBe(false);
+
+    // The 2019+ Type R is a "Civic 5Dr" to EPA.
+    const typeR = searchCars({ query: 'civic type r', limit: 50 }).results;
+    expect(typeR.some((c) => c.model === 'Civic 5Dr' && c.year >= 2019)).toBe(true);
+    expect(typeR.every((c) => c.variant === 'Type R' || /type r/i.test(c.model))).toBe(true);
+
+    // "STI" is also a tiny EPA make; it must not swallow the query.
+    const sti = searchCars({ query: 'wrx sti', limit: 50 }).results;
+    expect(sti.length).toBeGreaterThan(10);
+    expect(sti.every((c) => c.make === 'Subaru')).toBe(true);
+    expect(sti.every((c) => /sti/i.test(`${c.model} ${c.variant ?? ''}`))).toBe(true);
+  });
+
+  it('reads body-style, fuel and drive words when the phrase is not a model', () => {
+    const hybridSuv = searchCars({ query: 'hybrid suv', limit: 50 });
+    expect(hybridSuv.total).toBeGreaterThan(100);
+    expect(
+      hybridSuv.results.every(
+        (c) =>
+          c.bodyStyle === 'suv' &&
+          (c.engine.fuelType === 'hybrid' || c.engine.fuelType === 'plug-in hybrid'),
+      ),
+    ).toBe(true);
+
+    const hatch = searchCars({ query: 'mazda 3 hatchback', limit: 50 }).results;
+    expect(hatch.length).toBeGreaterThan(10);
+    expect(hatch.every((c) => c.make === 'Mazda' && c.bodyStyle === 'hatchback')).toBe(true);
+
+    // A model name that contains the word still wins: every RAV4 Hybrid, and
+    // only RAV4 Hybrids.
+    const rav4 = searchCars({ query: 'rav4 hybrid', limit: 50 }).results;
+    expect(rav4.length).toBeGreaterThan(5);
+    expect(rav4.every((c) => /^RAV4 Hybrid/.test(c.model))).toBe(true);
+  });
+
+  it('does not read "minivan" as MINI + "van"', () => {
+    const { results, total } = searchCars({ query: 'minivan', limit: 50 });
+    expect(total).toBeGreaterThan(100);
+    expect(results.every((c) => c.bodyStyle === 'minivan')).toBe(true);
+    // Glued make + model still splits.
+    const mazda3 = searchCars({ query: 'mazda3', limit: 20 }).results;
+    expect(mazda3.every((c) => c.make === 'Mazda' && /^3\b/.test(c.model))).toBe(true);
+  });
 });

@@ -42,6 +42,11 @@ export interface CarSpecs {
   model: string;
   year: number;
   trim?: string;
+  /**
+   * A trim EPA leaves out of the model name, named from the engine ("GT" for
+   * a V8 Mustang, "Type R", "STI"). See utils/performance-trims.ts.
+   */
+  variant?: string;
   countryOfOrigin?: string;
   epaId?: number;
   provenance: Provenance;
@@ -183,6 +188,12 @@ export interface SearchQuery {
   offset?: number;
   /** Keep highest-ranking trim per make+model before pagination. */
   collapseByModel?: boolean;
+  /**
+   * Set by the query parser, not the client: equivalent spellings of a trim
+   * the query ended in ("type r", "r t"/"rt"). Results must carry one as
+   * words of their model name or derived variant.
+   */
+  trimForms?: readonly string[];
 }
 
 /** Response body of the search endpoints. */

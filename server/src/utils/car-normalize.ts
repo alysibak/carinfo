@@ -4,6 +4,7 @@ import { inferEffectiveFuelType, isLikelyMisclassifiedPhev } from './fuel-type-i
 import { isCollectorCar } from './collector-cars.js';
 import { estimateMarketValue } from './ownership-economics.js';
 import { applyVehicleTaxonomy } from './vehicle-taxonomy-apply.js';
+import { deriveVariant } from './performance-trims.js';
 
 export { isFuelCellVehicle } from './fuel-cell-detection.js';
 
@@ -88,6 +89,15 @@ export function normalizeCarRecord(car: Car): Car {
 
   normalized = applyVehicleTaxonomy(normalized);
   normalized = dropPhantomDisplacement(normalized);
+
+  const variant = deriveVariant(normalized);
+  if (variant && normalized.variant !== variant) {
+    normalized = {
+      ...normalized,
+      variant,
+      provenance: { ...normalized.provenance, variant: 'estimated' },
+    };
+  }
 
   return applyMarketValue(normalized);
 }

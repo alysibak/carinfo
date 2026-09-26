@@ -263,6 +263,13 @@ const REFERENCES: Reference[] = [
     observedCad: 49_900,
     source: 'CarGurus Canada average, September 2026',
   },
+  {
+    // EPA files it as "WRX"; the 2.5-litre turbo makes it the STI.
+    label: '2018 Subaru WRX STI',
+    find: (c) => c.make === 'Subaru' && c.model === 'WRX' && c.year === 2018 && c.variant === 'STI',
+    observedCad: 27_710,
+    source: 'CarGurus Canada average, September 2026',
+  },
   // Trucks and body-on-frame SUVs. GMC sat on the luxury list (Sierra +52%),
   // pickups kept ~60% of today's price at seven years where listings show
   // 45–55%, every Bronco shared the Bronco Sport's anchor (-40%), and Toyota's

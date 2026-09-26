@@ -23,6 +23,19 @@ describe('displayVehicleTitle / model family', () => {
     expect(displayModelConfigRemainder(mazda3)).toBe('4-Door');
   });
 
+  it('adds a trim EPA leaves out of the name, once', () => {
+    const civic = { ...mazda3, make: 'Honda', model: 'Civic 5Dr', year: 2020, variant: 'Type R' };
+    expect(displayVehicleTitle(civic)).toBe('2020 Honda Civic Type R');
+    const srt = { ...mazda3, make: 'Dodge', model: 'Challenger SRT', variant: 'Hellcat' };
+    expect(displayVehicleTitle(srt)).toBe('2026 Dodge Challenger SRT Hellcat');
+    // Named by EPA, but past the point where the family label stops.
+    const named = { ...mazda3, make: 'Honda', model: 'Civic Type R', year: 2018 };
+    expect(displayVehicleTitle(named)).toBe('2018 Honda Civic Type R');
+    // Already in the family name: not repeated.
+    const gt = { ...mazda3, make: 'Ford', model: 'Mustang GT', variant: 'GT' };
+    expect(displayVehicleTitle(gt)).toBe('2026 Ford Mustang GT');
+  });
+
   it('keeps multi-word families like Model 3', () => {
     const tesla = { ...mazda3, make: 'Tesla', model: 'Model 3' };
     expect(displayModelFamilyLabel(tesla)).toBe('Model 3');

@@ -5,6 +5,7 @@ import {
   type RegionalAssumptions,
 } from '../config/regional-assumptions.js';
 import { inferEffectiveFuelType } from './fuel-type-inference.js';
+import { deriveVariant } from './performance-trims.js';
 
 const REFERENCE_YEAR = new Date().getFullYear();
 
@@ -154,6 +155,11 @@ const MAINSTREAM_BRAND_RETENTION: Record<string, number> = {
  */
 function brandFactorAt(factor: number, age: number): number {
   return 1 + (factor - 1) * Math.min(1, age / 3);
+}
+
+/** A trim EPA leaves out of the name, whether or not the record carries it yet. */
+function trimOf(car: CarSpecs): string | undefined {
+  return car.variant ?? deriveVariant(car);
 }
 
 interface ModelMsrpRule {
@@ -671,7 +677,7 @@ const MODEL_MSRP_RULES: ModelMsrpRule[] = [
     msrp: (c) => (c.year >= 2022 ? 45000 : c.year >= 2016 ? 40000 : 36000),
   },
   {
-    test: (c) => c.make === 'Honda' && /civic si/i.test(c.model),
+    test: (c) => c.make === 'Honda' && (/civic si/i.test(c.model) || trimOf(c) === 'Si'),
     msrp: (c) => (c.year >= 2022 ? 29000 : 24000),
   },
   {
@@ -679,9 +685,14 @@ const MODEL_MSRP_RULES: ModelMsrpRule[] = [
     msrp: (c) => (c.year >= 2023 ? 44000 : 36000),
   },
   ...PERFORMANCE_VARIANT_RULES,
-  { test: (c) => c.make === 'Subaru' && /wrx sti|\bsti\b/i.test(c.model), msrp: 38000 },
+  // EPA files the STI as "Impreza" (to 2014) or "WRX" (2015–21); the trim comes
+  // from the engine and gearbox (performance-trims.ts).
   {
-    test: (c) => c.make === 'Subaru' && /wrx/i.test(c.model),
+    test: (c) => c.make === 'Subaru' && /\bsti\b/i.test(`${c.model} ${trimOf(c) ?? ''}`),
+    msrp: 38000,
+  },
+  {
+    test: (c) => c.make === 'Subaru' && /wrx/i.test(`${c.model} ${trimOf(c) ?? ''}`),
     msrp: (c) => (c.year >= 2022 ? 32000 : c.year >= 2015 ? 28000 : 26000),
   },
   { test: (c) => c.make === 'Ford' && /focus st|fiesta st/i.test(c.model), msrp: 26000 },
