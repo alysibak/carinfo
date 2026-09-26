@@ -15,6 +15,15 @@ describe('collector cars', () => {
       ['1996 Porsche 911', (c) => c.make === 'Porsche' && /^911/.test(c.model) && c.year === 1996],
       ['2000 Honda S2000', (c) => c.make === 'Honda' && /^S2000/.test(c.model) && c.year === 2000],
       ['1995 Ferrari F50', (c) => c.make === 'Ferrari' && /F50/.test(c.model)],
+      ['2012 Mercedes-Benz SLS AMG', (c) => c.make === 'Mercedes-Benz' && /^SLS/.test(c.model)],
+      ['2008 Lotus Elise', (c) => c.make === 'Lotus' && /^Elise/.test(c.model) && c.year === 2008],
+      ['2016 Porsche 911 R', (c) => c.make === 'Porsche' && c.model === '911 R'],
+      // EPA put the model name last on some 2004–05 Porsches.
+      [
+        '2004 Porsche 911 GT3',
+        (c) => c.make === 'Porsche' && c.model === 'Carrera 2 911 GT3' && c.year === 2004,
+      ],
+      ['2014 Lamborghini Veneno', (c) => c.make === 'Lamborghini' && /Veneno/.test(c.model)],
     ];
     for (const [label, pred] of collectors) {
       const car = find(pred);
@@ -36,6 +45,11 @@ describe('collector cars', () => {
         (c) => c.make === 'Ford' && /Mustang/.test(c.model) && c.year === 2013,
       ],
       ['2016 Ferrari 488', (c) => c.make === 'Ferrari' && c.year === 2016],
+      ['2017 Lotus Evora', (c) => c.make === 'Lotus' && /^Evora/.test(c.model) && c.year === 2017],
+      [
+        '2021 Porsche 911 Carrera',
+        (c) => c.make === 'Porsche' && c.model === '911 Carrera' && c.year === 2021,
+      ],
     ];
     for (const [label, pred] of ordinary) {
       const car = find(pred);

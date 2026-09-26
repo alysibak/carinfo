@@ -4,6 +4,7 @@ import {
   applyValuationReliabilityGuard,
   assessMsrpAnchor,
   estimateMarketValue,
+  estimateNewVehicleMsrp,
   isImplausibleResaleProjection,
   LOW_VOLUME_CONFIDENCE_LABEL,
 } from './vehicle-valuation.js';
@@ -134,6 +135,26 @@ describe('vehicle-valuation (Ontario/CAD)', () => {
     expect(retained('Toyota', /^RAV4$/, 2019)).toBeGreaterThan(
       retained('Ford', /^Escape/, 2019) * 1.3,
     );
+  });
+
+  it('prices exotics by line and keeps supercars off the exotic curve', () => {
+    const car = (make: string, model: RegExp, year: number) =>
+      getAllCars().find((c) => c.make === make && model.test(c.model) && c.year === year)!;
+    // EPA files the GT-R as a subcompact; it used to take a $22,000 anchor
+    // and come out at $13,000. A 2017 lists around US$80,000.
+    const gtr = car('Nissan', /^GT-R$/, 2017);
+    expect(estimateNewVehicleMsrp(gtr)).toBeGreaterThan(100_000);
+    expect(estimateMarketValue(gtr).mid).toBeGreaterThan(75_000);
+    // A marque's price already covers its V12; the big-engine uplift made a
+    // Ghost $512,000.
+    expect(estimateNewVehicleMsrp(car('Rolls-Royce', /^Ghost$/, 2017))).toBe(360_000);
+    // Nine years on, a Huracán keeps far more of its sticker than a Bentayga,
+    // and a Ghibli (about a quarter of its sticker at eight years) far less.
+    const kept = (make: string, model: RegExp, year: number) =>
+      estimateMarketValue(car(make, model, year)).retainedFraction;
+    expect(kept('Lamborghini', /^Huracan$/, 2017)).toBeGreaterThan(0.7);
+    expect(kept('Bentley', /^Bentayga$/, 2017)).toBeLessThan(0.45);
+    expect(kept('Maserati', /^Ghibli/, 2018)).toBeLessThan(0.35);
   });
 
   it('has zero degenerate resale ranges across the full dataset', () => {

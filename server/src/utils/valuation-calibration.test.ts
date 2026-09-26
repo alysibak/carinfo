@@ -263,6 +263,20 @@ const REFERENCES: Reference[] = [
     observedCad: 49_900,
     source: 'CarGurus Canada average, September 2026',
   },
+  // Luxury performance and supercars: a 2017 Huracán was valued at $121,000 on
+  // the exotic curve.
+  {
+    label: '2019 Audi S4',
+    find: named('Audi', /^S4$/, 2019),
+    observedCad: 29_530,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2017 Lamborghini Huracán',
+    find: named('Lamborghini', /^Huracan$/, 2017),
+    observedCad: 266_700,
+    source: 'CarGurus Canada average, September 2026',
+  },
   {
     // EPA files it as "WRX"; the 2.5-litre turbo makes it the STI.
     label: '2018 Subaru WRX STI',

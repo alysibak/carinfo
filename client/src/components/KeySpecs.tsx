@@ -44,6 +44,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   'sport-sedan': 'Sport sedan',
   muscle: 'Muscle car',
   'sports-car': 'Sports car',
+  supercar: 'Supercar',
   luxury: 'Luxury',
   mainstream: 'Mainstream',
   utility: 'Utility',

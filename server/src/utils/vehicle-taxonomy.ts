@@ -8,6 +8,7 @@ export type ShoppingSegment =
   | 'sport-sedan'
   | 'muscle'
   | 'sports-car'
+  | 'supercar'
   | 'luxury'
   | 'mainstream'
   | 'utility'
@@ -94,6 +95,24 @@ const SEDAN_DERIVED_TRIM = /\b(ss|sho|n line|gt|r\/t|scat pack|hellcat|srt8)\b/i
  */
 const PERFORMANCE_BADGE_PATTERN = /\b(s[3-8]|rs ?[3-7]|tt ?rs|tts|m[2-8])\b/i;
 
+/**
+ * Makes whose two-doors are all supercars, and other makes' supercars. By the
+ * horsepower rule a Huracán, a 488 or an R8 was a "muscle car".
+ */
+const SUPERCAR_MAKES = new Set([
+  'Ferrari',
+  'Lamborghini',
+  'McLaren Automotive',
+  'Bugatti',
+  'Bugatti Rimac',
+  'Pagani',
+  'Koenigsegg',
+  'Spyker',
+  'Vector',
+]);
+const SUPERCAR_NAMES =
+  /^(audi r8|acura nsx|ford gt$|porsche (carrera gt|918)|mercedes-benz (slr|sls)|lexus lfa|maserati (mc20|mcpura|gt2 stradale)|aston martin (valkyrie|valhalla))\b/;
+
 /** Marques where every car is a luxury car. */
 const LUXURY_MARQUES = new Set(['Rolls-Royce', 'Bentley', 'Maybach', 'Mercedes-Maybach']);
 
@@ -114,7 +133,7 @@ const LUXURY_FLAGSHIPS: Record<string, RegExp> = {
   Hyundai: /^equus\b/i,
   Cadillac: /^(ct6|xts|dts|deville)\b/i,
   Lincoln: /^(continental|town car)\b/i,
-  Maserati: /^quattroporte\b/i,
+  Maserati: /^(quattroporte|ghibli)\b/i,
   Volkswagen: /^phaeton\b/i,
 };
 
@@ -212,7 +231,13 @@ export function inferBodyStyle(car: CarSpecs, displayModel?: string): BodyStyle 
     // MINI's "Hardtop 2 door" is its three-door hatch.
     if (car.make.toLowerCase() === 'mini' && /hardtop|\b2 door\b/.test(name)) return 'hatchback';
     if (FIVE_DOOR_CAR.test(name)) return 'hatchback';
+    if (CONVERTIBLE_NAMES.test(name)) return 'convertible';
     if (COUPE_NAMES.test(name) || TWO_DOOR_CAR.test(name)) return 'coupe';
+    // EPA's minicompact and two-seater classes are two-door cars bar a few
+    // city cars: 304 Porsche 911s, every Evora and DB11 read as sedans.
+    if (/^(minicompact|two seaters)/i.test(car.epa?.vClass ?? '')) {
+      return CITY_HATCH.test(name) ? 'hatchback' : 'coupe';
+    }
   }
 
   return car.bodyStyle;
@@ -258,10 +283,27 @@ const COUPE_NAMES = new RegExp(
     'saturn sc',
     'clk\\d+',
     'audi tts?',
+    // Grand tourers and halo cars filed by size class.
+    'nissan gt-r',
+    'bmw m2',
+    'jaguar xk[8r]?',
+    'lexus lc',
+    'lotus evora',
+    'maserati granturismo',
+    'mercedes-benz (?:amg )?cl ?\\d+',
+    'bentley continental (?:gt|r|t|sc|supersports)',
+    'rolls-royce (?:wraith|spectre)',
+    'ferrari (?:456|612|ff|gtc4lusso|roma)',
+    'aston martin (?:db-?7|db9|db11|db12|dbs|v12 vanquish|vanquish|virage)',
   ]
     .map((name) => `\\b${name}\\b`)
     .join('|'),
 );
+/** Convertibles EPA files as sedans, with no "convertible" in the name. */
+const CONVERTIBLE_NAMES =
+  /\b(volante|drophead|bentley azure|bentley continental gtc|rolls-royce (?:dawn|corniche)|maserati grancabrio|ferrari (?:california|portofino)|porsche boxster|(?:amg )?sl ?\d+|slk ?\d*|slc ?\d*|\d{3}ic)\b/;
+/** City cars in EPA's minicompact class: three-door hatchbacks, not coupes. */
+const CITY_HATCH = /\b(fiat 500|mini|scion iq|smart|fortwo)/;
 const TWO_DOOR_CAR = /\b2[ -]?dr\b|\b2[ -]door\b/;
 /** "Civic 5Dr", "Mazda 3 5-Door": a five-door car is a hatchback. */
 const FIVE_DOOR_CAR = /\b5[ -]?dr\b|\b5[ -]door\b/;
@@ -281,14 +323,21 @@ export function classifyShoppingSegment(
   if (ft === 'electric' || ft === 'hydrogen') return 'ev';
   if (bodyStyle === 'truck') return 'truck';
   if (bodyStyle === 'suv' || bodyStyle === 'van' || bodyStyle === 'minivan') return 'utility';
+  if (
+    (bodyStyle === 'coupe' || bodyStyle === 'convertible') &&
+    (SUPERCAR_MAKES.has(car.make) || SUPERCAR_NAMES.test(`${car.make} ${car.model}`.toLowerCase()))
+  ) {
+    return 'supercar';
+  }
 
   if (HOT_HATCH_PATTERN.test(h) || (bodyStyle === 'hatchback' && hp >= 200 && disp >= 1.8))
     return 'hot-hatch';
   // Performance badges first (an S63 AMG or an Audi S8 is a sport sedan), then
   // flagships (a Phantom is not), then the horsepower rule for everything else.
   // Coupes and convertibles fall through to their own sports-car / muscle split.
+  const twoDoor = bodyStyle === 'coupe' || bodyStyle === 'convertible';
   if (
-    SPORT_SEDAN_PATTERN.test(h) ||
+    (!twoDoor && SPORT_SEDAN_PATTERN.test(h)) ||
     ((bodyStyle === 'sedan' || bodyStyle === 'wagon') && PERFORMANCE_BADGE_PATTERN.test(h))
   )
     return 'sport-sedan';
@@ -338,6 +387,13 @@ function ownershipProfileFor(
       bestFor: ['Year-round performance', 'Back-seat practicality', 'Weekend drives'],
     };
   }
+  if (segment === 'supercar') {
+    return {
+      label: 'Supercar',
+      tags: ['Exotic', 'Performance'],
+      bestFor: ['Weekend drives', 'Track days', 'Collector appeal'],
+    };
+  }
   if (segment === 'sports-car' || segment === 'muscle') {
     return {
       label: segment === 'muscle' ? 'Muscle Car' : 'Sports Car',
@@ -365,8 +421,9 @@ export function segmentAffinity(a: ShoppingSegment, b: ShoppingSegment): number 
     'hot-hatch': ['sport-compact', 'sport-sedan'],
     'sport-compact': ['hot-hatch', 'mainstream'],
     'sport-sedan': ['hot-hatch', 'sport-compact', 'luxury'],
-    muscle: ['sports-car', 'luxury'],
-    'sports-car': ['muscle', 'luxury'],
+    muscle: ['sports-car', 'supercar', 'luxury'],
+    'sports-car': ['muscle', 'supercar', 'luxury'],
+    supercar: ['sports-car', 'muscle', 'luxury'],
     luxury: ['sport-sedan', 'sports-car'],
     mainstream: ['sport-compact'],
     utility: ['truck'],

@@ -113,6 +113,9 @@ const BRAND_RETENTION: Record<string, number> = {
   Nissan: 0.96,
   Fiat: 0.88,
   Mitsubishi: 0.9,
+  // A 2018 Ghibli lists around US$18,500, a quarter of its sticker (CarGurus,
+  // September 2026).
+  Maserati: 0.6,
   // Bankrupt makers: no dealers, software updates or assured parts. A 2023
   // Fisker Ocean Extreme ($69,000 new) sells for about $16,000 in 2026.
   Fisker: 0.4,
@@ -211,6 +214,125 @@ function isCivicTypeR(c: CarSpecs): boolean {
 
 const cyl = (c: CarSpecs) => c.engine.cylinders ?? 0;
 const litres = (c: CarSpecs) => c.engine.displacement ?? 0;
+
+const luxTrim = (c: CarSpecs) =>
+  /\b(cs|csl|gts|black series)\b/i.test(c.model)
+    ? 1.35
+    : /\bcompetition\b/i.test(c.model)
+      ? 1.08
+      : 1;
+const lux = (make: string, model: RegExp, msrp: number): ModelMsrpRule => ({
+  test: (c) => c.make === make && c.engine.fuelType !== 'electric' && model.test(c.model),
+  msrp: (c) => msrp * luxTrim(c),
+});
+
+const LUXURY_PERFORMANCE_RULES: ModelMsrpRule[] = [
+  lux('BMW', /^alpina\b/i, 145000),
+  lux('BMW', /^m2\b/i, 65000),
+  lux('BMW', /^m3\b/i, 77000),
+  lux('BMW', /^m4\b/i, 80000),
+  lux('BMW', /^m5\b/i, 110000),
+  lux('BMW', /^m6\b/i, 115000),
+  lux('BMW', /^x[34] m\b(?!\d)/i, 76000),
+  lux('BMW', /^x[56] m\b(?!\d)/i, 118000),
+  lux('BMW', /^m2[34]\d/i, 50000),
+  lux('BMW', /^m340/i, 58000),
+  lux('BMW', /^m440/i, 62000),
+  lux('BMW', /^m550/i, 80000),
+  lux('BMW', /^m760/i, 120000),
+  lux('BMW', /^x[12] m35/i, 50000),
+  lux('BMW', /^x[34] m[45]0/i, 65000),
+  lux('BMW', /^x[56] m[56]0/i, 90000),
+  lux('BMW', /^x7 m[56]0/i, 105000),
+  lux('Mercedes-Benz', /\b(a|cla|gla|glb) ?35\b/i, 50000),
+  lux('Mercedes-Benz', /\b(a|cla|gla) ?45\b/i, 60000),
+  lux('Mercedes-Benz', /\bslc ?43\b/i, 62000),
+  lux('Mercedes-Benz', /\bslk ?55\b/i, 72000),
+  lux('Mercedes-Benz', /\b(c ?43|c450 amg)\b/i, 62000),
+  lux('Mercedes-Benz', /\bc ?63\b/i, 85000),
+  lux('Mercedes-Benz', /\bcle ?53\b/i, 75000),
+  lux('Mercedes-Benz', /\bcls ?53\b/i, 82000),
+  lux('Mercedes-Benz', /\bcls ?63\b/i, 110000),
+  lux('Mercedes-Benz', /\be ?43\b/i, 72000),
+  lux('Mercedes-Benz', /\be ?53\b/i, 82000),
+  lux('Mercedes-Benz', /\be ?63\b/i, 110000),
+  lux('Mercedes-Benz', /\bglc ?43\b/i, 64000),
+  lux('Mercedes-Benz', /\bglc ?63\b/i, 88000),
+  lux('Mercedes-Benz', /\b(gle ?43|gle450 amg)\b/i, 72000),
+  lux('Mercedes-Benz', /\bgle ?53\b/i, 90000),
+  lux('Mercedes-Benz', /\b(gle|ml) ?63\b/i, 120000),
+  lux('Mercedes-Benz', /\bgls? ?63\b/i, 140000),
+  lux('Mercedes-Benz', /\bg ?(500|550)\b/i, 150000),
+  lux('Mercedes-Benz', /\bg ?(55|63)\b/i, 180000),
+  lux('Mercedes-Benz', /\bg ?65\b/i, 225000),
+  lux('Mercedes-Benz', /\bs ?63\b/i, 180000),
+  lux('Mercedes-Benz', /\bs ?65\b/i, 230000),
+  lux('Mercedes-Benz', /\bcl ?63\b/i, 150000),
+  lux('Mercedes-Benz', /\bcl ?65\b/i, 215000),
+  lux('Audi', /^s3\b/i, 50000),
+  lux('Audi', /^rs ?3\b/i, 62000),
+  lux('Audi', /^s4\b/i, 52000),
+  lux('Audi', /^s5\b/i, 57000),
+  lux('Audi', /^rs ?5\b/i, 80000),
+  lux('Audi', /^s6\b/i, 75000),
+  lux('Audi', /^rs ?6\b/i, 125000),
+  lux('Audi', /^s7\b/i, 85000),
+  lux('Audi', /^rs ?7\b/i, 130000),
+  lux('Audi', /^s8\b/i, 120000),
+  lux('Audi', /^sq5\b/i, 60000),
+  lux('Audi', /^sq7\b/i, 95000),
+  lux('Audi', /^sq8\b/i, 100000),
+  lux('Audi', /^rs ?q8\b/i, 125000),
+];
+
+const exo = (make: string, model: RegExp, msrp: number): ModelMsrpRule => ({
+  test: (c) => c.make === make && c.engine.fuelType !== 'electric' && model.test(c.model),
+  msrp,
+});
+
+/**
+ * Exotic and halo models priced by line rather than by marque. One figure per
+ * make put a McLaren 570S and a 765LT, or a Roma and an Aventador, at the same
+ * sticker, and priced a GT-R by its EPA size class ("Subcompact", $22,000).
+ * Current US list prices of each line's successor.
+ */
+const EXOTIC_MODEL_RULES: ModelMsrpRule[] = [
+  // First-generation R8s (2008–15) listed at $115,000–$175,000; the line
+  // closed at about $200,000.
+  {
+    test: (c) => c.make === 'Audi' && /^r8\b/i.test(c.model),
+    msrp: (c) => (c.year >= 2017 ? 200000 : 130000),
+  },
+  exo('Ferrari', /^(california|portofino|roma)\b/i, 250000),
+  exo('Ferrari', /^(ff|gtc4)/i, 320000),
+  exo('Ferrari', /^(599|f12|812|12cilindri)/i, 400000),
+  exo('Ferrari', /^sf90/i, 530000),
+  exo('Ferrari', /^purosangue/i, 400000),
+  exo('Lamborghini', /^(aventador|revuelto|murcielago|l-147)/i, 600000),
+  exo('Lamborghini', /^urus/i, 260000),
+  exo('McLaren Automotive', /^(540c|570s|570gt|600lt|620r|gt)\b/i, 210000),
+  exo('McLaren Automotive', /^artura/i, 240000),
+  exo('McLaren Automotive', /^(mp4-12c|650s|675lt|720s|750s)/i, 310000),
+  exo('McLaren Automotive', /^765lt/i, 380000),
+  exo('Maserati', /^ghibli/i, 80000),
+  exo('Maserati', /^levante/i, 95000),
+  exo('Maserati', /^grecale/i, 72000),
+  exo('Maserati', /^quattroporte/i, 115000),
+  exo('Maserati', /^gran ?(turismo|cabrio)/i, 180000),
+  exo('Maserati', /^(mc20|mcpura|gt2 stradale)/i, 250000),
+  exo('Rolls-Royce', /^phantom/i, 520000),
+  exo('Rolls-Royce', /^(ghost|wraith|dawn)/i, 360000),
+  exo('Bentley', /^bentayga/i, 220000),
+  exo('Bentley', /^mulsanne/i, 340000),
+  exo('Aston Martin', /^dbx/i, 200000),
+  exo('Aston Martin', /^(v8 |v12 )?vantage/i, 190000),
+  exo('Aston Martin', /^(db9|db11|db12)/i, 245000),
+  exo('Aston Martin', /^(dbs|v12 vanquish|vanquish)/i, 330000),
+  exo('Aston Martin', /^valhalla/i, 1000000),
+  exo('Lotus', /^elise|^exige/i, 60000),
+  exo('Lotus', /^(evora|emira)/i, 100000),
+  exo('Nissan', /^gt-r/i, 120000),
+];
 
 /**
  * Performance versions EPA files under the base model's name, told apart by
@@ -339,7 +461,16 @@ const PERFORMANCE_VARIANT_RULES: ModelMsrpRule[] = [
   { test: (c) => c.make === 'Scion' && /^tc\b/i.test(c.model), msrp: 20000 },
   // Luxury flagships the cylinder table would undersell.
   { test: (c) => c.make === 'Acura' && /^nsx/i.test(c.model) && c.year >= 2016, msrp: 157000 },
-  { test: (c) => c.make === 'Mercedes-Benz' && /amg gt\b/i.test(c.model), msrp: 130000 },
+  // BMW M, Mercedes-AMG and Audi S/RS. Luxury sedans anchor on their size
+  // class, so a new M3 came out at $48,000 (a C300's value) and an M4, M4
+  // Competition and M440i all at one $70,000. Current US prices of the core
+  // model; Competition, S and CS/CSL/GTS trims scale from it.
+  ...LUXURY_PERFORMANCE_RULES,
+  {
+    test: (c) => c.make === 'Mercedes-Benz' && /amg gt\b/i.test(c.model),
+    msrp: (c) =>
+      /black series/i.test(c.model) ? 325000 : /\bgt r\b/i.test(c.model) ? 165000 : 130000,
+  },
   {
     test: (c) => c.make === 'Mercedes-Benz' && /^(amg )?sl ?\d/i.test(c.model),
     msrp: (c) => (cyl(c) >= 8 ? 115000 : 90000),
@@ -577,6 +708,7 @@ const TRUCK_SUV_RULES: ModelMsrpRule[] = [
 const MODEL_MSRP_RULES: ModelMsrpRule[] = [
   ...EV_LINE_RULES,
   ...TRUCK_SUV_RULES,
+  ...EXOTIC_MODEL_RULES,
   {
     test: (c) => c.make === 'Tesla' && c.model.toLowerCase().includes('model s'),
     msrp: (c) => (c.year >= 2021 ? 95000 : c.year >= 2016 ? 85000 : 75000),
@@ -799,10 +931,10 @@ const MODEL_MSRP_RULES: ModelMsrpRule[] = [
     msrp: (c) => (c.year >= 2020 ? 98000 : c.year >= 2016 ? 88000 : 78000),
   },
   {
-    test: (c) => c.make === 'Porsche' && /^911\b/.test(c.model),
+    test: (c) => c.make === 'Porsche' && /\b911\b/.test(c.model),
     msrp: (c) => (/turbo|gt2|gt3|dakar|s\/t/i.test(c.model) ? 220000 : 135000),
   },
-  { test: (c) => c.make === 'Porsche' && /^718\b/.test(c.model), msrp: 80000 },
+  { test: (c) => c.make === 'Porsche' && /^(718|boxster|cayman)\b/i.test(c.model), msrp: 80000 },
   {
     test: (c) => c.make === 'Porsche' && /^macan\b.*\belectric$/i.test(c.model),
     msrp: (c) => {
@@ -978,8 +1110,9 @@ export function estimateNewVehicleMsrp(car: CarSpecs): number {
   if (ft === 'electric') price *= 1.12 * evTrimFactor(car);
   else if (ft === 'plug-in hybrid') price *= 1.06;
   else if (ft === 'hydrogen') price *= 1.15;
-  // The cylinder table already prices a luxury V8.
-  if (!luxuryTwoDoor && car.engine.displacement && car.engine.displacement >= 4.5) price *= 1.22;
+  // The cylinder table already prices a luxury V8, and a marque's figure its
+  // V12s (a Rolls-Royce Ghost came out at $512,000).
+  if (marque == null && !luxuryTwoDoor && (car.engine.displacement ?? 0) >= 4.5) price *= 1.22;
 
   return Math.round(price);
 }
@@ -1141,6 +1274,16 @@ function retentionFraction(
     return Math.min(0.98, base * brand * shortRangeFactor(car, age));
   }
 
+  const flat = flatCurveRetention(car);
+  if (flat != null) {
+    // Supercars keep most of their price for a decade, then ease off: a 2017
+    // Huracán lists around $266,700 CAD (CarGurus.ca) and a 2017 R8 around
+    // US$143,500, where the exotic curve said a third. Plug-in supercars (SF90,
+    // 296, Revuelto) follow it too.
+    const curve = 0.3 + 0.7 * Math.exp(-0.075 * age);
+    return Math.min(0.97, curve * flat);
+  }
+
   if (fuelType === 'plug-in hybrid') {
     // 0.14 had a 2020 Pacifica Hybrid 23% and a 2020 Prius Prime 9% under
     // their CarGurus.ca averages (September 2026).
@@ -1197,7 +1340,7 @@ function retentionFraction(
 }
 
 /**
- * Models that hold value far better than their segment. Halo cars: 2026
+ * Models whose resale departs from their segment's curve, mostly upward. Halo cars: 2026
  * listings put a 2020 Civic Type R and a 2021 Corvette above their original
  * sticker (CarGurus.ca averages ~$49,900 and ~$91,200 CAD). Toyota's trucks
  * and the RAV4 Prime: a 2019 Tacoma lists at ~$39,800 CAD and a 2021 RAV4
@@ -1224,13 +1367,69 @@ const HIGH_RETENTION_MODELS: Array<[(c: CarSpecs) => boolean, number]> = [
     1.5,
   ],
   [(c) => c.make === 'Ram' && /trx/i.test(c.model), 1.5],
-  [(c) => c.make === 'Nissan' && /gt-r/i.test(c.model), 1.5],
   [(c) => c.make === 'Toyota' && /gr supra/i.test(c.model), 1.5],
   [(c) => c.make === 'Toyota' && /^tacoma/i.test(c.model), 1.3],
   [(c) => c.make === 'Toyota' && /^4runner/i.test(c.model), 1.4],
   [(c) => c.make === 'Toyota' && /^land cruiser/i.test(c.model), 1.3],
   [(c) => c.make === 'Toyota' && /^rav4 (prime|plug-in)/i.test(c.model), 1.4],
+  // Porsche's sports cars: a 2018 718 Cayman lists around US$50,000–$57,000
+  // against about $57,000 new (Cars.com, KBB).
+  [(c) => c.make === 'Porsche' && /\b911\b/.test(c.model), 1.5],
+  [(c) => c.make === 'Porsche' && /^(718|boxster|cayman)\b/i.test(c.model), 1.4],
+  [(c) => c.make === 'Lotus' && /^(evora|emira)/i.test(c.model), 1.4],
+  // The original two-door AMG GT (a 2017 ~US$72,200 on CarGurus), an RS 6
+  // Avant (a 2021 ~US$94,300) and the G-Class (a 2020 AMG G 63 ~US$122,800).
+  [
+    (c) =>
+      c.make === 'Mercedes-Benz' &&
+      /^amg gt\b/i.test(c.model) &&
+      (c.bodyStyle === 'coupe' || c.bodyStyle === 'convertible') &&
+      !/\b(43|53|55|63)\b/.test(c.model),
+    1.25,
+  ],
+  [(c) => c.make === 'Audi' && /^rs ?6\b/i.test(c.model) && c.year >= 2020, 1.3],
+  [(c) => c.make === 'Mercedes-Benz' && /\bg ?\d{2,3}\b|g-class/i.test(c.model), 1.2],
+  // Exotic SUVs and flagships that buck the exotic curve: a 2019 Urus lists
+  // around US$170,500, 2020 Cullinans US$262,500–$330,000 (CarGurus).
+  [(c) => c.make === 'Lamborghini' && /^urus/i.test(c.model), 1.5],
+  [(c) => c.make === 'Rolls-Royce' && /^cullinan/i.test(c.model), 1.5],
+  [(c) => c.make === 'Rolls-Royce' && /^phantom/i.test(c.model), 1.3],
 ];
+
+/**
+ * Supercars, and the few enthusiast cars that depreciate like them, with how
+ * far each sits from that flatter curve; null for everything else. They hold
+ * value like collectibles without being rare enough to trade on auction
+ * results. Ferrari's front-engine GTs lose more than its mid-engine cars.
+ */
+function flatCurveRetention(car: CarSpecs): number | null {
+  const m = car.model;
+  switch (car.make) {
+    case 'Ferrari':
+      return /^(california|portofino|roma|ff|gtc4|612|456)/i.test(m) ? 0.85 : 1.1;
+    case 'Lamborghini':
+      return /^urus/i.test(m) ? null : 1.15;
+    case 'McLaren Automotive':
+      return 0.95;
+    case 'Audi':
+      return /^r8\b/i.test(m) ? 1.1 : null;
+    case 'BMW':
+      // M2, M3 and M4: a 2018 M3 lists around US$56,200 and a 2021 M4 around
+      // US$66,300 (Cars.com, September 2026). The luxury curve with a bonus
+      // fitted one and put the other a third high.
+      return /^m[234]\b/i.test(m) ? 0.85 : null;
+    case 'Acura':
+      // KBB puts a 2017 NSX at about US$116,000–$125,000 against $156,000 new.
+      return /^nsx/i.test(m) && car.year >= 2016 ? 1.25 : null;
+    case 'Maserati':
+      return /^(mc20|mcpura|gt2 stradale)/i.test(m) ? 1 : null;
+    case 'Nissan':
+      // A 2010 GT-R still lists around US$60,000–$65,000.
+      return /^gt-r/i.test(m) ? 1.05 : null;
+    default:
+      return null;
+  }
+}
 
 function highRetention(car: CarSpecs): number {
   return HIGH_RETENTION_MODELS.find(([test]) => test(car))?.[1] ?? 1;
@@ -1400,6 +1599,12 @@ export function estimateMarketValue(
   if (anchor.confidence === 'low') {
     confidence = 'low';
     confidenceLabel = LOW_VOLUME_CONFIDENCE_LABEL;
+  } else if (
+    anchor.source === 'model-rule' &&
+    (segment === 'exotic' || flatCurveRetention(car) != null)
+  ) {
+    // Options, mileage and history move these prices more than age does.
+    confidenceLabel = 'Model-anchored, but a thin market where options and history matter';
   } else if (anchor.confidence === 'high' && anchor.source === 'model-rule') {
     confidence = 'high';
     confidenceLabel = 'Model-anchored CAD value with age and condition curve';

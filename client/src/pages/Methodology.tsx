@@ -93,9 +93,9 @@ export default function Methodology() {
               1.2, not the exchange rate), then depreciated by age.
             </li>
             <li>
-              Checked against average Canadian asking prices for 59 reference vehicles, from
-              compacts to pickups, performance cars, plug-in hybrids and EVs; expect individual
-              estimates to be within about 25%.
+              Checked against average Canadian asking prices for 61 reference vehicles, from
+              compacts to pickups, performance cars, supercars, plug-in hybrids and EVs; expect
+              individual estimates to be within about 25%.
             </li>
             <li>
               For everyday cars, SUVs and minivans the make matters from about three years on: a
@@ -112,9 +112,16 @@ export default function Methodology() {
               unusually well are depreciated more gently.
             </li>
             <li>
+              Supercars (a Ferrari, a Lamborghini, an R8) keep most of their price for a decade,
+              while ultra-luxury cars and Maseratis lose most of theirs: a nine-year-old Huracán
+              lists near 80% of today&rsquo;s sticker, a Bentayga near 30%. Each follows its own
+              curve, and values stay at medium confidence at best, since options and history move
+              these prices more than age.
+            </li>
+            <li>
               Collector cars are not valued: a first-generation NSX, a Supra Turbo, an air-cooled
-              911, a Viper or a supercar trades on auction results and condition, and is often worth
-              more than when new.
+              911, a Viper, a limited-run hypercar or a Ferrari over twenty trades on auction
+              results and condition, and is often worth more than when new.
             </li>
             <li>
               Depreciation curves by segment, age and fuel type. Electric cars follow one curve

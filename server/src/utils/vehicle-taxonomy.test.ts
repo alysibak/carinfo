@@ -118,6 +118,27 @@ describe('vehicle-taxonomy', () => {
       inferBodyStyle(minimalCar({ make: 'Jeep', model: 'Wrangler 2dr 4WD', bodyStyle: 'suv' })),
     ).toBe('suv');
   });
+
+  it('files grand tourers and minicompact two-doors by their doors, not their size class', () => {
+    // 304 Porsche 911s, every Evora and every DB11 read as sedans.
+    const body = (make: string, model: string, vClass = 'Subcompact Cars') =>
+      inferBodyStyle(minimalCar({ make, model, epa: { vClass } as Car['epa'] }), model);
+    expect(body('Porsche', '911 Carrera', 'Minicompact Cars')).toBe('coupe');
+    expect(body('Aston Martin', 'DB11 V12', 'Minicompact Cars')).toBe('coupe');
+    expect(body('Nissan', 'GT-R')).toBe('coupe');
+    expect(body('Bentley', 'Continental GT')).toBe('coupe');
+    expect(body('Rolls-Royce', 'Wraith', 'Large Cars')).toBe('coupe');
+    expect(body('Bentley', 'Continental GTC')).toBe('convertible');
+    expect(body('Ferrari', 'California T', 'Minicompact Cars')).toBe('convertible');
+    expect(body('Aston Martin', 'DB9 Volante', 'Minicompact Cars')).toBe('convertible');
+    expect(body('Mercedes-Benz', 'AMG SL63')).toBe('convertible');
+    // City cars in the same class are hatchbacks; four-doors stay sedans.
+    expect(body('Fiat', '500', 'Minicompact Cars')).toBe('hatchback');
+    expect(body('Bentley', 'Flying Spur', 'Large Cars')).toBe('sedan');
+    expect(body('Aston Martin', 'Rapide S', 'Subcompact Cars')).toBe('sedan');
+    // The 1995 "Spirit III/Spur III/Dawn" is a saloon, not the Dawn convertible.
+    expect(body('Rolls-Royce', 'Spirit III/Spur III/Dawn', 'Large Cars')).toBe('sedan');
+  });
 });
 
 describe('shopping segments', () => {
@@ -181,6 +202,23 @@ describe('shopping segments', () => {
         'Cullinan SUV',
       ),
     ).toBe('utility');
+  });
+
+  it('calls supercars supercars, not muscle cars', () => {
+    const seg = (make: string, model: string, bodyStyle: Car['bodyStyle'] = 'coupe') =>
+      classifyShoppingSegment(
+        minimalCar({ make, model, bodyStyle, engine: { fuelType: 'gasoline', horsepower: 600 } }),
+        model,
+        bodyStyle,
+      );
+    expect(seg('Lamborghini', 'Huracan')).toBe('supercar');
+    expect(seg('Ferrari', '488 Spider', 'convertible')).toBe('supercar');
+    expect(seg('Audi', 'R8')).toBe('supercar');
+    expect(seg('Ford', 'GT')).toBe('supercar');
+    expect(seg('Ford', 'GT500')).toBe('muscle');
+    expect(seg('Lamborghini', 'Urus', 'suv')).toBe('utility');
+    // An "AMG" badge makes a sedan a sport sedan, not a two-door.
+    expect(seg('Mercedes-Benz', 'AMG GT S')).toBe('muscle');
   });
 
   it('leaves badge-named coupes to the sports-car / muscle split', () => {

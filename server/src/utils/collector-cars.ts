@@ -41,7 +41,15 @@ const RULES: CollectorRule[] = [
   // Air-cooled and track-special Porsches.
   { test: (c) => same(c.make, 'Porsche') && /^911/i.test(c.model) && c.year <= 1998 },
   {
-    test: (c, age) => same(c.make, 'Porsche') && /^911.*\b(gt2|gt3)\b/i.test(c.model) && age >= 15,
+    test: (c, age) =>
+      same(c.make, 'Porsche') &&
+      /\b911\b/.test(c.model) &&
+      /\b(gt2|gt3)\b/i.test(c.model) &&
+      age >= 15,
+  },
+  // Porsche's limited-run 911s, which trade well above their sticker.
+  {
+    test: (c) => same(c.make, 'Porsche') && /^911 (r|s\/t|sport classic|speedster)$/i.test(c.model),
   },
   { test: (c) => same(c.make, 'Porsche') && /carrera gt|^918/i.test(c.model) },
   // American collector cars.
@@ -53,14 +61,24 @@ const RULES: CollectorRule[] = [
   { test: (c, age) => /^(ferrari|lamborghini)$/i.test(c.make) && age >= 20 },
   {
     test: (c) =>
-      same(c.make, 'Ferrari') && /\b(f40|f50|enzo|laferrari|monza|daytona sp3)\b/i.test(c.model),
+      same(c.make, 'Ferrari') &&
+      /\b(f40|f50|f60|f80|enzo|laferrari|monza|daytona sp3)\b/i.test(c.model),
   },
   {
-    test: (c) => /mclaren/i.test(c.make) && /\b(p1|senna|speedtail|elva)\b/i.test(c.model),
+    test: (c) =>
+      /mclaren/i.test(c.make) && /\b(p1|senna|speedtail|elva|sabre|mso hs)\b/i.test(c.model),
   },
-  { test: (c) => same(c.make, 'Mercedes-Benz') && /\bslr\b/i.test(c.model) },
+  {
+    test: (c) =>
+      same(c.make, 'Lamborghini') && /\b(reventon|veneno|sian|countach)\b/i.test(c.model),
+  },
+  { test: (c) => same(c.make, 'Aston Martin') && /\b(valour|zagato)\b/i.test(c.model) },
+  // The SLS now lists above its $200,000 sticker.
+  { test: (c) => same(c.make, 'Mercedes-Benz') && /\b(slr|sls)\b/i.test(c.model) },
   { test: (c) => same(c.make, 'Lexus') && /\blfa\b/i.test(c.model) },
   { test: (c) => same(c.make, 'BMW') && /^z8/i.test(c.model) },
+  // US-market Elises and Exiges (2005–11) list near or above their sticker.
+  { test: (c) => same(c.make, 'Lotus') && /^(elise|exige)/i.test(c.model) },
   { test: (c) => /^(bugatti|bugatti rimac|pagani|koenigsegg)$/i.test(c.make) },
 ];
 

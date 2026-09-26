@@ -25,6 +25,7 @@ export type ShoppingSegment =
   | 'sport-sedan'
   | 'muscle'
   | 'sports-car'
+  | 'supercar'
   | 'luxury'
   | 'mainstream'
   | 'utility'
