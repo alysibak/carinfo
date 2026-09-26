@@ -45,8 +45,10 @@ export default function Methodology() {
             </li>
             <li>
               <strong className="text-zinc-200 font-medium">Normalization</strong>: fuel-type
-              inference, body-style correction, shopping-segment taxonomy, and Ontario/CAD market
-              valuation run on every served record.
+              inference, body-style correction, shopping-segment taxonomy, and regional CAD market
+              valuation run on every served record. Trims EPA leaves out of the model name (a
+              Mustang GT is just &ldquo;Mustang&rdquo;, a 2019 Civic Type R a &ldquo;Civic
+              5Dr&rdquo;) are named from the engine and gearbox, and marked as estimated.
             </li>
             <li>
               <strong className="text-zinc-200 font-medium">API + UI</strong>: dossier, compare, and
