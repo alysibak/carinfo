@@ -162,7 +162,10 @@ export const REGIONAL_ASSUMPTIONS: Record<RegionId, RegionalAssumptions> = {
     // $16.50/kg at the pump (HTEC FAQ, 2026).
     hydrogenCadPerKg: 16.5,
     annualKm: 14000,
-    registrationCadPerYear: 180,
+    // B.C.'s annual vehicle licence fee is set by net weight (Motor Vehicle
+    // Fees Regulation, B.C. Reg. 334/91): $61 for a 1,401–1,900 kg passenger
+    // vehicle, the band most cars fall in. The $180 used before had no source.
+    registrationCadPerYear: 61,
     beaterValueThresholdCad: 8500,
     // ICBC (basic + optional) averages about $1,832 in 2026; a clean record
     // pays $1,600–$2,000. These bases were higher than Ontario's, inverting

@@ -129,7 +129,8 @@ export default function Methodology() {
             </li>
             <li>
               Maintenance and tires follow AAA and CAA driving-cost studies, by fuel type and age.
-              Ontario charges no plate renewal fee (since 2022).
+              Ontario charges no plate renewal fee (since 2022); B.C.&rsquo;s licence fee is set by
+              weight, about $61 a year for most cars.
             </li>
             <li>
               Energy costs from your region&rsquo;s gas, diesel and home-electricity prices (recent
