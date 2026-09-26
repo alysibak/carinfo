@@ -77,6 +77,16 @@ const SPORT_SEDAN_PATTERN =
   /\b(wrx|sti|si\b|civic si|accord sport|camry trd|altima sr|model 3 performance|340i|m340|amg|c63|s4|s5|rs3|giulia)\b/i;
 
 /**
+ * Performance trims that make a sedan a sport sedan (a Challenger with the
+ * same badge is a coupe, and stays muscle). Badges EPA sometimes puts in the
+ * name are read from it; generic words ("GT", "SS") count only as a trim
+ * derived from the engine (performance-trims.ts), so an Elantra GT hatchback
+ * is not promoted.
+ */
+const SEDAN_BADGE_IN_NAME = /\b(r\/t|scat pack|hellcat|srt8?)\b/i;
+const SEDAN_DERIVED_TRIM = /\b(ss|sho|n line|gt|r\/t|scat pack|hellcat|srt8)\b/i;
+
+/**
  * Factory performance badges: Audi S / RS / TT RS, BMW M. These identify a
  * performance car on their own. Relying on a horsepower figure instead let a
  * placeholder rating decide: the 2020-22 Audi S8 was a sport sedan only by
@@ -261,7 +271,9 @@ export function classifyShoppingSegment(
   displayModel: string,
   bodyStyle: BodyStyle,
 ): ShoppingSegment {
-  const h = `${displayModel} ${car.make}`.toLowerCase();
+  // The derived trim counts: many listings have no horsepower on file, so the
+  // horsepower rule below cannot tell a Charger R/T or an Impreza STI apart.
+  const h = `${displayModel} ${car.variant ?? ''} ${car.make}`.toLowerCase();
   const ft = car.engine.fuelType;
   const hp = car.engine.horsepower ?? 0;
   const disp = car.engine.displacement ?? 0;
@@ -280,6 +292,12 @@ export function classifyShoppingSegment(
     ((bodyStyle === 'sedan' || bodyStyle === 'wagon') && PERFORMANCE_BADGE_PATTERN.test(h))
   )
     return 'sport-sedan';
+  if (
+    (bodyStyle === 'sedan' || bodyStyle === 'hatchback') &&
+    (SEDAN_BADGE_IN_NAME.test(displayModel) || SEDAN_DERIVED_TRIM.test(car.variant ?? ''))
+  ) {
+    return 'sport-sedan';
+  }
   if (isLuxuryFlagship(car, displayModel)) return 'luxury';
   if (bodyStyle === 'sedan' && hp >= 250 && disp >= 2) return 'sport-sedan';
   if (bodyStyle === 'coupe' || bodyStyle === 'convertible') {

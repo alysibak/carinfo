@@ -87,9 +87,7 @@ export function normalizeCarRecord(car: Car): Car {
     normalized = applyFuelTypeCorrection(normalized);
   }
 
-  normalized = applyVehicleTaxonomy(normalized);
-  normalized = dropPhantomDisplacement(normalized);
-
+  // Before the taxonomy, which reads the trim to place the car in a segment.
   const variant = deriveVariant(normalized);
   if (variant && normalized.variant !== variant) {
     normalized = {
@@ -98,6 +96,9 @@ export function normalizeCarRecord(car: Car): Car {
       provenance: { ...normalized.provenance, variant: 'estimated' },
     };
   }
+
+  normalized = applyVehicleTaxonomy(normalized);
+  normalized = dropPhantomDisplacement(normalized);
 
   return applyMarketValue(normalized);
 }

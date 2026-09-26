@@ -121,6 +121,26 @@ describe('vehicle-taxonomy', () => {
 });
 
 describe('shopping segments', () => {
+  it('reads a derived trim: a Charger R/T is a sport sedan, a Challenger R/T stays muscle', () => {
+    const v8 = { fuelType: 'gasoline' as const, cylinders: 8, displacement: 5.7 };
+    const charger = minimalCar({ make: 'Dodge', model: 'Charger', engine: v8, variant: 'R/T' });
+    expect(classifyShoppingSegment(charger, 'Charger', 'sedan')).toBe('sport-sedan');
+    const challenger = minimalCar({
+      make: 'Dodge',
+      model: 'Challenger',
+      engine: v8,
+      variant: 'R/T',
+      bodyStyle: 'coupe',
+    });
+    expect(classifyShoppingSegment(challenger, 'Challenger', 'coupe')).toBe('muscle');
+    // "GT" in a name alone does not make a sport sedan.
+    const elantraGt = minimalCar({ make: 'Hyundai', model: 'Elantra GT', bodyStyle: 'hatchback' });
+    expect(classifyShoppingSegment(elantraGt, 'Elantra GT', 'hatchback')).not.toBe('sport-sedan');
+    // The 2019+ Type R is a "Civic 5Dr" to EPA.
+    const typeR = minimalCar({ make: 'Honda', model: 'Civic 5Dr', variant: 'Type R' });
+    expect(classifyShoppingSegment(typeR, 'Civic', 'hatchback')).toBe('hot-hatch');
+  });
+
   const segmentOf = (predicate: (c: Car) => boolean, label: string) => {
     const car = findEnrichedCar(predicate);
     expect(car, `${label} should exist in the corpus`).toBeDefined();
