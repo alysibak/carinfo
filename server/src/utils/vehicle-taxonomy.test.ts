@@ -69,6 +69,22 @@ describe('vehicle-taxonomy', () => {
     expect(canonicalizeDisplayModel(base)).toBe('Golf');
   });
 
+  it('reads "Touring" as a trim and keeps EPA utility classes over a "Wagon" name', () => {
+    const cases: Array<[Partial<Car> & Pick<CarSpecs, 'make' | 'model'>, string]> = [
+      [{ make: 'Honda', model: 'Accord Sport/Touring' }, 'sedan'],
+      [{ make: 'Honda', model: 'Pilot AWD Touring/Elite/Black', bodyStyle: 'suv' }, 'suv'],
+      [{ make: 'Porsche', model: '911 GT3 Touring', bodyStyle: 'coupe' }, 'coupe'],
+      [{ make: 'Ford', model: 'E150 Club Wagon', bodyStyle: 'van' }, 'van'],
+      [{ make: 'Ford', model: 'Windstar FWD Wagon', bodyStyle: 'minivan' }, 'minivan'],
+      [{ make: 'Toyota', model: 'Land Cruiser Wagon 4WD', bodyStyle: 'suv' }, 'suv'],
+      [{ make: 'Volkswagen', model: 'Jetta SportWagen' }, 'wagon'],
+      [{ make: 'Mercedes-Benz', model: 'E350 Wagon' }, 'wagon'],
+    ];
+    for (const [car, expected] of cases) {
+      expect(inferBodyStyle(minimalCar(car)), car.model).toBe(expected);
+    }
+  });
+
   it('files two-door cars EPA calls "small cars" as coupes', () => {
     // EPA's size classes made the Mustang, Camaro and Challenger sedans, so
     // the coupe filter missed them and valuation used an economy car's curve.

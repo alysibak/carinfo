@@ -57,7 +57,6 @@ const LUXURY_MAKES = new Set([
   'Bentley',
   'Rolls-Royce',
   'Alfa Romeo',
-  'GMC',
   'Lucid',
   'Rivian',
   'Polestar',
@@ -327,6 +326,7 @@ const PERFORMANCE_VARIANT_RULES: ModelMsrpRule[] = [
     test: (c) => c.make === 'Ford' && /f150 raptor r/i.test(c.model),
     msrp: 110000,
   },
+  { test: (c) => c.make === 'Ford' && /^ranger raptor/i.test(c.model), msrp: 57000 },
   {
     test: (c) => c.make === 'Ford' && /raptor/i.test(c.model),
     msrp: (c) => (c.year >= 2021 ? 70000 : c.year >= 2017 ? 52000 : 45000),
@@ -448,8 +448,85 @@ const EV_LINE_RULES: ModelMsrpRule[] = [
   { test: evLine('Volvo', /^(xc40|c40|ex40|ec40)/i), msrp: 54000, evTrims: true },
 ];
 
+/**
+ * Mid-size pickups (Tacoma, Colorado, Ranger, Frontier...). EPA files many in
+ * "Standard Pickup Trucks" by weight, so the name decides. They keep more of
+ * their value than full-size trucks: a 2019 Colorado lists at ~$27,100 CAD
+ * (CarGurus.ca, September 2026), about 70% of its sticker at seven years.
+ */
+const MIDSIZE_PICKUP_NAMES =
+  /^(colorado|canyon|tacoma|frontier|ranger|ridgeline|gladiator|dakota|s10|sonoma|maverick|santa cruz)\b/i;
+
+export function isMidsizePickup(car: CarSpecs): boolean {
+  if (MIDSIZE_PICKUP_NAMES.test(car.model)) return true;
+  return car.bodyStyle === 'truck' && /^small pickup/i.test(car.epa?.vClass ?? '');
+}
+
+/**
+ * Trucks and body-on-frame SUVs whose size class misprices them. Prices are
+ * the mid trim of the generation (USD).
+ */
+const TRUCK_SUV_RULES: ModelMsrpRule[] = [
+  {
+    test: (c) => c.make === 'Toyota' && /^tacoma/i.test(c.model),
+    msrp: (c) => (c.year >= 2024 ? 44000 : c.year >= 2016 ? 38000 : 30000),
+  },
+  {
+    test: (c) => /^(chevrolet|gmc)$/i.test(c.make) && /^(colorado|canyon)/i.test(c.model),
+    msrp: (c) => {
+      const base = c.year >= 2023 ? 40000 : 36000;
+      const trim = /zr2|at4x/i.test(c.model) ? 1.25 : 1;
+      return base * trim * (c.make === 'GMC' ? 1.08 : 1);
+    },
+  },
+  {
+    test: (c) => c.make === 'Nissan' && /^frontier/i.test(c.model),
+    msrp: (c) => (c.year >= 2022 ? 38000 : 30000),
+  },
+  { test: (c) => c.make === 'Ford' && /^ranger/i.test(c.model) && c.year >= 2019, msrp: 36000 },
+  { test: (c) => c.make === 'Ford' && /^maverick/i.test(c.model), msrp: 30000 },
+  { test: (c) => c.make === 'Honda' && /^ridgeline/i.test(c.model), msrp: 42000 },
+  { test: (c) => c.make === 'Hyundai' && /^santa cruz/i.test(c.model), msrp: 34000 },
+  { test: (c) => c.make === 'Jeep' && /^gladiator/i.test(c.model), msrp: 46000 },
+  {
+    // Every Wrangler shared the $30,000 small-SUV anchor: a 2018 listed at
+    // $18,500 against ~$24,300 on CarGurus.ca.
+    test: (c) => c.make === 'Jeep' && /wrangler/i.test(c.model),
+    msrp: (c) => {
+      if (litres(c) >= 6) return 80000; // 392
+      if (/4xe/i.test(c.model)) return 52000;
+      const fourDoor = /unlimited|4dr/i.test(c.model);
+      const base = c.year >= 2018 ? (fourDoor ? 38000 : 33000) : fourDoor ? 32000 : 28000;
+      return /rubic/i.test(c.model) ? base + 8000 : base;
+    },
+  },
+  {
+    // The full-size Bronco, not the Bronco Sport (Raptor has its own rule).
+    test: (c) => c.make === 'Ford' && /^bronco\b(?! sport)/i.test(c.model) && c.year >= 2021,
+    msrp: (c) => (litres(c) >= 2.6 ? 50000 : 42000),
+  },
+  {
+    test: (c) => c.make === 'Toyota' && /^4runner/i.test(c.model),
+    msrp: (c) => (c.year >= 2025 ? 48000 : c.year >= 2010 ? 40000 : 34000),
+  },
+  {
+    test: (c) => c.make === 'Toyota' && /^land cruiser/i.test(c.model),
+    msrp: (c) => (c.year >= 2024 ? 58000 : c.year >= 2008 ? 85000 : 60000),
+  },
+  {
+    test: (c) => c.make === 'Toyota' && /^highlander/i.test(c.model),
+    msrp: (c) => (c.year >= 2020 ? 42000 : c.year >= 2014 ? 38000 : 32000),
+  },
+  {
+    test: (c) => c.make === 'Toyota' && /^rav4 (prime|plug-in)/i.test(c.model),
+    msrp: (c) => (c.year >= 2025 ? 45000 : 40000),
+  },
+  { test: (c) => c.make === 'Chrysler' && /^pacifica hybrid/i.test(c.model), msrp: 43000 },
+];
+
 const MODEL_MSRP_RULES: ModelMsrpRule[] = [
   ...EV_LINE_RULES,
+  ...TRUCK_SUV_RULES,
   {
     test: (c) => c.make === 'Tesla' && c.model.toLowerCase().includes('model s'),
     msrp: (c) => (c.year >= 2021 ? 95000 : c.year >= 2016 ? 85000 : 75000),
@@ -475,8 +552,9 @@ const MODEL_MSRP_RULES: ModelMsrpRule[] = [
     msrp: (c) => (c.year >= 2018 ? 35000 : c.year >= 2013 ? 32000 : 28000),
   },
   {
+    // $33,220 for the 2016–19 car; the 2011 launch price was $41,000.
     test: (c) => c.make === 'Chevrolet' && c.model.toLowerCase().includes('volt'),
-    msrp: (c) => (c.year >= 2016 ? 36000 : 34000),
+    msrp: (c) => (c.year >= 2016 ? 34000 : 38000),
   },
   { test: (c) => c.make === 'Fiat' && c.model.toLowerCase().includes('500e'), msrp: 33000 },
   {
@@ -771,7 +849,23 @@ const CLASS_ANCHORS_USD: Array<[RegExp, number]> = [
   [/^vans/i, 44_000],
 ];
 
+/**
+ * EPA splits SUVs into "Small" and "Standard" by gross weight rating, not size
+ * or price, so a Telluride (about $36,000–$50,000 new) anchored like a CR-V
+ * while its twin, the Palisade, flipped between the two from year to year, and
+ * a 2023 Pilot was worth $29,500 or $44,500 depending on its drive. Mainstream
+ * three-row and mid-size two-row SUVs are named instead.
+ */
+const THREE_ROW_SUV =
+  /^(pilot|pathfinder|cx-9|cx-90|atlas(?! cross)|palisade|telluride|ascent|traverse|explorer|durango|enclave|acadia|flex|borrego|santa fe xl)\b/i;
+const MIDSIZE_TWO_ROW_SUV =
+  /^(sorento|santa fe(?! sport)|murano|edge|blazer(?! ev)|passport|venza|atlas cross sport|cx-70)\b/i;
+
 function classAnchorUsd(car: CarSpecs): number | null {
+  if (car.bodyStyle === 'suv' && !LUXURY_MAKES.has(car.make)) {
+    if (THREE_ROW_SUV.test(car.model)) return 40_000;
+    if (MIDSIZE_TWO_ROW_SUV.test(car.model)) return 36_000;
+  }
   const vClass = car.epa?.vClass;
   if (!vClass) return null;
   return CLASS_ANCHORS_USD.find(([pattern]) => pattern.test(vClass))?.[1] ?? null;
@@ -818,6 +912,10 @@ export function estimateNewVehicleMsrp(car: CarSpecs): number {
       baseByStyle[car.bodyStyle] ||
       34000;
     if (LUXURY_MAKES.has(car.make)) price *= luxuryClassMultiplier(car.epa?.vClass);
+    // GMC sells Chevrolet's trucks and SUVs a trim step up. It used to be on
+    // the luxury list, which put a 2019 Sierra 1500 at $52,500 against ~$34,500
+    // listed (CarGurus.ca, September 2026).
+    if (car.make === 'GMC') price *= 1.08;
   }
   if (isHeavyEvTruck(car)) price = Math.max(price, 95000);
 
@@ -978,9 +1076,11 @@ function retentionFraction(
   }
 
   if (fuelType === 'plug-in hybrid') {
-    const k = 0.14;
+    // 0.14 had a 2020 Pacifica Hybrid 23% and a 2020 Prius Prime 9% under
+    // their CarGurus.ca averages (September 2026).
+    const k = 0.12;
     const base = 0.08 + 0.92 * Math.exp(-k * age);
-    return Math.min(0.95, base * brand);
+    return Math.min(0.95, base * brand * highRetention(car));
   }
 
   if (fuelType === 'hydrogen') {
@@ -1002,7 +1102,11 @@ function retentionFraction(
     // about three-quarters of the sticker at six years (CarGurus.ca, 2026:
     // 2020 Mustang EcoBoost ~$25,000, GT ~$33,500 CAD); 0.108 gave ~57%.
     performance: 0.075,
-    utility: 0.086,
+    // Pickups and vans. Against today's sticker, 2019 full-size pickups list at
+    // 45–55% (Silverado ~$30,800, Sierra ~$34,500, Tundra ~$39,600 CAD on
+    // CarGurus.ca, September 2026); 0.086 held them near 60%. Mid-size pickups
+    // keep more, and get a retention bonus below.
+    utility: 0.12,
     exotic: 0.144,
   };
   const segmentFloor: Record<MarketSegment, number> = {
@@ -1018,7 +1122,8 @@ function retentionFraction(
   const floorFrac = segmentFloor[segment];
   const ageCurve = floorFrac + (1 - floorFrac) * Math.exp(-k * age);
 
-  let modifier = brand * enthusiastRetention(car);
+  let modifier = brand * highRetention(car);
+  if (segment === 'utility' && isMidsizePickup(car)) modifier *= 1.2;
   if (fuelType === 'hybrid') modifier *= 1.03;
   if (age > 12) modifier *= 0.92;
 
@@ -1026,31 +1131,43 @@ function retentionFraction(
 }
 
 /**
- * Halo cars that hold value far better than their segment: 2026 listings put
- * a 2020 Civic Type R and a 2021 Corvette above their original sticker
- * (CarGurus.ca averages ~$49,900 and ~$91,200 CAD). The 0.97 cap above still
- * holds, so these read as "close to sticker", never as appreciating.
+ * Models that hold value far better than their segment. Halo cars: 2026
+ * listings put a 2020 Civic Type R and a 2021 Corvette above their original
+ * sticker (CarGurus.ca averages ~$49,900 and ~$91,200 CAD). Toyota's trucks
+ * and the RAV4 Prime: a 2019 Tacoma lists at ~$39,800 CAD and a 2021 RAV4
+ * Prime at ~$39,200, close to what they cost new. The 0.97 cap still holds,
+ * so these read as "close to sticker", never as appreciating.
  */
-const ENTHUSIAST_MODELS: Array<(c: CarSpecs) => boolean> = [
-  (c) => c.make === 'Chevrolet' && /^corvette/i.test(c.model) && c.year >= 2014,
-  (c) =>
-    c.make === 'Chevrolet' &&
-    /^camaro/i.test(c.model) &&
-    (litres(c) >= 7 || c.engine.aspiration === 'supercharged'),
-  (c) => c.make === 'Honda' && (/type r/i.test(c.model) || isCivicTypeR(c)),
-  (c) => c.make === 'Ford' && /shelby|gt350|gt500|dark horse/i.test(c.model),
-  (c) => c.make === 'Ford' && /raptor/i.test(c.model),
-  (c) =>
-    c.make === 'Dodge' &&
-    /^(challenger|charger)/i.test(c.model) &&
-    c.engine.aspiration === 'supercharged',
-  (c) => c.make === 'Ram' && /trx/i.test(c.model),
-  (c) => c.make === 'Nissan' && /gt-r/i.test(c.model),
-  (c) => c.make === 'Toyota' && /gr supra/i.test(c.model),
+const HIGH_RETENTION_MODELS: Array<[(c: CarSpecs) => boolean, number]> = [
+  [(c) => c.make === 'Chevrolet' && /^corvette/i.test(c.model) && c.year >= 2014, 1.5],
+  [
+    (c) =>
+      c.make === 'Chevrolet' &&
+      /^camaro/i.test(c.model) &&
+      (litres(c) >= 7 || c.engine.aspiration === 'supercharged'),
+    1.5,
+  ],
+  [(c) => c.make === 'Honda' && (/type r/i.test(c.model) || isCivicTypeR(c)), 1.5],
+  [(c) => c.make === 'Ford' && /shelby|gt350|gt500|dark horse/i.test(c.model), 1.5],
+  [(c) => c.make === 'Ford' && /raptor/i.test(c.model), 1.5],
+  [
+    (c) =>
+      c.make === 'Dodge' &&
+      /^(challenger|charger)/i.test(c.model) &&
+      c.engine.aspiration === 'supercharged',
+    1.5,
+  ],
+  [(c) => c.make === 'Ram' && /trx/i.test(c.model), 1.5],
+  [(c) => c.make === 'Nissan' && /gt-r/i.test(c.model), 1.5],
+  [(c) => c.make === 'Toyota' && /gr supra/i.test(c.model), 1.5],
+  [(c) => c.make === 'Toyota' && /^tacoma/i.test(c.model), 1.3],
+  [(c) => c.make === 'Toyota' && /^4runner/i.test(c.model), 1.4],
+  [(c) => c.make === 'Toyota' && /^land cruiser/i.test(c.model), 1.3],
+  [(c) => c.make === 'Toyota' && /^rav4 (prime|plug-in)/i.test(c.model), 1.4],
 ];
 
-function enthusiastRetention(car: CarSpecs): number {
-  return ENTHUSIAST_MODELS.some((test) => test(car)) ? 1.5 : 1;
+function highRetention(car: CarSpecs): number {
+  return HIGH_RETENTION_MODELS.find(([test]) => test(car))?.[1] ?? 1;
 }
 
 function roundMoney(n: number): number {

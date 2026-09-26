@@ -126,7 +126,6 @@ const LUXURY_MAKES = new Set([
   'Bentley',
   'Rolls-Royce',
   'Alfa Romeo',
-  'GMC',
 ]);
 
 function isHeavyEvTruck(car: CarSpecs): boolean {

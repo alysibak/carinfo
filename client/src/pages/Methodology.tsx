@@ -91,8 +91,13 @@ export default function Methodology() {
               1.2, not the exchange rate), then depreciated by age.
             </li>
             <li>
-              Checked against average Canadian asking prices for reference vehicles, including
-              performance cars; expect individual estimates to be within about 25%.
+              Checked against average Canadian asking prices for 46 reference vehicles, from
+              compacts to pickups, performance cars, plug-in hybrids and EVs; expect individual
+              estimates to be within about 25%.
+            </li>
+            <li>
+              Pickups depreciate on their own curve, mid-size pickups more gently than full-size,
+              and models known to hold value (Tacoma, 4Runner, RAV4 Prime) more gently still.
             </li>
             <li>
               Performance versions EPA lists under the base model&rsquo;s name (a Mustang GT, a

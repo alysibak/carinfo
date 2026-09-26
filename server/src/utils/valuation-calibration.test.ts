@@ -26,6 +26,10 @@ const TOLERANCE = 0.25;
 const named = (make: string, model: RegExp, year: number) => (c: Car) =>
   c.make === make && c.year === year && model.test(c.model) && c.engine.fuelType !== 'hybrid';
 
+/** A named model with a given engine, where EPA lists several under one name. */
+const withEngine = (make: string, model: RegExp, year: number, litres: number) => (c: Car) =>
+  named(make, model, year)(c) && c.engine.displacement === litres;
+
 const REFERENCES: Reference[] = [
   // New: midpoint of the Canadian MSRP range (before freight).
   {
@@ -181,6 +185,103 @@ const REFERENCES: Reference[] = [
       c.engine.aspiration === 'turbocharged' &&
       c.engine.displacement === 2,
     observedCad: 49_900,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  // Trucks and body-on-frame SUVs. GMC sat on the luxury list (Sierra +52%),
+  // pickups kept ~60% of today's price at seven years where listings show
+  // 45–55%, every Bronco shared the Bronco Sport's anchor (-40%), and Toyota's
+  // trucks hold value far beyond any segment curve (Tacoma -38%).
+  {
+    label: '2019 Chevrolet Silverado 1500 V8',
+    find: withEngine('Chevrolet', /^Silverado K10 4WD$/, 2019, 5.3),
+    observedCad: 30_840,
+    source: 'CarGurus Canada average (all trims), September 2026',
+  },
+  {
+    label: '2019 GMC Sierra 1500 V8',
+    find: withEngine('GMC', /^Sierra K10 4WD$/, 2019, 5.3),
+    observedCad: 34_470,
+    source: 'CarGurus Canada average (all trims), September 2026',
+  },
+  {
+    label: '2019 Toyota Tundra',
+    find: withEngine('Toyota', /^Tundra 4WD$/, 2019, 5.7),
+    observedCad: 39_560,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2019 Toyota Tacoma V6',
+    find: withEngine('Toyota', /^Tacoma 4WD$/, 2019, 3.5),
+    observedCad: 39_820,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2019 Chevrolet Colorado V6',
+    find: withEngine('Chevrolet', /^Colorado 4WD$/, 2019, 3.6),
+    observedCad: 27_130,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2018 Jeep Wrangler Unlimited (JL)',
+    find: withEngine('Jeep', /^New Wrangler Unlimited 4WD$/, 2018, 3.6),
+    observedCad: 24_340,
+    source: 'CarGurus Canada average (JK and JL), September 2026',
+  },
+  {
+    label: '2021 Ford Bronco 2.7',
+    find: withEngine('Ford', /^Bronco 4WD$/, 2021, 2.7),
+    observedCad: 39_210,
+    source: 'CarGurus Canada average (all trims), September 2026',
+  },
+  {
+    label: '2019 Toyota Highlander V6',
+    find: withEngine('Toyota', /^Highlander AWD$/, 2019, 3.5),
+    observedCad: 30_170,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2019 Chevrolet Tahoe',
+    find: withEngine('Chevrolet', /^Tahoe K1500 4WD$/, 2019, 5.3),
+    observedCad: 33_390,
+    source: 'CarGurus Ontario average, September 2026',
+  },
+  {
+    // EPA files it a "Small" SUV by weight, which anchored it like a CR-V
+    // (-27%) while its twin, the Palisade, flipped between classes by year.
+    label: '2021 Kia Telluride',
+    find: named('Kia', /^Telluride AWD$/, 2021),
+    observedCad: 32_270,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2019 Toyota Sienna',
+    find: named('Toyota', /^Sienna 2WD$/, 2019),
+    observedCad: 30_150,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  // Plug-in hybrids: the PHEV curve was steeper than the listings.
+  {
+    label: '2021 Toyota RAV4 Prime',
+    find: named('Toyota', /^RAV4 Prime 4WD$/, 2021),
+    observedCad: 39_240,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2020 Toyota Prius Prime',
+    find: named('Toyota', /^Prius Prime$/, 2020),
+    observedCad: 23_020,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2020 Chrysler Pacifica Hybrid',
+    find: named('Chrysler', /^Pacifica Hybrid$/, 2020),
+    observedCad: 29_890,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2019 Chevrolet Volt',
+    find: named('Chevrolet', /^Volt$/, 2019),
+    observedCad: 15_740,
     source: 'CarGurus Canada average, September 2026',
   },
   // Electric. Per-tier curves had these between -28% and +21%, and a battery

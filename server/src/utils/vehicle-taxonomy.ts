@@ -183,7 +183,13 @@ export function inferBodyStyle(car: CarSpecs, displayModel?: string): BodyStyle 
     return 'suv';
   if (/minivan|\bsienna\b|\bodyssey\b|\bpacifica\b|\bcarnival\b/.test(h)) return 'minivan';
   if (/\bvan\b|\btransit\b|\bsprinter\b|\bpromaster\b/.test(h)) return 'van';
-  if (/station wagon|\bwagon\b|\bavant\b|\btouring\b|\bestate\b/.test(h)) return 'wagon';
+  // "Wagon" in a name makes a car a wagon, not a van, minivan or SUV EPA filed
+  // as one (Club Wagon, Windstar Wagon, Land Cruiser Wagon, and the older
+  // "Outback Wagon", which split the Outback line between two body styles).
+  // "Touring" is a trim name (Accord Touring, Pilot Touring, 911 GT3 Touring);
+  // together these turned 261 listings into wagons.
+  const epaUtility = ['suv', 'truck', 'van', 'minivan'].includes(car.bodyStyle);
+  if (!epaUtility && /station wagon|\bwagon\b|\bavant\b|\bestate\b/.test(h)) return 'wagon';
 
   if (HATCHBACK_PATTERNS.some((re) => re.test(h) || re.test(model))) return 'hatchback';
 
