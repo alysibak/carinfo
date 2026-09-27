@@ -169,7 +169,9 @@ export function canonicalizeDisplayModel(car: CarSpecs): string {
 
   if (make === 'Honda') {
     if (/civic.*type r|type r.*civic/.test(h)) return 'Civic Type R';
-    if (/civic.*si|\bsi\b/.test(h) && /civic/.test(h)) return 'Civic Si';
+    // "Si" as a word: EPA's "SIL" trim code marks the lean-burn VX and HX and
+    // the 2003-05 Civic Hybrid, which read as a 201 hp "Civic Si".
+    if (/\bsi\b/.test(h) && /civic/.test(h)) return 'Civic Si';
     if (/civic.*hatch|hatch.*civic/.test(h)) return 'Civic Hatchback';
   }
 

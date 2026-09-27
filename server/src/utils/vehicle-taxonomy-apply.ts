@@ -39,3 +39,17 @@ export function applyVehicleTaxonomy(car: Car): Car {
 
   return { ...next, provenance: prov };
 }
+
+/**
+ * Re-derive the shopping segment after a corpus pass changed a car's
+ * horsepower (the segment reads it: 400 hp makes a coupe a muscle car).
+ */
+export function refreshShoppingSegment(car: Car): Car {
+  const taxonomy = resolveVehicleTaxonomy(car);
+  if (taxonomy.shoppingSegment === car.shoppingSegment) return car;
+  return {
+    ...car,
+    shoppingSegment: taxonomy.shoppingSegment,
+    ownershipProfile: taxonomy.ownershipProfile,
+  };
+}

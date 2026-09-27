@@ -9,11 +9,7 @@ import { resolve } from 'path';
 import { readFileSync } from 'fs';
 import { enrichCar } from '../src/services/content-enrichment.js';
 import { normalizeCarRecord } from '../src/utils/car-normalize.js';
-import {
-  dropInductionMismatchedHorsepower,
-  dropRatingsSharedAcrossEngines,
-  dropYearOverYearOutliers,
-} from '../src/utils/horsepower-plausibility.js';
+import { cleanCorpusHorsepower } from '../src/utils/horsepower-plausibility.js';
 import { resolveDataFile } from '../src/utils/data-paths.js';
 import { ensureUniqueIds } from '../src/utils/unique-ids.js';
 import { packRuntimeDatabase } from '../src/services/runtime-db.js';
@@ -38,27 +34,21 @@ console.log(
   `[build-runtime-db] Enriching + normalizing ${db.cars.length.toLocaleString()} cars...`,
 );
 
-const enriched = dropInductionMismatchedHorsepower(
+const { cars: normalized, report: hp } = cleanCorpusHorsepower(
   db.cars.map((car) => normalizeCarRecord(enrichCar(car))),
 );
-if (enriched.dropped) {
+for (const [count, what] of [
+  [hp.induction, 'borrowed from a non-turbo sibling'],
+  [hp.shared, 'shared by two engines of one model'],
+  [hp.yearOverYear, "out of line with the same engine's other years"],
+] as const) {
+  if (count) console.log(`[build-runtime-db] Dropped ${count} horsepower rating(s) ${what}.`);
+}
+if (hp.filled) {
   console.log(
-    `[build-runtime-db] Dropped ${enriched.dropped} horsepower rating(s) borrowed from a non-turbo sibling.`,
+    `[build-runtime-db] Filled ${hp.filled} horsepower rating(s) from the same engine in the same model (estimated).`,
   );
 }
-const shared = dropRatingsSharedAcrossEngines(enriched.cars);
-if (shared.dropped) {
-  console.log(
-    `[build-runtime-db] Dropped ${shared.dropped} horsepower rating(s) shared by two engines of one model.`,
-  );
-}
-const yearOverYear = dropYearOverYearOutliers(shared.cars);
-if (yearOverYear.dropped) {
-  console.log(
-    `[build-runtime-db] Dropped ${yearOverYear.dropped} horsepower rating(s) out of line with the same engine's other years.`,
-  );
-}
-const normalized = yearOverYear.cars;
 
 // Slug collisions made some vehicles unreachable by ID — see utils/unique-ids.ts.
 const { cars, report } = ensureUniqueIds(normalized);

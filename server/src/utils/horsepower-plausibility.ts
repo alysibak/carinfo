@@ -1,4 +1,5 @@
 import type { Car } from '../types/car.types.js';
+import { refreshShoppingSegment } from './vehicle-taxonomy-apply.js';
 
 /**
  * Whether an EPA Test Car List "Rated Horsepower" figure can be a real rating.
@@ -194,7 +195,7 @@ export function dropYearOverYearOutliers(cars: Car[]): { cars: Car[]; dropped: n
         return gap(hp, prev) > 0.2 && gap(hp, next) > 0.2 && mine > theirs - 0.2;
       }
     }
-    return neighbours.some((n) => gap(hp, n) > 0.35 && mine > atypicality(n, car) + 0.2);
+    return neighbours.some((n) => gap(hp, n) > 0.35 && mine > atypicality(n, car) + 0.15);
   };
 
   let dropped = 0;
@@ -206,4 +207,93 @@ export function dropYearOverYearOutliers(cars: Car[]): { cars: Car[]; dropped: n
     return { ...car, engine, provenance };
   });
   return { cars: out, dropped };
+}
+
+/**
+ * Fill a missing rating from the same engine in the same model.
+ *
+ * EPA's test-car file rates one configuration of an engine, so a 4WD, FFV or
+ * later-year listing of the same engine often has no figure of its own; the
+ * 7,547 listings restored from EPA's data in 2026 have none at all. A listing
+ * takes the rating of the same engine (size, cylinders, induction and fuel) in
+ * the same model family: from the same year when a sibling has one, else from
+ * the adjacent years, else from two years either side. Where the candidates
+ * disagree by more than 10% the engine probably changed, and the listing stays
+ * "not on file". Filled figures are labelled estimates. Run it after the
+ * clean-up passes, so a dropped rating is not copied.
+ */
+export function fillHorsepowerFromSiblings(cars: Car[]): { cars: Car[]; filled: number } {
+  const key = (c: Car) =>
+    [
+      c.make,
+      modelFamily(c.model),
+      c.engine.displacement,
+      c.engine.cylinders,
+      c.engine.aspiration ?? '',
+      c.engine.fuelType,
+    ].join('|');
+  const rated = new Map<string, Map<number, number[]>>();
+  for (const car of cars) {
+    const hp = car.engine.horsepower;
+    if (hp == null || !car.engine.displacement) continue;
+    if (car.provenance?.['engine.horsepower'] !== 'curated') continue;
+    const years = rated.get(key(car)) ?? new Map<number, number[]>();
+    years.set(car.year, [...(years.get(car.year) ?? []), hp]);
+    rated.set(key(car), years);
+  }
+
+  let filled = 0;
+  const out = cars.map((car) => {
+    if (car.engine.horsepower != null || !car.engine.displacement) return car;
+    const years = rated.get(key(car));
+    if (!years) return car;
+    const around = (offset: number) => [
+      ...(years.get(car.year - offset) ?? []),
+      ...(offset ? (years.get(car.year + offset) ?? []) : []),
+    ];
+    const candidates = [0, 1, 2].map(around).find((list) => list.length > 0);
+    if (!candidates) return car;
+    const sorted = [...candidates].sort((a, b) => a - b);
+    if (sorted[sorted.length - 1] / sorted[0] > 1.1) return car;
+    filled++;
+    return {
+      ...car,
+      // The lower middle: between two years, the one that does not overstate.
+      engine: { ...car.engine, horsepower: sorted[(sorted.length - 1) >> 1] },
+      provenance: { ...car.provenance, 'engine.horsepower': 'estimated' as const },
+    };
+  });
+  return { cars: out, filled };
+}
+
+export interface HorsepowerPassReport {
+  induction: number;
+  shared: number;
+  yearOverYear: number;
+  filled: number;
+}
+
+/**
+ * The corpus-wide horsepower passes, in order: drop borrowed ratings, then
+ * fill gaps from the ratings that remain. Cars whose figure changed get their
+ * shopping segment re-derived, since normalization placed them with the old
+ * one.
+ */
+export function cleanCorpusHorsepower(cars: Car[]): { cars: Car[]; report: HorsepowerPassReport } {
+  const induction = dropInductionMismatchedHorsepower(cars);
+  const shared = dropRatingsSharedAcrossEngines(induction.cars);
+  const yearOverYear = dropYearOverYearOutliers(shared.cars);
+  const fill = fillHorsepowerFromSiblings(yearOverYear.cars);
+  const out = fill.cars.map((car, i) =>
+    car.engine.horsepower === cars[i].engine.horsepower ? car : refreshShoppingSegment(car),
+  );
+  return {
+    cars: out,
+    report: {
+      induction: induction.dropped,
+      shared: shared.dropped,
+      yearOverYear: yearOverYear.dropped,
+      filled: fill.filled,
+    },
+  };
 }

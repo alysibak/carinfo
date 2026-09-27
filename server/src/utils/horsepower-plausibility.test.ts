@@ -4,6 +4,7 @@ import {
   dropInductionMismatchedHorsepower,
   dropRatingsSharedAcrossEngines,
   dropYearOverYearOutliers,
+  fillHorsepowerFromSiblings,
   isPlausibleRatedHorsepower,
 } from './horsepower-plausibility.js';
 
@@ -183,5 +184,56 @@ describe('dropYearOverYearOutliers', () => {
         car('Avenger', 2014, 2.4, 283, 'Dodge'),
       ])[1],
     ).toBe(178);
+  });
+});
+
+describe('fillHorsepowerFromSiblings', () => {
+  const car = (model: string, year: number, hp?: number, displacement = 3.5) =>
+    ({
+      id: `${model}-${year}-${hp ?? 'none'}`,
+      make: 'Toyota',
+      model,
+      year,
+      provenance: hp == null ? {} : { 'engine.horsepower': 'curated' },
+      engine: { fuelType: 'gasoline', displacement, cylinders: 6, horsepower: hp },
+      fuelEconomy: { combined: 22 },
+      transmission: { type: 'automatic' },
+      driveType: 'FWD',
+      bodyStyle: 'suv',
+    }) as Car;
+  const hpOf = (cars: Car[]) =>
+    fillHorsepowerFromSiblings(cars).cars.map((c) => [
+      c.engine.horsepower ?? null,
+      c.provenance['engine.horsepower'] ?? null,
+    ]);
+
+  it('takes the same engine of the same model, same year first, marked as an estimate', () => {
+    expect(
+      hpOf([
+        car('Highlander 2WD', 2019, 295),
+        car('Highlander AWD', 2019),
+        car('Highlander AWD', 2020),
+      ]),
+    ).toEqual([
+      [295, 'curated'],
+      [295, 'estimated'],
+      [295, 'estimated'],
+    ]);
+  });
+
+  it('leaves a gap when the neighbours disagree or the engine differs', () => {
+    expect(
+      hpOf([
+        car('Highlander 2WD', 2019, 270),
+        car('Highlander AWD', 2020),
+        car('Highlander 2WD', 2021, 310),
+        car('Highlander AWD', 2021, undefined, 2.7),
+      ]),
+    ).toEqual([
+      [270, 'curated'],
+      [null, null],
+      [310, 'curated'],
+      [null, null],
+    ]);
   });
 });

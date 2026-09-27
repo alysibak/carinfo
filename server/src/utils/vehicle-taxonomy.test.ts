@@ -119,6 +119,15 @@ describe('vehicle-taxonomy', () => {
     ).toBe('suv');
   });
 
+  it('reads "Si" as a word, not the "SIL" trim code', () => {
+    // The lean-burn Civic VX and the 2003-05 Civic Hybrid read as a 201 hp Civic Si.
+    const model = (m: string, trim: string, year: number) =>
+      canonicalizeDisplayModel(minimalCar({ make: 'Honda', model: m, trim, year }));
+    expect(model('Civic HB VX', 'civic-sil-manual-5-spd', 1995)).not.toBe('Civic Si');
+    expect(model('Civic Hybrid', 'civic-sil-ems-manual-5-spd', 2004)).not.toBe('Civic Si');
+    expect(model('Civic Si', 'civic-si-manual-6-spd', 2019)).toBe('Civic Si');
+  });
+
   it('files grand tourers and minicompact two-doors by their doors, not their size class', () => {
     // 304 Porsche 911s, every Evora and every DB11 read as sedans.
     const body = (make: string, model: string, vClass = 'Subcompact Cars') =>

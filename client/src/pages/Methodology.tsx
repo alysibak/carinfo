@@ -174,11 +174,12 @@ export default function Methodology() {
               coverage)
             </li>
             <li className="flex items-center gap-2">
-              <ProvenanceChip source="curated" /> EPA test-car rated horsepower (~71% coverage)
+              <ProvenanceChip source="curated" /> EPA test-car rated horsepower (~55% of listings)
             </li>
             <li className="flex items-center gap-2">
               <ProvenanceChip source="estimated" /> Market value, TCO, predicted 0-60, EV HP when no
-              test-car match
+              test-car match, and horsepower taken from the same engine in the same model (another
+              ~17% of listings)
             </li>
           </ul>
         </section>
