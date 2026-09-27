@@ -702,6 +702,16 @@ const PERFORMANCE_VARIANT_RULES: ModelMsrpRule[] = [
   { test: (c) => /^(pontiac solstice|saturn sky)/i.test(`${c.make} ${c.model}`), msrp: 25000 },
   { test: (c) => c.make === 'Toyota' && /^mr2/i.test(c.model), msrp: 25000 },
   { test: (c) => c.make === 'Fiat' && /124 spider/i.test(c.model), msrp: 27000 },
+  // City cars and small hybrids EPA also files as two-seaters: they took the
+  // class's sports-car price ($42,000-48,000), so a 2017 smart fortwo was
+  // worth $28,000 CAD and a CR-Z $28,500.
+  {
+    test: (c) => c.make === 'smart' && /^fortwo/i.test(c.model) && c.engine.fuelType !== 'electric',
+    msrp: (c) => (/convertible|cabriolet/i.test(c.model) ? 18000 : 15000),
+  },
+  { test: (c) => c.make === 'Honda' && /^cr-z/i.test(c.model), msrp: 22000 },
+  { test: (c) => c.make === 'Honda' && /del sol/i.test(c.model), msrp: 17000 },
+  { test: (c) => c.make === 'Suzuki' && /^x-90/i.test(c.model), msrp: 14000 },
   // Trucks and SUVs with a performance engine
   {
     test: (c) => c.make === 'Ford' && /f150 raptor r/i.test(c.model),
@@ -1580,6 +1590,9 @@ const HIGH_RETENTION_MODELS: Array<[(c: CarSpecs) => boolean, number]> = [
   ],
   [(c) => c.make === 'Ram' && /trx/i.test(c.model), 1.5],
   [(c) => c.make === 'Toyota' && /gr supra/i.test(c.model), 1.5],
+  // A small, much-missed hybrid coupe: a 2016 CR-Z averages about US$13,500
+  // in listings (Cars.com) against about $20,000-24,000 new.
+  [(c) => c.make === 'Honda' && /^cr-z/i.test(c.model), 1.15],
   [(c) => c.make === 'Toyota' && /^tacoma/i.test(c.model), 1.3],
   [(c) => c.make === 'Toyota' && /^4runner/i.test(c.model), 1.4],
   [(c) => c.make === 'Toyota' && /^land cruiser/i.test(c.model), 1.3],

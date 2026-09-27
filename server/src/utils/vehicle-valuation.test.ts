@@ -204,6 +204,20 @@ describe('vehicle-valuation (Ontario/CAD)', () => {
     expect(estimateMarketValue(car('BMW', /^i8 coupe$/i, 2019)).mid).toBeGreaterThan(82_000 * 0.8);
   });
 
+  it('prices city cars EPA files as two-seaters as city cars', () => {
+    const car = (make: string, model: RegExp, year: number) =>
+      getAllCars().find((c) => c.make === make && model.test(c.model) && c.year === year)!;
+    // They took the class's sports-car anchor: a 2017 smart fortwo read
+    // $28,000 and a 2016 CR-Z $28,500. KBB puts a 2017 fortwo at US$7,825-
+    // 9,725; a 2016 CR-Z averages about US$13,500 (Cars.com).
+    const fortwo = estimateMarketValue(car('smart', /^fortwo coupe$/, 2017)).mid;
+    expect(fortwo).toBeGreaterThan(9_725 * 1.2 * 0.7);
+    expect(fortwo).toBeLessThan(9_725 * 1.2 * 1.2);
+    const crz = estimateMarketValue(car('Honda', /^CR-Z$/, 2016)).mid;
+    expect(crz).toBeGreaterThan(13_500 * 1.2 * 0.8);
+    expect(crz).toBeLessThan(13_500 * 1.2 * 1.25);
+  });
+
   it('has zero degenerate resale ranges across the full dataset', () => {
     const cars = loadRawCars();
     let degenerate = 0;
