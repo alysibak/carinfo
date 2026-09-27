@@ -552,6 +552,32 @@ const SETS: Record<CompetitiveSet, Member[]> = {
   ],
 };
 
+/**
+ * Each member with the text a make must appear in for it to match: an
+ * anchored pattern names its makes ("^(chevrolet|gmc) ...", "^mini ..."), so
+ * a Camry is tested against the Toyota rows only. Predicates and unanchored
+ * patterns are tested for every car.
+ */
+const MEMBERS: Array<{ set: CompetitiveSet; member: Member; hint: string | null }> = (
+  Object.keys(SETS) as CompetitiveSet[]
+).flatMap((set) =>
+  SETS[set].map((member) => ({
+    set,
+    member,
+    hint: typeof member !== 'function' && member.source.startsWith('^') ? member.source : null,
+  })),
+);
+
+const membersByMake = new Map<string, typeof MEMBERS>();
+function membersFor(make: string): typeof MEMBERS {
+  let list = membersByMake.get(make);
+  if (!list) {
+    list = MEMBERS.filter(({ hint }) => !hint || hint.includes(make));
+    membersByMake.set(make, list);
+  }
+  return list;
+}
+
 const cache = new Map<string, CompetitiveSet[]>();
 
 /** The competitive sets a car belongs to (usually one, sometimes two, often none). */
@@ -564,9 +590,13 @@ export function competitiveSets(car: CarSpecs & { id?: string }): CompetitiveSet
   const name = `${car.make} ${car.model.replace(/^new /i, '')} ${car.variant ?? ''}`
     .toLowerCase()
     .replace(/\s+/g, ' ');
-  let sets = (Object.keys(SETS) as CompetitiveSet[]).filter((set) =>
-    SETS[set].some((m) => (typeof m === 'function' ? m(name, car) : m.test(name))),
-  );
+  const make = car.make.toLowerCase().split(' ')[0];
+  const found = new Set<CompetitiveSet>();
+  for (const { set, member } of membersFor(make)) {
+    if (found.has(set)) continue;
+    if (typeof member === 'function' ? member(name, car) : member.test(name)) found.add(set);
+  }
+  let sets = (Object.keys(SETS) as CompetitiveSet[]).filter((set) => found.has(set));
   // An S-Class or E-Class with two doors is a grand tourer, not a sedan's rival.
   if (car.bodyStyle === 'coupe' || car.bodyStyle === 'convertible') {
     const sedanSets: CompetitiveSet[] = ['flagship-sedan', 'midsize-luxury-car'];
