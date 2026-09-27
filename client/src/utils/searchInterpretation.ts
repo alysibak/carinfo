@@ -30,11 +30,29 @@ export function describeSearchInterpretation(
   } else if (price?.min != null) {
     lines.push(`Estimated value over ${cad(price.min)}.`);
   }
-  if (interpretation.cheapestFirst) {
+  const order = {
+    price: 'Cheapest first by estimated value',
+    fuelEconomy: 'Most fuel-efficient first',
+    horsepower: 'Most powerful first',
+  } as const;
+  if (interpretation.sortedBy) {
     lines.push(
-      interpretation.cheapestFrom != null
-        ? `Cheapest first by estimated value, model years ${interpretation.cheapestFrom} and newer.`
-        : 'Cheapest first by estimated value.',
+      interpretation.recentFrom != null
+        ? `${order[interpretation.sortedBy]}, model years ${interpretation.recentFrom} and newer.`
+        : `${order[interpretation.sortedBy]}.`,
+    );
+  }
+  if (interpretation.newestFrom != null) {
+    lines.push(`Model years ${interpretation.newestFrom} and newer.`);
+  }
+  if (interpretation.threeRow) {
+    lines.push(
+      'Minivans, passenger vans and SUVs sold with a third row, by model: EPA records no seating.',
+    );
+  }
+  if (interpretation.compared?.length) {
+    lines.push(
+      `Showing ${interpretation.compared.map((part) => `“${part}”`).join(' and ')} together.`,
     );
   }
   return lines;

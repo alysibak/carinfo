@@ -440,8 +440,8 @@ describe('car.service natural language search', () => {
       sort: { field: 'relevance', order: 'desc' },
       limit: 20,
     });
-    expect(cheap.interpretation?.cheapestFirst).toBe(true);
-    expect(cheap.results.every((c) => c.year >= cheap.interpretation!.cheapestFrom!)).toBe(true);
+    expect(cheap.interpretation?.sortedBy).toBe('price');
+    expect(cheap.results.every((c) => c.year >= cheap.interpretation!.recentFrom!)).toBe(true);
     const prices = cheap.results.map((c) => c.price!.msrp!);
     expect(prices).toEqual([...prices].sort((a, b) => a - b));
   });
@@ -459,6 +459,64 @@ describe('car.service natural language search', () => {
       // EPA filed the 2013-14 Viper under the make "SRT".
       searchCars({ query: 'viper', limit: 100 }).results.some((c) => c.make === 'SRT'),
     ).toBe(true);
+  });
+
+  it('reads year ranges, new and used, order, gearbox, engine and seating', () => {
+    const years = (q: string) => {
+      const { results, total } = searchCars({ query: q, limit: 500 });
+      expect(total, q).toBeGreaterThan(0);
+      return new Set(results.map((c) => c.year));
+    };
+    expect([...years('2015-2018 accord')].sort()).toEqual([2015, 2016, 2017, 2018]);
+    expect([...years('accord 2015 to 2018')].sort()).toEqual([2015, 2016, 2017, 2018]);
+    expect(Math.min(...years('civic since 2020'))).toBe(2020);
+    const fresh = searchCars({ query: 'new camry', limit: 50 });
+    expect(fresh.results.every((c) => c.model.toLowerCase().includes('camry'))).toBe(true);
+    expect(fresh.interpretation?.newestFrom).toBe(LATEST_FULL_MODEL_YEAR);
+    // "New" in a name is the name.
+    expect(searchCars({ query: 'new beetle', limit: 5 }).results[0].model).toMatch(/^New Beetle/);
+    expect(searchCars({ query: 'used civic', limit: 5 }).total).toBeGreaterThan(100);
+
+    const efficient = searchCars({
+      query: 'most fuel efficient suv',
+      sort: { field: 'relevance', order: 'desc' },
+      limit: 20,
+    });
+    expect(efficient.interpretation?.sortedBy).toBe('fuelEconomy');
+    const mpg = efficient.results.map((c) => c.fuelEconomy.combined ?? 0);
+    expect(mpg).toEqual([...mpg].sort((a, b) => b - a));
+
+    const manual = searchCars({ query: 'stick shift sedan', limit: 50 }).results;
+    expect(manual.every((c) => c.transmission.type === 'manual' && c.bodyStyle === 'sedan')).toBe(
+      true,
+    );
+    const v8 = searchCars({ query: 'v8 truck', limit: 50 }).results;
+    expect(v8.length).toBeGreaterThan(0);
+    expect(v8.every((c) => c.engine.cylinders === 8 && c.bodyStyle === 'truck')).toBe(true);
+    // A name that says V8 keeps its V12 sibling out.
+    expect(
+      searchCars({ query: 'vantage v8', limit: 50 }).results.every((c) => c.engine.cylinders === 8),
+    ).toBe(true);
+
+    const threeRow = searchCars({ query: 'third row suv', limit: 200 });
+    expect(threeRow.interpretation?.threeRow).toBe(true);
+    const names = threeRow.results.map((c) => `${c.make} ${c.model}`);
+    expect(names.some((n) => /Telluride|Palisade|Highlander|Pilot|Tahoe|Explorer/.test(n))).toBe(
+      true,
+    );
+    expect(names.some((n) => /RAV4|CR-V|Rogue Sport|Corolla/.test(n))).toBe(false);
+  });
+
+  it('shows both sides of a comparison, and treats plain words as what they mean', () => {
+    const both = searchCars({ query: 'honda accord vs toyota camry', limit: 10 });
+    expect(both.interpretation?.compared).toEqual(['honda accord', 'toyota camry']);
+    expect(new Set(both.results.map((c) => c.make))).toEqual(new Set(['Honda', 'Toyota']));
+    // "beetle" is two edits from "bentley": it found every Bentley.
+    expect(
+      searchCars({ query: 'beetle', limit: 20 }).results.every((c) => c.make === 'Volkswagen'),
+    ).toBe(true);
+    // "truck" is pickups, not the 1990s models EPA calls "Truck".
+    expect(searchCars({ query: 'truck', limit: 1 }).total).toBeGreaterThan(1000);
   });
 
   it('lists keyword-only searches newest first', () => {

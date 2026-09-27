@@ -60,6 +60,7 @@ const HATCHBACK_PATTERNS: RegExp[] = [
   /\blancer sportback\b/,
   /\bcaliber\b/,
   /\bmatrix\b/,
+  /\bbeetle\b/,
   /\bcooper s\b/,
   /\bmini s\b/,
   /\bgr corolla\b/,

@@ -20,6 +20,8 @@ import { ensureUniqueIds } from '../utils/unique-ids.js';
 import { type RuntimeDatabaseFile, unpackRuntimeDatabase } from './runtime-db.js';
 import { LATEST_FULL_MODEL_YEAR } from '../config/model-years.js';
 import { TRIM_QUERY_FORMS } from '../utils/performance-trims.js';
+import { extractQueryModifiers } from '../utils/search-modifiers.js';
+import { isThreeRow } from '../utils/three-row.js';
 
 function resolveDbPath(): string | null {
   return resolveDataFile('cars.json');
@@ -322,9 +324,48 @@ export function getCarPipelineDebug(id: string): {
  */
 export function searchCars(query: SearchQuery): SearchResults {
   ensureDatabase();
+  const parts = (query.query ?? '')
+    .split(/\s+(?:vs\.?|versus|compared (?:to|with))\s+/i)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (parts.length > 1) return searchTogether(query, parts.slice(0, 4));
+  return searchOne(query);
+}
+
+function searchOne(query: SearchQuery): SearchResults {
   const results = runSearch(query);
   if (results.total > 0) return results;
   return relaxTrailingWords(query) ?? results;
+}
+
+/**
+ * "honda accord vs toyota camry": each side searched on its own, the results
+ * taken in turn so both show on the first page. It showed only Accords, with
+ * "vs toyota camry" set aside.
+ */
+function searchTogether(query: SearchQuery, parts: string[]): SearchResults {
+  const lists = parts.map(
+    (part) => searchOne({ ...query, query: part, offset: 0, limit: 500 }).results,
+  );
+  const seen = new Set<string>();
+  const merged: Car[] = [];
+  for (let i = 0; lists.some((list) => i < list.length); i += 1) {
+    for (const list of lists) {
+      const car = list[i];
+      if (car && !seen.has(car.id)) {
+        seen.add(car.id);
+        merged.push(car);
+      }
+    }
+  }
+  const limit = Math.min(Math.max(query.limit || 50, 1), 500);
+  const offset = Math.max(query.offset || 0, 0);
+  return {
+    results: merged.slice(offset, offset + limit),
+    total: merged.length,
+    hasMore: offset + limit < merged.length,
+    interpretation: { compared: parts },
+  };
 }
 
 /**
@@ -345,11 +386,16 @@ function relaxTrailingWords(query: SearchQuery): SearchResults | null {
         !(token in BODY_WORDS) &&
         !(token in FUEL_WORDS) &&
         !(token in DRIVE_WORDS) &&
+        !(token in ASPIRATION_WORDS) &&
         !PRICE_WORD.test(token) &&
-        !/\d{2}/.test(token)
+        !/\d{2}/.test(token) &&
+        extractQueryModifiers(token).text !== '' &&
+        // "new camry" must not become "new" (the New Range Rover).
+        !resolveMakeFromTokens([token]) &&
+        !namesAModel(token)
       );
     });
-  for (let count = 1; count <= 3 && count < droppable.length; count += 1) {
+  for (let count = 1; count <= 3 && count <= droppable.length; count += 1) {
     const dropped = droppable.slice(-count);
     const skip = new Set(dropped.map((d) => d.index));
     const text = words.filter((_, i) => !skip.has(i)).join(' ');
@@ -736,16 +782,33 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
   if (!typed) return query;
 
   const filters = { ...(query.filters || {}) };
-  const price = extractPricePhrases(typed);
+  const explicit = query.filters;
+  const modifiers = extractQueryModifiers(typed);
+  const price = extractPricePhrases(modifiers.text);
   const interpretation: NonNullable<SearchQuery['interpretation']> = {};
-  if ((price.min != null || price.max != null) && !query.filters?.price) {
+  if ((price.min != null || price.max != null) && !explicit?.price) {
     filters.price = { min: price.min, max: price.max };
     interpretation.price = { min: price.min, max: price.max };
   }
+  if (modifiers.year && !explicit?.year) {
+    filters.year = modifiers.year;
+    if (modifiers.newest && modifiers.year.min != null && modifiers.year.max == null) {
+      interpretation.newestFrom = modifiers.year.min;
+    }
+  }
+  if (modifiers.transmission && !explicit?.transmission?.length) {
+    filters.transmission = modifiers.transmission;
+  }
+  if (modifiers.cylinders && !explicit?.cylinders?.length) filters.cylinders = modifiers.cylinders;
+  if (modifiers.threeRow) {
+    filters.threeRow = true;
+    interpretation.threeRow = true;
+  }
   let sort = query.sort;
-  if (price.cheapest && (!sort || sort.field === 'relevance')) {
-    sort = { field: 'price', order: 'asc' };
-    interpretation.cheapestFirst = true;
+  const sortedBy = price.cheapest ? 'price' : modifiers.sortedBy;
+  if (sortedBy && (!sort || sort.field === 'relevance')) {
+    sort = { field: sortedBy, order: sortedBy === 'price' ? 'asc' : 'desc' };
+    interpretation.sortedBy = sortedBy;
   }
   const withInterpretation = (q: SearchQuery): SearchQuery =>
     Object.keys(interpretation).length ? { ...q, sort, interpretation } : { ...q, sort };
@@ -783,6 +846,15 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
       filters.make = [makeHit.make];
       textTokens.splice(makeHit.index, makeHit.consumed);
     }
+  }
+
+  // Nothing but body, fuel, drive or induction words: "truck" means pickups,
+  // not the 1990s models EPA calls "Truck 2WD".
+  const isKeyword = (t: string) =>
+    !!(BODY_WORDS[t] || FUEL_WORDS[t] || DRIVE_WORDS[t] || ASPIRATION_WORDS[t]);
+  if (!filters.model?.length && textTokens.length > 0 && textTokens.every(isKeyword)) {
+    const kept = applyKeywordFilters(textTokens, filters, query.filters);
+    textTokens.splice(0, textTokens.length, ...kept);
   }
 
   if (!filters.model?.length && textTokens.length === 1) {
@@ -854,9 +926,9 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
 
   // "Cheapest" over every year on file is a list of 30-year-old Accents: keep
   // to the last ten model years unless the query gives years.
-  if (interpretation.cheapestFirst && !filters.year) {
+  if (interpretation.sortedBy === 'price' && !filters.year) {
     filters.year = { min: LATEST_FULL_MODEL_YEAR - 10 };
-    interpretation.cheapestFrom = LATEST_FULL_MODEL_YEAR - 10;
+    interpretation.recentFrom = LATEST_FULL_MODEL_YEAR - 10;
   }
 
   return withInterpretation({
@@ -999,6 +1071,13 @@ const FUEL_WORDS: Record<string, string[]> = {
   fcev: ['hydrogen'],
 };
 
+const ASPIRATION_WORDS: Record<string, string[]> = {
+  turbo: ['turbocharged', 'turbocharged and supercharged'],
+  turbocharged: ['turbocharged', 'turbocharged and supercharged'],
+  'twin-turbo': ['turbocharged', 'turbocharged and supercharged'],
+  supercharged: ['supercharged', 'turbocharged and supercharged'],
+};
+
 const DRIVE_WORDS: Record<string, string[]> = {
   awd: ['AWD', '4WD'],
   '4wd': ['4WD', 'AWD'],
@@ -1019,6 +1098,7 @@ function applyKeywordFilters(
   const bodies = new Set<string>();
   const fuels = new Set<string>();
   const drives = new Set<string>();
+  const aspirations = new Set<string>();
   const kept: string[] = [];
   for (const token of tokens) {
     if (BODY_WORDS[token] && !explicit?.bodyStyle?.length) bodies.add(BODY_WORDS[token]);
@@ -1026,11 +1106,14 @@ function applyKeywordFilters(
       for (const f of FUEL_WORDS[token]) fuels.add(f);
     } else if (DRIVE_WORDS[token] && !explicit?.driveType?.length) {
       for (const d of DRIVE_WORDS[token]) drives.add(d);
+    } else if (ASPIRATION_WORDS[token] && !explicit?.aspiration?.length) {
+      for (const a of ASPIRATION_WORDS[token]) aspirations.add(a);
     } else kept.push(token);
   }
   if (bodies.size) filters.bodyStyle = [...bodies];
   if (fuels.size) filters.fuelType = [...fuels];
   if (drives.size) filters.driveType = [...drives];
+  if (aspirations.size) filters.aspiration = [...aspirations];
   return kept;
 }
 
@@ -1099,19 +1182,42 @@ function resolveMakeFromTokens(
     if (hit) return { make: hit, index: i, consumed: 2 };
   }
 
-  // 3) Unique prefix single token ("chev" → Chevrolet) — not used for multi-word
+  // 3) Unique prefix single token ("chev" → Chevrolet) — not used for multi-word.
+  // Neither a prefix nor a typo when the word is a model's name: "beetle" is
+  // two edits from "bentley", and searched every Bentley instead of Beetles.
   for (let i = 0; i < tokens.length; i++) {
+    if (namesAModel(tokens[i])) continue;
     const hit = findPrefixMake(tokens[i]);
     if (hit) return { make: hit, index: i, consumed: 1 };
   }
 
   // 4) Fuzzy single token for typos: "toyata" → Toyota
   for (let i = 0; i < tokens.length; i++) {
+    if (namesAModel(tokens[i])) continue;
     const hit = findFuzzyMake(tokens[i]);
     if (hit) return { make: hit, index: i, consumed: 1 };
   }
 
   return null;
+}
+
+const modelWordCache = new Map<string, boolean>();
+
+/** Whether a word is a whole model name ("beetle", "camry"), not a prefix of one ("land"). */
+function namesAModel(token: string): boolean {
+  const word = token.toLowerCase();
+  let hit = modelWordCache.get(word);
+  if (hit === undefined) {
+    hit = false;
+    for (const [key, cars] of modelIndex) {
+      if (key === word || (cars.length && modelFamilyName(cars[0].model) === word)) {
+        hit = true;
+        break;
+      }
+    }
+    modelWordCache.set(word, hit);
+  }
+  return hit;
 }
 
 function findExactMake(label: string): string | null {
@@ -1393,7 +1499,14 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
   const hasPriceMin = filters?.price?.min != null;
   const hasPriceMax = filters?.price?.max != null;
 
+  const cylinderSet = filters?.cylinders?.length ? new Set(filters.cylinders) : null;
+  const aspirationSet = filters?.aspiration?.length ? new Set(filters.aspiration) : null;
+  const threeRow = filters?.threeRow === true;
+
   const needsFiltering =
+    !!cylinderSet ||
+    !!aspirationSet ||
+    threeRow ||
     hasTextSearch ||
     hasModel ||
     !!query.trimForms?.length ||
@@ -1447,6 +1560,10 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
     if (modelSet && !modelSet.has(car.model.toLowerCase())) {
       continue;
     }
+
+    if (cylinderSet && !cylinderSet.has(car.engine.cylinders ?? -1)) continue;
+    if (aspirationSet && !aspirationSet.has(car.engine.aspiration ?? '')) continue;
+    if (threeRow && !isThreeRow(car)) continue;
 
     // A trim the query ended in ("mustang gt"): the model shares its name
     // with the other trims, so check the model name plus derived variant.

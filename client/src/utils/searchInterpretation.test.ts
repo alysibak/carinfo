@@ -12,8 +12,8 @@ describe('describeSearchInterpretation', () => {
       describeSearchInterpretation({
         ignored: ['trd', 'pro'],
         price: { max: 30000 },
-        cheapestFirst: true,
-        cheapestFrom: 2016,
+        sortedBy: 'price',
+        recentFrom: 2016,
       }),
     ).toEqual([
       'EPA records no trim levels, so “trd pro” was left out of the search.',
@@ -22,6 +22,19 @@ describe('describeSearchInterpretation', () => {
     ]);
     expect(describeSearchInterpretation({ price: { min: 20000, max: 40000 } })).toEqual([
       'Estimated value $20,000 to $40,000.',
+    ]);
+    expect(
+      describeSearchInterpretation({
+        sortedBy: 'fuelEconomy',
+        newestFrom: 2026,
+        threeRow: true,
+        compared: ['honda accord', 'toyota camry'],
+      }),
+    ).toEqual([
+      'Most fuel-efficient first.',
+      'Model years 2026 and newer.',
+      'Minivans, passenger vans and SUVs sold with a third row, by model: EPA records no seating.',
+      'Showing “honda accord” and “toyota camry” together.',
     ]);
   });
 });

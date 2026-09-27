@@ -176,6 +176,11 @@ export interface CarFilter {
     min?: number;
     max?: number;
   };
+  cylinders?: number[];
+  /** "turbocharged", "supercharged" (a car with both matches either). */
+  aspiration?: string[];
+  /** Minivans, passenger vans and three-row SUVs, by model: EPA records no seating. */
+  threeRow?: boolean;
 }
 
 export interface SearchQuery {
@@ -208,10 +213,16 @@ export interface SearchInterpretation {
   ignored?: string[];
   /** A price limit read from the query ("under 30k"), estimated CAD value. */
   price?: { min?: number; max?: number };
-  /** "cheapest", "affordable": sorted by estimated value, lowest first. */
-  cheapestFirst?: boolean;
+  /** An order read from the query: "cheapest", "most fuel efficient", "fastest". */
+  sortedBy?: 'price' | 'fuelEconomy' | 'horsepower';
   /** With no year given, "cheapest" keeps to model years from this one. */
-  cheapestFrom?: number;
+  recentFrom?: number;
+  /** "new camry": model years from this one. */
+  newestFrom?: number;
+  /** "third row suv", "7 seater": matched by model name. */
+  threeRow?: boolean;
+  /** "accord vs camry": the searches shown together. */
+  compared?: string[];
 }
 
 /** Response body of the search endpoints. */
