@@ -142,8 +142,11 @@ export default function Methodology() {
             </li>
             <li>
               Insurance starts from each province&rsquo;s average premium (FSRA in Ontario, ICBC in
-              B.C.), then scales with body style, luxury make, value and age. Your own quote depends
-              on your record and postal code far more than on the car.
+              B.C.), then scales with body style, luxury make, value and age: above $30,000 of value
+              it rises 0.4% for each $1,000, since collision and comprehensive cover grow with the
+              car&rsquo;s worth. Teslas and other premium EVs cost about a quarter more to insure
+              for their repair costs. Your own quote depends on your record and postal code far more
+              than on the car.
             </li>
             <li>
               Maintenance and tires follow AAA and CAA driving-cost studies, by fuel type and age;
