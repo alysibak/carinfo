@@ -112,9 +112,11 @@ export default function Methodology() {
               unusually well are depreciated more gently.
             </li>
             <li>
-              Flagship sedans and Range Rovers lose value fastest: priced new like other luxury
-              cars, but by eight years a Mercedes S-Class or BMW 7 Series keeps about half what a
-              C-Class or 3 Series does. A Lexus LS or a new-generation Defender keeps far more.
+              Flagship sedans, big luxury SUVs and Range Rovers lose value fastest: priced new like
+              other luxury cars, but by eight years a Mercedes S-Class or BMW 7 Series keeps about
+              60% of what a C-Class or 3 Series does. A Lexus or a new-generation Defender keeps far
+              more. Canadian listings for these makes run about 1.2 times US ones, and the model is
+              fitted at that ratio.
             </li>
             <li>
               Supercars (a Ferrari, a Lamborghini, an R8) keep most of their price for a decade,

@@ -120,6 +120,7 @@ const LUXURY_MAKES = new Set([
   'Cadillac',
   'Lincoln',
   'Genesis',
+  'Volvo',
   'Maserati',
   'Ferrari',
   'Lamborghini',

@@ -52,6 +52,7 @@ const LUXURY_MAKES = new Set([
   'Cadillac',
   'Lincoln',
   'Genesis',
+  'Volvo',
   'Maserati',
   'Ferrari',
   'Lamborghini',
@@ -115,6 +116,8 @@ const BRAND_RETENTION: Record<string, number> = {
   // A 2018 Ghibli lists around US$18,500, a quarter of its sticker (CarGurus,
   // September 2026).
   Maserati: 0.6,
+  // A 2019 Q50 lists around US$19,100 and a QX60 ~US$16,200 (Cars.com).
+  Infiniti: 0.85,
   // Bankrupt makers: no dealers, software updates or assured parts. A 2023
   // Fisker Ocean Extreme ($69,000 new) sells for about $16,000 in 2026.
   Fisker: 0.4,
@@ -351,6 +354,22 @@ const ENTHUSIAST_RULES: ModelMsrpRule[] = [
   { test: (c) => c.make === 'Toyota' && /^gr corolla/i.test(c.model), msrp: 42000 },
   { test: (c) => c.make === 'Ford' && /^focus rs/i.test(c.model), msrp: 41000 },
   { test: (c) => c.make === 'Volvo' && /polestar/i.test(c.model), msrp: 61000 },
+  // Volvo by line; the luxury size-class table priced an XC90 above $69,000
+  // and an XC60 like a C-Class.
+  {
+    test: (c) => c.make === 'Volvo' && c.engine.fuelType !== 'electric',
+    msrp: (c) => {
+      const m = c.model.toLowerCase();
+      if (/^xc90/.test(m)) return 60000;
+      if (/^xc60/.test(m)) return 46000;
+      if (/^(xc40|c40)/.test(m)) return 42000;
+      if (/^(xc70|v60 cross|v90 cross)/.test(m)) return 50000;
+      if (/^(s90|v90|s80)/.test(m)) return 57000;
+      if (/^(s60|v60)/.test(m)) return 45000;
+      if (/^c70/.test(m)) return 42000;
+      return 32000;
+    },
+  },
   {
     test: (c) => c.make === 'Polestar' && /^1\b/.test(c.model) && c.engine.fuelType !== 'electric',
     msrp: 155000,
@@ -413,6 +432,15 @@ const FLAGSHIP_RULES: ModelMsrpRule[] = [
     test: (c) => c.make === 'Audi' && /^a8/i.test(c.model),
     msrp: (c) => (cyl(c) >= 12 ? 135000 : 92000),
   },
+  // EPA's weight classes put the GX and LX at one price; one lists at about
+  // $55,000-$65,000, the other $90,000-$100,000.
+  {
+    test: (c) => c.make === 'Lexus' && /^gx\b/i.test(c.model),
+    msrp: (c) => (c.year >= 2024 ? 65000 : 55000),
+  },
+  { test: (c) => c.make === 'Lexus' && /^lx\b/i.test(c.model), msrp: 95000 },
+  { test: (c) => c.make === 'Audi' && /^q7\b/i.test(c.model), msrp: 60000 },
+  { test: (c) => c.make === 'Audi' && /^q8\b/i.test(c.model), msrp: 75000 },
   {
     test: (c) => c.make === 'Lexus' && /^ls\b/i.test(c.model),
     msrp: (c) => (/600h/i.test(c.model) ? 120000 : 82000),
@@ -1608,33 +1636,41 @@ function flatCurveRetention(car: CarSpecs): number | null {
 }
 
 /**
- * Flagships and Range Rovers lose value faster than the luxury curve, and the
- * gap opens with age: a 2023 S 580 lists around US$79,000 and a 2024 740i
- * around US$61,700, about 0.7 of the curve; a 2018 S 560 ~US$37,200, a 2019
- * 750i ~US$26,600 and a 2019 Range Rover ~US$31,400, half of it or less
- * (Cars.com, KBB, TrueCar; September 2026). Each value is where the factor
- * settles; it starts at 1 for a new car.
+ * Flagships, big luxury SUVs and Range Rovers lose value faster than the
+ * luxury curve, and the gap opens with age: a 2023 S 580 lists around
+ * US$79,000 and a 2024 740i around US$61,700; a 2018 S 560 ~US$37,200, a 2019
+ * 750i ~US$26,600 and a 2019 Range Rover ~US$31,400 (Cars.com, KBB, TrueCar;
+ * September 2026). Canadian listings of these makes run about 1.2 times the
+ * US figure (a 2020 Q5 ~$24,850 CAD against US$20,800, a 2015 X5 ~$16,770
+ * against US$13,400), and the factors are fitted at that ratio. Each value is
+ * where the factor settles; it starts at 1 for a new car.
  */
 const FAST_DEPRECIATION_MODELS: Array<[(c: CarSpecs) => boolean, number]> = [
   [
     (c) =>
       c.make === 'Mercedes-Benz' &&
       /^(s ?\d{2,3}|cl ?\d{2,3}|amg s ?\d{2})\b|maybach/i.test(c.model),
-    0.52,
+    0.62,
   ],
-  [(c) => c.make === 'BMW' && /^(7[1-6]\d|m760|alpina b7)/i.test(c.model), 0.5],
-  [(c) => c.make === 'Audi' && /^(a8|s8)\b/i.test(c.model), 0.55],
-  [(c) => /^(genesis|hyundai|kia)$/i.test(c.make) && /^(g90|equus|k900)\b/i.test(c.model), 0.52],
-  [(c) => c.make === 'Jaguar' && /^xj(?!s)/i.test(c.model), 0.52],
-  [(c) => c.make === 'Cadillac' && /^ct6/i.test(c.model), 0.55],
-  [(c) => c.make === 'Volkswagen' && /^phaeton/i.test(c.model), 0.52],
+  [(c) => c.make === 'BMW' && /^(7[1-6]\d|m760|alpina b7)/i.test(c.model), 0.58],
+  [(c) => c.make === 'Audi' && /^(a8|s8)\b/i.test(c.model), 0.62],
+  [(c) => /^(genesis|hyundai|kia)$/i.test(c.make) && /^(g90|equus|k900)\b/i.test(c.model), 0.65],
+  [(c) => c.make === 'Jaguar' && /^xj(?!s)/i.test(c.model), 0.6],
+  [(c) => c.make === 'Volkswagen' && /^phaeton/i.test(c.model), 0.6],
+  // Three-row luxury SUVs: a 2019 Q7 lists around US$20,400, a 2019 XC90
+  // ~US$20,700. So do outgoing generations: a 2019 GLE 400 ~US$19,100 and a
+  // 2019 Escalade ~US$33,000, where the next generation holds far better.
+  [(c) => c.make === 'Audi' && /^(q7|q8|sq7|sq8)\b/i.test(c.model), 0.75],
+  [(c) => c.make === 'Volvo' && /^xc90/i.test(c.model), 0.72],
+  [(c) => c.make === 'Mercedes-Benz' && /^(gle|ml|gl) ?\d/i.test(c.model) && c.year < 2020, 0.6],
+  [(c) => c.make === 'Cadillac' && /^escalade/i.test(c.model) && c.year < 2021, 0.8],
   // A 2018 LS 500 keeps more (~US$39,000), as Lexus does.
-  [(c) => c.make === 'Lexus' && /^ls\b/i.test(c.model), 0.75],
+  [(c) => c.make === 'Lexus' && /^ls\b/i.test(c.model), 0.9],
   // The 1,500-car Polestar 1 (about $155,000 new) lists around US$59,300 at six
   // years (Cars.com).
-  [(c) => c.make === 'Polestar' && /^1\b/.test(c.model), 0.65],
+  [(c) => c.make === 'Polestar' && /^1\b/.test(c.model), 0.75],
   // The Defender (2020 on) holds its value; the rest of the range does not.
-  [(c) => c.make === 'Land Rover' && !/^defender/i.test(c.model), 0.5],
+  [(c) => c.make === 'Land Rover' && !/^defender/i.test(c.model), 0.6],
 ];
 
 function fastDepreciation(car: CarSpecs, age: number): number {

@@ -176,6 +176,11 @@ describe('vehicle-valuation (Ontario/CAD)', () => {
     const kept = (make: string, model: RegExp, year: number) =>
       estimateMarketValue(car(make, model, year)).retainedFraction;
     expect(kept('Mercedes-Benz', /^S580 4matic$/, 2026)).toBeGreaterThan(0.9);
+    // EPA's weight classes gave the GX and LX one price.
+    expect(estimateNewVehicleMsrp(car('Lexus', /^GX 460$/, 2019))).toBe(55_000);
+    expect(estimateNewVehicleMsrp(car('Lexus', /^LX 570$/, 2019))).toBe(95_000);
+    // A 2019 Q7 lists around US$20,400 (about $24,500 CAD); it read $37,000.
+    expect(estimateMarketValue(car('Audi', /^Q7$/, 2019)).mid).toBeLessThan(30_000);
     expect(kept('Mercedes-Benz', /^S560 4matic$/, 2018)).toBeLessThan(
       kept('Mercedes-Benz', /^C300 4matic$/, 2018) * 0.65,
     );
