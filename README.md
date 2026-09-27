@@ -234,7 +234,7 @@ Types live in `client/src/types/car.types.ts` and `server/src/types/car.types.ts
 
 **BodyStyle:** `sedan` · `suv` · `coupe` · `convertible` · `hatchback` · `wagon` · `truck` · `van` · `minivan`
 
-**ShoppingSegment:** `hot-hatch` · `sport-compact` · `sport-sedan` · `muscle` · `sports-car` · `luxury` · `mainstream` · `utility` · `ev` · `truck`
+**ShoppingSegment:** `hot-hatch` · `sport-compact` · `sport-sedan` · `muscle` · `sports-car` · `supercar` · `luxury` · `mainstream` · `utility` · `ev` · `truck`
 
 **ProvenanceSource:** `epa` · `nhtsa` · `estimated` · `curated`
 
@@ -353,22 +353,23 @@ Then `normalizeCarRecord()` applies fuel-type inference, MPGe labels, hydrogen n
 
 **`canonicalizeDisplayModel()`** — disambiguates EPA slugs (Golf GTI vs Golf, Civic Type R, Cooper S, WRX, etc.)
 
-**`inferBodyStyle()`** — corrects EPA mislabels (hatchbacks listed as sedans, etc.)
+**`inferBodyStyle()`** — corrects EPA mislabels: hatchbacks listed as sedans, roadsters in the two-seater class listed as coupes (Boxster, MX-5, S2000, Z4, SL), four-door "Gran Coupes" as coupes, coupe-SUVs (GLE Coupe, Cayenne Coupe) and soft-top SUVs as coupes and convertibles, crossovers listed as wagons or sedans (CX-3, EX35), and the Magnum EPA files as an SUV.
 
-**`classifyShoppingSegment()`** — rules based on fuel type, body, HP, displacement, make, price:
+**`classifyShoppingSegment()`** — rules based on fuel type, body, names, horsepower, induction and make:
 
 | Segment | Triggers (simplified) |
 |---------|----------------------|
 | `ev` | electric or hydrogen |
 | `truck` | bodyStyle truck |
 | `utility` | suv, van, minivan |
-| `hot-hatch` | GTI, Type R, ST, etc. |
-| `sport-sedan` | WRX, Si, AMG, etc. |
-| `muscle` | coupe + HP≥400 or disp≥5L |
-| `sports-car` | coupe/convertible otherwise |
-| `luxury` | premium make + MSRP >$55k |
-| `sport-compact` | hatchback + HP≥150 |
-| `mainstream` | default |
+| `supercar` | two-door from Ferrari, Lamborghini, McLaren…, or R8, NSX, Ford GT, MC20 |
+| `hot-hatch` | GTI, Type R, ST… on a hatchback or wagon, or a hatchback with 200+ hp |
+| `sport-sedan` | WRX, Si, GLI, AMG, S/RS/M badges; or a sedan with 250+ hp that is turbocharged, makes 330+ hp or 95+ hp per litre (luxury makes need only the 250 hp, bar the ES, MKZ and RLX) |
+| `luxury` | flagships (S-Class, 7 Series, LS, CL, Genesis, K900…), then every car from a luxury make; luxury two-doors that are not sports cars (430i, E350 coupe, RC 350) |
+| `muscle` | Mustang, Camaro, Challenger, Firebird, GTO… with a V8 (4.5 L+ or 400+ hp) |
+| `sports-car` | sports-car names and makes (911, Corvette, MX-5, Z4, AMG GT, GT-R, F-Type, Lotus…), performance badges, or a non-luxury two-door with 300+ hp |
+| `sport-compact` | hatchback with 150+ hp; two-doors with 180+ hp or a sporty badge (Civic Si coupe, Cobalt SS) |
+| `mainstream` | default, including family coupes (Accord, Solara) and city cars (smart) |
 
 **`ownershipProfileFor()`** — human label + tags + bestFor for sport-compact, sport-sedan, etc.
 
@@ -446,6 +447,8 @@ Base: `/api` (Vite proxies to `:5000` in dev; Vercel routes to `api/index.ts`)
 **Prices:** `under 30k`, `below $25,000`, `over 40 000`, `less than 20k` filter on the estimated CAD value (an amount needs a `k`, a `$` or four digits outside the model-year range, so `civic under 2015` is not a price); `cheap`, `cheapest`, `affordable` and `budget` sort by estimated value, lowest first, within the last ten model years unless the query gives years. Both come back in `interpretation` for the page to state.
 
 **Years, order, gearbox, engine, seats** (`utils/search-modifiers.ts`): year ranges and open ends (`2015-2018 accord`, `accord 2015 to 2018`, `rav4 2019+`, `civic since 2020`, `corvette before 2000`); `new` means the current model years unless it is part of a name (`new beetle`), and `used`, `certified`, `car` and `vehicle` are ignored; `most fuel efficient`, `best mpg` and `fastest`, `most powerful` sort by combined MPG or horsepower; `manual`, `stick shift`, `automatic`, `cvt` filter the gearbox; `v6`, `v8`, `4 cylinder` the cylinder count, and `turbo`, `supercharged` the induction (after model names, so `911 turbo` stays a model); `third row`, `3 row`, `7 seater`, `8 passenger` keep to minivans, passenger vans and the SUVs sold with a third row (`utils/three-row.ts`: EPA records no seating, so this is by model); `longest range` sorts by EPA range and `300 mile range` or `400 km range` sets a minimum. `honda accord vs toyota camry` searches both and takes results in turn. An empty search is also retried as one model name across makes (`hummer ev` read "hummer" as the old HUMMER make), and `lightning` covers both Ford trucks of that name.
+
+**Kinds of vehicle** (`utils/search-modifiers.ts`): a size with a body (`compact suv`, `midsize sedan`, `full size truck`, `small suv`, `heavy duty truck`) keeps to that competitive set, mainstream unless `luxury` is said; `sports car`, `muscle car`, `supercar`, `hot hatch`, `sport sedan`, `off road` and `luxury` keep to a segment or to luxury makes. The response names the class in `interpretation.vehicleClass`. When the words name a model or trim instead (`saab 9-3 sport sedan`, `cadillac xt5 luxury`), the empty search is retried with the words as words; `premium`, `big` and `large` are read only where they cannot be a trim (`outback premium`, `ram big horn`).
 
 **Plain words mean what they say:** a query made only of body, fuel, drive or induction words is read as filters before any model lookup (`truck` is every pickup, not the 1990s models EPA calls "Truck"), and a word that is a whole model name is never read as a typo or prefix of a make (`beetle` found every Bentley).
 
@@ -773,9 +776,9 @@ Calibration sources are cited next to each figure in `regional-assumptions.ts`: 
 
 **File:** `server/src/utils/similar-vehicles.ts`
 
-Scores candidates by: shopping segment affinity, body style, price tier, HP similarity, fuel type match, exotic make isolation, dedupe by base model key.
+Scores candidates first by competitive set (`utils/competitive-sets.ts`: about thirty classes shoppers compare within, such as compact cars, midsize sedans, compact and three-row SUVs, full-size pickups, off-roaders, pony cars and premium sports cars, covering 98% of listings since 2005), then shopping segment affinity, body style, brand tier (except for sports cars), price, horsepower, fuel type and model year. EPA's size class counts only when no set is known: it measures interior volume, so a Civic and a Camry are both "Midsize".
 
-Exotic makes never cross-shop with mainstream.
+Suggestions leave out the anchor's own model line (a Huracán Sterrato for a Huracán, a Model 3 Performance for a Model 3), collector cars (they carry no estimate) and tuners' versions of other makes' cars (a Roush F-150); keep one car per model line and two per make; and cross between exotics and other cars only at 60% of the price or closer.
 
 ---
 

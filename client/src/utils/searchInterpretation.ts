@@ -57,6 +57,9 @@ export function describeSearchInterpretation(
       'Minivans, passenger vans and SUVs sold with a third row, by model: EPA records no seating.',
     );
   }
+  if (interpretation.vehicleClass) {
+    lines.push(`Showing ${interpretation.vehicleClass}, classed by model.`);
+  }
   if (interpretation.compared?.length) {
     lines.push(
       `Showing ${interpretation.compared.map((part) => `“${part}”`).join(' and ')} together.`,

@@ -1,4 +1,6 @@
 import { LATEST_FULL_MODEL_YEAR } from '../config/model-years.js';
+import type { ShoppingSegment } from '../types/car.types.js';
+import type { CompetitiveSet } from './competitive-sets.js';
 
 export type SortIntent = 'price' | 'fuelEconomy' | 'horsepower' | 'range';
 
@@ -15,6 +17,182 @@ export interface QueryModifiers {
   threeRow?: boolean;
   /** "300 mile range", "400 km range": the least EPA range asked for, in miles. */
   minRangeMiles?: number;
+  /** "compact suv", "sports car", "luxury sedan": the kind of vehicle asked for. */
+  vehicleClass?: VehicleClassQuery;
+}
+
+export interface VehicleClassQuery {
+  /** Competitive sets, any of which a car must be in. */
+  sets?: CompetitiveSet[];
+  /** Shopping segments, any of which a car must be in. */
+  segments?: ShoppingSegment[];
+  /** Luxury makes only. */
+  luxury?: boolean;
+  /** What was read, for the results page: "compact SUVs", "luxury sedans". */
+  label: string;
+}
+
+type Size = 'subcompact' | 'small' | 'compact' | 'midsize' | 'full-size' | 'heavy-duty';
+type BodyGroup = 'car' | 'suv' | 'truck' | 'van';
+
+const SIZE_WORDS: Array<[RegExp, Size]> = [
+  [/\bsub-?compact\b/, 'subcompact'],
+  [/\b(?:heavy[- ]duty|3\/4[- ]ton|one[- ]ton|hd)\b(?=\s+(?:trucks?|pickups?))/, 'heavy-duty'],
+  [/\bhalf[- ]ton\b/, 'full-size'],
+  [/\bcompact\b(?!\s+(?:sports?|performance))/, 'compact'],
+  [/\bmid[- ]?size\b/, 'midsize'],
+  [/\bfull[- ]?size\b/, 'full-size'],
+  // Everyday words count only before a body word: "Big Horn" is a Ram trim.
+  [/\bmedium\b(?=\s+(?:cars?|sedans?|suvs?|crossovers?|trucks?|pickups?))/, 'midsize'],
+  [
+    /\b(?:large|big)\b(?=\s+(?:cars?|sedans?|suvs?|crossovers?|trucks?|pickups?|vans?))/,
+    'full-size',
+  ],
+  [/\bsmall\b(?=\s+(?:cars?|sedans?|hatch\w*|suvs?|crossovers?|trucks?|pickups?|vans?))/, 'small'],
+];
+
+/**
+ * Sets by size and body, mainstream then luxury: "compact car" means a Civic,
+ * "luxury compact car" an A4.
+ */
+const SIZE_SETS: Record<Size, Partial<Record<BodyGroup, [CompetitiveSet[], CompetitiveSet[]]>>> = {
+  subcompact: {
+    car: [['subcompact-car', 'small-ev'], ['entry-luxury-car']],
+    suv: [['subcompact-suv'], ['subcompact-luxury-suv']],
+  },
+  small: {
+    car: [['subcompact-car', 'compact-car', 'small-ev'], ['entry-luxury-car']],
+    suv: [
+      ['subcompact-suv', 'compact-suv'],
+      ['subcompact-luxury-suv', 'compact-luxury-suv'],
+    ],
+    truck: [['compact-pickup', 'midsize-pickup'], []],
+    van: [['compact-van'], []],
+  },
+  compact: {
+    car: [['compact-car', 'small-ev'], ['entry-luxury-car']],
+    suv: [['compact-suv'], ['compact-luxury-suv']],
+    truck: [['compact-pickup', 'midsize-pickup'], []],
+    van: [['compact-van'], []],
+  },
+  midsize: {
+    car: [['midsize-car'], ['midsize-luxury-car']],
+    suv: [['midsize-suv', 'three-row-suv'], ['midsize-luxury-suv']],
+    truck: [['midsize-pickup'], []],
+  },
+  'full-size': {
+    car: [['large-car'], ['flagship-sedan']],
+    suv: [['full-size-suv'], ['full-size-luxury-suv']],
+    truck: [['full-size-pickup', 'ev-pickup'], []],
+    van: [['full-size-van'], []],
+  },
+  'heavy-duty': { truck: [['heavy-duty-pickup'], []] },
+};
+
+const BODY_GROUPS: Array<[RegExp, BodyGroup, string]> = [
+  [/^(?:cars?|autos?)$/, 'car', 'cars'],
+  [/^sedans?$/, 'car', 'sedans'],
+  [/^hatch(?:back)?(?:e?s)?$/, 'car', 'hatchbacks'],
+  [/^(?:suvs?|crossovers?|cuvs?)$/, 'suv', 'SUVs'],
+  [/^(?:trucks?|pickups?|pick-ups?)$/, 'truck', 'pickups'],
+  [/^(?:vans?|minivans?)$/, 'van', 'vans'],
+];
+
+/** Kinds of vehicle named outright. Each takes its whole phrase. */
+const CLASS_PHRASES: Array<[RegExp, Omit<VehicleClassQuery, 'luxury'>]> = [
+  [/\bmuscle cars?\b/, { segments: ['muscle'], label: 'muscle cars' }],
+  [/\bpony cars?\b/, { sets: ['pony-car'], label: 'pony cars' }],
+  [
+    /\b(?:supercars?|super cars?|hypercars?|exotic cars?|exotics?)\b/,
+    { segments: ['supercar'], label: 'supercars' },
+  ],
+  [/\bhot hatch(?:back)?(?:e?s)?\b/, { segments: ['hot-hatch'], label: 'hot hatches' }],
+  [/\b(?:sports?|performance) sedans?\b/, { segments: ['sport-sedan'], label: 'sport sedans' }],
+  [/\bsport compacts?\b/, { sets: ['sport-compact'], label: 'sport compacts' }],
+  // Not "Sport Coupe", a Camaro trim.
+  [
+    /\b(?:sports|sporty) (?:cars?|coupes?)\b|\bsport cars?\b|\bsportscars?\b/,
+    { segments: ['sports-car', 'supercar', 'muscle'], label: 'sports cars' },
+  ],
+  [/\b(?:grand tourers?|gt cars?)\b/, { sets: ['grand-tourer'], label: 'grand tourers' }],
+  [/\boff[- ]?road(?:ers?|ing)?\b/, { sets: ['off-roader'], label: 'off-roaders' }],
+  [
+    /\b(?:economy|commuter|city) cars?\b/,
+    { sets: ['subcompact-car', 'compact-car', 'small-ev'], label: 'economy cars' },
+  ],
+  [/\bfamily (?:cars?|sedans?)\b/, { sets: ['midsize-car', 'large-car'], label: 'family cars' }],
+];
+
+/**
+ * Read the kind of vehicle a query names: a size with a body ("compact suv",
+ * "midsize truck", "full size sedan"), a segment ("sports car", "muscle car",
+ * "supercar", "hot hatch") or "luxury". Body words stay in the text for the
+ * body-style filter; the size word and the phrase are taken out. Searches for
+ * "compact suv" or "sports car" matched no name and showed nothing, or cars
+ * with "Sport" in their trim.
+ */
+function readVehicleClass(text: string): { text: string; vehicleClass?: VehicleClassQuery } {
+  let rest = text;
+  let luxury = false;
+  // Not "premium": it is a trim (Outback Premium, Audi Premium Plus).
+  const luxuryHit = /\bluxury\b/.exec(rest);
+  if (luxuryHit) {
+    luxury = true;
+    rest = rest.replace(luxuryHit[0], ' ');
+  }
+
+  for (const [re, found] of CLASS_PHRASES) {
+    const hit = re.exec(rest);
+    if (!hit) continue;
+    rest = rest.replace(hit[0], ' ');
+    return {
+      text: rest,
+      vehicleClass: {
+        ...found,
+        ...(luxury ? { luxury, label: `luxury ${found.label}` } : {}),
+      },
+    };
+  }
+
+  for (const [re, size] of SIZE_WORDS) {
+    const hit = re.exec(rest);
+    if (!hit) continue;
+    const after =
+      rest
+        .slice(hit.index + hit[0].length)
+        .trim()
+        .split(/\s+/)[0] ?? '';
+    const body = BODY_GROUPS.find(([word]) => word.test(after));
+    const bySize = SIZE_SETS[size];
+    const pick = (pair?: [CompetitiveSet[], CompetitiveSet[]]) => pair?.[luxury ? 1 : 0] ?? [];
+    const sets = body
+      ? pick(bySize[body[1]])
+      : [...new Set(Object.values(bySize).flatMap((pair) => pick(pair)))];
+    if (!sets.length) continue;
+    // "compact car": "car" says nothing more once the size is read.
+    let end = hit.index + hit[0].length;
+    if (body && /^(?:cars?|autos?)$/.test(after)) end += /^\s*\S+/.exec(rest.slice(end))![0].length;
+    rest = `${rest.slice(0, hit.index)} ${rest.slice(end)}`;
+    const noun = body ? body[2] : 'vehicles';
+    return {
+      text: rest,
+      vehicleClass: {
+        sets,
+        ...(luxury ? { luxury } : {}),
+        label: `${luxury ? 'luxury ' : ''}${size} ${noun}`,
+      },
+    };
+  }
+
+  if (luxury) {
+    const words = rest.trim().split(/\s+/);
+    const body = BODY_GROUPS.find(([word]) => words.some((w) => word.test(w)));
+    return {
+      text: rest,
+      vehicleClass: { luxury, label: `luxury ${body ? body[2] : 'vehicles'}` },
+    };
+  }
+  return { text };
 }
 
 const YEAR = '((?:19|20)\\d{2})';
@@ -78,7 +256,10 @@ const NEW_IN_NAME = /\bnew (?:beetle|yorker|range rover)\b/;
  * found nothing, or the wrong years, because only names and single years
  * were read.
  */
-export function extractQueryModifiers(raw: string): QueryModifiers {
+export function extractQueryModifiers(
+  raw: string,
+  options: { classes?: boolean } = {},
+): QueryModifiers {
   let text = ` ${raw.toLowerCase()} `;
   const out: Omit<QueryModifiers, 'text'> = {};
   const take = (re: RegExp) => {
@@ -93,6 +274,13 @@ export function extractQueryModifiers(raw: string): QueryModifiers {
       out.year = read(Number(hit[1]), hit[2] ? Number(hit[2]) : undefined);
       break;
     }
+  }
+
+  // Before the filler words go: "sports car" and "compact car" need their "car".
+  if (options.classes !== false) {
+    const classRead = readVehicleClass(text);
+    text = classRead.text;
+    if (classRead.vehicleClass) out.vehicleClass = classRead.vehicleClass;
   }
 
   text = text.replace(FILLER, ' ');

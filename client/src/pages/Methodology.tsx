@@ -48,7 +48,11 @@ export default function Methodology() {
               inference, body-style correction, shopping-segment taxonomy, and regional CAD market
               valuation run on every served record. Trims EPA leaves out of the model name (a
               Mustang GT is just &ldquo;Mustang&rdquo;, a 2019 Civic Type R a &ldquo;Civic
-              5Dr&rdquo;) are named from the engine and gearbox, and marked as estimated.
+              5Dr&rdquo;) are named from the engine and gearbox, and marked as estimated. Body
+              styles follow the doors, not EPA&rsquo;s size class: a Boxster is a convertible, a BMW
+              Gran Coupe a sedan and a GLE Coupe an SUV. Similar vehicles come from the classes
+              shoppers compare within, so a Camry&rsquo;s are an Accord and a Sonata rather than a
+              Civic at the same price.
             </li>
             <li>
               <strong className="text-zinc-200 font-medium">API + UI</strong>: dossier, compare, and

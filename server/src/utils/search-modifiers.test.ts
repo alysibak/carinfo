@@ -46,4 +46,46 @@ describe('extractQueryModifiers', () => {
     expect(extractQueryModifiers('bmw i4')).toEqual({ text: 'bmw i4' });
     expect(extractQueryModifiers('third-row suv')).toEqual({ text: 'suv', threeRow: true });
   });
+
+  it('reads the kind of vehicle and leaves body words for the body filter', () => {
+    expect(extractQueryModifiers('compact suv')).toEqual({
+      text: 'suv',
+      vehicleClass: { sets: ['compact-suv'], label: 'compact SUVs' },
+    });
+    expect(extractQueryModifiers('luxury compact suv').vehicleClass).toEqual({
+      sets: ['compact-luxury-suv'],
+      luxury: true,
+      label: 'luxury compact SUVs',
+    });
+    // "compact car" takes its "car"; "sedan" stays for the body filter.
+    expect(extractQueryModifiers('compact car').text).toBe('');
+    expect(extractQueryModifiers('midsize sedan').text).toBe('sedan');
+    expect(extractQueryModifiers('full size truck').vehicleClass?.sets).toEqual([
+      'full-size-pickup',
+      'ev-pickup',
+    ]);
+    expect(extractQueryModifiers('heavy duty truck').vehicleClass?.sets).toEqual([
+      'heavy-duty-pickup',
+    ]);
+    expect(extractQueryModifiers('sports car').vehicleClass?.segments).toEqual([
+      'sports-car',
+      'supercar',
+      'muscle',
+    ]);
+    expect(extractQueryModifiers('muscle cars').vehicleClass?.segments).toEqual(['muscle']);
+    expect(extractQueryModifiers('luxury sedan').vehicleClass).toEqual({
+      luxury: true,
+      label: 'luxury sedans',
+    });
+  });
+
+  it('keeps trim and everyday words that only look like classes', () => {
+    // A Camaro "Sport Coupe", a Ram "Big Horn", an Outback "Premium".
+    expect(extractQueryModifiers('camaro sport coupe').vehicleClass).toBeUndefined();
+    expect(extractQueryModifiers('ram big horn').vehicleClass).toBeUndefined();
+    expect(extractQueryModifiers('outback premium').vehicleClass).toBeUndefined();
+    expect(extractQueryModifiers('compact suv', { classes: false })).toEqual({
+      text: 'compact suv',
+    });
+  });
 });

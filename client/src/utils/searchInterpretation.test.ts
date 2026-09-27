@@ -40,5 +40,8 @@ describe('describeSearchInterpretation', () => {
       'Minivans, passenger vans and SUVs sold with a third row, by model: EPA records no seating.',
       'Showing “honda accord” and “toyota camry” together.',
     ]);
+    expect(describeSearchInterpretation({ vehicleClass: 'compact SUVs' })).toEqual([
+      'Showing compact SUVs, classed by model.',
+    ]);
   });
 });

@@ -183,6 +183,12 @@ export interface CarFilter {
   threeRow?: boolean;
   /** EPA range in miles (EVs and plug-in hybrids' electric range). */
   rangeMiles?: { min?: number; max?: number };
+  /** Competitive sets ("compact-suv", "midsize-car"), any of which a car must be in. */
+  classes?: string[];
+  /** Shopping segments ("sports-car", "muscle"), any of which a car must be in. */
+  segments?: string[];
+  /** Luxury makes only. */
+  luxury?: boolean;
 }
 
 export interface SearchQuery {
@@ -204,6 +210,11 @@ export interface SearchQuery {
   trimForms?: readonly string[];
   /** Set by the query parser: what it read into filters or sorting. */
   interpretation?: SearchInterpretation;
+  /**
+   * Set by the search itself on a retry: read "sport sedan" or "luxury" as
+   * words ("Saab 9-3 Sport Sedan" is a model), not as a kind of vehicle.
+   */
+  keepClassWords?: boolean;
 }
 
 /** How the server read a free-text query, for the results page to state. */
@@ -227,6 +238,8 @@ export interface SearchInterpretation {
   threeRow?: boolean;
   /** "accord vs camry": the searches shown together. */
   compared?: string[];
+  /** "compact suv", "sports car", "luxury sedan": the kind of vehicle read. */
+  vehicleClass?: string;
 }
 
 /** Response body of the search endpoints. */

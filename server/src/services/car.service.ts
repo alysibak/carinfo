@@ -22,6 +22,8 @@ import { LATEST_FULL_MODEL_YEAR } from '../config/model-years.js';
 import { TRIM_QUERY_FORMS } from '../utils/performance-trims.js';
 import { extractQueryModifiers } from '../utils/search-modifiers.js';
 import { isThreeRow } from '../utils/three-row.js';
+import { competitiveSets } from '../utils/competitive-sets.js';
+import { isLuxuryBrand } from '../utils/vehicle-taxonomy.js';
 
 function resolveDbPath(): string | null {
   return resolveDataFile('cars.json');
@@ -335,6 +337,12 @@ export function searchCars(query: SearchQuery): SearchResults {
 function searchOne(query: SearchQuery): SearchResults {
   const results = runSearch(query);
   if (results.total > 0) return results;
+  // "saab 9-3 sport sedan" and "cadillac xt5 luxury" name a model and a trim:
+  // read the words as words before setting any aside.
+  if (results.interpretation?.vehicleClass && !query.keepClassWords) {
+    const literal = searchOne({ ...query, keepClassWords: true });
+    if (literal.total > 0) return literal;
+  }
   return searchAsModelName(query) ?? relaxTrailingWords(query) ?? results;
 }
 
@@ -712,6 +720,20 @@ const KEYWORD_SUGGESTIONS: Array<{ label: string; query: string }> = [
   { label: 'Cheapest EVs', query: 'cheapest ev' },
   { label: 'Fastest cars', query: 'fastest car' },
   { label: 'V8 trucks', query: 'v8 truck' },
+  { label: 'Compact SUVs', query: 'compact suv' },
+  { label: 'Midsize SUVs', query: 'midsize suv' },
+  { label: 'Full-size SUVs', query: 'full size suv' },
+  { label: 'Compact cars', query: 'compact car' },
+  { label: 'Midsize sedans', query: 'midsize sedan' },
+  { label: 'Full-size trucks', query: 'full size truck' },
+  { label: 'Midsize trucks', query: 'midsize truck' },
+  { label: 'Sports cars', query: 'sports car' },
+  { label: 'Muscle cars', query: 'muscle car' },
+  { label: 'Supercars', query: 'supercar' },
+  { label: 'Hot hatches', query: 'hot hatch' },
+  { label: 'Luxury SUVs', query: 'luxury suv' },
+  { label: 'Luxury sedans', query: 'luxury sedan' },
+  { label: 'Off-road SUVs', query: 'off road suv' },
 ];
 
 type TrimSuggestion = { make: string; label: string; query: string };
@@ -811,7 +833,7 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
 
   const filters = { ...(query.filters || {}) };
   const explicit = query.filters;
-  const modifiers = extractQueryModifiers(typed);
+  const modifiers = extractQueryModifiers(typed, { classes: !query.keepClassWords });
   const price = extractPricePhrases(modifiers.text);
   const interpretation: NonNullable<SearchQuery['interpretation']> = {};
   if ((price.min != null || price.max != null) && !explicit?.price) {
@@ -835,6 +857,13 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
   if (modifiers.minRangeMiles != null && !explicit?.rangeMiles) {
     filters.rangeMiles = { min: modifiers.minRangeMiles };
     interpretation.minRangeMiles = modifiers.minRangeMiles;
+  }
+  if (modifiers.vehicleClass) {
+    const { sets, segments, luxury, label } = modifiers.vehicleClass;
+    if (sets?.length) filters.classes = sets;
+    if (segments?.length) filters.segments = segments;
+    if (luxury) filters.luxury = true;
+    interpretation.vehicleClass = label;
   }
   let sort = query.sort;
   const sortedBy = price.cheapest ? 'price' : modifiers.sortedBy;
@@ -1539,8 +1568,14 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
   const threeRow = filters?.threeRow === true;
   const rangeMin = filters?.rangeMiles?.min;
   const rangeMax = filters?.rangeMiles?.max;
+  const classSet = filters?.classes?.length ? new Set(filters.classes) : null;
+  const segmentSet = filters?.segments?.length ? new Set(filters.segments) : null;
+  const luxuryOnly = filters?.luxury === true;
 
   const needsFiltering =
+    !!classSet ||
+    !!segmentSet ||
+    luxuryOnly ||
     !!cylinderSet ||
     !!aspirationSet ||
     threeRow ||
@@ -1603,6 +1638,9 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
     if (cylinderSet && !cylinderSet.has(car.engine.cylinders ?? -1)) continue;
     if (aspirationSet && !aspirationSet.has(car.engine.aspiration ?? '')) continue;
     if (threeRow && !isThreeRow(car)) continue;
+    if (classSet && !competitiveSets(car).some((set) => classSet.has(set))) continue;
+    if (segmentSet && !segmentSet.has(car.shoppingSegment ?? 'mainstream')) continue;
+    if (luxuryOnly && !isLuxuryBrand(car.make)) continue;
     if (rangeMin != null || rangeMax != null) {
       const range = car.epa?.rangeMiles;
       if (range == null) continue;

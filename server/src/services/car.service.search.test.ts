@@ -561,6 +561,49 @@ describe('car.service natural language search', () => {
     expect(results[0].year).toBeGreaterThanOrEqual(LATEST_FULL_MODEL_YEAR);
   });
 
+  it('reads kinds of vehicle: sizes, segments and luxury', () => {
+    const search = (query: string) =>
+      searchCars({ query, sort: { field: 'relevance', order: 'desc' }, limit: 200 });
+    const compactSuv = search('compact suv');
+    expect(compactSuv.interpretation?.vehicleClass).toBe('compact SUVs');
+    const models = compactSuv.results.map((c) => `${c.make} ${c.model}`);
+    expect(models.some((m) => /RAV4|CR-V|Rogue|CX-5|Tucson/.test(m))).toBe(true);
+    expect(models.filter((m) => /Highlander|Tahoe|HR-V|X3|GLC/.test(m))).toEqual([]);
+
+    const midsize = search('midsize sedan').results;
+    expect(midsize.every((c) => c.bodyStyle === 'sedan')).toBe(true);
+    expect(midsize.some((c) => /^Camry|^Accord|^Sonata|^K5/.test(c.model))).toBe(true);
+    expect(midsize.filter((c) => /^Civic|^Corolla/.test(c.model))).toEqual([]);
+
+    const sports = search('sports car under 40k').results;
+    expect(sports.length).toBeGreaterThan(5);
+    expect(
+      sports.every((c) => ['sports-car', 'supercar', 'muscle'].includes(c.shoppingSegment!)),
+    ).toBe(true);
+    const muscle = search('muscle car').results;
+    expect(muscle.some((c) => /Mustang|Camaro|Challenger/.test(c.model))).toBe(true);
+    expect(muscle.filter((c) => c.make === 'Porsche')).toEqual([]);
+
+    const luxurySuv = search('luxury suv').results;
+    expect(luxurySuv.every((c) => c.bodyStyle === 'suv')).toBe(true);
+    expect(luxurySuv.filter((c) => ['Toyota', 'Honda', 'Kia'].includes(c.make))).toEqual([]);
+    expect(
+      search('off road suv').results.some((c) => /Wrangler|Bronco|4Runner/.test(c.model)),
+    ).toBe(true);
+  });
+
+  it('reads class words as words where they name a model or a trim', () => {
+    // "Sport Sedan" is part of a Saab's name; "Premium" and "Big Horn" are trims.
+    const saab = searchCars({ query: 'saab 9-3 sport sedan', limit: 5 });
+    expect(saab.results[0]?.model).toMatch(/9-3 Sport Sedan/);
+    const outback = searchCars({ query: 'subaru outback premium', limit: 5 });
+    expect(outback.results[0]?.model).toMatch(/Outback/);
+    expect(outback.interpretation?.vehicleClass).toBeUndefined();
+    const ram = searchCars({ query: 'ram 1500 big horn', limit: 5 });
+    expect(ram.results[0]?.model).toMatch(/1500/);
+    expect(ram.interpretation?.vehicleClass).toBeUndefined();
+  });
+
   it('suggests derived trims and body/fuel phrases, without duplicate labels', () => {
     const labels = (q: string) => getSearchSuggestions(q, 8).map((s) => s.label);
     expect(labels('mustang gt')[0]).toBe('Ford Mustang GT');
@@ -570,6 +613,8 @@ describe('car.service natural language search', () => {
     expect(labels('third')).toContain('Third-row SUVs');
     expect(labels('cheap')).toContain('Cheapest SUVs');
     expect(labels('longest')).toContain('Longest-range EVs');
+    expect(labels('compact')).toContain('Compact SUVs');
+    expect(labels('muscle')).toContain('Muscle cars');
     const typeR = labels('civic type r');
     expect(typeR.filter((l) => l === 'Honda Civic Type R')).toHaveLength(1);
   });
