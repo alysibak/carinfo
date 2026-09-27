@@ -126,3 +126,32 @@ describe('regions', () => {
     expect(computeOwnershipEconomics(car, [], 'ontario').annualCost.registration).toBe(0);
   });
 });
+
+describe('two-doors', () => {
+  const find = (make: string, model: RegExp, year: number, bodyStyle: string) =>
+    getAllCars().find(
+      (c) => c.make === make && model.test(c.model) && c.year === year && c.bodyStyle === bodyStyle,
+    );
+
+  it('insures a convertible as a coupe, not a sedan', () => {
+    // Roadsters became convertibles, and every convertible was on sedan rates:
+    // a Mustang Convertible cost less to insure than the coupe.
+    const coupe = find('Ford', /^Mustang(?! Convertible)/, 2020, 'coupe');
+    const convertible = find('Ford', /^Mustang Convertible/, 2020, 'convertible');
+    expect(coupe && convertible).toBeTruthy();
+    expect(computeOwnershipEconomics(convertible!, []).annualCost.insurance).toBe(
+      computeOwnershipEconomics(coupe!, []).annualCost.insurance,
+    );
+  });
+
+  it('puts a luxury roadster in the luxury-performance tier with luxury coupes', () => {
+    // A Z4 was costed as a sedan while a 430i coupe paid the tier.
+    const z4 = find('BMW', /^Z4/, 2020, 'convertible');
+    const coupe = find('BMW', /^430i Coupe/, 2021, 'coupe');
+    expect(z4 && coupe).toBeTruthy();
+    const roadster = computeOwnershipEconomics(z4!, []);
+    const reference = computeOwnershipEconomics(coupe!, []);
+    expect(roadster.annualCost.tires).toBe(reference.annualCost.tires);
+    expect(roadster.assumptions.insuranceTier).toBe(reference.assumptions.insuranceTier);
+  });
+});

@@ -761,7 +761,7 @@ Group order: Powertrain → Vehicle → Market → Fuel → Safety → Performan
 
 ### Regional assumptions include
 
-Insurance by body style + luxury multipliers · maintenance by fuel type + age · tire costs · registration · energy prices (gas, diesel, electricity, hydrogen note) · depreciation curves by segment, with one listing-fitted EV curve · CAD FX from USD EPA fuel costs
+Insurance by body style (coupes and convertibles share the two-door rate; luxury-brand two-doors take the luxury-performance tier for insurance, maintenance and tires) + luxury multipliers · maintenance by fuel type + age · tire costs · registration · energy prices (gas, diesel, electricity, hydrogen note) · depreciation curves by segment, with one listing-fitted EV curve · CAD FX from USD EPA fuel costs
 
 Calibration sources are cited next to each figure in `regional-assumptions.ts`: Statistics Canada pump prices, FSRA (Ontario) and ICBC (B.C.) average premiums, and the AAA/CAA driving-cost studies for maintenance and tires. Ontario registration is $0 (plate renewal fees ended March 2022); B.C.'s licence-fee figure has not been re-checked against the weight-based fee regulation.
 

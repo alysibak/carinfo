@@ -137,13 +137,18 @@ function isHeavyEvTruck(car: CarSpecs): boolean {
   );
 }
 
+/**
+ * Coupes and convertibles, which insurers rate alike. Only coupes counted,
+ * so a Boxster, SL, Z4 or MX-5 (convertibles, not coupes) was costed as a
+ * sedan while a 430i coupe paid the luxury-performance tier.
+ */
+function isTwoDoor(car: CarSpecs): boolean {
+  return car.bodyStyle === 'coupe' || car.bodyStyle === 'convertible';
+}
+
 function isLuxuryPerformance(car: CarSpecs): boolean {
   const m = car.model.toLowerCase();
-  return (
-    (car.bodyStyle === 'coupe' && LUXURY_MAKES.has(car.make)) ||
-    m.includes('lc ') ||
-    m.startsWith('lc')
-  );
+  return (isTwoDoor(car) && LUXURY_MAKES.has(car.make)) || m.includes('lc ') || m.startsWith('lc');
 }
 
 function vehicleAge(car: CarSpecs): number {
@@ -158,7 +163,7 @@ function insuranceAnnual(car: CarSpecs, marketMid: number, ins = REGION.insuranc
   let base = ins.sedan;
   if (car.bodyStyle === 'suv') base = ins.suv;
   if (car.bodyStyle === 'truck') base = ins.truck;
-  if (car.bodyStyle === 'coupe') base = ins.coupe;
+  if (isTwoDoor(car)) base = ins.coupe;
   if (LUXURY_MAKES.has(car.make)) base *= ins.luxuryMultiplier;
   if (isHeavyEvTruck(car)) base = ins.heavyEvTruck;
   if (isLuxuryPerformance(car)) base = ins.luxuryPerformance;
@@ -447,8 +452,8 @@ export function computeOwnershipEconomics(
         : isHeavyEvTruck(car)
           ? `Heavy EV / truck (${region.label} baseline)`
           : isLuxuryPerformance(car)
-            ? `Luxury coupe (${region.label} baseline)`
-            : `${car.bodyStyle} baseline (${region.label})`,
+            ? `Luxury coupe or convertible (${region.label} baseline)`
+            : `${isTwoDoor(car) ? 'coupe / convertible' : car.bodyStyle} baseline (${region.label})`,
       depreciationNote: `${depNote}; US MSRP anchors × ${region.vehiclePriceCadPerUsd} (Canadian vs US sticker prices)`,
       regionNote: formatOntarioRegionNote(region),
     },
