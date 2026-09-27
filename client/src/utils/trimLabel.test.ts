@@ -82,6 +82,13 @@ describe('displayVehicleTitle / model family', () => {
     expect(formatTransmissionLabel({ type: 'automatic', description: 'Automatic (S8)' })).toBe(
       '8-Speed Automatic',
     );
+    // EPA's AM codes: a PDK, a DSG, a Hyundai DCT.
+    expect(formatTransmissionLabel({ type: 'automatic', description: 'Automatic (AM-S7)' })).toBe(
+      '7-Speed Automated Manual',
+    );
+    expect(formatTransmissionLabel({ type: 'automatic', description: 'Automatic (AM8)' })).toBe(
+      '8-Speed Automated Manual',
+    );
   });
 
   it('keeps multi-word families like Model 3', () => {

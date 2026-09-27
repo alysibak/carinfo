@@ -202,6 +202,8 @@ export interface CarFilter {
   luxury?: boolean;
   /** 12-48 V mild hybrids only ("mild hybrid" in a search). */
   mildHybrid?: boolean;
+  /** EPA's automated manuals (dual-clutch gearboxes, mostly) only. */
+  automatedManual?: boolean;
 }
 
 export interface SearchQuery {
@@ -263,6 +265,8 @@ export interface SearchInterpretation {
   snow?: boolean;
   /** "mild hybrid": kept to 12-48 V mild hybrids, which are listed by their fuel. */
   mildHybrid?: boolean;
+  /** "dual clutch", "dct": kept to EPA's automated manuals. */
+  automatedManual?: boolean;
   /** "first car", "teenager": the First car preset's price, MPG and year limits. */
   firstCar?: { maxPrice: number; minMpg: number; minYear: number };
 }

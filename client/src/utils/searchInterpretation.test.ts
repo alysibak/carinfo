@@ -67,6 +67,9 @@ describe('describeSearchInterpretation', () => {
       'Read as a first car, as the First car preset: under $18,000 where no price was given, 28 MPG or better, 2010 or newer.',
       'All- and four-wheel drive only, for snow: EPA records the drive, not the tires, which matter as much.',
     ]);
+    expect(describeSearchInterpretation({ automatedManual: true })).toEqual([
+      'Automated manuals only, as EPA files them: mostly dual-clutch gearboxes (PDK, DSG), some with a single clutch.',
+    ]);
     expect(describeSearchInterpretation({ mildHybrid: true })).toEqual([
       'Mild hybrids only: a 12-48 volt motor helps the engine but never drives the car, so they are listed by their fuel.',
     ]);

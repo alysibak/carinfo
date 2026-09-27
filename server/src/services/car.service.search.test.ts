@@ -697,6 +697,16 @@ describe('car.service natural language search', () => {
     expect(snow.results.every((c) => c.driveType === 'AWD' || c.driveType === '4WD')).toBe(true);
   });
 
+  it('finds dual-clutch gearboxes by name', () => {
+    const pdk = searchCars({ query: 'porsche pdk', limit: 100 });
+    expect(pdk.interpretation?.automatedManual).toBe(true);
+    expect(pdk.total).toBeGreaterThan(3);
+    expect(pdk.results.every((c) => /\(AM/.test(c.transmission.description ?? ''))).toBe(true);
+    // "automated manual" is not a manual.
+    const am = searchCars({ query: 'automated manual', limit: 50 }).results;
+    expect(am.every((c) => c.transmission.type !== 'manual')).toBe(true);
+  });
+
   it('keeps mild hybrids out of "hybrid" and finds them by name', () => {
     // A BMW 430i and an Audi S8 led "2020 or newer hybrid".
     const hybrids = searchCars({ query: 'hybrid suv', limit: 200 }).results;

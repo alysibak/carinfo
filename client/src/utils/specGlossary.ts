@@ -95,7 +95,7 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
   },
   transmission: {
     plain: 'How power reaches the wheels',
-    what: 'Automatic shifts for you. Manual you shift. CVT has no fixed gears. Dual-clutch is a fast auto.',
+    what: 'Automatic shifts for you. Manual you shift. CVT has no fixed gears. An automated manual is a gearbox with clutches instead of a torque converter that the car shifts itself: usually a dual-clutch (Porsche PDK, VW DSG).',
     why: 'Affects how the car feels day to day and how it sips fuel on the highway.',
   },
   fuel: {

@@ -29,6 +29,8 @@ export interface QueryModifiers {
   firstCar?: boolean;
   /** "mild hybrid", "mhev", "48v": listed by their fuel, so "hybrid" alone misses them. */
   mildHybrid?: boolean;
+  /** "dual clutch", "dct", "pdk": EPA's automated manuals. */
+  automatedManual?: boolean;
 }
 
 export interface VehicleClassQuery {
@@ -436,6 +438,10 @@ export function extractQueryModifiers(
   if (unmeasured.length) {
     out.unmeasured = [...new Set(unmeasured)];
     text = text.replace(UNMEASURED, ' ');
+  }
+  // Before "manual" is read as a gearbox: "automated manual" is not one.
+  if (take(/\b(?:dual[- ]clutch|dct|dsg|pdk|s[- ]tronic|automated manual)\b/)) {
+    out.automatedManual = true;
   }
   for (const [re, types] of TRANSMISSION_PHRASES) {
     if (take(re)) {

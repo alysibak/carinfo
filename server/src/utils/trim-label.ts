@@ -141,7 +141,8 @@ function parseEpaTransmissionSpeeds(
   if (!description) return undefined;
   const d = description.trim();
 
-  const avMatch = d.match(/(?:AV|AM)-S(\d+)/i);
+  // "(AV-S7)", "(AM-S7)", and an automated manual without select shift: "(AM7)".
+  const avMatch = d.match(/(?:AV|AM)-S(\d+)/i) ?? d.match(/\(AM(\d+)\)/i);
   if (avMatch && isPlausibleSpeedCount(Number(avMatch[1]))) return Number(avMatch[1]);
 
   const parenS = d.match(/\(S(\d+)\)/i);
@@ -171,7 +172,13 @@ export function formatTransmissionLabel(
 ): string {
   if (isCvtDescription(trans.description, trans.type)) return 'CVT';
 
-  const type = TRANSMISSION_TYPE_LABELS[trans.type] ?? 'Automatic';
+  // EPA's "AM" and "AM-S7" codes: a manual gearbox the car shifts itself,
+  // mostly with two clutches (PDK, DSG), in older cars with one (a smart).
+  const automatedManual =
+    trans.type === 'automatic' && /\(AM(?:-S)?\d*\)/i.test(trans.description ?? '');
+  const type = automatedManual
+    ? 'Automated Manual'
+    : (TRANSMISSION_TYPE_LABELS[trans.type] ?? 'Automatic');
   const speeds = parseEpaTransmissionSpeeds(trans.speeds, trans.description);
 
   if (speeds && trans.type !== 'cvt') return `${speeds}-Speed ${type}`;

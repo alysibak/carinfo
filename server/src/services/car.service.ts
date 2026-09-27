@@ -1013,6 +1013,10 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
       minYear: FIRST_CAR.minYear,
     };
   }
+  if (modifiers.automatedManual) {
+    filters.automatedManual = true;
+    interpretation.automatedManual = true;
+  }
   if (modifiers.mildHybrid) {
     filters.mildHybrid = true;
     interpretation.mildHybrid = true;
@@ -1744,6 +1748,10 @@ function getCandidateSet(query: SearchQuery): Car[] {
  * Indexed fields (make, bodyStyle, fuelType, transmission, driveType, country)
  * are skipped here since getCandidateSet already handled them.
  */
+/** EPA's "AM" and "AM-S7" codes: a PDK, a DSG, or an older single-clutch box. */
+const isAutomatedManual = (car: Car) =>
+  /\(AM(?:-S)?\d*\)/i.test(car.transmission?.description ?? '');
+
 const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): Car[] {
@@ -1777,12 +1785,14 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
   const segmentSet = filters?.segments?.length ? new Set(filters.segments) : null;
   const luxuryOnly = filters?.luxury === true;
   const mildOnly = filters?.mildHybrid === true;
+  const automatedManualOnly = filters?.automatedManual === true;
 
   const needsFiltering =
     !!classSet ||
     !!segmentSet ||
     luxuryOnly ||
     mildOnly ||
+    automatedManualOnly ||
     !!cylinderSet ||
     !!aspirationSet ||
     threeRow ||
@@ -1859,6 +1869,7 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
     if (segmentSet && !segmentSet.has(car.shoppingSegment ?? 'mainstream')) continue;
     if (luxuryOnly && !isLuxuryBrand(car.make)) continue;
     if (mildOnly && !car.engine.mildHybrid) continue;
+    if (automatedManualOnly && !isAutomatedManual(car)) continue;
     if (rangeMin != null || rangeMax != null) {
       const range = car.epa?.rangeMiles;
       if (range == null) continue;
