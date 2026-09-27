@@ -201,7 +201,7 @@ Types live in `client/src/types/car.types.ts` and `server/src/types/car.types.ts
 | `vehicleCategory` | `car\|suv\|truck\|van` | Computed |
 | `shoppingSegment` | `ShoppingSegment` | Computed |
 | `ownershipProfile` | object? | Label, tags, bestFor |
-| `engine` | object | displacement, hp, torque, fuelType, cylinders, configuration |
+| `engine` | object | displacement, hp, torque, fuelType, cylinders, configuration, aspiration, `horsepowerBasis` (`manufacturer` for our manufacturer and EV motor ratings, `sibling` for a copy from the same engine in the same model) |
 | `performance` | object? | zeroToSixty, topSpeed, quarterMile (always empty in prod DB) |
 | `dimensions` | object? | length, width, height, wheelbase, curbWeight (always empty in prod DB) |
 | `fuelEconomy` | object | city, highway, combined |
@@ -227,6 +227,7 @@ Types live in `client/src/types/car.types.ts` and `server/src/types/car.types.ts
 | `evCharge` | charge120/240, kWh/100mi, range (EV/FCEV) |
 | `fieldProvenance` | Merged provenance for analytics fields |
 | `zeroToSixty` | `{ value, method: 'actual'\|'predicted', confidence }` |
+| `competitiveClass` | The class it is shopped in (`"Compact SUV"`), from `utils/competitive-sets.ts`; absent for the ~1% of listings in none |
 
 ### Enums
 
