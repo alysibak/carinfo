@@ -21,6 +21,8 @@ interface Correction {
   hp: number;
   /** The derived trim, where it tells engines of one size apart (a Civic Si). */
   variant?: RegExp;
+  /** The engine is naturally aspirated whatever EPA's turbo flag says. */
+  naturallyAspirated?: boolean;
 }
 
 const row = (
@@ -151,6 +153,19 @@ const CORRECTIONS: Correction[] = [
   row('Ford', /^Ranger/, [2019, 2023], 2.3, true, 270),
   row('Ford', /^Ranger(?! Raptor)/, [2024, 2026], 2.7, true, 315),
   row('Toyota', /^Tacoma/, [2016, 2023], 2.7, false, 159),
+  // Porsche's 718, by trim: the 2.0 turbo base car and T (300 hp) read the
+  // GTS's 361, the 2023 GT4 the GT4 RS's 493, and EPA flags some of the
+  // naturally aspirated 4.0s as turbocharged.
+  ...[false, true].flatMap((forced) =>
+    [
+      row('Porsche', /^718 (?:Boxster|Cayman) GTS$/, [2020, 2025], 4, forced, 394),
+      row('Porsche', /^718 (?:Cayman GT4|Spyder)$/, [2020, 2025], 4, forced, 414),
+      row('Porsche', /^718 (?:GT4 RS|Spyder RS)$/, [2022, 2025], 4, forced, 493),
+    ].map((r) => ({ ...r, naturallyAspirated: true })),
+  ),
+  row('Porsche', /^(?:718 )?(?:Boxster|Cayman)(?: T)?$/, [2017, 2025], 2, true, 300),
+  row('Porsche', /^(?:718 )?(?:Boxster|Cayman) S$/, [2017, 2025], 2.5, true, 350),
+  row('Porsche', /^(?:718 )?(?:Boxster|Cayman) GTS$/, [2018, 2019], 2.5, true, 365),
   // Toyota's i-Force Max hybrids, rated as a system.
   row('Toyota', /^Tundra/, [2022, 2026], 3.4, true, 437, 'hybrid'),
   row('Toyota', /^(4Runner|Tacoma)/, [2024, 2026], 2.4, true, 326, 'hybrid'),
@@ -180,12 +195,22 @@ export function applyHorsepowerCorrections(cars: Car[]): { cars: Car[]; correcte
   let corrected = 0;
   const out = cars.map((car) => {
     const fix = correctionFor(car);
-    if (!fix || car.engine.horsepower === fix.hp) return car;
+    const clearTurbo = !!fix?.naturallyAspirated && !!car.engine.aspiration;
+    if (!fix || (car.engine.horsepower === fix.hp && !clearTurbo)) return car;
     corrected++;
+    const { aspiration: _flag, ...engine } = car.engine;
     return {
       ...car,
-      engine: { ...car.engine, horsepower: fix.hp, horsepowerBasis: 'manufacturer' as const },
-      provenance: { ...car.provenance, 'engine.horsepower': 'curated' as const },
+      engine: {
+        ...(clearTurbo ? engine : car.engine),
+        horsepower: fix.hp,
+        horsepowerBasis: 'manufacturer' as const,
+      },
+      provenance: {
+        ...car.provenance,
+        'engine.horsepower': 'curated' as const,
+        ...(clearTurbo ? { 'engine.aspiration': 'curated' as const } : {}),
+      },
     };
   });
   return { cars: out, corrected };

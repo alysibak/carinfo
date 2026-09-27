@@ -66,6 +66,18 @@ describe('applyHorsepowerCorrections', () => {
     expect(cars.map((c) => c.engine.horsepower)).toEqual([355, 277, 305, 181, 437, 389]);
   });
 
+  it("rates the 718 by trim and clears EPA's turbo flag on its 4.0", () => {
+    const { cars } = applyHorsepowerCorrections([
+      // The 2.0 turbo base car read the GTS's 361 hp.
+      car('Porsche', 'Cayman', 2019, 2, 361, { aspiration: 'turbocharged' }),
+      car('Porsche', '718 Cayman GTS', 2023, 4, undefined, { aspiration: 'turbocharged' }),
+      // The 2023 GT4 read the GT4 RS's 493.
+      car('Porsche', '718 Cayman GT4', 2023, 4, 493, { aspiration: 'turbocharged' }),
+    ]);
+    expect(cars.map((c) => c.engine.horsepower)).toEqual([300, 394, 414]);
+    expect(cars.map((c) => c.engine.aspiration)).toEqual(['turbocharged', undefined, undefined]);
+  });
+
   it('leaves other engines, hybrids and years alone', () => {
     const cars = [
       car('Honda', 'CR-V Hybrid AWD', 2021, 2, 212, { fuelType: 'hybrid' }),
