@@ -59,7 +59,10 @@ const HATCHBACK_PATTERNS: RegExp[] = [
   /\belantra gt\b/,
   /\bscion xd\b/,
   /\bc-max\b/,
-  /\bioniq(?! [56])\b/,
+  // The car's id is in the haystack too, hyphenated ("ioniq-6"): the
+  // exclusions allow for it, or the Ioniq 6, Yaris iA and Mirage G4 sedans
+  // read as hatchbacks.
+  /\bioniq(?![ -]\d)\b/,
   /\bfocus (rs|electric)\b/,
   /\blancer sportback\b/,
   /\bcaliber\b/,
@@ -72,19 +75,20 @@ const HATCHBACK_PATTERNS: RegExp[] = [
   /\bleaf\b/,
   /\bbolt ev\b/,
   /\bbolt\b/,
-  /\bi3\b/,
+  /\bi3s?\b/,
   /\b500e\b/,
   /\bspark ev\b/,
   /\bkona electric\b/,
   /\bniro ev\b/,
   /\bev6\b/,
   /\bioniq 5\b/,
-  /\byaris\b(?! ia)/,
+  /\byaris\b(?![ -]ia)/,
   /\bfit\b/,
-  /\bmirage\b(?! g4)/,
+  /\bmirage\b(?![ -]g4)/,
   /\bsoul\b/,
   /\bcube\b/,
-  /\bprius\b(?!\s*prime)/,
+  // The Prius Prime is a liftback too.
+  /\bprius\b/,
 ];
 
 const HOT_HATCH_PATTERN =
@@ -366,7 +370,10 @@ export function inferBodyStyle(car: CarSpecs, displayModel?: string): BodyStyle 
   }
 
   // Never over an SUV, pickup or van class: a Model Y or Kona Electric is not a hatchback.
-  if (!epaUtility && HATCHBACK_PATTERNS.some((re) => re.test(h) || re.test(model)))
+  // Names only: the trim and id are slugs that repeat the base name without its
+  // suffix ("yaris-manual-6-spd" for a Yaris iA), so a sedan read as the hatch.
+  const name = `${car.make} ${car.model}`.toLowerCase();
+  if (!epaUtility && HATCHBACK_PATTERNS.some((re) => re.test(name) || re.test(model)))
     return 'hatchback';
 
   // The first two Insights were hatchbacks; the 2019-22 car is a sedan.

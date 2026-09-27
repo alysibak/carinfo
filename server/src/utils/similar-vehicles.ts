@@ -51,6 +51,15 @@ const LUXURY_BRANDS = new Set([
   'Rivian',
 ]);
 
+/**
+ * Priced between the tiers and shopped against both: a Model 3 against an i4
+ * and a Polestar 2, and an Ioniq 6 and an EV6. As luxury cars only, a Model
+ * Y's rivals were a Q4, an EQB and an iX, with no Ioniq 5 or Mach-E.
+ */
+function bridgesBrandTiers(car: Car): boolean {
+  return car.make === 'Tesla' && /^model [3y]\b/i.test(car.model);
+}
+
 /** Exotic makes and every supercar: an R8 is cross-shopped against a Huracán. */
 function isExoticPeer(car: Car): boolean {
   return EXOTIC_MAKES.has(car.make) || car.shoppingSegment === 'supercar';
@@ -168,7 +177,14 @@ export function scoreCrossShopCandidate(
   // A RAV4 shopper compares a CR-V and a Rogue before a Q3 or a GLA. Sports
   // cars cross the line: a Corvette is a 911's rival.
   const sporting = anchorSeg === 'sports-car' || anchorSeg === 'supercar' || anchorSeg === 'muscle';
-  if (!sporting && LUXURY_BRANDS.has(candidate.make) === LUXURY_BRANDS.has(anchor.make)) score += 3;
+  if (
+    !sporting &&
+    (LUXURY_BRANDS.has(candidate.make) === LUXURY_BRANDS.has(anchor.make) ||
+      bridgesBrandTiers(anchor) ||
+      bridgesBrandTiers(candidate))
+  ) {
+    score += 3;
+  }
   // A Telluride shopper wants a third row; a RAV4 shopper does not.
   if (anchor.bodyStyle === 'suv' && isThreeRow(anchor) === isThreeRow(candidate)) score += 2;
   // EPA's size class measures interior volume (a Civic and a Camry are both

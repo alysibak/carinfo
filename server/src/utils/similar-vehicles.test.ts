@@ -67,3 +67,16 @@ describe('similar vehicles', () => {
     expect(similar.map((c) => c.id)).not.toContain(anchorId);
   });
 });
+
+describe('Tesla Model 3 and Model Y', () => {
+  it('meet rivals from both brand tiers', () => {
+    // Counted as luxury only, a Model Y's rivals were a Q4, an EQB and an iX.
+    const all = getAllCars();
+    const modelY = all.find(
+      (c) => c.make === 'Tesla' && /^Model Y Long Range AWD$/.test(c.model) && c.year === 2024,
+    )!;
+    const pool = all.filter((c) => c.bodyStyle === modelY.bodyStyle);
+    const makes = findSimilarCars(modelY, pool, 6).map((c) => c.make);
+    expect(makes.some((m) => m === 'Hyundai' || m === 'Kia')).toBe(true);
+  });
+});

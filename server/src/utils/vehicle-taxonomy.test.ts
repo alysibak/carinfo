@@ -119,6 +119,29 @@ describe('vehicle-taxonomy', () => {
     ).toBe('suv');
   });
 
+  it('reads a sedan by its name, not the slugs that repeat its base name', () => {
+    // The id and trim are slugs ("ioniq-6", "yaris-manual-6-spd"): matched
+    // against them, 34 Ioniq 6, Mirage G4 and Yaris iA sedans read as hatchbacks.
+    const slugged = (make: string, model: string, id: string, trim?: string) =>
+      inferBodyStyle(minimalCar({ make, model, id, trim }), model);
+    expect(
+      slugged('Hyundai', 'Ioniq 6 Long Range AWD', 'hyundai-ioniq-6-long-range-awd-2024'),
+    ).toBe('sedan');
+    expect(slugged('Mitsubishi', 'Mirage G4', 'mitsubishi-mirage-g4-2019', 'mirage-cvt')).toBe(
+      'sedan',
+    );
+    expect(slugged('Toyota', 'Yaris iA', 'toyota-yaris-ia-2017', 'yaris-manual-6-spd')).toBe(
+      'sedan',
+    );
+    // Their hatchback siblings, and the liftbacks, stay hatchbacks.
+    expect(slugged('Hyundai', 'Ioniq Blue', 'hyundai-ioniq-blue-2019')).toBe('hatchback');
+    expect(slugged('Mitsubishi', 'Mirage', 'mitsubishi-mirage-2019', 'mirage-cvt')).toBe(
+      'hatchback',
+    );
+    expect(slugged('Toyota', 'Prius Prime', 'toyota-prius-prime-2021')).toBe('hatchback');
+    expect(slugged('BMW', 'i3s', 'bmw-i3s-2019')).toBe('hatchback');
+  });
+
   it('reads the retro Thunderbird as the convertible it is', () => {
     const tbird = (year: number) =>
       inferBodyStyle(minimalCar({ make: 'Ford', model: 'Thunderbird', year, bodyStyle: 'coupe' }));

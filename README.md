@@ -359,7 +359,7 @@ Then `normalizeCarRecord()` applies fuel-type inference, MPGe labels, hydrogen n
 
 **`canonicalizeDisplayModel()`** — disambiguates EPA slugs (Golf GTI vs Golf, Civic Type R, Cooper S, WRX, etc.)
 
-**`inferBodyStyle()`** — corrects EPA mislabels: hatchbacks listed as sedans, roadsters in the two-seater class listed as coupes (Boxster, MX-5, S2000, Z4, SL), four-door "Gran Coupes" as coupes, coupe-SUVs (GLE Coupe, Cayenne Coupe) and soft-top SUVs as coupes and convertibles, crossovers listed as wagons or sedans (CX-3, EX35), and the Magnum EPA files as an SUV.
+**`inferBodyStyle()`** — corrects EPA mislabels: hatchbacks listed as sedans, roadsters in the two-seater class listed as coupes (Boxster, MX-5, S2000, Z4, SL), four-door "Gran Coupes" as coupes, coupe-SUVs (GLE Coupe, Cayenne Coupe) and soft-top SUVs as coupes and convertibles, crossovers listed as wagons or sedans (CX-3, EX35), and the Magnum EPA files as an SUV. Hatchback names match the make and model only, not the id or trim slugs that repeat a base name ("ioniq-6", "yaris-manual-6-spd"), so the Ioniq 6, Mirage G4 and Yaris iA stay sedans.
 
 **`classifyShoppingSegment()`** — rules based on fuel type, body, names, horsepower, induction and make:
 
@@ -786,7 +786,7 @@ Calibration sources are cited next to each figure in `regional-assumptions.ts`: 
 
 **File:** `server/src/utils/similar-vehicles.ts`
 
-Scores candidates first by competitive set (`utils/competitive-sets.ts`: about thirty classes shoppers compare within, such as compact cars, midsize sedans, compact and three-row SUVs, full-size pickups, off-roaders, pony cars and premium sports cars, covering 98% of listings since 2005), then shopping segment affinity, body style, brand tier (except for sports cars), price, horsepower, fuel type and model year. EPA's size class counts only when no set is known: it measures interior volume, so a Civic and a Camry are both "Midsize".
+Scores candidates first by competitive set (`utils/competitive-sets.ts`: about thirty classes shoppers compare within, such as compact cars, midsize sedans, compact and three-row SUVs, full-size pickups, off-roaders, pony cars and premium sports cars, covering 98% of listings since 2005), then shopping segment affinity, body style, brand tier (except for sports cars; Tesla's Model 3 and Model Y count in both tiers, so a Model Y meets an Ioniq 5 and an EV6 as well as a Q4), price, horsepower, fuel type and model year. EPA's size class counts only when no set is known: it measures interior volume, so a Civic and a Camry are both "Midsize".
 
 Suggestions leave out the anchor's own model line (a Huracán Sterrato for a Huracán, a Model 3 Performance for a Model 3), collector cars (they carry no estimate) and tuners' versions of other makes' cars (a Roush F-150); keep one car per model line and two per make; and cross between exotics and other cars only at 60% of the price or closer.
 
