@@ -1,14 +1,14 @@
 import type { CarDashboard } from '../types/car.types';
 import { buildGlanceMetrics } from '../utils/glanceMetrics';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
-import { formatFuelTypeLabel } from '../utils/fuelDisplay';
+import { formatCarFuelLabel } from '../utils/fuelDisplay';
 import GlanceMetricCell from './GlanceMetricCell';
 
 function CategoricalFallback({ car }: { car: CarDashboard['car'] }) {
   const chips = [
     bodyStyleLabel(car.bodyStyle),
     car.driveType,
-    formatFuelTypeLabel(car.engine.fuelType),
+    formatCarFuelLabel(car),
     car.countryOfOrigin,
   ].filter(Boolean);
 

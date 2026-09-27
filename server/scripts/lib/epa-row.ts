@@ -11,7 +11,7 @@ import type {
   Provenance,
   ProvenanceSource,
 } from '../../src/types/car.types.js';
-import { mapEpaFuelType } from './epa-fuel-type.js';
+import { mapEpaFuelType, isEpaMildHybrid } from './epa-fuel-type.js';
 
 export interface EpaRow {
   id: string;
@@ -46,6 +46,8 @@ export interface EpaRow {
   sCharger?: string;
   /** Free-text engine notes: "VTEC", "DOHC", "(FFS,TRBO)", "SIDI", "PZEV"... */
   eng_dscr?: string;
+  /** Hybrid motor and pack: "48V Li-Ion", "259V Li-Ion". */
+  evMotor?: string;
 }
 
 /** Oldest model year imported. */
@@ -397,6 +399,7 @@ export function mapEpaRow(row: EpaRow, maxYear = maxModelYear()): Car | null {
             : `V${cylinders}`
           : undefined,
       ...(aspiration ? { aspiration } : {}),
+      ...(isEpaMildHybrid(row) ? { mildHybrid: true } : {}),
     },
     fuelEconomy: { city, highway, combined },
     transmission,

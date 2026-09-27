@@ -73,6 +73,11 @@ export interface CarSpecs {
      * model (a sibling or an adjacent year).
      */
     horsepowerBasis?: 'manufacturer' | 'sibling';
+    /**
+     * A 12-48 V mild hybrid (EPA's "Mild Hybrid"): the motor assists the
+     * engine but never drives the car, so the fuel type is the engine's.
+     */
+    mildHybrid?: boolean;
   };
 
   performance?: {
@@ -195,6 +200,8 @@ export interface CarFilter {
   segments?: string[];
   /** Luxury makes only. */
   luxury?: boolean;
+  /** 12-48 V mild hybrids only ("mild hybrid" in a search). */
+  mildHybrid?: boolean;
 }
 
 export interface SearchQuery {
@@ -254,6 +261,8 @@ export interface SearchInterpretation {
   similarTo?: { id: string; label: string };
   /** "car for snow": kept to all- and four-wheel drive. */
   snow?: boolean;
+  /** "mild hybrid": kept to 12-48 V mild hybrids, which are listed by their fuel. */
+  mildHybrid?: boolean;
   /** "first car", "teenager": the First car preset's price, MPG and year limits. */
   firstCar?: { maxPrice: number; minMpg: number; minYear: number };
 }

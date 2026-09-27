@@ -55,6 +55,11 @@ export function describeSearchInterpretation(
       `Read as a first car, as the First car preset: under ${cad(maxPrice)} where no price was given, ${minMpg} MPG or better, ${minYear} or newer.`,
     );
   }
+  if (interpretation.mildHybrid) {
+    lines.push(
+      'Mild hybrids only: a 12-48 volt motor helps the engine but never drives the car, so they are listed by their fuel.',
+    );
+  }
   if (interpretation.snow) {
     lines.push(
       'All- and four-wheel drive only, for snow: EPA records the drive, not the tires, which matter as much.',

@@ -15,7 +15,7 @@ import { dirname, join, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { parse } from 'csv-parse/sync';
 import type { Car } from '../src/types/car.types.js';
-import { mapEpaFuelType, type EpaFuelFields } from './lib/epa-fuel-type.js';
+import { isEpaMildHybrid, mapEpaFuelType, type EpaFuelFields } from './lib/epa-fuel-type.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = resolve(__dirname, '..', 'data');
@@ -43,10 +43,14 @@ for (const car of db.cars) {
     continue;
   }
   const epaFuel = mapEpaFuelType(row);
-  if (epaFuel === car.engine.fuelType) continue;
-  const key = `${car.engine.fuelType} -> ${epaFuel}`;
+  const mild = isEpaMildHybrid(row);
+  if (epaFuel === car.engine.fuelType && mild === !!car.engine.mildHybrid) continue;
+  const key = `${car.engine.fuelType}${car.engine.mildHybrid ? ' (mild)' : ''} -> ${epaFuel}${mild ? ' (mild)' : ''}`;
   changes.set(key, [...(changes.get(key) ?? []), car.id]);
-  if (write) car.engine = { ...car.engine, fuelType: epaFuel };
+  if (write) {
+    const { mildHybrid: _was, ...engine } = car.engine;
+    car.engine = { ...engine, fuelType: epaFuel, ...(mild ? { mildHybrid: true } : {}) };
+  }
 }
 
 const total = [...changes.values()].reduce((n, ids) => n + ids.length, 0);

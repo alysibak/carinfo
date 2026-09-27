@@ -65,6 +65,24 @@ export function formatFuelBadge(fuelType: string): string {
   return fuelType;
 }
 
+type FuelCar = { engine: Pick<CarSpecs['engine'], 'fuelType' | 'mildHybrid'> };
+
+/**
+ * The fuel, naming a mild hybrid: EPA files a 48 V mild hybrid (an S8, a Ram
+ * eTorque) as a "Hybrid", but its motor never drives the car and it runs on
+ * gasoline, so it is listed as gasoline and said to be a mild hybrid.
+ */
+export function formatCarFuelLabel(car: FuelCar): string {
+  const label = formatFuelTypeLabel(car.engine.fuelType);
+  return car.engine.mildHybrid ? `${label}, mild hybrid` : label;
+}
+
+/** Card and pill text: "mild hybrid" for a gasoline mild hybrid. */
+export function formatCarFuelBadge(car: FuelCar): string {
+  if (!car.engine.mildHybrid) return formatFuelBadge(car.engine.fuelType);
+  return car.engine.fuelType === 'gasoline' ? 'mild hybrid' : `${car.engine.fuelType} mild hybrid`;
+}
+
 export function formatPowertrainLabel(fuelType: string): string | null {
   if (fuelType === 'hydrogen') return 'Fuel Cell Electric Vehicle';
   if (fuelType === 'electric') return 'Battery Electric Vehicle';

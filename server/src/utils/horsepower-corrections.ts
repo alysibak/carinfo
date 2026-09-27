@@ -51,6 +51,11 @@ const CORRECTIONS: Correction[] = [
   // plain "1500 4WD", makes 777.
   row('Ram', /^1500/, [2021, 2024], 6.2, true, 702),
   row('Ram', /^1500/, [2026, 2026], 6.2, true, 777),
+  // The Pentastar V6 and the 5.7 Hemi, rated 305 and 395 hp throughout: the
+  // match gave the V6 240 (the EcoDiesel's), 290 or 298 by year, and the Hemi
+  // 390 or 393.
+  row('Ram', /^1500(?! (TRX|HO|RHO))/, [2013, 2026], 3.6, false, 305),
+  row('Ram', /^1500(?! (TRX|HO|RHO))/, [2013, 2026], 5.7, false, 395),
   row('Ram', /^1500/, [2014, 2018], 3, true, 240, 'diesel'),
   row('Ram', /^1500/, [2020, 2023], 3, true, 260, 'diesel'),
   row('Nissan', /^Kicks/, [2018, 2019], 1.6, false, 125),
@@ -93,6 +98,10 @@ const CORRECTIONS: Correction[] = [
   row('Lexus', /^IS 300/, [2021, 2026], 3.5, false, 260),
   row('Lexus', /^ES 250/, [2021, 2026], 2.5, false, 203),
   row('Audi', /^Q5/, [2013, 2017], 3, true, 272),
+  // A 2020 S8 took the 2017-18 S8 plus's 605 hp; the 2024 530i the old
+  // generation's 248.
+  row('Audi', /^S8/, [2020, 2027], 4, true, 563),
+  row('BMW', /^530i/, [2024, 2027], 2, true, 255),
   row('Audi', /^Q5/, [2014, 2016], 3, true, 240, 'diesel'),
   // The 2.0-litre turbo NX 200t and NX 300, which read 112 hp.
   row('Lexus', /^NX (200t|300)(?!h)/, [2015, 2021], 2, true, 235),

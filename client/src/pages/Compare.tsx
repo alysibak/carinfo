@@ -4,7 +4,7 @@ import { useCarStore } from '../stores/carStore';
 import type { CarDashboard, CarSpecs } from '../types/car.types';
 import * as api from '../services/api';
 import { formatEngineForDetail, UNAVAILABLE_LABEL } from '../utils/dataValue';
-import { formatFuelTypeLabel, usesMpge } from '../utils/fuelDisplay';
+import { usesMpge, formatCarFuelLabel } from '../utils/fuelDisplay';
 import {
   displayListingSubtitle,
   displayModelLabel,
@@ -77,7 +77,7 @@ const ALL_SPECS: SpecRow[] = [
   {
     key: 'fuelType',
     label: 'FUEL',
-    getValue: (car) => formatFuelTypeLabel(car.engine.fuelType).toUpperCase(),
+    getValue: (car) => formatCarFuelLabel(car).toUpperCase(),
   },
   {
     key: 'transmission',

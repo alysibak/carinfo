@@ -27,6 +27,8 @@ export interface QueryModifiers {
   snow?: boolean;
   /** "first car", "for a teenager", "student": the First car preset's limits. */
   firstCar?: boolean;
+  /** "mild hybrid", "mhev", "48v": listed by their fuel, so "hybrid" alone misses them. */
+  mildHybrid?: boolean;
 }
 
 export interface VehicleClassQuery {
@@ -391,6 +393,10 @@ export function extractQueryModifiers(
     if (classRead.vehicleClass) out.vehicleClass = classRead.vehicleClass;
   }
 
+  // Before "hybrid" is read as a fuel.
+  if (take(/\b(?:mild[- ]hybrids?|mhev|48[- ]?v(?:olt)?|etorque|e-?assist|eq ?boost)\b/)) {
+    out.mildHybrid = true;
+  }
   // Before the filler words go: "first car" needs its "car".
   if (text.match(FIRST_CAR_WORDS)) {
     out.firstCar = true;

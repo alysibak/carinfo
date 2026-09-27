@@ -141,7 +141,11 @@ Stored in `cars.json` as EPA classifies them (`scripts/reconcile-fuel-types.ts`
 re-derives them from EPA's `vehicles.csv`): gasoline, diesel, hybrid, plug-in
 hybrid, electric, hydrogen, and natural gas (dedicated CNG, e.g. the Civic GX).
 Bi-fuel and flex-fuel vehicles are gasoline, since their EPA figures are
-gasoline figures. The runtime rules in `fuel-type-inference.ts` remain as a
+gasoline figures. Mild hybrids (EPA's atvType "Hybrid" with "Mild Hybrid" in
+the engine notes: 12-48 V motors that assist but never drive the car, 774
+records from Audi S8s to Ram eTorques) are listed by their fuel with
+`engine.mildHybrid`, so "hybrid" means a full hybrid; EPA also calls the Lexus
+UX 250h "Mild Hybrid", and its Ni-MH pack keeps it a hybrid. The runtime rules in `fuel-type-inference.ts` remain as a
 second line of defense and agree with EPA on every record (a test pins that).
 
 ### Field coverage in raw `cars.json`
@@ -201,7 +205,7 @@ Types live in `client/src/types/car.types.ts` and `server/src/types/car.types.ts
 | `vehicleCategory` | `car\|suv\|truck\|van` | Computed |
 | `shoppingSegment` | `ShoppingSegment` | Computed |
 | `ownershipProfile` | object? | Label, tags, bestFor |
-| `engine` | object | displacement, hp, torque, fuelType, cylinders, configuration, aspiration, `horsepowerBasis` (`manufacturer` for our manufacturer and EV motor ratings, `sibling` for a copy from the same engine in the same model) |
+| `engine` | object | displacement, hp, torque, fuelType, cylinders, configuration, aspiration, `horsepowerBasis` (`manufacturer` for our manufacturer and EV motor ratings, `sibling` for a copy from the same engine in the same model), `mildHybrid` (a 12-48 V mild hybrid, listed by its fuel) |
 | `performance` | object? | zeroToSixty, topSpeed, quarterMile (always empty in prod DB) |
 | `dimensions` | object? | length, width, height, wheelbase, curbWeight (always empty in prod DB) |
 | `fuelEconomy` | object | city, highway, combined |
@@ -451,7 +455,7 @@ Base: `/api` (Vite proxies to `:5000` in dev; Vercel routes to `api/index.ts`)
 
 **Kinds of vehicle** (`utils/search-modifiers.ts`): a size with a body (`compact suv`, `midsize sedan`, `full size truck`, `small suv`, `heavy duty truck`) keeps to that competitive set, mainstream unless `luxury` is said; `sports car`, `muscle car`, `supercar`, `hot hatch`, `sport sedan`, `off road` and `luxury` keep to a segment or to luxury makes. The response names the class in `interpretation.vehicleClass`. When the words name a model or trim instead (`saab 9-3 sport sedan`, `cadillac xt5 luxury`), the empty search is retried with the words as words; `premium`, `big` and `large` are read only where they cannot be a trim (`outback premium`, `ram big horn`).
 
-**Everyday words:** words with no search meaning are dropped (`for`, `the`, `my`, `for sale near me`: "for" was read as a prefix of Ford); judgements no data on file can make (`best`, `reliable`, `good`) and words about one car for sale (`like new`, `low mileage`, `one owner`) are set aside and named in `interpretation.unmeasured`; a stop word that begins a model code stays (`lexus is 350`, `i 4`, `a 220`), and codes typed with a space are joined (`rav 4`, `id 4`); words of one or two letters match only at the start of a word (`ix` no longer finds a Matrix); `family` keeps to three-row and mid-size SUVs, minivans or mid-size cars by the body word wherever it stands (`suv for my family`); and `safest` sorts by NHTSA overall stars. `snow`, `winter` and `icy` keep to all- and four-wheel drive (`interpretation.snow`); `first car`, `teenager`, `student` and `new driver` apply the First car preset's limits where the query sets none (`config/first-car.ts`, shared with the Browse preset: under $18,000, 28 MPG or better, 2010 or newer, no hydrogen or natural gas, cheapest first); `most`, `very` and `really` left over after the orders are read are dropped (`most reliable suv` matched a Mach-E and a Montero). Price ranges read `between 20k and 30k`, `20-30k` and `$20,000 to $30,000`.
+**Everyday words:** words with no search meaning are dropped (`for`, `the`, `my`, `for sale near me`: "for" was read as a prefix of Ford); judgements no data on file can make (`best`, `reliable`, `good`) and words about one car for sale (`like new`, `low mileage`, `one owner`) are set aside and named in `interpretation.unmeasured`; a stop word that begins a model code stays (`lexus is 350`, `i 4`, `a 220`), and codes typed with a space are joined (`rav 4`, `id 4`); words of one or two letters match only at the start of a word (`ix` no longer finds a Matrix); `family` keeps to three-row and mid-size SUVs, minivans or mid-size cars by the body word wherever it stands (`suv for my family`); and `safest` sorts by NHTSA overall stars. `snow`, `winter` and `icy` keep to all- and four-wheel drive (`interpretation.snow`); `first car`, `teenager`, `student` and `new driver` apply the First car preset's limits where the query sets none (`config/first-car.ts`, shared with the Browse preset: under $18,000, 28 MPG or better, 2010 or newer, no hydrogen or natural gas, cheapest first); `most`, `very` and `really` left over after the orders are read are dropped (`most reliable suv` matched a Mach-E and a Montero). Price ranges read `between 20k and 30k`, `20-30k` and `$20,000 to $30,000`. `mild hybrid`, `mhev`, `48v` and `etorque` keep to mild hybrids (`interpretation.mildHybrid`); `hybrid` alone means full hybrids and plug-ins.
 
 **Rivals:** `cars like a camry`, `alternatives to the rav4`, `similar to a model 3` and `miata competitors` list the rivals of the base configuration of the car named (the cheapest in its newest matching year, two-wheel drive at a tie), as its page lists them (`utils/similar-vehicles.ts`), and name it in `interpretation.similarTo` with its id. Words before `like` narrow the rivals (`awd cars like a camry`, `cheapest suvs like the cr-v`), as do the request's filters; `like new` is a condition, not a comparison.
 

@@ -6,6 +6,25 @@ export interface EpaFuelFields {
   fuelType?: string;
   fuelType1?: string;
   atvType?: string;
+  /** Engine notes: "SIDI; Mild Hybrid", "Mild Hybrid; eTorque". */
+  eng_dscr?: string;
+  /** The hybrid motor and pack: "48V Li-Ion", "259V Li-Ion", "216V Ni-MH". */
+  evMotor?: string;
+}
+
+/**
+ * A mild hybrid: EPA files it under atvType "Hybrid" and says "Mild Hybrid"
+ * in its engine notes. The 12-48 V motor assists the engine and restarts it,
+ * but never drives the car, so it runs on gasoline like any other: an Audi S8
+ * at 16 MPG, a Ram eTorque, a BMW 330i, 778 records in all, were "hybrids".
+ * EPA also calls the Lexus UX 250h "Mild Hybrid"; its 216 V Ni-MH pack is a
+ * full hybrid's, and it stays one.
+ */
+export function isEpaMildHybrid(row: EpaFuelFields): boolean {
+  const atv = (row.atvType || '').toLowerCase();
+  if (!atv.includes('hybrid') || atv.includes('plug-in')) return false;
+  if (!/\bmild hybrid\b/i.test(row.eng_dscr ?? '')) return false;
+  return !/ni-?mh/i.test(row.evMotor ?? '');
 }
 
 /**
@@ -37,6 +56,7 @@ export function mapEpaFuelType(row: EpaFuelFields): FuelType {
   // PHEV before electricity — "Premium Gas or Electricity" contains "electricity".
   if (atv.includes('plug-in hybrid') || atv.includes('phev')) return 'plug-in hybrid';
   if (atv === 'ev' || ft.includes('electricity')) return 'electric';
+  if (isEpaMildHybrid(row)) return ft.includes('diesel') ? 'diesel' : 'gasoline';
   if (atv.includes('hybrid') || ft.includes('hybrid')) return 'hybrid';
   if (ft.includes('diesel')) return 'diesel';
   if (atv === 'cng' || ft === 'cng') return 'natural gas';

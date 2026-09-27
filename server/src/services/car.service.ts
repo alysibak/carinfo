@@ -1013,6 +1013,10 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
       minYear: FIRST_CAR.minYear,
     };
   }
+  if (modifiers.mildHybrid) {
+    filters.mildHybrid = true;
+    interpretation.mildHybrid = true;
+  }
   if (modifiers.snow && !explicit?.driveType?.length) {
     filters.driveType = ['AWD', '4WD'];
     interpretation.snow = true;
@@ -1772,11 +1776,13 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
   const classSet = filters?.classes?.length ? new Set(filters.classes) : null;
   const segmentSet = filters?.segments?.length ? new Set(filters.segments) : null;
   const luxuryOnly = filters?.luxury === true;
+  const mildOnly = filters?.mildHybrid === true;
 
   const needsFiltering =
     !!classSet ||
     !!segmentSet ||
     luxuryOnly ||
+    mildOnly ||
     !!cylinderSet ||
     !!aspirationSet ||
     threeRow ||
@@ -1852,6 +1858,7 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
     if (classSet && !competitiveSets(car).some((set) => classSet.has(set))) continue;
     if (segmentSet && !segmentSet.has(car.shoppingSegment ?? 'mainstream')) continue;
     if (luxuryOnly && !isLuxuryBrand(car.make)) continue;
+    if (mildOnly && !car.engine.mildHybrid) continue;
     if (rangeMin != null || rangeMax != null) {
       const range = car.epa?.rangeMiles;
       if (range == null) continue;

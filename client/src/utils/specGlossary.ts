@@ -100,7 +100,7 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
   },
   fuel: {
     plain: 'What powers the car',
-    what: 'Gas, diesel, hybrid, plug-in hybrid, electric, or hydrogen fuel cell.',
+    what: 'Gas, diesel, hybrid, plug-in hybrid, electric, or hydrogen fuel cell. A mild hybrid is listed by its fuel: its 48-volt motor helps the engine but never drives the car alone.',
     why: 'Drives your fuel stops, charging habits, and running costs.',
   },
   body: {

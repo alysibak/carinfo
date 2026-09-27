@@ -7,7 +7,7 @@ import ToolPageHeader from '../components/ToolPageHeader';
 import PageShell, { PageBody } from '../components/PageShell';
 import { ErrorState, LoadingScreen } from '../components/ui';
 import { formatMpgForCard, formatPowerForCard, formatPriceShort } from '../utils/dataValue';
-import { formatFuelBadge, usesMpge } from '../utils/fuelDisplay';
+import { usesMpge, formatCarFuelBadge } from '../utils/fuelDisplay';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 import { displayModelLabel } from '../utils/trimLabel';
 import { searchQueryToParams } from '../utils/searchParams';
@@ -386,7 +386,7 @@ export default function SmartSearch() {
                             ? `est. ${formatPriceShort(car.price.msrp, true)}`
                             : null,
                           bodyStyleLabel(car.bodyStyle),
-                          formatFuelBadge(car.engine.fuelType),
+                          formatCarFuelBadge(car),
                         ]
                           .filter((x) => x && x !== 'Not on file')
                           .join(' · ')}

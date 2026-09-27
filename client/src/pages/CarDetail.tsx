@@ -27,7 +27,7 @@ import DataTrustPanel from '../components/DataTrustPanel';
 import { DataRow } from '../components/DataValue';
 import { buildGlanceMetrics } from '../utils/glanceMetrics';
 import { efficiencyUnit } from '../utils/fuelLabels';
-import { formatFuelBadge } from '../utils/fuelDisplay';
+import { formatCarFuelBadge } from '../utils/fuelDisplay';
 import { efficiencySecondaryLine, formatKwhPer100KmFromMi } from '../utils/fuelEconomyUnits';
 import {
   ghgFraming,
@@ -436,7 +436,7 @@ export default function CarDetail() {
               <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-zinc-400">
                 {car.bodyStyle && <span>{bodyStyleLabel(car.bodyStyle)}</span>}
                 {car.driveType && <span>{car.driveType}</span>}
-                {car.engine.fuelType && <span>{formatFuelBadge(car.engine.fuelType)}</span>}
+                {car.engine.fuelType && <span>{formatCarFuelBadge(car)}</span>}
               </div>
             </div>
           </div>

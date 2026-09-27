@@ -697,6 +697,22 @@ describe('car.service natural language search', () => {
     expect(snow.results.every((c) => c.driveType === 'AWD' || c.driveType === '4WD')).toBe(true);
   });
 
+  it('keeps mild hybrids out of "hybrid" and finds them by name', () => {
+    // A BMW 430i and an Audi S8 led "2020 or newer hybrid".
+    const hybrids = searchCars({ query: 'hybrid suv', limit: 200 }).results;
+    expect(hybrids.length).toBeGreaterThan(20);
+    expect(hybrids.filter((c) => c.engine.mildHybrid)).toEqual([]);
+    const mild = searchCars({ query: 'mild hybrid suv', limit: 200 });
+    expect(mild.interpretation?.mildHybrid).toBe(true);
+    expect(mild.total).toBeGreaterThan(10);
+    expect(mild.results.every((c) => c.engine.mildHybrid && c.bodyStyle === 'suv')).toBe(true);
+    // Every mild hybrid is listed by its fuel.
+    const all = searchCars({ query: 'mild hybrid', limit: 500 }).results;
+    expect(
+      all.every((c) => c.engine.fuelType === 'gasoline' || c.engine.fuelType === 'diesel'),
+    ).toBe(true);
+  });
+
   it('completes the name in a rivals phrase, one entry per model', () => {
     const suggestions = getSearchSuggestions('cars like a cam', 8);
     expect(suggestions[0]).toMatchObject({

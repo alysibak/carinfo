@@ -15,7 +15,7 @@ import {
   formatPriceShort,
   formatRangeForCard,
 } from '../utils/dataValue';
-import { formatFuelBadge, usesMpge } from '../utils/fuelDisplay';
+import { usesMpge, formatCarFuelBadge } from '../utils/fuelDisplay';
 import VehiclePlaceholder from './VehiclePlaceholder';
 import { StatusToast } from './ui';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
@@ -79,7 +79,7 @@ export default function CarCard({ car, showCompare = true }: CarCardProps) {
   if (!isAltPowertrain && transLabel && !variantLabel) metaParts.push(transLabel);
   if (car.driveType) metaParts.push(car.driveType);
   // An EV's engine already reads "Electric"; don't repeat it as the fuel.
-  const fuelBadge = car.engine.fuelType ? formatFuelBadge(car.engine.fuelType) : '';
+  const fuelBadge = car.engine.fuelType ? formatCarFuelBadge(car) : '';
   if (fuelBadge && !metaParts.some((part) => part.toLowerCase() === fuelBadge.toLowerCase())) {
     metaParts.push(fuelBadge);
   }
