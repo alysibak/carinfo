@@ -79,6 +79,16 @@ const CORRECTIONS: Correction[] = [
   row('Mazda', /^CX-50/, [2023, 2026], 2.5, false, 187),
   row('Mazda', /^CX-50/, [2023, 2026], 2.5, true, 227),
   row('Mazda', /^6\b/, [2018, 2021], 2.5, false, 187),
+  // Luxury engines the output check leaves alone: a 2025 Escalade's 6.2 read
+  // the Escalade-V's 675, an IS 350 232, an ES 250 181.
+  row('Cadillac', /^Escalade(?! V)/, [2015, 2026], 6.2, false, 420),
+  row('Lexus', /^IS 350/, [2014, 2020], 3.5, false, 306),
+  row('Lexus', /^IS 350/, [2021, 2026], 3.5, false, 311),
+  row('Lexus', /^IS 300/, [2016, 2020], 3.5, false, 255),
+  row('Lexus', /^IS 300/, [2021, 2026], 3.5, false, 260),
+  row('Lexus', /^ES 250/, [2021, 2026], 2.5, false, 203),
+  row('Audi', /^Q5/, [2013, 2017], 3, true, 272),
+  row('Audi', /^Q5/, [2014, 2016], 3, true, 240, 'diesel'),
   // The 2.0-litre turbo NX 200t and NX 300, which read 112 hp.
   row('Lexus', /^NX (200t|300)(?!h)/, [2015, 2021], 2, true, 235),
   // EPA files the 2.5-litre STI as "WRX".
