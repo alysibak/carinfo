@@ -401,6 +401,25 @@ describe('shopping segments', () => {
     expect(seg('Mercedes-Benz', 'CL600', 510, 5.5)).toBe('luxury');
   });
 
+  it("does not read a four-door hybrid's system output as a sporting engine", () => {
+    const hybrid = (make: string, model: string, hp: number, body: Car['bodyStyle']) =>
+      classifyShoppingSegment(
+        minimalCar({
+          make,
+          model,
+          bodyStyle: body,
+          engine: { fuelType: 'hybrid', horsepower: hp, displacement: 2 },
+        }),
+        model,
+        body,
+      );
+    // 194 hp made the Prius a sport compact.
+    expect(hybrid('Toyota', 'Prius', 194, 'hatchback')).toBe('mainstream');
+    expect(hybrid('Honda', 'Civic 5Dr', 200, 'hatchback')).toBe('mainstream');
+    // A luxury make's sporting sedan keeps its place.
+    expect(hybrid('Porsche', 'Panamera 4 E-Hybrid', 455, 'sedan')).toBe('sport-sedan');
+  });
+
   it('does not call a V6 family sedan a sport sedan', () => {
     const seg = (make: string, model: string, horsepower: number, displacement: number) =>
       classifyShoppingSegment(

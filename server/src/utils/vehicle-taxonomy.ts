@@ -523,11 +523,17 @@ export function classifyShoppingSegment(
   }
 
   const twoDoor = bodyStyle === 'coupe' || bodyStyle === 'convertible';
+  // A four-door hybrid's rating is its system output, not a sporting engine:
+  // 188 hp made a C-Max a sport compact, 194 a Prius one, 200 a Civic Hybrid
+  // hatch a hot hatch and 377 an RLX Sport Hybrid a sport sedan. Badges, a
+  // turbo and a luxury make's sporting lines (a Panamera E-Hybrid) still count.
+  const hybrid = ft === 'hybrid' || ft === 'plug-in hybrid';
+  const powerHp = hybrid && !twoDoor ? 0 : hp;
   // A hot-hatch badge on a sedan (Civic Si, Mazdaspeed6) makes a sport sedan,
   // and on a coupe a sport compact.
   if (
     (!twoDoor && bodyStyle !== 'sedan' && HOT_HATCH_PATTERN.test(h)) ||
-    (bodyStyle === 'hatchback' && hp >= 200 && disp >= 1.8)
+    (bodyStyle === 'hatchback' && powerHp >= 200 && disp >= 1.8)
   )
     return 'hot-hatch';
   // Performance badges first (an S63 AMG or an Audi S8 is a sport sedan), then
@@ -550,7 +556,7 @@ export function classifyShoppingSegment(
   // of power tells a WRX, a Stinger or a Fusion Sport apart.
   const forced =
     car.engine.aspiration === 'turbocharged' || car.engine.aspiration === 'supercharged';
-  const sporty = forced || hp >= 330 || (disp > 0 && hp / disp >= 95);
+  const sporty = forced || powerHp >= 330 || (disp > 0 && powerHp / disp >= 95);
   const luxuryMake = LUXURY_BRAND_MAKES.has(car.make);
   // An IS 350, a G37 or a CTS is a sport sedan with a big V6; an ES is not.
   const luxurySport = luxuryMake && !COMFORT_LUXURY.test(`${car.make} ${displayModel}`);
@@ -581,7 +587,7 @@ export function classifyShoppingSegment(
   // A C300, an A4 or an ES is a luxury car at any price. The rule used to key
   // off the estimated value, so older ones read "mainstream".
   if (luxuryMake) return 'luxury';
-  if (bodyStyle === 'hatchback' && hp >= 150) return 'sport-compact';
+  if (bodyStyle === 'hatchback' && powerHp >= 150) return 'sport-compact';
 
   return 'mainstream';
 }

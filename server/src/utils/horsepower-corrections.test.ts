@@ -90,6 +90,23 @@ describe('applyHorsepowerCorrections', () => {
     expect(cars.map((c) => c.engine.horsepower)).toEqual([150, 180, 90, 100]);
   });
 
+  it('rates hybrids at their system output, not the engine alone', () => {
+    const hybrid = { fuelType: 'hybrid' as const };
+    const { cars } = applyHorsepowerCorrections([
+      // The test-car list gives the engine: a Prius read 98 hp, a RAV4 Hybrid 176.
+      car('Toyota', 'Prius', 2012, 1.8, 98, hybrid),
+      car('Toyota', 'RAV4 Hybrid AWD', 2021, 2.5, 176, hybrid),
+      car('Honda', 'Accord Hybrid', 2024, 2, 146, hybrid),
+      car('Hyundai', 'Tucson Hybrid', 2023, 1.6, 177, { ...hybrid, aspiration: 'turbocharged' }),
+      // A Fusion Hybrid read the 2.0 EcoBoost's 240.
+      car('Ford', 'Fusion Hybrid FWD', 2017, 2, 240, hybrid),
+      // The Crown's turbocharged Hybrid MAX is rated apart.
+      car('Toyota', 'Crown AWD', 2024, 2.4, 264, { ...hybrid, aspiration: 'turbocharged' }),
+      car('Toyota', 'Crown AWD', 2024, 2.5, 184, hybrid),
+    ]);
+    expect(cars.map((c) => c.engine.horsepower)).toEqual([134, 219, 204, 226, 188, 340, 236]);
+  });
+
   it('leaves other engines, hybrids and years alone', () => {
     const cars = [
       car('Honda', 'CR-V Hybrid AWD', 2021, 2, 212, { fuelType: 'hybrid' }),

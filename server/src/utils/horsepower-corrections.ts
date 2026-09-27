@@ -177,13 +177,153 @@ const CORRECTIONS: Correction[] = [
   row('Toyota', /^(4Runner|Tacoma)/, [2024, 2026], 2.4, true, 326, 'hybrid'),
 ];
 
+interface HybridSystem {
+  make: string;
+  model: RegExp;
+  years: [number, number];
+  hp: number | ((car: Car) => number);
+}
+
+const hy = (
+  make: string,
+  model: RegExp,
+  years: [number, number],
+  hp: HybridSystem['hp'],
+): HybridSystem => ({ make, model, years, hp });
+const turbo = (car: Car) => !!car.engine.aspiration;
+const awd = (car: Car) => car.driveType === 'AWD' || car.driveType === '4WD';
+
+/**
+ * Hybrids at their system output, as the makers rate them. The test-car
+ * list gives a hybrid's engine alone: a Prius read 96-98 hp (the system
+ * makes 121-134), a RAV4 Hybrid 176 (219), an Accord Hybrid 146 (204), a
+ * Tucson, Santa Fe or Sorento Hybrid 177 (226-231), and a Fusion or MKZ
+ * Hybrid 240 (the 2.0 EcoBoost's; the hybrid makes 188).
+ */
+const HYBRID_SYSTEM: HybridSystem[] = [
+  hy('Toyota', /^prius c\b/i, [2012, 2020], 99),
+  hy('Toyota', /^prius v\b/i, [2012, 2017], 134),
+  hy('Toyota', /^prius\b(?! (?:c|v|prime|plug))/i, [2004, 2009], 110),
+  hy('Toyota', /^prius\b(?! (?:c|v|prime|plug))/i, [2010, 2015], 134),
+  hy('Toyota', /^prius\b(?! (?:c|v|prime|plug))/i, [2016, 2022], 121),
+  hy('Toyota', /^prius\b(?! (?:c|v|prime|plug))/i, [2023, 2026], (c) => (awd(c) ? 196 : 194)),
+  hy('Toyota', /^corolla hybrid/i, [2020, 2022], 121),
+  hy('Toyota', /^corolla hybrid/i, [2023, 2026], 138),
+  hy('Toyota', /^corolla cross/i, [2023, 2026], 196),
+  hy('Toyota', /^camry\b/i, [2007, 2011], 187),
+  hy('Toyota', /^camry\b/i, [2012, 2017], 200),
+  hy('Toyota', /^camry\b/i, [2018, 2024], 208),
+  hy('Toyota', /^camry\b/i, [2025, 2026], (c) => (awd(c) ? 232 : 225)),
+  hy('Toyota', /^avalon/i, [2013, 2018], 200),
+  hy('Toyota', /^avalon/i, [2019, 2022], 215),
+  hy('Toyota', /^rav4 hybrid/i, [2016, 2018], 194),
+  hy('Toyota', /^rav4 hybrid/i, [2019, 2025], 219),
+  hy('Toyota', /^highlander hybrid/i, [2006, 2007], 268),
+  hy('Toyota', /^highlander hybrid/i, [2008, 2010], 270),
+  hy('Toyota', /^highlander hybrid/i, [2011, 2016], 280),
+  hy('Toyota', /^highlander hybrid/i, [2017, 2019], 306),
+  hy('Toyota', /^highlander hybrid/i, [2020, 2026], 243),
+  hy('Toyota', /^grand highlander/i, [2024, 2026], (c) => (turbo(c) ? 362 : 245)),
+  hy('Toyota', /^venza/i, [2021, 2024], 219),
+  hy('Toyota', /^sienna/i, [2021, 2026], 245),
+  hy('Toyota', /^crown signia/i, [2025, 2026], 240),
+  hy('Toyota', /^crown\b/i, [2023, 2026], (c) => (turbo(c) ? 340 : 236)),
+  hy('Toyota', /^sequoia/i, [2023, 2026], 437),
+  hy('Toyota', /^land cruiser/i, [2024, 2027], 326),
+  hy('Lexus', /^ct 200h/i, [2011, 2017], 134),
+  hy('Lexus', /^es 300h/i, [2013, 2018], 200),
+  hy('Lexus', /^es 300h/i, [2019, 2025], 215),
+  hy('Lexus', /^nx 300h/i, [2015, 2021], 194),
+  hy('Lexus', /^nx 350h/i, [2022, 2026], 240),
+  hy('Lexus', /^rx 450h/i, [2010, 2015], 295),
+  hy('Lexus', /^rx 450h/i, [2016, 2022], 308),
+  hy('Lexus', /^rx 350h/i, [2023, 2026], 246),
+  hy('Lexus', /^[rt]x 500h/i, [2023, 2026], 366),
+  hy('Lexus', /^ux 250h/i, [2019, 2024], 181),
+  hy('Lexus', /^ux 300h/i, [2025, 2026], 196),
+  hy('Lexus', /^l[cs] 500h/i, [2018, 2025], 354),
+  hy('Lexus', /^gs 450h/i, [2007, 2011], 340),
+  hy('Lexus', /^gs 450h/i, [2013, 2018], 338),
+  hy('Lexus', /^rx 400h/i, [2006, 2008], 268),
+  hy('Lexus', /^ls 600h/i, [2008, 2016], 438),
+  hy('Lexus', /^hs 250h/i, [2010, 2012], 187),
+  hy('Lexus', /^lx 700h/i, [2025, 2026], 457),
+  hy('Honda', /^accord/i, [2017, 2022], 212),
+  hy('Honda', /^accord/i, [2023, 2026], 204),
+  hy('Honda', /^cr-v/i, [2020, 2022], 212),
+  hy('Honda', /^cr-v/i, [2023, 2026], 204),
+  hy('Honda', /^civic hybrid/i, [2006, 2015], 110),
+  hy('Honda', /^civic\b/i, [2025, 2026], 200),
+  hy('Honda', /^insight/i, [2019, 2022], 151),
+  hy('Honda', /^prelude/i, [2026, 2026], 200),
+  hy('Acura', /^mdx/i, [2017, 2020], 321),
+  hy('Acura', /^rlx/i, [2014, 2020], 377),
+  hy('Hyundai', /^(?:elantra hybrid|ioniq)\b/i, [2017, 2026], 139),
+  hy('Kia', /^niro\b/i, [2017, 2026], 139),
+  hy('Hyundai', /^sonata hybrid/i, [2011, 2012], 206),
+  hy('Hyundai', /^sonata hybrid/i, [2013, 2015], 199),
+  hy('Hyundai', /^sonata hybrid/i, [2016, 2019], 193),
+  hy('Hyundai', /^sonata hybrid/i, [2020, 2026], 192),
+  hy('Kia', /^optima hybrid/i, [2011, 2012], 206),
+  hy('Kia', /^optima hybrid/i, [2013, 2016], 199),
+  hy('Kia', /^optima hybrid/i, [2017, 2020], 192),
+  hy('Hyundai', /^(?:tucson|santa fe) hybrid/i, [2021, 2024], (c) =>
+    /^santa fe/i.test(c.model) && c.year >= 2024 ? 231 : 226,
+  ),
+  hy('Hyundai', /^tucson hybrid/i, [2025, 2026], 231),
+  hy('Hyundai', /^santa fe hybrid/i, [2025, 2026], 231),
+  hy('Kia', /^sorento hybrid/i, [2021, 2024], 227),
+  hy('Kia', /^sorento hybrid/i, [2025, 2026], 231),
+  hy('Kia', /^sportage hybrid/i, [2023, 2025], 227),
+  hy('Kia', /^carnival hybrid/i, [2025, 2027], 242),
+  hy('Hyundai', /^palisade hybrid/i, [2026, 2026], 329),
+  hy('Ford', /^maverick/i, [2022, 2026], 191),
+  hy('Ford', /^escape\b/i, [2020, 2022], 200),
+  hy('Ford', /^escape\b/i, [2023, 2026], 192),
+  hy('Ford', /^escape hybrid/i, [2005, 2008], 155),
+  hy('Ford', /^escape hybrid/i, [2009, 2012], 177),
+  hy('Mercury', /^mariner hybrid/i, [2006, 2008], 155),
+  hy('Mercury', /^mariner hybrid/i, [2009, 2011], 177),
+  hy('Mazda', /^tribute hybrid/i, [2008, 2008], 155),
+  hy('Mazda', /^tribute hybrid/i, [2009, 2011], 177),
+  hy('Mercury', /^milan hybrid/i, [2010, 2011], 191),
+  hy('Ford', /^fusion hybrid/i, [2010, 2012], 191),
+  hy('Ford', /^fusion hybrid/i, [2013, 2020], 188),
+  hy('Lincoln', /^mkz hybrid/i, [2011, 2012], 191),
+  hy('Lincoln', /^mkz hybrid/i, [2013, 2020], 188),
+  hy('Ford', /^explorer\b/i, [2020, 2023], 318),
+  hy('Ford', /^f-?150/i, [2021, 2026], 430),
+  hy('Lincoln', /^nautilus/i, [2024, 2026], 310),
+  hy('Ford', /^c-max hybrid/i, [2013, 2018], 188),
+  hy('Chevrolet', /^malibu hybrid/i, [2016, 2019], 182),
+  hy('Nissan', /^rogue hybrid/i, [2017, 2019], 176),
+  hy('Nissan', /^pathfinder hybrid/i, [2014, 2015], 250),
+  hy('Nissan', /^altima hybrid/i, [2007, 2011], 198),
+  hy('Subaru', /^(?:forester|crosstrek) hybrid/i, [2025, 2026], 194),
+  hy('Subaru', /^xv crosstrek hybrid/i, [2014, 2016], 160),
+  hy('Mazda', /^cx-50/i, [2025, 2026], 219),
+  hy('Jeep', /^cherokee/i, [2026, 2026], 210),
+];
+
+function hybridSystemFor(car: Car): number | undefined {
+  const rule = HYBRID_SYSTEM.find(
+    (h) =>
+      h.make === car.make &&
+      car.year >= h.years[0] &&
+      car.year <= h.years[1] &&
+      h.model.test(car.model),
+  );
+  if (!rule) return undefined;
+  return typeof rule.hp === 'function' ? rule.hp(car) : rule.hp;
+}
+
 function correctionFor(car: Car): Correction | undefined {
   const fuel = car.engine.fuelType;
   if (fuel !== 'gasoline' && fuel !== 'diesel' && fuel !== 'hybrid') return undefined;
   const litres = car.engine.displacement;
   if (litres == null) return undefined;
   const forced = !!car.engine.aspiration;
-  return CORRECTIONS.find(
+  const match = CORRECTIONS.find(
     (c) =>
       c.make === car.make &&
       c.forced === forced &&
@@ -194,6 +334,11 @@ function correctionFor(car: Car): Correction | undefined {
       c.model.test(car.model) &&
       (!c.variant || c.variant.test(car.variant ?? '')),
   );
+  if (match || fuel !== 'hybrid') return match;
+  const hp = hybridSystemFor(car);
+  return hp == null
+    ? undefined
+    : { make: car.make, model: /./, years: [car.year, car.year], litres, forced, fuel, hp };
 }
 
 /** Put the manufacturer's rating on the engines above, whatever the matcher gave them. */
