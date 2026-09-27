@@ -77,10 +77,10 @@ export function formatCarFuelLabel(car: FuelCar): string {
   return car.engine.mildHybrid ? `${label}, mild hybrid` : label;
 }
 
-/** Card and pill text: "mild hybrid" for a gasoline mild hybrid. */
+/** Card and pill text: "gasoline mild hybrid". */
 export function formatCarFuelBadge(car: FuelCar): string {
-  if (!car.engine.mildHybrid) return formatFuelBadge(car.engine.fuelType);
-  return car.engine.fuelType === 'gasoline' ? 'mild hybrid' : `${car.engine.fuelType} mild hybrid`;
+  const badge = formatFuelBadge(car.engine.fuelType);
+  return car.engine.mildHybrid ? `${badge} mild hybrid` : badge;
 }
 
 export function formatPowertrainLabel(fuelType: string): string | null {
