@@ -519,6 +519,38 @@ describe('car.service natural language search', () => {
     expect(searchCars({ query: 'truck', limit: 1 }).total).toBeGreaterThan(1000);
   });
 
+  it('reads EV range, and names that span makes or bases', () => {
+    const longest = searchCars({
+      query: 'longest range ev',
+      sort: { field: 'relevance', order: 'desc' },
+      limit: 20,
+    });
+    expect(longest.interpretation?.sortedBy).toBe('range');
+    const ranges = longest.results.map((c) => c.epa?.rangeMiles ?? 0);
+    expect(ranges).toEqual([...ranges].sort((a, b) => b - a));
+    const km = searchCars({ query: 'suv 400 km range', limit: 50 });
+    expect(km.interpretation?.minRangeMiles).toBe(249);
+    expect(km.results.every((c) => (c.epa?.rangeMiles ?? 0) >= 249 && c.bodyStyle === 'suv')).toBe(
+      true,
+    );
+    // "i4" is BMW's electric sedan, not "inline four".
+    expect(
+      searchCars({ query: 'bmw i4', limit: 10 }).results.every((c) => /^i4\b/.test(c.model)),
+    ).toBe(true);
+    // "hummer" is also the old HUMMER make.
+    expect(
+      searchCars({ query: 'hummer ev', limit: 10 }).results.every((c) => c.make === 'GMC'),
+    ).toBe(true);
+    // Both Lightnings, the electric one first.
+    const lightning = searchCars({
+      query: 'ford lightning',
+      sort: { field: 'relevance', order: 'desc' },
+      limit: 50,
+    }).results;
+    expect(lightning[0].model).toMatch(/^F-150 Lightning/);
+    expect(lightning.some((c) => /^Lightning/.test(c.model))).toBe(true);
+  });
+
   it('lists keyword-only searches newest first', () => {
     // Scoring "electric pickup" against model names put a 1998 S10 Electric first.
     const { results } = searchCars({

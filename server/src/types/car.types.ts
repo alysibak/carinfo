@@ -181,6 +181,8 @@ export interface CarFilter {
   aspiration?: string[];
   /** Minivans, passenger vans and three-row SUVs, by model: EPA records no seating. */
   threeRow?: boolean;
+  /** EPA range in miles (EVs and plug-in hybrids' electric range). */
+  rangeMiles?: { min?: number; max?: number };
 }
 
 export interface SearchQuery {
@@ -214,7 +216,9 @@ export interface SearchInterpretation {
   /** A price limit read from the query ("under 30k"), estimated CAD value. */
   price?: { min?: number; max?: number };
   /** An order read from the query: "cheapest", "most fuel efficient", "fastest". */
-  sortedBy?: 'price' | 'fuelEconomy' | 'horsepower';
+  sortedBy?: 'price' | 'fuelEconomy' | 'horsepower' | 'range';
+  /** "300 mile range", "400 km range": the least EPA range kept, in miles. */
+  minRangeMiles?: number;
   /** With no year given, "cheapest" keeps to model years from this one. */
   recentFrom?: number;
   /** "new camry": model years from this one. */

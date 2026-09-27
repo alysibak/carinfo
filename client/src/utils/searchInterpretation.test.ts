@@ -20,6 +20,10 @@ describe('describeSearchInterpretation', () => {
       'Estimated value under $30,000.',
       'Cheapest first by estimated value, model years 2016 and newer.',
     ]);
+    expect(describeSearchInterpretation({ sortedBy: 'range', minRangeMiles: 249 })).toEqual([
+      'Longest EPA range first.',
+      'EPA range of at least 249 miles (401 km).',
+    ]);
     expect(describeSearchInterpretation({ price: { min: 20000, max: 40000 } })).toEqual([
       'Estimated value $20,000 to $40,000.',
     ]);

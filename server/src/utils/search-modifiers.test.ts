@@ -36,6 +36,14 @@ describe('extractQueryModifiers', () => {
     expect(extractQueryModifiers('v8 truck').cylinders).toEqual([8]);
     expect(extractQueryModifiers('4 cylinder camry').cylinders).toEqual([4]);
     expect(extractQueryModifiers('7 seater')).toEqual({ text: '', threeRow: true });
+    expect(extractQueryModifiers('longest range ev')).toEqual({ text: 'ev', sortedBy: 'range' });
+    expect(extractQueryModifiers('ev with 300+ miles of range')).toEqual({
+      text: 'ev',
+      minRangeMiles: 300,
+    });
+    expect(extractQueryModifiers('suv 400 km range').minRangeMiles).toBe(249);
+    // "i4" is a BMW, not an inline four.
+    expect(extractQueryModifiers('bmw i4')).toEqual({ text: 'bmw i4' });
     expect(extractQueryModifiers('third-row suv')).toEqual({ text: 'suv', threeRow: true });
   });
 });

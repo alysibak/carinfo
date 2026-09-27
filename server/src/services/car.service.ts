@@ -335,7 +335,22 @@ export function searchCars(query: SearchQuery): SearchResults {
 function searchOne(query: SearchQuery): SearchResults {
   const results = runSearch(query);
   if (results.total > 0) return results;
-  return relaxTrailingWords(query) ?? results;
+  return searchAsModelName(query) ?? relaxTrailingWords(query) ?? results;
+}
+
+/**
+ * Retry an empty search as one model name across makes. "hummer ev" read
+ * "hummer" as the old HUMMER make and "ev" as electric, and found nothing;
+ * the GMC Hummer EV is filed as "Hummer EV Pickup".
+ */
+function searchAsModelName(query: SearchQuery): SearchResults | null {
+  if (query.filters?.make?.length || query.filters?.model?.length) return null;
+  const phrase = normalizeSearchQuery(extractQueryModifiers(query.query ?? '').text);
+  if (!phrase.includes(' ')) return null;
+  const { models } = resolveModelsAcrossMakes(phrase);
+  if (!models.length) return null;
+  const retry = runSearch({ ...query, filters: { ...query.filters, model: models } });
+  return retry.total > 0 ? retry : null;
 }
 
 /**
@@ -804,6 +819,10 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
     filters.threeRow = true;
     interpretation.threeRow = true;
   }
+  if (modifiers.minRangeMiles != null && !explicit?.rangeMiles) {
+    filters.rangeMiles = { min: modifiers.minRangeMiles };
+    interpretation.minRangeMiles = modifiers.minRangeMiles;
+  }
   let sort = query.sort;
   const sortedBy = price.cheapest ? 'price' : modifiers.sortedBy;
   if (sortedBy && (!sort || sort.field === 'relevance')) {
@@ -840,7 +859,7 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
     }
   }
 
-  if (!filters.make?.length && textTokens.length > 0) {
+  if (!filters.make?.length && !explicit?.model?.length && textTokens.length > 0) {
     const makeHit = resolveMakeFromTokens(textTokens);
     if (makeHit) {
       filters.make = [makeHit.make];
@@ -1354,7 +1373,10 @@ function scoreRelevance(car: Car, tokens: string[]): number {
     // A word of the model name ("gti" in "Golf GTI") beats a hit only in the
     // trim: EPA files the Golf R under a "golf-gti" base model.
     else if (modelLower.split(/[\s-]+/).includes(token) || variantWords.includes(token))
-      score += 36;
+      // A whole word of the name counts like its first word once it is long
+      // enough to mean something: "lightning" is the F-150 Lightning as much as
+      // the 1990s "Lightning Pickup", and the newer should lead.
+      score += token.length >= 5 ? 48 : 36;
     else if (modelLower.startsWith(token)) score += 30;
     else if (haystack.includes(token)) score += 12;
     else if (fuzzyTokenMatch(makeLower, token)) score += 28;
@@ -1502,11 +1524,15 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
   const cylinderSet = filters?.cylinders?.length ? new Set(filters.cylinders) : null;
   const aspirationSet = filters?.aspiration?.length ? new Set(filters.aspiration) : null;
   const threeRow = filters?.threeRow === true;
+  const rangeMin = filters?.rangeMiles?.min;
+  const rangeMax = filters?.rangeMiles?.max;
 
   const needsFiltering =
     !!cylinderSet ||
     !!aspirationSet ||
     threeRow ||
+    rangeMin != null ||
+    rangeMax != null ||
     hasTextSearch ||
     hasModel ||
     !!query.trimForms?.length ||
@@ -1564,6 +1590,12 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
     if (cylinderSet && !cylinderSet.has(car.engine.cylinders ?? -1)) continue;
     if (aspirationSet && !aspirationSet.has(car.engine.aspiration ?? '')) continue;
     if (threeRow && !isThreeRow(car)) continue;
+    if (rangeMin != null || rangeMax != null) {
+      const range = car.epa?.rangeMiles;
+      if (range == null) continue;
+      if (rangeMin != null && range < rangeMin) continue;
+      if (rangeMax != null && range > rangeMax) continue;
+    }
 
     // A trim the query ended in ("mustang gt"): the model shares its name
     // with the other trims, so check the model name plus derived variant.

@@ -1,6 +1,6 @@
 import { LATEST_FULL_MODEL_YEAR } from '../config/model-years.js';
 
-export type SortIntent = 'price' | 'fuelEconomy' | 'horsepower';
+export type SortIntent = 'price' | 'fuelEconomy' | 'horsepower' | 'range';
 
 /** What a free-text query asks for beyond names: years, order, gearbox, engine, seats. */
 export interface QueryModifiers {
@@ -13,6 +13,8 @@ export interface QueryModifiers {
   transmission?: string[];
   cylinders?: number[];
   threeRow?: boolean;
+  /** "300 mile range", "400 km range": the least EPA range asked for, in miles. */
+  minRangeMiles?: number;
 }
 
 const YEAR = '((?:19|20)\\d{2})';
@@ -40,6 +42,7 @@ const SORT_PHRASES: Array<[RegExp, SortIntent]> = [
     'fuelEconomy',
   ],
   [/\b(?:fastest|quickest|most powerful|powerful)\b/, 'horsepower'],
+  [/\b(?:longest|most|best|max(?:imum)?) (?:driving )?range\b/, 'range'],
 ];
 
 const TRANSMISSION_PHRASES: Array<[RegExp, string[]]> = [
@@ -52,8 +55,9 @@ const TRANSMISSION_PHRASES: Array<[RegExp, string[]]> = [
 ];
 
 const CYLINDER_PHRASES: Array<[RegExp, number]> = [
-  [/\b(?:4|four)[- ]?cyl(?:inder)?s?\b|\bi4\b/, 4],
-  [/\b(?:6|six)[- ]?cyl(?:inder)?s?\b|\b(?:v6|i6|inline[- ]?6|inline six)\b/, 6],
+  // Not "i4": that is BMW's electric sedan.
+  [/\b(?:4|four)[- ]?cyl(?:inder)?s?\b/, 4],
+  [/\b(?:6|six)[- ]?cyl(?:inder)?s?\b|\b(?:v6|inline[- ]?6|inline six)\b/, 6],
   [/\b(?:8|eight)[- ]?cyl(?:inder)?s?\b|\bv8\b/, 8],
   [/\bv10\b/, 10],
   [/\bv12\b/, 12],
@@ -112,6 +116,14 @@ export function extractQueryModifiers(raw: string): QueryModifiers {
   const cylinders = CYLINDER_PHRASES.filter(([re]) => take(re)).map(([, n]) => n);
   if (cylinders.length) out.cylinders = cylinders;
   if (take(THREE_ROW_PHRASE)) out.threeRow = true;
+  // "300 mile range", "with 300+ miles of range", "400 km range", "range over 300 miles"
+  const range = take(
+    /\b(?:(?:with|range|over|at least|of)\s+)*(\d{2,4})\s*\+?\s*(mi|miles?|km|kilomet(?:re|er)s?)\b(?:\s+(?:of\s+)?range)?/,
+  );
+  if (range) {
+    const km = /^k/.test(range[2]);
+    out.minRangeMiles = Math.round(Number(range[1]) / (km ? 1.609 : 1));
+  }
 
   return { text: text.replace(/\s+/g, ' ').trim(), ...out };
 }

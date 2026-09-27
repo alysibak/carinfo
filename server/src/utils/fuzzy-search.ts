@@ -83,7 +83,15 @@ export interface Lineup {
   pattern: RegExp;
 }
 
+/** Names that cover models filed under different bases. */
+const NAMED_LINEUPS: Record<string, Lineup> = {
+  // The SVT Lightning (1993-2004) is "Lightning Pickup", the electric truck
+  // (2022 on) "F-150 Lightning": "ford lightning" found only the old one.
+  lightning: { make: 'Ford', label: 'Lightning', pattern: /^(?:f-?150 )?lightning\b/i },
+};
+
 export function lineupForToken(token: string): Lineup | null {
+  if (NAMED_LINEUPS[token]) return NAMED_LINEUPS[token];
   const series = /^([1-8])-series$/.exec(token);
   if (series) {
     const n = series[1];

@@ -34,12 +34,19 @@ export function describeSearchInterpretation(
     price: 'Cheapest first by estimated value',
     fuelEconomy: 'Most fuel-efficient first',
     horsepower: 'Most powerful first',
+    range: 'Longest EPA range first',
   } as const;
   if (interpretation.sortedBy) {
     lines.push(
       interpretation.recentFrom != null
         ? `${order[interpretation.sortedBy]}, model years ${interpretation.recentFrom} and newer.`
         : `${order[interpretation.sortedBy]}.`,
+    );
+  }
+  if (interpretation.minRangeMiles != null) {
+    const km = Math.round(interpretation.minRangeMiles * 1.609);
+    lines.push(
+      `EPA range of at least ${interpretation.minRangeMiles} miles (${km.toLocaleString('en-CA')} km).`,
     );
   }
   if (interpretation.newestFrom != null) {
