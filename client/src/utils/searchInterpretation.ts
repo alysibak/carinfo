@@ -17,6 +17,21 @@ export function describeSearchInterpretation(
 ): string[] {
   if (!interpretation) return [];
   const lines: string[] = [];
+  if (interpretation.otherYears) {
+    const { asked, onFile } = interpretation.otherYears;
+    const askedText =
+      asked.min != null && asked.max != null
+        ? asked.min === asked.max
+          ? `${asked.min}`
+          : `${asked.min}–${asked.max}`
+        : asked.min != null
+          ? `${asked.min} and newer`
+          : `${asked.max} and older`;
+    const runs = onFile.map((r) => (r.min === r.max ? `${r.min}` : `${r.min}–${r.max}`));
+    const runText =
+      runs.length > 1 ? `${runs.slice(0, -1).join(', ')} and ${runs.at(-1)}` : (runs[0] ?? '');
+    lines.push(`None on file for ${askedText}. Showing the years that are: ${runText}.`);
+  }
   if (interpretation.similarTo) {
     lines.push(
       `Rivals of the ${interpretation.similarTo.label}: the models shoppers compare it with, by class, size and price.`,

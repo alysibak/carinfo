@@ -230,6 +230,8 @@ export interface SearchQuery {
    * words ("Saab 9-3 Sport Sedan" is a model), not as a kind of vehicle.
    */
   keepClassWords?: boolean;
+  /** Set by the search itself on a retry: leave the years in the words out. */
+  ignoreYearWords?: boolean;
 }
 
 /** How the server read a free-text query, for the results page to state. */
@@ -261,6 +263,15 @@ export interface SearchInterpretation {
   unmeasured?: string[];
   /** "good gas mileage": EVs left out of an MPG order. */
   gasMileage?: boolean;
+  /**
+   * "2005 honda ridgeline": nothing that year, so every year is shown; these
+   * are the years asked for and the years on file for what was found.
+   */
+  otherYears?: {
+    asked: { min?: number; max?: number };
+    /** Runs of consecutive model years: the Ranger is 1995-2011 and 2019-2026. */
+    onFile: Array<{ min: number; max: number }>;
+  };
   /** "cars like a camry": the car whose rivals are listed. */
   similarTo?: { id: string; label: string };
   /** "car for snow": kept to all- and four-wheel drive. */

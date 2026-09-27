@@ -454,7 +454,45 @@ function searchOne(query: SearchQuery): SearchResults {
     const literal = searchOne({ ...query, keepClassWords: true });
     if (literal.total > 0) return literal;
   }
-  return searchAsModelName(query) ?? relaxTrailingWords(query) ?? results;
+  return (
+    searchAsModelName(query) ??
+    relaxTrailingWords(query) ??
+    searchOtherYears(query, results) ??
+    results
+  );
+}
+
+/**
+ * "2005 honda ridgeline", "2010 tesla model 3": the model is on file, just
+ * not that year, and the search said nothing. Show its other years and say
+ * which are on file. Years outside everything on file keep their own notice.
+ */
+function searchOtherYears(query: SearchQuery, empty: SearchResults): SearchResults | null {
+  if (query.ignoreYearWords || empty.yearCoverage || query.filters?.year) return null;
+  const asked = empty.interpretation?.newestFrom
+    ? null
+    : enrichSearchQuery({ ...query, offset: 0 }).filters?.year;
+  if (!asked) return null;
+  const all = runSearch({
+    ...query,
+    ignoreYearWords: true,
+    offset: 0,
+    limit: 500,
+    collapseByModel: undefined,
+  });
+  if (all.total === 0) return null;
+  const years = [...new Set(all.results.map((car) => car.year))].sort((a, b) => a - b);
+  const onFile: Array<{ min: number; max: number }> = [];
+  for (const year of years) {
+    const run = onFile.at(-1);
+    if (run && year === run.max + 1) run.max = year;
+    else onFile.push({ min: year, max: year });
+  }
+  const shown = runSearch({ ...query, ignoreYearWords: true });
+  return {
+    ...shown,
+    interpretation: { ...shown.interpretation, otherYears: { asked, onFile } },
+  };
 }
 
 /**
@@ -1011,7 +1049,7 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
     filters.price = { min: price.min, max: price.max };
     interpretation.price = { min: price.min, max: price.max };
   }
-  if (modifiers.year && !explicit?.year) {
+  if (modifiers.year && !explicit?.year && !query.ignoreYearWords) {
     filters.year = modifiers.year;
     if (modifiers.newest && modifiers.year.min != null && modifiers.year.max == null) {
       interpretation.newestFrom = modifiers.year.min;
@@ -1100,6 +1138,7 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
 
   for (const token of tokens) {
     const yearRange = parseYearToken(token);
+    if (yearRange && query.ignoreYearWords) continue;
     if (yearRange && filters.year?.min == null && filters.year?.max == null) {
       filters.year = yearRange;
     } else {

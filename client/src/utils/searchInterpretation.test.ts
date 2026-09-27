@@ -67,6 +67,17 @@ describe('describeSearchInterpretation', () => {
       'Read as a first car, as the First car preset: under $18,000 where no price was given, 28 MPG or better, 2010 or newer.',
       'All- and four-wheel drive only, for snow: EPA records the drive, not the tires, which matter as much.',
     ]);
+    expect(
+      describeSearchInterpretation({
+        otherYears: {
+          asked: { min: 2012, max: 2012 },
+          onFile: [
+            { min: 1995, max: 2011 },
+            { min: 2019, max: 2026 },
+          ],
+        },
+      }),
+    ).toEqual(['None on file for 2012. Showing the years that are: 1995–2011 and 2019–2026.']);
     expect(describeSearchInterpretation({ automatedManual: true })).toEqual([
       'Automated manuals only, as EPA files them: mostly dual-clutch gearboxes (PDK, DSG), some with a single clutch.',
     ]);

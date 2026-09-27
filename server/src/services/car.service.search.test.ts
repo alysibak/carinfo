@@ -697,6 +697,25 @@ describe('car.service natural language search', () => {
     expect(snow.results.every((c) => c.driveType === 'AWD' || c.driveType === '4WD')).toBe(true);
   });
 
+  it('shows the other years of a model asked for in a year it was not made', () => {
+    // "2012 ford ranger" found nothing, and said nothing.
+    const ranger = searchCars({ query: '2012 ford ranger', limit: 10 });
+    expect(ranger.total).toBeGreaterThan(0);
+    expect(ranger.results.every((c) => /^Ranger/.test(c.model))).toBe(true);
+    expect(ranger.interpretation?.otherYears?.asked).toEqual({ min: 2012, max: 2012 });
+    const runs = ranger.interpretation!.otherYears!.onFile;
+    expect(runs.length).toBeGreaterThan(1);
+    expect(runs.some((r) => r.min <= 2012 && r.max >= 2012)).toBe(false);
+    // Years outside everything on file keep their own notice.
+    const old = searchCars({ query: '1985 corvette', limit: 5 });
+    expect(old.total).toBe(0);
+    expect(old.yearCoverage).toBeDefined();
+    // A year the model was made: an ordinary search.
+    expect(
+      searchCars({ query: '2024 camry', limit: 5 }).interpretation?.otherYears,
+    ).toBeUndefined();
+  });
+
   it('names one car per side of a comparison, for the compare page', () => {
     const vs = searchCars({ query: 'civic vs corolla', limit: 10 }).interpretation;
     expect(vs?.compareWith?.map((c) => c.label)).toEqual([
