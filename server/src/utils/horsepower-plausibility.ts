@@ -1,5 +1,7 @@
 import type { Car } from '../types/car.types.js';
+import { applyHorsepowerCorrections } from './horsepower-corrections.js';
 import { refreshShoppingSegment } from './vehicle-taxonomy-apply.js';
+import { isLuxuryBrand } from './vehicle-taxonomy.js';
 
 /**
  * Whether an EPA Test Car List "Rated Horsepower" figure can be a real rating.
@@ -266,10 +268,59 @@ export function fillHorsepowerFromSiblings(cars: Car[]): { cars: Car[]; filled: 
   return { cars: out, filled };
 }
 
+/**
+ * Where a naturally aspirated engine can make 95 hp a litre: sports cars and
+ * luxury makes (an S2000, a GT3, a Maserati V8). Not a segment the rating
+ * itself decided: a sedan is a "sport sedan" by the very output in question.
+ */
+const HIGH_OUTPUT_SEGMENTS = new Set(['sports-car', 'muscle', 'supercar']);
+/**
+ * Names that say the engine is boosted where EPA's record does not (a BMW 35i,
+ * a Kompressor, a GTI), or a high-revving performance engine (a 2006–11 Civic
+ * Si makes 197 hp from 2.0 litres).
+ */
+const BOOSTED_OR_PERFORMANCE_NAME =
+  /\b(\d{2}[id]|kompressor|turbo|tsi|tfsi|ecoboost|supercharged|gti|si|type[- ]?[rs]|srt[- ]?\d?|sti|wrx|se-r|spec v|mazdaspeed|nismo|ralliart|svt)\b/i;
+
+/**
+ * Ratings no engine of that kind makes, so borrowed from another. A
+ * naturally aspirated engine in an everyday car above 94 hp a litre (a 2014
+ * F-150 5.0 at 600 hp, a Flex 3.5 at the EcoBoost's 355, a Mazda5 at 254),
+ * or a turbo or supercharged engine from 2008 on below 70 (a Lexus NX 300 at
+ * 112 hp, a Shelby GT500 at the GT's 300, a Forester XT at the 2.5's 173).
+ */
+export function dropImplausibleOutput(cars: Car[]): { cars: Car[]; dropped: number } {
+  let dropped = 0;
+  const out = cars.map((car) => {
+    const hp = car.engine.horsepower;
+    const litres = car.engine.displacement ?? 0;
+    if (hp == null || litres <= 0 || car.engine.fuelType !== 'gasoline') return car;
+    const perLitre = hp / litres;
+    const boosted = !!car.engine.aspiration;
+    const implausible = boosted
+      ? car.year >= 2008 && perLitre < 70
+      : litres >= 1.4 &&
+        perLitre > 94 &&
+        !HIGH_OUTPUT_SEGMENTS.has(car.shoppingSegment ?? '') &&
+        !isLuxuryBrand(car.make) &&
+        !BOOSTED_OR_PERFORMANCE_NAME.test(`${car.model} ${car.variant ?? ''}`);
+    if (!implausible) return car;
+    dropped++;
+    const { horsepower: _hp, ...engine } = car.engine;
+    const { 'engine.horsepower': _source, ...provenance } = car.provenance ?? {};
+    return { ...car, engine, provenance };
+  });
+  return { cars: out, dropped };
+}
+
 export interface HorsepowerPassReport {
   induction: number;
   shared: number;
   yearOverYear: number;
+  /** Ratings no engine of that kind makes (dropImplausibleOutput). */
+  implausible: number;
+  /** Ratings set to the manufacturer's figure (horsepower-corrections.ts). */
+  corrected: number;
   filled: number;
 }
 
@@ -283,7 +334,11 @@ export function cleanCorpusHorsepower(cars: Car[]): { cars: Car[]; report: Horse
   const induction = dropInductionMismatchedHorsepower(cars);
   const shared = dropRatingsSharedAcrossEngines(induction.cars);
   const yearOverYear = dropYearOverYearOutliers(shared.cars);
-  const fill = fillHorsepowerFromSiblings(yearOverYear.cars);
+  const implausible = dropImplausibleOutput(yearOverYear.cars);
+  // Manufacturer ratings last, so no pass can drop them, and before the fill
+  // so unrated siblings copy the right figure.
+  const corrections = applyHorsepowerCorrections(implausible.cars);
+  const fill = fillHorsepowerFromSiblings(corrections.cars);
   const out = fill.cars.map((car, i) =>
     car.engine.horsepower === cars[i].engine.horsepower ? car : refreshShoppingSegment(car),
   );
@@ -293,6 +348,8 @@ export function cleanCorpusHorsepower(cars: Car[]): { cars: Car[]; report: Horse
       induction: induction.dropped,
       shared: shared.dropped,
       yearOverYear: yearOverYear.dropped,
+      implausible: implausible.dropped,
+      corrected: corrections.corrected,
       filled: fill.filled,
     },
   };

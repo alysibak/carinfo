@@ -145,7 +145,7 @@ const SPORTS_CAR_NAMES = new RegExp(
       'fiat 124 spider',
       'alfa romeo (?:4c|spider|8 ?c)',
       'mercedes-benz (?:amg )?(?:(?:sl|slk|slc)(?: ?\\d+)?|sls|slr|amg gt)',
-      'bmw (?:z[348]|i8|1 series m)',
+      'bmw (?:z[348]|i8|1 series m|m coupe|m roadster)',
       'audi tt(?:s| ?rs)?',
       'jaguar (?:f-type|xk[8r]?)',
       'lexus (?:lc|rc ?f|lfa)',

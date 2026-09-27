@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Car } from '../types/car.types.js';
 import {
+  dropImplausibleOutput,
   dropInductionMismatchedHorsepower,
   dropRatingsSharedAcrossEngines,
   dropYearOverYearOutliers,
@@ -235,5 +236,66 @@ describe('fillHorsepowerFromSiblings', () => {
       [310, 'curated'],
       [null, null],
     ]);
+  });
+});
+
+describe('dropImplausibleOutput', () => {
+  const car = (
+    make: string,
+    model: string,
+    year: number,
+    displacement: number,
+    horsepower: number,
+    extra: Partial<Car> & { aspiration?: 'turbocharged' | 'supercharged' } = {},
+  ) =>
+    ({
+      id: `${make}-${model}-${year}`,
+      make,
+      model,
+      year,
+      provenance: { 'engine.horsepower': 'curated' },
+      engine: { fuelType: 'gasoline', displacement, horsepower, aspiration: extra.aspiration },
+      fuelEconomy: { combined: 20 },
+      transmission: { type: 'automatic' },
+      driveType: 'AWD',
+      bodyStyle: 'sedan',
+      shoppingSegment: 'mainstream',
+      ...extra,
+    }) as Car;
+  const kept = (c: Car) => dropImplausibleOutput([c]).cars[0].engine.horsepower != null;
+
+  it('drops ratings no engine of that size and induction makes', () => {
+    // A 5.0 V8 F-150 at a Raptor R's 650 hp; a Flex's V6 at the EcoBoost's 355.
+    expect(kept(car('Ford', 'F150 Pickup 4WD', 2021, 5, 650, { shoppingSegment: 'truck' }))).toBe(
+      false,
+    );
+    expect(kept(car('Ford', 'Flex AWD', 2011, 3.5, 355, { shoppingSegment: 'utility' }))).toBe(
+      false,
+    );
+    // A 2.0 turbo at 112 hp; a supercharged Shelby at the GT's 300.
+    expect(kept(car('Lexus', 'NX 300', 2019, 2, 112, { aspiration: 'turbocharged' }))).toBe(false);
+    expect(
+      kept(
+        car('Ford', 'Mustang', 2008, 5.4, 300, {
+          aspiration: 'supercharged',
+          shoppingSegment: 'muscle',
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it('keeps sports cars, luxury engines, performance badges and old turbos', () => {
+    expect(kept(car('Honda', 'S2000', 2004, 2, 240, { shoppingSegment: 'sports-car' }))).toBe(true);
+    expect(
+      kept(car('Maserati', 'Quattroporte', 2008, 4.2, 399, { shoppingSegment: 'luxury' })),
+    ).toBe(true);
+    // The 2006–11 Civic Si makes 197 hp from 2.0 litres; EPA sometimes omits a GTI's turbo.
+    expect(kept(car('Honda', 'Civic', 2008, 2, 197, { variant: 'Si' }))).toBe(true);
+    expect(kept(car('Volkswagen', 'Golf GTI', 2008, 2, 200))).toBe(true);
+    expect(kept(car('Toyota', 'Camry', 2020, 2.5, 203))).toBe(true);
+    // Boosted engines of the 1980s made little per litre.
+    expect(kept(car('Dodge', 'Daytona', 1987, 2.2, 146, { aspiration: 'turbocharged' }))).toBe(
+      true,
+    );
   });
 });

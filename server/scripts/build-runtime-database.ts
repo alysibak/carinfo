@@ -41,8 +41,14 @@ for (const [count, what] of [
   [hp.induction, 'borrowed from a non-turbo sibling'],
   [hp.shared, 'shared by two engines of one model'],
   [hp.yearOverYear, "out of line with the same engine's other years"],
+  [hp.implausible, 'no engine of that size and induction makes'],
 ] as const) {
   if (count) console.log(`[build-runtime-db] Dropped ${count} horsepower rating(s) ${what}.`);
+}
+if (hp.corrected) {
+  console.log(
+    `[build-runtime-db] Set ${hp.corrected} horsepower rating(s) to the manufacturer's figure.`,
+  );
 }
 if (hp.filled) {
   console.log(
