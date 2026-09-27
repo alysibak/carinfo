@@ -2,7 +2,7 @@ import { LATEST_FULL_MODEL_YEAR } from '../config/model-years.js';
 import type { ShoppingSegment } from '../types/car.types.js';
 import type { CompetitiveSet } from './competitive-sets.js';
 
-export type SortIntent = 'price' | 'fuelEconomy' | 'horsepower' | 'range';
+export type SortIntent = 'price' | 'fuelEconomy' | 'horsepower' | 'range' | 'safety';
 
 /** What a free-text query asks for beyond names: years, order, gearbox, engine, seats. */
 export interface QueryModifiers {
@@ -19,6 +19,8 @@ export interface QueryModifiers {
   minRangeMiles?: number;
   /** "compact suv", "sports car", "luxury sedan": the kind of vehicle asked for. */
   vehicleClass?: VehicleClassQuery;
+  /** "best", "reliable": words no data on file can measure, set aside. */
+  unmeasured?: string[];
 }
 
 export interface VehicleClassQuery {
@@ -120,8 +122,25 @@ const CLASS_PHRASES: Array<[RegExp, Omit<VehicleClassQuery, 'luxury'>]> = [
     /\b(?:economy|commuter|city) cars?\b/,
     { sets: ['subcompact-car', 'compact-car', 'small-ev'], label: 'economy cars' },
   ],
-  [/\bfamily (?:cars?|sedans?)\b/, { sets: ['midsize-car', 'large-car'], label: 'family cars' }],
 ];
+
+/** Family vehicles by body, mainstream then luxury. */
+const FAMILY_SETS: Record<BodyGroup | 'any', [CompetitiveSet[], CompetitiveSet[]]> = {
+  car: [
+    ['midsize-car', 'large-car'],
+    ['midsize-luxury-car', 'flagship-sedan'],
+  ],
+  suv: [
+    ['three-row-suv', 'midsize-suv'],
+    ['midsize-luxury-suv', 'full-size-luxury-suv'],
+  ],
+  truck: [['full-size-pickup'], []],
+  van: [['minivan'], ['minivan']],
+  any: [
+    ['three-row-suv', 'midsize-suv', 'minivan', 'midsize-car'],
+    ['midsize-luxury-suv', 'full-size-luxury-suv', 'midsize-luxury-car'],
+  ],
+};
 
 /**
  * Read the kind of vehicle a query names: a size with a body ("compact suv",
@@ -150,6 +169,24 @@ function readVehicleClass(text: string): { text: string; vehicleClass?: VehicleC
       vehicleClass: {
         ...found,
         ...(luxury ? { luxury, label: `luxury ${found.label}` } : {}),
+      },
+    };
+  }
+
+  // "family suv", "suv for family", "family car": with the body wherever it
+  // stands, which stays for the body filter ("car" goes: it says nothing more).
+  const family = /\bfamily\b/.exec(rest);
+  if (family) {
+    const words = rest.replace(family[0], ' ').trim().split(/\s+/);
+    const body = BODY_GROUPS.find(([word]) => words.some((w) => word.test(w)));
+    const sets = FAMILY_SETS[body ? body[1] : 'any'][luxury ? 1 : 0];
+    rest = rest.replace(family[0], ' ').replace(/\b(?:cars?|autos?)\b/, ' ');
+    return {
+      text: rest,
+      vehicleClass: {
+        sets,
+        ...(luxury ? { luxury } : {}),
+        label: `${luxury ? 'luxury ' : ''}family ${body ? body[2] : 'vehicles'}`,
       },
     };
   }
@@ -221,7 +258,19 @@ const SORT_PHRASES: Array<[RegExp, SortIntent]> = [
   ],
   [/\b(?:fastest|quickest|most powerful|powerful)\b/, 'horsepower'],
   [/\b(?:longest|most|best|max(?:imum)?) (?:driving )?range\b/, 'range'],
+  [/\b(?:safest|safe|(?:best|highest|top) safety(?: rating)?)\b/, 'safety'],
 ];
+
+/** Words that ask for a judgement no data on file can make. */
+const UNMEASURED =
+  /\b(?:best|good|great|top|reliable|dependable|quality|nice|decent|perfect|ideal|recommended|popular|comfortable)\b/g;
+/**
+ * Words that carry no search meaning: "best suv for family" read "for" as a
+ * prefix of Ford and showed only Fords. Not "and" or "to": "Town and
+ * Country", "up to 30k".
+ */
+const STOP_WORDS =
+  /\b(?:for|with|the|a|an|of|in|my|me|i|is|are|that|sale|near|deals?|please|want|need|looking|find|show)\b/g;
 
 const TRANSMISSION_PHRASES: Array<[RegExp, string[]]> = [
   [
@@ -295,6 +344,14 @@ export function extractQueryModifiers(
       break;
     }
   }
+  // After the sort phrases, which use "best" ("best mpg"), and the class
+  // phrases, which use "for" nowhere but keep "family".
+  const unmeasured = text.match(UNMEASURED);
+  if (unmeasured) {
+    out.unmeasured = [...new Set(unmeasured)];
+    text = text.replace(UNMEASURED, ' ');
+  }
+  text = text.replace(STOP_WORDS, ' ');
   for (const [re, types] of TRANSMISSION_PHRASES) {
     if (take(re)) {
       out.transmission = types;

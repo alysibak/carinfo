@@ -592,6 +592,19 @@ describe('car.service natural language search', () => {
     ).toBe(true);
   });
 
+  it('reads everyday words: family, safest, and words with no meaning', () => {
+    const family = searchCars({ query: 'best suv for family', limit: 50 });
+    // "for" found only Fords.
+    expect(new Set(family.results.map((c) => c.make)).size).toBeGreaterThan(3);
+    expect(family.results.every((c) => c.bodyStyle === 'suv')).toBe(true);
+    expect(family.interpretation?.unmeasured).toEqual(['best']);
+    const cheap = searchCars({ query: 'cheap reliable car', limit: 5 });
+    expect(cheap.total).toBeGreaterThan(0);
+    expect(cheap.results[0].year).toBeGreaterThanOrEqual(LATEST_FULL_MODEL_YEAR - 10);
+    const safest = searchCars({ query: 'safest minivan', limit: 5 }).results;
+    expect(safest[0].safetyRating?.overall).toBe(5);
+  });
+
   it('reads class words as words where they name a model or a trim', () => {
     // "Sport Sedan" is part of a Saab's name; "Premium" and "Big Horn" are trims.
     const saab = searchCars({ query: 'saab 9-3 sport sedan', limit: 5 });

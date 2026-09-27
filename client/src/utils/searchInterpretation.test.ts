@@ -43,5 +43,11 @@ describe('describeSearchInterpretation', () => {
     expect(describeSearchInterpretation({ vehicleClass: 'compact SUVs' })).toEqual([
       'Showing compact SUVs, classed by model.',
     ]);
+    expect(
+      describeSearchInterpretation({ unmeasured: ['best', 'reliable'], sortedBy: 'safety' }),
+    ).toEqual([
+      'Best NHTSA crash rating first; most cars have none on file.',
+      'There is no reliability or review data on file, so “best” and “reliable” were not used.',
+    ]);
   });
 });

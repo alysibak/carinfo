@@ -232,8 +232,8 @@ export interface SearchInterpretation {
   ignored?: string[];
   /** A price limit read from the query ("under 30k"), estimated CAD value. */
   price?: { min?: number; max?: number };
-  /** An order read from the query: "cheapest", "most fuel efficient", "fastest". */
-  sortedBy?: 'price' | 'fuelEconomy' | 'horsepower' | 'range';
+  /** An order read from the query: "cheapest", "most fuel efficient", "fastest", "safest". */
+  sortedBy?: 'price' | 'fuelEconomy' | 'horsepower' | 'range' | 'safety';
   /** "300 mile range", "400 km range": the least EPA range kept, in miles. */
   minRangeMiles?: number;
   /** With no year given, "cheapest" keeps to model years from this one. */
@@ -246,6 +246,8 @@ export interface SearchInterpretation {
   compared?: string[];
   /** "compact suv", "sports car", "luxury sedan": the kind of vehicle read. */
   vehicleClass?: string;
+  /** "best", "reliable": words no data on file can measure, set aside. */
+  unmeasured?: string[];
 }
 
 /** Response body of the search endpoints. */

@@ -858,6 +858,7 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
     filters.rangeMiles = { min: modifiers.minRangeMiles };
     interpretation.minRangeMiles = modifiers.minRangeMiles;
   }
+  if (modifiers.unmeasured?.length) interpretation.unmeasured = modifiers.unmeasured;
   if (modifiers.vehicleClass) {
     const { sets, segments, luxury, label } = modifiers.vehicleClass;
     if (sets?.length) filters.classes = sets;
@@ -873,8 +874,20 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
   }
   const withInterpretation = (q: SearchQuery): SearchQuery =>
     Object.keys(interpretation).length ? { ...q, sort, interpretation } : { ...q, sort };
+  // "Cheapest" over every year on file is a list of 30-year-old Accents: keep
+  // to the last ten model years unless the query gives years.
+  const keepRecentWhenCheapest = () => {
+    if (interpretation.sortedBy === 'price' && !filters.year) {
+      filters.year = { min: LATEST_FULL_MODEL_YEAR - 10 };
+      interpretation.recentFrom = LATEST_FULL_MODEL_YEAR - 10;
+    }
+  };
   const raw = price.text;
-  if (!raw) return withInterpretation({ ...query, query: undefined, filters });
+  if (!raw) {
+    // "cheap reliable car" leaves no words, and listed 1995 Mirages.
+    keepRecentWhenCheapest();
+    return withInterpretation({ ...query, query: undefined, filters });
+  }
 
   const tokens = expandGluedMakeTokens(normalizeSearchQuery(raw).split(/\s+/).filter(Boolean));
   const textTokens: string[] = [];
@@ -985,12 +998,7 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
 
   const remainingQuery = textTokens.join(' ').trim() || undefined;
 
-  // "Cheapest" over every year on file is a list of 30-year-old Accents: keep
-  // to the last ten model years unless the query gives years.
-  if (interpretation.sortedBy === 'price' && !filters.year) {
-    filters.year = { min: LATEST_FULL_MODEL_YEAR - 10 };
-    interpretation.recentFrom = LATEST_FULL_MODEL_YEAR - 10;
-  }
+  keepRecentWhenCheapest();
 
   return withInterpretation({
     ...query,
@@ -1730,6 +1738,8 @@ function getSortValue(car: Car, field: string): number | string | null {
       return car.fuelEconomy?.combined ?? null;
     case 'range':
       return car.epa?.rangeMiles ?? null;
+    case 'safety':
+      return car.safetyRating?.overall || null;
     case 'evScore':
       return computeEvScore(car, car.price?.msrp ?? undefined);
     default:

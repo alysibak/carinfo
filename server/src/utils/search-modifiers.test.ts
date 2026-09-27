@@ -88,4 +88,30 @@ describe('extractQueryModifiers', () => {
       text: 'compact suv',
     });
   });
+
+  it('drops words with no search meaning and sets aside judgements', () => {
+    // "for" was read as a prefix of Ford.
+    expect(extractQueryModifiers('best suv for family')).toEqual({
+      text: 'suv',
+      unmeasured: ['best'],
+      vehicleClass: { sets: ['three-row-suv', 'midsize-suv'], label: 'family SUVs' },
+    });
+    expect(extractQueryModifiers('cheap reliable car').unmeasured).toEqual(['reliable']);
+    expect(extractQueryModifiers('honda accord for sale near me').text).toBe('honda accord');
+    // "best mpg" is an order, not a judgement; "Town and Country" keeps its "and".
+    expect(extractQueryModifiers('best mpg suv').unmeasured).toBeUndefined();
+    expect(extractQueryModifiers('town and country').text).toBe('town and country');
+  });
+
+  it('reads family vehicles by body and "safest" as an order', () => {
+    expect(extractQueryModifiers('family van').vehicleClass).toEqual({
+      sets: ['minivan'],
+      label: 'family vans',
+    });
+    expect(extractQueryModifiers('family car')).toEqual({
+      text: '',
+      vehicleClass: { sets: ['midsize-car', 'large-car'], label: 'family cars' },
+    });
+    expect(extractQueryModifiers('safest suv').sortedBy).toBe('safety');
+  });
 });

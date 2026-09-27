@@ -35,6 +35,7 @@ export function describeSearchInterpretation(
     fuelEconomy: 'Most fuel-efficient first',
     horsepower: 'Most powerful first',
     range: 'Longest EPA range first',
+    safety: 'Best NHTSA crash rating first; most cars have none on file',
   } as const;
   if (interpretation.sortedBy) {
     lines.push(
@@ -55,6 +56,14 @@ export function describeSearchInterpretation(
   if (interpretation.threeRow) {
     lines.push(
       'Minivans, passenger vans and SUVs sold with a third row, by model: EPA records no seating.',
+    );
+  }
+  if (interpretation.unmeasured?.length) {
+    const words = interpretation.unmeasured.map((w) => `“${w}”`).join(' and ');
+    lines.push(
+      `There is no reliability or review data on file, so ${words} ${
+        interpretation.unmeasured.length > 1 ? 'were' : 'was'
+      } not used.`,
     );
   }
   if (interpretation.vehicleClass) {

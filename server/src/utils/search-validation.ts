@@ -28,6 +28,7 @@ const SORT_FIELDS = new Set([
   'price',
   'fuelEconomy',
   'range',
+  'safety',
   'evScore',
   'relevance',
 ]);
