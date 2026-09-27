@@ -287,4 +287,23 @@ describe('extractQueryModifiers', () => {
       unmeasured: ['weight'],
     });
   });
+
+  it('reads engine layouts and engine names', () => {
+    expect(extractQueryModifiers('boxer engine')).toEqual({
+      text: '',
+      layouts: ['Flat-4', 'Flat-6'],
+    });
+    expect(extractQueryModifiers('inline 6 suv')).toEqual({ text: 'suv', layouts: ['I6'] });
+    expect(extractQueryModifiers('outback h6').layouts).toEqual(['Flat-6']);
+    expect(extractQueryModifiers('rotary').layouts).toEqual(['Rotary']);
+    expect(extractQueryModifiers('bentley w12').layouts).toEqual(['W12']);
+    expect(extractQueryModifiers('ram hemi')).toEqual({ text: 'ram', engineFamily: 'hemi' });
+    expect(extractQueryModifiers('f-150 ecoboost').engineFamily).toBe('ecoboost');
+    expect(extractQueryModifiers('power stroke').engineFamily).toBe('power-stroke');
+    // BMW's electric cars are names, and a V6 is any six.
+    expect(extractQueryModifiers('bmw i4')).toEqual({ text: 'bmw i4' });
+    expect(extractQueryModifiers('bmw i5')).toEqual({ text: 'bmw i5' });
+    expect(extractQueryModifiers('v6 camry')).toEqual({ text: 'camry', cylinders: [6] });
+    expect(extractQueryModifiers('3 cylinder').cylinders).toEqual([3]);
+  });
 });

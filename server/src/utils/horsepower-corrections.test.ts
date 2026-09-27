@@ -78,6 +78,18 @@ describe('applyHorsepowerCorrections', () => {
     expect(cars.map((c) => c.engine.aspiration)).toEqual(['turbocharged', undefined, undefined]);
   });
 
+  it("rates the Golf's lumped engines by what they are", () => {
+    const turbo = { aspiration: 'turbocharged' as const };
+    const { cars } = applyHorsepowerCorrections([
+      // A 2000 GTI 1.8T read the eight-valve 2.0's 115 hp; a 2002 Golf TDI too.
+      car('Volkswagen', 'Golf GTI', 2000, 1.8, 115, turbo),
+      car('Volkswagen', 'Golf GTI', 2004, 1.8, undefined, turbo),
+      car('Volkswagen', 'Golf', 2002, 1.9, 115, { ...turbo, fuelType: 'diesel' }),
+      car('Volkswagen', 'Golf', 2005, 1.9, 115, { ...turbo, fuelType: 'diesel' }),
+    ]);
+    expect(cars.map((c) => c.engine.horsepower)).toEqual([150, 180, 90, 100]);
+  });
+
   it('leaves other engines, hybrids and years alone', () => {
     const cars = [
       car('Honda', 'CR-V Hybrid AWD', 2021, 2, 212, { fuelType: 'hybrid' }),

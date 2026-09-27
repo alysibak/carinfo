@@ -96,6 +96,13 @@ export function describeSearchInterpretation(
     lines.push(describeFuelEconomy(interpretation.fuelEconomy, !!interpretation.gasMileage));
   }
   if (interpretation.horsepower) lines.push(describeHorsepower(interpretation.horsepower));
+  if (interpretation.engineFamily) lines.push(`Read as ${interpretation.engineFamily}.`);
+  if (interpretation.layouts?.length) {
+    const names = interpretation.layouts.join(' and ');
+    lines.push(
+      `${names} engines only: EPA records a cylinder count, so the layout comes from the engine family.`,
+    );
+  }
   const order = {
     price: 'Cheapest first by estimated value',
     fuelEconomy: 'Most fuel-efficient first',

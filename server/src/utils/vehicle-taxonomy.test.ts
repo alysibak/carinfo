@@ -49,24 +49,28 @@ describe('vehicle-taxonomy', () => {
     expect(inferBodyStyle(golf!, display)).toBe('hatchback');
   });
 
-  it('disambiguates Golf GTI from base Golf via displacement', () => {
-    const gti = minimalCar({
-      make: 'Volkswagen',
-      model: 'Golf GTI',
-      trim: 'golf-gti-automatic-s7',
-      engine: { fuelType: 'gasoline', displacement: 2 },
-      bodyStyle: 'sedan',
-    });
-    expect(canonicalizeDisplayModel(gti)).toBe('Golf GTI');
-
-    const base = minimalCar({
-      make: 'Volkswagen',
-      model: 'Golf GTI',
-      trim: 'golf-gti-automatic-s7',
-      engine: { fuelType: 'gasoline', displacement: 1.8 },
-      bodyStyle: 'sedan',
-    });
-    expect(canonicalizeDisplayModel(base)).toBe('Golf');
+  it('tells a Golf from a GTI by EPA model name, not the shared trim slug', () => {
+    // EPA files both under the base model "Golf/GTI", so every trim slug reads
+    // "golf-gti": by the slug, Golf TDIs and 2.5-litre Golfs were GTIs.
+    const vw = (model: string, displacement: number, fuelType: Car['engine']['fuelType']) =>
+      canonicalizeDisplayModel(
+        minimalCar({
+          make: 'Volkswagen',
+          model,
+          trim: 'golf-gti-manual-6-spd',
+          engine: { fuelType, displacement },
+          bodyStyle: 'hatchback',
+        }),
+      );
+    expect(vw('GTI', 2, 'gasoline')).toBe('Golf GTI');
+    // The 2000-06 GTI 1.8T is a GTI.
+    expect(vw('GTI', 1.8, 'gasoline')).toBe('Golf GTI');
+    expect(vw('GTI VR6', 2.8, 'gasoline')).toBe('Golf GTI');
+    expect(vw('Golf', 2, 'diesel')).toBe('Golf');
+    expect(vw('Golf', 2.5, 'gasoline')).toBe('Golf');
+    expect(vw('Golf', 1.8, 'gasoline')).toBe('Golf');
+    // EPA's own lumped names say nothing either way.
+    expect(vw('Golf III / GTI', 2, 'gasoline')).toBe('Golf');
   });
 
   it('reads "Touring" as a trim and keeps EPA utility classes over a "Wagon" name', () => {

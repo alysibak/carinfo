@@ -284,11 +284,14 @@ export function canonicalizeDisplayModel(car: CarSpecs): string {
     if (/sportwagen|sport wagen/.test(h)) return 'Golf SportWagen';
     if (/e-golf|e golf/.test(h)) return 'e-Golf';
     if (/golf r|\bgolf-r\b/.test(h)) return 'Golf R';
-    if (/\bgti\b|golf-gti/.test(h)) {
-      // EPA groups base 1.8L Golfs under golf-gti trim slugs — not a GTI.
-      if (disp >= 1.95) return 'Golf GTI';
-      return 'Golf';
-    }
+    // EPA files the Golf and the GTI under one base model ("Golf/GTI"), so
+    // every trim slug reads "golf-gti": only EPA's model name tells them
+    // apart. By the slug, Golf TDIs, 2.5-litre Golfs and 1.8T Golfs were GTIs.
+    const epaModel = car.model.toLowerCase();
+    const lumped = /golf\s*(?:iii\s*)?\/\s*gti/.test(epaModel);
+    if (/\bgti\b/.test(epaModel) && !lumped) return 'Golf GTI';
+    if (/^(?:new )?golf\b/.test(epaModel) || lumped) return 'Golf';
+    if (/\bgti\b|golf-gti/.test(h)) return disp >= 1.95 ? 'Golf GTI' : 'Golf';
   }
 
   if (make === 'Honda') {

@@ -388,16 +388,8 @@ export function mapEpaRow(row: EpaRow, maxYear = maxModelYear()): Car | null {
       fuelType,
       displacement,
       cylinders: Number.isNaN(cylinders) ? undefined : cylinders,
-      // EPA gives a cylinder count, never a bank layout. Inferring one is safe
-      // where the count implies it, but 6 and 5 cylinders were being labelled
-      // "I6" and "V5" — usually a V6 and always an inline-5. Leave those unset
-      // and let NHTSA's EngineConfiguration fill them in when available.
-      configuration:
-        cylinders && cylinders !== 5 && cylinders !== 6
-          ? cylinders <= 4
-            ? `I${cylinders}`
-            : `V${cylinders}`
-          : undefined,
+      // EPA gives a cylinder count, never a layout: normalization derives it
+      // from the engine family (src/utils/engine-layout.ts).
       ...(aspiration ? { aspiration } : {}),
       ...(isEpaMildHybrid(row) ? { mildHybrid: true } : {}),
     },

@@ -1,6 +1,7 @@
 import { LATEST_FULL_MODEL_YEAR } from '../config/model-years.js';
 import type { ShoppingSegment } from '../types/car.types.js';
 import type { CompetitiveSet } from './competitive-sets.js';
+import type { EngineFamilyId } from './engine-families.js';
 
 export type SortIntent =
   'price' | 'fuelEconomy' | 'horsepower' | 'range' | 'safety' | 'runningCost';
@@ -36,6 +37,10 @@ export interface QueryModifiers {
   fuelEconomy?: FuelEconomyBound;
   /** "over 300 hp", "300+ horsepower", "under 200 hp". */
   horsepower?: { min?: number; max?: number };
+  /** "boxer", "straight six", "rotary", "w12": layouts as utils/engine-layout.ts names them. */
+  layouts?: string[];
+  /** "hemi", "ecoboost", "duramax": an engine family (utils/engine-families.ts). */
+  engineFamily?: EngineFamilyId;
 }
 
 export type FuelEconomyUnit = 'MPG' | 'MPGe' | 'L/100 km';
@@ -379,12 +384,44 @@ const TRANSMISSION_PHRASES: Array<[RegExp, string[]]> = [
 ];
 
 const CYLINDER_PHRASES: Array<[RegExp, number]> = [
+  [/\b(?:3|three)[- ]?cyl(?:inder)?s?\b/, 3],
   // Not "i4": that is BMW's electric sedan.
   [/\b(?:4|four)[- ]?cyl(?:inder)?s?\b/, 4],
-  [/\b(?:6|six)[- ]?cyl(?:inder)?s?\b|\b(?:v6|inline[- ]?6|inline six)\b/, 6],
+  [/\b(?:5|five)[- ]?cyl(?:inder)?s?\b/, 5],
+  [/\b(?:6|six)[- ]?cyl(?:inder)?s?\b|\bv6\b/, 6],
   [/\b(?:8|eight)[- ]?cyl(?:inder)?s?\b|\bv8\b/, 8],
-  [/\bv10\b/, 10],
-  [/\bv12\b/, 12],
+  [/\b(?:10|ten)[- ]?cyl(?:inder)?s?\b|\bv10\b/, 10],
+  [/\b(?:12|twelve)[- ]?cyl(?:inder)?s?\b|\bv12\b/, 12],
+];
+
+/**
+ * Layouts, as utils/engine-layout.ts derives them from the engine family.
+ * Not "i4" or "i5": those are BMW's electric cars.
+ */
+const LAYOUT_PHRASES: Array<[RegExp, string[]]> = [
+  [/\b(?:inline|straight)[- ]?(?:6|six)\b|\bi-?6\b/, ['I6']],
+  [/\b(?:inline|straight)[- ]?(?:5|five)\b/, ['I5']],
+  [/\b(?:inline|straight)[- ]?(?:4|four)\b/, ['I4']],
+  [/\b(?:inline|straight)[- ]?(?:3|three)\b/, ['I3']],
+  [/\bflat[- ]?(?:6|six)\b|\bh-?6\b/, ['Flat-6']],
+  [/\bflat[- ]?(?:4|four)\b|\bh-?4\b/, ['Flat-4']],
+  [/\bflat[- ]?(?:12|twelve)\b/, ['Flat-12']],
+  [/\b(?:boxer|horizontally opposed)(?: engines?| motors?)?\b/, ['Flat-4', 'Flat-6']],
+  [/\bvr-?6\b/, ['VR6']],
+  [/\bw-?8\b/, ['W8']],
+  [/\bw-?12\b/, ['W12']],
+  [/\bw-?16\b/, ['W16']],
+  [/\b(?:rotary|wankel)(?: engines?| motors?)?\b/, ['Rotary']],
+];
+
+const ENGINE_FAMILY_PHRASES: Array<[RegExp, EngineFamilyId]> = [
+  [/\bhemi\b/, 'hemi'],
+  [/\beco-?boost\b/, 'ecoboost'],
+  [/\bcoyote\b/, 'coyote'],
+  [/\bpower-? ?stroke\b/, 'power-stroke'],
+  [/\bduramax\b/, 'duramax'],
+  [/\beco-? ?diesel\b/, 'ecodiesel'],
+  [/\btdi\b/, 'tdi'],
 ];
 
 const THREE_ROW_PHRASE =
@@ -654,6 +691,15 @@ export function extractQueryModifiers(
   for (const [re, types] of TRANSMISSION_PHRASES) {
     if (take(re)) {
       out.transmission = types;
+      break;
+    }
+  }
+  // Before the cylinder counts: "inline 6" is a layout, not any six.
+  const layouts = LAYOUT_PHRASES.filter(([re]) => take(re)).flatMap(([, names]) => names);
+  if (layouts.length) out.layouts = [...new Set(layouts)];
+  for (const [re, family] of ENGINE_FAMILY_PHRASES) {
+    if (take(re)) {
+      out.engineFamily = family;
       break;
     }
   }

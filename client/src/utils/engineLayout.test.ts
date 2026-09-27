@@ -3,23 +3,16 @@ import { engineLayoutLabel, formatEngineSystem } from './fuelDisplay';
 import { formatEngineDetailForCard } from './dataValue';
 
 describe('engineLayoutLabel', () => {
-  it('drops the two layouts the builder guessed wrong', () => {
-    // Most six-cylinders are a V6, and a "V5" is not a real production layout.
-    expect(engineLayoutLabel('I6', 6)).toBe('6-cyl');
-    expect(engineLayoutLabel('V5', 5)).toBe('5-cyl');
-  });
-
-  it('keeps layouts that are right for their cylinder count', () => {
+  it('shows the layout the server derives from the engine family', () => {
+    // The server no longer guesses from the count alone, so a straight six is one.
+    expect(engineLayoutLabel('I6', 6)).toBe('I6');
     expect(engineLayoutLabel('I4', 4)).toBe('I4');
-    expect(engineLayoutLabel('I3', 3)).toBe('I3');
     expect(engineLayoutLabel('V8', 8)).toBe('V8');
-    expect(engineLayoutLabel('V12', 12)).toBe('V12');
-  });
-
-  it('keeps a real layout that contradicts the guess', () => {
     expect(engineLayoutLabel('V6', 6)).toBe('V6');
     expect(engineLayoutLabel('I5', 5)).toBe('I5');
-    expect(engineLayoutLabel('Flat-6', 6)).toBe('Flat-6');
+    expect(engineLayoutLabel('Flat-4', 4)).toBe('Flat-4');
+    expect(engineLayoutLabel('W12', 12)).toBe('W12');
+    expect(engineLayoutLabel('Rotary', 2)).toBe('Rotary');
   });
 
   it('falls back to the cylinder count when no layout is recorded', () => {
@@ -32,7 +25,6 @@ describe('engineLayoutLabel', () => {
       formatEngineDetailForCard({
         fuelType: 'gasoline',
         displacement: 3,
-        configuration: 'I6',
         cylinders: 6,
       }),
     ).toBe('3L 6-cyl');
@@ -44,7 +36,8 @@ describe('engineLayoutLabel', () => {
         cylinders: 4,
       }),
     ).toBe('1.8L I4');
-    expect(formatEngineSystem('gasoline', 3, 'I6', 6)).toBe('3L 6-cyl');
+    expect(formatEngineSystem('gasoline', 3, 'I6', 6)).toBe('3L I6');
+    expect(formatEngineSystem('gasoline', 3.5, undefined, 6)).toBe('3.5L 6-cyl');
     expect(formatEngineSystem('electric', undefined, undefined, undefined)).toBe('Electric Motor');
   });
 

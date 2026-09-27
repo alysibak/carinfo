@@ -817,6 +817,23 @@ describe('car.service natural language search', () => {
     ).toBe(false);
   });
 
+  it('finds engines by layout and by name', () => {
+    const boxers = searchCars({ query: 'boxer engine', limit: 500 });
+    expect(boxers.total).toBeGreaterThan(10);
+    expect(boxers.results.every((c) => /Subaru|Porsche|Toyota|Scion|RUF/.test(c.make))).toBe(true);
+    expect(
+      searchCars({ query: 'rotary', limit: 50 }).results.every((c) => /^RX-/.test(c.model)),
+    ).toBe(true);
+    // "hemi" matched a Model 3 "Premium" and a Cruze "Premier".
+    const hemi = searchCars({ query: 'hemi', limit: 500 });
+    expect(hemi.results.every((c) => c.engine.cylinders === 8)).toBe(true);
+    expect(hemi.results.every((c) => /Chrysler|Dodge|Jeep|Ram/.test(c.make))).toBe(true);
+    expect(hemi.interpretation?.engineFamily).toMatch(/Hemi V8s/);
+    const ecoboost = searchCars({ query: 'ecoboost', limit: 500 });
+    expect(ecoboost.total).toBeGreaterThan(8);
+    expect(ecoboost.results.every((c) => c.make === 'Ford' && !!c.engine.aspiration)).toBe(true);
+  });
+
   it('completes the name in a rivals phrase, one entry per model', () => {
     const suggestions = getSearchSuggestions('cars like a cam', 8);
     expect(suggestions[0]).toMatchObject({

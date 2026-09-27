@@ -24,6 +24,7 @@ import { FIRST_CAR } from '../config/first-car.js';
 import { mpgToLPer100Km } from '../config/regional-assumptions.js';
 import { TRIM_QUERY_FORMS } from '../utils/performance-trims.js';
 import { extractQueryModifiers, withoutFigures } from '../utils/search-modifiers.js';
+import { ENGINE_FAMILIES, isEngineFamilyId } from '../utils/engine-families.js';
 import { isThreeRow } from '../utils/three-row.js';
 import { competitiveSets } from '../utils/competitive-sets.js';
 import { isLuxuryBrand } from '../utils/vehicle-taxonomy.js';
@@ -1067,6 +1068,14 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
     filters.transmission = modifiers.transmission;
   }
   if (modifiers.cylinders && !explicit?.cylinders?.length) filters.cylinders = modifiers.cylinders;
+  if (modifiers.layouts && !explicit?.layout?.length) {
+    filters.layout = modifiers.layouts;
+    interpretation.layouts = modifiers.layouts;
+  }
+  if (modifiers.engineFamily) {
+    filters.engineFamily = modifiers.engineFamily;
+    interpretation.engineFamily = ENGINE_FAMILIES[modifiers.engineFamily].label;
+  }
   if (modifiers.firstCar) {
     // The First car preset's limits, where the query and filters set none.
     if (!filters.price) filters.price = { max: FIRST_CAR.maxPrice };
@@ -1892,6 +1901,10 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
   const luxuryOnly = filters?.luxury === true;
   const mildOnly = filters?.mildHybrid === true;
   const automatedManualOnly = filters?.automatedManual === true;
+  const layoutSet = filters?.layout?.length ? new Set(filters.layout) : null;
+  const engineFamily = isEngineFamilyId(filters?.engineFamily)
+    ? ENGINE_FAMILIES[filters.engineFamily]
+    : null;
 
   const needsFiltering =
     !!classSet ||
@@ -1899,6 +1912,8 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
     luxuryOnly ||
     mildOnly ||
     automatedManualOnly ||
+    !!layoutSet ||
+    !!engineFamily ||
     !!cylinderSet ||
     !!aspirationSet ||
     threeRow ||
@@ -1970,6 +1985,8 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
     }
 
     if (cylinderSet && !cylinderSet.has(car.engine.cylinders ?? -1)) continue;
+    if (layoutSet && !layoutSet.has(car.engine.configuration ?? '')) continue;
+    if (engineFamily && !engineFamily.test(car)) continue;
     if (aspirationSet && !aspirationSet.has(car.engine.aspiration ?? '')) continue;
     if (threeRow && !isThreeRow(car)) continue;
     if (classSet && !competitiveSets(car).some((set) => classSet.has(set))) continue;

@@ -61,6 +61,12 @@ const CORRECTIONS: Correction[] = [
   row('Ram', /^1500(?! (TRX|HO|RHO))/, [2013, 2026], 5.7, false, 395),
   row('Ram', /^1500/, [2014, 2018], 3, true, 240, 'diesel'),
   row('Ram', /^1500/, [2020, 2023], 3, true, 260, 'diesel'),
+  // The test-car match lumped the Golf, GTI and Jetta: a 2000 GTI 1.8T at the
+  // eight-valve 2.0's 115 hp (it made 150), a 2002 Golf TDI at 115 (90).
+  row('Volkswagen', /^Golf GTI$/, [2000, 2001], 1.8, true, 150),
+  row('Volkswagen', /^Golf GTI$/, [2002, 2006], 1.8, true, 180),
+  row('Volkswagen', /^Golf$/, [1996, 2003], 1.9, true, 90, 'diesel'),
+  row('Volkswagen', /^Golf$/, [2004, 2006], 1.9, true, 100, 'diesel'),
   row('Nissan', /^Kicks/, [2018, 2019], 1.6, false, 125),
   row('Honda', /^CR-V(?! (Hybrid|e-FCEV))/, [2017, 2022], 1.5, true, 190),
   row('Honda', /^Civic(?! (Hybrid|Natural Gas|Type R))/, [2016, 2024], 2, false, 158),

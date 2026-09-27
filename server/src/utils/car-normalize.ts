@@ -2,6 +2,7 @@ import type { Car } from '../types/car.types.js';
 import { isFuelCellVehicle } from './fuel-cell-detection.js';
 import { inferEffectiveFuelType, isLikelyMisclassifiedPhev } from './fuel-type-inference.js';
 import { unvaluedReason } from './unvalued.js';
+import { engineLayout } from './engine-layout.js';
 import { estimateMarketValue } from './ownership-economics.js';
 import { applyVehicleTaxonomy } from './vehicle-taxonomy-apply.js';
 import { deriveVariant } from './performance-trims.js';
@@ -100,6 +101,13 @@ export function normalizeCarRecord(car: Car): Car {
     inferEffectiveFuelType(normalized) !== normalized.engine.fuelType
   ) {
     normalized = applyFuelTypeCorrection(normalized);
+  }
+
+  // After the fuel corrections: a 48 V mild hybrid marks the newer straight sixes.
+  const layout = engineLayout(normalized);
+  if (layout !== normalized.engine.configuration) {
+    const { configuration: _guess, ...engine } = normalized.engine;
+    normalized = { ...normalized, engine: layout ? { ...engine, configuration: layout } : engine };
   }
 
   // Before the taxonomy, which reads the trim to place the car in a segment.

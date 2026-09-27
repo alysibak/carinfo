@@ -213,6 +213,10 @@ export interface CarFilter {
   mildHybrid?: boolean;
   /** EPA's automated manuals (dual-clutch gearboxes, mostly) only. */
   automatedManual?: boolean;
+  /** Engine layouts ("Flat-4", "I6", "W12"), any of which a car must have. */
+  layout?: string[];
+  /** An engine family by name ("hemi", "ecoboost": utils/engine-families.ts). */
+  engineFamily?: string;
 }
 
 export interface SearchQuery {
@@ -306,6 +310,10 @@ export interface SearchInterpretation {
   };
   /** "over 300 hp": cars with no rating on file are left out. */
   horsepower?: { min?: number; max?: number };
+  /** "boxer", "straight six": the engine layouts kept. */
+  layouts?: string[];
+  /** "hemi", "ecoboost": what the engine name was read as. */
+  engineFamily?: string;
 }
 
 /** Response body of the search endpoints. */

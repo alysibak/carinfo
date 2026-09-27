@@ -93,6 +93,15 @@ describe('describeSearchInterpretation', () => {
     ]);
   });
 
+  it('names engine layouts and what an engine name was read as', () => {
+    expect(describeSearchInterpretation({ layouts: ['Flat-4', 'Flat-6'] })).toEqual([
+      'Flat-4 and Flat-6 engines only: EPA records a cylinder count, so the layout comes from the engine family.',
+    ]);
+    expect(describeSearchInterpretation({ engineFamily: "GM's Duramax diesels" })).toEqual([
+      "Read as GM's Duramax diesels.",
+    ]);
+  });
+
   it('states fuel economy and horsepower bounds in the unit asked', () => {
     expect(
       describeSearchInterpretation({ fuelEconomy: { min: 30, unit: 'MPG' }, gasMileage: true }),

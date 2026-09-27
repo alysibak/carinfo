@@ -70,7 +70,7 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
   },
   configuration: {
     plain: 'How the cylinders are laid out',
-    what: 'I4 = four cylinders in a line. V6/V8 = cylinders in a V shape. H4 = flat/boxer.',
+    what: 'I4 or I6 = cylinders in a line. V6/V8 = in a V. Flat-4/Flat-6 = opposed (boxer: Subaru, Porsche). W12 = two narrow Vs side by side (Bentley). VR6 = a very narrow V6 (Volkswagen). Rotary = a Wankel, with rotors instead of pistons (Mazda RX-7, RX-8). EPA records only the cylinder count; the layout comes from the engine family, and a six from a maker we do not have on record shows as a count.',
     why: 'Layout affects smoothness, packaging, and sometimes repair cost. I4 is the everyday default.',
   },
   cylinders: {
