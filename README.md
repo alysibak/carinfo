@@ -91,18 +91,18 @@ This README quotes **actual source** in [Code reference](#code-reference). To re
 
 ## What you get
 
-| Data | Source | In UI | Notes |
-|------|--------|-------|-------|
-| MPG/MPGe, engine, drive, transmission, CO₂, annual fuel cost, EV range | EPA FuelEconomy.gov | Verified | In `cars.json` |
-| GHG score, barrels/yr, 5-yr fuel savings, PHEV dual-mode | EPA `vehicles.csv` | Verified | `epa-enrichment.json` |
-| Rated horsepower | EPA Test Car List | Verified | `horsepower-enrichment.json` |
-| EV horsepower (no test-car match) | Heuristic | **Est.** | `ev-power-estimates.ts` |
-| Safety star ratings | NHTSA | Verified | When enriched |
-| Market value, running cost, TCO, resale | Depreciation model | **Est.** | Ontario/CAD |
-| Predicted 0–60 | HP/weight heuristic | **Est.** | `predictZeroToSixty()` |
-| Shopping segment, ownership profile | Taxonomy rules | **Est.** | `vehicle-taxonomy.ts` |
-| Dimensions, real 0–60, top speed, torque | Not in EPA bulk | Omitted | Compare hides empty rows |
-| Listing photos | N/A | Placeholder PNGs | Body-type illustrations only |
+| Data                                                                   | Source              | In UI            | Notes                        |
+| ---------------------------------------------------------------------- | ------------------- | ---------------- | ---------------------------- |
+| MPG/MPGe, engine, drive, transmission, CO₂, annual fuel cost, EV range | EPA FuelEconomy.gov | Verified         | In `cars.json`               |
+| GHG score, barrels/yr, 5-yr fuel savings, PHEV dual-mode               | EPA `vehicles.csv`  | Verified         | `epa-enrichment.json`        |
+| Rated horsepower                                                       | EPA Test Car List   | Verified         | `horsepower-enrichment.json` |
+| EV horsepower (no test-car match)                                      | Heuristic           | **Est.**         | `ev-power-estimates.ts`      |
+| Safety star ratings                                                    | NHTSA               | Verified         | When enriched                |
+| Market value, running cost, TCO, resale                                | Depreciation model  | **Est.**         | Ontario/CAD                  |
+| Predicted 0–60                                                         | HP/weight heuristic | **Est.**         | `predictZeroToSixty()`       |
+| Shopping segment, ownership profile                                    | Taxonomy rules      | **Est.**         | `vehicle-taxonomy.ts`        |
+| Dimensions, real 0–60, top speed, torque                               | Not in EPA bulk     | Omitted          | Compare hides empty rows     |
+| Listing photos                                                         | N/A                 | Placeholder PNGs | Body-type illustrations only |
 
 ---
 
@@ -110,30 +110,30 @@ This README quotes **actual source** in [Code reference](#code-reference). To re
 
 ### Database totals
 
-| Metric | Count |
-|--------|-------|
-| Total vehicles | 35,825 (35,823 after ID merges) |
-| Year range | 1995–2027 (2027 partial) |
-| Makes | 92 |
-| EPA enrichment records | 35,825 |
-| Horsepower enrichment keys | 20,043 (~56%) |
-| NHTSA combo ratings | 1,025 `make\|model\|year` |
-| NHTSA per-car index | 4,518 (12.6%) |
-| Turbocharged / supercharged | 11,369 |
-| NHTSA cache lookups attempted | 13,842 |
+| Metric                        | Count                           |
+| ----------------------------- | ------------------------------- |
+| Total vehicles                | 35,825 (35,823 after ID merges) |
+| Year range                    | 1995–2027 (2027 partial)        |
+| Makes                         | 92                              |
+| EPA enrichment records        | 35,825                          |
+| Horsepower enrichment keys    | 20,043 (~56%)                   |
+| NHTSA combo ratings           | 1,025 `make\|model\|year`       |
+| NHTSA per-car index           | 4,518 (12.6%)                   |
+| Turbocharged / supercharged   | 11,369                          |
+| NHTSA cache lookups attempted | 13,842                          |
 
 ### Body style breakdown
 
-| Body style | Count |
-|------------|-------|
-| sedan | 16,264 |
-| suv | 10,141 |
-| truck | 4,095 |
-| coupe | 2,013 |
-| wagon | 1,816 |
-| van | 889 |
-| minivan | 586 |
-| hatchback | 21 |
+| Body style | Count  |
+| ---------- | ------ |
+| sedan      | 16,264 |
+| suv        | 10,141 |
+| truck      | 4,095  |
+| coupe      | 2,013  |
+| wagon      | 1,816  |
+| van        | 889    |
+| minivan    | 586    |
+| hatchback  | 21     |
 
 ### Fuel types
 
@@ -150,21 +150,21 @@ second line of defense and agree with EPA on every record (a test pins that).
 
 ### Field coverage in raw `cars.json`
 
-| Field | Records |
-|-------|---------|
-| trim | 35,825 |
-| engine.configuration | 31,428 |
-| engine.aspiration | 11,369 |
-| transmission.speeds | 22,489 |
-| countryOfOrigin | 32,457 |
-| epa.co2 | 17,859 |
-| epa.charge240Hours | 1,874 |
-| epa.charge120Hours | 1 |
-| dimensions | 0 |
-| performance | 0 |
-| safetyRating | 0 |
-| engine.horsepower | 0 |
-| epa.ghgScore | 0 |
+| Field                | Records |
+| -------------------- | ------- |
+| trim                 | 35,825  |
+| engine.configuration | 31,428  |
+| engine.aspiration    | 11,369  |
+| transmission.speeds  | 22,489  |
+| countryOfOrigin      | 32,457  |
+| epa.co2              | 17,859  |
+| epa.charge240Hours   | 1,874   |
+| epa.charge120Hours   | 1       |
+| dimensions           | 0       |
+| performance          | 0       |
+| safetyRating         | 0       |
+| engine.horsepower    | 0       |
+| epa.ghgScore         | 0       |
 
 Enrichment adds HP, GHG, safety, corrected PHEV/EV economy at load time.
 
@@ -174,17 +174,17 @@ Slug derived from EPA record, e.g. `acura-nsx-1995-nsx-2mode-clkup-automatic-4-s
 
 ### Data files
 
-| File | Keyed by | Contents | Git |
-|------|----------|----------|-----|
-| `server/data/cars.json` | `id` | Master vehicle DB | Committed |
-| `server/data/epa-enrichment.json` | `epaId` | GHG, barrels, PHEV, EV kWh/range, charge times | Committed |
-| `server/data/horsepower-enrichment.json` | `epaId` | EPA test-car rated HP | Committed |
-| `server/data/nhtsa-safety.json` | `make\|model\|year` | NHTSA star ratings | Committed |
-| `server/data/nhtsa-by-car-id.json` | `id` | Pre-resolved NHTSA per vehicle | New/untracked |
-| `server/data/raw/vehicles.csv` | — | EPA source CSV | Gitignored |
-| `server/data/raw/nhtsa-enrichment-cache.json` | — | NHTSA API cache | Gitignored |
-| `server/data/raw/test-car-data/*.csv` | — | EPA test car list per year | Gitignored |
-| `server/data/manual-prices.json` | — | Optional MSRP overrides keyed by car id | Not present (build skips it) |
+| File                                          | Keyed by            | Contents                                       | Git                          |
+| --------------------------------------------- | ------------------- | ---------------------------------------------- | ---------------------------- |
+| `server/data/cars.json`                       | `id`                | Master vehicle DB                              | Committed                    |
+| `server/data/epa-enrichment.json`             | `epaId`             | GHG, barrels, PHEV, EV kWh/range, charge times | Committed                    |
+| `server/data/horsepower-enrichment.json`      | `epaId`             | EPA test-car rated HP                          | Committed                    |
+| `server/data/nhtsa-safety.json`               | `make\|model\|year` | NHTSA star ratings                             | Committed                    |
+| `server/data/nhtsa-by-car-id.json`            | `id`                | Pre-resolved NHTSA per vehicle                 | New/untracked                |
+| `server/data/raw/vehicles.csv`                | —                   | EPA source CSV                                 | Gitignored                   |
+| `server/data/raw/nhtsa-enrichment-cache.json` | —                   | NHTSA API cache                                | Gitignored                   |
+| `server/data/raw/test-car-data/*.csv`         | —                   | EPA test car list per year                     | Gitignored                   |
+| `server/data/manual-prices.json`              | —                   | Optional MSRP overrides keyed by car id        | Not present (build skips it) |
 
 ---
 
@@ -194,44 +194,44 @@ Types live in `client/src/types/car.types.ts` and `server/src/types/car.types.ts
 
 ### `CarSpecs` — core vehicle record
 
-| Field | Type | Notes |
-|-------|------|-------|
-| `id` | string | Unique slug |
-| `make`, `model`, `year` | string/number | |
-| `trim` | string? | EPA trim slug (cleaned for display) |
-| `countryOfOrigin` | string? | From NHTSA cache when available |
-| `epaId` | number? | EPA `vehicles.csv` id |
-| `provenance` | `Provenance` | Per-field source map |
-| `vehicleCategory` | `car\|suv\|truck\|van` | Computed |
-| `shoppingSegment` | `ShoppingSegment` | Computed |
-| `ownershipProfile` | object? | Label, tags, bestFor |
-| `engine` | object | displacement, hp, torque, fuelType, cylinders, configuration, aspiration, `horsepowerBasis` (`manufacturer` for our manufacturer and EV motor ratings, `sibling` for a copy from the same engine in the same model), `mildHybrid` (a 12-48 V mild hybrid, listed by its fuel) |
-| `performance` | object? | zeroToSixty, topSpeed, quarterMile (always empty in prod DB) |
-| `dimensions` | object? | length, width, height, wheelbase, curbWeight (always empty in prod DB) |
-| `fuelEconomy` | object | city, highway, combined |
-| `epa` | object? | co2, annualFuelCost, rangeMiles, kWhPer100Mi, charge times, vClass, ghgScore, fuelSavings5yrUsd, barrelsPerYear, phev |
-| `transmission` | object | type, speeds, description. EPA's `AV` and `AV-S7` codes are CVTs (the number is the simulated steps a select shift offers), read as `cvt` at load; `speeds` keeps the step count |
-| `driveType` | FWD/RWD/AWD/4WD | |
-| `bodyStyle` | BodyStyle | May be corrected from EPA VClass |
-| `safetyRating` | object? | overall, frontal, side, rollover |
-| `price` | object? | msrp, min, max, isEstimated, confidence |
-| `images` | string[]? | Unused in prod |
-| `productionYears` | object? | start, end |
+| Field                   | Type                   | Notes                                                                                                                                                                                                                                                                         |
+| ----------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                    | string                 | Unique slug                                                                                                                                                                                                                                                                   |
+| `make`, `model`, `year` | string/number          |                                                                                                                                                                                                                                                                               |
+| `trim`                  | string?                | EPA trim slug (cleaned for display)                                                                                                                                                                                                                                           |
+| `countryOfOrigin`       | string?                | From NHTSA cache when available                                                                                                                                                                                                                                               |
+| `epaId`                 | number?                | EPA `vehicles.csv` id                                                                                                                                                                                                                                                         |
+| `provenance`            | `Provenance`           | Per-field source map                                                                                                                                                                                                                                                          |
+| `vehicleCategory`       | `car\|suv\|truck\|van` | Computed                                                                                                                                                                                                                                                                      |
+| `shoppingSegment`       | `ShoppingSegment`      | Computed                                                                                                                                                                                                                                                                      |
+| `ownershipProfile`      | object?                | Label, tags, bestFor                                                                                                                                                                                                                                                          |
+| `engine`                | object                 | displacement, hp, torque, fuelType, cylinders, configuration, aspiration, `horsepowerBasis` (`manufacturer` for our manufacturer and EV motor ratings, `sibling` for a copy from the same engine in the same model), `mildHybrid` (a 12-48 V mild hybrid, listed by its fuel) |
+| `performance`           | object?                | zeroToSixty, topSpeed, quarterMile (always empty in prod DB)                                                                                                                                                                                                                  |
+| `dimensions`            | object?                | length, width, height, wheelbase, curbWeight (always empty in prod DB)                                                                                                                                                                                                        |
+| `fuelEconomy`           | object                 | city, highway, combined                                                                                                                                                                                                                                                       |
+| `epa`                   | object?                | co2, annualFuelCost, rangeMiles, kWhPer100Mi, charge times, vClass, ghgScore, fuelSavings5yrUsd, barrelsPerYear, phev                                                                                                                                                         |
+| `transmission`          | object                 | type, speeds, description. EPA's `AV` and `AV-S7` codes are CVTs (the number is the simulated steps a select shift offers), read as `cvt` at load; `speeds` keeps the step count                                                                                              |
+| `driveType`             | FWD/RWD/AWD/4WD        |                                                                                                                                                                                                                                                                               |
+| `bodyStyle`             | BodyStyle              | May be corrected from EPA VClass                                                                                                                                                                                                                                              |
+| `safetyRating`          | object?                | overall, frontal, side, rollover                                                                                                                                                                                                                                              |
+| `price`                 | object?                | msrp, min, max, isEstimated, confidence                                                                                                                                                                                                                                       |
+| `images`                | string[]?              | Unused in prod                                                                                                                                                                                                                                                                |
+| `productionYears`       | object?                | start, end                                                                                                                                                                                                                                                                    |
 
 ### `CarDashboard` — dossier API response
 
-| Field | Description |
-|-------|-------------|
-| `car` | Enriched, normalized `CarSpecs` with display price |
-| `segmentCount` | Size of comparison segment |
-| `ownership` | Full `OwnershipEconomics` |
-| `dealRating` | Always `null` (disabled) |
-| `annualRunningCost` | low/high/mid or null |
-| `tco5Year` | low/high/mid or null |
-| `evCharge` | charge120/240, kWh/100mi, range (EV/FCEV) |
-| `fieldProvenance` | Merged provenance for analytics fields |
-| `zeroToSixty` | `{ value, method: 'actual'\|'predicted', confidence }` |
-| `competitiveClass` | The class it is shopped in (`"Compact SUV"`), from `utils/competitive-sets.ts`, with a second that qualifies it where it has one (`"Full-size luxury SUV · Off-roader"`, `"Midsize SUV · Three-row SUV"`); absent for the ~1% of listings in none |
+| Field               | Description                                                                                                                                                                                                                                       |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `car`               | Enriched, normalized `CarSpecs` with display price                                                                                                                                                                                                |
+| `segmentCount`      | Size of comparison segment                                                                                                                                                                                                                        |
+| `ownership`         | Full `OwnershipEconomics`                                                                                                                                                                                                                         |
+| `dealRating`        | Always `null` (disabled)                                                                                                                                                                                                                          |
+| `annualRunningCost` | low/high/mid or null                                                                                                                                                                                                                              |
+| `tco5Year`          | low/high/mid or null                                                                                                                                                                                                                              |
+| `evCharge`          | charge120/240, kWh/100mi, range (EV/FCEV)                                                                                                                                                                                                         |
+| `fieldProvenance`   | Merged provenance for analytics fields                                                                                                                                                                                                            |
+| `zeroToSixty`       | `{ value, method: 'actual'\|'predicted', confidence }`                                                                                                                                                                                            |
+| `competitiveClass`  | The class it is shopped in (`"Compact SUV"`), from `utils/competitive-sets.ts`, with a second that qualifies it where it has one (`"Full-size luxury SUV · Off-roader"`, `"Midsize SUV · Three-row SUV"`); absent for the ~1% of listings in none |
 
 ### Enums
 
@@ -300,7 +300,7 @@ npm run build-horsepower --workspace=server
 
 Flags: `--from=2010 --to=2026`, `--offline`, `--refresh`
 
-**Re-run it.** The committed file predates three fixes. Its third matching tier accepted any engine with the same cylinder count when a listing's own engine was untested, so untested engines took a sibling's rating (2013 F-150 5.0 at the 6.2's 415 hp); the tier now tolerates only displacement rounding (±0.15 L). Its last tier took any same-make test car with the same engine size, even one that was plainly another model on file (the 2010 F-150 and Expedition 5.4 at the supercharged Mustang GT500's 540 hp); it now skips those. And the 7,547 listings restored from EPA's data in 2026 have no rating yet. Until the file is rebuilt, the runtime drops a rating that two engines of one model and year share (`dropRatingsSharedAcrossEngines`, 102 listings), a turbo rating that merely repeats the non-turbo sibling's (`dropInductionMismatchedHorsepower`, 118), and a rating out of line with the same engine's adjacent model years (`dropYearOverYearOutliers`, 42: a 2008 Titan at 417 hp between 305 and 317, a 2019 Corvette at the ZR1's 638), and a rating no engine of that size and induction makes (`dropImplausibleOutput`, 144: a naturally aspirated engine outside sports cars and luxury makes above 94 hp a litre, such as a 2014 F-150 5.0 at 600 hp, or a turbo from 2008 on below 70, such as a Lexus NX 300 at 112), so those read "not on file" rather than wrong. For best-selling engines the matcher got wrong, `utils/horsepower-corrections.ts` sets the manufacturer's rating (602 listings: every 2017–22 CR-V turbo read the CR-V Hybrid's 143 hp engine rating instead of 190, Mazda's 2.5 read 207 instead of 186–191, Hyundai and Kia's 2.5 read 236–241 instead of 191, the STI read the WRX's 268, and the F-150's 5.0 the Raptor R's 650).
+**Re-run it.** The committed file predates three fixes. Its third matching tier accepted any engine with the same cylinder count when a listing's own engine was untested, so untested engines took a sibling's rating (2013 F-150 5.0 at the 6.2's 415 hp); the tier now tolerates only displacement rounding (±0.15 L). Its last tier took any same-make test car with the same engine size, even one that was plainly another model on file (the 2010 F-150 and Expedition 5.4 at the supercharged Mustang GT500's 540 hp); it now skips those. And the 7,547 listings restored from EPA's data in 2026 have no rating yet. Until the file is rebuilt, the runtime drops a rating that two engines of one model and year share (`dropRatingsSharedAcrossEngines`, 102 listings), a turbo rating that merely repeats the non-turbo sibling's (`dropInductionMismatchedHorsepower`, 118), and a rating out of line with the same engine's adjacent model years (`dropYearOverYearOutliers`, 42: a 2008 Titan at 417 hp between 305 and 317, a 2019 Corvette at the ZR1's 638), and a rating no engine of that size and induction makes (`dropImplausibleOutput`, 144: a naturally aspirated engine outside sports cars and luxury makes above 94 hp a litre, such as a 2014 F-150 5.0 at 600 hp, or a turbo from 2008 on below 70, such as a Lexus NX 300 at 112), so those read "not on file" rather than wrong. For best-selling engines the matcher got wrong, `utils/horsepower-corrections.ts` sets the manufacturer's rating (1,362 listings: GM's full-size trucks and SUVs, whose 5.3 and 6.2 V8s and 3.0 Duramax were mostly unrated or off by 5-65 hp, Ram's Pentastar and Hemi, Toyota's i-Force Max hybrids at their system ratings; every 2017–22 CR-V turbo read the CR-V Hybrid's 143 hp engine rating instead of 190, Mazda's 2.5 read 207 instead of 186–191, Hyundai and Kia's 2.5 read 236–241 instead of 191, the STI read the WRX's 268, and the F-150's 5.0 the Raptor R's 650).
 
 ### `build-content-enrichment.ts`
 
@@ -362,19 +362,19 @@ Then `normalizeCarRecord()` applies fuel-type inference, MPGe labels, hydrogen n
 
 **`classifyShoppingSegment()`** — rules based on fuel type, body, names, horsepower, induction and make:
 
-| Segment | Triggers (simplified) |
-|---------|----------------------|
-| `ev` | electric or hydrogen |
-| `truck` | bodyStyle truck |
-| `utility` | suv, van, minivan |
-| `supercar` | two-door from Ferrari, Lamborghini, McLaren…, or R8, NSX, Ford GT, MC20 |
-| `hot-hatch` | GTI, Type R, ST… on a hatchback or wagon, or a hatchback with 200+ hp |
-| `sport-sedan` | WRX, Si, GLI, AMG, S/RS/M badges; or a sedan with 250+ hp that is turbocharged, makes 330+ hp or 95+ hp per litre (luxury makes need only the 250 hp, bar the ES, MKZ and RLX) |
-| `luxury` | flagships (S-Class, 7 Series, LS, CL, Genesis, K900…), then every car from a luxury make; luxury two-doors that are not sports cars (430i, E350 coupe, RC 350) |
-| `muscle` | Mustang, Camaro, Challenger, Firebird, GTO… with a V8 (4.5 L+ or 400+ hp) |
-| `sports-car` | sports-car names and makes (911, Corvette, MX-5, Z4, AMG GT, GT-R, F-Type, Lotus…), performance badges, or a non-luxury two-door with 300+ hp |
-| `sport-compact` | hatchback with 150+ hp; two-doors with 180+ hp or a sporty badge (Civic Si coupe, Cobalt SS) |
-| `mainstream` | default, including family coupes (Accord, Solara) and city cars (smart) |
+| Segment         | Triggers (simplified)                                                                                                                                                          |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ev`            | electric or hydrogen                                                                                                                                                           |
+| `truck`         | bodyStyle truck                                                                                                                                                                |
+| `utility`       | suv, van, minivan                                                                                                                                                              |
+| `supercar`      | two-door from Ferrari, Lamborghini, McLaren…, or R8, NSX, Ford GT, MC20                                                                                                        |
+| `hot-hatch`     | GTI, Type R, ST… on a hatchback or wagon, or a hatchback with 200+ hp                                                                                                          |
+| `sport-sedan`   | WRX, Si, GLI, AMG, S/RS/M badges; or a sedan with 250+ hp that is turbocharged, makes 330+ hp or 95+ hp per litre (luxury makes need only the 250 hp, bar the ES, MKZ and RLX) |
+| `luxury`        | flagships (S-Class, 7 Series, LS, CL, Genesis, K900…), then every car from a luxury make; luxury two-doors that are not sports cars (430i, E350 coupe, RC 350)                 |
+| `muscle`        | Mustang, Camaro, Challenger, Firebird, GTO… with a V8 (4.5 L+ or 400+ hp)                                                                                                      |
+| `sports-car`    | sports-car names and makes (911, Corvette, MX-5, Z4, AMG GT, GT-R, F-Type, Lotus…), performance badges, or a non-luxury two-door with 300+ hp                                  |
+| `sport-compact` | hatchback with 150+ hp; two-doors with 180+ hp or a sporty badge (Civic Si coupe, Cobalt SS)                                                                                   |
+| `mainstream`    | default, including family coupes (Accord, Solara) and city cars (smart)                                                                                                        |
 
 **`ownershipProfileFor()`** — human label + tags + bestFor for sport-compact, sport-sedan, etc.
 
@@ -415,21 +415,21 @@ Base: `/api` (Vite proxies to `:5000` in dev; Vercel routes to `api/index.ts`)
 
 ### Endpoints
 
-| Method | Path | Limits | Description |
-|--------|------|--------|-------------|
-| GET | `/health` | — | `{ status, carsTotal, dbFound }` |
-| GET | `/cars/makes` | — | Sorted make list |
-| GET | `/cars/makes/:make/models` | — | Models for make |
-| POST | `/cars/search` | max 500/request | Filtered search |
-| GET | `/cars/search/suggestions` | max 20 | Autocomplete |
-| POST | `/cars/compare` | max 5 IDs | Batch lookup |
-| GET | `/cars/stats/overview` | — | DB statistics |
-| GET | `/cars/stats/chart-points` | query params | Scatter plot sample |
-| GET | `/cars/:id` | — | Single vehicle |
-| GET | `/cars/:id/dashboard` | — | Full dossier |
-| GET | `/cars/:id/raw` | — | Debug: `{ raw, enriched, normalized }` pipeline |
-| GET | `/cars/:id/similar` | `?limit=6` | Similar vehicles |
-| GET | `/vin/:vin` | `?year=YYYY` | VIN decode |
+| Method | Path                       | Limits          | Description                                     |
+| ------ | -------------------------- | --------------- | ----------------------------------------------- |
+| GET    | `/health`                  | —               | `{ status, carsTotal, dbFound }`                |
+| GET    | `/cars/makes`              | —               | Sorted make list                                |
+| GET    | `/cars/makes/:make/models` | —               | Models for make                                 |
+| POST   | `/cars/search`             | max 500/request | Filtered search                                 |
+| GET    | `/cars/search/suggestions` | max 20          | Autocomplete                                    |
+| POST   | `/cars/compare`            | max 5 IDs       | Batch lookup                                    |
+| GET    | `/cars/stats/overview`     | —               | DB statistics                                   |
+| GET    | `/cars/stats/chart-points` | query params    | Scatter plot sample                             |
+| GET    | `/cars/:id`                | —               | Single vehicle                                  |
+| GET    | `/cars/:id/dashboard`      | —               | Full dossier                                    |
+| GET    | `/cars/:id/raw`            | —               | Debug: `{ raw, enriched, normalized }` pipeline |
+| GET    | `/cars/:id/similar`        | `?limit=6`      | Similar vehicles                                |
+| GET    | `/vin/:vin`                | `?year=YYYY`    | VIN decode                                      |
 
 ### Search
 
@@ -455,7 +455,7 @@ Base: `/api` (Vite proxies to `:5000` in dev; Vercel routes to `api/index.ts`)
 
 **Kinds of vehicle** (`utils/search-modifiers.ts`): a size with a body (`compact suv`, `midsize sedan`, `full size truck`, `small suv`, `heavy duty truck`) keeps to that competitive set, mainstream unless `luxury` is said; `sports car`, `muscle car`, `supercar`, `hot hatch`, `sport sedan`, `off road` and `luxury` keep to a segment or to luxury makes. The response names the class in `interpretation.vehicleClass`. When the words name a model or trim instead (`saab 9-3 sport sedan`, `cadillac xt5 luxury`), the empty search is retried with the words as words; `premium`, `big` and `large` are read only where they cannot be a trim (`outback premium`, `ram big horn`).
 
-**Everyday words:** words with no search meaning are dropped (`for`, `the`, `my`, `for sale near me`: "for" was read as a prefix of Ford); judgements no data on file can make (`best`, `reliable`, `good`), words about one car for sale (`like new`, `low mileage`, `one owner`) and equipment, which no source on file records (`sunroof`, `apple carplay`, `heated seats`, `backup camera`: each emptied the search), are set aside and named in `interpretation.unmeasured`; a stop word that begins a model code stays (`lexus is 350`, `i 4`, `a 220`), and codes typed with a space are joined (`rav 4`, `id 4`); words of one or two letters match only at the start of a word (`ix` no longer finds a Matrix); `family` keeps to three-row and mid-size SUVs, minivans or mid-size cars by the body word wherever it stands (`suv for my family`); and `safest` sorts by NHTSA overall stars. `snow`, `winter` and `icy` keep to all- and four-wheel drive (`interpretation.snow`); `first car`, `teenager`, `student` and `new driver` apply the First car preset's limits where the query sets none (`config/first-car.ts`, shared with the Browse preset: under $18,000, 28 MPG or better, 2010 or newer, no hydrogen or natural gas, cheapest first); `most`, `very` and `really` left over after the orders are read are dropped (`most reliable suv` matched a Mach-E and a Montero). Price ranges read `between 20k and 30k`, `20-30k` and `$20,000 to $30,000`. `mild hybrid`, `mhev`, `48v` and `etorque` keep to mild hybrids (`interpretation.mildHybrid`); `hybrid` alone means full hybrids and plug-ins. `dual clutch`, `dct`, `dsg`, `pdk` and `automated manual` keep to EPA's automated manuals (`interpretation.automatedManual`), which are labelled "7-Speed Automated Manual" rather than "Automatic".
+**Everyday words:** words with no search meaning are dropped (`for`, `the`, `my`, `for sale near me`: "for" was read as a prefix of Ford); judgements no data on file can make (`best`, `reliable`, `good`), words about one car for sale (`like new`, `low mileage`, `one owner`) and equipment, which no source on file records (`sunroof`, `apple carplay`, `heated seats`, `backup camera`: each emptied the search), are set aside and named in `interpretation.unmeasured`; a stop word that begins a model code stays (`lexus is 350`, `i 4`, `a 220`), and codes typed with a space are joined (`rav 4`, `id 4`); words of one or two letters match only at the start of a word (`ix` no longer finds a Matrix); `family` keeps to three-row and mid-size SUVs, minivans or mid-size cars by the body word wherever it stands (`suv for my family`); and `safest` sorts by NHTSA overall stars. `snow`, `winter` and `icy` keep to all- and four-wheel drive (`interpretation.snow`); `first car`, `teenager`, `student` and `new driver` apply the First car preset's limits where the query sets none (`config/first-car.ts`, shared with the Browse preset: under $18,000, 28 MPG or better, 2010 or newer, no hydrogen or natural gas, cheapest first); `most`, `very` and `really` left over after the orders are read are dropped (`most reliable suv` matched a Mach-E and a Montero). Price ranges read `between 20k and 30k`, `20-30k` and `$20,000 to $30,000`. `mild hybrid`, `mhev`, `48v`and`etorque` keep to mild hybrids (`interpretation.mildHybrid`); `hybrid`alone means full hybrids and plug-ins.`dual clutch`, `dct`, `dsg`, `pdk`and`automated manual` keep to EPA's automated manuals (`interpretation.automatedManual`), which are labelled "7-Speed Automated Manual" rather than "Automatic".
 
 **Rivals:** `cars like a camry`, `alternatives to the rav4`, `similar to a model 3` and `miata competitors` list the rivals of the base configuration of the car named (the cheapest in its newest matching year, two-wheel drive at a tie), as its page lists them (`utils/similar-vehicles.ts`), and name it in `interpretation.similarTo` with its id. The car page's six rivals link to this search ("More rivals of the 2026 Honda Civic"). Words before `like` narrow the rivals (`awd cars like a camry`, `cheapest suvs like the cr-v`), as do the request's filters; `like new` is a condition, not a comparison.
 
@@ -489,24 +489,24 @@ Loaded once at startup into memory:
 
 ## Routes & pages
 
-| Route | File | Layout | Description |
-|-------|------|--------|-------------|
-| `/` | `Landing.tsx` | No | Hero, stats, search, persona quiz, collections, showcase |
-| `/browse` | `Browse.tsx` | Yes | Lifestyle presets + taxonomy |
-| `/explore/:category` | `Explore.tsx` | Yes | Category drill-down |
-| `/vehicles/:category/:subcategory` | `VehicleGrid.tsx` | Yes | Filtered grid + sidebar |
-| `/car/:id` | `CarDetail.tsx` | Yes | Vehicle dossier |
-| `/home` | `Home.tsx` | Yes | Main search |
-| `/compare` | `Compare.tsx` | Yes | Side-by-side table (dashboard API, full provenance) |
-| `/collection/:collectionId` | `Collection.tsx` | Yes | Curated collection |
-| `/smart-search` | `SmartSearch.tsx` | Yes | Persona-ranked search |
-| `/garage` | `DreamGarage.tsx` | Yes | Saved garage |
-| `/shared-garage` | `SharedGarage.tsx` | Yes | `?cars=id1,id2` |
-| `/battle` | `BattleMode.tsx` | Yes | 2-car head-to-head (provenance-aware) |
-| `/value-matrix` | `ValueMatrix.tsx` | Yes | Recharts scatter (lazy-loaded chunk) |
-| `/methodology` | `Methodology.tsx` | Yes | Data pipeline, PHEV correction, valuation model |
-| `/vin` | `VinDecoder.tsx` | Yes | VIN lookup |
-| `/account` | `Account.tsx` | Yes | Clerk garage sync and billing (when keys exist) |
+| Route                              | File               | Layout | Description                                              |
+| ---------------------------------- | ------------------ | ------ | -------------------------------------------------------- |
+| `/`                                | `Landing.tsx`      | No     | Hero, stats, search, persona quiz, collections, showcase |
+| `/browse`                          | `Browse.tsx`       | Yes    | Lifestyle presets + taxonomy                             |
+| `/explore/:category`               | `Explore.tsx`      | Yes    | Category drill-down                                      |
+| `/vehicles/:category/:subcategory` | `VehicleGrid.tsx`  | Yes    | Filtered grid + sidebar                                  |
+| `/car/:id`                         | `CarDetail.tsx`    | Yes    | Vehicle dossier                                          |
+| `/home`                            | `Home.tsx`         | Yes    | Main search                                              |
+| `/compare`                         | `Compare.tsx`      | Yes    | Side-by-side table (dashboard API, full provenance)      |
+| `/collection/:collectionId`        | `Collection.tsx`   | Yes    | Curated collection                                       |
+| `/smart-search`                    | `SmartSearch.tsx`  | Yes    | Persona-ranked search                                    |
+| `/garage`                          | `DreamGarage.tsx`  | Yes    | Saved garage                                             |
+| `/shared-garage`                   | `SharedGarage.tsx` | Yes    | `?cars=id1,id2`                                          |
+| `/battle`                          | `BattleMode.tsx`   | Yes    | 2-car head-to-head (provenance-aware)                    |
+| `/value-matrix`                    | `ValueMatrix.tsx`  | Yes    | Recharts scatter (lazy-loaded chunk)                     |
+| `/methodology`                     | `Methodology.tsx`  | Yes    | Data pipeline, PHEV correction, valuation model          |
+| `/vin`                             | `VinDecoder.tsx`   | Yes    | VIN lookup                                               |
+| `/account`                         | `Account.tsx`      | Yes    | Clerk garage sync and billing (when keys exist)          |
 
 `Layout.tsx` wraps all non-landing routes with `SiteHeader`.
 
@@ -536,15 +536,15 @@ Browse · Search · Compare (badge) · Value Chart · VIN Lookup · Methodology 
 
 Defined in `client/src/config/collections.ts`. Used by Landing (cards + counts) and `/collection/:id`.
 
-| ID | Title | Filters (summary) |
-|----|-------|-------------------|
-| `goldilocks` | The Goldilocks Zone | $15–35k, 30+ MPG, dedupe by model, rank best-value |
-| `gas-savers` | Best Gas Savers | 35+ MPG, <$40k |
-| `luxury-less` | Luxury for Less | Mercedes/BMW/Audi/Lexus/etc., <$50k, 2015+ |
-| `family-fortress` | Family Fortress | SUV + minivan |
-| `weekend-warriors` | Weekend Warriors | Coupe, 3.0L+ |
-| `work-horses` | Work Horses | Truck, AWD/4WD |
-| `future-proof` | Future Proof | EV/hybrid/PHEV, 2018+ |
+| ID                 | Title               | Filters (summary)                                  |
+| ------------------ | ------------------- | -------------------------------------------------- |
+| `goldilocks`       | The Goldilocks Zone | $15–35k, 30+ MPG, dedupe by model, rank best-value |
+| `gas-savers`       | Best Gas Savers     | 35+ MPG, <$40k                                     |
+| `luxury-less`      | Luxury for Less     | Mercedes/BMW/Audi/Lexus/etc., <$50k, 2015+         |
+| `family-fortress`  | Family Fortress     | SUV + minivan                                      |
+| `weekend-warriors` | Weekend Warriors    | Coupe, 3.0L+                                       |
+| `work-horses`      | Work Horses         | Truck, AWD/4WD                                     |
+| `future-proof`     | Future Proof        | EV/hybrid/PHEV, 2018+                              |
 
 ---
 
@@ -554,15 +554,15 @@ Defined in `client/src/config/browseTaxonomy.ts`.
 
 ### Lifestyle presets (8)
 
-| ID | Label | Filters |
-|----|-------|---------|
-| `daily-driver` | Daily driver | sedan+suv, <$35k, 26+ MPG |
-| `first-car` | First car | <$18k, 28+ MPG, 2010+ |
-| `family` | Family hauler | suv, minivan, wagon |
-| `commuter` | Long commute | 40+ MPG, <$45k |
-| `work-truck` | Work & tow | truck, AWD/4WD |
-| `weekend` | Weekend fun | coupe, 3.0L+ |
-| `eco` | Go electric | EV/hybrid/PHEV, 2018+ |
+| ID             | Label           | Filters                     |
+| -------------- | --------------- | --------------------------- |
+| `daily-driver` | Daily driver    | sedan+suv, <$35k, 26+ MPG   |
+| `first-car`    | First car       | <$18k, 28+ MPG, 2010+       |
+| `family`       | Family hauler   | suv, minivan, wagon         |
+| `commuter`     | Long commute    | 40+ MPG, <$45k              |
+| `work-truck`   | Work & tow      | truck, AWD/4WD              |
+| `weekend`      | Weekend fun     | coupe, 3.0L+                |
+| `eco`          | Go electric     | EV/hybrid/PHEV, 2018+       |
 | `luxury-value` | Luxury for less | premium makes, <$50k, 2015+ |
 
 ### Buckets
@@ -625,14 +625,14 @@ Modal explaining EPA vs estimated data. Dismissible per session (`sessionStorage
 6. **GlanceRow** — up to 4 metrics (filterable via trust filter)
 7. **DataTrustPanel** — field-level provenance + confidence; All / Verified / Estimated filter
 8. **KeySpecs** — grouped spec grid
-8. **Mobile actions** — Garage, TCO calc
-9. **Expandables:**
-   - Fuel economy (EPA bars, PHEV dual-mode, EV charge)
-   - Emissions (CO₂, GHG score, oil use, 5-yr savings) — **kept, not top priority**
-   - Crash safety (only when NHTSA rated)
-   - Value & ownership (only when market value or cost data exists)
-10. **SimilarCars**
-11. **TCOCalculator** modal
+9. **Mobile actions** — Garage, TCO calc
+10. **Expandables:**
+    - Fuel economy (EPA bars, PHEV dual-mode, EV charge)
+    - Emissions (CO₂, GHG score, oil use, 5-yr savings) — **kept, not top priority**
+    - Crash safety (only when NHTSA rated)
+    - Value & ownership (only when market value or cost data exists)
+11. **SimilarCars**
+12. **TCOCalculator** modal
 
 ### Missing-data rules on dossier
 
@@ -716,12 +716,12 @@ Click `?` via `SpecExplain.tsx` (what + why from `getSpecEntry`)
 
 ### Profiles (what leads)
 
-| Profile | Priority order |
-|---------|----------------|
-| `ev` | range → mpg → power → engine → safety |
-| `performance` | power → engine → mpg → safety |
-| `efficient` | mpg → power → engine → safety |
-| `standard` | power → engine → mpg → safety |
+| Profile       | Priority order                        |
+| ------------- | ------------------------------------- |
+| `ev`          | range → mpg → power → engine → safety |
+| `performance` | power → engine → mpg → safety         |
+| `efficient`   | mpg → power → engine → safety         |
+| `standard`    | power → engine → mpg → safety         |
 
 Performance marques: Porsche, Ferrari, Lamborghini, Aston Martin, McLaren, Maserati, Bentley, Rolls-Royce, Lotus, Alfa Romeo, Jaguar, Dodge
 
@@ -739,15 +739,15 @@ PHEV MPG cell shows gas-mode MPG with electric range detail.
 
 **File:** `client/src/components/KeySpecs.tsx` · only rows with data
 
-| Group | Fields (when present) |
-|-------|----------------------|
-| **Powertrain** | Engine, displacement, layout, cylinders, HP, torque, drivetrain, transmission, fuel |
-| **Vehicle** | Trim, body, category, EPA class, origin, shopping segment |
-| **Market** | Est. MSRP, value confidence |
+| Group            | Fields (when present)                                                                                                                                                  |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Powertrain**   | Engine, displacement, layout, cylinders, HP, torque, drivetrain, transmission, fuel                                                                                    |
+| **Vehicle**      | Trim, body, category, EPA class, origin, shopping segment                                                                                                              |
+| **Market**       | Est. MSRP, value confidence                                                                                                                                            |
 | **Fuel economy** | City/hwy/combined MPG or MPGe, PHEV electric MPGe, electric range, gas-mode MPG, blended MPGe, L2 charge, EPA range, kWh/100mi, 120V/240V charge, EPA annual fuel cost |
-| **Crash safety** | NHTSA overall, frontal, side, rollover |
-| **Performance** | Predicted 0–60 |
-| **Emissions** | CO₂, emissions score, oil use, 5-yr fuel vs average |
+| **Crash safety** | NHTSA overall, frontal, side, rollover                                                                                                                                 |
+| **Performance**  | Predicted 0–60                                                                                                                                                         |
+| **Emissions**    | CO₂, emissions score, oil use, 5-yr fuel vs average                                                                                                                    |
 
 Group order: Powertrain → Vehicle → Market → Fuel → Safety → Performance → **Emissions last**
 
@@ -811,12 +811,12 @@ Landing detects 17-char VIN in search → redirects to `/vin`.
 
 `car.provenance` maps field paths to source:
 
-| Source | Meaning |
-|--------|---------|
-| `epa` | EPA FuelEconomy.gov |
-| `nhtsa` | NHTSA crash tests |
-| `curated` | EPA test car list HP |
-| `estimated` | Model/heuristic |
+| Source      | Meaning              |
+| ----------- | -------------------- |
+| `epa`       | EPA FuelEconomy.gov  |
+| `nhtsa`     | NHTSA crash tests    |
+| `curated`   | EPA test car list HP |
+| `estimated` | Model/heuristic      |
 
 `ProvenanceChip.tsx` shows badges on cards. Dashboard adds `fieldProvenance` for analytics fields (`analytics.annualCost`, `price.msrp`, etc.).
 
@@ -826,16 +826,16 @@ Landing detects 17-char VIN in search → redirects to `/vin`.
 
 **File:** `client/src/utils/dataValue.ts`
 
-| Constant | Text |
-|----------|------|
-| `UNAVAILABLE_LABEL` | "Not on file" |
-| `NHTSA_CHIP_UNAVAILABLE` | "No NHTSA rating" |
-| `NHTSA_UNAVAILABLE_VALUE` | "No rating found" |
+| Constant                  | Text                              |
+| ------------------------- | --------------------------------- |
+| `UNAVAILABLE_LABEL`       | "Not on file"                     |
+| `NHTSA_CHIP_UNAVAILABLE`  | "No NHTSA rating"                 |
+| `NHTSA_UNAVAILABLE_VALUE` | "No rating found"                 |
 | `SAFETY_UNAVAILABLE_NOTE` | Long explanation for absent NHTSA |
-| `PERFORMANCE_GAP_NOTE` | Torque/0–60 not in EPA |
+| `PERFORMANCE_GAP_NOTE`    | Torque/0–60 not in EPA            |
 
 **Dossier:** omit slots silently  
-**Compare:** show "Not on file", drop all-empty rows  
+**Compare:** show "Not on file", drop all-empty rows
 
 ---
 
@@ -850,10 +850,10 @@ previewed as "CarInfo".
 indexed. The SPA is unchanged — it boots from the same `index.html` and replaces
 the server-rendered content on mount.
 
-| Route | What the server adds |
-|-------|---------------------|
-| `/car/:id` | Title, description, canonical, Open Graph, schema.org `Car` JSON-LD, and a readable spec summary inside `#root` (also what no-JS visitors see). Unknown ids get a real **404** with `noindex`. |
-| `/compare?cars=a,b` | "Compare: X vs Y" title and description for link previews, a normalized canonical, `noindex` (combinations of indexed pages). Fewer than two known cars serves the plain SPA shell. |
+| Route               | What the server adds                                                                                                                                                                           |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/car/:id`          | Title, description, canonical, Open Graph, schema.org `Car` JSON-LD, and a readable spec summary inside `#root` (also what no-JS visitors see). Unknown ids get a real **404** with `noindex`. |
+| `/compare?cars=a,b` | "Compare: X vs Y" title and description for link previews, a normalized canonical, `noindex` (combinations of indexed pages). Fewer than two known cars serves the plain SPA shell.            |
 
 Structured data deliberately has **no `offers`**: our prices are estimates, and
 schema.org `Offer` asserts a real sale price.
@@ -873,10 +873,10 @@ page per cache period rather than per visit.
 The client reuses server modules through three Vite/TypeScript aliases. Each
 points at a directory whose modules must stay **pure** (no Node APIs, no I/O):
 
-| Alias | Directory | Holds |
-|-------|-----------|-------|
-| `@carinfo/types` | `server/src/types` | The API contract. `client/src/types/car.types.ts` only re-exports it. |
-| `@carinfo/config` | `server/src/config` | Regional assumptions (prices, km, insurance tiers), model-year slugs. |
+| Alias             | Directory           | Holds                                                                       |
+| ----------------- | ------------------- | --------------------------------------------------------------------------- |
+| `@carinfo/types`  | `server/src/types`  | The API contract. `client/src/types/car.types.ts` only re-exports it.       |
+| `@carinfo/config` | `server/src/config` | Regional assumptions (prices, km, insurance tiers), model-year slugs.       |
 | `@carinfo/shared` | `server/src/shared` | Logic both sides run: `energy-cost.ts`, the single fuel/energy cost engine. |
 
 Two ESLint rules keep the boundary honest: the client may not import server code
@@ -893,13 +893,13 @@ gasoline, so the dossier and its own TCO calculator showed different totals.
 
 ### Root
 
-| File | Purpose |
-|------|---------|
-| `package.json` | Workspace root, `dev`/`build`/`start` |
-| `vercel.json` | Vercel build, routes, serverless config |
-| `api/index.ts` | Vercel entry → `server/dist/app` |
-| `.gitignore` | Ignores `node_modules`, `dist`, `server/data/raw/`, `.env`, `.vercel` |
-| `.cursor/worktrees.json` | Cursor worktree config |
+| File                     | Purpose                                                               |
+| ------------------------ | --------------------------------------------------------------------- |
+| `package.json`           | Workspace root, `dev`/`build`/`start`                                 |
+| `vercel.json`            | Vercel build, routes, serverless config                               |
+| `api/index.ts`           | Vercel entry → `server/dist/app`                                      |
+| `.gitignore`             | Ignores `node_modules`, `dist`, `server/data/raw/`, `.env`, `.vercel` |
+| `.cursor/worktrees.json` | Cursor worktree config                                                |
 
 ### Client — pages (16)
 
@@ -943,18 +943,18 @@ Body-type PNGs: `sedan` · `suv` · `truck` · `coupe` · `hatchback` · `wagon`
 
 ### Server — scripts (13)
 
-| Script | Status |
-|--------|--------|
-| `build-verified-database.ts` | **Production** |
-| `build-content-enrichment.ts` | **Production** |
-| `build-horsepower-enrichment.ts` | **Production** |
-| `build-nhtsa-backfill.ts` | **Production** (new) |
-| `audit-nhtsa-coverage.mjs` | Audit |
-| `audit-content-sources.mjs` | Audit |
-| `audit-valuation-integrity.mjs` | Audit |
-| `verify-valuation-fixes.mjs` | Audit |
-| `measure-value-shift.mjs` | Audit |
-| `build-runtime-database.ts` | **Production** (pre-enriches for deploy) |
+| Script                           | Status                                   |
+| -------------------------------- | ---------------------------------------- |
+| `build-verified-database.ts`     | **Production**                           |
+| `build-content-enrichment.ts`    | **Production**                           |
+| `build-horsepower-enrichment.ts` | **Production**                           |
+| `build-nhtsa-backfill.ts`        | **Production** (new)                     |
+| `audit-nhtsa-coverage.mjs`       | Audit                                    |
+| `audit-content-sources.mjs`      | Audit                                    |
+| `audit-valuation-integrity.mjs`  | Audit                                    |
+| `verify-valuation-fixes.mjs`     | Audit                                    |
+| `measure-value-shift.mjs`        | Audit                                    |
+| `build-runtime-database.ts`      | **Production** (pre-enriches for deploy) |
 
 > Four deprecated generators — `generate-massive-database.ts`,
 > `generate-portfolio-database.ts`, `generate-comprehensive-database.cjs` and
@@ -984,34 +984,34 @@ Body-type PNGs: `sedan` · `suv` · `truck` · `coupe` · `hatchback` · `wagon`
 
 ## Client utilities reference
 
-| File | Key exports |
-|------|-------------|
-| `tco.ts` | `computeTco`, `defaultTcoInputs`, `monthlyPayment` — the Custom TCO calculator; reproduces the dossier's 5-year figure at default inputs |
-| `epaContent.ts` | `ghgFraming`, `phevModes`, `fiveYearFuelSavings`, `fuelSavingsSentence` |
-| `fuelLabels.ts` | `efficiencyUnit`, `annualFuelCostDetail` |
-| `fuelDisplay.ts` | `formatFuelBadge`, `formatPowertrainLabel`, `usesMpge` |
-| `trimLabel.ts` | `displayModelLabel`, `displayTrimLabel`, `displayListingSubtitle`, `formatTransmissionLabel` |
-| `collectionCuration.ts` | `dedupeByModel`, ranking for collections |
-| `filterState.ts` | `filtersMatchExactly` |
-| `searchParams.ts` | URL ↔ `SearchQuery` conversion |
-| `carImages.ts` | Body type → image path |
+| File                    | Key exports                                                                                                                              |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `tco.ts`                | `computeTco`, `defaultTcoInputs`, `monthlyPayment` — the Custom TCO calculator; reproduces the dossier's 5-year figure at default inputs |
+| `epaContent.ts`         | `ghgFraming`, `phevModes`, `fiveYearFuelSavings`, `fuelSavingsSentence`                                                                  |
+| `fuelLabels.ts`         | `efficiencyUnit`, `annualFuelCostDetail`                                                                                                 |
+| `fuelDisplay.ts`        | `formatFuelBadge`, `formatPowertrainLabel`, `usesMpge`                                                                                   |
+| `trimLabel.ts`          | `displayModelLabel`, `displayTrimLabel`, `displayListingSubtitle`, `formatTransmissionLabel`                                             |
+| `collectionCuration.ts` | `dedupeByModel`, ranking for collections                                                                                                 |
+| `filterState.ts`        | `filtersMatchExactly`                                                                                                                    |
+| `searchParams.ts`       | URL ↔ `SearchQuery` conversion                                                                                                           |
+| `carImages.ts`          | Body type → image path                                                                                                                   |
 
 ---
 
 ## Server utilities reference
 
-| File | Role |
-|------|------|
-| `ownership-economics.ts` | `computeOwnershipEconomics`, `estimateMarketValue`, `correctedKWhPer100Mi` |
-| `vehicle-valuation.ts` | MSRP estimation, depreciation, condition bands |
-| `market-intelligence.ts` | Segments, `predictZeroToSixty`, `getSegment` |
-| `ev-scoring.ts` | `computeEvScore` for search sort |
-| `ev-power-estimates.ts` | EV HP when test car list has no match |
-| `performance-hp-estimates.ts` | Performance HP heuristics |
-| `fuel-cell-detection.ts` | FCEV pattern detection |
-| `data-paths.ts` | `resolveDataFile()` — works locally and on Vercel |
-| `trim-label.ts` | Server-side trim cleanup |
-| `search-validation.ts` | `normalizeSearchQuery()` — validates POST body |
+| File                          | Role                                                                       |
+| ----------------------------- | -------------------------------------------------------------------------- |
+| `ownership-economics.ts`      | `computeOwnershipEconomics`, `estimateMarketValue`, `correctedKWhPer100Mi` |
+| `vehicle-valuation.ts`        | MSRP estimation, depreciation, condition bands                             |
+| `market-intelligence.ts`      | Segments, `predictZeroToSixty`, `getSegment`                               |
+| `ev-scoring.ts`               | `computeEvScore` for search sort                                           |
+| `ev-power-estimates.ts`       | EV HP when test car list has no match                                      |
+| `performance-hp-estimates.ts` | Performance HP heuristics                                                  |
+| `fuel-cell-detection.ts`      | FCEV pattern detection                                                     |
+| `data-paths.ts`               | `resolveDataFile()` — works locally and on Vercel                          |
+| `trim-label.ts`               | Server-side trim cleanup                                                   |
+| `search-validation.ts`        | `normalizeSearchQuery()` — validates POST body                             |
 
 ---
 
@@ -1054,20 +1054,20 @@ allow alongside `headers`):
 
 [`.env.example`](.env.example) is the annotated source of truth. In summary:
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `SITE_URL` | `APP_ORIGIN`, then Vercel's production domain | Public origin for canonical URLs, Open Graph, sitemap, robots.txt. Without one, absolute URLs are omitted rather than guessed. |
-| `APP_ORIGIN` | — | Public origin for Stripe return URLs and the CORS allowlist. **Required in production.** |
-| `ADDITIONAL_ORIGINS` | — | Extra browser origins allowed to call the API (comma-separated) |
-| `VITE_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` | — | Enable sign-in and cloud garage sync |
-| `DATABASE_URL` | — | Postgres for users and garages; tables are created on first use |
-| `DATABASE_SSL` | unset: TLS **without** certificate verification (warns in production) | Set `verify` in production (plus `DATABASE_CA_CERT` for a private CA); `false` for local Postgres |
-| `DATABASE_POOL_MAX` / `DATABASE_CONNECT_TIMEOUT_MS` | `5` / `5000` | Per-instance pool size and connect timeout |
-| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` / `STRIPE_PRICE_ID` | — | CarInfo Pro billing |
-| `VITE_API_BASE_URL` / `VITE_API_TIMEOUT_MS` | `/api` / `60000` | Client API origin and request timeout |
-| `SLOW_REQUEST_MS` | `1000` | Log requests slower than this |
-| `DISABLE_RATE_LIMIT` | `false` | Tests and load tests only |
-| `PORT` | `5000` | `npm start` port |
+| Variable                                                          | Default                                                               | Purpose                                                                                                                        |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `SITE_URL`                                                        | `APP_ORIGIN`, then Vercel's production domain                         | Public origin for canonical URLs, Open Graph, sitemap, robots.txt. Without one, absolute URLs are omitted rather than guessed. |
+| `APP_ORIGIN`                                                      | —                                                                     | Public origin for Stripe return URLs and the CORS allowlist. **Required in production.**                                       |
+| `ADDITIONAL_ORIGINS`                                              | —                                                                     | Extra browser origins allowed to call the API (comma-separated)                                                                |
+| `VITE_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY`                 | —                                                                     | Enable sign-in and cloud garage sync                                                                                           |
+| `DATABASE_URL`                                                    | —                                                                     | Postgres for users and garages; tables are created on first use                                                                |
+| `DATABASE_SSL`                                                    | unset: TLS **without** certificate verification (warns in production) | Set `verify` in production (plus `DATABASE_CA_CERT` for a private CA); `false` for local Postgres                              |
+| `DATABASE_POOL_MAX` / `DATABASE_CONNECT_TIMEOUT_MS`               | `5` / `5000`                                                          | Per-instance pool size and connect timeout                                                                                     |
+| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` / `STRIPE_PRICE_ID` | —                                                                     | CarInfo Pro billing                                                                                                            |
+| `VITE_API_BASE_URL` / `VITE_API_TIMEOUT_MS`                       | `/api` / `60000`                                                      | Client API origin and request timeout                                                                                          |
+| `SLOW_REQUEST_MS`                                                 | `1000`                                                                | Log requests slower than this                                                                                                  |
+| `DISABLE_RATE_LIMIT`                                              | `false`                                                               | Tests and load tests only                                                                                                      |
+| `PORT`                                                            | `5000`                                                                | `npm start` port                                                                                                               |
 
 The public catalog needs none of these.
 
@@ -1083,6 +1083,7 @@ The code ships ready — sign-in, the `/account` page, and cloud garage sync all
    - `DATABASE_URL` = the Postgres connection string
 
    Then redeploy. For local dev, put the same three in a root `.env`.
+
 4. **Stripe (optional, for Pro)** — add `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, and `STRIPE_WEBHOOK_SECRET` with a webhook pointed at `/api/billing/webhook`.
 
 **Accounts API:** `GET /api/me/status`, `GET/PUT /api/me/garage`, `POST /api/billing/checkout`, `POST /api/billing/portal`, `POST /api/billing/webhook`.
@@ -1095,31 +1096,31 @@ No `.env` required for local development of the public catalog.
 
 ### Root
 
-| Script | What it does |
-|--------|--------------|
-| `dev` | Client (:3000) and server (:5000) together |
-| `build` | Server, prebuilt `cars-ready.json`, client, sitemap |
-| `start` | Express serves the API and `client/dist` |
-| `verify` | `lint` + `typecheck` + `test` |
-| `lint` / `lint:fix` | ESLint (CI fails on any warning) |
-| `format` / `format:check` | Prettier |
-| `typecheck` | Server `src/` and `scripts/`, and the client |
-| `test` / `test:watch` | Vitest (server `node` + client `jsdom` projects) |
-| `test:e2e` | Playwright: trust path and axe accessibility sweep |
-| `validate:data` | Corpus invariants over what ships (`cars-ready.json`) |
-| `build:sitemap` | `sitemap.xml` + `robots.txt` for `SITE_URL` |
+| Script                    | What it does                                          |
+| ------------------------- | ----------------------------------------------------- |
+| `dev`                     | Client (:3000) and server (:5000) together            |
+| `build`                   | Server, prebuilt `cars-ready.json`, client, sitemap   |
+| `start`                   | Express serves the API and `client/dist`              |
+| `verify`                  | `lint` + `typecheck` + `test`                         |
+| `lint` / `lint:fix`       | ESLint (CI fails on any warning)                      |
+| `format` / `format:check` | Prettier                                              |
+| `typecheck`               | Server `src/` and `scripts/`, and the client          |
+| `test` / `test:watch`     | Vitest (server `node` + client `jsdom` projects)      |
+| `test:e2e`                | Playwright: trust path and axe accessibility sweep    |
+| `validate:data`           | Corpus invariants over what ships (`cars-ready.json`) |
+| `build:sitemap`           | `sitemap.xml` + `robots.txt` for `SITE_URL`           |
 
 ### Server data pipeline
 
-| Script | What it does |
-|--------|--------------|
-| `build-verified-db` (`:fast` skips NHTSA) | Rebuild `cars.json` from EPA (+ NHTSA). Needs network access to EPA and NHTSA. |
-| `build-horsepower` | Horsepower from EPA's Test Car List, with placeholder ratings filtered out |
-| `build-enrichment` | EPA extras (GHG, PHEV modes) and NHTSA indexes |
-| `build-nhtsa-backfill` | NHTSA safety backfill |
-| `reconcile-fuel-types` | Re-derive fuel types from EPA's `vehicles.csv` and fix `cars.json` in place (`-- --write`) |
-| `backfill-epa-variants` | Add EPA listings `cars.json` is missing (other engines, Special Purpose SUVs/minivans, next model year) without touching existing IDs, and record aspiration. `-- path/to/vehicles.csv [--dry-run]`; then run `build-enrichment -- --csv=…` and `build-runtime-db` |
-| `build-runtime-db` | Enrich + normalize into `cars-ready.json` (format 2: provenance maps interned) |
+| Script                                    | What it does                                                                                                                                                                                                                                                       |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `build-verified-db` (`:fast` skips NHTSA) | Rebuild `cars.json` from EPA (+ NHTSA). Needs network access to EPA and NHTSA.                                                                                                                                                                                     |
+| `build-horsepower`                        | Horsepower from EPA's Test Car List, with placeholder ratings filtered out                                                                                                                                                                                         |
+| `build-enrichment`                        | EPA extras (GHG, PHEV modes) and NHTSA indexes                                                                                                                                                                                                                     |
+| `build-nhtsa-backfill`                    | NHTSA safety backfill                                                                                                                                                                                                                                              |
+| `reconcile-fuel-types`                    | Re-derive fuel types from EPA's `vehicles.csv` and fix `cars.json` in place (`-- --write`)                                                                                                                                                                         |
+| `backfill-epa-variants`                   | Add EPA listings `cars.json` is missing (other engines, Special Purpose SUVs/minivans, next model year) without touching existing IDs, and record aspiration. `-- path/to/vehicles.csv [--dry-run]`; then run `build-enrichment -- --csv=…` and `build-runtime-db` |
+| `build-runtime-db`                        | Enrich + normalize into `cars-ready.json` (format 2: provenance maps interned)                                                                                                                                                                                     |
 
 ## Dependencies
 
@@ -1141,17 +1142,17 @@ the bundle budget and `validate:data`, Playwright E2E, and `npm audit`.
 
 Highlights:
 
-| Suite | Pins |
-|-------|------|
-| `fuel-type-inference.test.ts` | Rules agree with EPA on every record; stale-label corrections (Cayenne, Karma, i3 REx) |
-| `validate-data.ts` (CI) | IDs, enums, physics: CO₂ × MPG vs fuel, BEVs without engines, plausible horsepower |
-| `energy-cost.test.ts` / `tco.test.ts` | One cost engine for dossier and calculator; natural gas and hydrogen from EPA's figure |
-| `runtime-db.test.ts` | `cars-ready.json` format 2 round-trip; shared provenance frozen |
-| `seo.test.ts` | Server-rendered shells, JSON-LD, escaping, real 404s |
-| `billing.webhook.test.ts`, `user-store.test.ts`, `me.controller.test.ts` | Real Postgres, per-file schema |
-| `carStore.test.ts`, `SearchBar.test.tsx`, `garageStore.test.ts` | Latest-wins search, suggestion cancellation, garage sync rollback |
-| `e2e/accessibility.spec.ts` | Zero WCAG 2.1 A/AA axe violations on 11 pages, desktop and phone |
-| `e2e/trust-flow.spec.ts` | Search → dossier → compare, provenance labels throughout |
+| Suite                                                                    | Pins                                                                                   |
+| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| `fuel-type-inference.test.ts`                                            | Rules agree with EPA on every record; stale-label corrections (Cayenne, Karma, i3 REx) |
+| `validate-data.ts` (CI)                                                  | IDs, enums, physics: CO₂ × MPG vs fuel, BEVs without engines, plausible horsepower     |
+| `energy-cost.test.ts` / `tco.test.ts`                                    | One cost engine for dossier and calculator; natural gas and hydrogen from EPA's figure |
+| `runtime-db.test.ts`                                                     | `cars-ready.json` format 2 round-trip; shared provenance frozen                        |
+| `seo.test.ts`                                                            | Server-rendered shells, JSON-LD, escaping, real 404s                                   |
+| `billing.webhook.test.ts`, `user-store.test.ts`, `me.controller.test.ts` | Real Postgres, per-file schema                                                         |
+| `carStore.test.ts`, `SearchBar.test.tsx`, `garageStore.test.ts`          | Latest-wins search, suggestion cancellation, garage sync rollback                      |
+| `e2e/accessibility.spec.ts`                                              | Zero WCAG 2.1 A/AA axe violations on 11 pages, desktop and phone                       |
+| `e2e/trust-flow.spec.ts`                                                 | Search → dossier → compare, provenance labels throughout                               |
 
 ## Client bundle
 
@@ -1163,17 +1164,17 @@ renamed chunk (`utils/staleBuildRecovery.ts`).
 
 ## Known limitations
 
-| Gap | Detail |
-|-----|--------|
-| NHTSA safety | ~13% per-car; NHTSA tests far fewer configs than EPA |
-| Horsepower | ~75% coverage: ~55% EPA test-car ratings, the rest estimated (EVs, and ~6,000 listings given the rating of the same engine in the same model from a sibling or a year either side, `fillHorsepowerFromSiblings`, when those agree within 10%). The 7,547 listings restored from EPA (other engines, Special Purpose SUVs/minivans) have none until `build-horsepower` is re-run against EPA's test-car files, which are keyed by EPA ID. Its matcher compares displacement and cylinders, not aspiration, so a turbo engine could take the non-turbo rating (the 2005 Legacy GT had the 2.5i's 168 hp); `dropInductionMismatchedHorsepower` drops those 118 ratings at build time, and the matcher should compare aspiration when re-run. 31 placeholder ratings (999, 1, 11 hp…) were dropped. |
-| Dimensions / weight / torque / real 0–60 | Not in EPA bulk data; 0–60 is predicted |
-| Market value | Calibrated against Canadian MSRPs and listing averages (`valuation-calibration.test.ts`, 61 references across compact cars and SUVs, minivans, luxury, performance, supercars, pickups, plug-in hybrids and EVs, all within 25%). Size class is a coarse price signal; trims are distinguished only where the engine gives them away (Mustang GT, Camaro ZL1, Challenger Hellcat, Civic Type R). Exotics, flagships (S-Class, 7 Series, A8, G90), Land Rovers, Cadillac V and Alfa Quadrifoglio models are priced by model line (a 570S apart from a 765LT, a Maybach S 680 apart from an S 450); flagships, big luxury SUVs and Range Rovers then lose value on an age-ramped penalty fitted to US listing averages at the ~1.2 Canada/US listing ratio the reference cars show (a 2018 S 560 ~US$37,200, a 2023 S 580 ~US$79,000, a 2019 Q7 ~US$20,400); supercars, BMW M2/M3/M4 and the GT-R follow a flatter curve than the exotic one (a 2017 Huracán keeps ~80% of today's sticker, a Bentayga ~30%), checked against a handful of US listing averages, and are never labelled better than medium confidence. Collector cars (`utils/collector-cars.ts`: first-gen NSX, MkIV Supra, air-cooled 911, limited-run 911s, SLS, Elise, Lancer Evolution, STI S209, Viper, Ford GT, 20-year-old Ferraris and Lamborghinis, hypercars…) are deliberately not valued. |
-| Hydrogen and natural gas fuel cost | EPA's own annual figure, converted to CAD; the calculator's price inputs do not apply |
-| Rate limits | In-memory per instance; on serverless each instance counts separately |
-| CSP | Baseline only (`base-uri`, `object-src`, `frame-ancestors`); `script-src` would need the Clerk Frontend API host allowlisted |
-| Photos | Body-type illustrations only (documented on `/methodology`) |
-| `server/data/raw/` | Gitignored; the data pipeline needs network access to EPA and NHTSA |
+| Gap                                      | Detail                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NHTSA safety                             | ~13% per-car; NHTSA tests far fewer configs than EPA                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Horsepower                               | ~75% coverage: ~55% EPA test-car ratings, the rest estimated (EVs, and ~6,000 listings given the rating of the same engine in the same model from a sibling or a year either side, `fillHorsepowerFromSiblings`, when those agree within 10%). The 7,547 listings restored from EPA (other engines, Special Purpose SUVs/minivans) have none until `build-horsepower` is re-run against EPA's test-car files, which are keyed by EPA ID. Its matcher compares displacement and cylinders, not aspiration, so a turbo engine could take the non-turbo rating (the 2005 Legacy GT had the 2.5i's 168 hp); `dropInductionMismatchedHorsepower` drops those 118 ratings at build time, and the matcher should compare aspiration when re-run. 31 placeholder ratings (999, 1, 11 hp…) were dropped.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Dimensions / weight / torque / real 0–60 | Not in EPA bulk data; 0–60 is predicted                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Market value                             | Calibrated against Canadian MSRPs and listing averages (`valuation-calibration.test.ts`, 61 references across compact cars and SUVs, minivans, luxury, performance, supercars, pickups, plug-in hybrids and EVs, all within 25%). Size class is a coarse price signal; trims are distinguished only where the engine gives them away (Mustang GT, Camaro ZL1, Challenger Hellcat, Civic Type R). Exotics, flagships (S-Class, 7 Series, A8, G90), Land Rovers, Cadillac V and Alfa Quadrifoglio models are priced by model line (a 570S apart from a 765LT, a Maybach S 680 apart from an S 450); flagships, big luxury SUVs and Range Rovers then lose value on an age-ramped penalty fitted to US listing averages at the ~1.2 Canada/US listing ratio the reference cars show (a 2018 S 560 ~US$37,200, a 2023 S 580 ~US$79,000, a 2019 Q7 ~US$20,400); supercars, BMW M2/M3/M4 and the GT-R follow a flatter curve than the exotic one (a 2017 Huracán keeps ~80% of today's sticker, a Bentayga ~30%), checked against a handful of US listing averages, and are never labelled better than medium confidence. Collector cars (`utils/collector-cars.ts`: first-gen NSX, MkIV Supra, air-cooled 911, limited-run 911s, SLS, Elise, Lancer Evolution, STI S209, Viper, Ford GT, 20-year-old Ferraris and Lamborghinis, hypercars…) are deliberately not valued. |
+| Hydrogen and natural gas fuel cost       | EPA's own annual figure, converted to CAD; the calculator's price inputs do not apply                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Rate limits                              | In-memory per instance; on serverless each instance counts separately                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| CSP                                      | Baseline only (`base-uri`, `object-src`, `frame-ancestors`); `script-src` would need the Clerk Frontend API host allowlisted                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Photos                                   | Body-type illustrations only (documented on `/methodology`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `server/data/raw/`                       | Gitignored; the data pipeline needs network access to EPA and NHTSA                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 ## Outstanding work
 

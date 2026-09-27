@@ -47,6 +47,25 @@ describe('applyHorsepowerCorrections', () => {
     expect(cars.every((c) => c.provenance['engine.horsepower'] === 'curated')).toBe(true);
   });
 
+  it('fills trucks the match left without a figure, hybrids at their system rating', () => {
+    const diesel = { aspiration: 'turbocharged' as const, fuelType: 'diesel' as const };
+    const { cars } = applyHorsepowerCorrections([
+      car('Chevrolet', 'Silverado 4WD', 2022, 5.3, undefined),
+      // The SUVs' Duramax: 277 hp to 2024, 305 from the 2025 update.
+      car('GMC', 'Yukon 4WD', 2024, 3, 276, diesel),
+      car('GMC', 'Yukon 4WD', 2025, 3, undefined, diesel),
+      // EPA's 2.8 Duramax figure stands.
+      car('Chevrolet', 'Colorado 4WD', 2020, 2.8, 181, diesel),
+      // The i-Force Max hybrid read the gas engine's 389 hp.
+      car('Toyota', 'Tundra 4WD', 2023, 3.4, 389, {
+        aspiration: 'turbocharged',
+        fuelType: 'hybrid',
+      }),
+      car('Toyota', 'Tundra 4WD', 2023, 3.4, 389, { aspiration: 'turbocharged' }),
+    ]);
+    expect(cars.map((c) => c.engine.horsepower)).toEqual([355, 277, 305, 181, 437, 389]);
+  });
+
   it('leaves other engines, hybrids and years alone', () => {
     const cars = [
       car('Honda', 'CR-V Hybrid AWD', 2021, 2, 212, { fuelType: 'hybrid' }),

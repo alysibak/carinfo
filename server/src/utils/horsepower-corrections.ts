@@ -8,7 +8,8 @@ import type { Car } from '../types/car.types.js';
  * Mazda 2.5 at 207 (186–191), Hyundai and Kia's 2.5 at 236–241 (191), the
  * STI at the WRX's 268 (305–310), the Grand Cherokee EcoDiesel at 172 (240),
  * the Bronco Sport Sasquatch at 91 (181). Each row is one engine in one span
- * of model years; hybrids and plug-ins are rated differently and never match.
+ * of model years; a hybrid matches only a row for hybrids (rated as a
+ * system), and plug-ins never match.
  */
 interface Correction {
   make: string;
@@ -16,7 +17,7 @@ interface Correction {
   years: [number, number];
   litres: number;
   forced: boolean;
-  fuel?: 'gasoline' | 'diesel';
+  fuel?: 'gasoline' | 'diesel' | 'hybrid';
   hp: number;
   /** The derived trim, where it tells engines of one size apart (a Civic Si). */
   variant?: RegExp;
@@ -29,7 +30,7 @@ const row = (
   litres: number,
   forced: boolean,
   hp: number,
-  fuel: 'gasoline' | 'diesel' = 'gasoline',
+  fuel: 'gasoline' | 'diesel' | 'hybrid' = 'gasoline',
 ): Correction => ({ make, model, years, litres, forced, fuel, hp });
 
 const CORRECTIONS: Correction[] = [
@@ -113,11 +114,51 @@ const CORRECTIONS: Correction[] = [
   row('Jeep', /^Grand Cherokee(?! (SRT|Track|WK))/, [2011, 2021], 5.7, false, 360),
   row('Jeep', /^Grand Cherokee(?! (SRT|Track|WK|4xe))/, [2022, 2023], 5.7, false, 357),
   row('Jeep', /^Grand Cherokee/, [2014, 2019], 3, true, 240, 'diesel'),
+  // GM's full-size trucks and SUVs, which the match left without a figure:
+  // the 5.3 and 6.2 V8s (355 and 420 hp), the 2.7 turbo (310) and the 3.0
+  // Duramax (277, then 305 from its 2023 update).
+  ...['Silverado', 'Sierra'].flatMap((name) => {
+    const make = name === 'Silverado' ? 'Chevrolet' : 'GMC';
+    const model = new RegExp(`^${name}`);
+    return [
+      row(make, model, [2019, 2026], 5.3, false, 355),
+      row(make, model, [2019, 2026], 6.2, false, 420),
+      row(make, model, [2019, 2020], 2.7, true, 310),
+      row(make, model, [2020, 2022], 3, true, 277, 'diesel'),
+      row(make, model, [2023, 2026], 3, true, 305, 'diesel'),
+    ];
+  }),
+  ...[
+    ['Chevrolet', /^(Tahoe|Suburban)/],
+    ['GMC', /^Yukon/],
+  ].flatMap(([make, model]) => [
+    row(make as string, model as RegExp, [2015, 2026], 5.3, false, 355),
+    row(make as string, model as RegExp, [2015, 2026], 6.2, false, 420),
+    // The SUVs took the 305 hp diesel with the 2025 update.
+    row(make as string, model as RegExp, [2021, 2024], 3, true, 277, 'diesel'),
+    row(make as string, model as RegExp, [2025, 2026], 3, true, 305, 'diesel'),
+  ]),
+  // The midsize pickups' 3.6 V6 (305 hp, 308 from 2017) and 2.8 Duramax (181).
+  ...[
+    ['Chevrolet', /^Colorado/],
+    ['GMC', /^Canyon/],
+  ].flatMap(([make, model]) => [
+    row(make as string, model as RegExp, [2015, 2016], 3.6, false, 305),
+    row(make as string, model as RegExp, [2017, 2022], 3.6, false, 308),
+    row(make as string, model as RegExp, [2016, 2022], 2.8, true, 181, 'diesel'),
+  ]),
+  row('Ford', /^F-?150/, [2018, 2021], 3, true, 250, 'diesel'),
+  row('Ford', /^Ranger/, [2019, 2023], 2.3, true, 270),
+  row('Ford', /^Ranger(?! Raptor)/, [2024, 2026], 2.7, true, 315),
+  row('Toyota', /^Tacoma/, [2016, 2023], 2.7, false, 159),
+  // Toyota's i-Force Max hybrids, rated as a system.
+  row('Toyota', /^Tundra/, [2022, 2026], 3.4, true, 437, 'hybrid'),
+  row('Toyota', /^(4Runner|Tacoma)/, [2024, 2026], 2.4, true, 326, 'hybrid'),
 ];
 
 function correctionFor(car: Car): Correction | undefined {
   const fuel = car.engine.fuelType;
-  if (fuel !== 'gasoline' && fuel !== 'diesel') return undefined;
+  if (fuel !== 'gasoline' && fuel !== 'diesel' && fuel !== 'hybrid') return undefined;
   const litres = car.engine.displacement;
   if (litres == null) return undefined;
   const forced = !!car.engine.aspiration;
