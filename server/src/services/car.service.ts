@@ -369,7 +369,7 @@ const NAME_ENDS_AT =
   /^(?:[24]wd|awd|fwd|rwd|ff|fr|4x[24]|\d-door|\d?dr|hev|pickup|sedan|coupe|hatchback|wagon|convertible|l?[sx]?e|xse|xle|lx|ex|sport|touring|limited|base|standard|premium|w\/.*|.*\/.*|\(.*)$/i;
 
 /** "Camry HEV FF LE" → "Camry", "Civic 4Dr" (an Si) → "Civic Si", "F150 Pickup 2WD" → "F150". */
-function shopperModelName(car: Car): string {
+function shopperModelName(car: Pick<Car, 'model' | 'variant'>): string {
   const words = car.model.split(/\s+/).filter(Boolean);
   const end = words.findIndex((word, i) => i > 0 && NAME_ENDS_AT.test(word));
   const name = (end === -1 ? words : words.slice(0, end)).join(' ');
@@ -650,9 +650,36 @@ const POPULAR_SUGGESTIONS: SearchSuggestion[] = [
 ];
 
 /** Autocomplete suggestions for the search bar — includes typo-tolerant matches. */
+/** "cars like a civ": the phrase before the name being typed, and the name. */
+const RIVALS_PREFIX =
+  /^((?:(?:cars?|vehicles?|suvs?|trucks?|sedans?|something|anything)\s+)?(?:(?:similar|comparable)\s+to|like|alternatives?\s+(?:to|for)|competitors?\s+(?:to|of|for)|rivals?\s+(?:to|of|for))\s+(?:(?:a|an|the)\s+)?)(.*)$/i;
+
 export function getSearchSuggestions(rawQuery: string, limit = 8): SearchSuggestion[] {
   ensureDatabase();
   const qRaw = rawQuery.trim().toLowerCase();
+
+  // "cars like a civ": complete the name, keeping the phrase, so the choice
+  // opens the Civic's rivals rather than the Civic.
+  const rivals = RIVALS_PREFIX.exec(qRaw);
+  if (rivals && rivals[2].trim().length >= 2 && !/^new\b/.test(rivals[2])) {
+    // One entry per model: the rivals of a Camry LE and a Camry XSE are the same.
+    const models = new Map<string, string>();
+    for (const s of getSearchSuggestions(rivals[2], limit * 3)) {
+      const make = cachedMakes.find((m) => s.label.startsWith(`${m} `));
+      if (!make || s.id.startsWith('raw-')) continue;
+      const label = `${make} ${shopperModelName({ model: s.label.slice(make.length + 1) })}`;
+      if (!models.has(label.toLowerCase())) models.set(label.toLowerCase(), label);
+    }
+    if (models.size) {
+      return [...models.values()].slice(0, limit).map((label) => ({
+        id: `rivals-${label.toLowerCase()}`,
+        label: `Rivals of the ${label}`,
+        sublabel: 'Cars shoppers compare it with',
+        query: `${rivals[1].trim()} ${label.toLowerCase()}`,
+      }));
+    }
+  }
+
   const q = normalizeSearchQuery(qRaw);
   if (!q) return POPULAR_SUGGESTIONS.slice(0, limit);
 

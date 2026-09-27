@@ -670,6 +670,21 @@ describe('car.service natural language search', () => {
     ).toBeUndefined();
   });
 
+  it('completes the name in a rivals phrase, one entry per model', () => {
+    const suggestions = getSearchSuggestions('cars like a cam', 8);
+    expect(suggestions[0]).toMatchObject({
+      label: 'Rivals of the Toyota Camry',
+      query: 'cars like a toyota camry',
+    });
+    const labels = suggestions.map((s) => s.label);
+    expect(new Set(labels).size).toBe(labels.length);
+    // Every Camry trim once, not a row per EPA configuration.
+    expect(labels.filter((l) => /Camry (HEV|AWD|LE|XSE)/.test(l))).toEqual([]);
+    expect(getSearchSuggestions('like new civ', 8).every((s) => !/^Rivals/.test(s.label))).toBe(
+      true,
+    );
+  });
+
   it('suggests derived trims and body/fuel phrases, without duplicate labels', () => {
     const labels = (q: string) => getSearchSuggestions(q, 8).map((s) => s.label);
     expect(labels('mustang gt')[0]).toBe('Ford Mustang GT');

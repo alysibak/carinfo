@@ -367,10 +367,18 @@ export default function Home() {
               </div>
             ) : (
               <>
+                {/* The start page's heading goes with it; results need their own. */}
+                <h1 className="sr-only">
+                  {searchQuery.query
+                    ? `Search results for “${searchQuery.query}”`
+                    : 'Search results'}
+                </h1>
                 <div className="flex items-center justify-between flex-wrap gap-3 mb-5 pb-3 border-b border-zinc-900">
                   <div className="min-w-0">
                     {searchResults && !searchError && (
-                      <p className="text-sm text-zinc-400">
+                      // A heading between the page's and the cards' (h3), so the
+                      // outline does not skip a level.
+                      <h2 className="text-sm font-normal text-zinc-400">
                         <span className="text-white font-semibold tabular-nums">
                           {searchResults.total.toLocaleString()}
                         </span>{' '}
@@ -387,7 +395,7 @@ export default function Home() {
                             · {currentPage} of {totalPages}
                           </span>
                         )}
-                      </p>
+                      </h2>
                     )}
                     {searchResults &&
                       !searchError &&
