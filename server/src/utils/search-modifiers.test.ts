@@ -132,4 +132,29 @@ describe('extractQueryModifiers', () => {
       unmeasured: ['tow'],
     });
   });
+
+  it('keeps a stop word that begins a model code', () => {
+    // "is 350" read "350" and found a 350Z; "lexus is 350" found nothing.
+    expect(extractQueryModifiers('lexus is 350').text).toBe('lexus is 350');
+    expect(extractQueryModifiers('is f').text).toBe('is f');
+    expect(extractQueryModifiers('i 4').text).toBe('i 4');
+    expect(extractQueryModifiers('a 220').text).toBe('a 220');
+    // A number another phrase took leaves the word a stop word.
+    expect(extractQueryModifiers('i 4 cylinder sedan').text).toBe('sedan');
+    expect(extractQueryModifiers('suv with a 300 mile range').text).toBe('suv');
+    expect(extractQueryModifiers('is the rav4 reliable').text).toBe('rav4');
+  });
+
+  it('sets aside words about one car for sale', () => {
+    // "like new civic" was read as "new" and showed only this year's Civic.
+    expect(extractQueryModifiers('like new civic')).toEqual({
+      text: 'civic',
+      unmeasured: ['like new'],
+    });
+    expect(extractQueryModifiers('one owner accident free rav4').unmeasured).toEqual([
+      'one owner',
+      'accident free',
+    ]);
+    expect(extractQueryModifiers('new civic').newest).toBe(true);
+  });
 });

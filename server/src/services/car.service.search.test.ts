@@ -630,6 +630,46 @@ describe('car.service natural language search', () => {
     expect(ram.interpretation?.vehicleClass).toBeUndefined();
   });
 
+  it('finds model codes typed with a space or as a short word', () => {
+    const first = (q: string) => searchCars({ query: q, limit: 5, collapseByModel: true });
+    // "lexus is 350" found nothing once "is" was a stop word; "rav 4" found
+    // only the 2001-12 RAV4 4WD.
+    expect(first('lexus is 350').results[0]?.model).toMatch(/^IS 350/);
+    expect(first('is 350').results[0]?.model).toMatch(/^IS 350/);
+    expect(first('rav 4').results[0]?.year).toBeGreaterThanOrEqual(LATEST_FULL_MODEL_YEAR);
+    expect(first('id4').results[0]?.model).toMatch(/^ID\.4/);
+    expect(first('town & country').results[0]?.model).toMatch(/^Town and Country/);
+    // "ix" matched inside "Matrix" and "Grand Prix".
+    const ix = first('ix').results;
+    expect(ix.length).toBeGreaterThan(0);
+    expect(ix.every((c) => c.make === 'BMW')).toBe(true);
+  });
+
+  it('lists the rivals of a car named after "like"', () => {
+    const civic = searchCars({ query: 'cars like a civic', limit: 24 });
+    // The base Civic, not the Si its first result was: rivals are compacts.
+    expect(civic.interpretation?.similarTo?.label).toBe(`${LATEST_FULL_MODEL_YEAR} Honda Civic`);
+    const makes = civic.results.map((c) => `${c.make} ${c.model}`);
+    expect(makes.some((m) => /Toyota Corolla/.test(m))).toBe(true);
+    expect(makes.some((m) => /Honda Civic/.test(m))).toBe(false);
+
+    expect(
+      searchCars({ query: 'miata competitors', limit: 5 }).interpretation?.similarTo,
+    ).toBeTruthy();
+    // Words before "like" narrow the rivals.
+    const awd = searchCars({ query: 'awd cars like a camry', limit: 24 }).results;
+    expect(awd.length).toBeGreaterThan(0);
+    expect(awd.every((c) => c.driveType === 'AWD' || c.driveType === '4WD')).toBe(true);
+    // "like new" is a condition, not a comparison.
+    const likeNew = searchCars({ query: 'like new civic', limit: 5 });
+    expect(likeNew.interpretation?.similarTo).toBeUndefined();
+    expect(likeNew.results[0]?.model).toMatch(/^Civic/);
+    // Nothing named: an ordinary search.
+    expect(
+      searchCars({ query: 'cars like xyzzy', limit: 5 }).interpretation?.similarTo,
+    ).toBeUndefined();
+  });
+
   it('suggests derived trims and body/fuel phrases, without duplicate labels', () => {
     const labels = (q: string) => getSearchSuggestions(q, 8).map((s) => s.label);
     expect(labels('mustang gt')[0]).toBe('Ford Mustang GT');

@@ -250,6 +250,8 @@ export interface SearchInterpretation {
   unmeasured?: string[];
   /** "good gas mileage": EVs left out of an MPG order. */
   gasMileage?: boolean;
+  /** "cars like a camry": the car whose rivals are listed. */
+  similarTo?: { id: string; label: string };
 }
 
 /** Response body of the search endpoints. */

@@ -17,6 +17,11 @@ export function describeSearchInterpretation(
 ): string[] {
   if (!interpretation) return [];
   const lines: string[] = [];
+  if (interpretation.similarTo) {
+    lines.push(
+      `Rivals of the ${interpretation.similarTo.label}: the models shoppers compare it with, by class, size and price.`,
+    );
+  }
   if (interpretation.ignored?.length) {
     lines.push(
       `EPA records no trim levels, so “${interpretation.ignored.join(' ')}” was left out of the search.`,

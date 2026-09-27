@@ -285,6 +285,13 @@ const SORT_PHRASES: Array<[RegExp, SortIntent]> = [
   [/\b(?:safest|safe|(?:best|highest|top) safety(?: rating)?)\b/, 'safety'],
 ];
 
+/**
+ * Words about one car for sale, not a model: "like new civic" was read as
+ * "new" and showed only this year's Civic.
+ */
+const LISTING_WORDS =
+  /\b(?:like[- ]new|low (?:mileage|miles|kms?|kilomet(?:re|er)s)|(?:one|single)[- ]owner|accident[- ]free|no accidents?|clean (?:title|carfax|history)|mint|(?:excellent|good|great|mint) condition|well[- ]maintained|garage[- ]kept)\b/g;
+
 /** Words that ask for a judgement no data on file can make. */
 const UNMEASURED =
   /\b(?:best|good|great|top|reliable|dependable|quality|nice|decent|perfect|ideal|recommended|popular|comfortable|fun|cool|first|beginner|starter|tow|towing|haul|hauling)\b/g;
@@ -295,6 +302,16 @@ const UNMEASURED =
  */
 const STOP_WORDS =
   /\b(?:for|with|the|a|an|of|in|on|my|me|i|is|are|that|which|what|can|could|should|buy|get|sale|near|deals?|please|want|need|looking|find|show)\b/g;
+/**
+ * Stop words that begin a model name when its number follows: "is 350" is a
+ * Lexus IS 350 (the query read "350" and found a 350Z), "i 4" a BMW i4,
+ * "i 35" an Infiniti I35, "a 220" a Mercedes A220.
+ */
+const MODEL_CODE_AFTER: Record<string, RegExp> = {
+  is: /^\s+(?:\d{3}[a-z]?|f)\b/,
+  i: /^\s+(?:\d{1,2}|x)\b/,
+  a: /^\s+\d{3}\b/,
+};
 
 const TRANSMISSION_PHRASES: Array<[RegExp, string[]]> = [
   [
@@ -357,6 +374,8 @@ export function extractQueryModifiers(
   }
 
   text = text.replace(FILLER, ' ');
+  const listing = text.match(LISTING_WORDS) ?? [];
+  text = text.replace(LISTING_WORDS, ' ');
   if (!NEW_IN_NAME.test(text) && take(/\b(?:brand new|newest|latest|new)\b/)) {
     out.newest = true;
     if (!out.year) out.year = { min: LATEST_FULL_MODEL_YEAR };
@@ -376,12 +395,15 @@ export function extractQueryModifiers(
   }
   // After the sort phrases, which use "best" ("best mpg"), and the class
   // phrases, which use "for" nowhere but keep "family".
-  const unmeasured = [...(charging ? ['fast charging'] : []), ...(text.match(UNMEASURED) ?? [])];
+  const unmeasured = [
+    ...listing,
+    ...(charging ? ['fast charging'] : []),
+    ...(text.match(UNMEASURED) ?? []),
+  ];
   if (unmeasured.length) {
     out.unmeasured = [...new Set(unmeasured)];
     text = text.replace(UNMEASURED, ' ');
   }
-  text = text.replace(STOP_WORDS, ' ');
   for (const [re, types] of TRANSMISSION_PHRASES) {
     if (take(re)) {
       out.transmission = types;
@@ -400,5 +422,10 @@ export function extractQueryModifiers(
     out.minRangeMiles = Math.round(Number(range[1]) / (km ? 1.609 : 1));
   }
 
+  // Last, so a number the phrases above took ("i 4 cylinder", "a 300 mile
+  // range") cannot keep its stop word as a model code.
+  text = text.replace(STOP_WORDS, (word: string, at: number, whole: string) =>
+    MODEL_CODE_AFTER[word]?.test(whole.slice(at + word.length)) ? word : ' ',
+  );
   return { text: text.replace(/\s+/g, ' ').trim(), ...out };
 }

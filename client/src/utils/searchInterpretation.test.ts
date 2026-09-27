@@ -49,6 +49,15 @@ describe('describeSearchInterpretation', () => {
       'Best NHTSA crash rating first; most cars have none on file.',
       'No data on file measures “best” and “reliable”, so they were not used.',
     ]);
+    expect(
+      describeSearchInterpretation({
+        similarTo: { id: 'toyota-camry-2026', label: '2026 Toyota Camry' },
+        sortedBy: 'price',
+      }),
+    ).toEqual([
+      'Rivals of the 2026 Toyota Camry: the models shoppers compare it with, by class, size and price.',
+      'Cheapest first by estimated value.',
+    ]);
     expect(describeSearchInterpretation({ gasMileage: true, sortedBy: 'fuelEconomy' })).toEqual([
       'Most fuel-efficient first.',
       'Electric cars are left out: their MPGe does not compare with MPG.',

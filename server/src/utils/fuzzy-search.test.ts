@@ -57,6 +57,19 @@ describe('fuzzy-search', () => {
     expect(normalizeSearchQuery('gmc sierra 1500')).toBe('gmc sierra');
     expect(normalizeSearchQuery('ram 1500')).toBe('ram 1500');
   });
+  it('joins model codes typed with a space', () => {
+    // "rav" is already "rav4", so "rav 4" read the 4 as "4WD".
+    expect(normalizeSearchQuery('rav 4')).toBe('rav4');
+    expect(normalizeSearchQuery('rav4 4wd')).toBe('rav4 4wd');
+    expect(normalizeSearchQuery('vw id4')).toBe('volkswagen id.4');
+    expect(normalizeSearchQuery('id 4')).toBe('id.4');
+    expect(normalizeSearchQuery('bmw i 4')).toBe('bmw i4');
+    expect(normalizeSearchQuery('a 220')).toBe('a220');
+    // Lexus writes the space.
+    expect(normalizeSearchQuery('is 350')).toBe('is 350');
+    expect(normalizeSearchQuery('town & country')).toBe('town and country');
+  });
+
   it('folds lineup names into one token', () => {
     expect(normalizeSearchQuery('BMW 3 Series')).toBe('bmw 3-series');
     expect(normalizeSearchQuery('mercedes c class')).toBe('mercedes-benz c-class');

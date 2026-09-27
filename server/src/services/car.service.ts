@@ -24,6 +24,7 @@ import { extractQueryModifiers } from '../utils/search-modifiers.js';
 import { isThreeRow } from '../utils/three-row.js';
 import { competitiveSets } from '../utils/competitive-sets.js';
 import { isLuxuryBrand } from '../utils/vehicle-taxonomy.js';
+import { findSimilarCars, sameModelLine } from '../utils/similar-vehicles.js';
 
 function resolveDbPath(): string | null {
   return resolveDataFile('cars.json');
@@ -326,12 +327,109 @@ export function getCarPipelineDebug(id: string): {
  */
 export function searchCars(query: SearchQuery): SearchResults {
   ensureDatabase();
+  const rivals = readRivalsQuery(query.query ?? '');
+  if (rivals) {
+    const found = searchRivals(query, rivals.lead, rivals.named);
+    if (found) return found;
+  }
   const parts = (query.query ?? '')
     .split(/\s+(?:vs\.?|versus|compared (?:to|with))\s+/i)
     .map((part) => part.trim())
     .filter(Boolean);
   if (parts.length > 1) return searchTogether(query, parts.slice(0, 4));
   return searchOne(query);
+}
+
+/**
+ * "cars like a camry", "alternatives to the rav4", "miata competitors": the
+ * rivals of the car named, as its page lists them. "like" was set aside and
+ * the search showed Camrys. Words before "like" narrow the rivals ("awd cars
+ * like a camry", "cheapest suvs like the cr-v").
+ */
+const RIVALS_BEFORE =
+  /^(.*?)\b(?:(?:similar|comparable)\s+to|like|alternatives?\s+(?:to|for)|competitors?\s+(?:to|of|for)|rivals?\s+(?:to|of|for)|instead\s+of)\s+(?:(?:a|an|the|my)\s+)?(.+)$/i;
+const RIVALS_AFTER = /^(.+?)\s+(?:alternatives|competitors|rivals)$/i;
+/** Words before "like" that ask for nothing: "cars like", "something like". */
+const RIVALS_LEAD_FILLER =
+  /\b(?:cars?|vehicles?|something|anything|other|others|models?|options?)\b/gi;
+
+export function readRivalsQuery(text: string): { lead: string; named: string } | null {
+  const t = text.trim();
+  const before = RIVALS_BEFORE.exec(t);
+  // "like new": a condition, not a comparison.
+  if (before && !/^new\b/i.test(before[2])) {
+    return { lead: before[1].replace(RIVALS_LEAD_FILLER, ' ').trim(), named: before[2].trim() };
+  }
+  const after = RIVALS_AFTER.exec(t);
+  return after ? { lead: '', named: after[1].trim() } : null;
+}
+
+/** EPA's drive, door, body and trim words, where a shopper's name for a car ends. */
+const NAME_ENDS_AT =
+  /^(?:[24]wd|awd|fwd|rwd|ff|fr|4x[24]|\d-door|\d?dr|hev|pickup|sedan|coupe|hatchback|wagon|convertible|l?[sx]?e|xse|xle|lx|ex|sport|touring|limited|base|standard|premium|w\/.*|.*\/.*|\(.*)$/i;
+
+/** "Camry HEV FF LE" → "Camry", "Civic 4Dr" (an Si) → "Civic Si", "F150 Pickup 2WD" → "F150". */
+function shopperModelName(car: Car): string {
+  const words = car.model.split(/\s+/).filter(Boolean);
+  const end = words.findIndex((word, i) => i > 0 && NAME_ENDS_AT.test(word));
+  const name = (end === -1 ? words : words.slice(0, end)).join(' ');
+  return car.variant && !name.toLowerCase().includes(car.variant.toLowerCase())
+    ? `${name} ${car.variant}`
+    : name;
+}
+
+const isFourByFour = (car: Car) => car.driveType === 'AWD' || car.driveType === '4WD';
+
+function searchRivals(query: SearchQuery, lead: string, named: string): SearchResults | null {
+  // The base configuration of the car named, in the newest year it matched:
+  // "tesla model 3" anchored on the Performance and listed Taycans, "civic" on
+  // the Si and listed sport sedans.
+  const matches = searchOne({ query: named, limit: 500, offset: 0 }).results;
+  const top = matches[0];
+  if (!top) return null;
+  const anchor = matches
+    .filter(
+      (car) => car.year === top.year && car.bodyStyle === top.bodyStyle && sameModelLine(car, top),
+    )
+    .reduce((base, car) => {
+      const price = car.price?.msrp ?? Infinity;
+      const basePrice = base.price?.msrp ?? Infinity;
+      // At one price, two-wheel drive is the base car (a Camry LE, not an AWD).
+      if (price !== basePrice) return price < basePrice ? car : base;
+      return isFourByFour(base) && !isFourByFour(car) ? car : base;
+    }, top);
+
+  // The words before "like" and the sidebar's filters narrow the pool.
+  const reading = enrichSearchQuery({ ...query, query: lead || undefined });
+  const filters = reading.filters ?? {};
+  let pool = singlePassFilter(getCandidateSet({ filters }), { filters }, false);
+  // Rivals share a body style unless the query asks for another ("suvs like a
+  // camry"), as on the car's page; a body with few cars opens to all.
+  if (!filters.bodyStyle?.length) {
+    const sameBody = pool.filter((car) => car.bodyStyle === anchor.bodyStyle);
+    if (sameBody.length >= 40) pool = sameBody;
+  }
+  const rivals = findSimilarCars(anchor, pool, 24);
+
+  const sort = query.sort?.field && query.sort.field !== 'relevance' ? query.sort : reading.sort;
+  if (sort?.field && sort.field !== 'relevance') {
+    sortResultsInPlace(rivals, sort.field, sort.order ?? 'desc');
+  }
+  const limit = Math.min(Math.max(query.limit || 50, 1), 500);
+  const offset = Math.max(query.offset || 0, 0);
+  const { ignored: _ignored, ...leadInterpretation } = reading.interpretation ?? {};
+  return {
+    results: rivals.slice(offset, offset + limit),
+    total: rivals.length,
+    hasMore: offset + limit < rivals.length,
+    interpretation: {
+      ...leadInterpretation,
+      similarTo: {
+        id: anchor.id,
+        label: `${anchor.year} ${anchor.make} ${shopperModelName(anchor)}`,
+      },
+    },
+  };
 }
 
 function searchOne(query: SearchQuery): SearchResults {
@@ -1373,8 +1471,16 @@ function resolveModelsAcrossMakes(phrase: string): { models: string[]; makes: st
     if (!modelPhraseMatches(cars[0].model, phrase) && !modelKey.startsWith(phrase)) {
       continue;
     }
-    // Avoid ultra-short phrases matching huge prefixes ("3" → every "3..." globally)
-    if (phrase.length <= 2 && modelFamilyName(cars[0].model) !== phrase) continue;
+    // Avoid ultra-short phrases matching huge prefixes ("3" → every "3..." globally).
+    // A name's first word still counts: BMW files the iX as "iX xDrive50 (21
+    // inch Wheels)", so "ix" fell through to a substring search (Matrix).
+    if (
+      phrase.length <= 2 &&
+      modelFamilyName(cars[0].model) !== phrase &&
+      cars[0].model.toLowerCase().split(/\s+/)[0] !== phrase
+    ) {
+      continue;
+    }
     models.add(cars[0].model);
     // Every make under the name: EPA filed the 2013-14 Viper under "SRT", and
     // counting only the first car's make narrowed "viper" to Dodge.
@@ -1569,6 +1675,8 @@ function getCandidateSet(query: SearchQuery): Car[] {
  * Indexed fields (make, bodyStyle, fuelType, transmission, driveType, country)
  * are skipped here since getCandidateSet already handled them.
  */
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): Car[] {
   const filters = query.filters;
   const searchTerm = query.query ? normalizeSearchQuery(query.query) : '';
@@ -1644,6 +1752,14 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
 
   const result: Car[] = [];
 
+  // A word of one or two characters must start a word: "ix" was found inside
+  // "Matrix" and "Grand Prix", "i4" inside a Discovery Sport "Si4".
+  const shortTokens = new Map(
+    searchTokens
+      .filter((token) => token.length <= 2)
+      .map((token) => [token, new RegExp(`(?:^|[^a-z0-9])${escapeRegExp(token)}`)]),
+  );
+
   for (const car of cars) {
     // Text search: every token must match at least one field (exact or fuzzy typo)
     if (hasTextSearch) {
@@ -1651,7 +1767,9 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
         `${car.make} ${car.model} ${car.year} ${car.trim ?? ''} ${car.variant ?? ''}`.toLowerCase();
       let allMatch = true;
       for (const token of searchTokens) {
-        if (haystack.includes(token) || (allowFuzzy && fuzzyTokenMatch(haystack, token))) continue;
+        const short = shortTokens.get(token);
+        if (short ? short.test(haystack) : haystack.includes(token)) continue;
+        if (allowFuzzy && fuzzyTokenMatch(haystack, token)) continue;
         allMatch = false;
         break;
       }

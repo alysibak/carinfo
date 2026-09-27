@@ -77,7 +77,7 @@ function lineFamily(model: string): string {
  * it: a Huracán Sterrato for a Huracán, a Civic Type R for a Civic, any 911
  * for a 911 Carrera, an X5 M for an X5, a Model 3 Performance for a Model 3.
  */
-function sameModelLine(a: Car, b: Car): boolean {
+export function sameModelLine(a: Car, b: Car): boolean {
   if (a.make !== b.make) return false;
   const fa = lineFamily(a.model);
   const fb = lineFamily(b.model);

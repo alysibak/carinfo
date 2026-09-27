@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCarStore } from '../stores/carStore';
 import FilterSidebar from '../components/FilterSidebar';
 import CarCard from '../components/CarCard';
@@ -397,6 +397,16 @@ export default function Home() {
                           {line}
                         </p>
                       ))}
+                    {searchResults?.interpretation?.similarTo && !searchError && (
+                      <p className="text-xs mt-1">
+                        <Link
+                          to={`/car/${searchResults.interpretation.similarTo.id}`}
+                          className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
+                        >
+                          See the {searchResults.interpretation.similarTo.label}
+                        </Link>
+                      </p>
+                    )}
                     {searchError && <p className="text-sm text-red-400">{searchError}</p>}
                   </div>
 

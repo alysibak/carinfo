@@ -46,6 +46,8 @@ const ALIASES: Record<string, string> = {
   rav: 'rav4',
   crv: 'cr-v',
   hrv: 'hr-v',
+  // EPA writes "ID.4": "id4" found nothing.
+  id4: 'id.4',
   cx5: 'cx-5',
   cx50: 'cx-50',
   cx3: 'cx-3',
@@ -65,6 +67,13 @@ const ALIASES: Record<string, string> = {
  */
 const PHRASE_ALIASES: [RegExp, string][] = [
   [/\b(silverado|sierra) 1500\b/g, '$1'],
+  // Model codes typed with a space: "rav 4" ("rav" is already "rav4", so the
+  // 4 was read as "4WD" and found only the 2001-12 RAV4 4WD), "id 4", "i 4",
+  // "a 220". Lexus writes "IS 350" with the space, so that one stays.
+  [/\brav4 4\b/g, 'rav4'],
+  [/\bid\.? 4\b/g, 'id.4'],
+  [/\bi (\d{1,2}|x)\b/g, 'i$1'],
+  [/\ba (\d{3})\b/g, 'a$1'],
   // Lineup names EPA never uses, folded into one token that search resolves
   // to the models: "3 series" → "3-series" (BMW 330i, M340i…), "c class" →
   // "c-class" (Mercedes C300, AMG C43…).
@@ -133,6 +142,8 @@ export function normalizeSearchQuery(query: string): string {
   // multi-word expansions and human spacing both work.
   const tokens = query
     .toLowerCase()
+    // "town & country"
+    .replace(/&/g, ' and ')
     .trim()
     .split(/[\s,/]+/)
     .filter(Boolean)
