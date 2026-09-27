@@ -243,6 +243,11 @@ export interface SearchQuery {
    * words of their model name or derived variant.
    */
   trimForms?: readonly string[];
+  /**
+   * Set by the query parser: the body, fuel, drive and induction words it read
+   * into filters. Every result has them, so ranking leaves them out.
+   */
+  filterWords?: readonly string[];
   /** Set by the query parser: what it read into filters or sorting. */
   interpretation?: SearchInterpretation;
   /**

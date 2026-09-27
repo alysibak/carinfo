@@ -625,7 +625,11 @@ function runSearch(query: SearchQuery): SearchResults {
   // Figures and prices go; words such as "sport sedan" stay, as they can be
   // part of a name (a Saab "9-3 Sport Sedan").
   if (wantRelevance && originalText && !keywordsOnly) {
-    sortByRelevanceInPlace(candidates, extractPricePhrases(withoutFigures(originalText)).text);
+    sortByRelevanceInPlace(
+      candidates,
+      extractPricePhrases(withoutFigures(originalText)).text,
+      enriched.filterWords,
+    );
   } else if (sortField && sortField !== 'relevance') {
     sortResultsInPlace(candidates, sortField, sortOrder);
   } else {
@@ -674,24 +678,92 @@ function runSearch(query: SearchQuery): SearchResults {
 function collapseCandidatesByModel(cars: Car[], includeYear = false): Car[] {
   const best = new Map<string, Car>();
   for (const car of cars) {
-    const base = `${car.make}|${collapseModelKey(car.model)}`.toLowerCase();
+    const base = `${car.make}|${collapseModelKey(car.make, car.model)}`.toLowerCase();
     const key = includeYear ? `${base}|${car.year}` : base;
     if (!best.has(key)) best.set(key, car);
   }
   return Array.from(best.values());
 }
 
+/**
+ * Names whose next words make another vehicle, by make. On the first word
+ * alone "audi rs" showed one row for the RS 3, 5, 6, 7 and Q8, and "amg" one
+ * for every AMG; the Grand Wagoneer sat under the Grand Cherokee, the Santa
+ * Cruz under the Santa Fe, the Mach-E under the Mustang, the Bronco Sport under
+ * the Bronco and the GR 86 under the GR Supra. `$n` takes a captured word.
+ */
+const SUBMODEL_KEYS: Record<string, Array<[RegExp, string]>> = {
+  audi: [
+    [/^(?:rs |s )?e-tron gt\b/, 'e-tron gt'],
+    [/^rs ([\w-]+)/, 'rs $1'],
+    // The electric A6, Q8 and their S models beside the petrol ones.
+    [/^(s?[aq]\d) (?:sportback )?(?:\d\d )?e-tron\b/, '$1 e-tron'],
+  ],
+  // A series, not an engine: the 330i, M340i and 330e are one 3 Series.
+  bmw: [
+    [/^activehybrid ([357])/, '$1 series'],
+    [/^i3s?\b/, 'i3'],
+    [/^(activehybrid|alpina) (\w+)/, '$1 $2'],
+    [/^m?([1-8])\d\d[a-z]*\b/, '$1 series'],
+  ],
+  // A class, not an engine: the E350 and E450 are one E-Class. AMG models
+  // stand apart, "AMG C43" and "AMG C63" together with the badge-last "C63
+  // AMG" before them, as do Maybachs (below).
+  'mercedes-benz': [
+    [/^amg (gt|[a-z]+)/, 'amg $1'],
+    [/^([a-z]+)\d+ amg\b/, 'amg $1'],
+    [/^([a-z]+)\d{2,3}[a-z]?\b/, '$1'],
+  ],
+  ford: [
+    [/^(mustang mach-e|bronco sport|explorer sport(?: trac)?|taurus x|transit connect)\b/, '$1'],
+  ],
+  fiat: [[/^500 ?([lx])\b/, '500$1']],
+  honda: [[/^accord crosstour\b/, 'accord crosstour']],
+  jeep: [[/^(grand \w+|wagoneer s)\b/, '$1']],
+  pontiac: [[/^(grand \w+)/, '$1']],
+  hyundai: [[/^(santa \w+|ioniq \d|genesis coupe)\b/, '$1']],
+  mitsubishi: [[/^(eclipse cross|outlander sport|montero sport)\b/, '$1']],
+  nissan: [[/^rogue sport\b/, 'rogue sport']],
+  toyota: [[/^(camry solara|corolla cross|corolla im|prius [cv]|gr [\w-]+)\b/, '$1']],
+  vinfast: [[/^vf ?(\d)\b/, 'vf $1']],
+  'land rover': [
+    [/^discovery sport\b/, 'discovery sport'],
+    // EPA's plain "Evoque" of 2020-21 is the Range Rover Evoque.
+    [/^evoque\b/, 'range rover evoque'],
+  ],
+  volkswagen: [[/^atlas cross sport\b/, 'atlas cross sport']],
+  buick: [[/^encore gx\b/, 'encore gx']],
+  chevrolet: [[/^(blazer ev|equinox ev|silverado ev|bolt euv)\b/, '$1']],
+  gmc: [[/^sierra ev\b/, 'sierra ev']],
+  genesis: [[/^electrified (\w+)/, 'electrified $1']],
+};
+
 /** Stable one-per-model key from messy EPA model strings. */
-function collapseModelKey(model: string): string {
-  const family = modelFamilyName(model);
+function collapseModelKey(make: string, model: string): string {
+  // EPA marks a new generation "New" (New Range Rover, New Wrangler Unlimited).
+  const family = modelFamilyName(model).replace(/^new (?=\S)/, '');
+  // An SUV sharing a sedan's name: the EQS and EQE SUVs.
+  const suv = /\(suv\)/i.test(model) ? ' suv' : '';
+  // From the whole name: the family of "S580 4matic Maybach" stops at "s580".
+  if (make === 'Mercedes-Benz' && /\bmaybach\b/i.test(model)) {
+    const rest = model
+      .toLowerCase()
+      .replace(/\bmaybach\b/, '')
+      .trim();
+    return `maybach ${/^[a-z]+/.exec(rest)?.[0] ?? ''}`.trim() + suv;
+  }
+  for (const [pattern, key] of SUBMODEL_KEYS[make.toLowerCase()] ?? []) {
+    const m = pattern.exec(family);
+    if (m) return key.replace(/\$(\d)/g, (_, i: string) => m[Number(i)]) + suv;
+  }
   const parts = family.split(/\s+/).filter(Boolean);
   if (parts.length >= 2 && parts[0] === 'model') {
     return `${parts[0]} ${parts[1]}`;
   }
-  if (parts.length >= 2 && parts[0] === 'range' && parts[1] === 'rover') {
-    return parts.slice(0, Math.min(3, parts.length)).join(' ');
-  }
-  return parts[0] || family;
+  // The Range Rover Sport, Evoque and Velar, not "Range Rover P530" apart from "Range Rover LWB".
+  const rangeRover = /^range rover(?: (sport|evoque|velar)\b)?/.exec(family);
+  if (rangeRover) return rangeRover[0] + suv;
+  return (parts[0] || family) + suv;
 }
 
 export interface SearchSuggestion {
@@ -1250,8 +1322,14 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
   // not the 1990s models EPA calls "Truck 2WD".
   const isKeyword = (t: string) =>
     !!(BODY_WORDS[t] || FUEL_WORDS[t] || DRIVE_WORDS[t] || ASPIRATION_WORDS[t]);
-  if (!filters.model?.length && textTokens.length > 0 && textTokens.every(isKeyword)) {
+  const filterWords: string[] = [];
+  const readKeywords = () => {
     const kept = applyKeywordFilters(textTokens, filters, query.filters);
+    filterWords.push(...textTokens.filter((t) => !kept.includes(t)));
+    return kept;
+  };
+  if (!filters.model?.length && textTokens.length > 0 && textTokens.every(isKeyword)) {
+    const kept = readKeywords();
     textTokens.splice(0, textTokens.length, ...kept);
   }
 
@@ -1303,7 +1381,7 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
   // "awd sedan") once the phrase is not a model name: "RAV4 Hybrid" and
   // "Bolt EV" resolved above and never get here.
   if (!filters.model?.length && textTokens.length > 0) {
-    const kept = applyKeywordFilters(textTokens, filters, query.filters);
+    const kept = readKeywords();
     if (kept.length < textTokens.length) {
       textTokens.splice(0, textTokens.length, ...kept);
       if (kept.length > 0) {
@@ -1330,6 +1408,7 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
     query: remainingQuery,
     filters,
     ...(trimForms ? { trimForms } : {}),
+    ...(filterWords.length ? { filterWords } : {}),
   });
 }
 
@@ -1762,9 +1841,15 @@ function resolveModelsAcrossMakes(phrase: string): { models: string[]; makes: st
   };
 }
 
-function sortByRelevanceInPlace(cars: Car[], searchText: string): void {
+function sortByRelevanceInPlace(
+  cars: Car[],
+  searchText: string,
+  filterWords: readonly string[] = [],
+): void {
   const normalized = normalizeSearchQuery(searchText);
-  const tokens = normalized.split(/\s+/).filter(Boolean);
+  // A body or fuel word read as a filter is on every result: in a name it put
+  // a 2004 "C320 4matic Sedan" first for "mercedes sedan".
+  const tokens = normalized.split(/\s+/).filter((t) => t && !filterWords.includes(t));
   if (tokens.length === 0) {
     cars.sort((a, b) => b.year - a.year);
     return;

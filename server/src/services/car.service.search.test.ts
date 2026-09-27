@@ -161,7 +161,9 @@ describe('car.service natural language search', () => {
       collapseByModel: true,
       limit: 50,
     });
-    expect(collapsed.total).toBe(1);
+    // One row per model: the Camry, and the Camry Solara coupe and convertible.
+    expect(collapsed.total).toBe(2);
+    expect(collapsed.results.filter((c) => /solara/i.test(c.model))).toHaveLength(1);
   });
 
   it('accepts glued mazda3 and collapses Civic when one-per-model is on', () => {
@@ -901,6 +903,31 @@ describe('car.service natural language search', () => {
     expect(names).toContain('911 Targa 4 GTS');
     expect(gts.results.every((c) => /\bgts\b/i.test(c.model))).toBe(true);
     expect(gts.results[0].year).toBeGreaterThanOrEqual(2025);
+  });
+
+  it('shows one row per model, keeping apart models that share a first word', () => {
+    const rows = (query: string) =>
+      searchCars({ query, limit: 200, collapseByModel: true }).results.map((c) => c.model);
+    // "audi rs" showed one row for the RS 3, 5, 6, 7 and Q8, "jeep" hid the
+    // Grand Cherokee under the Grand Wagoneer, and "mustang" the Mach-E.
+    expect(rows('audi rs').length).toBeGreaterThanOrEqual(5);
+    const jeep = rows('jeep grand');
+    expect(jeep.some((m) => /^Grand Cherokee/.test(m))).toBe(true);
+    expect(jeep.some((m) => /^Grand Wagoneer/.test(m))).toBe(true);
+    expect(rows('ford mustang').some((m) => /Mach-E/.test(m))).toBe(true);
+    // An engine code is not a model: one row for every 3 Series, one per class.
+    expect(rows('bmw').filter((m) => /^M?3\d\d/.test(m))).toHaveLength(1);
+    expect(rows('mercedes').filter((m) => /^E\d{3}\b/.test(m))).toHaveLength(1);
+    // A Maybach is not an S-Class, though EPA names it "S580 4matic Maybach".
+    const s580 = rows('s 580 4matic');
+    expect(s580).toContain('S580 4matic');
+    expect(s580).toContain('S580 4matic Maybach');
+  });
+
+  it('ranks without the body and fuel words read into filters', () => {
+    // A 2004 "C320 4matic Sedan" led "mercedes sedan" on the word "sedan".
+    const sedans = searchCars({ query: 'mercedes sedan', limit: 3, collapseByModel: true });
+    expect(sedans.results.every((c) => c.year >= 2025)).toBe(true);
   });
 
   it('completes the name in a rivals phrase, one entry per model', () => {
