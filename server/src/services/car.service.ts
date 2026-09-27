@@ -380,25 +380,37 @@ function shopperModelName(car: Pick<Car, 'model' | 'variant'>): string {
 }
 
 const isFourByFour = (car: Car) => car.driveType === 'AWD' || car.driveType === '4WD';
+const plainName = (model: string) => model.replace(/\([^)]*\)/g, '').trim();
 
-function searchRivals(query: SearchQuery, lead: string, named: string): SearchResults | null {
-  // The base configuration of the car named, in the newest year it matched:
-  // "tesla model 3" anchored on the Performance and listed Taycans, "civic" on
-  // the Si and listed sport sedans.
+/**
+ * The base configuration of the car a phrase names, in the newest year it
+ * matched: "tesla model 3" anchored rivals on the Performance and listed
+ * Taycans, "civic" on the Si and listed sport sedans.
+ */
+function baseConfiguration(named: string): Car | undefined {
   const matches = searchOne({ query: named, limit: 500, offset: 0 }).results;
   const top = matches[0];
-  if (!top) return null;
-  const anchor = matches
+  if (!top) return undefined;
+  return matches
     .filter(
       (car) => car.year === top.year && car.bodyStyle === top.bodyStyle && sameModelLine(car, top),
     )
     .reduce((base, car) => {
       const price = car.price?.msrp ?? Infinity;
       const basePrice = base.price?.msrp ?? Infinity;
-      // At one price, two-wheel drive is the base car (a Camry LE, not an AWD).
+      // At one price, two-wheel drive is the base car (a Camry LE, not an AWD),
+      // then the plainest name (a Corolla, not a Corolla Hybrid SE).
       if (price !== basePrice) return price < basePrice ? car : base;
-      return isFourByFour(base) && !isFourByFour(car) ? car : base;
+      if (isFourByFour(base) !== isFourByFour(car)) return isFourByFour(car) ? base : car;
+      return plainName(car.model).length < plainName(base.model).length ? car : base;
     }, top);
+}
+
+const carLabel = (car: Car) => `${car.year} ${car.make} ${shopperModelName(car)}`;
+
+function searchRivals(query: SearchQuery, lead: string, named: string): SearchResults | null {
+  const anchor = baseConfiguration(named);
+  if (!anchor) return null;
 
   // The words before "like" and the sidebar's filters narrow the pool.
   const reading = enrichSearchQuery({ ...query, query: lead || undefined });
@@ -427,7 +439,7 @@ function searchRivals(query: SearchQuery, lead: string, named: string): SearchRe
       ...leadInterpretation,
       similarTo: {
         id: anchor.id,
-        label: `${anchor.year} ${anchor.make} ${shopperModelName(anchor)}`,
+        label: carLabel(anchor),
       },
     },
   };
@@ -482,11 +494,19 @@ function searchTogether(query: SearchQuery, parts: string[]): SearchResults {
   }
   const limit = Math.min(Math.max(query.limit || 50, 1), 500);
   const offset = Math.max(query.offset || 0, 0);
+  // One car per side for the compare page: each side's base configuration.
+  const bases = parts.map(baseConfiguration);
+  const compareWith = bases.every(Boolean)
+    ? (bases as Car[]).map((car) => ({ id: car.id, label: carLabel(car) }))
+    : undefined;
   return {
     results: merged.slice(offset, offset + limit),
     total: merged.length,
     hasMore: offset + limit < merged.length,
-    interpretation: { compared: parts },
+    interpretation: {
+      compared: parts,
+      ...(compareWith && new Set(compareWith.map((c) => c.id)).size > 1 ? { compareWith } : {}),
+    },
   };
 }
 

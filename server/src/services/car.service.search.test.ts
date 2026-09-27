@@ -697,6 +697,19 @@ describe('car.service natural language search', () => {
     expect(snow.results.every((c) => c.driveType === 'AWD' || c.driveType === '4WD')).toBe(true);
   });
 
+  it('names one car per side of a comparison, for the compare page', () => {
+    const vs = searchCars({ query: 'civic vs corolla', limit: 10 }).interpretation;
+    expect(vs?.compareWith?.map((c) => c.label)).toEqual([
+      `${LATEST_FULL_MODEL_YEAR} Honda Civic`,
+      `${LATEST_FULL_MODEL_YEAR} Toyota Corolla`,
+    ]);
+    for (const { id } of vs!.compareWith!) expect(getCarById(id)).not.toBeNull();
+    // A side that names nothing: no pair to compare.
+    expect(
+      searchCars({ query: 'rav4 vs xyzzy', limit: 5 }).interpretation?.compareWith,
+    ).toBeUndefined();
+  });
+
   it('finds dual-clutch gearboxes by name', () => {
     const pdk = searchCars({ query: 'porsche pdk', limit: 100 });
     expect(pdk.interpretation?.automatedManual).toBe(true);

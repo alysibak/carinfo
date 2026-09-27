@@ -405,6 +405,22 @@ export default function Home() {
                           {line}
                         </p>
                       ))}
+                    {searchResults?.interpretation?.compareWith && !searchError && (
+                      <p className="text-xs mt-1">
+                        <Link
+                          to={`/compare?cars=${searchResults.interpretation.compareWith
+                            .map((c) => c.id)
+                            .join(',')}`}
+                          className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
+                        >
+                          Compare the{' '}
+                          {searchResults.interpretation.compareWith
+                            .map((c) => c.label)
+                            .join(' and the ')}{' '}
+                          side by side
+                        </Link>
+                      </p>
+                    )}
                     {searchResults?.interpretation?.similarTo && !searchError && (
                       <p className="text-xs mt-1">
                         <Link

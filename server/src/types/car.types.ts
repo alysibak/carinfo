@@ -253,6 +253,8 @@ export interface SearchInterpretation {
   threeRow?: boolean;
   /** "accord vs camry": the searches shown together. */
   compared?: string[];
+  /** The base configuration each side names, for the compare page. */
+  compareWith?: Array<{ id: string; label: string }>;
   /** "compact suv", "sports car", "luxury sedan": the kind of vehicle read. */
   vehicleClass?: string;
   /** "best", "reliable": words no data on file can measure, set aside. */
