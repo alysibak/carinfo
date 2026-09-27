@@ -148,6 +148,18 @@ describe('vehicle structured data', () => {
     expect(ld.fuelEfficiency).toMatchObject({ value: 120, unitText: 'MPGe' });
   });
 
+  it('names a mild hybrid by its fuel, and an automated manual as one', () => {
+    const page = vehicleSeo(
+      car({
+        engine: { fuelType: 'gasoline', mildHybrid: true },
+        transmission: { type: 'automatic', description: 'Automatic (AM-S7)' },
+      }),
+    );
+    expect(page.description).toContain('gasoline mild hybrid');
+    expect(page.bodyHtml).toContain('Gasoline mild hybrid');
+    expect(page.bodyHtml).toContain('7-Speed Automated Manual');
+  });
+
   it('never presents an estimated price as an offer', () => {
     const ld = vehicleSeo(car({ price: { msrp: 32000, isEstimated: true } })).jsonLd!;
     expect(ld).not.toHaveProperty('offers');

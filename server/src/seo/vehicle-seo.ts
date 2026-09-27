@@ -85,7 +85,9 @@ function engineSummary(car: Car): string | null {
  */
 export function vehicleSeo(car: Car): PageSeo {
   const name = vehicleName(car);
-  const fuel = FUEL_LABEL[car.engine.fuelType] ?? car.engine.fuelType;
+  const base = FUEL_LABEL[car.engine.fuelType] ?? car.engine.fuelType;
+  // As the page says it: "Gasoline mild hybrid", not a "Hybrid" (EPA's word).
+  const fuel = car.engine.mildHybrid ? `${base} mild hybrid` : base;
   const efficiency = efficiencyPhrase(car);
 
   const facts = [
