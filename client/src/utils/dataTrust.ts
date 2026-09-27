@@ -33,7 +33,7 @@ export const PROVENANCE_FIELD_LABELS: Record<string, string> = {
   make: 'Make',
   model: 'Model',
   year: 'Year',
-  countryOfOrigin: 'Origin',
+  countryOfOrigin: 'Brand origin',
   safetyRating: 'Crash safety',
   'price.msrp': 'Est. current value',
   'analytics.annualCost': 'Annual running cost',

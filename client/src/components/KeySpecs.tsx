@@ -180,7 +180,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
     const raw = car.provenance?.countryOfOrigin;
     pushIf(vehicle, {
       key: 'origin',
-      label: 'Origin',
+      label: 'Brand origin',
       value: car.countryOfOrigin,
       glossary: 'countryOfOrigin',
       provenanceSource: raw ? displayProvenanceSource('countryOfOrigin', raw) : null,
