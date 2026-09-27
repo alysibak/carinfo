@@ -6,6 +6,7 @@ import { differentiateVsAnchor } from '../utils/differentiateCars';
 import { formatMpgForCard } from '../utils/dataValue';
 import { usesMpge } from '../utils/fuelDisplay';
 import {
+  displayConfigNotes,
   displayListingSubtitle,
   displayModelLabel,
   formatTransmissionLabel,
@@ -47,7 +48,11 @@ export default function SiblingConfigs({ car }: { car: CarSpecs }) {
         </p>
         <ul className="flex flex-col border border-zinc-900 divide-y divide-zinc-900 max-h-72 overflow-y-auto">
           {siblings.map((sib) => {
-            const subtitle = displayListingSubtitle(sib);
+            // Wheel sizes left the name, and are often all that tells siblings apart.
+            const subtitle =
+              [...displayConfigNotes(sib), displayListingSubtitle(sib)]
+                .filter(Boolean)
+                .join(' · ') || null;
             const trans = sib.transmission ? formatTransmissionLabel(sib.transmission) : null;
             const mpgLabel = usesMpge(sib.engine.fuelType) ? 'MPGe' : 'MPG';
             const mpg = formatMpgForCard(sib.fuelEconomy.combined);

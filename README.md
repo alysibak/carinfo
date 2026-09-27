@@ -206,7 +206,7 @@ Types live in `client/src/types/car.types.ts` and `server/src/types/car.types.ts
 | `dimensions` | object? | length, width, height, wheelbase, curbWeight (always empty in prod DB) |
 | `fuelEconomy` | object | city, highway, combined |
 | `epa` | object? | co2, annualFuelCost, rangeMiles, kWhPer100Mi, charge times, vClass, ghgScore, fuelSavings5yrUsd, barrelsPerYear, phev |
-| `transmission` | object | type, speeds, description |
+| `transmission` | object | type, speeds, description. EPA's `AV` and `AV-S7` codes are CVTs (the number is the simulated steps a select shift offers), read as `cvt` at load; `speeds` keeps the step count |
 | `driveType` | FWD/RWD/AWD/4WD | |
 | `bodyStyle` | BodyStyle | May be corrected from EPA VClass |
 | `safetyRating` | object? | overall, frontal, side, rollover |

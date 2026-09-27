@@ -137,7 +137,8 @@ export function mapTransmission(trany: string): {
   if (!speeds && parenS) speeds = parseInt(parenS[1], 10);
   if (speeds != null && (speeds < 1 || speeds > 12)) speeds = undefined;
   if (t.includes('manual')) return { type: 'manual', speeds, description: trany };
-  if (t.includes('variable gear') || t.includes('cvt'))
+  // "(AV-S7)": a CVT with seven simulated steps, not a seven-speed automatic.
+  if (t.includes('variable gear') || t.includes('cvt') || /\(av(?:-s\d+)?\)/.test(t))
     return { type: 'cvt', speeds, description: trany };
   if (t.includes('dual') || t.includes('dct'))
     return { type: 'dual-clutch', speeds, description: trany };

@@ -13,8 +13,51 @@ const TECHNICAL_PAREN = /\s*\([^)]*\d+\s*(?:ah|kw|kwh|mi|mpg|cc|hp|lb)[^)]*\)/gi
 
 const EPA_MODEL_SUFFIX = /\s+(?:FFV|4WD|AWD|FWD|RWD|2WD|4\s*Dr|2\s*Dr|5\s*Dr)\s*$/i;
 
+/**
+ * Configuration notes EPA writes into model names: wheel and tire sizes, test
+ * modes, stop-start. They tell one configuration from another, so they go
+ * under the name, not in it: a card read "2026 BMW i4 eDrive40 Gran Coupe (19
+ * inch Wheels)", "Sentra (3-mode)", "Elantra w Stop-Start".
+ */
+const CONFIG_NOTES: Array<{ pattern: RegExp; note: (hit: RegExpExecArray) => string | null }> = [
+  // "(19 inch Wheels)", "(22in)", "(20in Cyber wheels)", "(20 inch All-Season Tires)"
+  {
+    pattern: /\s*\([^)]*?\b(\d{2})\s*(?:-?\s?inch\b|in\b\.?|")\s*(alloy|steel)?[^)]*\)/i,
+    note: (hit) => `${hit[1]}-inch ${hit[2] ? `${hit[2].toLowerCase()} ` : ''}wheels`,
+  },
+  // "19in. Wheels", "with19 inch wheels"
+  {
+    pattern:
+      /\s*\b(?:with\s?)?(\d{2})\s*(?:-?\s?inch\b|in\b\.?)\s*(?:alloy\s+)?(?:wheels?|tires?)\b/i,
+    note: (hit) => `${hit[1]}-inch wheels`,
+  },
+  { pattern: /\s*\bmud terrain tires\b/i, note: () => 'Mud-terrain tires' },
+  { pattern: /\s*\(?\bwith sport mode\b\)?/i, note: () => 'Sport mode' },
+  // EPA test annotations, and stop-start or driver monitoring every car has.
+  { pattern: /\s*\(\d-mode(?: tm)?\)/i, note: () => null },
+  { pattern: /\s+w\/\s*(?:stop-start|start-stop|dms)\b/i, note: () => null },
+];
+
+function takeConfigNotes(model: string): { rest: string; notes: string[] } {
+  let rest = model;
+  const notes: string[] = [];
+  for (const { pattern, note } of CONFIG_NOTES) {
+    const hit = pattern.exec(rest);
+    if (!hit) continue;
+    rest = rest.replace(hit[0], '');
+    const text = note(hit);
+    if (text && !notes.includes(text)) notes.push(text);
+  }
+  return { rest: rest.trim(), notes };
+}
+
+/** "19-inch wheels", "Mud-terrain tires": what EPA's name says about this configuration. */
+export function displayConfigNotes(car: Pick<CarSpecs, 'model'>): string[] {
+  return takeConfigNotes(car.model).notes;
+}
+
 function stripEpaModelNoise(model: string): string {
-  let cleaned = model.trim();
+  let cleaned = takeConfigNotes(model.trim()).rest;
   let prev = '';
   while (prev !== cleaned) {
     prev = cleaned;
@@ -320,6 +363,8 @@ function isCvtDescription(description?: string, type?: TransmissionInfo['type'])
   if (!description) return false;
   const d = description.toLowerCase();
   if (d.includes('cvt')) return true;
+  // EPA's AV and AV-S codes are CVTs ("AV-S7": seven simulated steps).
+  if (/\(av(?:-s\d+)?\)/.test(d)) return true;
   if (d.includes('variable') && !/(?:av|am)-s\d+/i.test(description)) return true;
   if (d.includes('variable gear')) return true;
   return false;
@@ -355,4 +400,16 @@ export function displayListingSubtitle(car: ListingCar): string | null {
   }
 
   return null;
+}
+
+/**
+ * The line under a card or page title: the configuration notes taken out of
+ * the name ("19-inch wheels"), then the trim, gearbox or the rest of the name.
+ */
+export function displayConfigSubtitle(car: ListingCar & ModelCar): string | null {
+  const parts = [
+    ...displayConfigNotes(car),
+    displayListingSubtitle(car) ?? displayModelConfigRemainder(car),
+  ].filter((part): part is string => !!part);
+  return parts.length ? parts.join(' · ') : null;
 }

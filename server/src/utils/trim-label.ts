@@ -158,6 +158,8 @@ function isCvtDescription(description?: string, type?: TransmissionInfo['type'])
   if (!description) return false;
   const d = description.toLowerCase();
   if (d.includes('cvt')) return true;
+  // EPA's AV and AV-S codes are CVTs ("AV-S7": seven simulated steps).
+  if (/\(av(?:-s\d+)?\)/.test(d)) return true;
   if (d.includes('variable') && !/(?:av|am)-s\d+/i.test(description)) return true;
   if (d.includes('variable gear')) return true;
   return false;

@@ -3,8 +3,7 @@ import { Link } from 'react-router-dom';
 import type { CarSpecs } from '../types/car.types';
 import { useCarStore } from '../stores/carStore';
 import {
-  displayListingSubtitle,
-  displayModelConfigRemainder,
+  displayConfigSubtitle,
   displayModelLabel,
   displayVehicleTitle,
   formatTransmissionLabel,
@@ -34,7 +33,7 @@ export default function CarCard({ car, showCompare = true }: CarCardProps) {
   const isEv = car.engine.fuelType === 'electric';
   const isHydrogen = car.engine.fuelType === 'hydrogen';
   const isAltPowertrain = isEv || isHydrogen;
-  const variantLabel = displayListingSubtitle(car) ?? displayModelConfigRemainder(car);
+  const variantLabel = displayConfigSubtitle(car);
 
   useEffect(() => {
     if (!toast) return;
@@ -94,27 +93,32 @@ export default function CarCard({ car, showCompare = true }: CarCardProps) {
       </div>
 
       <div className="p-3 flex flex-col flex-1">
-        <div className="flex items-start justify-between gap-2 mb-0.5">
-          <h3 className="text-sm sm:text-base font-bold text-white leading-snug line-clamp-2 min-w-0">
-            <Link
-              to={`/car/${car.id}`}
-              className="after:absolute after:inset-0 focus:outline-none hover:underline underline-offset-2 decoration-zinc-600"
+        {/* The title takes the full width: beside the chips, a three-column
+            grid cut "2026 Nissan Sentra" to "2026 Nissan…". */}
+        <h3 className="text-sm sm:text-base font-bold text-white leading-snug line-clamp-2">
+          <Link
+            to={`/car/${car.id}`}
+            className="after:absolute after:inset-0 focus:outline-none hover:underline underline-offset-2 decoration-zinc-600"
+          >
+            {displayVehicleTitle(car)}
+          </Link>
+        </h3>
+        <div className="flex items-center gap-1.5 mt-1 min-w-0">
+          {car.bodyStyle && (
+            <span className="spec-chip shrink-0">{bodyStyleLabel(car.bodyStyle)}</span>
+          )}
+          {safety != null && safety > 0 && (
+            <span
+              className="spec-chip shrink-0 text-amber-200/90 border-amber-800/50"
+              title={`NHTSA ${safety}-star overall rating`}
             >
-              {displayVehicleTitle(car)}
-            </Link>
-          </h3>
-          <div className="flex items-center gap-1 shrink-0 pt-0.5">
-            {car.bodyStyle && <span className="spec-chip">{bodyStyleLabel(car.bodyStyle)}</span>}
-            {safety != null && safety > 0 && (
-              <span className="spec-chip text-amber-200/90 border-amber-800/50">
-                {'★'.repeat(safety)}
-              </span>
-            )}
-          </div>
+              {'★'.repeat(safety)}
+            </span>
+          )}
+          {variantLabel && (
+            <span className="text-[11px] text-zinc-500 truncate min-w-0">{variantLabel}</span>
+          )}
         </div>
-        {variantLabel && (
-          <p className="text-[11px] text-zinc-500 mt-0.5 truncate">{variantLabel}</p>
-        )}
 
         <div className="grid grid-cols-2 gap-px bg-zinc-900 border border-zinc-900 mt-2.5">
           <div className="bg-black px-2.5 py-2">

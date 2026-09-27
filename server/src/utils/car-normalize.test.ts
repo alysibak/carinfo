@@ -44,4 +44,16 @@ describe('car-normalize', () => {
     expect(pipeline.price?.msrp).toBeGreaterThan(0);
     expect(pipeline.price?.confidence).toBeTruthy();
   });
+
+  it("reads EPA's AV-S codes as CVTs", () => {
+    // "(AV-S7)" is a CVT with seven simulated steps: 938 cars showed as
+    // "7-Speed Automatic", a 2021 Elantra as "1-Speed Automatic".
+    const raw = findCar((c) => c.transmission?.description === 'Automatic (AV-S7)');
+    expect(raw).toBeDefined();
+    const stale = { ...raw!, transmission: { ...raw!.transmission, type: 'automatic' as const } };
+    expect(normalizeCarRecord(stale).transmission.type).toBe('cvt');
+    // A stepped automatic stays one.
+    const stepped = findCar((c) => c.transmission?.description === 'Automatic (S8)');
+    expect(normalizeCarRecord(stepped!).transmission.type).toBe('automatic');
+  });
 });

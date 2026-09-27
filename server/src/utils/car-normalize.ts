@@ -58,6 +58,20 @@ function applyMarketValue(normalized: Car): Car {
  * consumer that does not special-case EVs will print it. An engineless
  * vehicle's displacement is absent, not zero.
  */
+/**
+ * EPA's "AV" and "AV-S7" codes are continuously variable transmissions, the
+ * number being the stepped modes a select shift simulates. The import read
+ * only "variable gear ratios" as a CVT, so 938 Civics, Legacys, Elantras and
+ * Toyota hybrids were "7-Speed", "8-Speed" or "1-Speed Automatic".
+ */
+export const EPA_CVT_CODE = /\(AV(?:-S\d+)?\)/i;
+
+function readCvtCode(car: Car): Car {
+  const t = car.transmission;
+  if (!t || t.type === 'cvt' || !EPA_CVT_CODE.test(t.description ?? '')) return car;
+  return { ...car, transmission: { ...t, type: 'cvt' } };
+}
+
 function dropPhantomDisplacement(car: Car): Car {
   const { fuelType, displacement } = car.engine;
   if (displacement !== 0) return car;
@@ -99,6 +113,7 @@ export function normalizeCarRecord(car: Car): Car {
 
   normalized = applyVehicleTaxonomy(normalized);
   normalized = dropPhantomDisplacement(normalized);
+  normalized = readCvtCode(normalized);
 
   return applyMarketValue(normalized);
 }

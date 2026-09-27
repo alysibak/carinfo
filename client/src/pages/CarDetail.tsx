@@ -3,12 +3,7 @@ import { useEffect, useState } from 'react';
 import * as api from '../services/api';
 import { isHttpError } from '../services/http';
 import type { CarDashboard, CarSpecs } from '../types/car.types';
-import {
-  displayListingSubtitle,
-  displayModelConfigRemainder,
-  displayModelLabel,
-  displayVehicleTitle,
-} from '../utils/trimLabel';
+import { displayConfigSubtitle, displayModelLabel, displayVehicleTitle } from '../utils/trimLabel';
 import {
   formatCurrency,
   formatCurrencyRange,
@@ -280,7 +275,7 @@ export default function CarDetail() {
   const hydrogenPrice = getRegionalAssumptions(region).hydrogenCadPerKg;
   const efficiencyLabel = efficiencyUnit(car);
   const isInCompare = comparedCars.some((c) => c.id === car.id);
-  const trimLabel = displayListingSubtitle(car) ?? displayModelConfigRemainder(car);
+  const trimLabel = displayConfigSubtitle(car);
   const isPhev = car.engine.fuelType === 'plug-in hybrid';
   const phev = phevModes(car);
   const ghg = ghgFraming(car);

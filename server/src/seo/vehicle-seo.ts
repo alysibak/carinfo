@@ -1,5 +1,5 @@
 import type { Car } from '../types/car.types.js';
-import { displayListingSubtitle } from '../utils/trim-label.js';
+import { displayListingSubtitle, formatTransmissionLabel } from '../utils/trim-label.js';
 import { escapeHtml } from './html.js';
 import { absoluteUrl } from './site.js';
 
@@ -193,12 +193,8 @@ function vehicleSummaryHtml(car: Car, efficiency: string | null, fuel: string): 
   if (car.engine.aspiration) rows.push(['Induction', capitalize(car.engine.aspiration)]);
   if (car.engine.horsepower) rows.push(['Horsepower', `${car.engine.horsepower} hp`]);
   if (car.transmission?.type) {
-    rows.push([
-      'Transmission',
-      car.transmission.speeds
-        ? `${car.transmission.speeds}-speed ${car.transmission.type}`
-        : car.transmission.type,
-    ]);
+    // The page's own label: "CVT", not "7-speed cvt".
+    rows.push(['Transmission', formatTransmissionLabel(car.transmission)]);
   }
   if (car.safetyRating?.overall) rows.push(['NHTSA overall', `${car.safetyRating.overall} / 5`]);
 

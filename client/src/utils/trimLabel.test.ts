@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+  displayConfigNotes,
+  displayConfigSubtitle,
   displayModelConfigRemainder,
   displayModelFamilyLabel,
   displayModelLabel,
   displayTrimLabel,
   displayVehicleTitle,
+  formatTransmissionLabel,
 } from './trimLabel';
 
 const label = (model: string, trim: string) => displayTrimLabel({ model, trim });
@@ -41,6 +44,44 @@ describe('displayVehicleTitle / model family', () => {
     // Already in the family name: not repeated.
     const gt = { ...mazda3, make: 'Ford', model: 'Mustang GT', variant: 'GT' };
     expect(displayVehicleTitle(gt)).toBe('2026 Ford Mustang GT');
+  });
+
+  it('takes configuration notes out of the name and puts them under it', () => {
+    const car = (model: string) => ({
+      ...mazda3,
+      make: 'BMW',
+      model,
+      trim: 'base',
+      transmission: { type: 'automatic' as const, description: 'Automatic (A1)' },
+    });
+    const i4 = car('i4 eDrive40 Gran Coupe (19 inch Wheels)');
+    expect(displayVehicleTitle(i4)).toBe('2026 BMW i4 eDrive40 Gran Coupe');
+    expect(displayModelLabel(i4)).toBe('i4 eDrive40 Gran Coupe');
+    expect(displayConfigNotes(i4)).toEqual(['19-inch wheels']);
+    expect(displayConfigSubtitle(i4)).toMatch(/^19-inch wheels · /);
+    expect(displayConfigNotes(car('R1T Dual Large (22in)'))).toEqual(['22-inch wheels']);
+    expect(displayConfigNotes(car('LEAF 75kWh (18 inch steel Wheels)'))).toEqual([
+      '18-inch steel wheels',
+    ]);
+    expect(displayModelLabel(car('Air G Touring XR AWD with19 inch wheels'))).toBe(
+      'Air G Touring XR',
+    );
+    // EPA test modes and stop-start say nothing about the car.
+    expect(displayModelLabel(car('Sentra (3-mode)'))).toBe('Sentra');
+    expect(displayModelLabel(car('Elantra w/Stop-Start'))).toBe('Elantra');
+    expect(displayConfigNotes(car('Sentra (3-mode)'))).toEqual([]);
+    expect(displayModelLabel(car('Silverado Mud Terrain Tires 4WD'))).toBe('Silverado');
+    // Not a wheel size.
+    expect(displayModelLabel(car('Optima (2006 New Model)'))).toBe('Optima (2006 New Model)');
+  });
+
+  it('labels EPA AV-S gearboxes as CVTs', () => {
+    expect(formatTransmissionLabel({ type: 'automatic', description: 'Automatic (AV-S7)' })).toBe(
+      'CVT',
+    );
+    expect(formatTransmissionLabel({ type: 'automatic', description: 'Automatic (S8)' })).toBe(
+      '8-Speed Automatic',
+    );
   });
 
   it('keeps multi-word families like Model 3', () => {
