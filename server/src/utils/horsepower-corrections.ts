@@ -31,6 +31,24 @@ const row = (
 ): Correction => ({ make, model, years, litres, forced, fuel, hp });
 
 const CORRECTIONS: Correction[] = [
+  // The F-150's naturally aspirated engines read the EcoBoost's or the
+  // Raptor R's figures (a 5.0 at 600-653 hp).
+  row('Ford', /^F-?150(?! (Raptor|Lightning))/, [2011, 2014], 5, false, 360),
+  row('Ford', /^F-?150(?! (Raptor|Lightning))/, [2015, 2017], 5, false, 385),
+  row('Ford', /^F-?150(?! (Raptor|Lightning))/, [2018, 2020], 5, false, 395),
+  row('Ford', /^F-?150(?! (Raptor|Lightning))/, [2021, 2026], 5, false, 400),
+  row('Ford', /^F-?150(?! (Raptor|Lightning))/, [2015, 2017], 3.5, false, 282),
+  row('Chevrolet', /^Silverado/, [2014, 2021], 4.3, false, 285),
+  row('GMC', /^Sierra/, [2014, 2021], 4.3, false, 285),
+  // The Hurricane six: 420 hp as standard, 540 as the HO in the RHO.
+  row('Ram', /^1500(?! (HO|RHO|TRX))/, [2025, 2026], 3, true, 420),
+  // The TRX made 702 hp (not the Hellcats' 707); the 2026 car, filed as a
+  // plain "1500 4WD", makes 777.
+  row('Ram', /^1500/, [2021, 2024], 6.2, true, 702),
+  row('Ram', /^1500/, [2026, 2026], 6.2, true, 777),
+  row('Ram', /^1500/, [2014, 2018], 3, true, 240, 'diesel'),
+  row('Ram', /^1500/, [2020, 2023], 3, true, 260, 'diesel'),
+  row('Nissan', /^Kicks/, [2018, 2019], 1.6, false, 125),
   row('Honda', /^CR-V(?! (Hybrid|e-FCEV))/, [2017, 2022], 1.5, true, 190),
   row('Honda', /^Civic(?! (Hybrid|Natural Gas|Type R))/, [2016, 2024], 2, false, 158),
   row('Honda', /^Civic(?! (Hybrid|Natural Gas|Type R))/, [2025, 2027], 2, false, 150),

@@ -38,9 +38,12 @@ describe('applyHorsepowerCorrections', () => {
       car('Mazda', 'CX-5 2WD', 2020, 2.5, undefined),
       // EPA files the STI as a "WRX".
       car('Subaru', 'WRX', 2017, 2.5, 268, { aspiration: 'turbocharged' }),
+      // A 5.0 F-150 at the Raptor R's figure; the base Ram Hurricane at the HO's.
+      car('Ford', 'F150 Pickup 4WD FFV', 2016, 5, 653),
+      car('Ram', '1500 4WD', 2025, 3, 540, { aspiration: 'turbocharged' }),
     ]);
-    expect(cars.map((c) => c.engine.horsepower)).toEqual([190, 187, 187, 305]);
-    expect(corrected).toBe(4);
+    expect(cars.map((c) => c.engine.horsepower)).toEqual([190, 187, 187, 305, 385, 420]);
+    expect(corrected).toBe(6);
     expect(cars.every((c) => c.provenance['engine.horsepower'] === 'curated')).toBe(true);
   });
 
@@ -51,9 +54,10 @@ describe('applyHorsepowerCorrections', () => {
       // The 2.4 turbo WRX is not the 2.5 STI.
       car('Subaru', 'WRX', 2023, 2.4, 271, { aspiration: 'turbocharged' }),
       car('Mazda', 'CX-50 4WD', 2024, 2.5, 227, { aspiration: 'turbocharged' }),
+      car('Ram', '1500 HO 4WD', 2025, 3, 540, { aspiration: 'turbocharged' }),
     ];
     const { cars: out, corrected } = applyHorsepowerCorrections(cars);
-    expect(out.map((c) => c.engine.horsepower)).toEqual([212, 185, 271, 227]);
+    expect(out.map((c) => c.engine.horsepower)).toEqual([212, 185, 271, 227, 540]);
     expect(corrected).toBe(0);
   });
 });
