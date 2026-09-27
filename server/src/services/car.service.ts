@@ -1127,6 +1127,11 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
         : { min, max, ...(basis ? { basis } : {}) };
     interpretation.fuelEconomy = modifiers.fuelEconomy;
   }
+  if (modifiers.engineSize != null && !explicit?.displacement) {
+    const litres = modifiers.engineSize;
+    filters.displacement = { min: litres - 0.05, max: litres + 0.05 };
+    interpretation.engineSize = litres;
+  }
   if (modifiers.horsepower && !explicit?.horsepower) {
     filters.horsepower = modifiers.horsepower;
     interpretation.horsepower = modifiers.horsepower;

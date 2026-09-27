@@ -96,6 +96,9 @@ export function describeSearchInterpretation(
     lines.push(describeFuelEconomy(interpretation.fuelEconomy, !!interpretation.gasMileage));
   }
   if (interpretation.horsepower) lines.push(describeHorsepower(interpretation.horsepower));
+  if (interpretation.engineSize != null) {
+    lines.push(`${interpretation.engineSize.toFixed(1)}-litre engines only.`);
+  }
   if (interpretation.engineFamily) lines.push(`Read as ${interpretation.engineFamily}.`);
   if (interpretation.layouts?.length) {
     const names = interpretation.layouts.join(' and ');

@@ -33,7 +33,7 @@ describe('extractQueryModifiers', () => {
       text: 'sedan',
       transmission: ['manual'],
     });
-    expect(extractQueryModifiers('v8 truck').cylinders).toEqual([8]);
+    expect(extractQueryModifiers('v8 truck').layouts).toEqual(['V8']);
     expect(extractQueryModifiers('4 cylinder camry').cylinders).toEqual([4]);
     expect(extractQueryModifiers('7 seater')).toEqual({ text: '', threeRow: true });
     expect(extractQueryModifiers('longest range ev')).toEqual({ text: 'ev', sortedBy: 'range' });
@@ -300,11 +300,30 @@ describe('extractQueryModifiers', () => {
     expect(extractQueryModifiers('ram hemi')).toEqual({ text: 'ram', engineFamily: 'hemi' });
     expect(extractQueryModifiers('f-150 ecoboost').engineFamily).toBe('ecoboost');
     expect(extractQueryModifiers('power stroke').engineFamily).toBe('power-stroke');
-    // BMW's electric cars are names, and a V6 is any six.
+    // BMW's electric cars are names. A V6 is a V6 (or a VR6), not a straight six.
     expect(extractQueryModifiers('bmw i4')).toEqual({ text: 'bmw i4' });
     expect(extractQueryModifiers('bmw i5')).toEqual({ text: 'bmw i5' });
-    expect(extractQueryModifiers('v6 camry')).toEqual({ text: 'camry', cylinders: [6] });
+    expect(extractQueryModifiers('v6 camry')).toEqual({ text: 'camry', layouts: ['V6', 'VR6'] });
+    expect(extractQueryModifiers('6 cylinder').cylinders).toEqual([6]);
     expect(extractQueryModifiers('3 cylinder').cylinders).toEqual([3]);
+  });
+
+  it('reads an engine size, and fuels named in several words', () => {
+    expect(extractQueryModifiers('f150 5.0')).toEqual({ text: 'f150', engineSize: 5 });
+    expect(extractQueryModifiers('3.5 liter v6').engineSize).toBe(3.5);
+    // "2.0t" asks for a turbo too.
+    expect(extractQueryModifiers('audi 2.0t')).toEqual({ text: 'audi turbo', engineSize: 2 });
+    // Not a name's figure, a rating, or a price.
+    expect(extractQueryModifiers('x5 4.8is').engineSize).toBeUndefined();
+    expect(extractQueryModifiers('4.5 stars').engineSize).toBeUndefined();
+    expect(extractQueryModifiers('under 5.5k').engineSize).toBeUndefined();
+    expect(extractQueryModifiers('plug in hybrid suv').text).toBe('phev suv');
+    expect(extractQueryModifiers('plug-in hybrids').text).toBe('phev');
+    expect(extractQueryModifiers('fuel cell car').text).toBe('fcev');
+    expect(extractQueryModifiers('sedan with big trunk')).toEqual({
+      text: 'sedan',
+      unmeasured: ['big trunk'],
+    });
   });
 
   it('reads seats, doors and words about who rides', () => {

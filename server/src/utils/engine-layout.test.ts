@@ -30,6 +30,8 @@ describe('engine layouts', () => {
     expect(layoutOf(named('Mazda', /^RX-8/, 2004))).toBe('Rotary');
     expect(layoutOf(named('Jeep', /^Wrangler/, 2005, 6))).toBe('I6');
     expect(layoutOf(named('Chevrolet', /^TrailBlazer/i, 2005, 6))).toBe('I6');
+    // The GR Supra's six is BMW's.
+    expect(layoutOf(named('Toyota', /^GR Supra$/, 2022, 6))).toBe('I6');
   });
 
   it('dates the Mercedes, Jaguar and Land Rover straight sixes by their 48 V systems', () => {

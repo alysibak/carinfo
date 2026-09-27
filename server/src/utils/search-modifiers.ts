@@ -45,6 +45,8 @@ export interface QueryModifiers {
   horsepower?: { min?: number; max?: number };
   /** "boxer", "straight six", "rotary", "w12": layouts as utils/engine-layout.ts names them. */
   layouts?: string[];
+  /** "f150 5.0", "2.0t": an engine size in litres. */
+  engineSize?: number;
   /** "hemi", "ecoboost", "duramax": an engine family (utils/engine-families.ts). */
   engineFamily?: EngineFamilyId;
 }
@@ -343,7 +345,7 @@ const LISTING_WORDS =
  * read as a name.
  */
 const UNMEASURED =
-  /\b(?:best|good|great|top|reliable|dependable|quality|nice|decent|perfect|ideal|recommended|popular|comfortable|fun|cool|first|beginner|starter|tow|towing|haul|hauling|seniors?|elderly|kids?|son|daughter|wife|husband|mom|dad|girlfriend|boyfriend|grand(?:ma|pa|mother|father)|roomy|spacious|cargo space|legroom|headroom|dogs?|pets?|(?:tall|short|big) (?:people|persons?|drivers?|guys?)|work(?= (?:trucks?|vans?|pickups?)\b))\b/g;
+  /\b(?:best|good|great|top|reliable|dependable|quality|nice|decent|perfect|ideal|recommended|popular|comfortable|fun|cool|first|beginner|starter|tow|towing|haul|hauling|seniors?|elderly|kids?|son|daughter|wife|husband|mom|dad|girlfriend|boyfriend|grand(?:ma|pa|mother|father)|roomy|spacious|cargo space|cargo room|(?:big|large|huge|roomy|spacious) (?:trunk|boot)s?|trunk space|legroom|headroom|dogs?|pets?|(?:tall|short|big) (?:people|persons?|drivers?|guys?)|work(?= (?:trucks?|vans?|pickups?)\b))\b/g;
 
 /**
  * A first car, or a car for someone learning: "good first car for a teenager"
@@ -394,10 +396,10 @@ const CYLINDER_PHRASES: Array<[RegExp, number]> = [
   // Not "i4": that is BMW's electric sedan.
   [/\b(?:4|four)[- ]?cyl(?:inder)?s?\b/, 4],
   [/\b(?:5|five)[- ]?cyl(?:inder)?s?\b/, 5],
-  [/\b(?:6|six)[- ]?cyl(?:inder)?s?\b|\bv6\b/, 6],
-  [/\b(?:8|eight)[- ]?cyl(?:inder)?s?\b|\bv8\b/, 8],
-  [/\b(?:10|ten)[- ]?cyl(?:inder)?s?\b|\bv10\b/, 10],
-  [/\b(?:12|twelve)[- ]?cyl(?:inder)?s?\b|\bv12\b/, 12],
+  [/\b(?:6|six)[- ]?cyl(?:inder)?s?\b/, 6],
+  [/\b(?:8|eight)[- ]?cyl(?:inder)?s?\b/, 8],
+  [/\b(?:10|ten)[- ]?cyl(?:inder)?s?\b/, 10],
+  [/\b(?:12|twelve)[- ]?cyl(?:inder)?s?\b/, 12],
 ];
 
 /**
@@ -414,6 +416,12 @@ const LAYOUT_PHRASES: Array<[RegExp, string[]]> = [
   [/\bflat[- ]?(?:12|twelve)\b/, ['Flat-12']],
   [/\b(?:boxer|horizontally opposed)(?: engines?| motors?)?\b/, ['Flat-4', 'Flat-6']],
   [/\bvr-?6\b/, ['VR6']],
+  // A "v6" was any six, so a BMW straight six led "twin turbo v6". Volkswagen's
+  // narrow-angle VR6 is a V6 too; a W8 or W12 is not a V8 or V12.
+  [/\bv-?6\b/, ['V6', 'VR6']],
+  [/\bv-?8\b/, ['V8']],
+  [/\bv-?10\b/, ['V10']],
+  [/\bv-?12\b/, ['V12']],
   [/\bw-?8\b/, ['W8']],
   [/\bw-?12\b/, ['W12']],
   [/\bw-?16\b/, ['W16']],
@@ -588,8 +596,19 @@ function readFigures(padded: string): FiguresRead {
  * scored "over", "200" and "hp" against model names, and a 2008 Solara
  * convertible led the V6 Camrys.
  */
+/**
+ * An engine size: "f150 5.0", "3.5 liter", "2.0t". A figure with a decimal
+ * point, not part of a name ("x5 4.8is") or a rating ("4.5 stars").
+ */
+const ENGINE_SIZE = /\b([0-8]\.\d)(?:\s*(?:l|lit(?:re|er)s?)\b|(t)\b|(?![\w.]))(?!\s*stars?\b)/;
+
 export function withoutFigures(raw: string): string {
-  return readFigures(` ${raw.toLowerCase()} `).text.replace(/\s+/g, ' ').trim();
+  // The engine size too: ranked as a word, "f150 5.0" put a model named
+  // "F150 5.0L 2WD FFV GVWR>7599 LBS" before every F150 Pickup.
+  return readFigures(` ${raw.toLowerCase()} `)
+    .text.replace(ENGINE_SIZE, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 /**
@@ -642,6 +661,13 @@ export function extractQueryModifiers(
   if (take(/\b(?:mild[- ]hybrids?|mhev|48[- ]?v(?:olt)?|etorque|e-?assist|eq ?boost)\b/)) {
     out.mildHybrid = true;
   }
+  // Fuels named in several words, before "in" goes as a stop word: "plug in
+  // hybrid suv" found only models named "Plug-in Hybrid", "fuel cell" only
+  // the Tucson Fuel Cell.
+  text = text
+    .replace(/\bplug[- ]?in(?: electric)? hybrids?\b/g, ' phev ')
+    .replace(/\bplug[- ]?ins?\b/g, ' plug-in ')
+    .replace(/\bfuel[- ]cells?(?: electric)?\b/g, ' fcev ');
   // Before the filler words go: "first car" needs its "car".
   if (text.match(FIRST_CAR_WORDS)) {
     out.firstCar = true;
@@ -718,6 +744,14 @@ export function extractQueryModifiers(
       out.engineFamily = family;
       break;
     }
+  }
+  const size = take(ENGINE_SIZE);
+  if (size) {
+    const litres = Number(size[1]);
+    if (litres >= 0.6 && litres <= 8.4) {
+      out.engineSize = litres;
+      if (size[2]) text += ' turbo ';
+    } else text += ` ${size[0]} `;
   }
   const cylinders = CYLINDER_PHRASES.filter(([re]) => take(re)).map(([, n]) => n);
   if (cylinders.length) out.cylinders = cylinders;

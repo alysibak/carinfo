@@ -834,6 +834,36 @@ describe('car.service natural language search', () => {
     expect(ecoboost.results.every((c) => c.make === 'Ford' && !!c.engine.aspiration)).toBe(true);
   });
 
+  it('reads a V6 as a V6, an engine size, and fuels in several words', () => {
+    // BMW's straight sixes led "twin turbo v6".
+    const v6 = searchCars({ query: 'twin turbo v6', limit: 300 });
+    expect(v6.total).toBeGreaterThan(20);
+    expect(v6.results.every((c) => /^V/.test(c.engine.configuration ?? ''))).toBe(true);
+    expect(v6.results.every((c) => !!c.engine.aspiration)).toBe(true);
+    // "5.0" ranked as a word put "F150 5.0L 2WD FFV GVWR>7599 LBS" first.
+    const f150 = searchCars({ query: 'f150 5.0', limit: 50, collapseByModel: true });
+    expect(f150.interpretation?.engineSize).toBe(5);
+    expect(f150.results[0].model).toMatch(/^F150 Pickup/);
+    expect(
+      searchCars({ query: 'f150 5.0', limit: 100 }).results.every(
+        (c) => c.engine.displacement === 5,
+      ),
+    ).toBe(true);
+    // Only models named "Plug-in Hybrid", and only the Tucson Fuel Cell.
+    const phev = searchCars({ query: 'plug in hybrid suv', limit: 300 });
+    expect(phev.total).toBeGreaterThan(20);
+    expect(
+      phev.results.every((c) => c.engine.fuelType === 'plug-in hybrid' && c.bodyStyle === 'suv'),
+    ).toBe(true);
+    const fuelCell = searchCars({ query: 'fuel cell', limit: 50 });
+    expect(fuelCell.total).toBeGreaterThan(3);
+    expect(fuelCell.results.every((c) => c.engine.fuelType === 'hydrogen')).toBe(true);
+    // Trunk space is not on file; the sedans are.
+    const trunk = searchCars({ query: 'sedan with big trunk', limit: 20 });
+    expect(trunk.total).toBeGreaterThan(100);
+    expect(trunk.interpretation?.unmeasured).toEqual(['big trunk']);
+  });
+
   it('reads drive and body phrases, seats and doors', () => {
     // "rear wheel drive" and "four wheel drive" found nothing.
     const rwd = searchCars({ query: 'rear wheel drive sedan', limit: 200 });

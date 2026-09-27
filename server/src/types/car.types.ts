@@ -325,6 +325,8 @@ export interface SearchInterpretation {
   horsepower?: { min?: number; max?: number };
   /** "boxer", "straight six": the engine layouts kept. */
   layouts?: string[];
+  /** "f150 5.0": the engine size kept, in litres. */
+  engineSize?: number;
   /** "hemi", "ecoboost": what the engine name was read as. */
   engineFamily?: string;
 }

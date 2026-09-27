@@ -95,7 +95,8 @@ function sixLayout(car: CarSpecs, make: string, model: string): string | undefin
   if (make === 'bmw' || make === 'volvo' || make === 'ineos automotive') return 'I6';
   if (make === 'aston martin') return 'I6'; // The DB7's supercharged 3.2.
   if (make === 'daewoo' || (make === 'suzuki' && /^verona\b/.test(model))) return 'I6';
-  if (make === 'toyota' && (/^supra\b/.test(model) || litres === 4.5)) return 'I6';
+  // The GR Supra's 3.0 is BMW's straight six.
+  if (make === 'toyota' && (/^(?:gr )?supra\b/.test(model) || litres === 4.5)) return 'I6';
   if (make === 'lexus' && (litres === 4.5 || (/^(gs|is|sc) ?300\b/.test(model) && year <= 2005))) {
     return 'I6';
   }

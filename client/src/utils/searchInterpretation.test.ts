@@ -110,6 +110,10 @@ describe('describeSearchInterpretation', () => {
     ]);
   });
 
+  it('names an engine size read from the query', () => {
+    expect(describeSearchInterpretation({ engineSize: 5 })).toEqual(['5.0-litre engines only.']);
+  });
+
   it('states fuel economy and horsepower bounds in the unit asked', () => {
     expect(
       describeSearchInterpretation({ fuelEconomy: { min: 30, unit: 'MPG' }, gasMileage: true }),
