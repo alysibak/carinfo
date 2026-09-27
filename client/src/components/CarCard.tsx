@@ -19,6 +19,7 @@ import {
 import { formatFuelBadge, usesMpge } from '../utils/fuelDisplay';
 import VehiclePlaceholder from './VehiclePlaceholder';
 import { StatusToast } from './ui';
+import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 
 interface CarCardProps {
   car: CarSpecs;
@@ -103,7 +104,7 @@ export default function CarCard({ car, showCompare = true }: CarCardProps) {
             </Link>
           </h3>
           <div className="flex items-center gap-1 shrink-0 pt-0.5">
-            {car.bodyStyle && <span className="spec-chip capitalize">{car.bodyStyle}</span>}
+            {car.bodyStyle && <span className="spec-chip">{bodyStyleLabel(car.bodyStyle)}</span>}
             {safety != null && safety > 0 && (
               <span className="spec-chip text-amber-200/90 border-amber-800/50">
                 {'★'.repeat(safety)}

@@ -48,6 +48,18 @@ const HATCHBACK_PATTERNS: RegExp[] = [
   /\bfiesta st\b/,
   /\belantra n\b/,
   /\bveloster n\b/,
+  // Small cars EPA files as sedans or station wagons by interior volume.
+  /\bspark\b/,
+  /\bsonic 5\b/,
+  /\baveo ?5\b/,
+  /\belantra gt\b/,
+  /\bscion xd\b/,
+  /\bc-max\b/,
+  /\bioniq(?! [56])\b/,
+  /\bfocus (rs|electric)\b/,
+  /\blancer sportback\b/,
+  /\bcaliber\b/,
+  /\bmatrix\b/,
   /\bcooper s\b/,
   /\bmini s\b/,
   /\bgr corolla\b/,
@@ -62,11 +74,9 @@ const HATCHBACK_PATTERNS: RegExp[] = [
   /\bniro ev\b/,
   /\bev6\b/,
   /\bioniq 5\b/,
-  /\bioniq 6\b/,
-  /\bmodel y\b/,
-  /\byaris\b/,
+  /\byaris\b(?! ia)/,
   /\bfit\b/,
-  /\bmirage\b/,
+  /\bmirage\b(?! g4)/,
   /\bsoul\b/,
   /\bcube\b/,
   /\bprius\b(?!\s*prime)/,
@@ -213,6 +223,7 @@ export function inferBodyStyle(car: CarSpecs, displayModel?: string): BodyStyle 
   if (/pickup|\bf-150\b|\bsilverado\b|\bram 1500\b|\btundra\b|\btitan\b/.test(h)) return 'truck';
   if (/sport utility|\bsuv\b|\brav4\b|\bcrv\b|\bxt\d\b|\bexplorer\b|\btahoe\b/.test(h))
     return 'suv';
+  if (CROSSOVER_NAMES.test(`${car.make} ${model}`.toLowerCase())) return 'suv';
   if (/minivan|\bsienna\b|\bodyssey\b|\bpacifica\b|\bcarnival\b/.test(h)) return 'minivan';
   if (/\bvan\b|\btransit\b|\bsprinter\b|\bpromaster\b/.test(h)) return 'van';
   // "Wagon" in a name makes a car a wagon, not a van, minivan or SUV EPA filed
@@ -232,7 +243,14 @@ export function inferBodyStyle(car: CarSpecs, displayModel?: string): BodyStyle 
     return 'hatchback';
   }
 
-  if (HATCHBACK_PATTERNS.some((re) => re.test(h) || re.test(model))) return 'hatchback';
+  // Never over an SUV, pickup or van class: a Model Y or Kona Electric is not a hatchback.
+  if (!epaUtility && HATCHBACK_PATTERNS.some((re) => re.test(h) || re.test(model)))
+    return 'hatchback';
+
+  // The first two Insights were hatchbacks; the 2019-22 car is a sedan.
+  if (car.make === 'Honda' && /^insight/.test(model) && car.year < 2015) return 'hatchback';
+  // "5-Door" names a hatchback whichever size class EPA used (Impreza 5-Door).
+  if (car.bodyStyle === 'wagon' && FIVE_DOOR_CAR.test(model)) return 'hatchback';
 
   // Golf without qualifier is a hatchback (not sedan).
   if (car.make === 'Volkswagen' && /^golf$/i.test(model)) return 'hatchback';
@@ -309,6 +327,14 @@ const COUPE_NAMES = new RegExp(
     .map((name) => `\\b${name}\\b`)
     .join('|'),
 );
+/**
+ * Crossovers EPA files as station wagons or cars by size class: every CR-V
+ * FWD, HR-V, Juke, Murano, Niro, Mach-E, GLA, Cullinan and X1 read as a
+ * wagon or sedan.
+ */
+const CROSSOVER_NAMES =
+  /^(honda (cr-v|hr-v)|nissan (juke|rogue|murano|kicks|ariya)|kia (niro|seltos)|ford (mustang mach-e|ecosport)|mercedes-benz (amg )?gl[abc] ?\d|rolls-royce cullinan|chevrolet (trax|trailblazer)|buick (encore|envista)|infiniti qx\d0|bmw x[1-7]\b|toyota (c-hr|venza)|subaru crosstrek|jeep (compass|renegade)|hyundai (kona|venue)|lincoln (mkc|corsair)|lexus (ux|nx) )/;
+
 /** Convertibles EPA files as sedans, with no "convertible" in the name. */
 const CONVERTIBLE_NAMES =
   /\b(volante|drophead|bentley azure|bentley continental gtc|rolls-royce (?:dawn|corniche)|maserati grancabrio|ferrari (?:california|portofino)|porsche boxster|(?:amg )?sl ?\d+|slk ?\d*|slc ?\d*|\d{3}ic)\b/;

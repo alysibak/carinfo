@@ -44,6 +44,7 @@ import {
 import type { AnnualCostBreakdown } from '../types/car.types';
 import { TIER_HELPER } from '../utils/visualTiers';
 import { usePageMeta } from '../utils/pageMeta';
+import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 
 function Subheading({ children }: { children: React.ReactNode }) {
   return (
@@ -438,7 +439,7 @@ export default function CarDetail() {
               </h1>
               {trimLabel && <p className="text-sm text-zinc-500 mb-1.5 sm:mb-2">{trimLabel}</p>}
               <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-zinc-400">
-                {car.bodyStyle && <span className="capitalize">{car.bodyStyle}</span>}
+                {car.bodyStyle && <span>{bodyStyleLabel(car.bodyStyle)}</span>}
                 {car.driveType && <span>{car.driveType}</span>}
                 {car.engine.fuelType && <span>{formatFuelBadge(car.engine.fuelType)}</span>}
               </div>

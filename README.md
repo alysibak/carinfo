@@ -441,6 +441,12 @@ Base: `/api` (Vite proxies to `:5000` in dev; Vercel routes to `api/index.ts`)
 
 **Years outside the data:** an empty search whose years are all off file returns `yearCoverage: { min, max }`, and the results page offers the same search in every year.
 
+**Trim levels EPA does not record:** a search that finds nothing is retried without its last one to three free words, as long as what is left names a vehicle, so `honda civic ex`, `toyota 4runner trd pro` and `ford explorer limited` find the Civic, 4Runner and Explorer instead of nothing. Years, body/fuel/drive words and prices are never dropped. The response says what was set aside in `interpretation.ignored`, and the results page shows it.
+
+**Prices:** `under 30k`, `below $25,000`, `over 40 000`, `less than 20k` filter on the estimated CAD value (an amount needs a `k`, a `$` or four digits outside the model-year range, so `civic under 2015` is not a price); `cheap`, `cheapest`, `affordable` and `budget` sort by estimated value, lowest first, within the last ten model years unless the query gives years. Both come back in `interpretation` for the page to state.
+
+**Badges and bare trims:** badge-first names match without the badge (`g63` finds 2013–15 "G63 AMG" and 2016+ "AMG G63"; `viper` finds the 2013–14 "SRT Viper"), and a trim that names one car on its own (`gt500`, `hellcat`, `type r`, `trackhawk`, `zl1`) is searched as a trim, so `gt500` includes the 2007–14 cars EPA files as plain "Mustang". Generic trims (`gt`, `ss`, `si`, `rt`, `sti`) are not. Typo tolerance applies only when the exact words find nothing: `gt500` used to include the Mercedes G500. Searches made only of body/fuel/drive words (`electric pickup`) list newest first.
+
 ### Chart points query params
 
 `priceMin`, `priceMax`, `bodyStyles` (comma-separated), `yearMin`, `yearMax`, `limit`

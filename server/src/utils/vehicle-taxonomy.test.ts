@@ -148,6 +148,23 @@ describe('vehicle-taxonomy', () => {
     expect(body('MINI', 'Cooper Countryman', 'Compact Cars')).toBe('suv');
     expect(body('MINI', 'Cooper S Clubman', 'Midsize Cars')).toBe('wagon');
     expect(body('MINI', 'Cooper (5-doors)')).toBe('hatchback');
+    // Crossovers and small hatchbacks EPA files as wagons or sedans.
+    expect(
+      inferBodyStyle(minimalCar({ make: 'Honda', model: 'CR-V FWD', bodyStyle: 'wagon' })),
+    ).toBe('suv');
+    expect(
+      inferBodyStyle(minimalCar({ make: 'Rolls-Royce', model: 'Cullinan', bodyStyle: 'wagon' })),
+    ).toBe('suv');
+    expect(inferBodyStyle(minimalCar({ make: 'BMW', model: 'X1 xDrive28i' }))).toBe('suv');
+    expect(body('Chevrolet', 'Spark')).toBe('hatchback');
+    expect(
+      inferBodyStyle(minimalCar({ make: 'Subaru', model: 'Impreza 5-Door', bodyStyle: 'wagon' })),
+    ).toBe('hatchback');
+    expect(body('Hyundai', 'Ioniq 6')).toBe('sedan');
+    expect(body('Mitsubishi', 'Mirage G4')).toBe('sedan');
+    expect(
+      inferBodyStyle(minimalCar({ make: 'Tesla', model: 'Model Y AWD', bodyStyle: 'suv' })),
+    ).toBe('suv');
     // City cars in the same class are hatchbacks; four-doors stay sedans.
     expect(body('Fiat', '500', 'Minicompact Cars')).toBe('hatchback');
     expect(body('Bentley', 'Flying Spur', 'Large Cars')).toBe('sedan');

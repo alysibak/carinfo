@@ -404,6 +404,73 @@ describe('car.service natural language search', () => {
     expect(mazda3.every((c) => c.make === 'Mazda' && /^3\b/.test(c.model))).toBe(true);
   });
 
+  it('sets aside trim words EPA does not record, and says so', () => {
+    // These all found nothing: EPA names no trim levels.
+    const civic = searchCars({ query: 'honda civic ex', limit: 20 });
+    expect(civic.total).toBeGreaterThan(50);
+    expect(civic.results.every((c) => c.make === 'Honda' && /^civic/i.test(c.model))).toBe(true);
+    expect(civic.interpretation?.ignored).toEqual(['ex']);
+    const runner = searchCars({ query: 'toyota 4runner trd pro', limit: 20 });
+    expect(runner.results.every((c) => /^4runner/i.test(c.model))).toBe(true);
+    expect(runner.interpretation?.ignored).toEqual(['trd', 'pro']);
+    // Years stay: only 2021 Highlanders.
+    const highlander = searchCars({ query: 'toyota highlander platinum 2021', limit: 50 });
+    expect(highlander.total).toBeGreaterThan(0);
+    expect(highlander.results.every((c) => c.year === 2021)).toBe(true);
+    // A query that finds something is never relaxed.
+    expect(searchCars({ query: 'honda civic', limit: 1 }).interpretation).toBeUndefined();
+    // Nothing that names no vehicle once relaxed.
+    expect(searchCars({ query: 'qwertyuiop asdfghjkl', limit: 1 }).total).toBe(0);
+  });
+
+  it('reads price phrases and "cheapest"', () => {
+    const under = searchCars({ query: 'suv under 30k', limit: 50 });
+    expect(under.interpretation?.price).toEqual({ max: 30_000 });
+    expect(under.results.every((c) => c.bodyStyle === 'suv' && c.price!.msrp! <= 30_000)).toBe(
+      true,
+    );
+    const commas = searchCars({ query: 'sedan below $25,000', limit: 5 });
+    expect(commas.interpretation?.price).toEqual({ max: 25_000 });
+    // A year is not a price.
+    expect(
+      searchCars({ query: 'civic under 2015', limit: 1 }).interpretation?.price,
+    ).toBeUndefined();
+    const cheap = searchCars({
+      query: 'cheap sedan',
+      sort: { field: 'relevance', order: 'desc' },
+      limit: 20,
+    });
+    expect(cheap.interpretation?.cheapestFirst).toBe(true);
+    expect(cheap.results.every((c) => c.year >= cheap.interpretation!.cheapestFrom!)).toBe(true);
+    const prices = cheap.results.map((c) => c.price!.msrp!);
+    expect(prices).toEqual([...prices].sort((a, b) => a - b));
+  });
+
+  it('finds badge-first names and trims EPA files under the base model', () => {
+    // "AMG G63" (2016 on) as well as "G63 AMG" (2013-15).
+    const g63 = searchCars({ query: 'g63', limit: 100 }).results;
+    expect(g63.some((c) => c.model.startsWith('AMG G63'))).toBe(true);
+    expect(g63.some((c) => c.model.startsWith('G63 AMG'))).toBe(true);
+    // The 2007-14 Shelby GT500 is a plain "Mustang"; and no Mercedes G500s.
+    const gt500 = searchCars({ query: 'gt500', limit: 100 }).results;
+    expect(gt500.some((c) => c.model === 'Mustang' && c.variant === 'Shelby GT500')).toBe(true);
+    expect(gt500.every((c) => c.make === 'Ford')).toBe(true);
+    expect(
+      // EPA filed the 2013-14 Viper under the make "SRT".
+      searchCars({ query: 'viper', limit: 100 }).results.some((c) => c.make === 'SRT'),
+    ).toBe(true);
+  });
+
+  it('lists keyword-only searches newest first', () => {
+    // Scoring "electric pickup" against model names put a 1998 S10 Electric first.
+    const { results } = searchCars({
+      query: 'electric pickup',
+      sort: { field: 'relevance', order: 'desc' },
+      limit: 10,
+    });
+    expect(results[0].year).toBeGreaterThanOrEqual(LATEST_FULL_MODEL_YEAR);
+  });
+
   it('suggests derived trims and body/fuel phrases, without duplicate labels', () => {
     const labels = (q: string) => getSearchSuggestions(q, 8).map((s) => s.label);
     expect(labels('mustang gt')[0]).toBe('Ford Mustang GT');

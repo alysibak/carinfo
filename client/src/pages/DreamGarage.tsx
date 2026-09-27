@@ -10,6 +10,7 @@ import {
 import SignInPromptSlot from '../components/SignInPromptSlot';
 import ToolPageHeader from '../components/ToolPageHeader';
 import { ConfirmDialog, Modal, StatusToast } from '../components/ui';
+import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 
 export default function DreamGarage() {
   const [shareLink, setShareLink] = useState('');
@@ -266,7 +267,7 @@ export default function DreamGarage() {
                     </div>
                     <div>
                       <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">Type</p>
-                      <p className="text-lg font-bold capitalize">{car.bodyStyle}</p>
+                      <p className="text-lg font-bold">{bodyStyleLabel(car.bodyStyle)}</p>
                     </div>
                   </div>
 

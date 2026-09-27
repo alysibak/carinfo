@@ -11,6 +11,7 @@ import {
 } from '../utils/dataValue';
 import ToolPageHeader from '../components/ToolPageHeader';
 import { ErrorState, LoadingScreen, StatusToast } from '../components/ui';
+import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 
 export default function SharedGarage() {
   const [searchParams] = useSearchParams();
@@ -184,7 +185,7 @@ export default function SharedGarage() {
                     </div>
                     <div>
                       <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">Type</p>
-                      <p className="text-lg font-bold capitalize">{car.bodyStyle}</p>
+                      <p className="text-lg font-bold">{bodyStyleLabel(car.bodyStyle)}</p>
                     </div>
                   </div>
 

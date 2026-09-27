@@ -26,6 +26,7 @@ export type {
   Provenance,
   ProvenanceSource,
   ResaleImpact,
+  SearchInterpretation,
   SearchQuery,
   SearchResults,
   ShoppingSegment,

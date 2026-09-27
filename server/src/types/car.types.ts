@@ -195,6 +195,23 @@ export interface SearchQuery {
    * words of their model name or derived variant.
    */
   trimForms?: readonly string[];
+  /** Set by the query parser: what it read into filters or sorting. */
+  interpretation?: SearchInterpretation;
+}
+
+/** How the server read a free-text query, for the results page to state. */
+export interface SearchInterpretation {
+  /**
+   * Words dropped because nothing matched with them, usually trim levels EPA
+   * does not record ("TRD Pro", "EX-L", "Platinum").
+   */
+  ignored?: string[];
+  /** A price limit read from the query ("under 30k"), estimated CAD value. */
+  price?: { min?: number; max?: number };
+  /** "cheapest", "affordable": sorted by estimated value, lowest first. */
+  cheapestFirst?: boolean;
+  /** With no year given, "cheapest" keeps to model years from this one. */
+  cheapestFrom?: number;
 }
 
 /** Response body of the search endpoints. */
@@ -208,6 +225,7 @@ export interface SearchResults {
    * the UI can say so instead of suggesting a spelling problem.
    */
   yearCoverage?: { min: number; max: number };
+  interpretation?: SearchInterpretation;
 }
 
 export interface OwnershipAssumptions {

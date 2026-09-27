@@ -20,6 +20,7 @@ import { isElectricOnlyBrowse } from '../utils/filterState';
 import { LIFESTYLE_PRESETS, POPULAR_SEARCHES } from '../config/browseTaxonomy';
 import type { CarFilter } from '../types/car.types';
 import { usePageMeta } from '../utils/pageMeta';
+import { describeSearchInterpretation } from '../utils/searchInterpretation';
 
 const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/i;
 
@@ -386,6 +387,14 @@ export default function Home() {
                         )}
                       </p>
                     )}
+                    {searchResults &&
+                      !searchError &&
+                      searchResults.total > 0 &&
+                      describeSearchInterpretation(searchResults.interpretation).map((line) => (
+                        <p key={line} className="text-xs text-zinc-400 mt-1">
+                          {line}
+                        </p>
+                      ))}
                     {searchError && <p className="text-sm text-red-400">{searchError}</p>}
                   </div>
 

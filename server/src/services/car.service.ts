@@ -322,21 +322,76 @@ export function getCarPipelineDebug(id: string): {
  */
 export function searchCars(query: SearchQuery): SearchResults {
   ensureDatabase();
+  const results = runSearch(query);
+  if (results.total > 0) return results;
+  return relaxTrailingWords(query) ?? results;
+}
+
+/**
+ * Retry an empty text search without its last few free words, when what is
+ * left still names a vehicle. EPA records no trim levels, so "toyota 4runner
+ * trd pro", "honda civic ex" or "ford explorer limited" found nothing at all;
+ * they now find the 4Runner, Civic or Explorer and say which words were set
+ * aside. Years, body/fuel/drive words and price phrases are never dropped.
+ */
+function relaxTrailingWords(query: SearchQuery): SearchResults | null {
+  const words = (query.query ?? '').trim().split(/\s+/).filter(Boolean);
+  const droppable = words
+    .map((word, index) => ({ word, index }))
+    .filter(({ word }) => {
+      const token = normalizeSearchToken(word.toLowerCase());
+      return (
+        !parseYearToken(token) &&
+        !(token in BODY_WORDS) &&
+        !(token in FUEL_WORDS) &&
+        !(token in DRIVE_WORDS) &&
+        !PRICE_WORD.test(token) &&
+        !/\d{2}/.test(token)
+      );
+    });
+  for (let count = 1; count <= 3 && count < droppable.length; count += 1) {
+    const dropped = droppable.slice(-count);
+    const skip = new Set(dropped.map((d) => d.index));
+    const text = words.filter((_, i) => !skip.has(i)).join(' ');
+    const reading = enrichSearchQuery({ ...query, query: text });
+    const namesVehicle =
+      !reading.query && !!(reading.filters?.model?.length || reading.filters?.make?.length);
+    if (!namesVehicle) continue;
+    const retry = runSearch({ ...query, query: text });
+    if (retry.total === 0) continue;
+    return {
+      ...retry,
+      interpretation: { ...retry.interpretation, ignored: dropped.map((d) => d.word) },
+    };
+  }
+  return null;
+}
+
+function runSearch(query: SearchQuery): SearchResults {
   const originalText = query.query?.trim() ?? '';
   const enriched = enrichSearchQuery(query);
   let candidates = getCandidateSet(enriched);
 
-  // Single-pass filtering for criteria not already handled by index selection
-  candidates = singlePassFilter(candidates, enriched);
+  // Single-pass filtering for criteria not already handled by index selection.
+  // Typo tolerance only when the exact words find nothing: "gt500" matched the
+  // Mercedes G500 (one edit away) alongside every Shelby GT500.
+  const filtered = singlePassFilter(candidates, enriched, false);
+  candidates =
+    filtered.length || !enriched.query ? filtered : singlePassFilter(candidates, enriched, true);
 
   const sortField = enriched.sort?.field;
   const sortOrder = enriched.sort?.order ?? 'desc';
   const wantRelevance = !sortField || sortField === 'relevance';
+  // "electric pickup" or "awd minivan" names no vehicle: every result matches
+  // equally, and scoring the words against model names put a 1998 S10
+  // Electric first. Newest first instead.
+  const keywordsOnly =
+    !enriched.query && !enriched.filters?.make?.length && !enriched.filters?.model?.length;
 
   // Always rank natural-language searches with the *original* query.
   // enrichSearchQuery may clear `query` after parsing make/model/year; using that
   // cleared value made "relevance" a no-op and left oldest EPA rows first.
-  if (wantRelevance && originalText) {
+  if (wantRelevance && originalText && !keywordsOnly) {
     sortByRelevanceInPlace(candidates, originalText);
   } else if (sortField && sortField !== 'relevance') {
     sortResultsInPlace(candidates, sortField, sortOrder);
@@ -363,6 +418,7 @@ export function searchCars(query: SearchQuery): SearchResults {
     results: candidates.slice(offset, offset + limit),
     total,
     hasMore: offset + limit < total,
+    ...(enriched.interpretation ? { interpretation: enriched.interpretation } : {}),
   };
   if (total === 0) {
     const covered = getStatistics().yearRange;
@@ -620,11 +676,82 @@ function trimSuggestions(): TrimSuggestion[] {
  * into structured filters. User-provided filters always win — we only fill gaps.
  * Year prefixes: "20" → 2000–2099, "202" → 2020–2029; full years stay exact.
  */
+/** Words that ask for the cheapest first, and the words price phrases use. */
+const CHEAPEST_WORDS = /^(cheap|cheaper|cheapest|affordable|budget|inexpensive)$/;
+const PRICE_WORD =
+  /^(under|below|over|above|less|more|than|max|min|at|least|up|to|cheap|cheaper|cheapest|affordable|budget|inexpensive|\$.*|\d+k)$/;
+
+/**
+ * Read "under 30k", "below $25,000", "over 40 000", "less than 20k" and
+ * "cheapest" out of a query. Amounts must carry a "k", a "$" or at least four
+ * digits outside the model-year range, so "under 2015" or "civic 200" are not
+ * prices. Returns the text with those phrases removed.
+ */
+function extractPricePhrases(raw: string): {
+  text: string;
+  min?: number;
+  max?: number;
+  cheapest: boolean;
+} {
+  let text = ` ${raw.toLowerCase()} `;
+  const amount = (num: string, suffix: string | undefined, dollar: string | undefined) => {
+    const value = Number(num.replace(/[,\s]/g, '')) * (suffix ? 1000 : 1);
+    const looksLikeYear = !suffix && !dollar && value >= 1950 && value <= 2035;
+    return value >= 1000 && !looksLikeYear ? value : null;
+  };
+  const phrase = (words: string) =>
+    new RegExp(
+      `\\s(?:${words})\\s*(\\$)?\\s*(\\d{1,3}(?:[,\\s]\\d{3})+|\\d+(?:\\.\\d+)?)\\s*(k|thousand)?(?=\\s)`,
+    );
+  let max: number | undefined;
+  let min: number | undefined;
+  const maxHit = phrase('under|below|less than|cheaper than|up to|max|maximum|<').exec(text);
+  if (maxHit) {
+    const value = amount(maxHit[2], maxHit[3], maxHit[1]);
+    if (value != null) {
+      max = value;
+      text = text.replace(maxHit[0], ' ');
+    }
+  }
+  const minHit = phrase('over|above|more than|at least|min|minimum|>').exec(text);
+  if (minHit) {
+    const value = amount(minHit[2], minHit[3], minHit[1]);
+    if (value != null) {
+      min = value;
+      text = text.replace(minHit[0], ' ');
+    }
+  }
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  const cheapest = words.some((w) => CHEAPEST_WORDS.test(w));
+  return {
+    text: words.filter((w) => !CHEAPEST_WORDS.test(w)).join(' '),
+    ...(min != null ? { min } : {}),
+    ...(max != null ? { max } : {}),
+    cheapest,
+  };
+}
+
 function enrichSearchQuery(query: SearchQuery): SearchQuery {
-  const raw = query.query?.trim();
-  if (!raw) return query;
+  const typed = query.query?.trim();
+  if (!typed) return query;
 
   const filters = { ...(query.filters || {}) };
+  const price = extractPricePhrases(typed);
+  const interpretation: NonNullable<SearchQuery['interpretation']> = {};
+  if ((price.min != null || price.max != null) && !query.filters?.price) {
+    filters.price = { min: price.min, max: price.max };
+    interpretation.price = { min: price.min, max: price.max };
+  }
+  let sort = query.sort;
+  if (price.cheapest && (!sort || sort.field === 'relevance')) {
+    sort = { field: 'price', order: 'asc' };
+    interpretation.cheapestFirst = true;
+  }
+  const withInterpretation = (q: SearchQuery): SearchQuery =>
+    Object.keys(interpretation).length ? { ...q, sort, interpretation } : { ...q, sort };
+  const raw = price.text;
+  if (!raw) return withInterpretation({ ...query, query: undefined, filters });
+
   const tokens = expandGluedMakeTokens(normalizeSearchQuery(raw).split(/\s+/).filter(Boolean));
   const textTokens: string[] = [];
 
@@ -725,12 +852,19 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
 
   const remainingQuery = textTokens.join(' ').trim() || undefined;
 
-  return {
+  // "Cheapest" over every year on file is a list of 30-year-old Accents: keep
+  // to the last ten model years unless the query gives years.
+  if (interpretation.cheapestFirst && !filters.year) {
+    filters.year = { min: LATEST_FULL_MODEL_YEAR - 10 };
+    interpretation.cheapestFrom = LATEST_FULL_MODEL_YEAR - 10;
+  }
+
+  return withInterpretation({
     ...query,
     query: remainingQuery,
     filters,
     ...(trimForms ? { trimForms } : {}),
-  };
+  });
 }
 
 const trimLabels = new WeakMap<Car, string>();
@@ -765,6 +899,9 @@ function trimFollowsBase(label: string, base: string, forms: readonly string[]):
   return false;
 }
 
+/** Trim names shared by too many vehicles to search on their own. */
+const GENERIC_TRIMS = new Set(['gt', 'ss', 'si', 'rt', 'r t', 'sti', 'srt', 'ecoboost', 'n line']);
+
 function matchTrimQuery(
   tokens: string[],
   makes: string[] | undefined,
@@ -775,8 +912,9 @@ function matchTrimQuery(
     for (const form of forms) {
       if (phrase !== form && !phrase.endsWith(` ${form}`)) continue;
       const base = phrase.slice(0, phrase.length - form.length).trim();
-      // A bare "gt" or "ss" names no vehicle.
-      if (!base && !makeSet) continue;
+      // A bare "gt" or "ss" names no vehicle; a bare "gt500" or "hellcat" does,
+      // and EPA files the 2007-14 Shelby GT500 as a plain "Mustang".
+      if (!base && !makeSet && GENERIC_TRIMS.has(form)) continue;
       // Prefer the trim right after the model ("Mustang" + GT) over one that
       // merely appears in the name ("Mustang Mach-E GT").
       const strict = { models: new Set<string>(), makes: new Set<string>() };
@@ -1043,7 +1181,9 @@ function resolveModelsAcrossMakes(phrase: string): { models: string[]; makes: st
     // Avoid ultra-short phrases matching huge prefixes ("3" → every "3..." globally)
     if (phrase.length <= 2 && modelFamilyName(cars[0].model) !== phrase) continue;
     models.add(cars[0].model);
-    makes.add(cars[0].make);
+    // Every make under the name: EPA filed the 2013-14 Viper under "SRT", and
+    // counting only the first car's make narrowed "viper" to Dodge.
+    for (const car of cars) makes.add(car.make);
   }
 
   // If the phrase only matched one family name, expand to every EPA variant.
@@ -1082,7 +1222,9 @@ function scoreRelevance(car: Car, tokens: string[]): number {
   const makeLower = car.make.toLowerCase();
   const modelLower = car.model.toLowerCase();
   const family = modelFamilyName(car.model);
-  const haystack = `${makeLower} ${modelLower} ${car.year} ${car.trim ?? ''}`.toLowerCase();
+  const variantWords = (car.variant ?? '').toLowerCase().split(/\s+/).filter(Boolean);
+  const haystack =
+    `${makeLower} ${modelLower} ${car.year} ${car.trim ?? ''} ${car.variant ?? ''}`.toLowerCase();
 
   for (const token of tokens) {
     const yearRange = parseYearToken(token);
@@ -1105,7 +1247,8 @@ function scoreRelevance(car: Car, tokens: string[]): number {
       score += 48;
     // A word of the model name ("gti" in "Golf GTI") beats a hit only in the
     // trim: EPA files the Golf R under a "golf-gti" base model.
-    else if (modelLower.split(/[\s-]+/).includes(token)) score += 36;
+    else if (modelLower.split(/[\s-]+/).includes(token) || variantWords.includes(token))
+      score += 36;
     else if (modelLower.startsWith(token)) score += 30;
     else if (haystack.includes(token)) score += 12;
     else if (fuzzyTokenMatch(makeLower, token)) score += 28;
@@ -1228,7 +1371,7 @@ function getCandidateSet(query: SearchQuery): Car[] {
  * Indexed fields (make, bodyStyle, fuelType, transmission, driveType, country)
  * are skipped here since getCandidateSet already handled them.
  */
-function singlePassFilter(cars: Car[], query: SearchQuery): Car[] {
+function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): Car[] {
   const filters = query.filters;
   const searchTerm = query.query ? normalizeSearchQuery(query.query) : '';
   // Tokenize so multi-word queries like "2024 camry" match across fields
@@ -1293,7 +1436,7 @@ function singlePassFilter(cars: Car[], query: SearchQuery): Car[] {
         `${car.make} ${car.model} ${car.year} ${car.trim ?? ''} ${car.variant ?? ''}`.toLowerCase();
       let allMatch = true;
       for (const token of searchTokens) {
-        if (haystack.includes(token) || fuzzyTokenMatch(haystack, token)) continue;
+        if (haystack.includes(token) || (allowFuzzy && fuzzyTokenMatch(haystack, token))) continue;
         allMatch = false;
         break;
       }

@@ -18,6 +18,7 @@ import ValueMatrixHeatmap from '../components/ValueMatrixHeatmap';
 import { formatMpgForCard } from '../utils/dataValue';
 import { DISPLAY_CURRENCY } from '../utils/currency';
 import { usePageMeta } from '../utils/pageMeta';
+import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 
 type AxisMode = 'mpg' | 'displacement' | 'co2';
 type ViewPhase = 'choose' | 'chart';
@@ -666,7 +667,7 @@ export default function ValueMatrix() {
                             <p className="text-sm font-medium text-white truncate">
                               {car.year} {car.make} {car.model}
                             </p>
-                            <p className="text-xs text-zinc-400 capitalize">{car.bodyStyle}</p>
+                            <p className="text-xs text-zinc-400">{bodyStyleLabel(car.bodyStyle)}</p>
                           </div>
                           <div className="text-right shrink-0">
                             <p className="text-sm font-medium text-white">

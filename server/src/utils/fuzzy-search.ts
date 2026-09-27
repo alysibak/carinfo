@@ -166,6 +166,11 @@ export function modelPhraseMatches(model: string, phrase: string): boolean {
   if (family === p) return true;
   if (family.startsWith(`${p} `)) return true;
 
+  // Badge-first names: "AMG G63" (the 2013-15 car is "G63 AMG"), "SRT Viper",
+  // "Shelby GT500 Mustang".
+  const unbadged = modelLower.replace(/^(amg|srt|shelby) /, '');
+  if (unbadged !== modelLower && (unbadged === p || unbadged.startsWith(`${p} `))) return true;
+
   // Hyphens and spaces differ between EPA generations ("F150 Pickup 2WD" but
   // "F-150 Lightning") and between shoppers ("f 150", "f150", "f-150"). Match
   // when the squashed phrase equals the family's first words squashed: "f150"
