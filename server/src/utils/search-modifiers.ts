@@ -2,7 +2,8 @@ import { LATEST_FULL_MODEL_YEAR } from '../config/model-years.js';
 import type { ShoppingSegment } from '../types/car.types.js';
 import type { CompetitiveSet } from './competitive-sets.js';
 
-export type SortIntent = 'price' | 'fuelEconomy' | 'horsepower' | 'range' | 'safety';
+export type SortIntent =
+  'price' | 'fuelEconomy' | 'horsepower' | 'range' | 'safety' | 'runningCost';
 
 /** What a free-text query asks for beyond names: years, order, gearbox, engine, seats. */
 export interface QueryModifiers {
@@ -283,6 +284,11 @@ const YEAR_PHRASES: Array<[RegExp, (a: number, b?: number) => { min?: number; ma
 ];
 
 const SORT_PHRASES: Array<[RegExp, SortIntent]> = [
+  // Before "cheap" is read as the lowest price: "cheap to run" is not "cheap".
+  [
+    /\b(?:(?:cheap(?:est)?|inexpensive|affordable|less expensive|least expensive) to (?:own|run|keep|maintain|insure|operate)|low(?:est)? (?:running|ownership|operating|maintenance) costs?|low(?:est)? cost (?:of|to) (?:ownership|own|run)|cheap(?:est)? (?:insurance|maintenance)|low(?:est)? (?:insurance|maintenance))\b/,
+    'runningCost',
+  ],
   [
     /\b(?:most fuel[- ]efficient|fuel[- ]efficient|most efficient|(?:best|good|great|high|better) (?:mpg|gas mileage|mileage|fuel economy)|high mpg|(?:good|easy|great|light) on (?:gas|fuel)|gas mileage|fuel economy|gas saver|economical|efficient)\b/,
     'fuelEconomy',
@@ -421,7 +427,16 @@ export function extractQueryModifiers(
   }
 
   const charging = take(/\b(?:fast|quick|rapid|dc) charg(?:ing|er|e)\b/);
-  for (const [re, intent] of SORT_PHRASES) {
+  // "cheapest suv to own": the kind of car sits inside the phrase, and stays.
+  const cheapToOwn =
+    /\b(?:cheap(?:est)?|inexpensive|affordable|less expensive|least expensive)\s+((?:[a-z0-9-]+\s+){1,2}?)to (?:own|run|keep|maintain|insure|operate)\b/.exec(
+      text,
+    );
+  if (cheapToOwn) {
+    out.sortedBy = 'runningCost';
+    text = text.replace(cheapToOwn[0], ` ${cheapToOwn[1]} `);
+  }
+  for (const [re, intent] of out.sortedBy ? [] : SORT_PHRASES) {
     const hit = take(re);
     if (hit) {
       out.sortedBy = intent;

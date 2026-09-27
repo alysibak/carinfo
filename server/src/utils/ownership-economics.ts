@@ -129,6 +129,8 @@ const LUXURY_MAKES = new Set([
   'Alfa Romeo',
 ]);
 
+const PREMIUM_EV_MAKES = new Set(['Tesla', 'Lucid', 'Rivian', 'Polestar']);
+
 function isHeavyEvTruck(car: CarSpecs): boolean {
   return (
     car.bodyStyle === 'truck' &&
@@ -165,9 +167,15 @@ function insuranceAnnual(car: CarSpecs, marketMid: number, ins = REGION.insuranc
   if (car.bodyStyle === 'truck') base = ins.truck;
   if (isTwoDoor(car)) base = ins.coupe;
   if (LUXURY_MAKES.has(car.make)) base *= ins.luxuryMultiplier;
+  // Priced for repair costs, not their make's standing: a $97,500 Model S paid
+  // a Corolla's $2,250. Not the luxury tier, whose upkeep figures do not apply.
+  if (PREMIUM_EV_MAKES.has(car.make)) base *= ins.premiumEvMultiplier;
   if (isHeavyEvTruck(car)) base = ins.heavyEvTruck;
   if (isLuxuryPerformance(car)) base = ins.luxuryPerformance;
-  if (marketMid > ins.highValueThresholdCad) base *= ins.highValueMultiplier;
+  const { fromValueCad, perThousandCad, maxFactor } = ins.valueFactor;
+  if (marketMid > fromValueCad) {
+    base *= Math.min(maxFactor, 1 + ((marketMid - fromValueCad) / 1000) * perThousandCad);
+  }
 
   const age = vehicleAge(car);
   if (age >= 25) base *= 0.5;

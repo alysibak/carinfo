@@ -12,6 +12,7 @@ import { normalizeCarRecord } from '../src/utils/car-normalize.js';
 import { cleanCorpusHorsepower } from '../src/utils/horsepower-plausibility.js';
 import { resolveDataFile } from '../src/utils/data-paths.js';
 import { ensureUniqueIds } from '../src/utils/unique-ids.js';
+import { withRunningCosts } from '../src/utils/running-cost.js';
 import { packRuntimeDatabase } from '../src/services/runtime-db.js';
 import type { Car } from '../src/types/car.types.js';
 
@@ -57,7 +58,9 @@ if (hp.filled) {
 }
 
 // Slug collisions made some vehicles unreachable by ID — see utils/unique-ids.ts.
-const { cars, report } = ensureUniqueIds(normalized);
+const { cars: unique, report } = ensureUniqueIds(normalized);
+// Yearly running costs, for "cheapest to own" searches (see utils/running-cost.ts).
+const cars = withRunningCosts(unique);
 if (report.mergedDuplicates.length || report.renamed.length) {
   console.log(
     `[build-runtime-db] ID collisions: merged ${report.mergedDuplicates.length} duplicate listing(s), ` +

@@ -160,8 +160,17 @@ export default function Home() {
   };
 
   const handleSortChange = (field: string) => {
+    // A new field starts where people start: cheapest first for money,
+    // highest first for the rest.
+    const cheapestFirst = field === 'price' || field === 'runningCost';
     const newOrder =
-      field === searchQuery.sort?.field && searchQuery.sort?.order === 'desc' ? 'asc' : 'desc';
+      field === searchQuery.sort?.field
+        ? searchQuery.sort?.order === 'desc'
+          ? 'asc'
+          : 'desc'
+        : cheapestFirst
+          ? 'asc'
+          : 'desc';
     pushSearch({
       ...searchQuery,
       sort: { field, order: newOrder },
@@ -449,6 +458,7 @@ export default function Home() {
                         { value: 'make', label: 'Make' },
                         { value: 'model', label: 'Model' },
                         { value: 'price', label: 'Est. value (CAD)' },
+                        { value: 'runningCost', label: 'Running cost / yr' },
                         { value: 'horsepower', label: 'Horsepower' },
                         ...(isEvBrowse || sortField === 'range'
                           ? [{ value: 'range', label: 'EPA range' }]

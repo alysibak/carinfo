@@ -141,6 +141,13 @@ export interface CarSpecs {
     rollover?: number;
   };
 
+  /**
+   * Estimated yearly running cost, CAD, Ontario baseline (energy, insurance,
+   * maintenance, tires, registration), set when the database is built so
+   * searches can sort by it. The car page computes its own by region.
+   */
+  runningCostCad?: number;
+
   price?: {
     msrp?: number;
     min?: number;
@@ -244,7 +251,7 @@ export interface SearchInterpretation {
   /** A price limit read from the query ("under 30k"), estimated CAD value. */
   price?: { min?: number; max?: number };
   /** An order read from the query: "cheapest", "most fuel efficient", "fastest", "safest". */
-  sortedBy?: 'price' | 'fuelEconomy' | 'horsepower' | 'range' | 'safety';
+  sortedBy?: 'price' | 'fuelEconomy' | 'horsepower' | 'range' | 'safety' | 'runningCost';
   /** "300 mile range", "400 km range": the least EPA range kept, in miles. */
   minRangeMiles?: number;
   /** With no year given, "cheapest" keeps to model years from this one. */
@@ -263,6 +270,8 @@ export interface SearchInterpretation {
   unmeasured?: string[];
   /** "good gas mileage": EVs left out of an MPG order. */
   gasMileage?: boolean;
+  /** A cheapest-first order left out hydrogen and natural gas. */
+  rareFuelsLeftOut?: boolean;
   /**
    * "2005 honda ridgeline": nothing that year, so every year is shown; these
    * are the years asked for and the years on file for what was found.

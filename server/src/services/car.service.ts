@@ -17,6 +17,7 @@ import {
 } from '../utils/fuzzy-search.js';
 import { enrichCar } from './content-enrichment.js';
 import { ensureUniqueIds } from '../utils/unique-ids.js';
+import { withRunningCosts } from '../utils/running-cost.js';
 import { type RuntimeDatabaseFile, unpackRuntimeDatabase } from './runtime-db.js';
 import { LATEST_FULL_MODEL_YEAR } from '../config/model-years.js';
 import { FIRST_CAR } from '../config/first-car.js';
@@ -158,9 +159,10 @@ function initDatabase(): void {
       );
     } else {
       // Dev / missing ready file: enrich + normalize at load (slow on large DBs).
-      cachedCars = ensureUniqueIds(
-        cleanCorpusHorsepower(db.cars.map(enrichCar).map(normalizeCarRecord)).cars,
-      ).cars;
+      cachedCars = withRunningCosts(
+        ensureUniqueIds(cleanCorpusHorsepower(db.cars.map(enrichCar).map(normalizeCarRecord)).cars)
+          .cars,
+      );
       rawIdIndex = new Map(db.cars.map((car) => [car.id, car]));
       console.log(
         `[car.service] Loaded + enriched DB: ${cachedCars.length.toLocaleString()} cars in ${((Date.now() - started) / 1000).toFixed(1)}s`,
@@ -181,7 +183,7 @@ function initDatabase(): void {
 
 /** Built-in two-car dataset, normalized so it satisfies the same invariant. */
 function loadFallbackDataset(): void {
-  cachedCars = FALLBACK_CARS.map(normalizeCarRecord);
+  cachedCars = withRunningCosts(FALLBACK_CARS.map(normalizeCarRecord));
   rawIdIndex = new Map(FALLBACK_CARS.map((car) => [car.id, car]));
   lastUpdated = new Date().toISOString();
   buildIndexes();
@@ -979,6 +981,9 @@ function extractPricePhrases(raw: string): {
   cheapest: boolean;
 } {
   let text = ` ${raw.toLowerCase()} `;
+  // "under 20000 dollars", "under 25k cad": "dollars" was read as a name and
+  // found nothing, "cad" as Cadillac. The word marks an amount as money.
+  const CURRENCY = '(?:\\s*(dollars?|bucks|cad|canadian|usd))?';
   const amount = (num: string, suffix: string | undefined, dollar: string | undefined) => {
     const value = Number(num.replace(/[,\s]/g, '')) * (suffix ? 1000 : 1);
     const looksLikeYear = !suffix && !dollar && value >= 1950 && value <= 2035;
@@ -986,20 +991,20 @@ function extractPricePhrases(raw: string): {
   };
   const phrase = (words: string) =>
     new RegExp(
-      `\\s(?:${words})\\s*(\\$)?\\s*(\\d{1,3}(?:[,\\s]\\d{3})+|\\d+(?:\\.\\d+)?)\\s*(k|thousand)?(?=\\s)`,
+      `\\s(?:${words})\\s*(\\$)?\\s*(\\d{1,3}(?:[,\\s]\\d{3})+|\\d+(?:\\.\\d+)?)\\s*(k|thousand|grand)?${CURRENCY}(?=\\s)`,
     );
   let max: number | undefined;
   let min: number | undefined;
   // "between 20k and 30k", "20-30k", "$20,000 to $30,000": it found nothing.
   const number = '\\d{1,3}(?:,\\d{3})+|\\d+(?:\\.\\d+)?';
   const range = new RegExp(
-    `\\s(?:between\\s+|from\\s+)?(\\$)?\\s*(${number})\\s*(k|thousand)?\\s*(?:-|–|to|and)\\s*(\\$)?\\s*(${number})\\s*(k|thousand)?(?=\\s)`,
+    `\\s(?:between\\s+|from\\s+)?(\\$)?\\s*(${number})\\s*(k|thousand|grand)?\\s*(?:-|–|to|and)\\s*(\\$)?\\s*(${number})\\s*(k|thousand|grand)?${CURRENCY}(?=\\s)`,
   ).exec(text);
   if (range) {
     // "20 to 30k": the second amount's "k" is the first's too.
     const lowSuffix = range[3] ?? (range[6] && Number(range[2]) < 1000 ? range[6] : undefined);
-    const low = amount(range[2], lowSuffix, range[1] ?? range[4]);
-    const high = amount(range[5], range[6], range[4] ?? range[1]);
+    const low = amount(range[2], lowSuffix, range[1] ?? range[4] ?? range[7]);
+    const high = amount(range[5], range[6], range[4] ?? range[1] ?? range[7]);
     if (low != null && high != null && low < high) {
       min = low;
       max = high;
@@ -1011,7 +1016,7 @@ function extractPricePhrases(raw: string): {
       ? phrase('under|below|less than|cheaper than|up to|max|maximum|<').exec(text)
       : null;
   if (maxHit) {
-    const value = amount(maxHit[2], maxHit[3], maxHit[1]);
+    const value = amount(maxHit[2], maxHit[3], maxHit[1] ?? maxHit[4]);
     if (value != null) {
       max = value;
       text = text.replace(maxHit[0], ' ');
@@ -1020,7 +1025,7 @@ function extractPricePhrases(raw: string): {
   const minHit =
     min == null ? phrase('over|above|more than|at least|min|minimum|>').exec(text) : null;
   if (minHit) {
-    const value = amount(minHit[2], minHit[3], minHit[1]);
+    const value = amount(minHit[2], minHit[3], minHit[1] ?? minHit[4]);
     if (value != null) {
       min = value;
       text = text.replace(minHit[0], ' ');
@@ -1103,7 +1108,10 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
   const sortedBy =
     price.cheapest || (modifiers.firstCar && !modifiers.sortedBy) ? 'price' : modifiers.sortedBy;
   if (sortedBy && (!sort || sort.field === 'relevance')) {
-    sort = { field: sortedBy, order: sortedBy === 'price' ? 'asc' : 'desc' };
+    sort = {
+      field: sortedBy,
+      order: sortedBy === 'price' || sortedBy === 'runningCost' ? 'asc' : 'desc',
+    };
     interpretation.sortedBy = sortedBy;
   }
   const withInterpretation = (q: SearchQuery): SearchQuery =>
@@ -1111,7 +1119,16 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
   // "Cheapest" over every year on file is a list of 30-year-old Accents: keep
   // to the last ten model years unless the query gives years.
   const keepRecentWhenCheapest = () => {
-    if (interpretation.sortedBy === 'price' && !filters.year) {
+    const cheapest =
+      interpretation.sortedBy === 'price' || interpretation.sortedBy === 'runningCost';
+    // Hydrogen and natural-gas cars sell for little because there is almost
+    // nowhere in Canada to fill them: a Tucson Fuel Cell led "cheap suv".
+    if (cheapest && !filters.fuelType?.length) {
+      filters.fuelType = ['gasoline', 'diesel', 'hybrid', 'plug-in hybrid', 'electric'];
+      interpretation.rareFuelsLeftOut = true;
+    }
+    // "Cheapest to run" too: a 30-year-old car's insurance and upkeep are capped.
+    if (cheapest && !filters.year) {
       filters.year = { min: LATEST_FULL_MODEL_YEAR - 10 };
       interpretation.recentFrom = LATEST_FULL_MODEL_YEAR - 10;
     }
@@ -1383,6 +1400,11 @@ const FUEL_WORDS: Record<string, string[]> = {
   diesel: ['diesel'],
   hydrogen: ['hydrogen'],
   fcev: ['hydrogen'],
+  // "cheapest gas car to own" read "gas" as a name and found nothing.
+  gas: ['gasoline'],
+  gasoline: ['gasoline'],
+  petrol: ['gasoline'],
+  cng: ['natural gas'],
 };
 
 const ASPIRATION_WORDS: Record<string, string[]> = {
@@ -2020,6 +2042,8 @@ function getSortValue(car: Car, field: string): number | string | null {
       return car.epa?.rangeMiles ?? null;
     case 'safety':
       return car.safetyRating?.overall || null;
+    case 'runningCost':
+      return car.runningCostCad ?? null;
     case 'evScore':
       return computeEvScore(car, car.price?.msrp ?? undefined);
     default:

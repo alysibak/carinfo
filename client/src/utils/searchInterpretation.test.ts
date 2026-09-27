@@ -78,6 +78,9 @@ describe('describeSearchInterpretation', () => {
         },
       }),
     ).toEqual(['None on file for 2012. Showing the years that are: 1995–2011 and 2019–2026.']);
+    expect(describeSearchInterpretation({ sortedBy: 'runningCost', recentFrom: 2016 })).toEqual([
+      'Lowest estimated yearly running cost first: fuel, insurance, upkeep and tires, at the Ontario baseline, model years 2016 and newer.',
+    ]);
     expect(describeSearchInterpretation({ automatedManual: true })).toEqual([
       'Automated manuals only, as EPA files them: mostly dual-clutch gearboxes (PDK, DSG), some with a single clutch.',
     ]);

@@ -56,6 +56,8 @@ export function describeSearchInterpretation(
     horsepower: 'Most powerful first',
     range: 'Longest EPA range first',
     safety: 'Best NHTSA crash rating first; most cars have none on file',
+    runningCost:
+      'Lowest estimated yearly running cost first: fuel, insurance, upkeep and tires, at the Ontario baseline',
   } as const;
   if (interpretation.sortedBy) {
     lines.push(
@@ -83,6 +85,11 @@ export function describeSearchInterpretation(
   if (interpretation.snow) {
     lines.push(
       'All- and four-wheel drive only, for snow: EPA records the drive, not the tires, which matter as much.',
+    );
+  }
+  if (interpretation.rareFuelsLeftOut) {
+    lines.push(
+      'Hydrogen and natural-gas cars are left out: they sell cheaply because there is almost nowhere in Canada to fill them.',
     );
   }
   if (interpretation.gasMileage) {

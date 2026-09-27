@@ -13,8 +13,19 @@ export interface InsuranceAssumptions {
   luxuryMultiplier: number;
   heavyEvTruck: number;
   luxuryPerformance: number;
-  highValueMultiplier: number;
-  highValueThresholdCad: number;
+  /**
+   * Collision and comprehensive cover grow with the car's value; liability
+   * does not. Above `fromValueCad` the premium rises `perThousandCad` for each
+   * $1,000 of value, up to `maxFactor`. It used to step up by a fifth at
+   * $110,000, so a $97,500 Model S paid a $22,000 Corolla's premium.
+   */
+  valueFactor: { fromValueCad: number; perThousandCad: number; maxFactor: number };
+  /**
+   * Tesla, Lucid, Rivian and Polestar: priced above their body style's base
+   * for repair costs. Bankrate puts a Model 3 27% above the average car;
+   * Ontario brokers quote $1,900–$3,200 a year and average Teslas at $2,711.
+   */
+  premiumEvMultiplier: number;
   beaterMaxCad: number;
   lowValueMaxCad: number;
   lowValueThresholdCad: number;
@@ -116,8 +127,8 @@ export const REGIONAL_ASSUMPTIONS: Record<RegionId, RegionalAssumptions> = {
       luxuryMultiplier: 1.45,
       heavyEvTruck: 4000,
       luxuryPerformance: 3800,
-      highValueMultiplier: 1.2,
-      highValueThresholdCad: 110000,
+      valueFactor: { fromValueCad: 30000, perThousandCad: 0.004, maxFactor: 1.5 },
+      premiumEvMultiplier: 1.27,
       beaterMaxCad: 1400,
       lowValueMaxCad: 1900,
       lowValueThresholdCad: 11000,
@@ -186,8 +197,8 @@ export const REGIONAL_ASSUMPTIONS: Record<RegionId, RegionalAssumptions> = {
       luxuryMultiplier: 1.5,
       heavyEvTruck: 3500,
       luxuryPerformance: 3300,
-      highValueMultiplier: 1.22,
-      highValueThresholdCad: 110000,
+      valueFactor: { fromValueCad: 30000, perThousandCad: 0.004, maxFactor: 1.5 },
+      premiumEvMultiplier: 1.27,
       beaterMaxCad: 1100,
       lowValueMaxCad: 1500,
       lowValueThresholdCad: 11000,

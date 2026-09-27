@@ -670,6 +670,22 @@ describe('car.service natural language search', () => {
     ).toBeUndefined();
   });
 
+  it('reads currency words and "grand" in price phrases', () => {
+    // "dollars" was read as a name and found nothing; "cad" as Cadillac.
+    const dollars = searchCars({ query: 'suv under 20000 dollars', limit: 5 });
+    expect(dollars.interpretation?.price).toEqual({ max: 20000 });
+    expect(dollars.total).toBeGreaterThan(0);
+    const cad = searchCars({ query: 'sedan under 25k cad', limit: 50 }).results;
+    expect(new Set(cad.map((c) => c.make)).size).toBeGreaterThan(3);
+    expect(searchCars({ query: 'truck under 30 grand', limit: 5 }).interpretation?.price).toEqual({
+      max: 30000,
+    });
+    // Cadillac itself is still Cadillac.
+    const caddy = searchCars({ query: 'cadillac under 30k', limit: 20 }).results;
+    expect(caddy.length).toBeGreaterThan(0);
+    expect(caddy.every((c) => c.make === 'Cadillac')).toBe(true);
+  });
+
   it('reads price ranges, first cars and snow', () => {
     const range = searchCars({ query: 'between 20k and 30k suv', limit: 50 });
     expect(range.interpretation?.price).toEqual({ min: 20000, max: 30000 });
@@ -753,6 +769,21 @@ describe('car.service natural language search', () => {
     expect(
       all.every((c) => c.engine.fuelType === 'gasoline' || c.engine.fuelType === 'diesel'),
     ).toBe(true);
+  });
+
+  it('sorts by running cost, and keeps rare fuels out of cheapest-first orders', () => {
+    const own = searchCars({ query: 'cheapest gas car to own', limit: 30 });
+    expect(own.interpretation?.sortedBy).toBe('runningCost');
+    const costs = own.results.map((c) => c.runningCostCad!);
+    expect(costs.every((c) => c > 0)).toBe(true);
+    expect([...costs].sort((a, b) => a - b)).toEqual(costs);
+    expect(own.results.every((c) => c.engine.fuelType === 'gasoline')).toBe(true);
+    // A Tucson Fuel Cell led "cheap suv".
+    const cheap = searchCars({ query: 'cheap suv', limit: 100 });
+    expect(cheap.interpretation?.rareFuelsLeftOut).toBe(true);
+    expect(cheap.results.filter((c) => c.engine.fuelType === 'hydrogen')).toEqual([]);
+    // Asked for, they are shown.
+    expect(searchCars({ query: 'cheap hydrogen car', limit: 5 }).total).toBeGreaterThan(0);
   });
 
   it('completes the name in a rivals phrase, one entry per model', () => {

@@ -30,6 +30,7 @@ const SORT_FIELDS = new Set([
   'range',
   'safety',
   'evScore',
+  'runningCost',
   'relevance',
 ]);
 

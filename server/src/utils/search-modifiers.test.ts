@@ -164,6 +164,22 @@ describe('extractQueryModifiers', () => {
     expect(extractQueryModifiers('most powerful suv').sortedBy).toBe('horsepower');
   });
 
+  it('reads running-cost orders, with the kind of car inside the phrase', () => {
+    expect(extractQueryModifiers('cheap to run sedan')).toMatchObject({
+      text: 'sedan',
+      sortedBy: 'runningCost',
+    });
+    // "cheapest suv to own" found nothing: "cheapest" was a price order and
+    // "to own" words.
+    expect(extractQueryModifiers('cheapest suv to own')).toMatchObject({
+      text: 'suv',
+      sortedBy: 'runningCost',
+    });
+    expect(extractQueryModifiers('lowest insurance car').sortedBy).toBe('runningCost');
+    // "cheap" alone is still the price, read later.
+    expect(extractQueryModifiers('cheap suv').sortedBy).toBeUndefined();
+  });
+
   it('sets aside equipment, which nothing on file records', () => {
     // "suv with sunroof" and "car with apple carplay" found nothing at all.
     expect(extractQueryModifiers('suv with sunroof')).toEqual({

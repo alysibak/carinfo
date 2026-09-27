@@ -127,6 +127,29 @@ describe('regions', () => {
   });
 });
 
+describe('insurance', () => {
+  const find = (make: string, model: RegExp, year: number) =>
+    getAllCars().find((c) => c.make === make && model.test(c.model) && c.year === year)!;
+
+  it('rises with value, and prices Teslas for their repair costs', () => {
+    // A $97,500 Model S paid a $22,000 Corolla's premium.
+    const corolla = computeOwnershipEconomics(find('Toyota', /^Corolla$/, 2021), []);
+    const models = computeOwnershipEconomics(find('Tesla', /^Model S$/, 2025), []);
+    const model3 = computeOwnershipEconomics(
+      find('Tesla', /^Model 3 Standard Range Plus/, 2021),
+      [],
+    );
+    expect(models.annualCost.insurance).toBeGreaterThan(model3.annualCost.insurance);
+    // Bankrate: a Model 3 costs 27% more to insure than the average car.
+    expect(model3.annualCost.insurance / corolla.annualCost.insurance).toBeCloseTo(1.27, 1);
+  });
+
+  it('leaves a hydrogen car out of running-cost orders, its fuel having no price', () => {
+    expect(find('Toyota', /^Mirai/, 2023).runningCostCad).toBeUndefined();
+    expect(find('Toyota', /^Corolla$/, 2021).runningCostCad).toBeGreaterThan(0);
+  });
+});
+
 describe('two-doors', () => {
   const find = (make: string, model: RegExp, year: number, bodyStyle: string) =>
     getAllCars().find(
