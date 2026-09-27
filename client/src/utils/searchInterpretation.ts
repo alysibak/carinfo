@@ -44,6 +44,9 @@ export function describeSearchInterpretation(
         : `${order[interpretation.sortedBy]}.`,
     );
   }
+  if (interpretation.gasMileage) {
+    lines.push('Electric cars are left out: their MPGe does not compare with MPG.');
+  }
   if (interpretation.minRangeMiles != null) {
     const km = Math.round(interpretation.minRangeMiles * 1.609);
     lines.push(
@@ -61,8 +64,8 @@ export function describeSearchInterpretation(
   if (interpretation.unmeasured?.length) {
     const words = interpretation.unmeasured.map((w) => `“${w}”`).join(' and ');
     lines.push(
-      `There is no reliability or review data on file, so ${words} ${
-        interpretation.unmeasured.length > 1 ? 'were' : 'was'
+      `No data on file measures ${words}, so ${
+        interpretation.unmeasured.length > 1 ? 'they were' : 'it was'
       } not used.`,
     );
   }

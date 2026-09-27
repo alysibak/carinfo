@@ -881,6 +881,16 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
       filters.year = { min: LATEST_FULL_MODEL_YEAR - 10 };
       interpretation.recentFrom = LATEST_FULL_MODEL_YEAR - 10;
     }
+    // "good gas mileage" is an MPG order: EVs, rated in MPGe, led it. A fuel
+    // word in the query ("hybrid", "electric") keeps its own filter.
+    if (
+      modifiers.gasMileage &&
+      interpretation.sortedBy === 'fuelEconomy' &&
+      !filters.fuelType?.length
+    ) {
+      filters.fuelType = ['gasoline', 'diesel', 'hybrid', 'plug-in hybrid', 'natural gas'];
+      interpretation.gasMileage = true;
+    }
   };
   const raw = price.text;
   if (!raw) {

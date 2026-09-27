@@ -114,4 +114,22 @@ describe('extractQueryModifiers', () => {
     });
     expect(extractQueryModifiers('safest suv').sortedBy).toBe('safety');
   });
+
+  it('reads gas-mileage orders and phrases no data can answer', () => {
+    expect(extractQueryModifiers('suv with good gas mileage')).toEqual({
+      text: 'suv',
+      sortedBy: 'fuelEconomy',
+      gasMileage: true,
+    });
+    // "Most efficient" keeps EVs; "fast charging" is not a horsepower order.
+    expect(extractQueryModifiers('most fuel efficient suv').gasMileage).toBeUndefined();
+    expect(extractQueryModifiers('fast charging ev')).toEqual({
+      text: 'ev',
+      unmeasured: ['fast charging'],
+    });
+    expect(extractQueryModifiers('truck that can tow')).toEqual({
+      text: 'truck',
+      unmeasured: ['tow'],
+    });
+  });
 });

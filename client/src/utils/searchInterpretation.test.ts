@@ -47,7 +47,11 @@ describe('describeSearchInterpretation', () => {
       describeSearchInterpretation({ unmeasured: ['best', 'reliable'], sortedBy: 'safety' }),
     ).toEqual([
       'Best NHTSA crash rating first; most cars have none on file.',
-      'There is no reliability or review data on file, so “best” and “reliable” were not used.',
+      'No data on file measures “best” and “reliable”, so they were not used.',
+    ]);
+    expect(describeSearchInterpretation({ gasMileage: true, sortedBy: 'fuelEconomy' })).toEqual([
+      'Most fuel-efficient first.',
+      'Electric cars are left out: their MPGe does not compare with MPG.',
     ]);
   });
 });

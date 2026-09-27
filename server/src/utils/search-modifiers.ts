@@ -21,6 +21,8 @@ export interface QueryModifiers {
   vehicleClass?: VehicleClassQuery;
   /** "best", "reliable": words no data on file can measure, set aside. */
   unmeasured?: string[];
+  /** "good gas mileage": an MPG order, so EVs (rated in MPGe) are left out. */
+  gasMileage?: boolean;
 }
 
 export interface VehicleClassQuery {
@@ -109,7 +111,10 @@ const CLASS_PHRASES: Array<[RegExp, Omit<VehicleClassQuery, 'luxury'>]> = [
     { segments: ['supercar'], label: 'supercars' },
   ],
   [/\bhot hatch(?:back)?(?:e?s)?\b/, { segments: ['hot-hatch'], label: 'hot hatches' }],
-  [/\b(?:sports?|performance) sedans?\b/, { segments: ['sport-sedan'], label: 'sport sedans' }],
+  [
+    /\b(?:sports?|sporty|performance) sedans?\b/,
+    { segments: ['sport-sedan'], label: 'sport sedans' },
+  ],
   [/\bsport compacts?\b/, { sets: ['sport-compact'], label: 'sport compacts' }],
   // Not "Sport Coupe", a Camaro trim.
   [
@@ -122,6 +127,17 @@ const CLASS_PHRASES: Array<[RegExp, Omit<VehicleClassQuery, 'luxury'>]> = [
     /\b(?:economy|commuter|city) cars?\b/,
     { sets: ['subcompact-car', 'compact-car', 'small-ev'], label: 'economy cars' },
   ],
+];
+
+/** Every luxury car set: sedans, coupes and convertibles, not SUVs. */
+const LUXURY_CAR_SETS: CompetitiveSet[] = [
+  'entry-luxury-car',
+  'midsize-luxury-car',
+  'flagship-sedan',
+  'grand-tourer',
+  'premium-sports-car',
+  'supercar',
+  'ev-sedan',
 ];
 
 /** Family vehicles by body, mainstream then luxury. */
@@ -224,9 +240,16 @@ function readVehicleClass(text: string): { text: string; vehicleClass?: VehicleC
   if (luxury) {
     const words = rest.trim().split(/\s+/);
     const body = BODY_GROUPS.find(([word]) => words.some((w) => word.test(w)));
+    // "luxury car" means a car: "car" is a filler word, so the body filter
+    // never saw it, and a Range Rover Evoque led the results.
+    const carWord = body && /^(?:cars?|autos?)$/.test(words.find((w) => body[0].test(w)) ?? '');
     return {
       text: rest,
-      vehicleClass: { luxury, label: `luxury ${body ? body[2] : 'vehicles'}` },
+      vehicleClass: {
+        ...(carWord ? { sets: LUXURY_CAR_SETS } : {}),
+        luxury,
+        label: `luxury ${body ? body[2] : 'vehicles'}`,
+      },
     };
   }
   return { text };
@@ -253,24 +276,25 @@ const YEAR_PHRASES: Array<[RegExp, (a: number, b?: number) => { min?: number; ma
 
 const SORT_PHRASES: Array<[RegExp, SortIntent]> = [
   [
-    /\b(?:most fuel[- ]efficient|fuel[- ]efficient|most efficient|best (?:mpg|gas mileage|fuel economy)|high mpg|economical|efficient)\b/,
+    /\b(?:most fuel[- ]efficient|fuel[- ]efficient|most efficient|(?:best|good|great|high|better) (?:mpg|gas mileage|mileage|fuel economy)|high mpg|(?:good|easy|great|light) on (?:gas|fuel)|gas mileage|fuel economy|gas saver|economical|efficient)\b/,
     'fuelEconomy',
   ],
-  [/\b(?:fastest|quickest|most powerful|powerful)\b/, 'horsepower'],
+  // Not "fast charging": no charging speeds are on file.
+  [/\b(?:fastest|quickest|most powerful|powerful|fast|quick)\b(?!\s+charg)/, 'horsepower'],
   [/\b(?:longest|most|best|max(?:imum)?) (?:driving )?range\b/, 'range'],
   [/\b(?:safest|safe|(?:best|highest|top) safety(?: rating)?)\b/, 'safety'],
 ];
 
 /** Words that ask for a judgement no data on file can make. */
 const UNMEASURED =
-  /\b(?:best|good|great|top|reliable|dependable|quality|nice|decent|perfect|ideal|recommended|popular|comfortable)\b/g;
+  /\b(?:best|good|great|top|reliable|dependable|quality|nice|decent|perfect|ideal|recommended|popular|comfortable|fun|cool|first|beginner|starter|tow|towing|haul|hauling)\b/g;
 /**
  * Words that carry no search meaning: "best suv for family" read "for" as a
  * prefix of Ford and showed only Fords. Not "and" or "to": "Town and
  * Country", "up to 30k".
  */
 const STOP_WORDS =
-  /\b(?:for|with|the|a|an|of|in|my|me|i|is|are|that|sale|near|deals?|please|want|need|looking|find|show)\b/g;
+  /\b(?:for|with|the|a|an|of|in|on|my|me|i|is|are|that|which|what|can|could|should|buy|get|sale|near|deals?|please|want|need|looking|find|show)\b/g;
 
 const TRANSMISSION_PHRASES: Array<[RegExp, string[]]> = [
   [
@@ -338,16 +362,22 @@ export function extractQueryModifiers(
     if (!out.year) out.year = { min: LATEST_FULL_MODEL_YEAR };
   }
 
+  const charging = take(/\b(?:fast|quick|rapid|dc) charg(?:ing|er|e)\b/);
   for (const [re, intent] of SORT_PHRASES) {
-    if (take(re)) {
+    const hit = take(re);
+    if (hit) {
       out.sortedBy = intent;
+      // "gas mileage", "good on gas", "mpg": the shopper counts gallons.
+      if (intent === 'fuelEconomy' && /gas|mpg|mileage|fuel economy/.test(hit[0])) {
+        out.gasMileage = true;
+      }
       break;
     }
   }
   // After the sort phrases, which use "best" ("best mpg"), and the class
   // phrases, which use "for" nowhere but keep "family".
-  const unmeasured = text.match(UNMEASURED);
-  if (unmeasured) {
+  const unmeasured = [...(charging ? ['fast charging'] : []), ...(text.match(UNMEASURED) ?? [])];
+  if (unmeasured.length) {
     out.unmeasured = [...new Set(unmeasured)];
     text = text.replace(UNMEASURED, ' ');
   }

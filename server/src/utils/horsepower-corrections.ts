@@ -18,6 +18,8 @@ interface Correction {
   forced: boolean;
   fuel?: 'gasoline' | 'diesel';
   hp: number;
+  /** The derived trim, where it tells engines of one size apart (a Civic Si). */
+  variant?: RegExp;
 }
 
 const row = (
@@ -31,6 +33,9 @@ const row = (
 ): Correction => ({ make, model, years, litres, forced, fuel, hp });
 
 const CORRECTIONS: Correction[] = [
+  // The Si's 1.5 turbo read the Civic's 174 hp or 190 (it makes 205, 200 from 2022).
+  { ...row('Honda', /^Civic/, [2017, 2021], 1.5, true, 205), variant: /^Si$/ },
+  { ...row('Honda', /^Civic/, [2022, 2026], 1.5, true, 200), variant: /^Si$/ },
   // The F-150's naturally aspirated engines read the EcoBoost's or the
   // Raptor R's figures (a 5.0 at 600-653 hp).
   row('Ford', /^F-?150(?! (Raptor|Lightning))/, [2011, 2014], 5, false, 360),
@@ -115,7 +120,8 @@ function correctionFor(car: Car): Correction | undefined {
       car.year >= c.years[0] &&
       car.year <= c.years[1] &&
       Math.abs(litres - c.litres) <= 0.06 &&
-      c.model.test(car.model),
+      c.model.test(car.model) &&
+      (!c.variant || c.variant.test(car.variant ?? '')),
   );
 }
 

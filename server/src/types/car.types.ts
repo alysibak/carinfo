@@ -248,6 +248,8 @@ export interface SearchInterpretation {
   vehicleClass?: string;
   /** "best", "reliable": words no data on file can measure, set aside. */
   unmeasured?: string[];
+  /** "good gas mileage": EVs left out of an MPG order. */
+  gasMileage?: boolean;
 }
 
 /** Response body of the search endpoints. */
