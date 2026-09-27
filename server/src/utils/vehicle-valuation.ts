@@ -64,6 +64,10 @@ const LUXURY_MAKES = new Set([
   'Rivian',
   'Polestar',
   'Fisker',
+  // The Revero and GS-6 listed at US$83,000-145,000; as a mainstream make a
+  // 2018 Revero read $12,000 against listings near US$34,000 (Cars.com,
+  // September 2026).
+  'Karma',
 ]);
 
 /**
@@ -127,6 +131,9 @@ const BRAND_RETENTION: Record<string, number> = {
   // Fisker Ocean Extreme ($69,000 new) sells for about $16,000 in 2026.
   Fisker: 0.4,
   Lordstown: 0.4,
+  // Karma: a 2018 Revero lists near US$34,000, about a quarter of its
+  // US$131,000 sticker (Cars.com, September 2026).
+  Karma: 0.6,
 };
 
 /**
@@ -332,8 +339,15 @@ const EXOTIC_MODEL_RULES: ModelMsrpRule[] = [
   exo('McLaren Automotive', /^765lt/i, 380000),
   exo('Maserati', /^ghibli/i, 80000),
   exo('Maserati', /^levante/i, 95000),
-  exo('Maserati', /^grecale/i, 72000),
+  // By trim: one figure for all put a 2023 Trofeo (US$104,000 new) at the
+  // GT's value.
+  exo('Maserati', /^grecale trofeo/i, 104000),
+  exo('Maserati', /^grecale modena/i, 80000),
+  exo('Maserati', /^grecale/i, 67000),
   exo('Maserati', /^quattroporte/i, 115000),
+  exo('Karma', /^revero gt/i, 145000),
+  exo('Karma', /^revero/i, 130000),
+  exo('Karma', /^gs-6/i, 83000),
   exo('Maserati', /^gran ?(turismo|cabrio)/i, 180000),
   exo('Maserati', /^(mc20|mcpura|gt2 stradale)/i, 250000),
   exo('Rolls-Royce', /^phantom/i, 520000),
@@ -920,6 +934,16 @@ const TRUCK_SUV_RULES: ModelMsrpRule[] = [
     test: (c) => c.make === 'Toyota' && /^land cruiser/i.test(c.model),
     msrp: (c) => (c.year >= 2024 ? 58000 : c.year >= 2008 ? 85000 : 60000),
   },
+  // Full-size SUVs without a V8 took the class's US$45,000 with no V8 uplift:
+  // a 2024 Expedition read $40,000 against a $66,849 CarGurus.ca average, a
+  // 2020 $26,500 against $44,619, a 2024 Sequoia $52,000 against ~$90,500.
+  {
+    test: (c) => c.make === 'Ford' && /^expedition/i.test(c.model) && c.year >= 2015,
+    msrp: (c) => (c.year >= 2018 ? 72000 : 55000),
+  },
+  { test: (c) => c.make === 'Toyota' && /^sequoia/i.test(c.model) && c.year >= 2023, msrp: 75000 },
+  { test: (c) => c.make === 'Jeep' && /^grand wagoneer/i.test(c.model), msrp: 95000 },
+  { test: (c) => c.make === 'Jeep' && /^wagoneer(?! s)/i.test(c.model), msrp: 70000 },
   {
     test: (c) => c.make === 'Toyota' && /^highlander/i.test(c.model),
     msrp: (c) => (c.year >= 2020 ? 42000 : c.year >= 2014 ? 38000 : 32000),
@@ -1745,12 +1769,15 @@ export { roundMoney };
 export type MsrpAnchorSource = 'model-rule' | 'curated-price' | 'segment-inferred';
 
 /** How the MSRP anchor was derived — drives valuation confidence (not the dollar value). */
+/** Makers with so few cars on sale that a model's sticker says little about its price. */
+const THIN_MARKET_MAKES = new Set(['Karma', 'Fisker']);
+
 export function assessMsrpAnchor(car: CarSpecs): {
   source: MsrpAnchorSource;
   confidence: Confidence;
 } {
   if (MODEL_MSRP_RULES.some((r) => r.test(car))) {
-    return { source: 'model-rule', confidence: 'high' };
+    return { source: 'model-rule', confidence: THIN_MARKET_MAKES.has(car.make) ? 'low' : 'high' };
   }
   if (car.price?.msrp != null && car.price.isEstimated === false) {
     return { source: 'curated-price', confidence: 'high' };

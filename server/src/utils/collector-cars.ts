@@ -65,7 +65,12 @@ const RULES: CollectorRule[] = [
   // eBay for $67,300 (Wikipedia; Green Car Congress, 2006).
   { test: (c) => same(c.make, 'Toyota') && /^rav4 ev\b/i.test(c.model) && c.year <= 2003 },
   // American collector cars.
-  { test: (c) => same(c.make, 'Dodge') && /^viper/i.test(c.model) },
+  // SRT sold the 2013-14 Viper under its own name; one read $24,500.
+  { test: (c) => /^(dodge|srt)$/i.test(c.make) && /^viper/i.test(c.model) },
+  // The Australian-built Chevrolet SS (2014-17), a V8 sedan with a manual,
+  // lists near or above its US$46,000 sticker (a 2017 averages US$50,577 on
+  // Cars.com, September 2026); it read $19,500.
+  { test: (c) => same(c.make, 'Chevrolet') && /^ss$/i.test(c.model) },
   { test: (c) => same(c.make, 'Ford') && /^gt(\s|$)/i.test(c.model) },
   { test: (c) => same(c.make, 'Ford') && /^bronco/i.test(c.model) && c.year <= 1996 },
   { test: (c) => same(c.make, 'Plymouth') && /^prowler/i.test(c.model) },

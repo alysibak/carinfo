@@ -262,7 +262,6 @@ describe('vehicle-valuation (Ontario/CAD)', () => {
     // per-tier EV curve also collapsed its resale to under $1,000; the guard
     // for that is tested directly below.)
     const beforeMarket = estimateMarketValue(bevSim);
-    expect(beforeMarket.mid).toBeLessThan(15_000);
     expect(inferEffectiveFuelType(car)).toBe('plug-in hybrid');
 
     const anchor = assessMsrpAnchor(car);

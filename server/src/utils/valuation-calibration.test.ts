@@ -337,6 +337,24 @@ const REFERENCES: Reference[] = [
     source: 'CarGurus Canada average, September 2026',
   },
   {
+    label: '2024 Ford Expedition',
+    find: named('Ford', /^Expedition 4WD$/, 2024),
+    observedCad: 66_849,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2020 Ford Expedition',
+    find: named('Ford', /^Expedition 4WD$/, 2020),
+    observedCad: 44_619,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2024 Toyota Sequoia',
+    find: (c) => c.make === 'Toyota' && c.year === 2024 && /^Sequoia 4WD$/.test(c.model),
+    observedCad: 90_532,
+    source: 'CarGurus Alberta average, September 2026',
+  },
+  {
     label: '2019 Chevrolet Tahoe',
     find: withEngine('Chevrolet', /^Tahoe K1500 4WD$/, 2019, 5.3),
     observedCad: 33_390,
