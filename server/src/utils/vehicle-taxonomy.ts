@@ -80,12 +80,13 @@ const HATCHBACK_PATTERNS: RegExp[] = [
   /\bspark ev\b/,
   /\bkona electric\b/,
   /\bniro ev\b/,
-  /\bev6\b/,
   /\bioniq 5\b/,
   /\byaris\b(?![ -]ia)/,
   /\bfit\b/,
   /\bmirage\b(?![ -]g4)/,
   /\bsoul\b/,
+  // The SX4 hatchback, which EPA filed as a wagon and then a sedan.
+  /\bsx4\b(?! (?:sedan|sport))/,
   /\bcube\b/,
   // The Prius Prime is a liftback too.
   /\bprius\b/,
@@ -338,8 +339,19 @@ export function inferBodyStyle(car: CarSpecs, displayModel?: string): BodyStyle 
   if (car.make.toLowerCase() === 'mini' && /countryman|paceman/.test(model)) return 'suv';
   // EPA files the Magnum as an SUV; it is Dodge's station wagon.
   if (/^dodge magnum\b/.test(`${car.make} ${car.model}`.toLowerCase())) return 'wagon';
-  // BMW's Gran Coupes and Mercedes' "4-Door Coupe" have four doors.
+  const makeModelName = `${car.make} ${car.model}`.toLowerCase();
+  // BMW's Gran Coupes and Mercedes' "4-Door Coupe" have four doors, as does
+  // the AMG GT 43, 53 and 63 without "(coupe)", which EPA filed as a wagon.
   if (/\bgran coupe\b|\b(?:4|four)-door coupe\b/.test(h)) return 'sedan';
+  if (/^mercedes-benz amg gt \d\d\b(?!.*(?:coupe|roadster|convertible))/.test(makeModelName)) {
+    return 'sedan';
+  }
+  // Raised wagons and a compact minivan EPA filed as SUVs or station wagons.
+  if (/^volvo v[69]0 (?:cc|cross country)\b/.test(makeModelName)) return 'wagon';
+  if (/^mazda 5$/.test(makeModelName)) return 'minivan';
+  // An SUV by name, whatever class EPA used that year: a 2015-19 Q3 was a
+  // "Compact Car", a 2023 GV60 a "Large Car", a 2025 GLC 43 Coupe a coupe.
+  if (CROSSOVER_NAMES.test(`${car.make} ${model}`.toLowerCase())) return 'suv';
   // A GLE Coupe, a Cayenne Coupe, an Evoque Convertible or a soft-top Tracker
   // is an SUV with a car's name. The PT Cruiser is a car EPA files as a truck.
   const suvNamedLikeACar = car.bodyStyle === 'suv' && !/\bpt cruiser\b/.test(h);
@@ -352,7 +364,6 @@ export function inferBodyStyle(car: CarSpecs, displayModel?: string): BodyStyle 
   if (/pickup|\bf-150\b|\bsilverado\b|\bram 1500\b|\btundra\b|\btitan\b/.test(h)) return 'truck';
   if (/sport utility|\bsuv\b|\brav4\b|\bcrv\b|\bxt\d\b|\bexplorer\b|\btahoe\b/.test(h))
     return 'suv';
-  if (CROSSOVER_NAMES.test(`${car.make} ${model}`.toLowerCase())) return 'suv';
   if (/minivan|\bsienna\b|\bodyssey\b|\bpacifica\b|\bcarnival\b/.test(h)) return 'minivan';
   if (/\bvan\b|\btransit\b|\bsprinter\b|\bpromaster\b/.test(h)) return 'van';
   // "Wagon" in a name makes a car a wagon, not a van, minivan or SUV EPA filed
@@ -478,7 +489,7 @@ const COUPE_NAMES = new RegExp(
  * wagon or sedan.
  */
 const CROSSOVER_NAMES =
-  /^(honda (cr-v|hr-v)|nissan (juke|rogue|murano|kicks|ariya)|kia (niro|seltos)|ford (mustang mach-e|ecosport)|mercedes-benz (amg )?gl[abc] ?\d|rolls-royce cullinan|chevrolet (trax|trailblazer)|buick (encore|envista)|infiniti (?:qx\d0|ex\d\d)|mazda cx-\d+|bmw x[1-7]\b|toyota (c-hr|venza)|subaru crosstrek|jeep (compass|renegade)|hyundai (kona|venue)|lincoln (mkc|corsair)|lexus (ux|nx) )/;
+  /^(honda (cr-v|hr-v)|nissan (juke|rogue|murano|kicks|ariya)|kia (niro|seltos|ev6)|ford (mustang mach-e|ecosport)|mercedes-benz (?:amg |maybach )?gl[abceks]? ?\d|rolls-royce cullinan|chevrolet (trax|trailblazer)|buick (encore|envista)|infiniti (?:qx\d0|ex\d\d)|mazda cx-\d+|bmw x[1-7]\b|toyota (c-hr|venza)|subaru crosstrek|jeep (compass|renegade)|hyundai (kona|venue)|lincoln (mkc|corsair)|lexus (ux|nx) |audi (?:rs ?|s)?q\d|genesis (?:electrified )?gv\d\d|porsche (?:cayenne|macan)|volvo xc(?:40|60|90)|land rover |lamborghini urus|bentley bentayga|aston martin dbx|maserati (?:levante|grecale)|alfa romeo (?:stelvio|tonale)|jaguar [efi]-pace|lotus eletre|ferrari purosangue)/;
 
 /** Convertibles EPA files as sedans, with no "convertible" in the name. */
 const CONVERTIBLE_NAMES =

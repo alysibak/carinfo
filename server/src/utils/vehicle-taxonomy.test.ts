@@ -146,6 +146,32 @@ describe('vehicle-taxonomy', () => {
     expect(slugged('BMW', 'i3s', 'bmw-i3s-2019')).toBe('hatchback');
   });
 
+  it('keeps a model in one body style whatever class EPA used that year', () => {
+    const body = (make: string, model: string, bodyStyle: Car['bodyStyle'], vClass: string) =>
+      inferBodyStyle(minimalCar({ make, model, bodyStyle, epa: { vClass } as Car['epa'] }), model);
+    // EPA filed a 2015-19 Q3 as a "Compact Car", a 2023 GV60 as a "Large Car",
+    // a 2025 GLC 43 Coupe as a wagon and a 2026 Purosangue as a compact car.
+    expect(body('Audi', 'Q3 quattro', 'sedan', 'Compact Cars')).toBe('suv');
+    expect(body('Genesis', 'GV60 PERFORMANCE', 'sedan', 'Large Cars')).toBe('suv');
+    expect(body('Mercedes-Benz', 'AMG GLC43 4matic Coupe', 'wagon', 'Small Station Wagons')).toBe(
+      'suv',
+    );
+    expect(body('Ferrari', 'Purosangue', 'sedan', 'Compact Cars')).toBe('suv');
+    expect(body('Kia', 'EV6 Long Range RWD', 'wagon', 'Small Station Wagons')).toBe('suv');
+    // The AMG GT four-door is a sedan; the two-door says "(coupe)".
+    expect(body('Mercedes-Benz', 'AMG GT 53 4matic Plus', 'wagon', 'Small Station Wagons')).toBe(
+      'sedan',
+    );
+    expect(body('Mercedes-Benz', 'AMG GT 63 4matic Plus (coupe)', 'coupe', 'Two Seaters')).toBe(
+      'coupe',
+    );
+    // Raised wagons, a compact minivan and a hatchback EPA filed otherwise.
+    expect(body('Volvo', 'V60 CC AWD', 'suv', 'Small Sport Utility Vehicle 4WD')).toBe('wagon');
+    expect(body('Mazda', '5', 'wagon', 'Midsize Station Wagons')).toBe('minivan');
+    expect(body('Suzuki', 'SX4 AWD', 'sedan', 'Subcompact Cars')).toBe('hatchback');
+    expect(body('Suzuki', 'SX4 Sedan', 'sedan', 'Compact Cars')).toBe('sedan');
+  });
+
   it('reads the retro Thunderbird as the convertible it is', () => {
     const tbird = (year: number) =>
       inferBodyStyle(minimalCar({ make: 'Ford', model: 'Thunderbird', year, bodyStyle: 'coupe' }));
