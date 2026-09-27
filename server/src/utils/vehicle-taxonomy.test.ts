@@ -420,6 +420,31 @@ describe('shopping segments', () => {
     expect(hybrid('Porsche', 'Panamera 4 E-Hybrid', 455, 'sedan')).toBe('sport-sedan');
   });
 
+  it('keeps everyday compact hatchbacks out of the sport compacts', () => {
+    const hatch = (make: string, model: string, hp: number, turbo = false) =>
+      classifyShoppingSegment(
+        minimalCar({
+          make,
+          model,
+          bodyStyle: 'hatchback',
+          engine: {
+            fuelType: 'gasoline',
+            horsepower: hp,
+            displacement: 1.6,
+            ...(turbo ? { aspiration: 'turbocharged' as const } : {}),
+          },
+        }),
+        model,
+        'hatchback',
+      );
+    // 150 hp made a Soul, a Corolla and a Golf sport compacts.
+    expect(hatch('Kia', 'Soul', 164)).toBe('mainstream');
+    expect(hatch('Toyota', 'Corolla Hatchback', 169)).toBe('mainstream');
+    expect(hatch('Volkswagen', 'Golf', 170, true)).toBe('mainstream');
+    expect(hatch('Hyundai', 'Veloster', 201, true)).toBe('sport-compact');
+    expect(hatch('Fiat', '500 Abarth', 160, true)).toBe('hot-hatch');
+  });
+
   it('does not call a V6 family sedan a sport sedan', () => {
     const seg = (make: string, model: string, horsepower: number, displacement: number) =>
       classifyShoppingSegment(

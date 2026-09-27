@@ -42,6 +42,10 @@ describe('estimateEvHorsepower', () => {
     expect(hp('Tesla', 'Model S Plaid (21in wheels)', 2024)).toBe(1020);
     expect(hp('Rivian', 'R1T Quad Max (22in)', 2025)).toBe(1025);
     expect(hp('Rivian', 'R1T Performance Dual Large', 2025)).toBe(665);
+    expect(hp('Nissan', 'ARIYA ENGAGE e-4ORCE 63kWh', 2024)).toBe(335);
+    expect(hp('Nissan', 'ARIYA PLATINUM+ e-4ORCE 87kWh 19in. Wheels', 2024)).toBe(389);
+    expect(hp('Porsche', 'Macan 4S Electric', 2025)).toBe(509);
+    expect(hp('Dodge', 'Charger Daytona Scat Pack AWD 305/35ZR20', 2025)).toBe(670);
   });
 
   it('gives no figure where the name does not say which version it is', () => {
@@ -51,6 +55,15 @@ describe('estimateEvHorsepower', () => {
     expect(hp('Volkswagen', 'ID.4 Pro', 2024)).toBeNull();
     // EPA's doubled spaces do not hide a name.
     expect(hp('Tesla', 'Model 3 Long Range  AWD', 2018)).toBe(346);
+  });
+
+  it('rates fuel-cell cars by their motor', () => {
+    const fc = (make: string, model: string, year: number) =>
+      estimateEvHorsepower({ ...ev(make, model, year), engine: { fuelType: 'hydrogen' } });
+    expect(fc('Toyota', 'Mirai', 2018)).toBe(151);
+    expect(fc('Toyota', 'Mirai XLE', 2022)).toBe(182);
+    expect(fc('Honda', 'Clarity FCV', 2019)).toBe(174);
+    expect(fc('Hyundai', 'Nexo Blue', 2021)).toBe(161);
   });
 
   it('leaves combustion cars and rated EVs alone', () => {

@@ -1,4 +1,5 @@
 import type { Car } from '../types/car.types.js';
+import { MAKER_RATINGS } from './maker-ratings.js';
 
 /**
  * Manufacturer ratings for best-selling engines the EPA Test Car List match
@@ -11,7 +12,7 @@ import type { Car } from '../types/car.types.js';
  * of model years; a hybrid matches only a row for hybrids (rated as a
  * system), and plug-ins never match.
  */
-interface Correction {
+export interface Correction {
   make: string;
   model: RegExp;
   years: [number, number];
@@ -23,6 +24,8 @@ interface Correction {
   variant?: RegExp;
   /** The engine is naturally aspirated whatever EPA's turbo flag says. */
   naturallyAspirated?: boolean;
+  /** Tells apart versions of one engine the name does not (manual or automatic). */
+  when?: (car: Car) => boolean;
 }
 
 const row = (
@@ -303,6 +306,18 @@ const HYBRID_SYSTEM: HybridSystem[] = [
   hy('Subaru', /^xv crosstrek hybrid/i, [2014, 2016], 160),
   hy('Mazda', /^cx-50/i, [2025, 2026], 219),
   hy('Jeep', /^cherokee/i, [2026, 2026], 210),
+  // Performance hybrids read their engine alone: an NSX 500 hp (573), a
+  // Corvette E-Ray 495 (655), a Q50 Hybrid 301 (360).
+  hy('Acura', /^nsx/i, [2017, 2021], 573),
+  hy('Acura', /^nsx/i, [2022, 2022], 600),
+  hy('Chevrolet', /^corvette e-ray/i, [2024, 2026], 655),
+  hy('Ferrari', /^f80$/i, [2026, 2026], 1184),
+  hy('Infiniti', /^(?:q50s? hybrid|q70 hybrid|m35h)/i, [2012, 2018], 360),
+  hy('Nissan', /^murano hybrid/i, [2016, 2016], 250),
+  hy('Porsche', /^(?:panamera|cayenne) s hybrid/i, [2011, 2014], 380),
+  hy('BMW', /^activehybrid [35]\b/i, [2012, 2016], 335),
+  hy('BMW', /^activehybrid 7/i, [2013, 2015], 349),
+  hy('BMW', /^x6 activehybrid/i, [2010, 2011], 480),
 ];
 
 /**
@@ -360,6 +375,9 @@ const PLUG_IN_SYSTEM: HybridSystem[] = [
   hy('BMW', /^m5\b/i, [2025, 2026], 717),
   hy('BMW', /^i8\b/i, [2014, 2017], 357),
   hy('BMW', /^i8\b/i, [2019, 2020], 369),
+  // The i3 with Range Extender is driven by its motor; the 0.6 L engine only charges.
+  hy('BMW', /^i3s with range extender/i, [2018, 2021], 181),
+  hy('BMW', /^i3 (?:rex|with range extender)/i, [2014, 2021], 170),
   hy('Mercedes-Benz', /^s560e/i, [2019, 2020], 463),
   hy('Mercedes-Benz', /^s580e/i, [2023, 2025], 503),
   hy('Mercedes-Benz', /^gle ?450e/i, [2025, 2025], 375),
@@ -378,13 +396,19 @@ const PLUG_IN_SYSTEM: HybridSystem[] = [
   hy('Porsche', /^panamera turbo s e-hybrid/i, [2021, 2023], 690),
   hy('Porsche', /^panamera 4s e-hybrid/i, [2021, 2023], 552),
   hy('Porsche', /^panamera 4 e-hybrid/i, [2018, 2023], 455),
+  hy('Porsche', /^panamera turbo s e-hybrid/i, [2025, 2026], 771),
+  hy('Porsche', /^panamera turbo e-hybrid/i, [2025, 2026], 670),
+  hy('Porsche', /^panamera 4s e-hybrid/i, [2025, 2026], 536),
+  hy('Porsche', /^panamera 4 e-hybrid/i, [2025, 2026], 463),
   hy('Volvo', /^(?:s60|v60|s90|v90|xc60|xc90)\b/i, [2016, 2026], (c) =>
     c.year >= 2023 || (c.year === 2022 && /ext/i.test(c.model)) ? 455 : 400,
   ),
   hy('Land Rover', /^new range rover (?:sport )?p440/i, [2023, 2023], 434),
   hy('Land Rover', /^range rover p550/i, [2025, 2025], 542),
   hy('Land Rover', /^range rover (?:sport )?phev/i, [2019, 2022], 398),
-  hy('Bentley', /^bentayga hybrid/i, [2020, 2023], 443),
+  hy('Bentley', /^bentayga(?: hybrid)?$/i, [2020, 2023], 443),
+  hy('Bentley', /^continental gtc? speed$/i, [2025, 2026], 771),
+  hy('Bentley', /^continental gtc?$/i, [2025, 2026], 671),
   hy('Bentley', /^flying spur hybrid/i, [2022, 2024], 536),
   hy('Lamborghini', /^urus se/i, [2025, 2026], 789),
   hy('Ferrari', /^sf90 xx/i, [2025, 2025], 1016),
@@ -398,7 +422,7 @@ const PLUG_IN_SYSTEM: HybridSystem[] = [
   hy('Karma', /^revero/i, [2018, 2019], 403),
   hy('MINI', /^cooper se countryman/i, [2018, 2023], 221),
   hy('Audi', /^a3 e-tron/i, [2016, 2018], 204),
-  hy('Audi', /^(?:q5|a7)\b/i, [2020, 2024], 362),
+  hy('Audi', /^(?:q5|a7)\b/i, [2020, 2025], 362),
   hy('Audi', /^a8\b/i, [2020, 2021], 443),
 ];
 
@@ -428,17 +452,17 @@ function correctionFor(car: Car): Correction | undefined {
   const litres = car.engine.displacement;
   if (litres == null) return undefined;
   const forced = !!car.engine.aspiration;
-  const match = CORRECTIONS.find(
-    (c) =>
-      c.make === car.make &&
-      c.forced === forced &&
-      (c.fuel ?? 'gasoline') === fuel &&
-      car.year >= c.years[0] &&
-      car.year <= c.years[1] &&
-      Math.abs(litres - c.litres) <= 0.06 &&
-      c.model.test(car.model) &&
-      (!c.variant || c.variant.test(car.variant ?? '')),
-  );
+  const matches = (c: Correction) =>
+    c.make === car.make &&
+    c.forced === forced &&
+    (c.fuel ?? 'gasoline') === fuel &&
+    car.year >= c.years[0] &&
+    car.year <= c.years[1] &&
+    Math.abs(litres - c.litres) <= 0.06 &&
+    c.model.test(car.model) &&
+    (!c.variant || c.variant.test(car.variant ?? '')) &&
+    (!c.when || c.when(car));
+  const match = CORRECTIONS.find(matches) ?? MAKER_RATINGS.find(matches);
   if (match || fuel !== 'hybrid') return match;
   const hp = hybridSystemFor(car);
   return hp == null

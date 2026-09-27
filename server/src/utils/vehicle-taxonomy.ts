@@ -93,7 +93,7 @@ const HATCHBACK_PATTERNS: RegExp[] = [
 ];
 
 const HOT_HATCH_PATTERN =
-  /\b(gti|golf r|civic si|(?<!-)type r|focus st|fiesta st|mazdaspeed|veloster n|cooper s|mini.*\bs\b|gr corolla|i20 n|208 gti|clio rs|megane rs)\b/i;
+  /\b(gti|golf r|civic si|(?<!-)type r|focus st|fiesta st|mazdaspeed|veloster n|cooper s|mini.*\bs\b|gr corolla|i20 n|208 gti|clio rs|megane rs|abarth)\b/i;
 
 const SPORT_SEDAN_PATTERN =
   /\b(wrx|sti|si\b|civic si|gli|elantra n|accord sport|camry trd|altima sr|model 3 performance|340i|m340|amg|c63|s4|s5|rs3|giulia)\b/i;
@@ -587,7 +587,11 @@ export function classifyShoppingSegment(
   // A C300, an A4 or an ES is a luxury car at any price. The rule used to key
   // off the estimated value, so older ones read "mainstream".
   if (luxuryMake) return 'luxury';
-  if (bodyStyle === 'hatchback' && powerHp >= 150) return 'sport-compact';
+  // Most compact hatchbacks now make 150-190 hp (a Corolla 169, a Civic 180, a
+  // Mazda3 191), and the 150 hp line this replaced made a Soul, a Golf and an
+  // Impreza sport compacts. The Veloster Turbo, Elantra GT Sport and Forte5 SX
+  // make 201.
+  if (bodyStyle === 'hatchback' && powerHp >= 195) return 'sport-compact';
 
   return 'mainstream';
 }

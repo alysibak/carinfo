@@ -103,6 +103,27 @@ function correctDriveType(car: Car): Car {
   };
 }
 
+/**
+ * One spelling per make, the one most listings use. EPA filed a 2026 MINI as
+ * "Mini", which listed it as a make of its own.
+ */
+export function unifyMakeSpelling<T extends { make: string }>(cars: T[]): T[] {
+  const spellings = new Map<string, Map<string, number>>();
+  for (const car of cars) {
+    const key = car.make.toLowerCase();
+    const counts = spellings.get(key) ?? new Map<string, number>();
+    counts.set(car.make, (counts.get(car.make) ?? 0) + 1);
+    spellings.set(key, counts);
+  }
+  const canonical = new Map(
+    [...spellings].map(([key, counts]) => [key, [...counts].sort((a, b) => b[1] - a[1])[0][0]]),
+  );
+  return cars.map((car) => {
+    const make = canonical.get(car.make.toLowerCase()) ?? car.make;
+    return make === car.make ? car : { ...car, make };
+  });
+}
+
 export function normalizeCarRecord(car: Car): Car {
   let normalized = correctDriveType(car);
 

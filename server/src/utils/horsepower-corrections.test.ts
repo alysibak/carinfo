@@ -8,7 +8,11 @@ const car = (
   year: number,
   displacement: number,
   horsepower: number | undefined,
-  extra: { aspiration?: 'turbocharged'; fuelType?: Car['engine']['fuelType'] } = {},
+  extra: {
+    aspiration?: Car['engine']['aspiration'];
+    fuelType?: Car['engine']['fuelType'];
+    transmission?: 'manual' | 'automatic';
+  } = {},
 ) =>
   ({
     id: `${make}-${model}-${year}-${displacement}`,
@@ -23,7 +27,7 @@ const car = (
       aspiration: extra.aspiration,
     },
     fuelEconomy: { combined: 28 },
-    transmission: { type: 'automatic' },
+    transmission: { type: extra.transmission ?? 'automatic' },
     driveType: 'AWD',
     bodyStyle: 'suv',
   }) as Car;
@@ -120,6 +124,31 @@ describe('applyHorsepowerCorrections', () => {
       }),
     ]);
     expect(cars.map((c) => c.engine.horsepower)).toEqual([302, 375, 455, 670]);
+  });
+
+  it("puts the maker's rating on performance cars that read another engine's", () => {
+    const hp = (...args: Parameters<typeof car>) =>
+      applyHorsepowerCorrections([car(...args)]).cars[0].engine.horsepower;
+    // Every 2017-24 Camaro SS read 553 hp, a 2019-23 Charger R/T the Scat Pack's 485.
+    expect(hp('Chevrolet', 'Camaro', 2020, 6.2, 553)).toBe(455);
+    expect(hp('Chevrolet', 'Camaro', 2020, 6.2, 553, { aspiration: 'supercharged' })).toBe(650);
+    expect(hp('Dodge', 'Charger', 2021, 5.7, 485)).toBe(370);
+    expect(hp('BMW', 'M5', 2019, 4.4, 455, { aspiration: 'turbocharged' })).toBe(600);
+    expect(hp('Porsche', '911 Carrera GTS', 2016, 3.8, 350)).toBe(430);
+    // The gearbox tells the Camaro SS's two V8s apart.
+    expect(hp('Chevrolet', 'Camaro', 2013, 6.2, undefined, { transmission: 'manual' })).toBe(426);
+    expect(hp('Chevrolet', 'Camaro', 2013, 6.2, undefined)).toBe(400);
+  });
+
+  it('tells a Volvo T5 from a T6 by the supercharger EPA records', () => {
+    const hp = (model: string, year: number, aspiration: Car['engine']['aspiration']) =>
+      applyHorsepowerCorrections([car('Volvo', model, year, 2, undefined, { aspiration })]).cars[0]
+        .engine.horsepower;
+    expect(hp('XC90 AWD', 2018, 'turbocharged')).toBe(250);
+    expect(hp('XC90 AWD', 2018, 'turbocharged and supercharged')).toBe(316);
+    // The older platform's T5 and T6.
+    expect(hp('S60 FWD', 2016, 'turbocharged')).toBe(240);
+    expect(hp('S60 FWD', 2016, 'turbocharged and supercharged')).toBe(302);
   });
 
   it('leaves other engines, hybrids and years alone', () => {

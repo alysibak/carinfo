@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { enrichCar } from '../services/content-enrichment.js';
-import { normalizeCarRecord } from '../utils/car-normalize.js';
+import { normalizeCarRecord, unifyMakeSpelling } from '../utils/car-normalize.js';
 import type { Car } from '../types/car.types.js';
 import { findCar } from '../__tests__/helpers/loadCars.js';
 
@@ -67,5 +67,14 @@ describe('car-normalize', () => {
     // A stepped automatic stays one.
     const stepped = findCar((c) => c.transmission?.description === 'Automatic (S8)');
     expect(normalizeCarRecord(stepped!).transmission.type).toBe('automatic');
+  });
+});
+
+describe('unifyMakeSpelling', () => {
+  it('gives every listing of a make the spelling most of them use', () => {
+    const cars = [{ make: 'MINI' }, { make: 'MINI' }, { make: 'Mini' }, { make: 'Mazda' }];
+    expect(unifyMakeSpelling(cars).map((c) => c.make)).toEqual(['MINI', 'MINI', 'MINI', 'Mazda']);
+    // Untouched listings are the same objects.
+    expect(unifyMakeSpelling(cars)[3]).toBe(cars[3]);
   });
 });

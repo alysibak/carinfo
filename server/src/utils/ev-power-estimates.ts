@@ -319,10 +319,64 @@ const EV_POWER_RULES: EvPowerRule[] = [
   { make: 'mini', model: /^countryman se\b/, hp: 308 },
   { make: 'fiat', model: /^500e\b/, hp: (_m, y) => (y >= 2024 ? 117 : 111) },
   { make: 'mazda', model: /^mx-30\b/, hp: 143 },
+  {
+    make: 'nissan',
+    model: /^ariya\b/,
+    hp: (m) =>
+      /e-4orce/.test(m) ? (/87 ?kwh/.test(m) ? 389 : 335) : /87 ?kwh/.test(m) ? 238 : 214,
+  },
+  {
+    make: 'porsche',
+    model: /^macan\b.*electric/,
+    hp: (m) =>
+      /turbo/.test(m)
+        ? 630
+        : /\b4s\b/.test(m)
+          ? 509
+          : /\b4\b/.test(m)
+            ? 402
+            : /gts/.test(m)
+              ? null
+              : 355,
+  },
+  { make: 'rolls-royce', model: /^spectre\b/, hp: (m) => (/black badge/.test(m) ? 659 : 577) },
+  { make: 'vinfast', model: /^vf ?8\b/, hp: (m) => (/plus/.test(m) ? 402 : 349) },
+  { make: 'vinfast', model: /^vf ?9\b/, hp: 402 },
+  { make: 'vinfast', model: /^vf ?7 plus\b/, hp: 349 },
+  { make: 'vinfast', model: /^vf ?6 plus\b/, hp: 201 },
+  { make: 'maserati', model: /^grecale folgore\b/, hp: 550 },
+  // Dodge quotes the Daytonas with the PowerShot boost.
+  {
+    make: 'dodge',
+    model: /^charger\b.*daytona/,
+    hp: (m) => (/scat pack/.test(m) ? 670 : /r\/t/.test(m) ? 496 : null),
+  },
+  { make: 'jeep', model: /^wagoneer s\b/, hp: 600 },
+  { make: 'lucid', model: /^gravity touring\b/, hp: 450 },
+  {
+    make: 'fisker',
+    model: /^ocean\b/,
+    hp: (m) => (/extreme|one/.test(m) ? 564 : /ultra/.test(m) ? 540 : /sport/.test(m) ? 275 : null),
+  },
+  { make: 'mitsubishi', model: /^i-miev\b/, hp: 66 },
+  { make: 'coda automotive', model: /^coda\b/, hp: 134 },
+  // The lease-only 2011 car had a 30 kW motor.
+  {
+    make: 'smart',
+    model: /^(?:eq )?fortwo\b/,
+    hp: (_m, y) => (y >= 2017 ? 80 : y >= 2013 ? 74 : 40),
+  },
+  // Fuel-cell cars are driven by an electric motor too.
+  { make: 'toyota', model: /^mirai\b/, hp: (_m, y) => (y >= 2021 ? 182 : 151) },
+  { make: 'hyundai', model: /^nexo\b/, hp: (_m, y) => (y <= 2025 ? 161 : null) },
+  { make: 'hyundai', model: /^tucson fuel cell\b/, hp: 134 },
+  { make: 'honda', model: /^(?:clarity (?:fcv|fuel cell)|cr-v e-fcev)\b/, hp: 174 },
+  { make: 'honda', model: /^fcx clarity\b/, hp: 134 },
 ];
 
 export function estimateEvHorsepower(car: CarSpecs): number | null {
-  if (inferEffectiveFuelType(car) !== 'electric') return null;
+  const fuel = inferEffectiveFuelType(car);
+  if (fuel !== 'electric' && fuel !== 'hydrogen') return null;
   if (car.engine.horsepower != null && car.engine.horsepower > 0) return null;
   const make = car.make.toLowerCase();
   // EPA's names carry doubled spaces ("Model 3 Long Range  AWD").

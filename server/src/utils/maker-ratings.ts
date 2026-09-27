@@ -1,0 +1,751 @@
+import type { Car } from '../types/car.types.js';
+import type { Correction } from './horsepower-corrections.js';
+
+/**
+ * Makers' ratings for engines the EPA Test Car List match left without a
+ * figure or gave another engine's. Performance cars fared worst: every 2017-24
+ * Camaro SS read 553 hp (it makes 455), a 2019-23 Charger R/T the Scat Pack's
+ * 485 (370), a 2017-19 Charger Hellcat the 392's 485 (707), a C7 Corvette Z06
+ * the Stingray's 455 (650), an F90 M5 the M550i's 455 (600), a 991 911 GTS
+ * the Carrera's 350 (430), a GR86 264 (228). Most everyday gaps are engines
+ * the file never matched: every 2015-21 Volvo, the Mustang GT from 2011 to
+ * 2020, the Metris, the Outlander Sport, the Genesis V8s.
+ *
+ * Each row is one engine of one model over a span of years, as the maker
+ * rated it for the US market, and applies whatever figure the car carries.
+ * `when` splits an engine the name does not (a Camaro SS made 426 hp with the
+ * manual, 400 with the automatic). Sources: the makers' US specification
+ * sheets and press releases, checked against Edmunds, Kelley Blue Book and
+ * U.S. News (September 2026).
+ */
+const rate = (
+  make: string,
+  model: RegExp,
+  years: [number, number],
+  litres: number,
+  forced: boolean,
+  hp: number,
+  fuel: 'gasoline' | 'diesel' = 'gasoline',
+): Correction => ({ make, model, years, litres, forced, fuel, hp });
+
+const manual = (c: Car) => c.transmission?.type === 'manual';
+const automatic = (c: Car) => c.transmission?.type !== 'manual';
+const allWheel = (c: Car) => c.driveType === 'AWD' || c.driveType === '4WD';
+const twoWheel = (c: Car) => !allWheel(c);
+/** Volvo's T5 (turbocharged) and T6 (turbocharged and supercharged). */
+const turboOnly = (c: Car) => c.engine.aspiration === 'turbocharged';
+const twinCharged = (c: Car) => c.engine.aspiration === 'turbocharged and supercharged';
+/** An engine EPA sometimes files without its turbo flag. */
+const eitherFlag = (r: Correction): Correction[] => [r, { ...r, forced: !r.forced }];
+
+/** GM's pickups and SUVs, by the names EPA files them under. */
+const gmTrucks = [
+  ['Chevrolet', /^Silverado/],
+  ['GMC', /^Sierra/],
+] as const;
+const gmSuvs = [
+  ['Chevrolet', /^(?:Tahoe|Suburban)(?! \d)/],
+  ['GMC', /^Yukon/],
+] as const;
+const gmMidsize = [
+  ['Chevrolet', /^Colorado/],
+  ['GMC', /^Canyon/],
+] as const;
+
+export const MAKER_RATINGS: Correction[] = [
+  // Acura
+  rate('Acura', /^TLX/, [2015, 2020], 3.5, false, 290),
+  rate('Acura', /^TSX/, [2010, 2014], 3.5, false, 280),
+
+  // Alfa Romeo
+  rate('Alfa Romeo', /^4C/, [2015, 2020], 1.8, true, 237),
+
+  // Aston Martin: the DBS and V12 Vantage read the DB9's 470-480 hp.
+  rate('Aston Martin', /^DBS(?: Coupe)?$/, [2009, 2012], 5.9, false, 510),
+  rate('Aston Martin', /^V12 Vantage$/, [2010, 2013], 5.9, false, 510),
+  rate('Aston Martin', /^Vanquish$/, [2014, 2014], 5.9, false, 565),
+  rate('Aston Martin', /^Rapide S$/, [2014, 2014], 5.9, false, 550),
+  rate('Aston Martin', /^DB11 V12$/, [2019, 2023], 5.2, true, 630),
+  rate('Aston Martin', /^Vantage V12$/, [2023, 2023], 5.2, true, 690),
+
+  // Audi: the redesigned A5 read nothing or the old car's 211; TTS 256.
+  rate('Audi', /^A3$/, [2015, 2016], 2, true, 150, 'diesel'),
+  rate('Audi', /^A4 S line quattro$/, [2025, 2025], 2, true, 261),
+  rate('Audi', /^A5 (?:Cabriolet )?quattro$/, [2017, 2017], 2, true, 220),
+  rate('Audi', /^A5 (?:Cabriolet |Sportback )?quattro$/, [2018, 2019], 2, true, 252),
+  rate('Audi', /^A5 (?:Cabriolet |Sportback )?quattro$/, [2020, 2020], 2, true, 261),
+  rate('Audi', /^A5 quattro$/, [2021, 2021], 2, true, 261),
+  rate('Audi', /^A5 (?:Cabriolet|Coupe) quattro$/, [2021, 2024], 2, true, 261),
+  rate('Audi', /^A5 Sportback S[ -]line quattro$/i, [2021, 2025], 2, true, 261),
+  // From 2021 the plain A5 Sportback is the 40 TFSI.
+  rate('Audi', /^A5 Sportback quattro$/, [2021, 2025], 2, true, 201),
+  rate('Audi', /^allroad quattro$/, [2017, 2019], 2, true, 252),
+  rate('Audi', /^Q7 quattro$/, [2020, 2024], 2, true, 248),
+  rate('Audi', /^TT (?:Coupe|Roadster)$/, [2019, 2023], 2, true, 228),
+  rate('Audi', /^TTS Coupe(?: quattro)?$/, [2016, 2018], 2, true, 292),
+  rate('Audi', /^TTS Coupe(?: quattro)?$/, [2019, 2023], 2, true, 288),
+  // Gasoline A7s read the TDI's 240 hp; the A6 TDI read the gasoline car's 333.
+  rate('Audi', /^A7 quattro$/, [2012, 2015], 3, true, 310),
+  rate('Audi', /^A7 quattro$/, [2016, 2017], 3, true, 333),
+  rate('Audi', /^A[67] quattro$/, [2014, 2016], 3, true, 240, 'diesel'),
+  rate('Audi', /^A6 quattro$/, [2019, 2025], 3, true, 335),
+  rate('Audi', /^S4$/, [2010, 2016], 3, true, 333),
+  rate('Audi', /^S5$/, [2008, 2012], 4.2, false, 354),
+  rate('Audi', /^S5$/, [2021, 2021], 3, true, 349),
+  rate('Audi', /^S6$/, [2007, 2011], 5.2, false, 435),
+  rate('Audi', /^S6$/, [2013, 2015], 4, true, 420),
+  rate('Audi', /^S7$/, [2016, 2018], 4, true, 450),
+  rate('Audi', /^A8 L$/, [2013, 2014], 4, true, 420),
+  rate('Audi', /^A8 L$/, [2015, 2018], 4, true, 435),
+  rate('Audi', /^A8 L$/, [2019, 2021], 4, true, 453),
+  rate('Audi', /^A8 L$/, [2012, 2016], 6.3, false, 500),
+  rate('Audi', /^RS 7$/, [2021, 2026], 4, true, 591),
+  rate('Audi', /^RS 5(?: Coupe| Sportback)?$/, [2018, 2025], 2.9, true, 444),
+
+  // BMW: the M cars read other engines' figures.
+  rate('BMW', /^X1 [sx]Drive28i$/, [2012, 2015], 2, true, 240),
+  rate('BMW', /^X2 [sx]Drive28i$/, [2018, 2023], 2, true, 228),
+  rate('BMW', /^X2 xDrive28i$/, [2024, 2026], 2, true, 241),
+  rate('BMW', /^X3 [sx]Drive ?28i$/, [2011, 2017], 2, true, 240),
+  rate('BMW', /^X4 xDrive28i$/, [2015, 2018], 2, true, 240),
+  rate('BMW', /^X4 xDrive30i$/, [2019, 2025], 2, true, 248),
+  rate('BMW', /^X4 M40i$/, [2020, 2025], 3, true, 382),
+  rate('BMW', /^X4 M$/, [2020, 2025], 3, true, 473),
+  rate('BMW', /^X4 M Competition$/, [2020, 2025], 3, true, 503),
+  rate('BMW', /^X6 M$/, [2010, 2014], 4.4, true, 555),
+  rate('BMW', /^X6 M$/, [2015, 2019], 4.4, true, 567),
+  rate('BMW', /^X6 M Competition$/, [2020, 2027], 4.4, true, 617),
+  rate('BMW', /^128ci/, [2008, 2013], 3, false, 230),
+  rate('BMW', /^M235i(?: xDrive)?$/, [2014, 2016], 3, true, 322),
+  rate('BMW', /^528i$/, [2011, 2011], 3, false, 240),
+  rate('BMW', /^550i xDrive GT$/, [2010, 2010], 4.4, true, 400),
+  rate('BMW', /^640i(?: xDrive)?(?: Gran Coupe| Coupe| Convertible)?$/, [2012, 2019], 3, true, 315),
+  rate(
+    'BMW',
+    /^650i(?: xDrive)?(?: Gran Coupe| Coupe| Convertible)?$/,
+    [2012, 2019],
+    4.4,
+    true,
+    445,
+  ),
+  rate('BMW', /^740i$/, [2011, 2015], 3, true, 315),
+  rate('BMW', /^840i/, [2019, 2026], 3, true, 335),
+  rate('BMW', /^M850i/, [2019, 2026], 4.4, true, 523),
+  rate('BMW', /^M3 CS$/, [2018, 2018], 3, true, 453),
+  rate('BMW', /^M3(?: Sedan)?$/, [2021, 2027], 3, true, 473),
+  rate('BMW', /^M3 Competition(?: Sedan)?$/, [2021, 2027], 3, true, 503),
+  rate('BMW', /^M3 Competition M xDrive Sedan$/, [2022, 2024], 3, true, 503),
+  rate('BMW', /^M4 (?:Coupe|Convertible)$/, [2015, 2020], 3, true, 425),
+  rate('BMW', /^M4 (?:Coupe|Convertible) Competition$/, [2016, 2020], 3, true, 444),
+  rate('BMW', /^M4 CS$/, [2018, 2020], 3, true, 454),
+  rate('BMW', /^M4 (?:GTS|DTM Champions Edition)$/, [2016, 2018], 3, true, 493),
+  rate('BMW', /^M5(?: Sedan)?$/, [2012, 2016], 4.4, true, 560),
+  rate('BMW', /^M5(?: Sedan)?$/, [2018, 2023], 4.4, true, 600),
+  rate('BMW', /^M6(?: Coupe| Convertible| Gran Coupe)?$/, [2012, 2019], 4.4, true, 560),
+  rate('BMW', /^M8 (?:Coupe|Convertible|Gran Coupe)$/, [2020, 2022], 4.4, true, 600),
+  rate('BMW', /^Z4 sDrive30i$/, [2019, 2026], 2, true, 255),
+  rate('BMW', /^Z4 sDrive35i$/, [2009, 2016], 3, true, 300),
+
+  // Buick: the Regal's 2.4 read the turbo's 220.
+  rate('Buick', /^Regal/, [2011, 2017], 2.4, false, 182),
+
+  // Cadillac: an ATS 3.6 read the ATS-V's 455; the CTS's six and twin-turbo swapped.
+  rate('Cadillac', /^ATS(?: AWD)?$/, [2013, 2019], 2, true, 272),
+  rate('Cadillac', /^ATS(?: AWD)?$/, [2013, 2018], 2.5, false, 202),
+  rate('Cadillac', /^ATS(?: AWD)?$/, [2013, 2015], 3.6, false, 321),
+  rate('Cadillac', /^ATS(?: AWD)?$/, [2016, 2019], 3.6, false, 335),
+  rate('Cadillac', /^ATS-V$/, [2016, 2019], 3.6, true, 464),
+  rate('Cadillac', /^CTS(?: Sedan| Wagon| Coupe)?(?: AWD)?$/, [2010, 2013], 3, false, 270),
+  rate('Cadillac', /^CTS(?: Sedan| Wagon| Coupe)?(?: AWD)?$/, [2010, 2011], 3.6, false, 304),
+  rate('Cadillac', /^CTS(?: Sedan| Wagon| Coupe)?(?: AWD)?$/, [2012, 2013], 3.6, false, 318),
+  rate('Cadillac', /^CTS(?: Sedan)?(?: AWD)?$/, [2014, 2015], 3.6, false, 321),
+  rate('Cadillac', /^CTS(?: Sedan)?(?: AWD)?$/, [2016, 2019], 3.6, false, 335),
+  rate('Cadillac', /^CTS(?: Sedan)?(?: AWD)?$/, [2014, 2019], 3.6, true, 420),
+  rate('Cadillac', /^CTS(?:-V| V)?(?: Sedan| Wagon| Coupe)?$/, [2009, 2015], 6.2, true, 556),
+  rate('Cadillac', /^CTS-V$/, [2016, 2019], 6.2, true, 640),
+  rate('Cadillac', /^CT5 V(?: AWD)?$/, [2020, 2024], 3, true, 360),
+  rate('Cadillac', /^CT5(?: AWD)?$/, [2020, 2026], 2, true, 237),
+  rate('Cadillac', /^Escalade(?! (?:V|Hybrid))/, [2007, 2014], 6.2, false, 403),
+  rate('Cadillac', /^XLR$/, [2004, 2009], 4.6, false, 320),
+  rate('Cadillac', /^XLR-V$/, [2006, 2009], 4.4, true, 443),
+
+  // Chevrolet: every 2017-24 Camaro SS and ZL1 read 553 hp, a C7 Z06 455.
+  rate('Chevrolet', /^Camaro$/, [2012, 2015], 3.6, false, 323),
+  rate('Chevrolet', /^Camaro$/, [2016, 2024], 2, true, 275),
+  { ...rate('Chevrolet', /^Camaro$/, [2010, 2015], 6.2, false, 426), when: manual },
+  { ...rate('Chevrolet', /^Camaro$/, [2010, 2015], 6.2, false, 400), when: automatic },
+  rate('Chevrolet', /^Camaro$/, [2016, 2024], 6.2, false, 455),
+  rate('Chevrolet', /^Camaro$/, [2012, 2015], 6.2, true, 580),
+  rate('Chevrolet', /^Camaro$/, [2017, 2024], 6.2, true, 650),
+  rate('Chevrolet', /^Corvette$/, [2008, 2013], 6.2, false, 430),
+  rate('Chevrolet', /^Corvette$/, [2009, 2013], 6.2, true, 638),
+  rate('Chevrolet', /^Corvette$/, [2014, 2019], 6.2, false, 455),
+  rate('Chevrolet', /^Corvette(?: Z06)?$/, [2015, 2019], 6.2, true, 650),
+  rate('Chevrolet', /^Corvette ZR1$/, [2019, 2019], 6.2, true, 755),
+  rate('Chevrolet', /^Impala$/, [2012, 2013], 3.6, false, 300),
+  rate('Chevrolet', /^Impala$/, [2014, 2020], 3.6, false, 305),
+  rate('Chevrolet', /^Malibu$/, [2008, 2012], 3.6, false, 252),
+  rate('Chevrolet', /^Equinox/, [2010, 2017], 2.4, false, 182),
+  rate('Chevrolet', /^Equinox/, [2013, 2017], 3.6, false, 301),
+  rate('Chevrolet', /^Equinox/, [2018, 2019], 1.6, true, 137, 'diesel'),
+  rate('Chevrolet', /^Trailblazer/, [2021, 2025], 1.2, true, 137),
+  rate('Chevrolet', /^City Express/, [2015, 2018], 2, false, 131),
+  rate('Chevrolet', /^Traverse/, [2018, 2020], 2, true, 257),
+  rate('Chevrolet', /^Traverse/, [2009, 2017], 3.6, false, 281),
+  rate('Chevrolet', /^Traverse/, [2018, 2024], 3.6, false, 310),
+  ...gmTrucks.flatMap(([make, model]) => [
+    rate(make, model, [2007, 2008], 4.8, false, 295),
+    rate(make, model, [2009, 2013], 4.8, false, 302),
+    rate(make, model, [2010, 2013], 5.3, false, 315),
+    rate(make, model, [2014, 2018], 5.3, false, 355),
+    rate(make, model, [2012, 2013], 6.2, false, 403),
+    rate(make, model, [2014, 2018], 6.2, false, 420),
+  ]),
+  ...gmSuvs.flatMap(([make, model]) => [
+    rate(make, model, [2010, 2014], 5.3, false, 320),
+    rate(make, model, [2009, 2014], 6.2, false, 403),
+  ]),
+  ...gmMidsize.flatMap(([make, model]) => [
+    rate(make, model, [2009, 2012], 2.9, false, 185),
+    rate(make, model, [2009, 2012], 3.7, false, 242),
+    rate(make, model, [2009, 2012], 5.3, false, 300),
+  ]),
+  // The 2007-08 Yukon Denali's 6.2 made 380 hp, the Escalade's 403.
+  rate('GMC', /^Yukon/, [2007, 2008], 6.2, false, 380),
+  rate('GMC', /^Terrain/, [2010, 2017], 2.4, false, 182),
+  rate('GMC', /^Terrain/, [2013, 2017], 3.6, false, 301),
+
+  // Chrysler
+  rate('Chrysler', /^300(?: AWD)?$/, [2022, 2023], 3.6, false, 292),
+  rate('Chrysler', /^300(?: AWD)?$/, [2011, 2023], 5.7, false, 363),
+  rate('Chrysler', /^300$/, [2023, 2023], 6.4, false, 485),
+  rate('Chrysler', /^300\/SRT-8$/, [2005, 2008], 2.7, false, 190),
+  rate('Chrysler', /^300\/SRT-8$/, [2009, 2010], 2.7, false, 178),
+  rate('Chrysler', /^300\/SRT-8$/, [2008, 2010], 3.5, false, 250),
+  rate('Chrysler', /^300(?:\/SRT-8| AWD)$/, [2008, 2008], 5.7, false, 340),
+  rate('Chrysler', /^300(?:\/SRT-8| AWD)$/, [2009, 2010], 5.7, false, 359),
+  rate('Chrysler', /^300\/SRT-8$/, [2008, 2010], 6.1, false, 425),
+  rate('Chrysler', /^Voyager$/, [2020, 2026], 3.6, false, 287),
+  rate('Chrysler', /^Crossfire/, [2004, 2008], 3.2, false, 215),
+
+  // Dodge: an R/T at the Scat Pack's 485 hp, the Hellcats at the 392's.
+  rate('Dodge', /^Caliber$/, [2007, 2012], 1.8, false, 148),
+  rate('Dodge', /^Caliber$/, [2007, 2012], 2, false, 158),
+  rate('Dodge', /^Caliber$/, [2007, 2012], 2.4, false, 172),
+  rate('Dodge', /^Caliber$/, [2008, 2009], 2.4, true, 285),
+  rate('Dodge', /^Journey/, [2009, 2020], 2.4, false, 173),
+  rate('Dodge', /^Durango/, [2011, 2026], 5.7, false, 360),
+  rate('Dodge', /^Durango/, [2018, 2026], 6.4, false, 475),
+  rate('Dodge', /^Durango/, [2021, 2026], 6.2, true, 710),
+  rate('Dodge', /^Challenger(?: GT)?$/, [2011, 2023], 3.6, false, 305),
+  rate('Dodge', /^Challenger AWD$/, [2020, 2023], 3.6, false, 303),
+  { ...rate('Dodge', /^Challenger$/, [2009, 2010], 5.7, false, 376), when: manual },
+  { ...rate('Dodge', /^Challenger$/, [2011, 2023], 5.7, false, 375), when: manual },
+  { ...rate('Dodge', /^Challenger$/, [2009, 2023], 5.7, false, 372), when: automatic },
+  rate('Dodge', /^Challenger(?: SRT8)?$/, [2011, 2014], 6.4, false, 470),
+  rate('Dodge', /^Challenger(?: SRT8| SRT| Widebody)?$/, [2015, 2023], 6.4, false, 485),
+  rate('Dodge', /^Challenger SRT(?: Widebody)?$/, [2019, 2023], 6.2, true, 717),
+  rate('Dodge', /^Charger(?: AWD)?$/, [2006, 2008], 5.7, false, 350),
+  rate('Dodge', /^Charger(?: AWD)?$/, [2009, 2010], 5.7, false, 368),
+  rate('Dodge', /^Charger(?: AWD)?$/, [2011, 2023], 5.7, false, 370),
+  rate('Dodge', /^Charger$/, [2006, 2008], 2.7, false, 190),
+  rate('Dodge', /^Charger$/, [2009, 2010], 2.7, false, 178),
+  rate('Dodge', /^Charger(?: SRT8)?$/, [2012, 2014], 6.4, false, 470),
+  rate('Dodge', /^Charger(?: SRT8| SRT)?$/, [2015, 2023], 6.4, false, 485),
+  rate('Dodge', /^Charger SRT8?$/, [2015, 2019], 6.2, true, 707),
+  rate('Dodge', /^Viper(?: Coupe| Convertible| SRT)?$/, [2008, 2010], 8.4, false, 600),
+  rate('Dodge', /^Viper(?: Coupe| Convertible| SRT)?$/, [2013, 2014], 8.4, false, 640),
+  rate('Dodge', /^Viper(?: Coupe| Convertible| SRT)?$/, [2015, 2017], 8.4, false, 645),
+
+  // Ferrari
+  rate('Ferrari', /^458 (?:Italia|Spider)(?: Coupe| Spider)?$/, [2010, 2015], 4.5, false, 562),
+  rate('Ferrari', /^458 Speciale/, [2014, 2015], 4.5, false, 597),
+  rate('Ferrari', /^488 Pista/, [2019, 2020], 3.9, true, 710),
+  rate('Ferrari', /^488 Spider$/, [2016, 2019], 3.9, true, 661),
+  rate('Ferrari', /^F12(?: Berlinetta)?$/, [2013, 2017], 6.3, false, 731),
+  rate('Ferrari', /^F12 tdf$/, [2016, 2017], 6.3, false, 769),
+  rate('Ferrari', /^F60 America$/, [2016, 2016], 6.3, false, 731),
+  rate('Ferrari', /^Purosangue$/, [2024, 2026], 6.5, false, 715),
+
+  // Fiat: the 500 Turbo read the Abarth's 160.
+  rate('Fiat', /^500$/, [2013, 2019], 1.4, true, 135),
+
+  // Ford: the Mustang GT went unrated for a decade; an ST read 148 or 204.
+  rate('Ford', /^Fiesta ST/, [2014, 2019], 1.6, true, 197),
+  rate('Ford', /^Focus(?: ST)?(?: FWD)?$/, [2013, 2018], 2, true, 252),
+  rate('Ford', /^GT$/, [2017, 2019], 3.5, true, 647),
+  rate('Ford', /^GT$/, [2020, 2022], 3.5, true, 660),
+  rate('Ford', /^Mustang(?: Convertible)?$/, [2005, 2010], 4, false, 210),
+  rate('Ford', /^Mustang(?: Convertible)?$/, [2005, 2009], 4.6, false, 300),
+  rate('Ford', /^Mustang(?: Convertible)?$/, [2010, 2010], 4.6, false, 315),
+  rate('Ford', /^Mustang(?: Convertible)?$/, [2011, 2014], 3.7, false, 305),
+  rate('Ford', /^Mustang(?: Convertible)?$/, [2007, 2009], 5.4, true, 500),
+  rate('Ford', /^Mustang(?: Convertible)?$/, [2010, 2010], 5.4, true, 540),
+  rate('Ford', /^Mustang(?: Convertible)?$/, [2011, 2012], 5.4, true, 550),
+  rate('Ford', /^Mustang(?: Convertible)?$/, [2013, 2014], 5.8, true, 662),
+  rate('Ford', /^Mustang(?: Convertible| Performance Package)?$/, [2011, 2012], 5, false, 412),
+  rate('Ford', /^Mustang(?: Convertible| Performance Package)?$/, [2013, 2014], 5, false, 420),
+  rate('Ford', /^Mustang(?: Convertible| Performance Package)?$/, [2015, 2017], 5, false, 435),
+  rate('Ford', /^Mustang(?: Convertible| Performance Package)?$/, [2018, 2023], 5, false, 460),
+  rate('Ford', /^Mustang(?: Convertible| Performance Package)?$/, [2024, 2026], 5, false, 480),
+  rate('Ford', /^Mustang (?:Bullitt|Mach 1)$/, [2019, 2023], 5, false, 480),
+  rate('Ford', /^Mustang Dark Horse$/, [2024, 2026], 5, false, 500),
+  rate('Ford', /^Mustang HO (?:Coupe|Convertible)$/, [2020, 2023], 2.3, true, 330),
+  rate('Ford', /^Mustang(?: Convertible| Performance Package)?$/, [2024, 2026], 2.3, true, 315),
+  rate('Ford', /^Mustang GTD$/, [2025, 2026], 5.2, true, 815),
+  rate('Ford', /^Taurus/, [2013, 2019], 2, true, 240),
+  rate('Ford', /^Taurus/, [2013, 2019], 3.5, false, 288),
+  rate('Ford', /^Taurus/, [2010, 2019], 3.5, true, 365),
+  rate('Ford', /^Transit Connect/, [2010, 2013], 2, false, 136),
+  rate('Ford', /^Transit Connect/, [2019, 2023], 2, false, 162),
+  rate('Ford', /^Transit Connect/, [2014, 2018], 1.6, true, 178),
+  rate('Ford', /^Transit Connect/, [2014, 2022], 2.5, false, 169),
+  rate('Ford', /^Transit T150 Wagon/, [2020, 2022], 3.5, false, 275),
+  rate('Ford', /^Bronco(?! (?:Sport|Raptor))/, [2021, 2026], 2.7, true, 330),
+  rate('Ford', /^Fusion/, [2017, 2019], 2.7, true, 325),
+  rate(
+    'Ford',
+    /^Explorer(?! (?:HEV|Platinum HEV|Sport Trac|ST|Tremor))/,
+    [2013, 2019],
+    3.5,
+    true,
+    365,
+  ),
+  rate('Ford', /^F-?150(?! (?:Raptor|Lightning))/, [2011, 2016], 3.5, true, 365),
+  rate('Ford', /^F-?150(?! (?:Raptor|Lightning))/, [2011, 2014], 3.7, false, 302),
+  rate('Ford', /^Flex/, [2010, 2012], 3.5, true, 355),
+  rate('Ford', /^Flex/, [2013, 2019], 3.5, true, 365),
+
+  // Genesis and the Hyundai Genesis
+  rate('Genesis', /^G80/, [2017, 2020], 5, false, 420),
+  rate('Genesis', /^G90/, [2017, 2022], 5, false, 420),
+  rate('Genesis', /^G80(?!.*MHEV)/, [2021, 2027], 3.5, true, 375),
+  rate('Genesis', /^GV80(?!.*MHEV)/, [2021, 2026], 3.5, true, 375),
+  rate('Hyundai', /^Genesis(?: RWD| AWD)?$/, [2012, 2014], 5, false, 429),
+  rate('Hyundai', /^Genesis(?: RWD| AWD)?$/, [2015, 2016], 5, false, 420),
+  rate('Hyundai', /^Genesis Coupe$/, [2013, 2016], 3.8, false, 348),
+
+  // Honda: the 2022-24 Civic 1.5 read the CR-V's 190; the Type R went unrated.
+  { ...rate('Honda', /^Civic [24]Dr$/, [2016, 2021], 1.5, true, 174), when: automatic },
+  { ...rate('Honda', /^Civic [45]Dr$/, [2022, 2024], 1.5, true, 180), when: automatic },
+  rate('Honda', /^Civic 5Dr$/, [2017, 2021], 2, true, 306),
+  rate('Honda', /^Civic 5Dr$/, [2023, 2026], 2, true, 315),
+  rate('Honda', /^Civic$/, [2006, 2013], 1.8, false, 140),
+  rate('Honda', /^Civic$/, [2014, 2015], 1.8, false, 143),
+  rate('Honda', /^Crosstour/, [2012, 2015], 2.4, false, 192),
+  rate('Honda', /^Crosstour/, [2012, 2015], 3.5, false, 278),
+
+  // Hyundai
+  rate('Hyundai', /^Veloster(?! N)/, [2012, 2013], 1.6, false, 138),
+  rate('Hyundai', /^Veloster(?! N)/, [2014, 2017], 1.6, false, 132),
+  rate('Hyundai', /^Veloster(?! N)/, [2013, 2021], 1.6, true, 201),
+  rate('Hyundai', /^Elantra(?! (?:GT|N|Hybrid))/, [2014, 2016], 2, false, 173),
+  rate('Hyundai', /^Santa Fe Sport/, [2013, 2014], 2, true, 264),
+  rate('Hyundai', /^Santa Fe Sport/, [2015, 2018], 2, true, 240),
+  rate('Hyundai', /^Tucson(?! (?:Hybrid|Plug-in|Fuel Cell))/, [2018, 2021], 2.4, false, 181),
+  rate('Hyundai', /^Santa Fe(?! (?:Hybrid|Plug-in|Sport|XL))/, [2021, 2023], 2.5, true, 281),
+
+  // Infiniti: Red Sports read the 3.0t's 300 or 350; the 3.0t read 350.
+  rate('Infiniti', /^Q50(?: AWD)?$/, [2016, 2019], 2, true, 208),
+  rate('Infiniti', /^Q50S?(?: AWD)?$/, [2016, 2024], 3, true, 300),
+  rate('Infiniti', /^Q[56]0S? Red Sport(?: AWD)?$/, [2016, 2024], 3, true, 400),
+  rate('Infiniti', /^Q70(?: AWD)?$/, [2014, 2019], 3.7, false, 330),
+
+  // Jaguar: an F-Type R at the V8 S's 495, an XK at the XKR's 448.
+  rate('Jaguar', /^(?:F-Pace|XE|XF)(?: AWD)?$/, [2017, 2020], 2, true, 180, 'diesel'),
+  rate('Jaguar', /^E-Pace P250$/, [2018, 2020], 2, true, 246),
+  rate('Jaguar', /^E-Pace P300$/, [2019, 2020], 2, true, 296),
+  rate('Jaguar', /^F-Type (?:Coupe|Convertible)$/, [2018, 2023], 2, true, 296),
+  rate('Jaguar', /^XE P250(?: AWD)?$/, [2020, 2021], 2, true, 247),
+  rate('Jaguar', /^XE P300(?: AWD)?$/, [2020, 2021], 2, true, 296),
+  rate('Jaguar', /^F-Pace P340 MHEV$/, [2021, 2023], 3, true, 335),
+  rate('Jaguar', /^F-Pace (?:P400 )?MHEV$/, [2021, 2026], 3, true, 395),
+  rate('Jaguar', /^F-Pace$/, [2019, 2026], 5, true, 550),
+  rate('Jaguar', /^F-Type S(?: AWD)? (?:Coupe|Convertible)$/, [2014, 2021], 3, true, 380),
+  rate('Jaguar', /^F-Type R(?: AWD)? (?:Coupe|Convertible)$/, [2015, 2019], 5, true, 550),
+  rate('Jaguar', /^F-Type R(?: AWD)? (?:Coupe|Convertible)$/, [2021, 2024], 5, true, 575),
+  rate('Jaguar', /^F-Type P450/, [2021, 2024], 5, true, 444),
+  rate('Jaguar', /^F-Type SVR/, [2017, 2021], 5, true, 575),
+  rate('Jaguar', /^XJL(?: FFV)?$/, [2011, 2019], 5, true, 470),
+  rate('Jaguar', /^XF$/, [2010, 2012], 5, false, 385),
+  rate('Jaguar', /^XK(?: Convertible)?$/, [2007, 2009], 4.2, false, 300),
+  rate('Jaguar', /^XK(?: Convertible)?$/, [2010, 2015], 5, false, 385),
+  rate('Jaguar', /^XK(?: Convertible)?$/, [2010, 2015], 5, true, 510),
+
+  // Jeep
+  rate('Jeep', /^(?:Gladiator|Wrangler)/, [2020, 2023], 3, true, 260, 'diesel'),
+  rate('Jeep', /^Compass/, [2007, 2017], 2, false, 158),
+  rate('Jeep', /^Compass/, [2023, 2026], 2, true, 200),
+  rate('Jeep', /^Cherokee/, [2019, 2023], 2, true, 270),
+  rate('Jeep', /^Cherokee/, [2014, 2023], 3.2, false, 271),
+  rate('Jeep', /^Grand Cherokee(?!.*4xe)/, [2026, 2026], 2, true, 324),
+  rate('Jeep', /^(?:New )?Wrangler(?!.*4xe)/, [2018, 2026], 2, true, 270),
+  rate('Jeep', /^Wrangler/, [2021, 2026], 6.4, false, 470),
+  rate('Jeep', /^Grand Wagoneer/, [2023, 2026], 3, true, 510),
+  rate('Jeep', /^Wagoneer(?! S)/, [2023, 2025], 3, true, 420),
+  rate('Jeep', /^Liberty/, [2008, 2012], 3.7, false, 210),
+
+  // Kia
+  rate('Kia', /^Soul/, [2017, 2019], 1.6, true, 201),
+  rate('Kia', /^Soul/, [2010, 2011], 2, false, 142),
+  rate('Kia', /^Soul/, [2012, 2013], 2, false, 164),
+  rate('Kia', /^Forte/, [2010, 2013], 2.4, false, 173),
+  rate('Kia', /^Forte Koup$/, [2014, 2016], 2, false, 173),
+  rate('Kia', /^Optima(?! (?:Hybrid|Plug-in))/, [2011, 2013], 2.4, false, 200),
+  rate('Kia', /^Optima(?! (?:Hybrid|Plug-in))/, [2014, 2015], 2.4, false, 192),
+  rate('Kia', /^Optima(?! (?:Hybrid|Plug-in))/, [2016, 2020], 2.4, false, 185),
+  rate('Kia', /^Sportage(?! (?:Hybrid|Plug-in))/, [2017, 2022], 2.4, false, 181),
+  rate('Kia', /^Sorento(?! (?:Hybrid|Plug-in))/, [2021, 2026], 2.5, true, 281),
+  rate('Kia', /^Sorento/, [2011, 2013], 3.5, false, 276),
+  rate('Kia', /^Stinger/, [2018, 2021], 3.3, true, 365),
+  rate('Kia', /^Stinger/, [2022, 2023], 3.3, true, 368),
+
+  // Lamborghini: the LP 560-4 (552 hp) and the rear-drive LP 550-2 (542).
+  {
+    ...rate('Lamborghini', /^Gallardo (?:Coupe|Spyder)$/, [2009, 2014], 5.2, false, 552),
+    when: allWheel,
+  },
+  {
+    ...rate('Lamborghini', /^Gallardo (?:Coupe|Spyder)$/, [2010, 2014], 5.2, false, 542),
+    when: twoWheel,
+  },
+
+  // Land Rover: output is in the name from 2019 (P250, P340, P400).
+  rate('Land Rover', /^Range Rover Velar$/, [2018, 2020], 2, true, 180, 'diesel'),
+  rate(
+    'Land Rover',
+    /^(?:Discovery|Range Rover(?: Sport| TDV6)?)$/,
+    [2016, 2020],
+    3,
+    true,
+    254,
+    'diesel',
+  ),
+  rate('Land Rover', /^Range Rover Evoque 237HP$/, [2019, 2019], 2, true, 237),
+  rate('Land Rover', /^Range Rover Evoque 286HP$/, [2019, 2019], 2, true, 286),
+  rate('Land Rover', /^Range Rover(?: Sport| L)?(?: FFV)?$/, [2014, 2017], 3, true, 340),
+  rate('Land Rover', /^Range Rover Velar$/, [2018, 2020], 3, true, 380),
+  rate(
+    'Land Rover',
+    /^(?:New )?Range Rover(?: Sport)? P360(?: LWB)? MHEV$/,
+    [2022, 2023],
+    3,
+    true,
+    355,
+  ),
+  rate(
+    'Land Rover',
+    /^(?:New )?Range Rover(?: Sport)? P400(?: LWB)? MHEV$/,
+    [2022, 2026],
+    3,
+    true,
+    395,
+  ),
+  rate('Land Rover', /^Range Rover Velar P340 MHEV$/, [2021, 2023], 3, true, 335),
+  rate('Land Rover', /^Range Rover Velar P400 MHEV$/, [2021, 2026], 3, true, 395),
+  rate('Land Rover', /^LR2$/, [2008, 2012], 3.2, false, 230),
+  rate('Land Rover', /^(?:LR4|Range Rover|Range Rover Sport)$/, [2010, 2013], 5, false, 375),
+  rate('Land Rover', /^Defender (?:90|110)$/, [2022, 2026], 5, true, 518),
+  rate('Land Rover', /^Range Rover(?: Sport| L)?(?: FFV)?$/, [2014, 2017], 5, true, 510),
+  rate('Land Rover', /^Range Rover(?: Sport| L)?(?: FFV)?$/, [2018, 2021], 5, true, 518),
+
+  // Lexus: an IS F read 389, a GS 460 the GS 350's 301.
+  rate('Lexus', /^RC 300$/, [2018, 2025], 2, true, 241),
+  rate('Lexus', /^RC 300 AWD$/, [2016, 2018], 3.5, false, 255),
+  rate('Lexus', /^RC 300 AWD$/, [2019, 2020], 3.5, false, 260),
+  rate('Lexus', /^RC 350(?: AWD)?$/, [2015, 2018], 3.5, false, 306),
+  rate('Lexus', /^GS 460$/, [2008, 2011], 4.6, false, 342),
+  rate('Lexus', /^IS F$/, [2008, 2014], 5, false, 416),
+
+  // Lincoln: the 3.0 twin-turbo made 400 hp with all-wheel drive, 350 without.
+  rate('Lincoln', /^Nautilus/, [2019, 2023], 2.7, true, 335),
+  rate('Lincoln', /^Continental/, [2017, 2020], 3, true, 400),
+  { ...rate('Lincoln', /^MKZ/, [2017, 2020], 3, true, 400), when: allWheel },
+  { ...rate('Lincoln', /^MKZ/, [2017, 2020], 3, true, 350), when: twoWheel },
+  rate('Lincoln', /^MKZ(?! Hybrid)/, [2010, 2012], 3.5, false, 263),
+  rate('Lincoln', /^MKZ(?! Hybrid)/, [2013, 2016], 3.7, false, 300),
+  rate('Lincoln', /^MKS/, [2010, 2012], 3.5, true, 355),
+  rate('Lincoln', /^MKS/, [2013, 2016], 3.5, true, 365),
+
+  // Lotus: the Evora read the Evora S's 311, the Elise the Exige S's 225.
+  rate('Lotus', /^Evora$/, [2010, 2014], 3.5, false, 276),
+  rate('Lotus', /^Evora$/, [2011, 2014], 3.5, true, 345),
+  rate('Lotus', /^Elise\/Exige$/, [2008, 2011], 1.8, false, 189),
+
+  // Maserati: the Trofeos read 537 or 572 hp; US cars make 580 (a 2019-20 Levante 590).
+  rate('Maserati', /^Ghibli V6 SQ4/, [2014, 2019], 3, true, 404),
+  rate('Maserati', /^(?:Ghibli|Quattroporte) GT$/, [2022, 2024], 3, true, 345),
+  rate('Maserati', /^(?:Ghibli|Quattroporte) Trofeo$/, [2021, 2024], 3.8, true, 580),
+  rate('Maserati', /^Levante Trofeo$/, [2019, 2020], 3.8, true, 590),
+  rate('Maserati', /^Levante Trofeo$/, [2021, 2024], 3.8, true, 580),
+  rate('Maserati', /^Levante GTS$/, [2019, 2021], 3.8, true, 550),
+  rate('Maserati', /^Levante Modena V8$/, [2022, 2024], 3.8, true, 550),
+  rate('Maserati', /^Gran(?:turismo|cabrio) Trofeo$/i, [2024, 2026], 3, true, 542),
+  rate('Maserati', /^Grancabrio Modena$/i, [2025, 2026], 3, true, 483),
+  rate('Maserati', /^GT2 Stradale$/, [2025, 2026], 3, true, 631),
+  rate('Maserati', /^MCPURA/, [2026, 2026], 3, true, 621),
+
+  // Mazda's 2.5 turbo on regular fuel (250 hp on premium), as the CX-50 row.
+  rate('Mazda', /^(?:3|CX-30)\b/, [2021, 2026], 2.5, true, 227),
+  rate('Mazda', /^6\b/, [2018, 2021], 2.5, true, 227),
+  rate('Mazda', /^CX-5\b/, [2019, 2025], 2.5, true, 227),
+  rate('Mazda', /^CX-9\b/, [2016, 2023], 2.5, true, 227),
+  rate('Mazda', /^CX-5\b/, [2018, 2019], 2.2, true, 168, 'diesel'),
+  rate('Mazda', /^CX-70 Hybrid Boost High Power/, [2026, 2026], 3.3, true, 340),
+  rate('Mazda', /^CX-70 Hybrid Boost Low Power/, [2026, 2026], 3.3, true, 280),
+
+  // McLaren names its cars by metric horsepower: a 570S makes 570 PS, 562 hp.
+  ...(
+    [
+      [/^540C/, 533],
+      [/^570(?:GT|S)/, 562],
+      [/^600LT/, 592],
+      [/^620R/, 611],
+      [/^650S/, 641],
+      [/^675LT/, 666],
+    ] as const
+  ).map(([model, hp]) => rate('McLaren Automotive', model, [2015, 2020], 3.8, true, hp)),
+  rate('McLaren Automotive', /^765LT/, [2021, 2022], 4, true, 755),
+  rate('McLaren Automotive', /^MP4-12C/, [2013, 2014], 3.8, true, 616),
+  rate('McLaren Automotive', /^Speedtail$/, [2020, 2020], 4, true, 1036),
+
+  // Mercedes-Benz: a C63 S read the C63's 469, a GT C 510, a CLA45 382.
+  rate('Mercedes-Benz', /^AMG (?:CLA|GLA)45 4matic$/, [2016, 2019], 2, true, 375),
+  rate('Mercedes-Benz', /^GLA250/, [2015, 2020], 2, true, 208),
+  rate('Mercedes-Benz', /^GLA250/, [2021, 2026], 2, true, 221),
+  rate('Mercedes-Benz', /^GLB250/, [2020, 2026], 2, true, 221),
+  rate('Mercedes-Benz', /^Metris/, [2016, 2023], 2, true, 208),
+  ...eitherFlag(rate('Mercedes-Benz', /^AMG GT 43 4matic Plus$/, [2019, 2026], 3, true, 362)),
+  rate('Mercedes-Benz', /^AMG CLE53/, [2024, 2026], 3, true, 443),
+  rate('Mercedes-Benz', /^AMG C63(?: Coupe| Convertible)?$/, [2015, 2021], 4, true, 469),
+  rate('Mercedes-Benz', /^AMG C63 S(?: Coupe| Convertible)?$/, [2015, 2023], 4, true, 503),
+  rate('Mercedes-Benz', /^AMG GLC63 4matic Plus(?: Coupe)?$/, [2018, 2023], 4, true, 469),
+  rate('Mercedes-Benz', /^AMG GT 55 4matic Plus/, [2024, 2026], 4, true, 469),
+  rate('Mercedes-Benz', /^AMG GT 63 PRO/, [2025, 2026], 4, true, 603),
+  rate('Mercedes-Benz', /^AMG GT 63 4matic Plus$/, [2019, 2026], 4, true, 577),
+  rate('Mercedes-Benz', /^AMG GT 63 S 4matic Plus$/, [2019, 2023], 4, true, 630),
+  rate('Mercedes-Benz', /^AMG GT C (?:Coupe|Roadster)$/, [2017, 2021], 4, true, 550),
+  rate('Mercedes-Benz', /^AMG GT(?: Coupe| Roadster)?$/, [2016, 2017], 4, true, 456),
+  rate('Mercedes-Benz', /^AMG GT(?: Coupe| Roadster)?$/, [2018, 2019], 4, true, 469),
+  rate('Mercedes-Benz', /^AMG GT(?: Coupe| Roadster)?$/, [2020, 2021], 4, true, 523),
+  rate('Mercedes-Benz', /^AMG GT S(?: Coupe)?$/, [2018, 2019], 4, true, 515),
+  rate('Mercedes-Benz', /^AMG GT R (?:Coupe|Roadster)$/, [2018, 2021], 4, true, 577),
+  rate('Mercedes-Benz', /^AMG SL55 4matic Plus$/, [2022, 2026], 4, true, 469),
+  rate('Mercedes-Benz', /^Maybach S560/, [2018, 2020], 4, true, 463),
+  rate('Mercedes-Benz', /^Maybach S550/, [2016, 2017], 4.7, true, 449),
+  rate('Mercedes-Benz', /^(?:AMG SLK55|SLK55 AMG)$/, [2012, 2016], 5.5, false, 415),
+  rate('Mercedes-Benz', /^(?:AMG CLS63 S|CLS63 AMG S) 4matic$/, [2014, 2018], 5.5, true, 577),
+  rate(
+    'Mercedes-Benz',
+    /^(?:AMG E63|E63 AMG) 4matic(?: \(wagon\))?$/,
+    [2014, 2016],
+    5.5,
+    true,
+    550,
+  ),
+  rate(
+    'Mercedes-Benz',
+    /^(?:AMG E63 S|E63 AMG S)(?: 4matic)?(?: \(wagon\))?$/,
+    [2014, 2016],
+    5.5,
+    true,
+    577,
+  ),
+  rate('Mercedes-Benz', /^AMG GL63$/, [2013, 2016], 5.5, true, 550),
+  rate('Mercedes-Benz', /^AMG S63 4matic Coupe$/, [2015, 2017], 5.5, true, 577),
+  rate('Mercedes-Benz', /^G63 AMG$/, [2013, 2015], 5.5, true, 536),
+  rate(
+    'Mercedes-Benz',
+    /^(?:S65 AMG|AMG S65)(?: Coupe| Convertible)?$/,
+    [2015, 2020],
+    6,
+    true,
+    621,
+  ),
+  rate('Mercedes-Benz', /^C63 AMG(?: Coupe)?$/, [2008, 2015], 6.2, false, 451),
+  rate('Mercedes-Benz', /^SLS AMG GT (?:Coupe|Roadster)$/, [2013, 2015], 6.2, false, 583),
+  rate('Mercedes-Benz', /^E550(?: 4matic)?$/, [2007, 2011], 5.5, false, 382),
+
+  // MINI
+  rate('MINI', /^JCW (?:Countryman(?: Coupe)?|Paceman) All4$/, [2013, 2016], 1.6, true, 208),
+  rate('MINI', /^Cooper S Hardtop [24] door$/, [2016, 2017], 2, true, 189),
+  rate('MINI', /^Cooper S [24] Door$/, [2026, 2026], 2, true, 201),
+  rate('MINI', /^JCW 2 Door$/, [2026, 2026], 2, true, 228),
+  rate('MINI', /^John Cooper Works Clubman All4$/, [2020, 2024], 2, true, 301),
+  rate('MINI', /^Cooper C (?:4 Door|Convertible)$/, [2026, 2026], 2, true, 161),
+  rate('MINI', /^Cooper S Convertible$/, [2009, 2010], 1.6, true, 172),
+  rate('MINI', /^Cooper S (?:Coupe|Roadster)$/, [2012, 2015], 1.6, true, 181),
+
+  // Mitsubishi
+  rate('Mitsubishi', /^Lancer Sportback$/, [2010, 2014], 2, false, 148),
+  rate('Mitsubishi', /^Lancer Sportback$/, [2009, 2014], 2.4, false, 168),
+  rate('Mitsubishi', /^Outlander Sport/, [2014, 2026], 2.4, false, 168),
+
+  // Nissan: the 2014-18 GT-R read 530, a 2024 Z 410.
+  rate('Nissan', /^NV200/, [2013, 2021], 2, false, 131),
+  rate('Nissan', /^Rogue Select/, [2014, 2015], 2.5, false, 170),
+  { ...rate('Nissan', /^Sentra$/, [2007, 2012], 2.5, false, 200), when: manual },
+  { ...rate('Nissan', /^Sentra$/, [2007, 2012], 2.5, false, 177), when: automatic },
+  rate('Nissan', /^Altima Coupe$/, [2008, 2013], 3.5, false, 270),
+  rate('Nissan', /^Pathfinder/, [2022, 2026], 3.5, false, 284),
+  rate('Nissan', /^370[Zz](?: Roadster)?$/, [2009, 2020], 3.7, false, 332),
+  rate('Nissan', /^GT-R$/, [2014, 2016], 3.8, true, 545),
+  rate('Nissan', /^GT-R$/, [2017, 2024], 3.8, true, 565),
+  rate('Nissan', /^Z$/, [2023, 2026], 3, true, 400),
+
+  // Porsche: 997 Carrera 4Ss read 350, 991 GTSs 350, 991 Turbos the Turbo S's 560.
+  rate('Porsche', /^911 Carrera 4(?: Cabriolet| Targa)?$/, [2009, 2012], 3.6, false, 345),
+  rate('Porsche', /^911 Carrera 4S(?: Cabriolet| Targa)?$/, [2009, 2012], 3.8, false, 385),
+  rate('Porsche', /^911 Carrera S(?: Cabriolet)?$/, [2009, 2012], 3.8, false, 385),
+  rate(
+    'Porsche',
+    /^911 (?:C4 )?GTS(?: Cabriolet)?$|^911 Speedster$/,
+    [2011, 2012],
+    3.8,
+    false,
+    408,
+  ),
+  rate('Porsche', /^Carrera 4 Targa$/, [2008, 2008], 3.6, false, 325),
+  rate('Porsche', /^Carrera 4 Targa$/, [2009, 2009], 3.6, false, 345),
+  rate('Porsche', /^New 911 Carrera(?: Cabriolet)?$/, [2012, 2012], 3.4, false, 350),
+  rate('Porsche', /^New 911 Carrera S(?: Cabriolet)?$/, [2012, 2012], 3.8, false, 400),
+  rate(
+    'Porsche',
+    /^911 (?:Carrera (?:4 )?GTS|Targa 4 GTS)(?: Cabriolet)?$/,
+    [2015, 2016],
+    3.8,
+    false,
+    430,
+  ),
+  rate('Porsche', /^911 Turbo(?: Cabriolet| Coupe)?$/, [2014, 2016], 3.8, true, 520),
+  rate('Porsche', /^911 Turbo S(?: Cabriolet| Coupe)?$/, [2014, 2016], 3.8, true, 560),
+  rate('Porsche', /^911 Carrera T$/, [2018, 2019], 3, true, 370),
+  rate('Porsche', /^911 Turbo(?: Cabriolet)?$/, [2017, 2019], 3.8, true, 540),
+  rate('Porsche', /^911 Turbo S(?: Cabriolet)?$/, [2017, 2019], 3.8, true, 580),
+  rate('Porsche', /^911 GT3 RS$/, [2019, 2019], 4, false, 520),
+  rate('Porsche', /^911 Carrera T$/, [2023, 2024], 3, true, 379),
+  rate('Porsche', /^911 Carrera (?:4 )?GTS Cabriolet$/, [2022, 2024], 3, true, 473),
+  rate('Porsche', /^911 Targa 4$/, [2021, 2024], 3, true, 379),
+  rate('Porsche', /^911 Targa 4S$/, [2021, 2024], 3, true, 443),
+  rate('Porsche', /^911 Carrera$/, [2025, 2026], 3, true, 388),
+  rate('Porsche', /^911 Targa 4S$/, [2026, 2026], 3, true, 473),
+  // The 2025 GTS and 2026 Turbo S are T-Hybrids, rated as a system.
+  rate(
+    'Porsche',
+    /^911 (?:Carrera (?:4 )?|Targa 4 )?GTS(?: Cabriolet)?$/,
+    [2025, 2026],
+    3.6,
+    true,
+    532,
+  ),
+  rate('Porsche', /^911 Turbo S(?: Cabriolet)?$/, [2026, 2026], 3.6, true, 701),
+  rate('Porsche', /^Boxster$/, [2009, 2012], 2.9, false, 255),
+  rate('Porsche', /^Boxster S$/, [2009, 2012], 3.4, false, 310),
+  rate('Porsche', /^Boxster GTS$/, [2015, 2016], 3.4, false, 330),
+  rate('Porsche', /^Cayman R$/, [2012, 2012], 3.4, false, 330),
+  rate('Porsche', /^Cayman$/, [2014, 2016], 2.7, false, 275),
+  rate('Porsche', /^Cayman S$/, [2014, 2016], 3.4, false, 325),
+  rate('Porsche', /^Panamera 4?S$/, [2010, 2013], 4.8, false, 400),
+  rate('Porsche', /^Panamera S$/, [2014, 2016], 3, true, 420),
+  rate('Porsche', /^Panamera Turbo S$/, [2012, 2013], 4.8, true, 550),
+  rate('Porsche', /^Panamera Turbo S(?: Executive)?$/, [2014, 2016], 4.8, true, 570),
+  rate('Porsche', /^Panamera Turbo S(?: Executive| ST|\/Exec\/ST)?$/, [2021, 2023], 4, true, 620),
+  rate('Porsche', /^Panamera 4S(?: Executive| ST)?$/, [2021, 2023], 2.9, true, 443),
+  rate('Porsche', /^Panamera 4 ST$/, [2021, 2023], 2.9, true, 325),
+  rate('Porsche', /^Cayenne Turbo GT(?: Coupe)?$/, [2022, 2023], 4, true, 631),
+  rate('Porsche', /^Cayenne Turbo GT(?: Coupe)?$/, [2025, 2026], 4, true, 650),
+
+  // Ram
+  rate('Ram', /^1500 Classic/, [2019, 2019], 3, true, 240, 'diesel'),
+  rate('Ram', /^Promaster City/i, [2015, 2022], 2.4, false, 178),
+  rate('Ram', /^C\/V/, [2012, 2015], 3.6, false, 283),
+
+  // Scion
+  rate('Scion', /^iA$/, [2016, 2016], 1.5, false, 106),
+  rate('Scion', /^FR-S$/, [2013, 2016], 2, false, 200),
+  rate('Scion', /^xB$/, [2008, 2015], 2.4, false, 158),
+
+  // smart
+  rate('smart', /^fortwo/, [2016, 2019], 0.9, true, 89),
+  rate('smart', /^fortwo/, [2008, 2015], 1, false, 70),
+
+  // Subaru: the Impreza 2.5i read the WRX's 224.
+  rate('Subaru', /^Impreza/, [2017, 2023], 2, false, 152),
+  rate('Subaru', /^Impreza/, [2024, 2026], 2.5, false, 182),
+  rate('Subaru', /^Impreza(?! WRX)/, [2008, 2011], 2.5, false, 170),
+  rate('Subaru', /^Impreza Wagon\/Outback Sport/, [2011, 2012], 2.5, true, 265),
+  rate('Subaru', /^Crosstrek(?! Hybrid)/, [2021, 2026], 2.5, false, 182),
+  rate('Subaru', /^Ascent/, [2019, 2026], 2.4, true, 260),
+  rate('Subaru', /^(?:Legacy|Outback)/, [2020, 2026], 2.4, true, 260),
+  rate('Subaru', /^(?:Legacy|Outback)/, [2010, 2012], 2.5, false, 170),
+  rate('Subaru', /^Legacy/, [2005, 2007], 2.5, true, 250),
+  rate('Subaru', /^Legacy/, [2008, 2009], 2.5, true, 243),
+  rate('Subaru', /^Legacy/, [2010, 2012], 2.5, true, 265),
+  rate('Subaru', /^Forester/, [2007, 2013], 2.5, true, 224),
+
+  // Suzuki: the Kizashi made 185 hp with the manual, 180 with the CVT.
+  { ...rate('Suzuki', /^Kizashi/, [2010, 2013], 2.4, false, 185), when: manual },
+  { ...rate('Suzuki', /^Kizashi/, [2010, 2013], 2.4, false, 180), when: automatic },
+  rate('Suzuki', /^Equator/, [2009, 2012], 4, false, 261),
+
+  // Toyota: a GR86 read 264.
+  rate('Toyota', /^Matrix/, [2009, 2013], 1.8, false, 132),
+  rate('Toyota', /^GR 86$/, [2022, 2026], 2.4, false, 228),
+  rate('Toyota', /^GR Supra$/, [2021, 2026], 2, true, 255),
+  rate('Toyota', /^GR Supra$/, [2020, 2020], 3, true, 335),
+  rate('Toyota', /^GR Supra$/, [2021, 2026], 3, true, 382),
+  rate('Toyota', /^Tacoma SR5/, [2024, 2026], 2.4, true, 278),
+  rate('Toyota', /^Avalon AWD$/, [2021, 2022], 2.5, false, 205),
+  rate('Toyota', /^Avalon$/, [2013, 2018], 3.5, false, 268),
+  rate('Toyota', /^Camry$/, [2012, 2017], 2.5, false, 178),
+  rate('Toyota', /^Camry$/, [2012, 2017], 3.5, false, 268),
+  rate('Toyota', /^Camry$/, [2018, 2024], 3.5, false, 301),
+  rate('Toyota', /^Venza/, [2009, 2015], 3.5, false, 268),
+
+  // Volkswagen: Beetle TDIs read 170-208 hp, a 1.8T Beetle the 2.0T's 210.
+  rate('Volkswagen', /^Passat/, [2012, 2014], 2, true, 140, 'diesel'),
+  rate('Volkswagen', /^Passat/, [2015, 2015], 2, true, 150, 'diesel'),
+  rate('Volkswagen', /^Touareg/, [2011, 2016], 3, true, 240, 'diesel'),
+  rate('Volkswagen', /^Touareg$/, [2009, 2017], 3.6, false, 280),
+  rate('Volkswagen', /^Golf SportWagen/, [2017, 2019], 1.4, true, 147),
+  rate('Volkswagen', /^Atlas Cross Sport/, [2020, 2023], 2, true, 235),
+  rate('Volkswagen', /^Atlas Cross Sport/, [2020, 2023], 3.6, false, 276),
+  rate('Volkswagen', /^Beetle(?: Convertible)?$/, [2012, 2013], 2, true, 200),
+  rate('Volkswagen', /^Beetle(?: Convertible)?$/, [2014, 2016], 2, true, 210),
+  rate('Volkswagen', /^Beetle(?: Dune)?(?: Convertible)?$/, [2017, 2017], 1.8, true, 170),
+  rate('Volkswagen', /^Beetle(?: Dune)?(?: Convertible)?$/, [2018, 2019], 2, true, 174),
+  rate('Volkswagen', /^Beetle(?: Convertible)?$/, [2013, 2015], 2, true, 140, 'diesel'),
+  rate('Volkswagen', /^Jetta$/, [2012, 2013], 2, true, 200),
+  rate('Volkswagen', /^Jetta$/, [2014, 2018], 2, true, 210),
+  rate('Volkswagen', /^Tiguan/, [2018, 2021], 2, true, 184),
+
+  // Volvo filed 2015-21 cars by drive, not engine; the turbo and supercharger
+  // flags tell a T5 from a T6. The older P3 cars (S60, V60 and XC60 to 2017,
+  // S80, XC70) made 240 and 302 hp, the SPA cars 250 and 316.
+  ...[
+    [/^(?:S60|V60)(?: CC| Inscription)? (?:FWD|AWD)$/, [2015, 2018], 240, 302],
+    [/^(?:S80|XC70) (?:FWD|AWD)$/, [2015, 2016], 240, 302],
+    [/^XC60 (?:FWD|AWD)$/, [2015, 2017], 240, 302],
+    [/^(?:S60|V60) (?:FWD|AWD)$/, [2019, 2021], 250, 316],
+    [/^V60 CC AWD$/, [2020, 2021], 250, 316],
+    [/^XC60 (?:FWD|AWD)$/, [2018, 2021], 250, 316],
+    [/^(?:XC90|S90|V90(?: CC)?) (?:FWD|AWD)$/, [2016, 2021], 250, 316],
+  ].flatMap(([model, years, t5, t6]) => [
+    {
+      ...rate('Volvo', model as RegExp, years as [number, number], 2, true, t5 as number),
+      when: turboOnly,
+    },
+    {
+      ...rate('Volvo', model as RegExp, years as [number, number], 2, true, t6 as number),
+      when: twinCharged,
+    },
+  ]),
+  // EPA's 2017 V90 Cross Country (a T6) has no turbo flag.
+  rate('Volvo', /^V90 CC AWD$/, [2017, 2017], 2, false, 316),
+  // Before 2022 EPA filed the XC40 T4 as "FWD" and the T5 as "AWD".
+  rate('Volvo', /^XC40 FWD$/, [2019, 2021], 2, true, 187),
+  rate('Volvo', /^XC40 AWD$/, [2019, 2021], 2, true, 248),
+  rate('Volvo', /^V60 AWD$/, [2015, 2016], 3, true, 325),
+  rate('Volvo', /^[SV]60 Pole[Ss]tar AWD$/, [2015, 2016], 3, true, 345),
+  rate('Volvo', /^XC60 AWD$/, [2015, 2016], 2.5, true, 250),
+];
