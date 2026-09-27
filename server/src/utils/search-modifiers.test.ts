@@ -306,4 +306,21 @@ describe('extractQueryModifiers', () => {
     expect(extractQueryModifiers('v6 camry')).toEqual({ text: 'camry', cylinders: [6] });
     expect(extractQueryModifiers('3 cylinder').cylinders).toEqual([3]);
   });
+
+  it('reads seats, doors and words about who rides', () => {
+    expect(extractQueryModifiers('seating for 7')).toEqual({ text: '', threeRow: true });
+    expect(extractQueryModifiers('seats 8').threeRow).toBe(true);
+    expect(extractQueryModifiers('5 seater suv')).toEqual({ text: 'suv', twoRow: true });
+    expect(extractQueryModifiers('two seater convertible')).toEqual({
+      text: 'convertible',
+      twoSeater: true,
+    });
+    expect(extractQueryModifiers('wrangler 2 door')).toEqual({ text: 'wrangler', doors: 2 });
+    expect(extractQueryModifiers('four-door').doors).toBe(4);
+    expect(extractQueryModifiers('work truck')).toEqual({ text: 'truck', unmeasured: ['work'] });
+    expect(extractQueryModifiers('car for tall people').unmeasured).toEqual(['tall people']);
+    expect(extractQueryModifiers('best car for commuting').vehicleClass?.label).toBe(
+      'economy cars',
+    );
+  });
 });

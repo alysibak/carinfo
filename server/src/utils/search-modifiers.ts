@@ -17,6 +17,12 @@ export interface QueryModifiers {
   transmission?: string[];
   cylinders?: number[];
   threeRow?: boolean;
+  /** "5 seater", "two row": models sold with a third row left out. */
+  twoRow?: boolean;
+  /** "2 seater", "two-seat": EPA's two-seater class. */
+  twoSeater?: boolean;
+  /** "2 door", "four-door": the doors asked for. */
+  doors?: number;
   /** "300 mile range", "400 km range": the least EPA range asked for, in miles. */
   minRangeMiles?: number;
   /** "compact suv", "sports car", "luxury sedan": the kind of vehicle asked for. */
@@ -152,7 +158,7 @@ const CLASS_PHRASES: Array<[RegExp, Omit<VehicleClassQuery, 'luxury'>]> = [
   [/\b(?:grand tourers?|gt cars?)\b/, { sets: ['grand-tourer'], label: 'grand tourers' }],
   [/\boff[- ]?road(?:ers?|ing)?\b/, { sets: ['off-roader'], label: 'off-roaders' }],
   [
-    /\b(?:economy|commuter|city) cars?\b/,
+    /\b(?:economy|commuter|city) cars?\b|\bcommut(?:ing|e|er)\b/,
     { sets: ['subcompact-car', 'compact-car', 'small-ev'], label: 'economy cars' },
   ],
 ];
@@ -337,7 +343,7 @@ const LISTING_WORDS =
  * read as a name.
  */
 const UNMEASURED =
-  /\b(?:best|good|great|top|reliable|dependable|quality|nice|decent|perfect|ideal|recommended|popular|comfortable|fun|cool|first|beginner|starter|tow|towing|haul|hauling|seniors?|elderly|kids?|son|daughter|wife|husband|mom|dad|girlfriend|boyfriend|grand(?:ma|pa|mother|father))\b/g;
+  /\b(?:best|good|great|top|reliable|dependable|quality|nice|decent|perfect|ideal|recommended|popular|comfortable|fun|cool|first|beginner|starter|tow|towing|haul|hauling|seniors?|elderly|kids?|son|daughter|wife|husband|mom|dad|girlfriend|boyfriend|grand(?:ma|pa|mother|father)|roomy|spacious|cargo space|legroom|headroom|dogs?|pets?|(?:tall|short|big) (?:people|persons?|drivers?|guys?)|work(?= (?:trucks?|vans?|pickups?)\b))\b/g;
 
 /**
  * A first car, or a car for someone learning: "good first car for a teenager"
@@ -425,7 +431,17 @@ const ENGINE_FAMILY_PHRASES: Array<[RegExp, EngineFamilyId]> = [
 ];
 
 const THREE_ROW_PHRASE =
-  /\b(?:third[- ]row|3rd[- ]row|3[- ]row|three[- ]row|[78][- ]?seat(?:er|s)?|[78][- ]passenger|seven[- ]seat(?:er|s)?|eight[- ]seat(?:er|s)?)\b/;
+  /\b(?:third[- ]row|3rd[- ]row|3[- ]row|three[- ]row|[78][- ]?seat(?:er|s)?|[78][- ]passengers?|(?:seven|eight)[- ]seat(?:er|s)?|(?:seven|eight)[- ]passengers?|(?:seats?|seating for|room for) (?:[78]|seven|eight)(?: (?:people|passengers|adults))?)\b/;
+
+/** Two rows of seats: "seating for 7" asks for a third row, "5 seater" for none. */
+const TWO_ROW_PHRASE =
+  /\b(?:[45]|four|five)[- ]?(?:seat(?:er|s)?|passengers?)\b|\b(?:seats?|seating for|room for) (?:[45]|four|five)\b|\b(?:2|two)[- ]row\b/;
+
+/** EPA's "Two Seaters" size class: roadsters, sports cars and city cars. */
+const TWO_SEATER_PHRASE = /\b(?:2|two)[- ]?seat(?:er|s)?\b/;
+
+const DOOR_WORDS: Record<string, number> = { two: 2, three: 3, four: 4, five: 5 };
+const DOOR_PHRASE = /\b([2-5]|two|three|four|five)[- ]?(?:doors?|dr)\b/;
 
 /** Words that say nothing EPA records: every listing is a model, new or used, and a car. */
 const FILLER = /\b(?:used|pre-?owned|second[- ]hand|certified|cars?|vehicles?|automobiles?)\b/g;
@@ -706,6 +722,10 @@ export function extractQueryModifiers(
   const cylinders = CYLINDER_PHRASES.filter(([re]) => take(re)).map(([, n]) => n);
   if (cylinders.length) out.cylinders = cylinders;
   if (take(THREE_ROW_PHRASE)) out.threeRow = true;
+  else if (take(TWO_SEATER_PHRASE)) out.twoSeater = true;
+  else if (take(TWO_ROW_PHRASE)) out.twoRow = true;
+  const doors = take(DOOR_PHRASE);
+  if (doors) out.doors = DOOR_WORDS[doors[1]] ?? Number(doors[1]);
   // "300 mile range", "with 300+ miles of range", "400 km range", "range over 300 miles"
   const range = take(
     /\b(?:(?:with|range|over|at least|of)\s+)*(\d{2,4})\s*\+?\s*(mi|miles?|km|kilomet(?:re|er)s?)\b(?:\s+(?:of\s+)?range)?/,

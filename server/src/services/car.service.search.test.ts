@@ -834,6 +834,34 @@ describe('car.service natural language search', () => {
     expect(ecoboost.results.every((c) => c.make === 'Ford' && !!c.engine.aspiration)).toBe(true);
   });
 
+  it('reads drive and body phrases, seats and doors', () => {
+    // "rear wheel drive" and "four wheel drive" found nothing.
+    const rwd = searchCars({ query: 'rear wheel drive sedan', limit: 200 });
+    expect(rwd.total).toBeGreaterThan(20);
+    expect(rwd.results.every((c) => c.driveType === 'RWD' && c.bodyStyle === 'sedan')).toBe(true);
+    expect(
+      searchCars({ query: 'station wagon', limit: 100 }).results.every(
+        (c) => c.bodyStyle === 'wagon',
+      ),
+    ).toBe(true);
+    const twoSeaters = searchCars({ query: '2 seater', limit: 200 });
+    expect(twoSeaters.results.every((c) => c.epa?.vClass === 'Two Seaters')).toBe(true);
+    // "5 seater suv" found one Isuzu with "5-passenger" in its name.
+    const fiveSeats = searchCars({ query: '5 seater suv', limit: 300 });
+    expect(fiveSeats.total).toBeGreaterThan(50);
+    expect(fiveSeats.results.map((c) => c.model)).not.toContain('Telluride FWD');
+    const twoDoors = searchCars({ query: 'two door', limit: 300 });
+    expect(twoDoors.total).toBeGreaterThan(50);
+    expect(twoDoors.results.every((c) => c.bodyStyle !== 'sedan')).toBe(true);
+    expect(searchCars({ query: 'wrangler 2 door', limit: 5 }).results[0].model).toMatch(/2dr/);
+    // Beside a truck, a door count is set aside, not a reason to find nothing.
+    const trucks = searchCars({ query: '4 door truck', limit: 5 });
+    expect(trucks.total).toBeGreaterThan(10);
+    expect(trucks.interpretation?.unmeasured).toContain('4-door');
+    // The plain name leads its year: a Camry Solara convertible stood for "2004 camry".
+    expect(searchCars({ query: '2004 toyota camry', limit: 1 }).results[0].model).toBe('Camry');
+  });
+
   it('completes the name in a rivals phrase, one entry per model', () => {
     const suggestions = getSearchSuggestions('cars like a cam', 8);
     expect(suggestions[0]).toMatchObject({

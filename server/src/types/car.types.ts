@@ -199,8 +199,15 @@ export interface CarFilter {
   cylinders?: number[];
   /** "turbocharged", "supercharged" (a car with both matches either). */
   aspiration?: string[];
-  /** Minivans, passenger vans and three-row SUVs, by model: EPA records no seating. */
+  /**
+   * Minivans, passenger vans and three-row SUVs, by model: EPA records no
+   * seating. False keeps to models sold without a third row ("5 seater").
+   */
   threeRow?: boolean;
+  /** EPA's two-seater class. */
+  twoSeater?: boolean;
+  /** Doors, from the model name or the body style. */
+  doors?: number;
   /** EPA range in miles (EVs and plug-in hybrids' electric range). */
   rangeMiles?: { min?: number; max?: number };
   /** Competitive sets ("compact-suv", "midsize-car"), any of which a car must be in. */
@@ -266,6 +273,12 @@ export interface SearchInterpretation {
   newestFrom?: number;
   /** "third row suv", "7 seater": matched by model name. */
   threeRow?: boolean;
+  /** "5 seater": models sold with a third row left out. */
+  twoRow?: boolean;
+  /** "2 seater": EPA's two-seater class. */
+  twoSeater?: boolean;
+  /** "2 door": doors asked for, read from names and body styles. */
+  doors?: number;
   /** "accord vs camry": the searches shown together. */
   compared?: string[];
   /** The base configuration each side names, for the compare page. */

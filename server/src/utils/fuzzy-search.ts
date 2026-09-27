@@ -78,6 +78,15 @@ const PHRASE_ALIASES: [RegExp, string][] = [
   // to the models: "3 series" → "3-series" (BMW 330i, M340i…), "c class" →
   // "c-class" (Mercedes C300, AMG C43…).
   [/\b([1-8]) series\b/g, '$1-series'],
+  // Drive, body and induction said in words: "rear wheel drive" found nothing,
+  // "four wheel drive" nothing, "station wagon" only names with those words.
+  [/\ball[- ]wheel[- ]drive\b/g, 'awd'],
+  [/\b(?:four|4)[- ]wheel[- ]drive\b/g, '4wd'],
+  [/\bfront[- ]wheel[- ]drive\b/g, 'fwd'],
+  [/\brear[- ]wheel[- ]drive\b/g, 'rwd'],
+  [/\b(?:two|2)[- ]wheel[- ]drive\b/g, '2wd'],
+  [/\bstation wagons?\b/g, 'wagon'],
+  [/\b(?:twin|bi)[- ]?turbo(?:charged)?\b/g, 'twin-turbo'],
   [/\bg[ -]?wagon\b/g, 'g-class'],
   [
     /\b(a|b|c|e|g|m|r|s|cl|cla|cle|clk|cls|gl|gla|glb|glc|gle|glk|gls|sl|slc|slk) class\b/g,

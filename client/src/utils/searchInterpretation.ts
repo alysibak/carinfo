@@ -158,6 +158,25 @@ export function describeSearchInterpretation(
   if (interpretation.newestFrom != null) {
     lines.push(`Model years ${interpretation.newestFrom} and newer.`);
   }
+  if (interpretation.twoRow) {
+    lines.push(
+      'Two rows of seats: models sold with a third row are left out, by model, as EPA records no seating.',
+    );
+  }
+  if (interpretation.twoSeater) {
+    lines.push("Two-seaters: EPA's two-seater class.");
+  }
+  if (interpretation.doors != null) {
+    lines.push(
+      `${interpretation.doors}-door models: named so, or ${
+        interpretation.doors === 2
+          ? 'coupes and convertibles'
+          : interpretation.doors === 4
+            ? 'sedans'
+            : 'wagons'
+      }, as EPA records no doors.`,
+    );
+  }
   if (interpretation.threeRow) {
     lines.push(
       'Minivans, passenger vans and SUVs sold with a third row, by model: EPA records no seating.',

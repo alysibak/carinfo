@@ -1104,6 +1104,14 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
     filters.threeRow = true;
     interpretation.threeRow = true;
   }
+  if (modifiers.twoRow && filters.threeRow == null) {
+    filters.threeRow = false;
+    interpretation.twoRow = true;
+  }
+  if (modifiers.twoSeater) {
+    filters.twoSeater = true;
+    interpretation.twoSeater = true;
+  }
   if (modifiers.fuelEconomy && !explicit?.fuelEconomy) {
     const { min, max, unit, basis } = modifiers.fuelEconomy;
     // L/100 km falls as MPG rises: a ceiling in litres is a floor in MPG. The
@@ -1177,9 +1185,23 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
       interpretation.recentFrom = LATEST_FULL_MODEL_YEAR - 10;
     }
   };
+  // Doors, where the body says or the name does: EPA records none. Beside a
+  // truck, SUV or van word the count is set aside rather than emptying the
+  // search ("4 door truck"). After the body words are read.
+  const applyDoors = () => {
+    if (modifiers.doors == null) return;
+    const bodies = filters.bodyStyle ?? [];
+    if (bodies.length && bodies.every((b) => !DOORS_BY_BODY[b])) {
+      interpretation.unmeasured = [...(interpretation.unmeasured ?? []), `${modifiers.doors}-door`];
+    } else {
+      filters.doors = modifiers.doors;
+      interpretation.doors = modifiers.doors;
+    }
+  };
   const raw = price.text;
   if (!raw) {
     // "cheap reliable car" leaves no words, and listed 1995 Mirages.
+    applyDoors();
     keepRecentWhenCheapest();
     return withInterpretation({ ...query, query: undefined, filters });
   }
@@ -1294,6 +1316,7 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
 
   const remainingQuery = textTokens.join(' ').trim() || undefined;
 
+  applyDoors();
   keepRecentWhenCheapest();
 
   return withInterpretation({
@@ -1302,6 +1325,26 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
     filters,
     ...(trimForms ? { trimForms } : {}),
   });
+}
+
+/** Doors by body style, where the body tells: a coupe has two, a sedan four. */
+const DOORS_BY_BODY: Partial<Record<string, number>> = {
+  coupe: 2,
+  convertible: 2,
+  sedan: 4,
+  wagon: 5,
+};
+const DOOR_NAME = /\b([2-5])[- ]?(?:dr|doors?)\b|\b(two|three|four|five)[- ]doors?\b/i;
+const DOOR_COUNT_WORDS: Record<string, number> = { two: 2, three: 3, four: 4, five: 5 };
+
+/**
+ * A car's doors: from its name ("Wrangler 2dr", "Civic 5Dr", "Cooper (5-doors)"),
+ * else from its body. Undefined for a hatchback, SUV, truck or van not named.
+ */
+function doorCount(car: Car): number | undefined {
+  const named = DOOR_NAME.exec(car.model);
+  if (named) return named[1] ? Number(named[1]) : DOOR_COUNT_WORDS[named[2].toLowerCase()];
+  return DOORS_BY_BODY[car.bodyStyle];
 }
 
 const trimLabels = new WeakMap<Car, string>();
@@ -1454,6 +1497,7 @@ const DRIVE_WORDS: Record<string, string[]> = {
   '4x4': ['4WD', 'AWD'],
   fwd: ['FWD'],
   rwd: ['RWD'],
+  '2wd': ['FWD', 'RWD'],
 };
 
 /**
@@ -1702,8 +1746,18 @@ function sortByRelevanceInPlace(cars: Car[], searchText: string): void {
   cars.sort((a, b) => {
     const scoreDiff = scoreRelevance(b, tokens) - scoreRelevance(a, tokens);
     if (scoreDiff !== 0) return scoreDiff;
-    return b.year - a.year;
+    if (a.year !== b.year) return b.year - a.year;
+    // Of equals, the plainer name: "2004 camry" showed the Camry Solara
+    // convertible for the year, as it came first.
+    return unaskedNameWords(a, tokens) - unaskedNameWords(b, tokens);
   });
+}
+
+/** Words of a car's model family the query did not ask for. */
+function unaskedNameWords(car: Car, tokens: string[]): number {
+  return modelFamilyName(car.model)
+    .split(/\s+/)
+    .filter((word) => word && !tokens.some((t) => word === t || word.startsWith(t))).length;
 }
 
 function scoreRelevance(car: Car, tokens: string[]): number {
@@ -1736,12 +1790,12 @@ function scoreRelevance(car: Car, tokens: string[]): number {
       score += 48;
     // A word of the model name ("gti" in "Golf GTI") beats a hit only in the
     // trim: EPA files the Golf R under a "golf-gti" base model.
-    else if (modelLower.split(/[\s-]+/).includes(token) || variantWords.includes(token))
+    else if (modelLower.split(/[\s-]+/).includes(token) || variantWords.includes(token)) {
       // A whole word of the name counts like its first word once it is long
       // enough to mean something: "lightning" is the F-150 Lightning as much as
       // the 1990s "Lightning Pickup", and the newer should lead.
       score += token.length >= 5 ? 48 : 36;
-    else if (modelLower.startsWith(token)) score += 30;
+    } else if (modelLower.startsWith(token)) score += 30;
     else if (haystack.includes(token)) score += 12;
     else if (fuzzyTokenMatch(makeLower, token)) score += 28;
     else if (fuzzyTokenMatch(family, token) || fuzzyTokenMatch(modelLower, token)) score += 24;
@@ -1894,6 +1948,9 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
   const cylinderSet = filters?.cylinders?.length ? new Set(filters.cylinders) : null;
   const aspirationSet = filters?.aspiration?.length ? new Set(filters.aspiration) : null;
   const threeRow = filters?.threeRow === true;
+  const twoRow = filters?.threeRow === false;
+  const twoSeater = filters?.twoSeater === true;
+  const doors = filters?.doors;
   const rangeMin = filters?.rangeMiles?.min;
   const rangeMax = filters?.rangeMiles?.max;
   const classSet = filters?.classes?.length ? new Set(filters.classes) : null;
@@ -1917,6 +1974,9 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
     !!cylinderSet ||
     !!aspirationSet ||
     threeRow ||
+    twoRow ||
+    twoSeater ||
+    doors != null ||
     rangeMin != null ||
     rangeMax != null ||
     hasTextSearch ||
@@ -1989,6 +2049,9 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
     if (engineFamily && !engineFamily.test(car)) continue;
     if (aspirationSet && !aspirationSet.has(car.engine.aspiration ?? '')) continue;
     if (threeRow && !isThreeRow(car)) continue;
+    if (twoRow && isThreeRow(car)) continue;
+    if (twoSeater && car.epa?.vClass !== 'Two Seaters') continue;
+    if (doors != null && doorCount(car) !== doors) continue;
     if (classSet && !competitiveSets(car).some((set) => classSet.has(set))) continue;
     if (segmentSet && !segmentSet.has(car.shoppingSegment ?? 'mainstream')) continue;
     if (luxuryOnly && !isLuxuryBrand(car.make)) continue;

@@ -93,6 +93,14 @@ describe('describeSearchInterpretation', () => {
     ]);
   });
 
+  it('names seating and doors, which EPA does not record', () => {
+    expect(describeSearchInterpretation({ twoRow: true, doors: 2, twoSeater: true })).toEqual([
+      'Two rows of seats: models sold with a third row are left out, by model, as EPA records no seating.',
+      "Two-seaters: EPA's two-seater class.",
+      '2-door models: named so, or coupes and convertibles, as EPA records no doors.',
+    ]);
+  });
+
   it('names engine layouts and what an engine name was read as', () => {
     expect(describeSearchInterpretation({ layouts: ['Flat-4', 'Flat-6'] })).toEqual([
       'Flat-4 and Flat-6 engines only: EPA records a cylinder count, so the layout comes from the engine family.',
