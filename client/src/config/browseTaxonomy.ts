@@ -8,6 +8,11 @@ export interface BrowsePreset {
   description: string;
   filters: CarFilter;
   sort?: SearchQuery['sort'];
+  /**
+   * Search words the server reads into a class, segment or seating filter
+   * ("third row", "sports car", "luxury"), which plain filters cannot express.
+   */
+  query?: string;
 }
 
 export interface BucketOption {
@@ -45,8 +50,10 @@ export const LIFESTYLE_PRESETS: BrowsePreset[] = [
   {
     id: 'family',
     label: 'Family hauler',
-    description: 'SUVs & minivans with space',
-    filters: { bodyStyle: ['suv', 'minivan', 'wagon'] },
+    description: 'Minivans & three-row SUVs',
+    // Every SUV and wagon used to qualify, down to a two-door Wrangler.
+    query: 'third row',
+    filters: {},
     sort: { field: 'year', order: 'desc' },
   },
   {
@@ -59,15 +66,18 @@ export const LIFESTYLE_PRESETS: BrowsePreset[] = [
   {
     id: 'work-truck',
     label: 'Work & tow',
-    description: '4WD/AWD trucks',
+    description: 'Full-size 4WD pickups',
+    query: 'full size truck',
     filters: { bodyStyle: ['truck'], driveType: ['AWD', '4WD'] },
     sort: { field: 'year', order: 'desc' },
   },
   {
     id: 'weekend',
     label: 'Weekend fun',
-    description: 'Coupe & larger engines',
-    filters: { bodyStyle: ['coupe'], displacement: { min: 3.0 } },
+    description: 'Sports cars, roadsters & muscle cars',
+    // Any coupe over 3 litres took in a CL600 and left out every Miata.
+    query: 'sports car',
+    filters: {},
     sort: { field: 'year', order: 'desc' },
   },
   {
@@ -81,8 +91,9 @@ export const LIFESTYLE_PRESETS: BrowsePreset[] = [
     id: 'luxury-value',
     label: 'Luxury for less',
     description: 'Premium brands under $50k',
+    // Eight makes by name missed Genesis, Volvo, Porsche, Jaguar and Land Rover.
+    query: 'luxury',
     filters: {
-      make: ['Mercedes-Benz', 'BMW', 'Audi', 'Lexus', 'Acura', 'Infiniti', 'Cadillac', 'Lincoln'],
       price: { max: 50000 },
       year: { min: 2015 },
     },
@@ -184,6 +195,7 @@ export const POPULAR_SEARCHES = [
 
 export function presetToSearchQuery(preset: BrowsePreset | BucketOption): SearchQuery {
   return {
+    ...('query' in preset && preset.query ? { query: preset.query } : {}),
     filters: preset.filters,
     sort: 'sort' in preset && preset.sort ? preset.sort : { field: 'year', order: 'desc' },
     limit: 36,

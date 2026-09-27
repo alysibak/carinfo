@@ -605,6 +605,19 @@ describe('car.service natural language search', () => {
     expect(safest[0].safetyRating?.overall).toBe(5);
   });
 
+  it('reads a body word beside an explicit body filter, as Browse presets send', () => {
+    // "truck" stayed as text and had to appear in the model name: 1990s "Truck"s.
+    const trucks = searchCars({
+      query: 'full size truck',
+      filters: { bodyStyle: ['truck'], driveType: ['AWD', '4WD'] },
+      sort: { field: 'year', order: 'desc' },
+      limit: 20,
+    });
+    expect(trucks.interpretation?.vehicleClass).toBe('full-size pickups');
+    expect(trucks.results.some((c) => /Silverado|F150|Ram|Tundra|Sierra/.test(c.model))).toBe(true);
+    expect(trucks.results.filter((c) => /^Truck/.test(c.model))).toEqual([]);
+  });
+
   it('reads class words as words where they name a model or a trim', () => {
     // "Sport Sedan" is part of a Saab's name; "Premium" and "Big Horn" are trims.
     const saab = searchCars({ query: 'saab 9-3 sport sedan', limit: 5 });

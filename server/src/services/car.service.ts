@@ -734,6 +734,11 @@ const KEYWORD_SUGGESTIONS: Array<{ label: string; query: string }> = [
   { label: 'Luxury SUVs', query: 'luxury suv' },
   { label: 'Luxury sedans', query: 'luxury sedan' },
   { label: 'Off-road SUVs', query: 'off road suv' },
+  { label: 'Family SUVs', query: 'family suv' },
+  { label: 'Family cars', query: 'family car' },
+  { label: 'Safest SUVs', query: 'safest suv' },
+  { label: 'Safest minivans', query: 'safest minivan' },
+  { label: 'SUVs with good gas mileage', query: 'suv good gas mileage' },
 ];
 
 type TrimSuggestion = { make: string; label: string; query: string };
@@ -1179,14 +1184,19 @@ function applyKeywordFilters(
   const drives = new Set<string>();
   const aspirations = new Set<string>();
   const kept: string[] = [];
+  // A word whose filter is already set explicitly is consumed all the same:
+  // left as text, "truck" beside a body filter had to appear in the model
+  // name, and a Browse preset's "full size truck" found only 1990s "Truck"s.
   for (const token of tokens) {
-    if (BODY_WORDS[token] && !explicit?.bodyStyle?.length) bodies.add(BODY_WORDS[token]);
-    else if (FUEL_WORDS[token] && !explicit?.fuelType?.length) {
-      for (const f of FUEL_WORDS[token]) fuels.add(f);
-    } else if (DRIVE_WORDS[token] && !explicit?.driveType?.length) {
-      for (const d of DRIVE_WORDS[token]) drives.add(d);
-    } else if (ASPIRATION_WORDS[token] && !explicit?.aspiration?.length) {
-      for (const a of ASPIRATION_WORDS[token]) aspirations.add(a);
+    if (BODY_WORDS[token]) {
+      if (!explicit?.bodyStyle?.length) bodies.add(BODY_WORDS[token]);
+    } else if (FUEL_WORDS[token]) {
+      if (!explicit?.fuelType?.length) for (const f of FUEL_WORDS[token]) fuels.add(f);
+    } else if (DRIVE_WORDS[token]) {
+      if (!explicit?.driveType?.length) for (const d of DRIVE_WORDS[token]) drives.add(d);
+    } else if (ASPIRATION_WORDS[token]) {
+      if (!explicit?.aspiration?.length)
+        for (const a of ASPIRATION_WORDS[token]) aspirations.add(a);
     } else kept.push(token);
   }
   if (bodies.size) filters.bodyStyle = [...bodies];
