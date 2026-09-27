@@ -166,5 +166,17 @@ describe('differentiateVsAnchor', () => {
     expect(edges.rav4).toMatch(/^An SUV, not a sedan/);
     expect(edges.manual).toBe('Manual, not automatic');
     for (const line of Object.values(edges)) expect(line).not.toMatch(/than this car|vs this car/);
+    // A near twin still gets figures.
+    const twin = car({
+      id: 'twin',
+      make: 'Honda',
+      model: 'Accord',
+      engine: { fuelType: 'gasoline', horsepower: 290 },
+      fuelEconomy: { city: 22, highway: 32, combined: 26 },
+      price: { msrp: 27500, isEstimated: true },
+    });
+    expect(differentiateVsAnchor(camry, [twin]).twin).toBe(
+      'Much the same on paper (26 vs 26 MPG, 290 vs 301 hp)',
+    );
   });
 });

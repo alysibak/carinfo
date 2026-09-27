@@ -437,6 +437,22 @@ function metricDifference(anchor: CarSpecs, alt: CarSpecs, skipMpg: boolean): st
   return best?.text ?? null;
 }
 
+/** No difference worth a sentence: the near-equal figures, so the note still says something. */
+function muchTheSame(anchor: CarSpecs, alt: CarSpecs): string {
+  const figures: string[] = [];
+  const a = alt.fuelEconomy.combined;
+  const b = anchor.fuelEconomy.combined;
+  if (a && b && mpgUnit(alt) === mpgUnit(anchor)) {
+    figures.push(`${roundMpg(a)} vs ${roundMpg(b)} ${mpgUnit(alt)}`);
+  }
+  const hpA = alt.engine.horsepower;
+  const hpB = anchor.engine.horsepower;
+  if (hpA && hpB) figures.push(`${Math.round(hpA)} vs ${Math.round(hpB)} hp`);
+  return figures.length
+    ? `Much the same on paper (${figures.join(', ')})`
+    : 'Close to this car on every spec on file';
+}
+
 /**
  * How each alternative differs from the car you're viewing, in a line: what
  * kind of car it is, then its largest measured difference. The notes used to
@@ -453,7 +469,7 @@ export function differentiateVsAnchor(
     // "Hybrid, not gas (52 vs 26 MPG)" has said the fuel economy already.
     const metric = metricDifference(anchor, other, !!kind && / MPGe?\)$/.test(kind));
     const parts = [kind, metric].filter((part): part is string => !!part);
-    out[other.id] = parts.length ? parts.join(' · ') : 'Close to this car on every spec on file';
+    out[other.id] = parts.length ? parts.join(' · ') : muchTheSame(anchor, other);
   }
   return out;
 }
