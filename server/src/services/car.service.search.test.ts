@@ -892,6 +892,17 @@ describe('car.service natural language search', () => {
     expect(searchCars({ query: '2004 toyota camry', limit: 1 }).results[0].model).toBe('Camry');
   });
 
+  it('finds a trim with words between it and the model', () => {
+    // "911 gts" found only the 2011-12 "911 GTS", not the Carrera or Targa GTS.
+    const gts = searchCars({ query: '911 gts', limit: 100 });
+    const names = new Set(gts.results.map((c) => c.model));
+    expect(names).toContain('911 GTS');
+    expect(names).toContain('911 Carrera GTS');
+    expect(names).toContain('911 Targa 4 GTS');
+    expect(gts.results.every((c) => /\bgts\b/i.test(c.model))).toBe(true);
+    expect(gts.results[0].year).toBeGreaterThanOrEqual(2025);
+  });
+
   it('completes the name in a rivals phrase, one entry per model', () => {
     const suggestions = getSearchSuggestions('cars like a cam', 8);
     expect(suggestions[0]).toMatchObject({

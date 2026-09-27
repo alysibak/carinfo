@@ -5,6 +5,7 @@ import {
   modelFamilyName,
   lineupForToken,
   modelPhraseMatches,
+  modelWordsInOrder,
   normalizeSearchQuery,
   normalizeSearchToken,
 } from './fuzzy-search.js';
@@ -39,6 +40,15 @@ describe('fuzzy-search', () => {
     expect(modelPhraseMatches('CX-50 4WD', 'cx-5')).toBe(false);
     expect(modelPhraseMatches('CX-5 4WD', 'cx-5')).toBe(true);
     expect(modelPhraseMatches('CX-5 4WD', 'cx5')).toBe(true);
+  });
+
+  it('finds a trim typed after the model with words between them', () => {
+    expect(modelWordsInOrder('911 Carrera 4 GTS', '911 gts')).toBe(true);
+    expect(modelWordsInOrder('Accord Hybrid Sport/Touring', 'accord sport')).toBe(true);
+    // The first word begins the name, and each word is whole.
+    expect(modelWordsInOrder('New Range Rover Sport', 'range sport')).toBe(false);
+    expect(modelWordsInOrder('911 Carrera GTS', '911 gt')).toBe(false);
+    expect(modelWordsInOrder('911 Carrera GTS', '911')).toBe(false);
   });
 
   it('ignores hyphens and spaces that differ between EPA generations', () => {

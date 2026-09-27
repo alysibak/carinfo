@@ -182,6 +182,28 @@ export function modelFamilyName(model: string): string {
   return (kept.length ? kept : parts.slice(0, 1)).join(' ');
 }
 
+/**
+ * A trim typed after the model finds it with words between: "911 gts" is the
+ * "911 Carrera GTS" and "911 Targa 4 GTS" as well as the 2011-12 "911 GTS".
+ * The phrase's first word must begin the name and the rest follow it in order,
+ * each a whole word.
+ */
+export function modelWordsInOrder(model: string, phrase: string): boolean {
+  const want = phrase.toLowerCase().trim().split(/\s+/);
+  if (want.length < 2) return false;
+  const words = model
+    .toLowerCase()
+    .split(/[\s_/()]+/)
+    .filter(Boolean);
+  if (words[0] !== want[0]) return false;
+  let next = 1;
+  for (const word of words.slice(1)) {
+    if (word === want[next]) next += 1;
+    if (next === want.length) return true;
+  }
+  return false;
+}
+
 /** True when a typed model phrase refers to this EPA model string. */
 export function modelPhraseMatches(model: string, phrase: string): boolean {
   const p = phrase.toLowerCase().trim();

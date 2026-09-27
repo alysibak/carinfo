@@ -12,6 +12,7 @@ import {
   maxEditsForToken,
   modelFamilyName,
   modelPhraseMatches,
+  modelWordsInOrder,
   normalizeSearchQuery,
   normalizeSearchToken,
 } from '../utils/fuzzy-search.js';
@@ -1707,7 +1708,13 @@ function resolveLineup(
 function resolveModelsForPhrase(make: string, phrase: string): string[] {
   const models = getModelsByMake(make);
   const matched = models.filter((m) => modelPhraseMatches(m, phrase));
-  if (matched.length) return matched;
+  if (matched.length) {
+    // With the names that put words between the model and the trim typed after
+    // it: "911 gts" found only the 2011-12 "911 GTS". A phrase no name begins
+    // with is left to the word search below, which finds these anyway.
+    const spread = models.filter((m) => !matched.includes(m) && modelWordsInOrder(m, phrase));
+    return [...matched, ...spread];
+  }
 
   // Unique fuzzy fallback for mild typos ("civc" → Civic)
   const fuzzy = models.filter((m) => fuzzyTokenMatch(modelFamilyName(m), phrase));
