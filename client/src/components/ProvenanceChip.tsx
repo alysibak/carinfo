@@ -32,7 +32,7 @@ export default function ProvenanceChip({ source, className = '' }: ProvenanceChi
             : source === 'estimated'
               ? 'Estimated value'
               : source === 'curated'
-                ? 'EPA test-car rated horsepower (separate from FuelEconomy.gov)'
+                ? "EPA test-car rated horsepower, or the manufacturer's rating (not FuelEconomy.gov)"
                 : 'Curated data'
       }
     >

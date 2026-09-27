@@ -128,7 +128,7 @@ export function applyHorsepowerCorrections(cars: Car[]): { cars: Car[]; correcte
     corrected++;
     return {
       ...car,
-      engine: { ...car.engine, horsepower: fix.hp },
+      engine: { ...car.engine, horsepower: fix.hp, horsepowerBasis: 'manufacturer' as const },
       provenance: { ...car.provenance, 'engine.horsepower': 'curated' as const },
     };
   });

@@ -169,7 +169,7 @@ export function enrichCar(car: Car): Car {
 
   const evHp = estimateEvHorsepower(next);
   if (evHp != null && next.engine.horsepower == null) {
-    next.engine = { ...next.engine, horsepower: evHp };
+    next.engine = { ...next.engine, horsepower: evHp, horsepowerBasis: 'manufacturer' };
     next.provenance = { ...next.provenance, 'engine.horsepower': 'estimated' };
   }
 

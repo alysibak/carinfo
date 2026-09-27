@@ -67,6 +67,12 @@ export interface CarSpecs {
      * naturally aspirated (or electric), or a record from before the field.
      */
     aspiration?: Aspiration;
+    /**
+     * Where a horsepower figure that is not EPA's test-car rating came from:
+     * the manufacturer's published rating, or the same engine in the same
+     * model (a sibling or an adjacent year).
+     */
+    horsepowerBasis?: 'manufacturer' | 'sibling';
   };
 
   performance?: {

@@ -261,7 +261,11 @@ export function fillHorsepowerFromSiblings(cars: Car[]): { cars: Car[]; filled: 
     return {
       ...car,
       // The lower middle: between two years, the one that does not overstate.
-      engine: { ...car.engine, horsepower: sorted[(sorted.length - 1) >> 1] },
+      engine: {
+        ...car.engine,
+        horsepower: sorted[(sorted.length - 1) >> 1],
+        horsepowerBasis: 'sibling' as const,
+      },
       provenance: { ...car.provenance, 'engine.horsepower': 'estimated' as const },
     };
   });

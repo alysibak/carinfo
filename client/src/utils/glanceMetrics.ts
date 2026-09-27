@@ -136,12 +136,20 @@ export function buildGlanceMetrics(dashboard: CarDashboard): {
       id: 'power',
       label: 'Horsepower',
       value: `${car.engine.horsepower} hp`,
+      // Where the figure came from: our manufacturer ratings, the same engine
+      // in this model, or EPA's test-car list.
       detail:
-        hpProv === 'estimated'
-          ? 'Manufacturer-rated motor output'
-          : hpProv === 'curated'
-            ? 'EPA test-car rated hp'
-            : (engine ?? (car.driveType ? `${car.driveType} drivetrain` : undefined)),
+        car.engine.horsepowerBasis === 'sibling'
+          ? 'Same engine in this model (est.)'
+          : car.engine.horsepowerBasis === 'manufacturer'
+            ? car.engine.fuelType === 'electric'
+              ? 'Manufacturer-rated motor output'
+              : 'Manufacturer rating'
+            : hpProv === 'estimated'
+              ? 'Estimated output'
+              : hpProv === 'curated'
+                ? 'EPA test-car rated hp'
+                : (engine ?? (car.driveType ? `${car.driveType} drivetrain` : undefined)),
       trustSource:
         hpProv === 'estimated' ? 'estimated' : hpProv === 'curated' ? 'curated' : undefined,
     };

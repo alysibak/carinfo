@@ -54,3 +54,30 @@ describe('glanceMetrics fuel cost', () => {
     expect(mpg?.detail).toBeUndefined();
   });
 });
+
+describe('glanceMetrics horsepower source', () => {
+  const withHp = (
+    provenance: 'curated' | 'estimated',
+    basis?: 'manufacturer' | 'sibling',
+    fuelType: 'gasoline' | 'electric' = 'gasoline',
+  ) => {
+    const car = sparseDashboard.car;
+    const dashboard = {
+      ...sparseDashboard,
+      car: {
+        ...car,
+        engine: { ...car.engine, fuelType, horsepower: 190, horsepowerBasis: basis },
+        provenance: { ...car.provenance, 'engine.horsepower': provenance },
+      },
+    };
+    return buildGlanceMetrics(dashboard).cells.find((c) => c.id === 'power')?.detail;
+  };
+
+  it('says where the figure came from', () => {
+    expect(withHp('curated')).toBe('EPA test-car rated hp');
+    expect(withHp('curated', 'manufacturer')).toBe('Manufacturer rating');
+    // A copied rating used to read "Manufacturer-rated motor output".
+    expect(withHp('estimated', 'sibling')).toBe('Same engine in this model (est.)');
+    expect(withHp('estimated', 'manufacturer', 'electric')).toBe('Manufacturer-rated motor output');
+  });
+});
