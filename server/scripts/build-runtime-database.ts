@@ -8,7 +8,11 @@ import { writeFileSync } from 'fs';
 import { resolve } from 'path';
 import { readFileSync } from 'fs';
 import { enrichCar } from '../src/services/content-enrichment.js';
-import { normalizeCarRecord, unifyMakeSpelling } from '../src/utils/car-normalize.js';
+import {
+  normalizeCarRecord,
+  unifyMakeSpelling,
+  unifyModelSpelling,
+} from '../src/utils/car-normalize.js';
 import { cleanCorpusHorsepower } from '../src/utils/horsepower-plausibility.js';
 import { resolveDataFile } from '../src/utils/data-paths.js';
 import { ensureUniqueIds } from '../src/utils/unique-ids.js';
@@ -36,7 +40,7 @@ console.log(
 );
 
 const { cars: normalized, report: hp } = cleanCorpusHorsepower(
-  unifyMakeSpelling(db.cars).map((car) => normalizeCarRecord(enrichCar(car))),
+  unifyModelSpelling(unifyMakeSpelling(db.cars)).map((car) => normalizeCarRecord(enrichCar(car))),
 );
 for (const [count, what] of [
   [hp.induction, 'borrowed from a non-turbo sibling'],

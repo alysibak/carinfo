@@ -124,6 +124,48 @@ export function unifyMakeSpelling<T extends { make: string }>(cars: T[]): T[] {
   });
 }
 
+/**
+ * One spelling per model name where EPA's capitalization drifted between
+ * adjacent years: a 2009 "370z" beside the 2010-20 "370Z", a 2024
+ * "GranTurismo" before the 2025 "Granturismo". The spelling most listings use
+ * wins; on a tie, one not in capitals, then the latest year's. Spellings years
+ * apart are separate cars and keep theirs: the 2002-09 TrailBlazer and the
+ * 2021 Trailblazer.
+ */
+export function unifyModelSpelling<T extends { make: string; model: string; year: number }>(
+  cars: T[],
+): T[] {
+  type Spelling = { count: number; min: number; max: number };
+  const groups = new Map<string, Map<string, Spelling>>();
+  for (const car of cars) {
+    const key = `${car.make}|${car.model.toLowerCase()}`;
+    const spellings = groups.get(key) ?? new Map<string, Spelling>();
+    const s = spellings.get(car.model) ?? { count: 0, min: car.year, max: car.year };
+    spellings.set(car.model, {
+      count: s.count + 1,
+      min: Math.min(s.min, car.year),
+      max: Math.max(s.max, car.year),
+    });
+    groups.set(key, spellings);
+  }
+  const rename = new Map<string, string>();
+  for (const spellings of groups.values()) {
+    if (spellings.size < 2) continue;
+    const shouts = (spelling: string) => (/[a-z]/.test(spelling) ? 0 : 1);
+    const [winner, top] = [...spellings].sort(
+      (a, b) => b[1].count - a[1].count || shouts(a[0]) - shouts(b[0]) || b[1].max - a[1].max,
+    )[0];
+    for (const [spelling, span] of spellings) {
+      const adjoins = span.min <= top.max + 1 && span.max >= top.min - 1;
+      if (spelling !== winner && adjoins) rename.set(spelling, winner);
+    }
+  }
+  return cars.map((car) => {
+    const model = rename.get(car.model);
+    return model ? { ...car, model } : car;
+  });
+}
+
 export function normalizeCarRecord(car: Car): Car {
   let normalized = correctDriveType(car);
 

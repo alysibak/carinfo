@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { enrichCar } from '../services/content-enrichment.js';
-import { normalizeCarRecord, unifyMakeSpelling } from '../utils/car-normalize.js';
+import {
+  normalizeCarRecord,
+  unifyMakeSpelling,
+  unifyModelSpelling,
+} from '../utils/car-normalize.js';
 import type { Car } from '../types/car.types.js';
 import { findCar } from '../__tests__/helpers/loadCars.js';
 
@@ -76,5 +80,27 @@ describe('unifyMakeSpelling', () => {
     expect(unifyMakeSpelling(cars).map((c) => c.make)).toEqual(['MINI', 'MINI', 'MINI', 'Mazda']);
     // Untouched listings are the same objects.
     expect(unifyMakeSpelling(cars)[3]).toBe(cars[3]);
+  });
+});
+
+describe('unifyModelSpelling', () => {
+  const car = (model: string, year: number) => ({ make: 'Nissan', model, year });
+
+  it('gives adjacent years one model spelling, the one most listings use', () => {
+    const cars = [car('370z', 2009), car('370Z', 2010), car('370Z', 2011)];
+    expect(unifyModelSpelling(cars).map((c) => c.model)).toEqual(['370Z', '370Z', '370Z']);
+  });
+
+  it('keeps spellings years apart, which name different cars', () => {
+    const cars = [
+      { make: 'Chevrolet', model: 'TrailBlazer AWD', year: 2005 },
+      { make: 'Chevrolet', model: 'Trailblazer AWD', year: 2021 },
+      { make: 'Chevrolet', model: 'Trailblazer AWD', year: 2022 },
+    ];
+    expect(unifyModelSpelling(cars).map((c) => c.model)).toEqual([
+      'TrailBlazer AWD',
+      'Trailblazer AWD',
+      'Trailblazer AWD',
+    ]);
   });
 });

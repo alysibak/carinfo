@@ -347,7 +347,9 @@ Per vehicle:
 1. Merge EPA extras; fix EV/PHEV economy (kWh/100mi was wrongly in `combined`)
 2. Resolve NHTSA: `nhtsaByCarId[id]` → `resolveNhtsaSafety()`
 3. Add HP from test car list (`provenance: 'curated'`)
-4. Estimate EV HP if still missing (`provenance: 'estimated'`)
+4. Estimate EV and fuel-cell HP if still missing (`provenance: 'estimated'`)
+
+Before that, the build gives each make and model one spelling (`unifyMakeSpelling`, `unifyModelSpelling`): EPA filed a 2026 MINI as "Mini", which listed it as a make of its own, and a 2009 Nissan as "370z" beside the 2010–20 "370Z". Model spellings years apart are left alone, since they name different cars (the 2002–09 TrailBlazer, the 2021 Trailblazer).
 
 Then `normalizeCarRecord()` applies fuel-type inference, MPGe labels, hydrogen notes.
 
