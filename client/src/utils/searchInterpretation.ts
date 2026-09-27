@@ -49,6 +49,17 @@ export function describeSearchInterpretation(
         : `${order[interpretation.sortedBy]}.`,
     );
   }
+  if (interpretation.firstCar) {
+    const { maxPrice, minMpg, minYear } = interpretation.firstCar;
+    lines.push(
+      `Read as a first car, as the First car preset: under ${cad(maxPrice)} where no price was given, ${minMpg} MPG or better, ${minYear} or newer.`,
+    );
+  }
+  if (interpretation.snow) {
+    lines.push(
+      'All- and four-wheel drive only, for snow: EPA records the drive, not the tires, which matter as much.',
+    );
+  }
   if (interpretation.gasMileage) {
     lines.push('Electric cars are left out: their MPGe does not compare with MPG.');
   }

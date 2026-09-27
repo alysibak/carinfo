@@ -1,4 +1,5 @@
 import { LATEST_FULL_MODEL_YEAR } from '@carinfo/config/model-years';
+import { FIRST_CAR } from '@carinfo/config/first-car';
 import type { CarFilter, SearchQuery } from '../types/car.types';
 import { filtersMatchExactly } from '../utils/filterState';
 
@@ -40,10 +41,12 @@ export const LIFESTYLE_PRESETS: BrowsePreset[] = [
     id: 'first-car',
     label: 'First car',
     description: 'Affordable, easy on gas',
+    // Shared with the search, which reads "first car" and "teenager" the same way.
     filters: {
-      price: { max: 18000 },
-      fuelEconomy: { min: 28 },
-      year: { min: 2010 },
+      price: { max: FIRST_CAR.maxPrice },
+      fuelEconomy: { min: FIRST_CAR.minMpg },
+      year: { min: FIRST_CAR.minYear },
+      fuelType: [...FIRST_CAR.fuelTypes],
     },
     sort: { field: 'price', order: 'asc' },
   },

@@ -670,6 +670,33 @@ describe('car.service natural language search', () => {
     ).toBeUndefined();
   });
 
+  it('reads price ranges, first cars and snow', () => {
+    const range = searchCars({ query: 'between 20k and 30k suv', limit: 50 });
+    expect(range.interpretation?.price).toEqual({ min: 20000, max: 30000 });
+    expect(range.total).toBeGreaterThan(0);
+    expect(searchCars({ query: 'suv 20-30k', limit: 1 }).interpretation?.price).toEqual({
+      min: 20000,
+      max: 30000,
+    });
+
+    // It listed every car newest first, a Lotus Emira at the top.
+    const first = searchCars({ query: 'good first car for a teenager', limit: 200 });
+    expect(first.total).toBeGreaterThan(20);
+    for (const car of first.results) {
+      expect(car.price?.msrp ?? 0).toBeLessThanOrEqual(18000);
+      expect(car.year).toBeGreaterThanOrEqual(2010);
+      expect(car.fuelEconomy.combined).toBeGreaterThanOrEqual(28);
+      expect(['hydrogen', 'natural gas']).not.toContain(car.engine.fuelType);
+    }
+    // A price in the query wins over the preset's.
+    const cheaper = searchCars({ query: 'first car under 12k', limit: 200 }).results;
+    expect(cheaper.every((c) => (c.price?.msrp ?? 0) <= 12000)).toBe(true);
+
+    const snow = searchCars({ query: 'best car for snow', limit: 100 });
+    expect(snow.interpretation?.snow).toBe(true);
+    expect(snow.results.every((c) => c.driveType === 'AWD' || c.driveType === '4WD')).toBe(true);
+  });
+
   it('completes the name in a rivals phrase, one entry per model', () => {
     const suggestions = getSearchSuggestions('cars like a cam', 8);
     expect(suggestions[0]).toMatchObject({

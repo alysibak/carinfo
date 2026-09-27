@@ -145,6 +145,25 @@ describe('extractQueryModifiers', () => {
     expect(extractQueryModifiers('is the rav4 reliable').text).toBe('rav4');
   });
 
+  it('reads first cars, snow, and adverbs with nothing to modify', () => {
+    expect(extractQueryModifiers('good first car for a teenager')).toEqual({
+      text: '',
+      firstCar: true,
+      unmeasured: ['good'],
+    });
+    expect(extractQueryModifiers('suv for a new driver').firstCar).toBe(true);
+    expect(extractQueryModifiers('best car for snow')).toEqual({
+      text: '',
+      snow: true,
+      unmeasured: ['best'],
+    });
+    expect(extractQueryModifiers('winter truck').snow).toBe(true);
+    // "most" read as a name matched a Mustang Mach-E and a Montero.
+    expect(extractQueryModifiers('most reliable suv').text).toBe('suv');
+    // "most powerful" is still an order.
+    expect(extractQueryModifiers('most powerful suv').sortedBy).toBe('horsepower');
+  });
+
   it('sets aside words about one car for sale', () => {
     // "like new civic" was read as "new" and showed only this year's Civic.
     expect(extractQueryModifiers('like new civic')).toEqual({

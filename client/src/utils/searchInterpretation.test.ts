@@ -58,6 +58,15 @@ describe('describeSearchInterpretation', () => {
       'Rivals of the 2026 Toyota Camry: the models shoppers compare it with, by class, size and price.',
       'Cheapest first by estimated value.',
     ]);
+    expect(
+      describeSearchInterpretation({
+        firstCar: { maxPrice: 18000, minMpg: 28, minYear: 2010 },
+        snow: true,
+      }),
+    ).toEqual([
+      'Read as a first car, as the First car preset: under $18,000 where no price was given, 28 MPG or better, 2010 or newer.',
+      'All- and four-wheel drive only, for snow: EPA records the drive, not the tires, which matter as much.',
+    ]);
     expect(describeSearchInterpretation({ gasMileage: true, sortedBy: 'fuelEconomy' })).toEqual([
       'Most fuel-efficient first.',
       'Electric cars are left out: their MPGe does not compare with MPG.',

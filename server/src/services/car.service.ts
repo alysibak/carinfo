@@ -19,6 +19,7 @@ import { enrichCar } from './content-enrichment.js';
 import { ensureUniqueIds } from '../utils/unique-ids.js';
 import { type RuntimeDatabaseFile, unpackRuntimeDatabase } from './runtime-db.js';
 import { LATEST_FULL_MODEL_YEAR } from '../config/model-years.js';
+import { FIRST_CAR } from '../config/first-car.js';
 import { TRIM_QUERY_FORMS } from '../utils/performance-trims.js';
 import { extractQueryModifiers } from '../utils/search-modifiers.js';
 import { isThreeRow } from '../utils/three-row.js';
@@ -931,7 +932,26 @@ function extractPricePhrases(raw: string): {
     );
   let max: number | undefined;
   let min: number | undefined;
-  const maxHit = phrase('under|below|less than|cheaper than|up to|max|maximum|<').exec(text);
+  // "between 20k and 30k", "20-30k", "$20,000 to $30,000": it found nothing.
+  const number = '\\d{1,3}(?:,\\d{3})+|\\d+(?:\\.\\d+)?';
+  const range = new RegExp(
+    `\\s(?:between\\s+|from\\s+)?(\\$)?\\s*(${number})\\s*(k|thousand)?\\s*(?:-|–|to|and)\\s*(\\$)?\\s*(${number})\\s*(k|thousand)?(?=\\s)`,
+  ).exec(text);
+  if (range) {
+    // "20 to 30k": the second amount's "k" is the first's too.
+    const lowSuffix = range[3] ?? (range[6] && Number(range[2]) < 1000 ? range[6] : undefined);
+    const low = amount(range[2], lowSuffix, range[1] ?? range[4]);
+    const high = amount(range[5], range[6], range[4] ?? range[1]);
+    if (low != null && high != null && low < high) {
+      min = low;
+      max = high;
+      text = text.replace(range[0], ' ');
+    }
+  }
+  const maxHit =
+    max == null
+      ? phrase('under|below|less than|cheaper than|up to|max|maximum|<').exec(text)
+      : null;
   if (maxHit) {
     const value = amount(maxHit[2], maxHit[3], maxHit[1]);
     if (value != null) {
@@ -939,7 +959,8 @@ function extractPricePhrases(raw: string): {
       text = text.replace(maxHit[0], ' ');
     }
   }
-  const minHit = phrase('over|above|more than|at least|min|minimum|>').exec(text);
+  const minHit =
+    min == null ? phrase('over|above|more than|at least|min|minimum|>').exec(text) : null;
   if (minHit) {
     const value = amount(minHit[2], minHit[3], minHit[1]);
     if (value != null) {
@@ -980,6 +1001,22 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
     filters.transmission = modifiers.transmission;
   }
   if (modifiers.cylinders && !explicit?.cylinders?.length) filters.cylinders = modifiers.cylinders;
+  if (modifiers.firstCar) {
+    // The First car preset's limits, where the query and filters set none.
+    if (!filters.price) filters.price = { max: FIRST_CAR.maxPrice };
+    if (!filters.fuelEconomy) filters.fuelEconomy = { min: FIRST_CAR.minMpg };
+    if (!filters.year) filters.year = { min: FIRST_CAR.minYear };
+    if (!filters.fuelType?.length) filters.fuelType = [...FIRST_CAR.fuelTypes];
+    interpretation.firstCar = {
+      maxPrice: FIRST_CAR.maxPrice,
+      minMpg: FIRST_CAR.minMpg,
+      minYear: FIRST_CAR.minYear,
+    };
+  }
+  if (modifiers.snow && !explicit?.driveType?.length) {
+    filters.driveType = ['AWD', '4WD'];
+    interpretation.snow = true;
+  }
   if (modifiers.threeRow) {
     filters.threeRow = true;
     interpretation.threeRow = true;
@@ -997,7 +1034,8 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
     interpretation.vehicleClass = label;
   }
   let sort = query.sort;
-  const sortedBy = price.cheapest ? 'price' : modifiers.sortedBy;
+  const sortedBy =
+    price.cheapest || (modifiers.firstCar && !modifiers.sortedBy) ? 'price' : modifiers.sortedBy;
   if (sortedBy && (!sort || sort.field === 'relevance')) {
     sort = { field: sortedBy, order: sortedBy === 'price' ? 'asc' : 'desc' };
     interpretation.sortedBy = sortedBy;

@@ -252,6 +252,10 @@ export interface SearchInterpretation {
   gasMileage?: boolean;
   /** "cars like a camry": the car whose rivals are listed. */
   similarTo?: { id: string; label: string };
+  /** "car for snow": kept to all- and four-wheel drive. */
+  snow?: boolean;
+  /** "first car", "teenager": the First car preset's price, MPG and year limits. */
+  firstCar?: { maxPrice: number; minMpg: number; minYear: number };
 }
 
 /** Response body of the search endpoints. */

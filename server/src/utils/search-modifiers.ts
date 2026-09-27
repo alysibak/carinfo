@@ -23,6 +23,10 @@ export interface QueryModifiers {
   unmeasured?: string[];
   /** "good gas mileage": an MPG order, so EVs (rated in MPGe) are left out. */
   gasMileage?: boolean;
+  /** "car for snow", "winter car": all- and four-wheel drive, which EPA records. */
+  snow?: boolean;
+  /** "first car", "for a teenager", "student": the First car preset's limits. */
+  firstCar?: boolean;
 }
 
 export interface VehicleClassQuery {
@@ -292,16 +296,30 @@ const SORT_PHRASES: Array<[RegExp, SortIntent]> = [
 const LISTING_WORDS =
   /\b(?:like[- ]new|low (?:mileage|miles|kms?|kilomet(?:re|er)s)|(?:one|single)[- ]owner|accident[- ]free|no accidents?|clean (?:title|carfax|history)|mint|(?:excellent|good|great|mint) condition|well[- ]maintained|garage[- ]kept)\b/g;
 
-/** Words that ask for a judgement no data on file can make. */
+/**
+ * Words that ask for a judgement no data on file can make, and words about
+ * who will drive: "first car for a teenager" found nothing, "teenager" being
+ * read as a name.
+ */
 const UNMEASURED =
-  /\b(?:best|good|great|top|reliable|dependable|quality|nice|decent|perfect|ideal|recommended|popular|comfortable|fun|cool|first|beginner|starter|tow|towing|haul|hauling)\b/g;
+  /\b(?:best|good|great|top|reliable|dependable|quality|nice|decent|perfect|ideal|recommended|popular|comfortable|fun|cool|first|beginner|starter|tow|towing|haul|hauling|seniors?|elderly|kids?|son|daughter|wife|husband|mom|dad|girlfriend|boyfriend|grand(?:ma|pa|mother|father))\b/g;
+
+/**
+ * A first car, or a car for someone learning: "good first car for a teenager"
+ * listed every car newest first, a Lotus Emira at the top.
+ */
+const FIRST_CAR_WORDS =
+  /\b(?:first|starter|beginner)\s+(?:cars?|vehicles?)\b|\bteen(?:ager)?s?\b|\b(?:new|young|student|learner)\s+drivers?\b|\bstudents?\b|\bcollege\b/g;
+
+/** "car for snow", "good in winter": the drive, the one thing EPA records that helps. */
+const SNOW = /\b(?:snowy?|winters?|icy|ice)\b/g;
 /**
  * Words that carry no search meaning: "best suv for family" read "for" as a
  * prefix of Ford and showed only Fords. Not "and" or "to": "Town and
  * Country", "up to 30k".
  */
 const STOP_WORDS =
-  /\b(?:for|with|the|a|an|of|in|on|my|me|i|is|are|that|which|what|can|could|should|buy|get|sale|near|deals?|please|want|need|looking|find|show)\b/g;
+  /\b(?:for|with|the|a|an|of|in|on|my|me|i|is|are|that|which|what|can|could|should|buy|get|sale|near|deals?|please|want|need|looking|find|show|most|least|more|very|really|super|pretty|quite|highly|extremely)\b/g;
 /**
  * Stop words that begin a model name when its number follows: "is 350" is a
  * Lexus IS 350 (the query read "350" and found a 350Z), "i 4" a BMW i4,
@@ -373,6 +391,11 @@ export function extractQueryModifiers(
     if (classRead.vehicleClass) out.vehicleClass = classRead.vehicleClass;
   }
 
+  // Before the filler words go: "first car" needs its "car".
+  if (text.match(FIRST_CAR_WORDS)) {
+    out.firstCar = true;
+    text = text.replace(FIRST_CAR_WORDS, ' ');
+  }
   text = text.replace(FILLER, ' ');
   const listing = text.match(LISTING_WORDS) ?? [];
   text = text.replace(LISTING_WORDS, ' ');
@@ -392,6 +415,10 @@ export function extractQueryModifiers(
       }
       break;
     }
+  }
+  if (text.match(SNOW)) {
+    out.snow = true;
+    text = text.replace(SNOW, ' ');
   }
   // After the sort phrases, which use "best" ("best mpg"), and the class
   // phrases, which use "for" nowhere but keep "family".
