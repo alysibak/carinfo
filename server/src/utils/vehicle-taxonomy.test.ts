@@ -119,6 +119,14 @@ describe('vehicle-taxonomy', () => {
     ).toBe('suv');
   });
 
+  it('reads the retro Thunderbird as the convertible it is', () => {
+    const tbird = (year: number) =>
+      inferBodyStyle(minimalCar({ make: 'Ford', model: 'Thunderbird', year, bodyStyle: 'coupe' }));
+    expect(tbird(2004)).toBe('convertible');
+    // The 1990s Thunderbird is a coupe.
+    expect(tbird(1996)).toBe('coupe');
+  });
+
   it('reads roadsters, four-door coupes and coupe-SUVs by what they are', () => {
     const body = (make: string, model: string, bodyStyle: Car['bodyStyle'], vClass?: string) =>
       inferBodyStyle(

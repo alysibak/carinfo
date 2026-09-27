@@ -382,6 +382,11 @@ export function inferBodyStyle(car: CarSpecs, displayModel?: string): BodyStyle 
   // Roadsters in EPA's two-seater class arrive as coupes: every Boxster,
   // MX-5, S2000, Z4 and SL.
   if (car.bodyStyle === 'coupe' && CONVERTIBLE_NAMES.test(makeModel)) return 'convertible';
+  // The 2002-05 Thunderbird is a two-seat convertible (its hardtop comes off);
+  // the 1990s cars of that name are coupes.
+  if (car.bodyStyle === 'coupe' && makeModel === 'ford thunderbird' && car.year >= 2002) {
+    return 'convertible';
+  }
   if (car.bodyStyle === 'sedan') {
     const name = makeModel;
     if (FIVE_DOOR_CAR.test(name)) return 'hatchback';

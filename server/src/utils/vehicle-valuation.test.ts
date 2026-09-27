@@ -204,14 +204,27 @@ describe('vehicle-valuation (Ontario/CAD)', () => {
     expect(estimateMarketValue(car('BMW', /^i8 coupe$/i, 2019)).mid).toBeGreaterThan(82_000 * 0.8);
   });
 
+  it('depreciates an everyday coupe like its sedan, a sports car on its own curve', () => {
+    const car = (make: string, model: RegExp, year: number) =>
+      getAllCars().find((c) => c.make === make && model.test(c.model) && c.year === year)!;
+    // On the performance curve a 2010 Cobalt Coupe read $9,500 and the sedan $6,250.
+    const coupe = estimateMarketValue(car('Chevrolet', /^Cobalt Coupe$/, 2010)).mid;
+    const sedan = estimateMarketValue(car('Chevrolet', /^Cobalt Sedan$/, 2010)).mid;
+    expect(coupe).toBeLessThanOrEqual(sedan * 1.1);
+    // The Cobalt SS, a sport compact, keeps the performance curve.
+    const ss = estimateMarketValue(car('Chevrolet', /^Cobalt SS Coupe$/, 2010)).mid;
+    expect(ss).toBeGreaterThan(coupe);
+  });
+
   it('prices city cars EPA files as two-seaters as city cars', () => {
     const car = (make: string, model: RegExp, year: number) =>
       getAllCars().find((c) => c.make === make && model.test(c.model) && c.year === year)!;
     // They took the class's sports-car anchor: a 2017 smart fortwo read
     // $28,000 and a 2016 CR-Z $28,500. KBB puts a 2017 fortwo at US$7,825-
     // 9,725; a 2016 CR-Z averages about US$13,500 (Cars.com).
+    // A city car on the economy curve, within a third of KBB's figure.
     const fortwo = estimateMarketValue(car('smart', /^fortwo coupe$/, 2017)).mid;
-    expect(fortwo).toBeGreaterThan(9_725 * 1.2 * 0.7);
+    expect(fortwo).toBeGreaterThan(9_725 * 1.2 * 0.65);
     expect(fortwo).toBeLessThan(9_725 * 1.2 * 1.2);
     const crz = estimateMarketValue(car('Honda', /^CR-Z$/, 2016)).mid;
     expect(crz).toBeGreaterThan(13_500 * 1.2 * 0.8);

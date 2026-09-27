@@ -97,6 +97,10 @@ const EXOTIC_MAKES = new Set(
 
 const BRAND_RETENTION: Record<string, number> = {
   Toyota: 1.08,
+  // Toyota's youth brand (2004-2016), built and serviced by Toyota; it had no
+  // entry and fell to the neutral 1.0 (a 2016 tC read $8,500 against listings
+  // of $10,000-14,000 CAD).
+  Scion: 1.08,
   // Lexus keeps more than the luxury curve (a 2018 RX lists ~57% of its sticker
   // at eight years); German makes, especially their SUVs, keep less (a 2015 X5
   // ~22% at eleven). CarGurus Canada averages, September 2026.
@@ -137,6 +141,7 @@ const BRAND_RETENTION: Record<string, number> = {
  */
 const MAINSTREAM_BRAND_RETENTION: Record<string, number> = {
   Toyota: 1.16,
+  Scion: 1.1,
   Honda: 1.14,
   Subaru: 1.06,
   Mazda: 1.05,
@@ -281,6 +286,8 @@ const LUXURY_PERFORMANCE_RULES: ModelMsrpRule[] = [
   lux('Audi', /^s3\b/i, 50000),
   lux('Audi', /^rs ?3\b/i, 62000),
   lux('Audi', /^s4\b/i, 52000),
+  // The 2007-08 RS4 (US$66,900 new) had no rule and priced as an A4: $8,000.
+  lux('Audi', /^rs ?4\b/i, 70000),
   lux('Audi', /^s5\b/i, 57000),
   lux('Audi', /^rs ?5\b/i, 80000),
   lux('Audi', /^s6\b/i, 75000),
@@ -708,7 +715,15 @@ const PERFORMANCE_VARIANT_RULES: ModelMsrpRule[] = [
   // worth $28,000 CAD and a CR-Z $28,500.
   {
     test: (c) => c.make === 'smart' && /^fortwo/i.test(c.model) && c.engine.fuelType !== 'electric',
-    msrp: (c) => (/convertible|cabriolet/i.test(c.model) ? 18000 : 15000),
+    // The 2016 third generation sold at US$14,650-18,480, the cabrio $17,650-21,480.
+    msrp: (c) =>
+      /convertible|cabriolet/i.test(c.model)
+        ? c.year >= 2016
+          ? 20000
+          : 18000
+        : c.year >= 2016
+          ? 16500
+          : 15000,
   },
   { test: (c) => c.make === 'Honda' && /^cr-z/i.test(c.model), msrp: 22000 },
   { test: (c) => c.make === 'Honda' && /del sol/i.test(c.model), msrp: 17000 },
@@ -1222,7 +1237,16 @@ export function classifyMarketSegment(car: CarSpecs): MarketSegment {
   if (EXOTIC_MAKES.has(car.make)) return 'exotic';
   if (isLuxuryPerformance(car) || LUXURY_MAKES.has(car.make)) return 'luxury';
   if (car.bodyStyle === 'truck' || car.bodyStyle === 'van') return 'utility';
-  if (car.bodyStyle === 'coupe' || car.bodyStyle === 'convertible') return 'performance';
+  // Sports cars hold their value; a Cobalt, Altima or Forte coupe depreciates
+  // like the sedan it is built from (on the performance curve a 2010 Cobalt
+  // Coupe was worth $9,500 and the sedan $6,250). Convertibles, even everyday
+  // ones, hold value better than their sedans and stay on it.
+  if (
+    car.bodyStyle === 'convertible' ||
+    (car.bodyStyle === 'coupe' && car.shoppingSegment !== 'mainstream')
+  ) {
+    return 'performance';
+  }
   const msrp = estimateNewVehicleMsrp(car);
   // Subcompacts (Versa, Mirage, Rio). Compacts anchor above this and depreciate
   // on the mainstream curve, as their listings show.

@@ -55,6 +55,9 @@ const RULES: CollectorRule[] = [
     test: (c) => same(c.make, 'Porsche') && /^911 (r|s\/t|sport classic|speedster)$/i.test(c.model),
   },
   { test: (c) => same(c.make, 'Porsche') && /carrera gt|^918/i.test(c.model) },
+  // The B7 RS4 (2007-08): a manual-only 420 hp V8 that trades on enthusiast
+  // demand, well above what its age would give.
+  { test: (c, age) => same(c.make, 'Audi') && /^rs ?4\b/i.test(c.model) && age >= 15 },
   // Alfa Romeo's 8C, 500 coupes and 500 Spiders (a 2009 Spider read $24,250).
   { test: (c) => same(c.make, 'Alfa Romeo') && /^8 ?c\b/i.test(c.model) },
   // American collector cars.
