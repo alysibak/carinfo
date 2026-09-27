@@ -6,6 +6,7 @@ import { calculateCollectionScore, dedupeByModel } from '../utils/collectionCura
 import { COLLECTIONS } from '../config/collections';
 import { formatMpgForCard, formatPowerForCard, formatPriceShort } from '../utils/dataValue';
 import { usesMpge } from '../utils/fuelDisplay';
+import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 import { displayModelLabel } from '../utils/trimLabel';
 import { searchQueryToParams } from '../utils/searchParams';
 import { differentiateCars } from '../utils/differentiateCars';
@@ -182,7 +183,7 @@ export default function Collection() {
                               return p === 'Not on file' ? null : p;
                             })(),
                             mpg !== 'Not on file' ? `${mpg} ${mpgLabel}` : null,
-                            car.bodyStyle,
+                            bodyStyleLabel(car.bodyStyle),
                           ]
                             .filter(Boolean)
                             .join(' · ')}

@@ -114,4 +114,57 @@ describe('differentiateVsAnchor', () => {
     const edges = differentiateVsAnchor(current, [alt]);
     expect(edges.alt).toMatch(/AWD|snow|power|efficiency|thirst/i);
   });
+
+  it('writes comparisons that read as sentences', () => {
+    const camry = car({
+      id: 'camry',
+      make: 'Toyota',
+      model: 'Camry',
+      engine: { fuelType: 'gasoline', horsepower: 301 },
+      fuelEconomy: { city: 22, highway: 32, combined: 26 },
+      price: { msrp: 27000, isEstimated: true },
+    });
+    const accord = car({
+      id: 'accord',
+      make: 'Honda',
+      model: 'Accord',
+      engine: { fuelType: 'gasoline', horsepower: 193 },
+      fuelEconomy: { city: 29, highway: 35, combined: 26 },
+      price: { msrp: 28000, isEstimated: true },
+    });
+    const legacy = car({
+      id: 'legacy',
+      make: 'Subaru',
+      model: 'Legacy',
+      driveType: 'AWD',
+      engine: { fuelType: 'gasoline', horsepower: 182 },
+      price: { msrp: 32000, isEstimated: true },
+    });
+    const hybrid = car({
+      id: 'hybrid',
+      make: 'Toyota',
+      model: 'Camry Hybrid',
+      engine: { fuelType: 'hybrid', horsepower: 208 },
+      fuelEconomy: { city: 51, highway: 53, combined: 52 },
+    });
+    const rav4 = car({ id: 'rav4', make: 'Toyota', model: 'RAV4', bodyStyle: 'suv' });
+    const manual = car({
+      id: 'manual',
+      make: 'Toyota',
+      model: 'Camry',
+      transmission: { type: 'manual' },
+      engine: { fuelType: 'gasoline', horsepower: 301 },
+      fuelEconomy: { city: 22, highway: 32, combined: 26 },
+      price: { msrp: 27000, isEstimated: true },
+    });
+    const edges = differentiateVsAnchor(camry, [accord, legacy, hybrid, rav4, manual]);
+    expect(edges.accord).toBe('Less power (193 vs 301 hp)');
+    expect(edges.legacy).toBe(
+      'AWD, which this car lacks: better in snow · Less power (182 vs 301 hp)',
+    );
+    expect(edges.hybrid).toBe('Hybrid, not gas (52 vs 26 MPG) · Less power (208 vs 301 hp)');
+    expect(edges.rav4).toMatch(/^An SUV, not a sedan/);
+    expect(edges.manual).toBe('Manual, not automatic');
+    for (const line of Object.values(edges)) expect(line).not.toMatch(/than this car|vs this car/);
+  });
 });

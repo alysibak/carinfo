@@ -8,6 +8,7 @@ import PageShell, { PageBody } from '../components/PageShell';
 import { ErrorState, LoadingScreen } from '../components/ui';
 import { formatMpgForCard, formatPowerForCard, formatPriceShort } from '../utils/dataValue';
 import { formatFuelBadge, usesMpge } from '../utils/fuelDisplay';
+import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 import { displayModelLabel } from '../utils/trimLabel';
 import { searchQueryToParams } from '../utils/searchParams';
 import { differentiateCars } from '../utils/differentiateCars';
@@ -384,7 +385,7 @@ export default function SmartSearch() {
                           car.price?.msrp != null
                             ? `est. ${formatPriceShort(car.price.msrp, true)}`
                             : null,
-                          car.bodyStyle,
+                          bodyStyleLabel(car.bodyStyle),
                           formatFuelBadge(car.engine.fuelType),
                         ]
                           .filter((x) => x && x !== 'Not on file')

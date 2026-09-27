@@ -300,8 +300,148 @@ export function differentiateCars(cars: CarSpecs[]): DiffResult {
   return { byCarId, axes: buildAxes(set) };
 }
 
+const POWERTRAIN: Record<string, string> = {
+  gasoline: 'gas',
+  diesel: 'diesel',
+  hybrid: 'hybrid',
+  'plug-in hybrid': 'plug-in hybrid',
+  electric: 'electric',
+  hydrogen: 'fuel cell',
+  'natural gas': 'natural gas',
+};
+
+function capitalize(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+function bodyNoun(style: string): string {
+  const label = style === 'suv' ? 'SUV' : style === 'truck' ? 'pickup' : style;
+  return `${/^[aeiou]|^SUV/i.test(label) ? 'an' : 'a'} ${label}`;
+}
+
+const isAwd = (drive?: string) => drive === 'AWD' || drive === '4WD';
+const isManual = (car: CarSpecs) => car.transmission?.type === 'manual';
+
+/** What makes the alternative a different kind of car: powertrain, drive, gearbox, body. */
+function kindDifference(anchor: CarSpecs, alt: CarSpecs): string | null {
+  const fuel = alt.engine.fuelType;
+  if (fuel !== anchor.engine.fuelType) {
+    const text = `${capitalize(POWERTRAIN[fuel] ?? fuel)}, not ${POWERTRAIN[anchor.engine.fuelType] ?? anchor.engine.fuelType}`;
+    const a = alt.fuelEconomy.combined;
+    const b = anchor.fuelEconomy.combined;
+    return a && b && mpgUnit(alt) === mpgUnit(anchor)
+      ? `${text} (${roundMpg(a)} vs ${roundMpg(b)} ${mpgUnit(alt)})`
+      : text;
+  }
+  if (alt.driveType && anchor.driveType && alt.driveType !== anchor.driveType) {
+    if (isAwd(alt.driveType) && !isAwd(anchor.driveType)) {
+      return `${alt.driveType}, which this car lacks: better in snow`;
+    }
+    if (!isAwd(alt.driveType) && isAwd(anchor.driveType)) {
+      return `${alt.driveType}, not ${anchor.driveType}: usually lighter and more efficient`;
+    }
+    if (!isAwd(alt.driveType) && !isAwd(anchor.driveType)) {
+      return `${alt.driveType}, not ${anchor.driveType}`;
+    }
+  }
+  if (isManual(alt) !== isManual(anchor) && alt.transmission && anchor.transmission) {
+    return isManual(alt) ? 'Manual, not automatic' : 'Automatic, not manual';
+  }
+  if (alt.bodyStyle && anchor.bodyStyle && alt.bodyStyle !== anchor.bodyStyle) {
+    return capitalize(`${bodyNoun(alt.bodyStyle)}, not ${bodyNoun(anchor.bodyStyle)}`);
+  }
+  return null;
+}
+
+interface PairMetric {
+  get: (car: CarSpecs) => number | null;
+  minAbs: number;
+  minRel: number;
+  higherIsBetter: boolean;
+  text: (better: boolean, alt: number, anchor: number, car: CarSpecs) => string;
+}
+
+const PAIR_METRICS: PairMetric[] = [
+  {
+    get: (car) => car.fuelEconomy.combined ?? null,
+    minAbs: 2,
+    minRel: 0.06,
+    higherIsBetter: true,
+    text: (better, a, b, car) =>
+      `${better ? 'Better fuel economy' : 'Uses more fuel'} (${roundMpg(a)} vs ${roundMpg(b)} ${mpgUnit(car)})`,
+  },
+  {
+    get: (car) => car.price?.msrp ?? null,
+    minAbs: 1500,
+    minRel: 0.08,
+    higherIsBetter: false,
+    text: (better, a, b) =>
+      `${better ? 'Costs less' : 'Costs more'} (est. ${formatMoneyShort(a)} vs ${formatMoneyShort(b)})`,
+  },
+  {
+    get: (car) => car.engine.horsepower ?? null,
+    minAbs: 25,
+    minRel: 0.12,
+    higherIsBetter: true,
+    text: (better, a, b) =>
+      `${better ? 'More power' : 'Less power'} (${Math.round(a)} vs ${Math.round(b)} hp)`,
+  },
+  {
+    get: (car) => {
+      const s = car.safetyRating?.overall;
+      return s != null && s > 0 ? s : null;
+    },
+    minAbs: 1,
+    minRel: 0,
+    higherIsBetter: true,
+    text: (better, a, b) => `${better ? 'Better' : 'Lower'} NHTSA rating (${a}/5 vs ${b}/5)`,
+  },
+  {
+    get: (car) =>
+      car.engine.fuelType === 'electric' || car.engine.fuelType === 'plug-in hybrid'
+        ? (car.epa?.rangeMiles ?? null)
+        : null,
+    minAbs: 20,
+    minRel: 0.1,
+    higherIsBetter: true,
+    text: (better, a, b) =>
+      `${better ? 'Longer' : 'Shorter'} electric range (${Math.round(a)} vs ${Math.round(b)} mi)`,
+  },
+  {
+    get: (car) => car.year,
+    minAbs: 2,
+    minRel: 0,
+    higherIsBetter: true,
+    text: (better, a, b) => `${better ? 'Newer' : 'Older'} (${a} vs ${b})`,
+  },
+];
+
+/** The biggest measured difference worth a sentence, favouring the alternative's strengths. */
+function metricDifference(anchor: CarSpecs, alt: CarSpecs, skipMpg: boolean): string | null {
+  let best: { score: number; text: string } | null = null;
+  for (const metric of PAIR_METRICS) {
+    if (skipMpg && metric === PAIR_METRICS[0]) continue;
+    const a = metric.get(alt);
+    const b = metric.get(anchor);
+    if (a == null || b == null) continue;
+    // MPG and MPGe do not compare.
+    if (metric === PAIR_METRICS[0] && mpgUnit(alt) !== mpgUnit(anchor)) continue;
+    const delta = Math.abs(a - b);
+    if (delta < metric.minAbs || (b > 0 && delta / b < metric.minRel)) continue;
+    const better = metric.higherIsBetter ? a > b : a < b;
+    // Relative to each threshold, so 121 hp of 301 does not outshout 6 MPG of 26.
+    const size = metric.minRel > 0 && b > 0 ? delta / b / metric.minRel : delta / metric.minAbs;
+    const score = size * (better ? 1.25 : 1);
+    if (!best || score > best.score) best = { score, text: metric.text(better, a, b, alt) };
+  }
+  return best?.text ?? null;
+}
+
 /**
- * How each alternative differs from the car you're viewing.
+ * How each alternative differs from the car you're viewing, in a line: what
+ * kind of car it is, then its largest measured difference. The notes used to
+ * be the shortlist wording with "here" swapped for "than this car", which
+ * read "Best efficiency than this car" and "Only AWD than this car".
  */
 export function differentiateVsAnchor(
   anchor: CarSpecs,
@@ -309,16 +449,11 @@ export function differentiateVsAnchor(
 ): Record<string, string> {
   const out: Record<string, string> = {};
   for (const other of others) {
-    const pair = differentiateCars([anchor, other]);
-    const edge = pair.byCarId[other.id]?.edge;
-    if (edge) {
-      // Soften "in this set" language for pairwise vs current car
-      out[other.id] = edge
-        .replace(/\bhere\b/gi, 'than this car')
-        .replace(/\bin this set\b/gi, 'vs this car')
-        .replace(/^Close to .+ — compare /i, 'Differs on ')
-        .replace(/^Your shortlist.+$/i, edge);
-    }
+    const kind = kindDifference(anchor, other);
+    // "Hybrid, not gas (52 vs 26 MPG)" has said the fuel economy already.
+    const metric = metricDifference(anchor, other, !!kind && / MPGe?\)$/.test(kind));
+    const parts = [kind, metric].filter((part): part is string => !!part);
+    out[other.id] = parts.length ? parts.join(' · ') : 'Close to this car on every spec on file';
   }
   return out;
 }

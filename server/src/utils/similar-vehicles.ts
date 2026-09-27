@@ -200,6 +200,11 @@ export function scoreCrossShopCandidate(
   else if (anchorFcev && !candFcev) score -= 4;
   else if (candidate.engine.fuelType === anchor.engine.fuelType) score += 1.5;
 
+  // Of a rival's configurations, the one set up like this car: an automatic
+  // Accord for an automatic Camry, an AWD CR-V for an AWD RAV4.
+  if (candidate.transmission?.type === anchor.transmission?.type) score += 0.75;
+  if (candidate.driveType && candidate.driveType === anchor.driveType) score += 0.75;
+
   const yearDiff = Math.abs(candidate.year - anchor.year);
   score += Math.max(0, 4 - yearDiff) * 0.35;
 

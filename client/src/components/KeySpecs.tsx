@@ -2,6 +2,7 @@ import type { CarDashboard, CarSpecs, ProvenanceSource } from '../types/car.type
 import { formatEngineForDetail, formatCurrency, hasNumericValue } from '../utils/dataValue';
 import { displayProvenanceSource } from '../utils/dataTrust';
 import { engineLayoutLabel, formatFuelTypeLabel } from '../utils/fuelDisplay';
+import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 import { displayTrimLabel, formatTransmissionLabel } from '../utils/trimLabel';
 import { efficiencyUnit } from '../utils/fuelLabels';
 import { fiveYearFuelSavings, fuelSavingsShort, phevModes } from '../utils/epaContent';
@@ -32,10 +33,6 @@ function engineCharacter(car: CarSpecs): string | null {
 function transmissionLabel(car: CarSpecs): string | null {
   if (!car.transmission?.type) return null;
   return formatTransmissionLabel(car.transmission);
-}
-
-function titleCase(value: string): string {
-  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 const SEGMENT_LABELS: Record<string, string> = {
@@ -159,7 +156,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
     pushIf(vehicle, {
       key: 'body',
       label: 'Body',
-      value: titleCase(car.bodyStyle),
+      value: bodyStyleLabel(car.bodyStyle),
       glossary: 'body',
     });
   }
@@ -167,7 +164,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
     pushIf(vehicle, {
       key: 'category',
       label: 'Category',
-      value: titleCase(car.vehicleCategory),
+      value: bodyStyleLabel(car.vehicleCategory),
       glossary: 'category',
     });
   }

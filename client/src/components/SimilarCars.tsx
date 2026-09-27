@@ -5,6 +5,7 @@ import type { CarSpecs } from '../types/car.types';
 import { differentiateVsAnchor } from '../utils/differentiateCars';
 import { formatMpgForCard, formatPriceShort } from '../utils/dataValue';
 import { usesMpge } from '../utils/fuelDisplay';
+import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 import { displayModelLabel } from '../utils/trimLabel';
 import { useCarStore } from '../stores/carStore';
 
@@ -74,7 +75,7 @@ export default function SimilarCars({ car }: { car: CarSpecs }) {
                         {[
                           mpg !== 'Not on file' ? `${mpg} ${mpgLabel}` : null,
                           price !== 'Not on file' ? `est. ${price}` : null,
-                          alt.bodyStyle,
+                          bodyStyleLabel(alt.bodyStyle),
                           alt.driveType,
                         ]
                           .filter(Boolean)
