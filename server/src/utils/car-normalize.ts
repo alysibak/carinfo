@@ -1,7 +1,7 @@
 import type { Car } from '../types/car.types.js';
 import { isFuelCellVehicle } from './fuel-cell-detection.js';
 import { inferEffectiveFuelType, isLikelyMisclassifiedPhev } from './fuel-type-inference.js';
-import { isCollectorCar } from './collector-cars.js';
+import { unvaluedReason } from './unvalued.js';
 import { estimateMarketValue } from './ownership-economics.js';
 import { applyVehicleTaxonomy } from './vehicle-taxonomy-apply.js';
 import { deriveVariant } from './performance-trims.js';
@@ -23,9 +23,10 @@ function applyFuelTypeCorrection(car: Car): Car {
 }
 
 function applyMarketValue(normalized: Car): Car {
-  // No price for a collector car: listings, sorting and the value chart would
-  // otherwise show a depreciation figure an order of magnitude off.
-  if (isCollectorCar(normalized)) {
+  // No price for a collector car or one never sold to the public: listings,
+  // sorting and the value chart would otherwise show a depreciation figure
+  // an order of magnitude off, or a price nobody can pay.
+  if (unvaluedReason(normalized)) {
     const { price: _price, ...car } = normalized;
     const { 'price.msrp': _source, ...provenance } = normalized.provenance;
     return { ...car, provenance };

@@ -303,11 +303,12 @@ export default function CarDetail() {
     hasNumericValue(car.safetyRating?.frontal, { allowZero: false }) ||
     hasNumericValue(car.safetyRating?.side, { allowZero: false }) ||
     hasNumericValue(car.safetyRating?.rollover, { allowZero: false });
-  // A collector car's figures are computed but not shown (see the server's
-  // utils/collector-cars.ts): its price follows auctions, not depreciation.
-  const collector = ownership.collector;
+  // A collector car's or never-sold car's figures are computed but not shown
+  // (see the server's utils/unvalued.ts): its price follows auctions, or it
+  // has no used market at all.
+  const unvalued = ownership.unvalued;
   const showOwnership =
-    !collector &&
+    !unvalued &&
     (hasEconomics ||
       Boolean(marketValue.batteryHealth) ||
       (marketValue.conditionBands?.length ?? 0) > 0 ||
@@ -831,11 +832,11 @@ export default function CarDetail() {
         </section>
       )}
 
-      {collector && (
+      {unvalued && (
         <section className="border-b border-zinc-900">
           <div className="page-wrap-wide section-y-tight">
             <h2 className="text-base font-bold tracking-tight mb-1">Value and costs</h2>
-            <p className="text-sm text-zinc-400 leading-relaxed max-w-2xl">{collector.note}</p>
+            <p className="text-sm text-zinc-400 leading-relaxed max-w-2xl">{unvalued.note}</p>
           </div>
         </section>
       )}

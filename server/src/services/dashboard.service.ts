@@ -41,8 +41,8 @@ export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard |
       highway: roundEfficiency(car.fuelEconomy.highway),
       combined: roundEfficiency(car.fuelEconomy.combined),
     },
-    // A collector car has no price to show (see utils/collector-cars.ts).
-    price: ownership.collector
+    // A car the site does not value has no price to show (see utils/unvalued.ts).
+    price: ownership.unvalued
       ? undefined
       : {
           msrp: ownership.marketValue.mid,

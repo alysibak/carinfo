@@ -135,6 +135,12 @@ export default function Methodology() {
               trades on auction results and condition, and is often worth more than when new.
             </li>
             <li>
+              Nor are cars never sold to the public: the leased EV1 and Fit EV, the fuel-cell
+              Clarity and Tucson, fleet cars such as the BYD e6 and Motional&rsquo;s robotaxi, and
+              the Postal Service&rsquo;s Explorers. With no used market, a depreciation figure would
+              be a price nobody can pay.
+            </li>
+            <li>
               Depreciation curves by segment, age and fuel type. Electric cars follow one curve
               fitted to Canadian listings (about half the sticker at five years), with a steeper
               discount for early short-range models; battery health widens the range rather than

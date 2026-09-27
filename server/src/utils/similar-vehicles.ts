@@ -1,6 +1,6 @@
 import { usdAnchorToCadValue } from '../config/regional-assumptions.js';
 import type { Car } from '../types/car.types.js';
-import { isCollectorCar } from './collector-cars.js';
+import { unvaluedReason } from './unvalued.js';
 import { sharesCompetitiveSet } from './competitive-sets.js';
 import { modelFamilyName } from './fuzzy-search.js';
 import { estimateMarketValue, estimateNewVehicleMsrp } from './ownership-economics.js';
@@ -136,7 +136,8 @@ function priceMid(car: Car): number {
   // Collector cars carry no estimate, and the depreciation model's figure is
   // wrong by design (a 2015 Lancer Evolution at $10,000, so its rivals were a
   // Buick Verano and an Impala). They trade near their sticker or above it.
-  const mid = isCollectorCar(car)
+  // Cars never sold to the public are compared at their sticker too.
+  const mid = unvaluedReason(car)
     ? Math.round(usdAnchorToCadValue(estimateNewVehicleMsrp(car)))
     : estimateMarketValue(car).mid;
   priceMidCache.set(car.id, mid);
@@ -240,8 +241,9 @@ export function findSimilarCars(anchor: Car, all: Car[], limit = 6): Car[] {
   const anchorPrice = priceMid(anchor);
   const anchorExotic = isExoticPeer(anchor);
   // A Senna is not an alternative to a Huracán: collector cars trade on
-  // auctions, and carry no estimate to compare prices with.
-  const anchorCollector = isCollectorCar(anchor);
+  // auctions, and carry no estimate to compare prices with. Nor is a leased
+  // Fit EV an alternative to a Leaf: nobody can buy one.
+  const anchorUnvalued = unvaluedReason(anchor)?.kind;
   const anchorTuner = TUNER_MAKES.test(anchor.make);
 
   const collect = (yearWindow: number, minPriceRatio: number): Car[] => {
@@ -251,7 +253,8 @@ export function findSimilarCars(anchor: Car, all: Car[], limit = 6): Car[] {
       if (c.id === anchor.id) continue;
       if (Math.abs(c.year - anchor.year) > yearWindow) continue;
       if (sameModelLine(anchor, c)) continue;
-      if (!anchorCollector && isCollectorCar(c)) continue;
+      const unvalued = unvaluedReason(c)?.kind;
+      if (unvalued && unvalued !== anchorUnvalued) continue;
       if (!anchorTuner && TUNER_MAKES.test(c.make)) continue;
 
       const key = lineKey(c);

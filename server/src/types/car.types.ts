@@ -403,10 +403,19 @@ export interface OwnershipEconomics {
   warnings: string[];
   practicalityNote: string;
   /**
-   * Set for collector cars (utils/collector-cars.ts): the figures above are
-   * computed but must not be shown as the car's value or cost.
+   * Set for cars the site does not value (utils/unvalued.ts): collector cars
+   * and cars never sold to the public. The figures above are computed but
+   * must not be shown as the car's value or cost.
    */
-  collector?: { note: string };
+  unvalued?: UnvaluedReason;
+}
+
+/** Why a car carries no market value or running cost. */
+export interface UnvaluedReason {
+  kind: 'collector' | 'not-retailed';
+  /** "Collector car", "Lease or fleet only". */
+  label: string;
+  note: string;
 }
 
 export interface AnnualCostRange {

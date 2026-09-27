@@ -24,6 +24,8 @@ describe('collector cars', () => {
         (c) => c.make === 'Porsche' && c.model === 'Carrera 2 911 GT3' && c.year === 2004,
       ],
       ['2014 Lamborghini Veneno', (c) => c.make === 'Lamborghini' && /Veneno/.test(c.model)],
+      // 328 sold to the public in 2002; the rest were fleet and lease cars.
+      ['2002 Toyota RAV4 EV', (c) => /^RAV4 EV/.test(c.model) && c.year === 2002],
     ];
     for (const [label, pred] of collectors) {
       const car = find(pred);
@@ -63,11 +65,12 @@ describe('collector cars', () => {
     // It used to list at $2,300.
     expect(supra.price).toBeUndefined();
     const dashboard = getCarDashboard(supra.id)!;
-    expect(dashboard.ownership.collector?.note).toMatch(/collector car/i);
+    expect(dashboard.ownership.unvalued).toMatchObject({ kind: 'collector' });
+    expect(dashboard.ownership.unvalued?.note).toMatch(/collector car/i);
     expect(dashboard.car.price).toBeUndefined();
 
     const civic = find((c) => c.make === 'Honda' && c.model === 'Civic' && c.year === 1995)!;
     expect(civic.price?.msrp).toBeGreaterThan(0);
-    expect(getCarDashboard(civic.id)!.ownership.collector).toBeUndefined();
+    expect(getCarDashboard(civic.id)!.ownership.unvalued).toBeUndefined();
   });
 });

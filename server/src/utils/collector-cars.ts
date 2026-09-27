@@ -60,6 +60,10 @@ const RULES: CollectorRule[] = [
   { test: (c, age) => same(c.make, 'Audi') && /^rs ?4\b/i.test(c.model) && age >= 15 },
   // Alfa Romeo's 8C, 500 coupes and 500 Spiders (a 2009 Spider read $24,250).
   { test: (c) => same(c.make, 'Alfa Romeo') && /^8 ?c\b/i.test(c.model) },
+  // Toyota built the first RAV4 EV for fleets and leases, and sold 328 to the
+  // public in California in 2002; those left trade among enthusiasts, one on
+  // eBay for $67,300 (Wikipedia; Green Car Congress, 2006).
+  { test: (c) => same(c.make, 'Toyota') && /^rav4 ev\b/i.test(c.model) && c.year <= 2003 },
   // American collector cars.
   { test: (c) => same(c.make, 'Dodge') && /^viper/i.test(c.model) },
   { test: (c) => same(c.make, 'Ford') && /^gt(\s|$)/i.test(c.model) },

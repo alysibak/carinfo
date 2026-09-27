@@ -1,5 +1,5 @@
-import type { CarSpecs } from '../types/car.types.js';
-import { COLLECTOR_NOTE, isCollectorCar } from './collector-cars.js';
+import type { CarSpecs, UnvaluedReason } from '../types/car.types.js';
+import { unvaluedReason } from './unvalued.js';
 import { estimateAnnualEnergyCost } from '../shared/energy-cost.js';
 import {
   annualKmToMiles,
@@ -103,8 +103,8 @@ export interface OwnershipEconomics {
   assumptions: OwnershipAssumptions;
   warnings: string[];
   practicalityNote: string;
-  /** Collector cars: the figures are computed but must not be shown as its value or cost. */
-  collector?: { note: string };
+  /** Collector cars and cars never sold to the public: computed, but not to be shown as a value or cost. */
+  unvalued?: UnvaluedReason;
 }
 
 const LUXURY_MAKES = new Set([
@@ -400,6 +400,7 @@ export function computeOwnershipEconomics(
 ): OwnershipEconomics {
   const region = getRegionalAssumptions(regionId);
   const annualMiles = annualKmToMiles(region.annualKm);
+  const unvalued = unvaluedReason(car);
   let market = estimateMarketValue(car, region);
   const annualCost = calculateAnnualCosts(car, market, region);
   let resaleImpact = calculateResaleImpact(car, market);
@@ -467,7 +468,7 @@ export function computeOwnershipEconomics(
     },
     warnings,
     practicalityNote: practicalityNote(car, market.mid, region),
-    ...(isCollectorCar(car) ? { collector: { note: COLLECTOR_NOTE } } : {}),
+    ...(unvalued ? { unvalued } : {}),
   };
 }
 
