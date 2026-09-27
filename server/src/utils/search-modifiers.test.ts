@@ -164,6 +164,23 @@ describe('extractQueryModifiers', () => {
     expect(extractQueryModifiers('most powerful suv').sortedBy).toBe('horsepower');
   });
 
+  it('sets aside equipment, which nothing on file records', () => {
+    // "suv with sunroof" and "car with apple carplay" found nothing at all.
+    expect(extractQueryModifiers('suv with sunroof')).toEqual({
+      text: 'suv',
+      unmeasured: ['sunroof'],
+    });
+    expect(extractQueryModifiers('suv with leather seats and navigation')).toEqual({
+      text: 'suv',
+      unmeasured: ['leather seats', 'navigation'],
+    });
+    expect(extractQueryModifiers('car with apple carplay').unmeasured).toEqual(['apple carplay']);
+    // Names that contain the words are left alone.
+    expect(extractQueryModifiers('town and country').text).toBe('town and country');
+    expect(extractQueryModifiers('chrysler pt cruiser').text).toBe('chrysler pt cruiser');
+    expect(extractQueryModifiers('nissan leaf').text).toBe('nissan leaf');
+  });
+
   it('sets aside words about one car for sale', () => {
     // "like new civic" was read as "new" and showed only this year's Civic.
     expect(extractQueryModifiers('like new civic')).toEqual({

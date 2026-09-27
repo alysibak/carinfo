@@ -315,6 +315,14 @@ const UNMEASURED =
 const FIRST_CAR_WORDS =
   /\b(?:first|starter|beginner)\s+(?:cars?|vehicles?)\b|\bteen(?:ager)?s?\b|\b(?:new|young|student|learner)\s+drivers?\b|\bstudents?\b|\bcollege\b/g;
 
+/**
+ * Equipment, which no source on file records (EPA and NHTSA describe the
+ * powertrain and crash tests): "suv with sunroof" or "car with apple carplay"
+ * found nothing at all. Set aside and named instead.
+ */
+const EQUIPMENT =
+  /\b(?:apple carplay|carplay|android auto|(?:panoramic |pano )?(?:sun|moon)roof|panoramic roof|(?:heated|cooled|ventilated|leather|power|memory|massage) seats?|heated (?:steering )?wheel|leather|navigation|nav|gps|(?:backup|back-up|rear(?:view)?|360|surround[- ]view) cameras?|remote start|keyless(?: entry| start)?|push[- ]button start|(?:adaptive )?cruise control|adaptive cruise|lane (?:keep(?:ing)?|departure) (?:assist|warning)|lane assist|blind[- ]spot(?: monitoring| monitor| warning)?|(?:automatic )?emergency braking|bluetooth|wireless charging|premium (?:sound|audio)|bose|harman kardon|tow(?:ing)? (?:package|hitch)|trailer hitch)\b/g;
+
 /** "car for snow", "good in winter": the drive, the one thing EPA records that helps. */
 const SNOW = /\b(?:snowy?|winters?|icy|ice)\b/g;
 /**
@@ -430,8 +438,11 @@ export function extractQueryModifiers(
   }
   // After the sort phrases, which use "best" ("best mpg"), and the class
   // phrases, which use "for" nowhere but keep "family".
+  const equipment = text.match(EQUIPMENT) ?? [];
+  text = text.replace(EQUIPMENT, ' ');
   const unmeasured = [
     ...listing,
+    ...equipment,
     ...(charging ? ['fast charging'] : []),
     ...(text.match(UNMEASURED) ?? []),
   ];
@@ -466,5 +477,12 @@ export function extractQueryModifiers(
   text = text.replace(STOP_WORDS, (word: string, at: number, whole: string) =>
     MODEL_CODE_AFTER[word]?.test(whole.slice(at + word.length)) ? word : ' ',
   );
+  // An "and" left at either end once phrases are gone ("suv with sunroof and
+  // navigation"); "Town and Country" keeps its own.
+  text = text
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^(?:and|&)\s+|\s+(?:and|&)$/g, '');
+  if (text === 'and' || text === '&') text = '';
   return { text: text.replace(/\s+/g, ' ').trim(), ...out };
 }

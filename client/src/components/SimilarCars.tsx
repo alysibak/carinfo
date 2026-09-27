@@ -6,7 +6,7 @@ import { differentiateVsAnchor } from '../utils/differentiateCars';
 import { formatMpgForCard, formatPriceShort } from '../utils/dataValue';
 import { usesMpge } from '../utils/fuelDisplay';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
-import { displayModelLabel } from '../utils/trimLabel';
+import { displayModelLabel, displayVehicleTitle } from '../utils/trimLabel';
 import { useCarStore } from '../stores/carStore';
 
 /** Nearby alternatives with plain-English trade-offs vs the car you're viewing. */
@@ -98,6 +98,15 @@ export default function SimilarCars({ car }: { car: CarSpecs }) {
               );
             })}
           </ul>
+        )}
+        {cars != null && cars.length > 0 && (
+          // The search lists up to 24, as the page's six are drawn: "cars like …".
+          <Link
+            to={`/home?q=${encodeURIComponent(`cars like ${displayVehicleTitle(car)}`.toLowerCase())}`}
+            className="inline-flex items-center min-h-[40px] mt-3 text-sm text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
+          >
+            More rivals of the {displayVehicleTitle(car)}
+          </Link>
         )}
       </div>
     </section>
