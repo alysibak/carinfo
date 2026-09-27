@@ -229,6 +229,12 @@ const lux = (make: string, model: RegExp, msrp: number): ModelMsrpRule => ({
 });
 
 const LUXURY_PERFORMANCE_RULES: ModelMsrpRule[] = [
+  // The i8 plug-in: about US$140,000 new, the Roadster $163,000. Priced as a
+  // three-cylinder two-door it anchored at $47,700 and a 2014 read $15,750.
+  {
+    test: (c) => c.make === 'BMW' && /^i8\b/i.test(c.model),
+    msrp: (c) => (/roadster/i.test(c.model) ? 163000 : 140000),
+  },
   lux('BMW', /^alpina\b/i, 145000),
   lux('BMW', /^m2\b/i, 65000),
   lux('BMW', /^m3\b/i, 77000),
@@ -554,6 +560,7 @@ const PERFORMANCE_VARIANT_RULES: ModelMsrpRule[] = [
   { test: (c) => c.make === 'Ford' && /gt350/i.test(c.model), msrp: 60000 },
   { test: (c) => c.make === 'Ford' && /mustang dark horse/i.test(c.model), msrp: 60000 },
   { test: (c) => c.make === 'Ford' && /mustang bullitt/i.test(c.model), msrp: 47000 },
+  { test: (c) => c.make === 'Ford' && /mustang mach 1/i.test(c.model), msrp: 53000 },
   {
     test: (c) =>
       c.make === 'Ford' && /^mustang/i.test(c.model) && !/mach-e/i.test(c.model) && cyl(c) >= 8,
@@ -1286,7 +1293,11 @@ export function estimateNewVehicleMsrp(car: CarSpecs): number {
   // the body-style anchor. Coupes used to keep that $42,000 anchor whatever
   // their class, which priced a Tiburon like a Mustang GT.
   const sporty = car.bodyStyle === 'coupe' || car.bodyStyle === 'convertible';
-  const luxuryTwoDoor = sporty && LUXURY_MAKES.has(car.make);
+  // BMW's four-door Gran Coupes list with the two-doors they are built from (a
+  // 650i Gran Coupe near US$87,000), not with a compact sedan.
+  const luxuryTwoDoor =
+    (sporty || /\bgran coupe\b|\b(?:4|four)-door coupe\b/i.test(car.model)) &&
+    LUXURY_MAKES.has(car.make);
   const marque = MARQUE_ANCHORS_USD[car.make];
   let price: number;
   if (marque != null) {
@@ -1618,7 +1629,10 @@ function flatCurveRetention(car: CarSpecs): number | null {
       // M2, M3 and M4: a 2018 M3 lists around US$56,200 and a 2021 M4 around
       // US$66,300 (Cars.com, September 2026). The luxury curve with a bonus
       // fitted one and put the other a third high.
-      return /^m[234]\b/i.test(m) ? 0.85 : null;
+      if (/^m[234]\b/i.test(m)) return 0.85;
+      // A 2015 i8 lists around US$48,400 and a 2019 coupe US$68,300 (Cars.com,
+      // September 2026): about a third and a half of their stickers.
+      return /^i8\b/i.test(m) ? 0.62 : null;
     case 'Acura':
       // KBB puts a 2017 NSX at about US$116,000–$125,000 against $156,000 new.
       return /^nsx/i.test(m) && car.year >= 2016 ? 1.25 : null;

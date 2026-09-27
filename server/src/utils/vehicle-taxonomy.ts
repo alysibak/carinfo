@@ -43,10 +43,14 @@ const HATCHBACK_PATTERNS: RegExp[] = [
   /(?<!-)\btype r\b/,
   /\bcivic hatch/i,
   /\bveloster\b/,
+  // Kia's Forte5 and Volvo's three-door C30.
+  /\bforte ?5\b/,
+  /\bvolvo c30\b/,
+  /\bi-miev\b/,
+  /\bmercedes-benz b(?:-class| ?\d{3}e?)\b/,
   /\bmazdaspeed3\b/,
   /\bfocus st\b/,
   /\bfiesta st\b/,
-  /\belantra n\b/,
   /\bveloster n\b/,
   // Small cars EPA files as sedans or station wagons by interior volume.
   /\bspark\b/,
@@ -84,10 +88,10 @@ const HATCHBACK_PATTERNS: RegExp[] = [
 ];
 
 const HOT_HATCH_PATTERN =
-  /\b(gti|golf r|civic si|(?<!-)type r|focus st|fiesta st|mazdaspeed|veloster n|elantra n|cooper s|mini.*\bs\b|gr corolla|i20 n|208 gti|clio rs|megane rs)\b/i;
+  /\b(gti|golf r|civic si|(?<!-)type r|focus st|fiesta st|mazdaspeed|veloster n|cooper s|mini.*\bs\b|gr corolla|i20 n|208 gti|clio rs|megane rs)\b/i;
 
 const SPORT_SEDAN_PATTERN =
-  /\b(wrx|sti|si\b|civic si|accord sport|camry trd|altima sr|model 3 performance|340i|m340|amg|c63|s4|s5|rs3|giulia)\b/i;
+  /\b(wrx|sti|si\b|civic si|gli|elantra n|accord sport|camry trd|altima sr|model 3 performance|340i|m340|amg|c63|s4|s5|rs3|giulia)\b/i;
 
 /**
  * Performance trims that make a sedan a sport sedan (a Challenger with the
@@ -98,6 +102,108 @@ const SPORT_SEDAN_PATTERN =
  */
 const SEDAN_BADGE_IN_NAME = /\b(r\/t|scat pack|hellcat|srt8?)\b/i;
 const SEDAN_DERIVED_TRIM = /\b(ss|sho|n line|gt|r\/t|scat pack|hellcat|srt8)\b/i;
+
+/**
+ * American pony and muscle cars. With a V8 they are muscle cars; every other
+ * two-door is a sports car. By horsepower alone "muscle" held 170 Porsche 911
+ * Carreras, the M4, the GT-R, the LC 500 and the Corvette, America's sports car.
+ */
+const MUSCLE_NAMES =
+  /\b(mustang|camaro|challenger|firebird|trans am|gto|monte carlo|shelby|gt ?350|gt ?500|roush|saleen)\b/i;
+
+/** Makes whose two-doors are all sports cars ("Panoz Auto-Development", "RUF Automobile"). */
+const SPORTS_CAR_MAKES =
+  /^(porsche|lotus|aston martin|polestar|alpine|tvr|morgan|caterham|panoz|qvale|ruf|noble|saleen)\b/i;
+
+/**
+ * Sports cars by name, whatever their power: a Miata makes 155 hp and is a
+ * sports car, an Accord Coupe makes 278 and is not. By horsepower a smart
+ * fortwo was a "sports car" and a 911 Carrera S a "muscle car".
+ */
+const SPORTS_CAR_NAMES = new RegExp(
+  '^(?:' +
+    [
+      'mazda (?:mx-5|miata|rx-7|rx-8)',
+      'toyota (?:mr2|(?:gr )?supra|celica|(?:gr ?)?86)',
+      'scion fr-s',
+      'subaru brz',
+      'honda (?:s2000|prelude|cr-z|crx|(?:civic )?del sol)',
+      'acura (?:integra|rsx)',
+      'nissan (?:\\d{3}z|z|gt-r|240sx|300zx)',
+      'mitsubishi (?:eclipse|3000 ?gt)',
+      'dodge (?:stealth|viper)',
+      'srt viper',
+      'chevrolet (?:corvette|camaro)',
+      'ford (?:mustang|shelby)',
+      'dodge challenger',
+      'pontiac (?:firebird|solstice|fiero|gto)',
+      'saturn sky',
+      'chrysler crossfire',
+      '(?:plymouth|chrysler) prowler',
+      'eagle talon',
+      'hyundai genesis coupe',
+      'fiat 124 spider',
+      'alfa romeo (?:4c|spider|8 ?c)',
+      'mercedes-benz (?:amg )?(?:(?:sl|slk|slc)(?: ?\\d+)?|sls|slr|amg gt)',
+      'bmw (?:z[348]|i8|1 series m)',
+      'audi tt(?:s| ?rs)?',
+      'jaguar (?:f-type|xk[8r]?)',
+      'lexus (?:lc|rc ?f|lfa)',
+      'infiniti q60 red sport',
+      'cadillac (?:xlr|cts-v|ats-v)',
+    ].join('|') +
+    ')\\b',
+);
+
+/** Coupes of family cars: an Accord or a Solara with two doors. */
+const FAMILY_COUPES =
+  /^(honda (accord|civic)|nissan (altima|sentra)|toyota (camry|solara|corolla)|chrysler (sebring|200)|dodge (stratus|avenger)|chevrolet (cavalier|cobalt|monte carlo|malibu)|pontiac (sunfire|grand am|grand prix|g6)|oldsmobile (alero|intrigue)|buick|mercury cougar|hyundai (tiburon|elantra)|kia forte)\b/;
+
+/** Makes a shopper means by "luxury": the luxury brands, the marques and the exotics. */
+const LUXURY_SEARCH_MAKES = new Set([
+  'Aston Martin',
+  'Bentley',
+  'Bugatti',
+  'Ferrari',
+  'Koenigsegg',
+  'Lamborghini',
+  'Lotus',
+  'Lucid',
+  'Maybach',
+  'McLaren Automotive',
+  'Mercedes-Maybach',
+  'Pagani',
+  'Polestar',
+  'Rolls-Royce',
+  'Tesla',
+]);
+
+export function isLuxuryBrand(make: string): boolean {
+  return LUXURY_BRAND_MAKES.has(make) || LUXURY_SEARCH_MAKES.has(make);
+}
+
+/** Front-drive luxury sedans built for comfort, whatever their V6 makes. */
+const COMFORT_LUXURY = /^(lexus es|lincoln (mkz|mks|zephyr)|acura (rl|rlx))\b/i;
+
+/** Makes whose cars are luxury cars, whatever their price today. */
+const LUXURY_BRAND_MAKES = new Set([
+  'Acura',
+  'Alfa Romeo',
+  'Audi',
+  'BMW',
+  'Cadillac',
+  'Genesis',
+  'Infiniti',
+  'Jaguar',
+  'Land Rover',
+  'Lexus',
+  'Lincoln',
+  'Maserati',
+  'Mercedes-Benz',
+  'Porsche',
+  'Saab',
+  'Volvo',
+]);
 
 /**
  * Factory performance badges: Audi S / RS / TT RS, BMW M. These identify a
@@ -136,13 +242,16 @@ const LUXURY_MARQUES = new Set(['Rolls-Royce', 'Bentley', 'Maybach', 'Mercedes-M
  * segment held 14 cars in the entire corpus.
  */
 const LUXURY_FLAGSHIPS: Record<string, RegExp> = {
-  'Mercedes-Benz': /^(s ?\d{3}|s-class|maybach)/i,
+  // The CL is the S-Class coupe.
+  'Mercedes-Benz': /^(s ?\d{3}|s-class|maybach|cl ?\d{2,3}\b)/i,
   BMW: /^(7\d\d|alpina b7)/i,
   Audi: /^a8\b/i,
   Lexus: /^ls\b/i,
   Jaguar: /^(xj|vanden plas)/i,
   Genesis: /^g90\b/i,
-  Hyundai: /^equus\b/i,
+  // The 2009-16 Genesis sedan was the brand before it was one.
+  Hyundai: /^(equus|genesis(?! coupe))\b/i,
+  Kia: /^k900\b/i,
   Cadillac: /^(ct6|xts|dts|deville)\b/i,
   Lincoln: /^(continental|town car)\b/i,
   Maserati: /^(quattroporte|ghibli)\b/i,
@@ -218,9 +327,21 @@ export function inferBodyStyle(car: CarSpecs, displayModel?: string): BodyStyle 
   const model = (displayModel ?? car.model).toLowerCase();
 
   if (/sportwagen|sport wagen/.test(h)) return 'wagon';
-  if (/\bconvertible\b|\bcabriolet\b|\broadster\b|\bspider\b|\bspyder\b/.test(h))
+  // EPA's "Countryman Coupe" is the Paceman, a two-door crossover.
+  if (car.make.toLowerCase() === 'mini' && /countryman|paceman/.test(model)) return 'suv';
+  // EPA files the Magnum as an SUV; it is Dodge's station wagon.
+  if (/^dodge magnum\b/.test(`${car.make} ${car.model}`.toLowerCase())) return 'wagon';
+  // BMW's Gran Coupes and Mercedes' "4-Door Coupe" have four doors.
+  if (/\bgran coupe\b|\b(?:4|four)-door coupe\b/.test(h)) return 'sedan';
+  // A GLE Coupe, a Cayenne Coupe, an Evoque Convertible or a soft-top Tracker
+  // is an SUV with a car's name. The PT Cruiser is a car EPA files as a truck.
+  const suvNamedLikeACar = car.bodyStyle === 'suv' && !/\bpt cruiser\b/.test(h);
+  if (
+    !suvNamedLikeACar &&
+    /\bconvertible\b|\bcabriolet\b|\broadster\b|\bspider\b|\bspyder\b/.test(h)
+  )
     return 'convertible';
-  if (/\bcoupe\b/.test(h) && !/sport utility|suv/.test(h)) return 'coupe';
+  if (!suvNamedLikeACar && /\bcoupe\b/.test(h) && !/sport utility|suv/.test(h)) return 'coupe';
   if (/pickup|\bf-150\b|\bsilverado\b|\bram 1500\b|\btundra\b|\btitan\b/.test(h)) return 'truck';
   if (/sport utility|\bsuv\b|\brav4\b|\bcrv\b|\bxt\d\b|\bexplorer\b|\btahoe\b/.test(h))
     return 'suv';
@@ -257,8 +378,12 @@ export function inferBodyStyle(car: CarSpecs, displayModel?: string): BodyStyle 
   if (car.make === 'Volkswagen' && /^golf$/i.test(model)) return 'hatchback';
 
   // EPA files cars by interior volume, so these arrive as "sedan".
+  const makeModel = `${car.make} ${car.model}`.toLowerCase();
+  // Roadsters in EPA's two-seater class arrive as coupes: every Boxster,
+  // MX-5, S2000, Z4 and SL.
+  if (car.bodyStyle === 'coupe' && CONVERTIBLE_NAMES.test(makeModel)) return 'convertible';
   if (car.bodyStyle === 'sedan') {
-    const name = `${car.make} ${car.model}`.toLowerCase();
+    const name = makeModel;
     if (FIVE_DOOR_CAR.test(name)) return 'hatchback';
     if (CONVERTIBLE_NAMES.test(name)) return 'convertible';
     if (COUPE_NAMES.test(name) || TWO_DOOR_CAR.test(name)) return 'coupe';
@@ -279,7 +404,7 @@ export function inferBodyStyle(car: CarSpecs, displayModel?: string): BodyStyle 
  */
 const COUPE_NAMES = new RegExp(
   [
-    'mustang(?!\\s*mach)',
+    'mustang(?!\\s*mach-?e)',
     'camaro',
     'challenger',
     'brz',
@@ -312,6 +437,10 @@ const COUPE_NAMES = new RegExp(
     'saturn sc',
     'clk\\d+',
     'audi tts?',
+    // Before 2018 the A5 and S5 were coupes; the four-door says "Sportback".
+    'audi (?:a5|s5|rs ?5)(?! sportback| cabriolet)',
+    'bmw i8',
+    'cadillac elr',
     // Grand tourers and halo cars filed by size class.
     'nissan gt-r',
     'bmw m2',
@@ -334,11 +463,11 @@ const COUPE_NAMES = new RegExp(
  * wagon or sedan.
  */
 const CROSSOVER_NAMES =
-  /^(honda (cr-v|hr-v)|nissan (juke|rogue|murano|kicks|ariya)|kia (niro|seltos)|ford (mustang mach-e|ecosport)|mercedes-benz (amg )?gl[abc] ?\d|rolls-royce cullinan|chevrolet (trax|trailblazer)|buick (encore|envista)|infiniti qx\d0|bmw x[1-7]\b|toyota (c-hr|venza)|subaru crosstrek|jeep (compass|renegade)|hyundai (kona|venue)|lincoln (mkc|corsair)|lexus (ux|nx) )/;
+  /^(honda (cr-v|hr-v)|nissan (juke|rogue|murano|kicks|ariya)|kia (niro|seltos)|ford (mustang mach-e|ecosport)|mercedes-benz (amg )?gl[abc] ?\d|rolls-royce cullinan|chevrolet (trax|trailblazer)|buick (encore|envista)|infiniti (?:qx\d0|ex\d\d)|mazda cx-\d+|bmw x[1-7]\b|toyota (c-hr|venza)|subaru crosstrek|jeep (compass|renegade)|hyundai (kona|venue)|lincoln (mkc|corsair)|lexus (ux|nx) )/;
 
 /** Convertibles EPA files as sedans, with no "convertible" in the name. */
 const CONVERTIBLE_NAMES =
-  /\b(volante|drophead|bentley azure|bentley continental gtc|rolls-royce (?:dawn|corniche)|maserati grancabrio|ferrari (?:california|portofino)|porsche boxster|(?:amg )?sl ?\d+|slk ?\d*|slc ?\d*|\d{3}ic)\b/;
+  /\b(volante|drophead|bentley azure|bentley continental gtc|rolls-royce (?:dawn|corniche)|maserati grancabrio|ferrari (?:california|portofino)|porsche (?:718 )?boxster|(?:amg )?sl ?\d+|slk ?\d*|slc ?\d*|\d{3}ic|mazda mx-5|miata|honda s2000|bmw z[348]|pontiac solstice|saturn sky|volkswagen eos|cadillac xlr|plymouth prowler|lexus sc ?430|volvo c70 fwd|buick cascada)\b/;
 /** City cars in EPA's minicompact class: three-door hatchbacks, not coupes. */
 const CITY_HATCH = /\b(fiat 500|mini|scion iq|smart|fortwo)/;
 const TWO_DOOR_CAR = /\b2[ -]?dr\b|\b2[ -]door\b/;
@@ -367,12 +496,17 @@ export function classifyShoppingSegment(
     return 'supercar';
   }
 
-  if (HOT_HATCH_PATTERN.test(h) || (bodyStyle === 'hatchback' && hp >= 200 && disp >= 1.8))
+  const twoDoor = bodyStyle === 'coupe' || bodyStyle === 'convertible';
+  // A hot-hatch badge on a sedan (Civic Si, Mazdaspeed6) makes a sport sedan,
+  // and on a coupe a sport compact.
+  if (
+    (!twoDoor && bodyStyle !== 'sedan' && HOT_HATCH_PATTERN.test(h)) ||
+    (bodyStyle === 'hatchback' && hp >= 200 && disp >= 1.8)
+  )
     return 'hot-hatch';
   // Performance badges first (an S63 AMG or an Audi S8 is a sport sedan), then
   // flagships (a Phantom is not), then the horsepower rule for everything else.
-  // Coupes and convertibles fall through to their own sports-car / muscle split.
-  const twoDoor = bodyStyle === 'coupe' || bodyStyle === 'convertible';
+  // Coupes and convertibles fall through to their own split below.
   if (
     (!twoDoor && SPORT_SEDAN_PATTERN.test(h)) ||
     ((bodyStyle === 'sedan' || bodyStyle === 'wagon') && PERFORMANCE_BADGE_PATTERN.test(h))
@@ -385,19 +519,42 @@ export function classifyShoppingSegment(
     return 'sport-sedan';
   }
   if (isLuxuryFlagship(car, displayModel)) return 'luxury';
-  if (bodyStyle === 'sedan' && hp >= 250 && disp >= 2) return 'sport-sedan';
-  if (bodyStyle === 'coupe' || bodyStyle === 'convertible') {
-    if (hp >= 400 || disp >= 5) return 'muscle';
-    return 'sports-car';
+  // A V6 Camry, Accord, Impala or Charger makes 250-305 hp and is a family
+  // sedan: 490 of them were "sport sedans". Output per litre, a turbo or a lot
+  // of power tells a WRX, a Stinger or a Fusion Sport apart.
+  const forced =
+    car.engine.aspiration === 'turbocharged' || car.engine.aspiration === 'supercharged';
+  const sporty = forced || hp >= 330 || (disp > 0 && hp / disp >= 95);
+  const luxuryMake = LUXURY_BRAND_MAKES.has(car.make);
+  // An IS 350, a G37 or a CTS is a sport sedan with a big V6; an ES is not.
+  const luxurySport = luxuryMake && !COMFORT_LUXURY.test(`${car.make} ${displayModel}`);
+  if (bodyStyle === 'sedan' && hp >= 250 && disp >= 2 && (sporty || luxurySport))
+    return 'sport-sedan';
+  if (twoDoor) {
+    const name = `${car.make} ${displayModel}`.toLowerCase();
+    if ((hp >= 400 || disp >= 4.5) && MUSCLE_NAMES.test(name)) return 'muscle';
+    if (
+      SPORTS_CAR_MAKES.test(car.make) ||
+      SPORTS_CAR_NAMES.test(name) ||
+      PERFORMANCE_BADGE_PATTERN.test(h) ||
+      /\bamg\b/.test(h)
+    )
+      return 'sports-car';
+    if (
+      HOT_HATCH_PATTERN.test(h) ||
+      SPORT_SEDAN_PATTERN.test(h) ||
+      /\b(ss|srt-?4|type[- ]s|se-r|spec v)\b/.test(h)
+    )
+      return 'sport-compact';
+    // A 430i, an E350 or an RC 350 coupe is a luxury car with two doors.
+    if (luxuryMake) return 'luxury';
+    if (hp >= 300) return 'sports-car';
+    if (hp >= 180 && !FAMILY_COUPES.test(name)) return 'sport-compact';
+    return 'mainstream';
   }
-  if (
-    ['BMW', 'Mercedes-Benz', 'Audi', 'Lexus', 'Porsche', 'Genesis', 'Infiniti', 'Acura'].includes(
-      car.make,
-    ) &&
-    (car.price?.msrp ?? 0) > 55000
-  ) {
-    return 'luxury';
-  }
+  // A C300, an A4 or an ES is a luxury car at any price. The rule used to key
+  // off the estimated value, so older ones read "mainstream".
+  if (luxuryMake) return 'luxury';
   if (bodyStyle === 'hatchback' && hp >= 150) return 'sport-compact';
 
   return 'mainstream';

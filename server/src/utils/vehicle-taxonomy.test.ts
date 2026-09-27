@@ -119,6 +119,44 @@ describe('vehicle-taxonomy', () => {
     ).toBe('suv');
   });
 
+  it('reads roadsters, four-door coupes and coupe-SUVs by what they are', () => {
+    const body = (make: string, model: string, bodyStyle: Car['bodyStyle'], vClass?: string) =>
+      inferBodyStyle(
+        minimalCar({
+          make,
+          model,
+          bodyStyle,
+          epa: vClass ? ({ vClass } as Car['epa']) : undefined,
+        }),
+        model,
+      );
+    // Roadsters in EPA's two-seater class arrived as coupes.
+    expect(body('Porsche', '718 Boxster', 'coupe', 'Two Seaters')).toBe('convertible');
+    expect(body('Mazda', 'MX-5', 'coupe', 'Two Seaters')).toBe('convertible');
+    expect(body('Honda', 'S2000', 'coupe', 'Two Seaters')).toBe('convertible');
+    expect(body('BMW', 'Z4 sDrive30i', 'coupe', 'Two Seaters')).toBe('convertible');
+    expect(body('Mercedes-Benz', 'SLK350', 'coupe', 'Two Seaters')).toBe('convertible');
+    expect(body('BMW', 'Z4 Coupe', 'coupe', 'Two Seaters')).toBe('coupe');
+    expect(body('Volkswagen', 'Eos', 'sedan', 'Subcompact Cars')).toBe('convertible');
+    // Four doors, whatever the name says.
+    expect(body('BMW', '430i Gran Coupe', 'coupe', 'Compact Cars')).toBe('sedan');
+    expect(body('BMW', 'M8 Competition Gran Coupe', 'coupe', 'Midsize Cars')).toBe('sedan');
+    // SUVs with a car's name.
+    expect(body('Mercedes-Benz', 'GLC300 4matic Coupe', 'suv')).toBe('suv');
+    expect(body('Porsche', 'Cayenne Turbo Coupe', 'suv')).toBe('suv');
+    expect(body('Chevrolet', 'Tracker 4WD Convertible', 'suv')).toBe('suv');
+    // The PT Cruiser is a car EPA files as a truck.
+    expect(body('Chrysler', 'PT Cruiser Convertible', 'suv')).toBe('convertible');
+    // Crossovers, hatchbacks and wagons EPA filed as something else.
+    expect(body('Mazda', 'CX-3 2WD', 'sedan', 'Compact Cars')).toBe('suv');
+    expect(body('Infiniti', 'EX35', 'wagon', 'Small Station Wagons')).toBe('suv');
+    expect(body('Kia', 'Forte 5', 'sedan', 'Large Cars')).toBe('hatchback');
+    expect(body('Volvo', 'C30 FWD', 'sedan', 'Compact Cars')).toBe('hatchback');
+    expect(body('Dodge', 'Magnum AWD', 'suv')).toBe('wagon');
+    expect(body('Hyundai', 'Elantra N', 'sedan', 'Midsize Cars')).toBe('sedan');
+    expect(body('Ford', 'Mustang Mach 1', 'sedan', 'Subcompact Cars')).toBe('coupe');
+  });
+
   it('reads "Si" as a word, not the "SIL" trim code', () => {
     // The lean-burn Civic VX and the 2003-05 Civic Hybrid read as a 201 hp Civic Si.
     const model = (m: string, trim: string, year: number) =>
@@ -250,10 +288,84 @@ describe('shopping segments', () => {
     expect(seg('Ford', 'GT')).toBe('supercar');
     expect(seg('Ford', 'GT500')).toBe('muscle');
     // "Type R" is a Honda hot hatch, not Jaguar's F-Type R.
-    expect(seg('Jaguar', 'F-Type R Coupe')).toBe('muscle');
+    expect(seg('Jaguar', 'F-Type R Coupe')).toBe('sports-car');
     expect(seg('Lamborghini', 'Urus', 'suv')).toBe('utility');
     // An "AMG" badge makes a sedan a sport sedan, not a two-door.
-    expect(seg('Mercedes-Benz', 'AMG GT S')).toBe('muscle');
+    expect(seg('Mercedes-Benz', 'AMG GT S')).toBe('sports-car');
+  });
+
+  it('keeps "muscle car" for American V8 pony cars', () => {
+    const seg = (make: string, model: string, horsepower: number, displacement: number) =>
+      classifyShoppingSegment(
+        minimalCar({
+          make,
+          model,
+          bodyStyle: 'coupe',
+          engine: { fuelType: 'gasoline', horsepower, displacement },
+        }),
+        model,
+        'coupe',
+      );
+    expect(seg('Ford', 'Mustang', 460, 5)).toBe('muscle');
+    expect(seg('Chevrolet', 'Camaro', 455, 6.2)).toBe('muscle');
+    // A 2008 Mustang GT: a 4.6-litre V8 at 300 hp.
+    expect(seg('Ford', 'Mustang', 300, 4.6)).toBe('muscle');
+    expect(seg('Ford', 'Mustang', 310, 2.3)).toBe('sports-car');
+    // By horsepower alone these were muscle cars.
+    expect(seg('Porsche', '911 Carrera S', 443, 3)).toBe('sports-car');
+    expect(seg('Chevrolet', 'Corvette', 495, 6.2)).toBe('sports-car');
+    expect(seg('Nissan', 'GT-R', 565, 3.8)).toBe('sports-car');
+    expect(seg('BMW', 'M4 Coupe', 473, 3)).toBe('sports-car');
+  });
+
+  it('tells sports cars from luxury coupes and family coupes', () => {
+    const seg = (make: string, model: string, horsepower: number, displacement = 2) =>
+      classifyShoppingSegment(
+        minimalCar({
+          make,
+          model,
+          bodyStyle: 'coupe',
+          engine: { fuelType: 'gasoline', horsepower, displacement },
+        }),
+        model,
+        'coupe',
+      );
+    // A Miata is a sports car at 155 hp; a smart fortwo was one at 70.
+    expect(seg('Mazda', 'MX-5', 155)).toBe('sports-car');
+    expect(seg('smart', 'fortwo coupe', 70, 1)).toBe('mainstream');
+    expect(seg('Honda', 'Accord Coupe', 278, 3.5)).toBe('mainstream');
+    expect(seg('BMW', '430i Coupe', 248)).toBe('luxury');
+    expect(seg('Mercedes-Benz', 'E350 Coupe', 302, 3.5)).toBe('luxury');
+    expect(seg('Lexus', 'LC 500', 471, 5)).toBe('sports-car');
+    expect(seg('Mercedes-Benz', 'CL600', 510, 5.5)).toBe('luxury');
+  });
+
+  it('does not call a V6 family sedan a sport sedan', () => {
+    const seg = (make: string, model: string, horsepower: number, displacement: number) =>
+      classifyShoppingSegment(
+        minimalCar({ make, model, engine: { fuelType: 'gasoline', horsepower, displacement } }),
+        model,
+        'sedan',
+      );
+    // 490 V6 Camrys, Accords, Impalas and Chargers were "sport sedans".
+    expect(seg('Toyota', 'Camry', 301, 3.5)).toBe('mainstream');
+    expect(seg('Chevrolet', 'Impala', 305, 3.6)).toBe('mainstream');
+    expect(seg('Lexus', 'ES 350', 302, 3.5)).toBe('luxury');
+    // A turbo, or real output per litre, still makes one.
+    const wrx = minimalCar({
+      make: 'Subaru',
+      model: 'Legacy',
+      engine: {
+        fuelType: 'gasoline',
+        horsepower: 260,
+        displacement: 2.4,
+        aspiration: 'turbocharged',
+      },
+    });
+    expect(classifyShoppingSegment(wrx, 'Legacy', 'sedan')).toBe('sport-sedan');
+    expect(seg('Lexus', 'IS 350', 311, 3.5)).toBe('sport-sedan');
+    // A C300 or an A4 is a luxury car, whatever it is worth today.
+    expect(seg('Mercedes-Benz', 'C300', 241, 2)).toBe('luxury');
   });
 
   it('leaves badge-named coupes to the sports-car / muscle split', () => {

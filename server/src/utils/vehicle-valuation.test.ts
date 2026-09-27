@@ -195,6 +195,13 @@ describe('vehicle-valuation (Ontario/CAD)', () => {
     expect(estimateNewVehicleMsrp(car('MINI', /^Cooper Hardtop 2 door$/, 2020))).toBe(28_500);
     // A 2017 Focus RS lists around US$29,300 (Cars.com); it was valued at $11,750.
     expect(estimateMarketValue(car('Ford', /^Focus RS/, 2017)).mid).toBeGreaterThan(28_000);
+    // A 2015 i8 lists around US$48,400 and a 2019 coupe US$68,300 (Cars.com),
+    // $58,000 and $82,000 at the 1.2 Canada/US ratio. Anchored as a
+    // three-cylinder coupe, a 2014 read $15,750.
+    const i8 = (year: number) => estimateMarketValue(car('BMW', /^i8$/i, year)).mid;
+    expect(i8(2015)).toBeGreaterThan(58_000 * 0.8);
+    expect(i8(2015)).toBeLessThan(58_000 * 1.2);
+    expect(estimateMarketValue(car('BMW', /^i8 coupe$/i, 2019)).mid).toBeGreaterThan(82_000 * 0.8);
   });
 
   it('has zero degenerate resale ranges across the full dataset', () => {
