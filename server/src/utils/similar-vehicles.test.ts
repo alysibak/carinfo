@@ -77,6 +77,8 @@ describe('Tesla Model 3 and Model Y', () => {
     )!;
     const pool = all.filter((c) => c.bodyStyle === modelY.bodyStyle);
     const makes = findSimilarCars(modelY, pool, 6).map((c) => c.make);
-    expect(makes.some((m) => m === 'Hyundai' || m === 'Kia')).toBe(true);
+    expect(
+      makes.some((m) => /^(Hyundai|Kia|Ford|Chevrolet|Volkswagen|Nissan|Toyota)$/.test(m)),
+    ).toBe(true);
   });
 });

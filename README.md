@@ -96,7 +96,7 @@ This README quotes **actual source** in [Code reference](#code-reference). To re
 | MPG/MPGe, engine, drive, transmission, CO₂, annual fuel cost, EV range | EPA FuelEconomy.gov | Verified         | In `cars.json`               |
 | GHG score, barrels/yr, 5-yr fuel savings, PHEV dual-mode               | EPA `vehicles.csv`  | Verified         | `epa-enrichment.json`        |
 | Rated horsepower                                                       | EPA Test Car List   | Verified         | `horsepower-enrichment.json` |
-| EV horsepower (no test-car match)                                      | Heuristic           | **Est.**         | `ev-power-estimates.ts`      |
+| EV horsepower (no test-car match)                                      | Manufacturer, by trim | **Est.**       | `ev-power-estimates.ts`      |
 | Safety star ratings                                                    | NHTSA               | Verified         | When enriched                |
 | Market value, running cost, TCO, resale                                | Depreciation model  | **Est.**         | Ontario/CAD                  |
 | Predicted 0–60                                                         | HP/weight heuristic | **Est.**         | `predictZeroToSixty()`       |
@@ -1007,7 +1007,7 @@ Body-type PNGs: `sedan` · `suv` · `truck` · `coupe` · `hatchback` · `wagon`
 | `vehicle-valuation.ts`        | MSRP estimation, depreciation, condition bands                             |
 | `market-intelligence.ts`      | Segments, `predictZeroToSixty`, `getSegment`                               |
 | `ev-scoring.ts`               | `computeEvScore` for search sort                                           |
-| `ev-power-estimates.ts`       | EV HP when test car list has no match                                      |
+| `ev-power-estimates.ts`       | EV HP by trim and year from the makers' ratings (EPA publishes none); a name that does not say which version gets none |
 | `performance-hp-estimates.ts` | Performance HP heuristics                                                  |
 | `fuel-cell-detection.ts`      | FCEV pattern detection                                                     |
 | `data-paths.ts`               | `resolveDataFile()` — works locally and on Vercel                          |

@@ -1327,6 +1327,21 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
   });
 }
 
+/**
+ * Electric cars sold as sports cars. Their segment is "ev", so "electric
+ * sports car" found none and listed Audi "Sportback" SUVs by name instead.
+ */
+const ELECTRIC_SPORTS_CARS =
+  /^(?:porsche taycan|audi (?:rs |s )?e-tron gt|tesla model s plaid|tesla roadster|lucid air sapphire|bmw i[45] m[56]0|mercedes-benz amg eq[es]\b(?!.*\(suv\)))/i;
+
+function isElectricSportsCar(car: Car): boolean {
+  return (
+    car.engine.fuelType === 'electric' &&
+    ELECTRIC_SPORTS_CARS.test(`${car.make} ${car.model}`) &&
+    !['suv', 'truck', 'van', 'minivan'].includes(car.bodyStyle)
+  );
+}
+
 /** Doors by body style, where the body tells: a coupe has two, a sedan four. */
 const DOORS_BY_BODY: Partial<Record<string, number>> = {
   coupe: 2,
@@ -2053,7 +2068,12 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
     if (twoSeater && car.epa?.vClass !== 'Two Seaters') continue;
     if (doors != null && doorCount(car) !== doors) continue;
     if (classSet && !competitiveSets(car).some((set) => classSet.has(set))) continue;
-    if (segmentSet && !segmentSet.has(car.shoppingSegment ?? 'mainstream')) continue;
+    if (
+      segmentSet &&
+      !segmentSet.has(car.shoppingSegment ?? 'mainstream') &&
+      !(segmentSet.has('sports-car') && isElectricSportsCar(car))
+    )
+      continue;
     if (luxuryOnly && !isLuxuryBrand(car.make)) continue;
     if (mildOnly && !car.engine.mildHybrid) continue;
     if (automatedManualOnly && !isAutomatedManual(car)) continue;

@@ -73,12 +73,16 @@ const TUNER_MAKES = /^(roush|saleen|tecstar|hennessey|lingenfelter|callaway)/i;
  * "718 Cayman GT4" a Cayman, a "V12 Vantage S" a Vantage, a "Jetta GLI" a GLI.
  */
 function lineFamily(model: string): string {
-  return modelFamilyName(model)
-    .replace(/^new /, '')
-    .replace(/^718 /, '')
-    .replace(/^v(8|10|12) /, '')
-    .replace(/^jetta gli\b/, 'gli')
-    .replace(/^golf gti\b/, 'gti');
+  return (
+    modelFamilyName(model)
+      .replace(/^new /, '')
+      .replace(/^718 /, '')
+      .replace(/^v(8|10|12) /, '')
+      .replace(/^jetta gli\b/, 'gli')
+      .replace(/^golf gti\b/, 'gti')
+      // Volvo's C40 is the XC40 with a sloping roof (the EC40 and EX40 from 2025).
+      .replace(/^(?:c40|ec40|ex40)\b/, 'xc40')
+  );
 }
 
 /**
