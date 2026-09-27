@@ -132,6 +132,13 @@ describe('vehicle-taxonomy', () => {
     expect(body('Ferrari', 'California T', 'Minicompact Cars')).toBe('convertible');
     expect(body('Aston Martin', 'DB9 Volante', 'Minicompact Cars')).toBe('convertible');
     expect(body('Mercedes-Benz', 'AMG SL63')).toBe('convertible');
+    // A Civic Type R is a hatchback; Jaguar's S-Type R is not.
+    expect(body('Honda', 'Civic Type R')).toBe('hatchback');
+    expect(body('Jaguar', 'S-Type R', 'Midsize Cars')).toBe('sedan');
+    // MINI builds no sedans.
+    expect(body('MINI', 'Cooper Countryman', 'Compact Cars')).toBe('suv');
+    expect(body('MINI', 'Cooper S Clubman', 'Midsize Cars')).toBe('wagon');
+    expect(body('MINI', 'Cooper (5-doors)')).toBe('hatchback');
     // City cars in the same class are hatchbacks; four-doors stay sedans.
     expect(body('Fiat', '500', 'Minicompact Cars')).toBe('hatchback');
     expect(body('Bentley', 'Flying Spur', 'Large Cars')).toBe('sedan');
@@ -216,6 +223,8 @@ describe('shopping segments', () => {
     expect(seg('Audi', 'R8')).toBe('supercar');
     expect(seg('Ford', 'GT')).toBe('supercar');
     expect(seg('Ford', 'GT500')).toBe('muscle');
+    // "Type R" is a Honda hot hatch, not Jaguar's F-Type R.
+    expect(seg('Jaguar', 'F-Type R Coupe')).toBe('muscle');
     expect(seg('Lamborghini', 'Urus', 'suv')).toBe('utility');
     // An "AMG" badge makes a sedan a sport sedan, not a two-door.
     expect(seg('Mercedes-Benz', 'AMG GT S')).toBe('muscle');

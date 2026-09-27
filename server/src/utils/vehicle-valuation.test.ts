@@ -181,6 +181,17 @@ describe('vehicle-valuation (Ontario/CAD)', () => {
     );
   });
 
+  it('prices enthusiast cars and MINIs by trim, not by size class', () => {
+    const car = (make: string, model: RegExp, year: number) =>
+      getAllCars().find((c) => c.make === make && model.test(c.model) && c.year === year)!;
+    // All three used to take a base car's anchor ($22,000 to $27,000).
+    expect(estimateNewVehicleMsrp(car('Toyota', /^GR Corolla$/, 2023))).toBe(42_000);
+    expect(estimateNewVehicleMsrp(car('MINI', /^John Cooper Works Hardtop$/, 2020))).toBe(40_000);
+    expect(estimateNewVehicleMsrp(car('MINI', /^Cooper Hardtop 2 door$/, 2020))).toBe(28_500);
+    // A 2017 Focus RS lists around US$29,300 (Cars.com); it was valued at $11,750.
+    expect(estimateMarketValue(car('Ford', /^Focus RS/, 2017)).mid).toBeGreaterThan(28_000);
+  });
+
   it('has zero degenerate resale ranges across the full dataset', () => {
     const cars = loadRawCars();
     let degenerate = 0;

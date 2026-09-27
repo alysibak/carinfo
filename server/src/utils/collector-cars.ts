@@ -32,6 +32,12 @@ const RULES: CollectorRule[] = [
       same(c.make, 'Nissan') && /^300zx/i.test(c.model) && c.engine.aspiration === 'turbocharged',
   },
   { test: (c) => same(c.make, 'Honda') && /^s2000/i.test(c.model) },
+  // A 2015 Lancer Evolution lists around its US$34,000–$38,000 sticker, a
+  // Final Edition near US$50,000 (Cars.com, September 2026).
+  { test: (c) => same(c.make, 'Mitsubishi') && /^lancer evolution/i.test(c.model) },
+  // EPA files the 209-car Subaru S209 under the make "STI"; it lists above
+  // its US$64,000 sticker.
+  { test: (c) => same(c.make, 'STI') },
   {
     test: (c) =>
       /^(mitsubishi|dodge)$/i.test(c.make) &&

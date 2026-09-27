@@ -39,7 +39,8 @@ const HATCHBACK_PATTERNS: RegExp[] = [
   /\bgolf r\b/,
   /\be-golf\b/,
   /\bhatchback\b/,
-  /\btype r\b/,
+  // Not Jaguar's S-Type R or F-Type R.
+  /(?<!-)\btype r\b/,
   /\bcivic hatch/i,
   /\bveloster\b/,
   /\bmazdaspeed3\b/,
@@ -72,7 +73,7 @@ const HATCHBACK_PATTERNS: RegExp[] = [
 ];
 
 const HOT_HATCH_PATTERN =
-  /\b(gti|golf r|civic si|type r|focus st|fiesta st|mazdaspeed|veloster n|elantra n|cooper s|mini.*\bs\b|gr corolla|i20 n|208 gti|clio rs|megane rs)\b/i;
+  /\b(gti|golf r|civic si|(?<!-)type r|focus st|fiesta st|mazdaspeed|veloster n|elantra n|cooper s|mini.*\bs\b|gr corolla|i20 n|208 gti|clio rs|megane rs)\b/i;
 
 const SPORT_SEDAN_PATTERN =
   /\b(wrx|sti|si\b|civic si|accord sport|camry trd|altima sr|model 3 performance|340i|m340|amg|c63|s4|s5|rs3|giulia)\b/i;
@@ -220,6 +221,15 @@ export function inferBodyStyle(car: CarSpecs, displayModel?: string): BodyStyle 
   const epaUtility = ['suv', 'truck', 'van', 'minivan'].includes(car.bodyStyle);
   if (!epaUtility && /station wagon|\bwagon\b|\bavant\b|\bestate\b/.test(h)) return 'wagon';
 
+  // MINI builds no sedans: the Clubman is an estate, the Countryman and
+  // Paceman crossovers, the rest hatchbacks ("Hardtop 2 door", "3-doors").
+  // EPA's size classes split one Countryman between "sedan" and "hatchback".
+  if (car.make.toLowerCase() === 'mini' && !epaUtility) {
+    if (/clubman|clubvan/.test(model)) return 'wagon';
+    if (/countryman|paceman/.test(model)) return 'suv';
+    return 'hatchback';
+  }
+
   if (HATCHBACK_PATTERNS.some((re) => re.test(h) || re.test(model))) return 'hatchback';
 
   // Golf without qualifier is a hatchback (not sedan).
@@ -228,8 +238,6 @@ export function inferBodyStyle(car: CarSpecs, displayModel?: string): BodyStyle 
   // EPA files cars by interior volume, so these arrive as "sedan".
   if (car.bodyStyle === 'sedan') {
     const name = `${car.make} ${car.model}`.toLowerCase();
-    // MINI's "Hardtop 2 door" is its three-door hatch.
-    if (car.make.toLowerCase() === 'mini' && /hardtop|\b2 door\b/.test(name)) return 'hatchback';
     if (FIVE_DOOR_CAR.test(name)) return 'hatchback';
     if (CONVERTIBLE_NAMES.test(name)) return 'convertible';
     if (COUPE_NAMES.test(name) || TWO_DOOR_CAR.test(name)) return 'coupe';

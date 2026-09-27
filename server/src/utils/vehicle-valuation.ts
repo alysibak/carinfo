@@ -341,6 +341,40 @@ const litresAtLeast = (c: CarSpecs, l: number) => (c.engine.displacement ?? 0) >
  * at $69,750, a CT5-V Blackwing at $46,440 and a Maybach S 680 at $64,000.
  * Current US list prices of each line, typical trim.
  */
+/**
+ * Enthusiast cars and MINIs the size-class table priced as their base car: a
+ * GR Corolla at $22,000 (about $38,000–$50,000 new), a Focus RS at $27,000
+ * (about $41,000), an S60 Polestar at $24,000 (about $61,000), a Polestar 1 at
+ * $47,700 (about $155,000), and every MINI at $22,000 whatever its trim.
+ */
+const ENTHUSIAST_RULES: ModelMsrpRule[] = [
+  { test: (c) => c.make === 'Toyota' && /^gr corolla/i.test(c.model), msrp: 42000 },
+  { test: (c) => c.make === 'Ford' && /^focus rs/i.test(c.model), msrp: 41000 },
+  { test: (c) => c.make === 'Volvo' && /polestar/i.test(c.model), msrp: 61000 },
+  {
+    test: (c) => c.make === 'Polestar' && /^1\b/.test(c.model) && c.engine.fuelType !== 'electric',
+    msrp: 155000,
+  },
+  {
+    // Current US prices by line and trim: Cooper, Cooper S, John Cooper Works.
+    test: (c) => c.make === 'MINI' && c.engine.fuelType !== 'electric',
+    msrp: (c) => {
+      const m = c.model.toLowerCase();
+      const [base, s, jcw] = /countryman|paceman/.test(m)
+        ? [34000, 40000, 46000]
+        : /clubman|clubvan/.test(m)
+          ? [30000, 34000, 42000]
+          : [28500, 33000, 40000];
+      const price = /john cooper works|\bjcw/.test(m)
+        ? jcw
+        : /cooper se?\b|countryman s\b/.test(m)
+          ? s
+          : base;
+      return /convertible|roadster/.test(m) ? price + 5000 : price;
+    },
+  },
+];
+
 const FLAGSHIP_RULES: ModelMsrpRule[] = [
   // Mercedes-Benz S-Class (AMG models have their own rules) and Maybach.
   {
@@ -847,6 +881,7 @@ const MODEL_MSRP_RULES: ModelMsrpRule[] = [
   ...TRUCK_SUV_RULES,
   ...EXOTIC_MODEL_RULES,
   ...FLAGSHIP_RULES,
+  ...ENTHUSIAST_RULES,
   {
     test: (c) => c.make === 'Tesla' && c.model.toLowerCase().includes('model s'),
     msrp: (c) => (c.year >= 2021 ? 95000 : c.year >= 2016 ? 85000 : 75000),
@@ -1564,6 +1599,9 @@ function flatCurveRetention(car: CarSpecs): number | null {
     case 'Nissan':
       // A 2010 GT-R still lists around US$60,000–$65,000.
       return /^gt-r/i.test(m) ? 1.05 : null;
+    case 'Ford':
+      // A 2017 Focus RS lists around US$29,300, 80% of its sticker (Cars.com).
+      return /^focus rs/i.test(m) ? 1.05 : null;
     default:
       return null;
   }
@@ -1592,6 +1630,9 @@ const FAST_DEPRECIATION_MODELS: Array<[(c: CarSpecs) => boolean, number]> = [
   [(c) => c.make === 'Volkswagen' && /^phaeton/i.test(c.model), 0.52],
   // A 2018 LS 500 keeps more (~US$39,000), as Lexus does.
   [(c) => c.make === 'Lexus' && /^ls\b/i.test(c.model), 0.75],
+  // The 1,500-car Polestar 1 (about $155,000 new) lists around US$59,300 at six
+  // years (Cars.com).
+  [(c) => c.make === 'Polestar' && /^1\b/.test(c.model), 0.65],
   // The Defender (2020 on) holds its value; the rest of the range does not.
   [(c) => c.make === 'Land Rover' && !/^defender/i.test(c.model), 0.5],
 ];

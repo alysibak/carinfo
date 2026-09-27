@@ -125,8 +125,8 @@ export default function Methodology() {
             </li>
             <li>
               Collector cars are not valued: a first-generation NSX, a Supra Turbo, an air-cooled
-              911, a Viper, a limited-run hypercar or a Ferrari over twenty trades on auction
-              results and condition, and is often worth more than when new.
+              911, a Lancer Evolution, a Viper, a limited-run hypercar or a Ferrari over twenty
+              trades on auction results and condition, and is often worth more than when new.
             </li>
             <li>
               Depreciation curves by segment, age and fuel type. Electric cars follow one curve
