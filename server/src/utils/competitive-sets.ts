@@ -647,12 +647,48 @@ export const COMPETITIVE_SET_LABELS: Record<CompetitiveSet, string> = {
   'family-coupe': 'Family coupe',
 };
 
-/** The class a car is shopped in, for display: its first competitive set. */
-export function competitiveClassLabel(car: CarSpecs & { id?: string }): string | undefined {
-  const sets = competitiveSets(car);
+/**
+ * Classes that qualify a size and price class rather than stand for one: a
+ * G-Class is a full-size luxury SUV that is also an off-roader, a Model X a
+ * midsize luxury SUV that is also electric.
+ */
+const QUALIFYING_SETS = new Set<CompetitiveSet>([
+  'off-roader',
+  'three-row-suv',
+  'family-coupe',
+  'small-ev',
+  'ev-sedan',
+  'ev-suv',
+  'ev-pickup',
+]);
+
+/** Pairs where the second class adds nothing a reader needs ("Sports car · Premium sports car"). */
+const REDUNDANT_PAIRS = new Set(['affordable-sports-car|premium-sports-car']);
+
+function displayRank(set: CompetitiveSet, car: CarSpecs): number {
   // A Gladiator is an off-roader too, but it is shopped as a pickup.
-  const set = (car.bodyStyle === 'truck' && sets.find((s) => s.endsWith('-pickup'))) || sets[0];
-  return set ? COMPETITIVE_SET_LABELS[set] : undefined;
+  if (car.bodyStyle === 'truck' && set.endsWith('-pickup')) return 0;
+  // A 918 Spyder is a supercar first.
+  if (set === 'supercar') return 1;
+  return QUALIFYING_SETS.has(set) ? 3 : 2;
+}
+
+/**
+ * The classes a car is shopped in, for display: the size and price class
+ * first, then one that qualifies it ("Full-size luxury SUV · Off-roader"). It
+ * showed the first set alone, so a G-Class read "Off-roader".
+ */
+export function competitiveClassLabel(car: CarSpecs & { id?: string }): string | undefined {
+  const sets = competitiveSets(car)
+    .map((set, order) => ({ set, order, rank: displayRank(set, car) }))
+    .sort((a, b) => a.rank - b.rank || a.order - b.order)
+    .map(({ set }) => set);
+  if (!sets.length) return undefined;
+  const shown = sets.length > 1 && !REDUNDANT_PAIRS.has(`${sets[0]}|${sets[1]}`) ? 2 : 1;
+  return sets
+    .slice(0, shown)
+    .map((set) => COMPETITIVE_SET_LABELS[set])
+    .join(' · ');
 }
 
 /** True when two cars are cross-shopped: they share a competitive set. */

@@ -66,10 +66,24 @@ describe('competitiveClassLabel', () => {
       'Compact SUV',
     );
     expect(competitiveClassLabel(car('Toyota', 'Camry'))).toBe('Midsize car');
-    // Also an off-roader, but shopped as a pickup.
+    // Also an off-roader, but shopped as a pickup first.
     expect(competitiveClassLabel(car('Jeep', 'Gladiator 4WD', { bodyStyle: 'truck' }))).toBe(
-      'Midsize pickup',
+      'Midsize pickup · Off-roader',
     );
     expect(competitiveClassLabel(car('Cadillac', 'Funeral Coach'))).toBeUndefined();
+  });
+
+  it('puts the size and price class before one that qualifies it', () => {
+    // It read "Off-roader" alone.
+    expect(competitiveClassLabel(car('Mercedes-Benz', 'G550', { bodyStyle: 'suv' }))).toBe(
+      'Full-size luxury SUV · Off-roader',
+    );
+    expect(competitiveClassLabel(car('Kia', 'Sorento FWD', { bodyStyle: 'suv' }))).toBe(
+      'Midsize SUV · Three-row SUV',
+    );
+    // Not "Sports car · Premium sports car".
+    expect(competitiveClassLabel(car('Toyota', 'GR Supra', { bodyStyle: 'coupe' }))).toBe(
+      'Sports car',
+    );
   });
 });

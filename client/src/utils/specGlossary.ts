@@ -234,7 +234,7 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
   },
   competitiveClass: {
     plain: 'The rivals it is shopped against',
-    what: "The class shoppers compare it within, by model: a Camry is a midsize car beside an Accord and a Sonata, whatever EPA's interior-volume class says.",
+    what: "The class shoppers compare it within, by model: a Camry is a midsize car beside an Accord and a Sonata, whatever EPA's interior-volume class says. A second class qualifies the first: a G-Class is a full-size luxury SUV and an off-roader.",
     why: 'Similar vehicles are drawn from it first.',
   },
   shoppingSegment: {
