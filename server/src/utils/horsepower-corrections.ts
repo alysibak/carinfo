@@ -305,8 +305,106 @@ const HYBRID_SYSTEM: HybridSystem[] = [
   hy('Jeep', /^cherokee/i, [2026, 2026], 210),
 ];
 
+/**
+ * Plug-in hybrids at their system output. Most read their engine: a RAV4
+ * Prime 203 hp (the system makes 302), a Wrangler or Grand Cherokee 4xe 270
+ * (375), a Volvo T8 312 (455), an SF90 770 (986), a Polestar 1 322 (619).
+ */
+const PLUG_IN_SYSTEM: HybridSystem[] = [
+  hy('Toyota', /^prius plug-in/i, [2012, 2015], 134),
+  hy('Toyota', /^prius (?:prime|phev)/i, [2017, 2022], 121),
+  hy('Toyota', /^prius (?:prime|phev)/i, [2023, 2026], 220),
+  hy('Toyota', /^rav4 (?:prime|phev)/i, [2021, 2025], 302),
+  hy('Hyundai', /^ioniq plug-in/i, [2018, 2022], 139),
+  hy('Hyundai', /^sonata plug-in/i, [2016, 2019], 202),
+  hy('Hyundai', /^(?:tucson|santa fe) plug-in/i, [2022, 2026], (c) =>
+    /^santa fe/i.test(c.model) ? 260 : 261,
+  ),
+  hy('Kia', /^niro plug-in/i, [2018, 2022], 139),
+  hy('Kia', /^niro plug-in/i, [2023, 2026], 180),
+  hy('Kia', /^optima plug-in/i, [2017, 2020], 202),
+  hy('Kia', /^(?:sorento|sportage) plug-in/i, [2022, 2026], 261),
+  hy('Ford', /^escape\b/i, [2020, 2022], 221),
+  hy('Ford', /^escape\b/i, [2023, 2026], 210),
+  hy('Ford', /^(?:fusion|c-max) (?:energi|special service)/i, [2013, 2020], 188),
+  hy('Lincoln', /^corsair/i, [2021, 2026], 266),
+  hy('Lincoln', /^aviator/i, [2020, 2023], 494),
+  hy('Chevrolet', /^volt/i, [2011, 2019], 149),
+  hy('Cadillac', /^elr/i, [2014, 2015], 207),
+  hy('Cadillac', /^elr/i, [2016, 2016], 233),
+  hy('Cadillac', /^ct6/i, [2017, 2018], 335),
+  hy('Chrysler', /^pacifica/i, [2017, 2026], 260),
+  hy('Dodge', /^hornet/i, [2024, 2025], 288),
+  hy('Jeep', /^(?:wrangler|grand cherokee)\b.*4xe/i, [2021, 2026], 375),
+  hy('Alfa Romeo', /^tonale/i, [2024, 2025], 285),
+  hy('Honda', /^clarity plug-in/i, [2018, 2021], 212),
+  hy('Honda', /^accord plug-in/i, [2014, 2014], 196),
+  hy('Mitsubishi', /^outlander phev/i, [2018, 2020], 197),
+  hy('Mitsubishi', /^outlander phev/i, [2021, 2022], 221),
+  hy('Mitsubishi', /^outlander phev/i, [2023, 2025], 248),
+  hy('Subaru', /^crosstrek hybrid/i, [2019, 2023], 148),
+  hy('Mazda', /^cx-[79]0/i, [2024, 2026], 323),
+  hy('Lexus', /^[nr]x 450h plus/i, [2022, 2025], 304),
+  hy('Lexus', /^tx 550h plus/i, [2024, 2025], 404),
+  hy('BMW', /^330e/i, [2016, 2018], 248),
+  hy('BMW', /^330e/i, [2021, 2024], 288),
+  hy('BMW', /^530e/i, [2018, 2020], 248),
+  hy('BMW', /^530e/i, [2021, 2023], 288),
+  hy('BMW', /^(?:550e|750e)|^x5 xdrive50e/i, [2024, 2026], 483),
+  hy('BMW', /^740e/i, [2017, 2019], 322),
+  hy('BMW', /^745e|^x5 xdrive45e/i, [2020, 2023], 389),
+  hy('BMW', /^x5 xdrive40e/i, [2016, 2018], 308),
+  hy('BMW', /^x3 xdrive30e/i, [2020, 2021], 288),
+  hy('BMW', /^xm label/i, [2025, 2026], 738),
+  hy('BMW', /^xm\b/i, [2023, 2025], 644),
+  hy('BMW', /^m5\b/i, [2025, 2026], 717),
+  hy('BMW', /^i8\b/i, [2014, 2017], 357),
+  hy('BMW', /^i8\b/i, [2019, 2020], 369),
+  hy('Mercedes-Benz', /^s560e/i, [2019, 2020], 463),
+  hy('Mercedes-Benz', /^s580e/i, [2023, 2025], 503),
+  hy('Mercedes-Benz', /^gle ?450e/i, [2025, 2025], 375),
+  hy('Mercedes-Benz', /^glc ?350e/i, [2025, 2025], 313),
+  hy('Mercedes-Benz', /^amg (?:c|glc)63 s e performance/i, [2024, 2026], 671),
+  hy('Mercedes-Benz', /^amg e53 hybrid/i, [2025, 2026], 577),
+  hy('Mercedes-Benz', /^amg gt 63 s e performance/i, [2024, 2026], 831),
+  hy('Mercedes-Benz', /^amg s63 e performance/i, [2024, 2026], 791),
+  hy('Mercedes-Benz', /^amg sl63 s e performance/i, [2025, 2026], 805),
+  hy('Porsche', /^cayenne\b.*turbo s\b.*e-hybrid/i, [2020, 2023], 670),
+  hy('Porsche', /^cayenne\b.*turbo e-hybrid/i, [2025, 2026], 729),
+  hy('Porsche', /^cayenne\b.*\bs e-hybrid/i, [2025, 2026], 512),
+  hy('Porsche', /^cayenne\b.*e-hybrid/i, [2019, 2023], 455),
+  hy('Porsche', /^cayenne\b.*e-hybrid/i, [2025, 2026], 463),
+  hy('Porsche', /^panamera turbo s e-hybrid/i, [2018, 2020], 680),
+  hy('Porsche', /^panamera turbo s e-hybrid/i, [2021, 2023], 690),
+  hy('Porsche', /^panamera 4s e-hybrid/i, [2021, 2023], 552),
+  hy('Porsche', /^panamera 4 e-hybrid/i, [2018, 2023], 455),
+  hy('Volvo', /^(?:s60|v60|s90|v90|xc60|xc90)\b/i, [2016, 2026], (c) =>
+    c.year >= 2023 || (c.year === 2022 && /ext/i.test(c.model)) ? 455 : 400,
+  ),
+  hy('Land Rover', /^new range rover (?:sport )?p440/i, [2023, 2023], 434),
+  hy('Land Rover', /^range rover p550/i, [2025, 2025], 542),
+  hy('Land Rover', /^range rover (?:sport )?phev/i, [2019, 2022], 398),
+  hy('Bentley', /^bentayga hybrid/i, [2020, 2023], 443),
+  hy('Bentley', /^flying spur hybrid/i, [2022, 2024], 536),
+  hy('Lamborghini', /^urus se/i, [2025, 2026], 789),
+  hy('Ferrari', /^sf90 xx/i, [2025, 2025], 1016),
+  hy('Ferrari', /^sf90/i, [2021, 2025], 986),
+  hy('Ferrari', /^296 speciale/i, [2026, 2026], 868),
+  hy('Ferrari', /^296/i, [2022, 2026], 819),
+  hy('McLaren Automotive', /^artura/i, [2023, 2024], 671),
+  hy('Polestar', /^1\b/i, [2020, 2021], 619),
+  hy('Fisker', /^karma/i, [2012, 2012], 403),
+  hy('Karma', /^revero gt|^gs-6/i, [2020, 2021], 536),
+  hy('Karma', /^revero/i, [2018, 2019], 403),
+  hy('MINI', /^cooper se countryman/i, [2018, 2023], 221),
+  hy('Audi', /^a3 e-tron/i, [2016, 2018], 204),
+  hy('Audi', /^(?:q5|a7)\b/i, [2020, 2024], 362),
+  hy('Audi', /^a8\b/i, [2020, 2021], 443),
+];
+
 function hybridSystemFor(car: Car): number | undefined {
-  const rule = HYBRID_SYSTEM.find(
+  const table = car.engine.fuelType === 'plug-in hybrid' ? PLUG_IN_SYSTEM : HYBRID_SYSTEM;
+  const rule = table.find(
     (h) =>
       h.make === car.make &&
       car.year >= h.years[0] &&
@@ -319,6 +417,13 @@ function hybridSystemFor(car: Car): number | undefined {
 
 function correctionFor(car: Car): Correction | undefined {
   const fuel = car.engine.fuelType;
+  if (fuel === 'plug-in hybrid') {
+    const hp = hybridSystemFor(car);
+    const litres = car.engine.displacement ?? 0;
+    return hp == null
+      ? undefined
+      : { make: car.make, model: /./, years: [car.year, car.year], litres, forced: false, hp };
+  }
   if (fuel !== 'gasoline' && fuel !== 'diesel' && fuel !== 'hybrid') return undefined;
   const litres = car.engine.displacement;
   if (litres == null) return undefined;

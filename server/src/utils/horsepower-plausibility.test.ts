@@ -35,6 +35,14 @@ describe('isPlausibleRatedHorsepower', () => {
     expect(isPlausibleRatedHorsepower(hp, litres)).toBe(true);
   });
 
+  it("allows a hybrid's system output more per litre than an engine alone", () => {
+    expect(isPlausibleRatedHorsepower(536, 1.5, 'plug-in hybrid')).toBe(true);
+    expect(isPlausibleRatedHorsepower(671, 2.0, 'plug-in hybrid')).toBe(true);
+    expect(isPlausibleRatedHorsepower(671, 2.0, 'gasoline')).toBe(false);
+    expect(isPlausibleRatedHorsepower(999, 2.0, 'hybrid')).toBe(false);
+    expect(isPlausibleRatedHorsepower(1200, 1.5, 'hybrid')).toBe(false);
+  });
+
   it('judges by the absolute floor when displacement is unknown', () => {
     expect(isPlausibleRatedHorsepower(150, undefined)).toBe(true);
     expect(isPlausibleRatedHorsepower(1, undefined)).toBe(false);

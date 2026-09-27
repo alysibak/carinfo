@@ -164,7 +164,7 @@ for (const car of cars) {
   const hp = car.engine?.horsepower;
   if (hp != null && (!isFiniteNumber(hp) || hp <= 0 || hp > 2000)) {
     fail('horsepower', car, `engine.horsepower = ${hp}`);
-  } else if (hp != null && !isPlausibleRatedHorsepower(hp, disp)) {
+  } else if (hp != null && !isPlausibleRatedHorsepower(hp, disp, car.engine?.fuelType)) {
     // Placeholders from EPA's Test Car List ("999 hp", "1 hp") once reached the page.
     fail('horsepower-plausible', car, `${hp} hp from ${disp ?? '?'} L is not a real rating`);
   }

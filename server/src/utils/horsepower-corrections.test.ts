@@ -107,6 +107,21 @@ describe('applyHorsepowerCorrections', () => {
     expect(cars.map((c) => c.engine.horsepower)).toEqual([134, 219, 204, 226, 188, 340, 236]);
   });
 
+  it('rates plug-in hybrids at their system output', () => {
+    const phev = { fuelType: 'plug-in hybrid' as const };
+    const { cars } = applyHorsepowerCorrections([
+      // A RAV4 Prime read its engine's 203 hp, a Wrangler 4xe 270.
+      car('Toyota', 'RAV4 Prime AWD', 2022, 2.5, 203, phev),
+      car('Jeep', 'Wrangler 4dr 4xe', 2023, 2, 270, { ...phev, aspiration: 'turbocharged' }),
+      car('Volvo', 'XC90 T8 AWD Recharge', 2024, 2, 312, { ...phev, aspiration: 'turbocharged' }),
+      car('Porsche', 'Cayenne Turbo S/Coupe E-Hybrid', 2022, 4, 541, {
+        ...phev,
+        aspiration: 'turbocharged',
+      }),
+    ]);
+    expect(cars.map((c) => c.engine.horsepower)).toEqual([302, 375, 455, 670]);
+  });
+
   it('leaves other engines, hybrids and years alone', () => {
     const cars = [
       car('Honda', 'CR-V Hybrid AWD', 2021, 2, 212, { fuelType: 'hybrid' }),

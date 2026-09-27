@@ -161,7 +161,7 @@ export function enrichCar(car: Car): Car {
   if (
     hp != null &&
     car.engine.horsepower == null &&
-    isPlausibleRatedHorsepower(hp, car.engine.displacement)
+    isPlausibleRatedHorsepower(hp, car.engine.displacement, car.engine.fuelType)
   ) {
     next.engine = { ...next.engine, horsepower: hp };
     next.provenance = { ...next.provenance, 'engine.horsepower': 'curated' };

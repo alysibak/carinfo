@@ -1,4 +1,4 @@
-import type { Car } from '../types/car.types.js';
+import type { Car, FuelType } from '../types/car.types.js';
 import { applyHorsepowerCorrections } from './horsepower-corrections.js';
 import { refreshShoppingSegment } from './vehicle-taxonomy-apply.js';
 import { isLuxuryBrand } from './vehicle-taxonomy.js';
@@ -17,13 +17,23 @@ import { isLuxuryBrand } from './vehicle-taxonomy.js';
  *
  * The 40 hp floor also drops the BMW i3 with Range Extender's rating, which is
  * its 0.6 L generator (11–38 hp), not the 170 hp motor that drives the car.
+ *
+ * A hybrid's or plug-in hybrid's rating is the system output, the motors'
+ * power on top of the engine's, so the litres bound it less: the Karma Revero
+ * GT makes 536 hp with a 1.5 L three (357 hp a litre), the Mercedes-AMG C63 S
+ * E Performance 671 hp with a 2.0 L four. Their ceiling is 500 hp a litre.
  */
-export function isPlausibleRatedHorsepower(hp: number, displacementL?: number | null): boolean {
+export function isPlausibleRatedHorsepower(
+  hp: number,
+  displacementL?: number | null,
+  fuelType?: FuelType,
+): boolean {
   if (!Number.isFinite(hp) || hp < 40 || hp > 2000) return false;
   if (hp === 999) return false;
   if (displacementL != null && displacementL > 0) {
     const perLitre = hp / displacementL;
-    if (perLitre < 20 || perLitre > 300) return false;
+    const ceiling = fuelType === 'hybrid' || fuelType === 'plug-in hybrid' ? 500 : 300;
+    if (perLitre < 20 || perLitre > ceiling) return false;
   }
   return true;
 }
