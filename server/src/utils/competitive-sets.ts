@@ -608,6 +608,53 @@ export function competitiveSets(car: CarSpecs & { id?: string }): CompetitiveSet
   return sets;
 }
 
+/** One vehicle of each set, for the spec table: "Class: Compact SUV". */
+export const COMPETITIVE_SET_LABELS: Record<CompetitiveSet, string> = {
+  'subcompact-car': 'Subcompact car',
+  'compact-car': 'Compact car',
+  'sport-compact': 'Sport compact',
+  'midsize-car': 'Midsize car',
+  'large-car': 'Full-size car',
+  'entry-luxury-car': 'Entry luxury car',
+  'midsize-luxury-car': 'Midsize luxury car',
+  'flagship-sedan': 'Flagship sedan',
+  'subcompact-suv': 'Subcompact SUV',
+  'compact-suv': 'Compact SUV',
+  'midsize-suv': 'Midsize SUV',
+  'three-row-suv': 'Three-row SUV',
+  'full-size-suv': 'Full-size SUV',
+  'off-roader': 'Off-roader',
+  'subcompact-luxury-suv': 'Subcompact luxury SUV',
+  'compact-luxury-suv': 'Compact luxury SUV',
+  'midsize-luxury-suv': 'Midsize luxury SUV',
+  'full-size-luxury-suv': 'Full-size luxury SUV',
+  'compact-pickup': 'Compact pickup',
+  'midsize-pickup': 'Midsize pickup',
+  'full-size-pickup': 'Full-size pickup',
+  'heavy-duty-pickup': 'Heavy-duty pickup',
+  'pony-car': 'Pony car',
+  'affordable-sports-car': 'Sports car',
+  'premium-sports-car': 'Premium sports car',
+  'grand-tourer': 'Grand tourer',
+  supercar: 'Supercar',
+  'small-ev': 'Small EV',
+  'ev-sedan': 'Electric sedan',
+  'ev-suv': 'Electric SUV',
+  'ev-pickup': 'Electric pickup',
+  minivan: 'Minivan',
+  'compact-van': 'Compact van',
+  'full-size-van': 'Full-size van',
+  'family-coupe': 'Family coupe',
+};
+
+/** The class a car is shopped in, for display: its first competitive set. */
+export function competitiveClassLabel(car: CarSpecs & { id?: string }): string | undefined {
+  const sets = competitiveSets(car);
+  // A Gladiator is an off-roader too, but it is shopped as a pickup.
+  const set = (car.bodyStyle === 'truck' && sets.find((s) => s.endsWith('-pickup'))) || sets[0];
+  return set ? COMPETITIVE_SET_LABELS[set] : undefined;
+}
+
 /** True when two cars are cross-shopped: they share a competitive set. */
 export function sharesCompetitiveSet(a: CarSpecs, b: CarSpecs): boolean {
   const setsA = competitiveSets(a);

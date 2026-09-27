@@ -195,6 +195,15 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
       provenanceSource: displayProvenanceSource('variant', car.provenance?.variant ?? 'estimated'),
     });
   }
+  if (dashboard.competitiveClass) {
+    pushIf(vehicle, {
+      key: 'class',
+      // Beside "EPA class", which measures interior volume.
+      label: 'Competes as',
+      value: dashboard.competitiveClass,
+      glossary: 'competitiveClass',
+    });
+  }
   if (car.shoppingSegment) {
     pushIf(vehicle, {
       key: 'segment',

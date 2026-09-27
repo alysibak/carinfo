@@ -40,6 +40,7 @@ export type SpecGlossaryKey =
   | 'trim'
   | 'variant'
   | 'shoppingSegment'
+  | 'competitiveClass'
   | 'msrp'
   | 'charge120'
   | 'phevBlendedMpge'
@@ -230,6 +231,11 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
     plain: 'Named from the engine',
     what: 'EPA leaves this trim out of the model name (a Mustang GT is just "Mustang"), so we name it from the engine and gearbox, which only this trim has in these years.',
     why: 'It is how sellers list the car, and it moves the price far more than the model name suggests.',
+  },
+  competitiveClass: {
+    plain: 'The rivals it is shopped against',
+    what: "The class shoppers compare it within, by model: a Camry is a midsize car beside an Accord and a Sonata, whatever EPA's interior-volume class says.",
+    why: 'Similar vehicles are drawn from it first.',
   },
   shoppingSegment: {
     plain: 'What kind of buyer it targets',

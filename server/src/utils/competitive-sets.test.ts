@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { CarSpecs } from '../types/car.types.js';
-import { competitiveSets, sharesCompetitiveSet } from './competitive-sets.js';
+import {
+  competitiveClassLabel,
+  competitiveSets,
+  sharesCompetitiveSet,
+} from './competitive-sets.js';
 
 const car = (make: string, model: string, over: Partial<CarSpecs> = {}): CarSpecs =>
   ({
@@ -53,5 +57,19 @@ describe('competitive sets', () => {
     expect(sharesCompetitiveSet(car('Cadillac', 'Funeral Coach'), car('Honda', 'Accord'))).toBe(
       false,
     );
+  });
+});
+
+describe('competitiveClassLabel', () => {
+  it('names the class for the spec table, a pickup first for a pickup', () => {
+    expect(competitiveClassLabel(car('Honda', 'CR-V AWD', { bodyStyle: 'suv' }))).toBe(
+      'Compact SUV',
+    );
+    expect(competitiveClassLabel(car('Toyota', 'Camry'))).toBe('Midsize car');
+    // Also an off-roader, but shopped as a pickup.
+    expect(competitiveClassLabel(car('Jeep', 'Gladiator 4WD', { bodyStyle: 'truck' }))).toBe(
+      'Midsize pickup',
+    );
+    expect(competitiveClassLabel(car('Cadillac', 'Funeral Coach'))).toBeUndefined();
   });
 });

@@ -9,6 +9,7 @@ import {
   roundEfficiency,
 } from '../utils/ownership-economics.js';
 import { findSimilarCars } from '../utils/similar-vehicles.js';
+import { competitiveClassLabel } from '../utils/competitive-sets.js';
 
 export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard | null {
   const car = carService.getCarById(id);
@@ -61,8 +62,10 @@ export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard |
       : {}),
   };
 
+  const competitiveClass = competitiveClassLabel(car);
   const dashboard: CarDashboard = {
     car: displayCar,
+    ...(competitiveClass ? { competitiveClass } : {}),
     segmentCount: segment.length,
     ownership,
     dealRating: null,

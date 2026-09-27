@@ -384,4 +384,6 @@ export interface CarDashboard {
     method: 'actual' | 'predicted';
     confidence: string;
   };
+  /** The class it is shopped in ("Compact SUV"), from utils/competitive-sets.ts. */
+  competitiveClass?: string;
 }
