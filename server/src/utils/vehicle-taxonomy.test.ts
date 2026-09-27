@@ -170,6 +170,15 @@ describe('vehicle-taxonomy', () => {
     expect(body('Mazda', '5', 'wagon', 'Midsize Station Wagons')).toBe('minivan');
     expect(body('Suzuki', 'SX4 AWD', 'sedan', 'Subcompact Cars')).toBe('hatchback');
     expect(body('Suzuki', 'SX4 Sedan', 'sedan', 'Compact Cars')).toBe('sedan');
+    // Every Impreza five-door since 2008 is a hatchback, whatever EPA named it;
+    // the GG before it was a wagon.
+    expect(body('Subaru', 'Impreza', 'wagon', 'Small Station Wagons')).toBe('hatchback');
+    expect(body('Subaru', 'Impreza Wagon AWD', 'wagon', 'Small Station Wagons')).toBe('hatchback');
+    expect(
+      inferBodyStyle(
+        minimalCar({ make: 'Subaru', model: 'Impreza Wagon AWD', year: 2005, bodyStyle: 'wagon' }),
+      ),
+    ).toBe('wagon');
   });
 
   it('reads the retro Thunderbird as the convertible it is', () => {

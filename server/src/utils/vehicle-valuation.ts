@@ -876,7 +876,7 @@ const EV_LINE_RULES: ModelMsrpRule[] = [
  * (CarGurus.ca, September 2026), about 70% of its sticker at seven years.
  */
 const MIDSIZE_PICKUP_NAMES =
-  /^(colorado|canyon|tacoma|frontier|ranger|ridgeline|gladiator|dakota|s10|sonoma|maverick|santa cruz)\b/i;
+  /^(colorado|canyon|tacoma|frontier|ranger|ridgeline|gladiator|dakota|s10|sonoma|maverick|santa cruz|explorer sport trac|baja)\b/i;
 
 export function isMidsizePickup(car: CarSpecs): boolean {
   if (MIDSIZE_PICKUP_NAMES.test(car.model)) return true;
@@ -909,6 +909,11 @@ const TRUCK_SUV_RULES: ModelMsrpRule[] = [
   { test: (c) => c.make === 'Honda' && /^ridgeline/i.test(c.model), msrp: 42000 },
   { test: (c) => c.make === 'Hyundai' && /^santa cruz/i.test(c.model), msrp: 34000 },
   { test: (c) => c.make === 'Jeep' && /^gladiator/i.test(c.model), msrp: 46000 },
+  // Pickups EPA filed as SUVs, which anchored on the SUV classes: a 2012
+  // Avalanche listed at $12,000 against ~$15,000 on CarGurus.ca, a 2008 Sport
+  // Trac at $9,000 against ~$10,900.
+  { test: (c) => c.make === 'Chevrolet' && /^avalanche/i.test(c.model), msrp: 50000 },
+  { test: (c) => c.make === 'Ford' && /^explorer sport trac/i.test(c.model), msrp: 38000 },
   {
     // Every Wrangler shared the $30,000 small-SUV anchor: a 2018 listed at
     // $18,500 against ~$24,300 on CarGurus.ca.

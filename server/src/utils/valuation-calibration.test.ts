@@ -318,6 +318,19 @@ const REFERENCES: Reference[] = [
     observedCad: 27_130,
     source: 'CarGurus Canada average, September 2026',
   },
+  // Pickups EPA filed as SUVs.
+  {
+    label: '2012 Chevrolet Avalanche',
+    find: withEngine('Chevrolet', /^Avalanche 1500 4WD$/, 2012, 5.3),
+    observedCad: 14_960,
+    source: 'CarGurus Canada average, September 2026',
+  },
+  {
+    label: '2008 Ford Explorer Sport Trac',
+    find: withEngine('Ford', /^Explorer Sport Trac 4WD$/, 2008, 4),
+    observedCad: 10_870,
+    source: 'CarGurus Canada average, September 2026',
+  },
   {
     label: '2018 Jeep Wrangler Unlimited (JL)',
     find: withEngine('Jeep', /^New Wrangler Unlimited 4WD$/, 2018, 3.6),

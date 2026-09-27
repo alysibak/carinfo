@@ -349,6 +349,17 @@ export function inferBodyStyle(car: CarSpecs, displayModel?: string): BodyStyle 
   // Raised wagons and a compact minivan EPA filed as SUVs or station wagons.
   if (/^volvo v[69]0 (?:cc|cross country)\b/.test(makeModelName)) return 'wagon';
   if (/^mazda 5$/.test(makeModelName)) return 'minivan';
+  // Every Impreza five-door since 2008 is a hatchback, whatever EPA calls it:
+  // "Impreza Wagon", "Impreza Sport", and from 2024, when the sedan went, plain
+  // "Impreza", which "awd wagon" listed first.
+  if (
+    car.bodyStyle === 'wagon' &&
+    car.make === 'Subaru' &&
+    /^impreza\b/.test(model) &&
+    car.year >= 2008
+  ) {
+    return 'hatchback';
+  }
   // An SUV by name, whatever class EPA used that year: a 2015-19 Q3 was a
   // "Compact Car", a 2023 GV60 a "Large Car", a 2025 GLC 43 Coupe a coupe.
   if (CROSSOVER_NAMES.test(`${car.make} ${model}`.toLowerCase())) return 'suv';
@@ -361,7 +372,7 @@ export function inferBodyStyle(car: CarSpecs, displayModel?: string): BodyStyle 
   )
     return 'convertible';
   if (!suvNamedLikeACar && /\bcoupe\b/.test(h) && !/sport utility|suv/.test(h)) return 'coupe';
-  if (/pickup|\bf-150\b|\bsilverado\b|\bram 1500\b|\btundra\b|\btitan\b/.test(h)) return 'truck';
+  if (PICKUP_NAMES.test(h)) return 'truck';
   if (/sport utility|\bsuv\b|\brav4\b|\bcrv\b|\bxt\d\b|\bexplorer\b|\btahoe\b/.test(h))
     return 'suv';
   if (/minivan|\bsienna\b|\bodyssey\b|\bpacifica\b|\bcarnival\b/.test(h)) return 'minivan';
@@ -490,6 +501,13 @@ const COUPE_NAMES = new RegExp(
  */
 const CROSSOVER_NAMES =
   /^(honda (cr-v|hr-v)|nissan (juke|rogue|murano|kicks|ariya)|kia (niro|seltos|ev6)|ford (mustang mach-e|ecosport)|mercedes-benz (?:amg |maybach )?gl[abceks]? ?\d|rolls-royce cullinan|chevrolet (trax|trailblazer)|buick (encore|envista)|infiniti (?:qx\d0|ex\d\d)|mazda cx-\d+|bmw x[1-7]\b|toyota (c-hr|venza)|subaru crosstrek|jeep (compass|renegade)|hyundai (kona|venue)|lincoln (mkc|corsair)|lexus (ux|nx) |audi (?:rs ?|s)?q\d|genesis (?:electrified )?gv\d\d|porsche (?:cayenne|macan)|volvo xc(?:40|60|90)|land rover |lamborghini urus|bentley bentayga|aston martin dbx|maserati (?:levante|grecale)|alfa romeo (?:stelvio|tonale)|jaguar [efi]-pace|lotus eletre|ferrari purosangue)/;
+
+/**
+ * Pickups by name, with those EPA filed as SUVs: the Avalanche, Escalade EXT,
+ * Explorer Sport Trac and Baja carry a bed.
+ */
+const PICKUP_NAMES =
+  /pickup|\bf-150\b|\bsilverado\b|\bram 1500\b|\btundra\b|\btitan\b|\bavalanche\b|\bescalade ext\b|\bsport trac\b|\bsubaru baja\b/;
 
 /** Convertibles EPA files as sedans, with no "convertible" in the name. */
 const CONVERTIBLE_NAMES =
