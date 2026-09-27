@@ -32,6 +32,20 @@ export interface QueryModifiers {
   mildHybrid?: boolean;
   /** "dual clutch", "dct", "pdk": EPA's automated manuals. */
   automatedManual?: boolean;
+  /** "over 30 mpg", "under 7 l/100km", "40 mpg highway": an EPA rating, in the unit asked. */
+  fuelEconomy?: FuelEconomyBound;
+  /** "over 300 hp", "300+ horsepower", "under 200 hp". */
+  horsepower?: { min?: number; max?: number };
+}
+
+export type FuelEconomyUnit = 'MPG' | 'MPGe' | 'L/100 km';
+
+export interface FuelEconomyBound {
+  min?: number;
+  max?: number;
+  unit: FuelEconomyUnit;
+  /** The city or highway rating; combined when absent. */
+  basis?: 'city' | 'highway';
 }
 
 export interface VehicleClassQuery {
@@ -290,13 +304,19 @@ const SORT_PHRASES: Array<[RegExp, SortIntent]> = [
     'runningCost',
   ],
   [
-    /\b(?:most fuel[- ]efficient|fuel[- ]efficient|most efficient|(?:best|good|great|high|better) (?:mpg|gas mileage|mileage|fuel economy)|high mpg|(?:good|easy|great|light) on (?:gas|fuel)|gas mileage|fuel economy|gas saver|economical|efficient)\b/,
+    /\b(?:most fuel[- ]efficient|fuel[- ]efficient|most efficient|(?:best|good|great|high|better) (?:mpg|gas mileage|mileage|fuel economy)|high mpg|(?:good|easy|great|light) on (?:gas|fuel)|gas mileage|fuel economy|gas saver|economical|efficient|(?:low(?:est)?|best|good) (?:fuel |gas )?consumption)\b/,
     'fuelEconomy',
   ],
   // Not "fast charging": no charging speeds are on file.
-  [/\b(?:fastest|quickest|most powerful|powerful|fast|quick)\b(?!\s+charg)/, 'horsepower'],
+  [
+    /\b(?:fastest|quickest|most powerful|powerful|fast|quick|(?:most|highest|high|best|top|max(?:imum)?|lots of) (?:horsepower|hp|power))\b(?!\s+charg)/,
+    'horsepower',
+  ],
   [/\b(?:longest|most|best|max(?:imum)?) (?:driving )?range\b/, 'range'],
   [/\b(?:safest|safe|(?:best|highest|top) safety(?: rating)?)\b/, 'safety'],
+  // A unit alone asks for the figure: "civic mpg", "mustang horsepower".
+  [/\b(?:mpg|l\/100 ?km)(?=\s)/, 'fuelEconomy'],
+  [/\b(?:horsepower|hp)\b/, 'horsepower'],
 ];
 
 /**
@@ -375,6 +395,150 @@ const FILLER = /\b(?:used|pre-?owned|second[- ]hand|certified|cars?|vehicles?|au
 /** "New" names a model in a few places. */
 const NEW_IN_NAME = /\bnew (?:beetle|yorker|range rover)\b/;
 
+const AT_LEAST = String.raw`over|above|more than|greater than|at least|min(?:imum)?(?:\s+of)?|no less than|>=?`;
+const AT_MOST = String.raw`under|below|less than|at most|max(?:imum)?(?:\s+of)?|no more than|up to|<=?`;
+const OR_MORE = String.raw`or (?:more|better|higher|above|over|greater)|and (?:up|above|over|higher)|plus|minimum|min`;
+const OR_LESS = String.raw`or (?:less|lower|under|below|fewer|worse)|and (?:under|below|less|lower)|maximum|max`;
+const FIGURE = String.raw`\d+(?:[.,]\d+)?`;
+
+const HORSEPOWER_UNIT = String.raw`hp|bhp|horse ?power|horses`;
+const RATING_BASIS = String.raw`city|highway|hwy|combined`;
+const FUEL_ECONOMY_UNITS: Array<[FuelEconomyUnit, string]> = [
+  ['MPGe', String.raw`mpg-?e`],
+  ['L/100 km', String.raw`(?:l|litres?|liters?)\s*(?:\/|per)\s*100\s*(?:kms?|kilomet(?:re|er)s?)?`],
+  ['MPG', String.raw`mpg|miles per gallon|mi\/gal`],
+];
+
+/**
+ * A figure with its unit and the words that bound it: "over 300 hp", "300+
+ * hp", "300 hp or more", "hp over 300", "under 200 hp", "200 to 300 hp". A
+ * bare figure is a floor ("300 hp", "40 mpg"), or a ceiling where less is
+ * better ("7 l/100km"): nobody asks for exactly 300.
+ */
+function readFigure(
+  text: string,
+  unit: string,
+  lessIsBetter = false,
+): { hit: string; min?: number; max?: number } | undefined {
+  const value = (figure: string) => Number(figure.replace(',', '.'));
+  const between = new RegExp(
+    String.raw`(?<=\s)(?:between\s+|from\s+)?(${FIGURE})\s*(?:-|–|to|and)\s*(${FIGURE})\s*(?:${unit})(?=\s)`,
+  ).exec(text);
+  if (between) {
+    const [a, b] = [value(between[1]), value(between[2])];
+    return { hit: between[0], min: Math.min(a, b), max: Math.max(a, b) };
+  }
+  const figureFirst = new RegExp(
+    String.raw`(?<=\s)(?:(${AT_LEAST})|(${AT_MOST}))?\s*(${FIGURE})\s*(\+|plus)?[\s-]*(?:${unit})(?:\s+(?:(${OR_MORE})|(${OR_LESS})))?(?=\s)`,
+  ).exec(text);
+  if (figureFirst) {
+    const figure = value(figureFirst[3]);
+    const atMost = figureFirst[2] != null || figureFirst[6] != null;
+    const atLeast = figureFirst[1] != null || figureFirst[4] != null || figureFirst[5] != null;
+    const ceiling = atMost || (!atLeast && lessIsBetter);
+    return { hit: figureFirst[0], ...(ceiling ? { max: figure } : { min: figure }) };
+  }
+  // "hp over 300", "mpg 40+", "mpg 40": no more than three digits without a
+  // bound, or "mpg 2020 civic" read a model year as a rating.
+  const unitFirst = new RegExp(
+    String.raw`(?<=\s)(?:${unit})\s+(?:of\s+)?(?:(?:(${AT_LEAST})|(${AT_MOST}))\s*(${FIGURE})|(\d{1,3}(?:[.,]\d+)?))\s*(\+)?(?=\s)`,
+  ).exec(text);
+  if (unitFirst) {
+    const figure = value(unitFirst[3] ?? unitFirst[4]);
+    const ceiling = unitFirst[2] != null || (unitFirst[1] == null && !unitFirst[5] && lessIsBetter);
+    return { hit: unitFirst[0], ...(ceiling ? { max: figure } : { min: figure }) };
+  }
+  return undefined;
+}
+
+/**
+ * Figures nothing on file records, set aside by name: EPA and NHTSA publish
+ * no acceleration, torque, towing or weight. "0-60 under 4 seconds" found
+ * nothing, and "0 to 100 km/h" was read as a 100 km range.
+ */
+const UNRECORDED_FIGURES: Array<[RegExp, string]> = [
+  [
+    /(?<=\s)(?:(?:a|with|under|in)\s+)?0\s*(?:-|to)\s*(?:60|100)(?:\s*(?:mph|km\/?h|kph))?(?:\s+times?)?(?:\s+(?:(?:under|in|below|less than|of)\s+)?\d+(?:\.\d+)?\s*(?:s|secs?|seconds?)?)?(?=\s)/,
+    '0-60 times',
+  ],
+  [
+    new RegExp(
+      String.raw`(?<=\s)(?:(?:${AT_LEAST}|${AT_MOST})\s+)?\d{2,4}\s*(?:lbs?[- ]?-?ft|pound[- ]?(?:feet|foot)|ft[- ]?lbs?|foot[- ]?pounds?|nm)(?:\s+(?:of\s+)?torque)?(?=\s)|\btorque\b`,
+    ),
+    'torque',
+  ],
+  [
+    new RegExp(
+      String.raw`(?<=\s)(?:(?:can\s+)?tow(?:s|ing)?(?:\s+capacity)?(?:\s+(?:of|over|at least|up to))?\s+)?(?:(?:${AT_LEAST})\s+)?\d{1,2},?\d{3}\s*(?:lbs?|pounds|kg|kilograms?)(?:\s+(?:or more|and up|\+))?(?:\s+(?:towing|trailer))?(?=\s)`,
+    ),
+    'towing',
+  ],
+  [/\b(?:light ?weight|curb weight)\b/, 'weight'],
+];
+
+interface FiguresRead {
+  text: string;
+  setAside: string[];
+  horsepower?: { min?: number; max?: number };
+  fuelEconomy?: FuelEconomyBound;
+  /** "low fuel consumption" beside a figure: an order as well. */
+  lowConsumption?: boolean;
+}
+
+/** Horsepower and fuel-economy figures, and those nothing on file records. */
+function readFigures(padded: string): FiguresRead {
+  let text = padded;
+  const take = (re: RegExp) => {
+    const hit = re.exec(text);
+    if (hit) text = text.replace(hit[0], ' ');
+    return hit;
+  };
+  const out: FiguresRead = { text, setAside: [] };
+  for (const [re, name] of UNRECORDED_FIGURES) {
+    const hit = take(re);
+    if (hit) {
+      out.setAside.push(
+        name === '0-60 times' && /0\s*(?:-|to)\s*100/.test(hit[0]) ? '0-100 km/h times' : name,
+      );
+    }
+  }
+  const horsepower = readFigure(text, HORSEPOWER_UNIT);
+  if (horsepower) {
+    text = text.replace(horsepower.hit, ' ');
+    out.horsepower = { min: horsepower.min, max: horsepower.max };
+  }
+  for (const [unit, pattern] of FUEL_ECONOMY_UNITS) {
+    const withBasis = String.raw`(?:(?:${RATING_BASIS})\s+)?(?:${pattern})(?:\s+(?:${RATING_BASIS}))?`;
+    const figure = readFigure(text, withBasis, unit === 'L/100 km');
+    if (!figure) continue;
+    text = text.replace(figure.hit, ' ');
+    const basis = /\bcity\b/.test(figure.hit)
+      ? 'city'
+      : /\b(?:highway|hwy)\b/.test(figure.hit)
+        ? 'highway'
+        : undefined;
+    out.fuelEconomy = { min: figure.min, max: figure.max, unit, ...(basis ? { basis } : {}) };
+    // "fuel consumption under 7 l/100km": the words that name the figure go,
+    // and "low fuel consumption" is an order as well.
+    const naming = take(
+      /\b(?:(low(?:est)?|best|good)\s+)?(?:(?:fuel|gas)\s+)?consumption(?:\s+of)?\b/,
+    );
+    if (naming?.[1]) out.lowConsumption = true;
+    break;
+  }
+  out.text = text;
+  return out;
+}
+
+/**
+ * The query without its figures, for ranking by name: "camry over 200 hp"
+ * scored "over", "200" and "hp" against model names, and a 2008 Solara
+ * convertible led the V6 Camrys.
+ */
+export function withoutFigures(raw: string): string {
+  return readFigures(` ${raw.toLowerCase()} `).text.replace(/\s+/g, ' ').trim();
+}
+
 /**
  * Read years, order, gearbox, engine and seating out of a query and return
  * the rest. "2015-2018 accord", "used civic", "new camry", "most fuel
@@ -393,6 +557,18 @@ export function extractQueryModifiers(
     if (hit) text = text.replace(hit[0], ' ');
     return hit;
   };
+
+  // Figures first: "between 2000 and 2500 lbs" is not a run of model years,
+  // and "7 l/100 km" is not a 100 km range.
+  const figures = readFigures(text);
+  text = figures.text;
+  const setAside = figures.setAside;
+  if (figures.horsepower) out.horsepower = figures.horsepower;
+  if (figures.fuelEconomy) out.fuelEconomy = figures.fuelEconomy;
+  if (figures.lowConsumption) {
+    out.sortedBy = 'fuelEconomy';
+    out.gasMileage = true;
+  }
 
   for (const [re, read] of YEAR_PHRASES) {
     const hit = take(re);
@@ -441,12 +617,17 @@ export function extractQueryModifiers(
     if (hit) {
       out.sortedBy = intent;
       // "gas mileage", "good on gas", "mpg": the shopper counts gallons.
-      if (intent === 'fuelEconomy' && /gas|mpg|mileage|fuel economy/.test(hit[0])) {
+      if (
+        intent === 'fuelEconomy' &&
+        /gas|mpg|mileage|fuel economy|consumption|l\/100/.test(hit[0])
+      ) {
         out.gasMileage = true;
       }
       break;
     }
   }
+  // No acceleration is on file: the most powerful cars come nearest.
+  if (!out.sortedBy && setAside.some((name) => name.startsWith('0-'))) out.sortedBy = 'horsepower';
   if (text.match(SNOW)) {
     out.snow = true;
     text = text.replace(SNOW, ' ');
@@ -456,6 +637,7 @@ export function extractQueryModifiers(
   const equipment = text.match(EQUIPMENT) ?? [];
   text = text.replace(EQUIPMENT, ' ');
   const unmeasured = [
+    ...setAside,
     ...listing,
     ...equipment,
     ...(charging ? ['fast charging'] : []),

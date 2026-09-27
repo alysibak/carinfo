@@ -7,6 +7,48 @@ const cad = (value: number) =>
     maximumFractionDigits: 0,
   }).format(value);
 
+const LITRES_AT_1_MPG = 235.215;
+
+/** "EPA combined rating of 30 MPG or better (7.8 L/100 km or less)." */
+function describeFuelEconomy(
+  bound: NonNullable<SearchInterpretation['fuelEconomy']>,
+  evsLeftOut: boolean,
+): string {
+  const { min, max, unit, basis = 'combined' } = bound;
+  const litres = (mpg: number) => `${(LITRES_AT_1_MPG / mpg).toFixed(1)} L/100 km`;
+  const mpg = (litres: number, round: (n: number) => number) =>
+    `${round(LITRES_AT_1_MPG / litres)} MPG`;
+  if (unit === 'L/100 km') {
+    // Ratings are whole MPG: 7 L/100 km or less is 34 MPG or better.
+    const text =
+      min != null && max != null
+        ? `${min} to ${max} L/100 km (${mpg(max, Math.ceil)} to ${mpg(min, Math.floor)})`
+        : max != null
+          ? `${max} L/100 km or less (${mpg(max, Math.ceil)} or better)`
+          : `${min} L/100 km or more (${mpg(min!, Math.floor)} or worse)`;
+    return `EPA ${basis} fuel consumption of ${text}${evsLeftOut ? '; electric cars are left out' : ''}.`;
+  }
+  const metric = unit === 'MPG';
+  const text =
+    min != null && max != null
+      ? `${min} to ${max} ${unit}${metric ? ` (${litres(min)} to ${litres(max)})` : ''}`
+      : min != null
+        ? `${min} ${unit} or better${metric ? ` (${litres(min)} or less)` : ''}`
+        : `${max} ${unit} or less${metric ? ` (${litres(max!)} or more)` : ''}`;
+  return `EPA ${basis} rating of ${text}${evsLeftOut ? '; electric cars are left out' : ''}.`;
+}
+
+/** "300 hp or more; cars with no rating on file are left out." */
+function describeHorsepower({ min, max }: NonNullable<SearchInterpretation['horsepower']>): string {
+  const text =
+    min != null && max != null
+      ? `${min} to ${max} hp`
+      : min != null
+        ? `${min} hp or more`
+        : `${max} hp or less`;
+  return `${text}; cars with no rating on file are left out.`;
+}
+
 /**
  * What the search read into its query, as sentences for the results page:
  * trim words it set aside, a price limit, a "cheapest first" order. Without
@@ -50,6 +92,10 @@ export function describeSearchInterpretation(
   } else if (price?.min != null) {
     lines.push(`Estimated value over ${cad(price.min)}.`);
   }
+  if (interpretation.fuelEconomy) {
+    lines.push(describeFuelEconomy(interpretation.fuelEconomy, !!interpretation.gasMileage));
+  }
+  if (interpretation.horsepower) lines.push(describeHorsepower(interpretation.horsepower));
   const order = {
     price: 'Cheapest first by estimated value',
     fuelEconomy: 'Most fuel-efficient first',
@@ -92,7 +138,8 @@ export function describeSearchInterpretation(
       'Hydrogen and natural-gas cars are left out: they sell cheaply because there is almost nowhere in Canada to fill them.',
     );
   }
-  if (interpretation.gasMileage) {
+  // A fuel-economy bound's own line says so.
+  if (interpretation.gasMileage && !interpretation.fuelEconomy) {
     lines.push('Electric cars are left out: their MPGe does not compare with MPG.');
   }
   if (interpretation.minRangeMiles != null) {

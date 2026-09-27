@@ -209,4 +209,82 @@ describe('extractQueryModifiers', () => {
     ]);
     expect(extractQueryModifiers('new civic').newest).toBe(true);
   });
+
+  it('reads fuel economy and horsepower figures with their bounds', () => {
+    expect(extractQueryModifiers('suv over 30 mpg')).toEqual({
+      text: 'suv',
+      fuelEconomy: { min: 30, unit: 'MPG' },
+    });
+    expect(extractQueryModifiers('40 mpg highway sedan')).toEqual({
+      text: 'sedan',
+      fuelEconomy: { min: 40, unit: 'MPG', basis: 'highway' },
+    });
+    expect(extractQueryModifiers('city mpg over 50').fuelEconomy).toEqual({
+      min: 50,
+      unit: 'MPG',
+      basis: 'city',
+    });
+    expect(extractQueryModifiers('mpg 40').fuelEconomy).toEqual({ min: 40, unit: 'MPG' });
+    expect(extractQueryModifiers('over 100 mpge').fuelEconomy).toEqual({ min: 100, unit: 'MPGe' });
+    // Litres fall as economy rises: a bare figure is a ceiling. "100 km" in
+    // "l/100 km" was read as a 100 km range.
+    expect(extractQueryModifiers('suv under 8 l/100 km')).toEqual({
+      text: 'suv',
+      fuelEconomy: { max: 8, unit: 'L/100 km' },
+    });
+    expect(extractQueryModifiers('6,5 litres per 100 km').fuelEconomy).toEqual({
+      max: 6.5,
+      unit: 'L/100 km',
+    });
+    expect(extractQueryModifiers('fuel consumption under 7l/100km')).toEqual({
+      text: '',
+      fuelEconomy: { max: 7, unit: 'L/100 km' },
+    });
+    expect(extractQueryModifiers('low fuel consumption suv')).toEqual({
+      text: 'suv',
+      sortedBy: 'fuelEconomy',
+      gasMileage: true,
+    });
+
+    expect(extractQueryModifiers('manual with over 300 hp')).toEqual({
+      text: '',
+      transmission: ['manual'],
+      horsepower: { min: 300 },
+    });
+    expect(extractQueryModifiers('300-hp coupe').horsepower).toEqual({ min: 300 });
+    expect(extractQueryModifiers('hatchback 200hp or less').horsepower).toEqual({ max: 200 });
+    expect(extractQueryModifiers('between 200 and 300 horsepower').horsepower).toEqual({
+      min: 200,
+      max: 300,
+    });
+    expect(extractQueryModifiers('hp over 300').horsepower).toEqual({ min: 300 });
+    expect(extractQueryModifiers('most horsepower suv')).toEqual({
+      text: 'suv',
+      sortedBy: 'horsepower',
+    });
+    // Names with numbers are not figures.
+    expect(extractQueryModifiers('chrysler 300')).toEqual({ text: 'chrysler 300' });
+    expect(extractQueryModifiers('mpg 2020 civic').fuelEconomy).toBeUndefined();
+  });
+
+  it('sets aside figures nothing on file records', () => {
+    expect(extractQueryModifiers('0-60 under 4 seconds')).toEqual({
+      text: '',
+      sortedBy: 'horsepower',
+      unmeasured: ['0-60 times'],
+    });
+    expect(extractQueryModifiers('0 to 100 km/h under 6').unmeasured).toEqual(['0-100 km/h times']);
+    expect(extractQueryModifiers('truck that can tow 10,000 lbs')).toEqual({
+      text: 'truck',
+      unmeasured: ['towing'],
+    });
+    expect(extractQueryModifiers('400 lb-ft torque truck')).toEqual({
+      text: 'truck',
+      unmeasured: ['torque'],
+    });
+    expect(extractQueryModifiers('lightweight coupe')).toEqual({
+      text: 'coupe',
+      unmeasured: ['weight'],
+    });
+  });
 });

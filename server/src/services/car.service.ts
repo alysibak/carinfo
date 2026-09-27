@@ -21,8 +21,9 @@ import { withRunningCosts } from '../utils/running-cost.js';
 import { type RuntimeDatabaseFile, unpackRuntimeDatabase } from './runtime-db.js';
 import { LATEST_FULL_MODEL_YEAR } from '../config/model-years.js';
 import { FIRST_CAR } from '../config/first-car.js';
+import { mpgToLPer100Km } from '../config/regional-assumptions.js';
 import { TRIM_QUERY_FORMS } from '../utils/performance-trims.js';
-import { extractQueryModifiers } from '../utils/search-modifiers.js';
+import { extractQueryModifiers, withoutFigures } from '../utils/search-modifiers.js';
 import { isThreeRow } from '../utils/three-row.js';
 import { competitiveSets } from '../utils/competitive-sets.js';
 import { isLuxuryBrand } from '../utils/vehicle-taxonomy.js';
@@ -619,8 +620,10 @@ function runSearch(query: SearchQuery): SearchResults {
   // Always rank natural-language searches with the *original* query.
   // enrichSearchQuery may clear `query` after parsing make/model/year; using that
   // cleared value made "relevance" a no-op and left oldest EPA rows first.
+  // Figures and prices go; words such as "sport sedan" stay, as they can be
+  // part of a name (a Saab "9-3 Sport Sedan").
   if (wantRelevance && originalText && !keywordsOnly) {
-    sortByRelevanceInPlace(candidates, originalText);
+    sortByRelevanceInPlace(candidates, extractPricePhrases(withoutFigures(originalText)).text);
   } else if (sortField && sortField !== 'relevance') {
     sortResultsInPlace(candidates, sortField, sortOrder);
   } else {
@@ -1092,6 +1095,25 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
     filters.threeRow = true;
     interpretation.threeRow = true;
   }
+  if (modifiers.fuelEconomy && !explicit?.fuelEconomy) {
+    const { min, max, unit, basis } = modifiers.fuelEconomy;
+    // L/100 km falls as MPG rises: a ceiling in litres is a floor in MPG. The
+    // conversion is its own inverse.
+    const mpg = (litres: number) => Math.round(mpgToLPer100Km(litres) * 100) / 100;
+    filters.fuelEconomy =
+      unit === 'L/100 km'
+        ? {
+            ...(max != null ? { min: mpg(max) } : {}),
+            ...(min != null ? { max: mpg(min) } : {}),
+            ...(basis ? { basis } : {}),
+          }
+        : { min, max, ...(basis ? { basis } : {}) };
+    interpretation.fuelEconomy = modifiers.fuelEconomy;
+  }
+  if (modifiers.horsepower && !explicit?.horsepower) {
+    filters.horsepower = modifiers.horsepower;
+    interpretation.horsepower = modifiers.horsepower;
+  }
   if (modifiers.minRangeMiles != null && !explicit?.rangeMiles) {
     filters.rangeMiles = { min: modifiers.minRangeMiles };
     interpretation.minRangeMiles = modifiers.minRangeMiles;
@@ -1122,25 +1144,28 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
     const cheapest =
       interpretation.sortedBy === 'price' || interpretation.sortedBy === 'runningCost';
     // Hydrogen and natural-gas cars sell for little because there is almost
-    // nowhere in Canada to fill them: a Tucson Fuel Cell led "cheap suv".
-    if (cheapest && !filters.fuelType?.length) {
-      filters.fuelType = ['gasoline', 'diesel', 'hybrid', 'plug-in hybrid', 'electric'];
-      interpretation.rareFuelsLeftOut = true;
+    // nowhere in Canada to fill them: a Tucson Fuel Cell led "cheap suv", and
+    // a lease-only FCX Clarity sat among "honda under 10 grand".
+    const rareFuelsOut = cheapest || interpretation.price?.max != null;
+    // "good gas mileage" is an MPG order: EVs, rated in MPGe, led it. So is
+    // "over 30 mpg" or "under 7 l/100km": every EV's MPGe clears it.
+    const countsFuel =
+      (modifiers.gasMileage && interpretation.sortedBy === 'fuelEconomy') ||
+      (modifiers.fuelEconomy != null && modifiers.fuelEconomy.unit !== 'MPGe');
+    // A fuel word in the query ("hybrid", "electric") keeps its own filter.
+    if ((rareFuelsOut || countsFuel) && !filters.fuelType?.length) {
+      filters.fuelType = (
+        ['gasoline', 'diesel', 'hybrid', 'plug-in hybrid', 'electric', 'natural gas'] as const
+      ).filter(
+        (fuel) => !(rareFuelsOut && fuel === 'natural gas') && !(countsFuel && fuel === 'electric'),
+      );
+      if (rareFuelsOut) interpretation.rareFuelsLeftOut = true;
+      if (countsFuel) interpretation.gasMileage = true;
     }
     // "Cheapest to run" too: a 30-year-old car's insurance and upkeep are capped.
     if (cheapest && !filters.year) {
       filters.year = { min: LATEST_FULL_MODEL_YEAR - 10 };
       interpretation.recentFrom = LATEST_FULL_MODEL_YEAR - 10;
-    }
-    // "good gas mileage" is an MPG order: EVs, rated in MPGe, led it. A fuel
-    // word in the query ("hybrid", "electric") keeps its own filter.
-    if (
-      modifiers.gasMileage &&
-      interpretation.sortedBy === 'fuelEconomy' &&
-      !filters.fuelType?.length
-    ) {
-      filters.fuelType = ['gasoline', 'diesel', 'hybrid', 'plug-in hybrid', 'natural gas'];
-      interpretation.gasMileage = true;
     }
   };
   const raw = price.text;
@@ -1908,6 +1933,7 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
   const dispMax = filters?.displacement?.max;
   const fuelEcoMin = filters?.fuelEconomy?.min;
   const fuelEcoMax = filters?.fuelEconomy?.max;
+  const fuelEcoBasis = filters?.fuelEconomy?.basis ?? 'combined';
   const priceMin = filters?.price?.min;
   const priceMax = filters?.price?.max;
   const trimForms = query.trimForms?.length ? query.trimForms : null;
@@ -1984,7 +2010,7 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
 
     // Fuel economy range — exclude cars without EPA MPG when filtering
     if (hasFuelEcoMin || hasFuelEcoMax) {
-      const mpg = car.fuelEconomy.combined;
+      const mpg = car.fuelEconomy[fuelEcoBasis];
       if (mpg == null || mpg <= 0) continue;
       if (hasFuelEcoMin && mpg < fuelEcoMin!) continue;
       if (hasFuelEcoMax && mpg > fuelEcoMax!) continue;

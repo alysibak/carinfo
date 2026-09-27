@@ -784,6 +784,37 @@ describe('car.service natural language search', () => {
     expect(cheap.results.filter((c) => c.engine.fuelType === 'hydrogen')).toEqual([]);
     // Asked for, they are shown.
     expect(searchCars({ query: 'cheap hydrogen car', limit: 5 }).total).toBeGreaterThan(0);
+    // A price ceiling too: a lease-only FCX Clarity sat among "honda under 10 grand".
+    const honda = searchCars({ query: 'honda under 10 grand', limit: 100 });
+    expect(honda.interpretation?.rareFuelsLeftOut).toBe(true);
+    expect(honda.results.filter((c) => c.engine.fuelType === 'hydrogen')).toEqual([]);
+  });
+
+  it('reads fuel economy and horsepower figures as filters', () => {
+    // "7 l/100 km" was read as a 100 km EV range and found nothing.
+    const litres = searchCars({ query: 'suv under 8 l/100 km', limit: 500 });
+    expect(litres.interpretation?.fuelEconomy).toEqual({ max: 8, unit: 'L/100 km' });
+    expect(litres.total).toBeGreaterThan(20);
+    // 8 L/100 km is 29.4 MPG: a 29 MPG SUV burns 8.1.
+    expect(litres.results.every((c) => (c.fuelEconomy.combined ?? 0) >= 30)).toBe(true);
+    expect(litres.results.filter((c) => c.engine.fuelType === 'electric')).toEqual([]);
+    expect(litres.results.every((c) => c.bodyStyle === 'suv')).toBe(true);
+
+    const highway = searchCars({ query: '40 mpg highway', limit: 500 });
+    expect(highway.results.every((c) => (c.fuelEconomy.highway ?? 0) >= 40)).toBe(true);
+    expect(highway.results.some((c) => (c.fuelEconomy.combined ?? 0) < 40)).toBe(true);
+
+    const power = searchCars({ query: 'manual with over 300 hp', limit: 500 });
+    expect(power.total).toBeGreaterThan(20);
+    expect(power.results.every((c) => (c.engine.horsepower ?? 0) >= 300)).toBe(true);
+    expect(power.results.every((c) => c.transmission.type === 'manual')).toBe(true);
+    // Ranked by the words that name a car, not "over 200 hp": a 2008 Solara
+    // convertible led the V6 Camrys.
+    const camry = searchCars({ query: 'camry over 200 hp', limit: 5 });
+    expect(camry.results[0].model).toMatch(/^Camry\b(?! Solara)/);
+    expect(
+      searchCars({ query: '300 hp', limit: 50 }).results.some((c) => /^300/.test(c.model)),
+    ).toBe(false);
   });
 
   it('completes the name in a rivals phrase, one entry per model', () => {

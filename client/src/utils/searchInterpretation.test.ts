@@ -92,4 +92,31 @@ describe('describeSearchInterpretation', () => {
       'Electric cars are left out: their MPGe does not compare with MPG.',
     ]);
   });
+
+  it('states fuel economy and horsepower bounds in the unit asked', () => {
+    expect(
+      describeSearchInterpretation({ fuelEconomy: { min: 30, unit: 'MPG' }, gasMileage: true }),
+    ).toEqual([
+      'EPA combined rating of 30 MPG or better (7.8 L/100 km or less); electric cars are left out.',
+    ]);
+    // Ratings are whole MPG: 7 L/100 km or less is 34 MPG or better.
+    expect(
+      describeSearchInterpretation({
+        fuelEconomy: { max: 7, unit: 'L/100 km', basis: 'highway' },
+        gasMileage: true,
+      }),
+    ).toEqual([
+      'EPA highway fuel consumption of 7 L/100 km or less (34 MPG or better); electric cars are left out.',
+    ]);
+    // Electric cars stay when a fuel filter kept them.
+    expect(describeSearchInterpretation({ fuelEconomy: { min: 100, unit: 'MPGe' } })).toEqual([
+      'EPA combined rating of 100 MPGe or better.',
+    ]);
+    expect(describeSearchInterpretation({ horsepower: { min: 200, max: 300 } })).toEqual([
+      '200 to 300 hp; cars with no rating on file are left out.',
+    ]);
+    expect(describeSearchInterpretation({ horsepower: { max: 150 } })).toEqual([
+      '150 hp or less; cars with no rating on file are left out.',
+    ]);
+  });
 });

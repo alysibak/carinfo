@@ -193,6 +193,8 @@ export interface CarFilter {
   fuelEconomy?: {
     min?: number;
     max?: number;
+    /** The EPA city or highway rating the bounds apply to; combined when absent. */
+    basis?: 'city' | 'highway';
   };
   cylinders?: number[];
   /** "turbocharged", "supercharged" (a car with both matches either). */
@@ -291,6 +293,19 @@ export interface SearchInterpretation {
   automatedManual?: boolean;
   /** "first car", "teenager": the First car preset's price, MPG and year limits. */
   firstCar?: { maxPrice: number; minMpg: number; minYear: number };
+  /**
+   * "over 30 mpg", "under 7 l/100km", "40 mpg highway": the EPA rating asked
+   * for, in the unit asked. Electric cars are left out of an MPG or L/100 km
+   * bound (see gasMileage).
+   */
+  fuelEconomy?: {
+    min?: number;
+    max?: number;
+    unit: 'MPG' | 'MPGe' | 'L/100 km';
+    basis?: 'city' | 'highway';
+  };
+  /** "over 300 hp": cars with no rating on file are left out. */
+  horsepower?: { min?: number; max?: number };
 }
 
 /** Response body of the search endpoints. */
