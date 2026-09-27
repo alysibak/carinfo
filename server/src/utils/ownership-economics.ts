@@ -181,6 +181,7 @@ function maintenanceAnnual(car: CarSpecs, marketMid: number, region = REGION): n
   const age = vehicleAge(car);
   let base = maint.base;
   if (isHeavyEvTruck(car)) base = maint.heavyEvTruck;
+  else if (classifyMarketSegment(car) === 'exotic') base = maint.exotic;
   else if (isLuxuryPerformance(car)) base = maint.luxuryPerformance;
   else if (LUXURY_MAKES.has(car.make)) base = maint.luxury;
   else if (car.engine.fuelType === 'electric') base = maint.electric;
@@ -201,6 +202,7 @@ function maintenanceAnnual(car: CarSpecs, marketMid: number, region = REGION): n
 
 function tiresAnnual(car: CarSpecs, tires = REGION.tires): number {
   if (isHeavyEvTruck(car)) return tires.heavyEvTruck;
+  if (classifyMarketSegment(car) === 'exotic') return tires.exotic;
   if (car.bodyStyle === 'truck') return tires.truck;
   if (isLuxuryPerformance(car)) return tires.luxuryPerformance;
   if (car.bodyStyle === 'suv') return tires.suv;

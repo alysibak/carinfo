@@ -142,9 +142,10 @@ export default function Methodology() {
               on your record and postal code far more than on the car.
             </li>
             <li>
-              Maintenance and tires follow AAA and CAA driving-cost studies, by fuel type and age.
-              Ontario charges no plate renewal fee (since 2022); B.C.&rsquo;s licence fee is set by
-              weight, about $61 a year for most cars.
+              Maintenance and tires follow AAA and CAA driving-cost studies, by fuel type and age;
+              exotics (a Ferrari, a Rolls-Royce, a Bentley) cost about $4,000 a year to service and
+              wear through performance tires. Ontario charges no plate renewal fee (since 2022);
+              B.C.&rsquo;s licence fee is set by weight, about $61 a year for most cars.
             </li>
             <li>
               Energy costs from your region&rsquo;s gas, diesel and home-electricity prices (recent

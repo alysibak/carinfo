@@ -25,6 +25,8 @@ export interface MaintenanceAssumptions {
   heavyEvTruck: number;
   luxuryPerformance: number;
   luxury: number;
+  /** Ferrari, Lamborghini, McLaren, Rolls-Royce, Bentley, Aston Martin… */
+  exotic: number;
   electric: number;
   hydrogen: number;
   hybrid: number;
@@ -37,6 +39,7 @@ export interface TireAssumptions {
   heavyEvTruck: number;
   truck: number;
   luxuryPerformance: number;
+  exotic: number;
   suv: number;
   electric: number;
 }
@@ -128,6 +131,9 @@ export const REGIONAL_ASSUMPTIONS: Record<RegionId, RegionalAssumptions> = {
       heavyEvTruck: 1500,
       luxuryPerformance: 1900,
       luxury: 1500,
+      // Automonitor puts a Cullinan's servicing at US$3,500–$5,500 a year;
+      // exotics need dealer service, specialist parts and track-grade brakes.
+      exotic: 4000,
       electric: 650,
       hydrogen: 1300,
       hybrid: 850,
@@ -139,6 +145,8 @@ export const REGIONAL_ASSUMPTIONS: Record<RegionId, RegionalAssumptions> = {
       heavyEvTruck: 1900,
       truck: 1200,
       luxuryPerformance: 1500,
+      // 20-inch-plus performance tires that last 10,000-15,000 km.
+      exotic: 2400,
       suv: 950,
       electric: 800,
     },
@@ -189,6 +197,7 @@ export const REGIONAL_ASSUMPTIONS: Record<RegionId, RegionalAssumptions> = {
       heavyEvTruck: 1550,
       luxuryPerformance: 1950,
       luxury: 1550,
+      exotic: 4100,
       electric: 680,
       hydrogen: 1350,
       hybrid: 900,
@@ -200,6 +209,7 @@ export const REGIONAL_ASSUMPTIONS: Record<RegionId, RegionalAssumptions> = {
       heavyEvTruck: 1950,
       truck: 1250,
       luxuryPerformance: 1550,
+      exotic: 2450,
       suv: 1000,
       electric: 850,
     },
