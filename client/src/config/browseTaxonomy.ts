@@ -224,9 +224,15 @@ export function makeFilter(make: string): CarFilter {
   return { make: [make] };
 }
 
-/** Detect if current filters exactly match a lifestyle preset (for UI highlight). */
-export function matchingLifestylePreset(filters: CarFilter = {}): string | null {
+/**
+ * The lifestyle preset the current search is (for UI highlight): its filters
+ * exactly, and its words where it has some. A preset with words and no
+ * filters ("third row") matched every unfiltered search on filters alone.
+ */
+export function matchingLifestylePreset(filters: CarFilter = {}, query?: string): string | null {
+  const text = (query ?? '').trim().toLowerCase();
   for (const preset of LIFESTYLE_PRESETS) {
+    if (preset.query && preset.query !== text) continue;
     if (filtersMatchExactly(filters, preset.filters)) return preset.id;
   }
   return null;

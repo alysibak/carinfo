@@ -92,7 +92,12 @@ function RangeInputs({
   );
 }
 
-export default function FilterSidebar({ onFiltersApplied }: { onFiltersApplied?: () => void }) {
+export default function FilterSidebar({
+  onFiltersApplied,
+}: {
+  /** After a change; `text` when the search words changed too (a preset's "third row"). */
+  onFiltersApplied?: (text?: string) => void;
+}) {
   const { searchQuery, setSearchQuery, performSearch, availableMakes, loadMakes } = useCarStore();
   const [filters, setFilters] = useState<CarFilter>(searchQuery.filters || {});
   const [countries, setCountries] = useState<string[]>([]);
@@ -122,17 +127,18 @@ export default function FilterSidebar({ onFiltersApplied }: { onFiltersApplied?:
   }, [loadMakes]);
 
   const commitFilters = useCallback(
-    (next: CarFilter, sortOverride?: SearchQuery['sort']) => {
+    (next: CarFilter, sortOverride?: SearchQuery['sort'], text?: string) => {
       setFilters(next);
-      const sort = sortOverride ?? sortForFilters(next, searchQuery.query, searchQuery.sort);
-      setSearchQuery({ ...searchQuery, filters: next, offset: 0, sort });
+      const query = text !== undefined ? text || undefined : searchQuery.query;
+      const sort = sortOverride ?? sortForFilters(next, query, searchQuery.sort);
+      setSearchQuery({ ...searchQuery, query, filters: next, offset: 0, sort });
       performSearch();
-      onFiltersApplied?.();
+      onFiltersApplied?.(text);
     },
     [onFiltersApplied, performSearch, searchQuery, setSearchQuery],
   );
 
-  const activeLifestyle = matchingLifestylePreset(filters);
+  const activeLifestyle = matchingLifestylePreset(filters, searchQuery.query);
 
   const activePriceBucket = useMemo(
     () => PRICE_BUCKETS.find((b) => bucketMatches(filters.price, b.filters.price))?.id ?? null,
@@ -154,10 +160,15 @@ export default function FilterSidebar({ onFiltersApplied }: { onFiltersApplied?:
   const toggleLifestyle = (id: string) => {
     const preset = LIFESTYLE_PRESETS.find((p) => p.id === id);
     if (!preset) return;
+    // A preset's words ("third row", "sports car") replace the search words.
     if (activeLifestyle === id) {
-      commitFilters(stripFilterFields(filters, preset.filters), { field: 'year', order: 'desc' });
+      commitFilters(
+        stripFilterFields(filters, preset.filters),
+        { field: 'year', order: 'desc' },
+        preset.query ? '' : undefined,
+      );
     } else {
-      commitFilters(mergeFilterFields(filters, preset.filters), preset.sort);
+      commitFilters(mergeFilterFields(filters, preset.filters), preset.sort, preset.query);
     }
   };
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LIFESTYLE_PRESETS, presetToSearchQuery } from './browseTaxonomy';
+import { LIFESTYLE_PRESETS, matchingLifestylePreset, presetToSearchQuery } from './browseTaxonomy';
 import { searchQueryToParams } from '../utils/searchParams';
 
 describe('lifestyle presets', () => {
@@ -22,5 +22,19 @@ describe('lifestyle presets', () => {
 
   it('leave presets without words as plain filter searches', () => {
     expect(presetToSearchQuery(preset('first-car')).query).toBeUndefined();
+  });
+});
+
+describe('matchingLifestylePreset', () => {
+  it("needs a preset's words as well as its filters", () => {
+    // "Family hauler" has no filters, so it lit up for every unfiltered search.
+    expect(matchingLifestylePreset({}, 'best suv for family')).toBeNull();
+    expect(matchingLifestylePreset({}, 'third row')).toBe('family');
+    expect(matchingLifestylePreset({ price: { max: 50000 }, year: { min: 2015 } }, 'luxury')).toBe(
+      'luxury-value',
+    );
+    // A preset without words still matches on filters alone.
+    const firstCar = LIFESTYLE_PRESETS.find((p) => p.id === 'first-car')!;
+    expect(matchingLifestylePreset(firstCar.filters, 'honda')).toBe('first-car');
   });
 });

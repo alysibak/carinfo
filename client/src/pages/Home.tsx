@@ -291,9 +291,11 @@ export default function Home() {
               className={`${filtersOpen ? 'block' : 'hidden lg:block'} lg:sticky lg:top-[calc(var(--header-height)+1rem)]`}
             >
               <FilterSidebar
-                onFiltersApplied={() => {
+                onFiltersApplied={(text) => {
+                  if (text !== undefined) setSearchText(text);
                   const q = useCarStore.getState().searchQuery;
-                  const params = searchQueryToParams({ ...q, query: searchText || undefined }, 1);
+                  const words = text !== undefined ? text : searchText;
+                  const params = searchQueryToParams({ ...q, query: words || undefined }, 1);
                   setSearchParams(params);
                   setHasSearched(true);
                   // Keep the mobile filter panel open so people can stack filters.
@@ -342,13 +344,13 @@ export default function Home() {
                         type="button"
                         onClick={() => {
                           pushSearch({
-                            query: undefined,
+                            query: item.query,
                             filters: item.filters as CarFilter,
                             sort: item.sort ?? { field: 'year', order: 'desc' },
                             limit: pageSize,
                             offset: 0,
                           });
-                          setSearchText('');
+                          setSearchText(item.query ?? '');
                         }}
                         className="list-row text-left"
                       >

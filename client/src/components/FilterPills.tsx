@@ -19,6 +19,7 @@ export default function FilterPills({
           <button
             key={opt.id}
             type="button"
+            aria-pressed={active}
             onClick={() => onToggle(opt.id)}
             title={opt.description}
             className={`text-left border transition-colors ${
