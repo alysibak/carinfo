@@ -1,4 +1,5 @@
 import type { CarSpecs } from '../types/car.types.js';
+import { isPorsche911 } from './porsche-911.js';
 
 /**
  * Cars whose used price is set by collectors, not by depreciation.
@@ -47,17 +48,15 @@ const RULES: CollectorRule[] = [
   // Air-cooled and track-special Porsches.
   { test: (c) => same(c.make, 'Porsche') && /^911/i.test(c.model) && c.year <= 1998 },
   {
-    test: (c, age) =>
-      same(c.make, 'Porsche') &&
-      /\b911\b/.test(c.model) &&
-      /\b(gt2|gt3)\b/i.test(c.model) &&
-      age >= 15,
+    test: (c, age) => isPorsche911(c) && /\b(gt2|gt3)\b/i.test(c.model) && age >= 15,
   },
   // Porsche's limited-run 911s, which trade well above their sticker.
   {
     test: (c) => same(c.make, 'Porsche') && /^911 (r|s\/t|sport classic|speedster)$/i.test(c.model),
   },
   { test: (c) => same(c.make, 'Porsche') && /carrera gt|^918/i.test(c.model) },
+  // Alfa Romeo's 8C, 500 coupes and 500 Spiders (a 2009 Spider read $24,250).
+  { test: (c) => same(c.make, 'Alfa Romeo') && /^8 ?c\b/i.test(c.model) },
   // American collector cars.
   { test: (c) => same(c.make, 'Dodge') && /^viper/i.test(c.model) },
   { test: (c) => same(c.make, 'Ford') && /^gt(\s|$)/i.test(c.model) },

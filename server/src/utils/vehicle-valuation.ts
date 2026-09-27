@@ -6,6 +6,7 @@ import {
 } from '../config/regional-assumptions.js';
 import { inferEffectiveFuelType } from './fuel-type-inference.js';
 import { deriveVariant } from './performance-trims.js';
+import { isPorsche911 } from './porsche-911.js';
 
 const REFERENCE_YEAR = new Date().getFullYear();
 
@@ -1149,7 +1150,7 @@ const MODEL_MSRP_RULES: ModelMsrpRule[] = [
     msrp: (c) => (c.year >= 2020 ? 98000 : c.year >= 2016 ? 88000 : 78000),
   },
   {
-    test: (c) => c.make === 'Porsche' && /\b911\b/.test(c.model),
+    test: (c) => isPorsche911(c),
     msrp: (c) => (/turbo|gt2|gt3|dakar|s\/t/i.test(c.model) ? 220000 : 135000),
   },
   { test: (c) => c.make === 'Porsche' && /^(718|boxster|cayman)\b/i.test(c.model), msrp: 80000 },
@@ -1599,7 +1600,7 @@ const HIGH_RETENTION_MODELS: Array<[(c: CarSpecs) => boolean, number]> = [
   [(c) => c.make === 'Toyota' && /^rav4 (prime|plug-in)/i.test(c.model), 1.4],
   // Porsche's sports cars: a 2018 718 Cayman lists around US$50,000–$57,000
   // against about $57,000 new (Cars.com, KBB).
-  [(c) => c.make === 'Porsche' && /\b911\b/.test(c.model), 1.7],
+  [(c) => isPorsche911(c), 1.7],
   [(c) => c.make === 'Porsche' && /^(718|boxster|cayman)\b/i.test(c.model), 1.55],
   [(c) => c.make === 'Lotus' && /^(evora|emira)/i.test(c.model), 1.4],
   // The original two-door AMG GT (a 2017 ~US$72,200 on CarGurus), an RS 6
