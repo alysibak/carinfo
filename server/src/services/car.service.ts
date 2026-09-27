@@ -699,6 +699,19 @@ const KEYWORD_SUGGESTIONS: Array<{ label: string; query: string }> = [
   { label: 'Convertibles', query: 'convertible' },
   { label: 'Hatchbacks', query: 'hatchback' },
   { label: 'Wagons', query: 'wagon' },
+  // Phrases search-modifiers reads.
+  { label: 'Third-row SUVs', query: 'third row suv' },
+  { label: '3-row SUVs', query: '3 row suv' },
+  { label: '7-seaters', query: '7 seater' },
+  { label: 'Longest-range EVs', query: 'longest range ev' },
+  { label: 'Most fuel-efficient cars', query: 'most fuel efficient' },
+  { label: 'Most fuel-efficient SUVs', query: 'most fuel efficient suv' },
+  { label: 'Manual transmission', query: 'manual transmission' },
+  { label: 'Cheapest SUVs', query: 'cheapest suv' },
+  { label: 'Cheapest sedans', query: 'cheapest sedan' },
+  { label: 'Cheapest EVs', query: 'cheapest ev' },
+  { label: 'Fastest cars', query: 'fastest car' },
+  { label: 'V8 trucks', query: 'v8 truck' },
 ];
 
 type TrimSuggestion = { make: string; label: string; query: string };

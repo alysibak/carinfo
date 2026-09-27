@@ -567,6 +567,9 @@ describe('car.service natural language search', () => {
     expect(labels('wrx st')).toContain('Subaru WRX STI');
     expect(labels('challenger hell')).toContain('Dodge Challenger Hellcat');
     expect(labels('hybrid s')).toContain('Hybrid SUVs');
+    expect(labels('third')).toContain('Third-row SUVs');
+    expect(labels('cheap')).toContain('Cheapest SUVs');
+    expect(labels('longest')).toContain('Longest-range EVs');
     const typeR = labels('civic type r');
     expect(typeR.filter((l) => l === 'Honda Civic Type R')).toHaveLength(1);
   });
