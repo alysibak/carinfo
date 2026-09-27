@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { LIFESTYLE_PRESETS, matchingLifestylePreset, presetToSearchQuery } from './browseTaxonomy';
+import {
+  CLASS_LINKS,
+  LIFESTYLE_PRESETS,
+  matchingLifestylePreset,
+  presetToSearchQuery,
+} from './browseTaxonomy';
 import { searchQueryToParams } from '../utils/searchParams';
 
 describe('lifestyle presets', () => {
@@ -36,5 +41,13 @@ describe('matchingLifestylePreset', () => {
     // A preset without words still matches on filters alone.
     const firstCar = LIFESTYLE_PRESETS.find((p) => p.id === 'first-car')!;
     expect(matchingLifestylePreset(firstCar.filters, 'honda')).toBe('first-car');
+  });
+});
+
+describe('class links', () => {
+  it('are distinct search phrases', () => {
+    const queries = CLASS_LINKS.map((c) => c.query);
+    expect(new Set(queries).size).toBe(queries.length);
+    expect(queries).toContain('compact suv');
   });
 });

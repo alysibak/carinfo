@@ -101,6 +101,29 @@ export const LIFESTYLE_PRESETS: BrowsePreset[] = [
   },
 ];
 
+/**
+ * The classes shoppers compare within, as search words the server reads
+ * (competitive sets and segments): each opens that class, all years.
+ */
+export const CLASS_LINKS: Array<{ label: string; query: string }> = [
+  { label: 'Compact cars', query: 'compact car' },
+  { label: 'Midsize sedans', query: 'midsize sedan' },
+  { label: 'Compact SUVs', query: 'compact suv' },
+  { label: 'Midsize SUVs', query: 'midsize suv' },
+  { label: 'Three-row SUVs', query: 'third row suv' },
+  { label: 'Full-size SUVs', query: 'full size suv' },
+  { label: 'Midsize pickups', query: 'midsize truck' },
+  { label: 'Full-size pickups', query: 'full size truck' },
+  { label: 'Off-roaders', query: 'off road suv' },
+  { label: 'Luxury sedans', query: 'luxury sedan' },
+  { label: 'Luxury SUVs', query: 'luxury suv' },
+  { label: 'Hot hatches', query: 'hot hatch' },
+  { label: 'Sport sedans', query: 'sport sedan' },
+  { label: 'Sports cars', query: 'sports car' },
+  { label: 'Muscle cars', query: 'muscle car' },
+  { label: 'Supercars', query: 'supercar' },
+];
+
 export const PRICE_BUCKETS: BucketOption[] = [
   {
     id: 'under-15',

@@ -3,6 +3,7 @@ import { PageHeader } from '../components/PageHeader';
 import {
   BODY_TYPES,
   FUEL_TYPES,
+  CLASS_LINKS,
   LIFESTYLE_PRESETS,
   PRICE_BUCKETS,
   TOP_MAKES,
@@ -71,6 +72,26 @@ export default function Browse() {
                 />
                 <p className="font-semibold text-white capitalize">{type.label}</p>
                 <p className="text-xs text-zinc-500 mt-0.5 leading-snug">{type.description}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-zinc-900">
+        <div className="page-wrap section-y">
+          <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2">Or a class</h2>
+          <p className="text-sm text-zinc-500 mb-6">
+            The rivals shoppers compare: a Camry against an Accord, not a Civic.
+          </p>
+          <div className="flex flex-wrap gap-x-5 gap-y-3">
+            {CLASS_LINKS.map((item) => (
+              <Link
+                key={item.query}
+                to={`/home?${new URLSearchParams({ q: item.query }).toString()}`}
+                className="text-sm text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-800 hover:decoration-zinc-500 min-h-[36px] inline-flex items-center"
+              >
+                {item.label}
               </Link>
             ))}
           </div>
