@@ -82,8 +82,29 @@ function dropPhantomDisplacement(car: Car): Car {
   return { ...car, engine };
 }
 
+/**
+ * All-wheel drive EPA recorded as two-wheel drive against the car's own name
+ * and size class: a 2011 ML350 and R350 "4matic", a 2014 Range Rover Sport.
+ */
+const AWD_NAME = /\b(?:awd|4wd|4x4|4matic|xdrive|quattro|4motion|all4)\b/i;
+const TWO_WD_NAME = /\b(?:fwd|rwd|2wd|sdrive|4x2)\b/i;
+
+function correctDriveType(car: Car): Car {
+  if (car.driveType !== 'FWD' && car.driveType !== 'RWD') return car;
+  const alwaysDriven =
+    car.make === 'Land Rover' ||
+    (car.make === 'BMW' && /^x5\b/i.test(car.model) && car.year <= 2006);
+  const named = AWD_NAME.test(car.model) && !TWO_WD_NAME.test(car.model);
+  if (!alwaysDriven && !named) return car;
+  return {
+    ...car,
+    driveType: car.make === 'Land Rover' ? '4WD' : 'AWD',
+    provenance: { ...car.provenance, driveType: 'estimated' },
+  };
+}
+
 export function normalizeCarRecord(car: Car): Car {
-  let normalized = car;
+  let normalized = correctDriveType(car);
 
   if (isFuelCellVehicle(normalized)) {
     normalized = {

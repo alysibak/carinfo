@@ -45,6 +45,18 @@ describe('car-normalize', () => {
     expect(pipeline.price?.confidence).toBeTruthy();
   });
 
+  it('trusts an all-wheel-drive name over a two-wheel-drive record', () => {
+    // EPA recorded the 2011 ML350 4matic as rear-wheel drive.
+    const ml = findCar((c) => c.model === 'ML350 4matic' && c.year === 2011);
+    expect(ml).toBeDefined();
+    const normalized = normalizeCarRecord({ ...ml!, driveType: 'RWD' });
+    expect(normalized.driveType).toBe('AWD');
+    expect(normalized.provenance.driveType).toBe('estimated');
+    // An sDrive BMW is rear-wheel drive whatever its size class says.
+    const sDrive = findCar((c) => c.model === 'X3 sDrive30i' && c.year === 2019);
+    expect(normalizeCarRecord(sDrive!).driveType).toBe('RWD');
+  });
+
   it("reads EPA's AV-S codes as CVTs", () => {
     // "(AV-S7)" is a CVT with seven simulated steps: 938 cars showed as
     // "7-Speed Automatic", a 2021 Elantra as "1-Speed Automatic".
