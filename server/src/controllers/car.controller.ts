@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { HttpError } from '../middleware/error-handler.js';
 import * as carService from '../services/car.service.js';
 import * as dashboardService from '../services/dashboard.service.js';
+import * as collectionsService from '../services/collections.service.js';
 import { parseRegionId } from '../config/regional-assumptions.js';
 import { normalizeSearchQuery, parseSearchQueryString } from '../utils/search-validation.js';
 
@@ -247,6 +248,17 @@ export function getChartPoints(req: Request, res: Response, next: NextFunction) 
     });
 
     res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * The first picks of every curated shortlist, for the home page's previews.
+ */
+export function getCollectionPreviews(_req: Request, res: Response, next: NextFunction) {
+  try {
+    res.json({ success: true, data: collectionsService.getCollectionPreviews() });
   } catch (error) {
     next(error);
   }

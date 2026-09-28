@@ -30,6 +30,9 @@ router.get('/stats/overview', cacheData, carController.getStatistics);
 router.get('/stats/chart-density', cacheData, carController.getChartDensity);
 router.get('/stats/chart-points', cacheData, carController.getChartPoints);
 
+// First picks of every curated shortlist (before /:id to avoid param capture)
+router.get('/collections/previews', cacheData, carController.getCollectionPreviews);
+
 // Get car dashboard
 router.get('/:id/dashboard', cacheData, carController.getCarDashboard);
 

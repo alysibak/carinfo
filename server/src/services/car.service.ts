@@ -742,6 +742,11 @@ const SUBMODEL_KEYS: Record<string, Array<[RegExp, string]>> = {
   genesis: [[/^electrified (\w+)/, 'electrified $1']],
 };
 
+/** The model line a car belongs to, as "one per model" groups them: "honda|civic". */
+export function modelLineKey(car: Pick<Car, 'make' | 'model'>): string {
+  return `${car.make}|${collapseModelKey(car.make, car.model)}`.toLowerCase();
+}
+
 /** Stable one-per-model key from messy EPA model strings. */
 function collapseModelKey(make: string, model: string): string {
   // EPA marks a new generation "New" (New Range Rover, New Wrangler Unlimited).

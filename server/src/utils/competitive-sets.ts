@@ -675,16 +675,25 @@ function displayRank(set: CompetitiveSet, car: CarSpecs): number {
   return QUALIFYING_SETS.has(set) ? 3 : 2;
 }
 
+function displayOrder(car: CarSpecs & { id?: string }): CompetitiveSet[] {
+  return competitiveSets(car)
+    .map((set, order) => ({ set, order, rank: displayRank(set, car) }))
+    .sort((a, b) => a.rank - b.rank || a.order - b.order)
+    .map(({ set }) => set);
+}
+
+/** The class a car is first shopped in: its size and price class, as the label leads with. */
+export function primaryCompetitiveSet(car: CarSpecs & { id?: string }): CompetitiveSet | undefined {
+  return displayOrder(car)[0];
+}
+
 /**
  * The classes a car is shopped in, for display: the size and price class
  * first, then one that qualifies it ("Full-size luxury SUV · Off-roader"). It
  * showed the first set alone, so a G-Class read "Off-roader".
  */
 export function competitiveClassLabel(car: CarSpecs & { id?: string }): string | undefined {
-  const sets = competitiveSets(car)
-    .map((set, order) => ({ set, order, rank: displayRank(set, car) }))
-    .sort((a, b) => a.rank - b.rank || a.order - b.order)
-    .map(({ set }) => set);
+  const sets = displayOrder(car);
   if (!sets.length) return undefined;
   const shown = sets.length > 1 && !REDUNDANT_PAIRS.has(`${sets[0]}|${sets[1]}`) ? 2 : 1;
   return sets

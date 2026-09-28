@@ -71,6 +71,11 @@ export function normalizeSearchQuery(body: unknown): SearchQuery {
       displacement: asRange(filtersRaw.displacement),
       fuelEconomy: asRange(filtersRaw.fuelEconomy),
       price: asRange(filtersRaw.price),
+      // Read from words ("third row", "300 mile range") and, for the curated
+      // shortlists, sent as filters: dropped here, "Family fortress" listed
+      // every car of 2020 on and "Future-proof" every EV.
+      threeRow: typeof filtersRaw.threeRow === 'boolean' ? filtersRaw.threeRow : undefined,
+      rangeMiles: asRange(filtersRaw.rangeMiles),
     };
   }
 

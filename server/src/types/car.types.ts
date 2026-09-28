@@ -464,8 +464,32 @@ export interface TcoRange {
   mid: number;
 }
 
+/**
+ * How a car sits against its class: rivals in the same competitive set within
+ * a model year of it, one figure per model line so a model sold in forty
+ * configurations counts once. Medians, not means, so one supercar in a class
+ * does not move the middle.
+ */
+export interface ClassComparison {
+  /** "Sport compact": the class the rivals are drawn from. */
+  className: string;
+  /** Rival model lines behind the medians. */
+  models: number;
+  /** Model years the rivals are drawn from. */
+  years: { min: number; max: number };
+  /** Combined fuel use; kWh/100 km among electric rivals only. Lower is better. */
+  fuel?: { unit: 'L/100 km' | 'kWh/100 km'; car: number; median: number; models: number };
+  /** Yearly running cost, CAD, on the default region's basis for car and class alike. */
+  annualCost?: { car: number; median: number; models: number };
+  /** Estimated value, CAD. */
+  value?: { car: number; median: number; models: number };
+  horsepower?: { car: number; median: number; models: number };
+}
+
 export interface CarDashboard {
   car: Car;
+  /** The car against its class (utils/class-comparison.ts); absent when it has no class. */
+  classComparison?: ClassComparison;
   segmentCount: number;
   ownership: OwnershipEconomics;
   dealRating: string | null;
