@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { ClerkProvider } from '@clerk/clerk-react';
+import { ClerkMountedContext } from '../utils/clerkMounted';
 import { AccountSyncBridge } from './AccountAuth';
 
 /**
@@ -15,8 +16,10 @@ export default function ClerkShell({
 }) {
   return (
     <ClerkProvider publishableKey={publishableKey} afterSignOutUrl="/">
-      <AccountSyncBridge />
-      {children}
+      <ClerkMountedContext.Provider value={true}>
+        <AccountSyncBridge />
+        {children}
+      </ClerkMountedContext.Provider>
     </ClerkProvider>
   );
 }
