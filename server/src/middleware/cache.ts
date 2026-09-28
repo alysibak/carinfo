@@ -35,6 +35,20 @@ export const CACHE_SHORT: CachePolicy = {
   staleWhileRevalidate: ONE_HOUR,
 };
 
+/** Stands in for a deployment name where the host gives none: a restart is a deploy there. */
+const PROCESS_STARTED = `started-${Date.now()}`;
+
+/**
+ * The deployment serving the response. An ETag has to change with the code
+ * that shapes a response, not only with the data: a deploy that added the
+ * model count to /stats/overview kept the dataset's ETag, so browsers holding
+ * the old body revalidated, got 304 and kept a body without the field, and
+ * the new home page crashed reading it. Vercel names every deployment.
+ */
+export function deploymentId(): string {
+  return process.env.VERCEL_DEPLOYMENT_ID || process.env.VERCEL_GIT_COMMIT_SHA || PROCESS_STARTED;
+}
+
 function formatCacheControl(policy: CachePolicy): string {
   const parts = ['public'];
   if (policy.maxAge != null) parts.push(`max-age=${policy.maxAge}`);
@@ -46,8 +60,9 @@ function formatCacheControl(policy: CachePolicy): string {
 }
 
 /**
- * Tag responses with the dataset fingerprint plus the request's own shape, so
- * two different queries never collide on one ETag. Cheap to compute (a hash of
+ * Tag responses with the dataset fingerprint, the deployment and the request's
+ * own shape, so two different queries never collide on one ETag and a deploy
+ * never 304s a body the new code no longer sends. Cheap to compute (a hash of
  * a short string) and it turns repeat traffic into 304s with no body.
  */
 export function dataCache(policy: CachePolicy = CACHE_IMMUTABLE_DATA) {
@@ -64,7 +79,7 @@ export function dataCache(policy: CachePolicy = CACHE_IMMUTABLE_DATA) {
     }
 
     const etag = `W/"${createHash('sha1')
-      .update(`${version}|${req.originalUrl}`)
+      .update(`${version}|${deploymentId()}|${req.originalUrl}`)
       .digest('base64url')}"`;
 
     res.setHeader('Cache-Control', cacheControl);

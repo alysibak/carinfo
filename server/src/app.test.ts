@@ -103,6 +103,25 @@ describe('caching', () => {
     expect(second.text).toBeFalsy();
   });
 
+  it('does not 304 a body from an earlier deployment of the same data', async () => {
+    // A deploy that adds a field must reach browsers holding the old body.
+    const before = process.env.VERCEL_DEPLOYMENT_ID;
+    try {
+      process.env.VERCEL_DEPLOYMENT_ID = 'dpl_old';
+      const old = await request(app).get('/api/cars/stats/overview');
+      process.env.VERCEL_DEPLOYMENT_ID = 'dpl_new';
+      const revalidated = await request(app)
+        .get('/api/cars/stats/overview')
+        .set('if-none-match', old.headers.etag);
+      expect(revalidated.status).toBe(200);
+      expect(revalidated.headers.etag).not.toBe(old.headers.etag);
+      expect(revalidated.body.data.totalModels).toBeGreaterThan(900);
+    } finally {
+      if (before === undefined) delete process.env.VERCEL_DEPLOYMENT_ID;
+      else process.env.VERCEL_DEPLOYMENT_ID = before;
+    }
+  });
+
   it('gives different queries different ETags', async () => {
     const a = await request(app).get('/api/cars/search?q=camry');
     const b = await request(app).get('/api/cars/search?q=civic');

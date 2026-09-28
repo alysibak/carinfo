@@ -26,4 +26,24 @@ describe('ErrorBoundary', () => {
 
     spy.mockRestore();
   });
+
+  it('keeps the rest of the page when a part with a fallback fails', () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    render(
+      <MemoryRouter>
+        <ErrorBoundary>
+          <h1>Home</h1>
+          <ErrorBoundary fallback={null}>
+            <Boom />
+          </ErrorBoundary>
+        </ErrorBoundary>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Home' })).toBeInTheDocument();
+    expect(screen.queryByText(/something went wrong/i)).not.toBeInTheDocument();
+
+    spy.mockRestore();
+  });
 });

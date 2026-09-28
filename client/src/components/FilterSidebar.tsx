@@ -147,8 +147,13 @@ export default function FilterSidebar({
         if (Array.isArray(stats.countries) && stats.countries.length > 0) {
           setCountries(stats.countries);
         }
-        if (stats.totalCars > 0 && stats.coverage) {
-          setRatedShare(stats.coverage.nhtsaSafety / stats.totalCars);
+        const rated = stats.coverage?.nhtsaSafety;
+        if (
+          typeof rated === 'number' &&
+          typeof stats.totalCars === 'number' &&
+          stats.totalCars > 0
+        ) {
+          setRatedShare(rated / stats.totalCars);
         }
       })
       .catch(() => {

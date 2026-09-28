@@ -5,6 +5,22 @@ import * as api from '../services/api';
 import type { DatabaseStatistics } from '../services/api';
 
 /**
+ * A count from the stats endpoint, or the rounded stand-in when the response
+ * lacks it. A browser can hold a response from before a field existed: the
+ * model count arrived in one deploy, cached copies without it crashed the
+ * home page on `undefined.toLocaleString()`.
+ */
+function countOr(value: unknown, fallback: string): string {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? value.toLocaleString('en-CA')
+    : fallback;
+}
+
+function yearOr(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+/**
  * What is on file, from the live counts (GET /cars/stats/overview), so the
  * numbers move with the data rather than going stale in the copy. The big
  * number is labelled for what it counts: EPA lists each engine, gearbox and
@@ -31,14 +47,11 @@ export default function CatalogueStats({ className = '' }: { className?: string 
   }, []);
 
   const figures = [
+    { value: countOr(stats?.totalCars, '35,000+'), label: 'versions EPA tested' },
+    { value: countOr(stats?.totalModels, '1,000+'), label: 'models' },
+    { value: countOr(stats?.totalMakes, '90+'), label: 'makes' },
     {
-      value: stats ? stats.totalCars.toLocaleString('en-CA') : '35,000+',
-      label: 'versions EPA tested',
-    },
-    { value: stats ? stats.totalModels.toLocaleString('en-CA') : '1,000+', label: 'models' },
-    { value: stats ? String(stats.totalMakes) : '90+', label: 'makes' },
-    {
-      value: `${stats?.yearRange.min ?? FIRST_MODEL_YEAR}–${stats?.yearRange.max ?? LATEST_MODEL_YEAR}`,
+      value: `${yearOr(stats?.yearRange?.min, FIRST_MODEL_YEAR)}–${yearOr(stats?.yearRange?.max, LATEST_MODEL_YEAR)}`,
       label: 'model years',
     },
   ];

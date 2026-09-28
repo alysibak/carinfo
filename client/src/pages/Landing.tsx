@@ -13,6 +13,7 @@ import { searchQueryToParams } from '../utils/searchParams';
 import { HERO_PREVIEW_QUERY, pickHeroPreviewCar } from '../utils/landingShowcase';
 import { usePageMeta } from '../utils/pageMeta';
 import CompareTray from '../components/CompareTray';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { useCarStore } from '../stores/carStore';
 
 const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/i;
@@ -127,11 +128,15 @@ export default function Landing() {
                   </button>
                 </div>
               </div>
-              <CatalogueStats className="mt-8 pt-6 border-t border-zinc-800/80 animate-hero-rise [animation-delay:100ms]" />
+              <ErrorBoundary fallback={null}>
+                <CatalogueStats className="mt-8 pt-6 border-t border-zinc-800/80 animate-hero-rise [animation-delay:100ms]" />
+              </ErrorBoundary>
             </div>
             {heroCar && (
               <div className="animate-hero-rise [animation-delay:120ms] w-full max-w-md lg:max-w-none">
-                <SampleCarCard car={heroCar} />
+                <ErrorBoundary fallback={null}>
+                  <SampleCarCard car={heroCar} />
+                </ErrorBoundary>
               </div>
             )}
           </div>
@@ -213,7 +218,9 @@ export default function Landing() {
           <p className="text-[15px] text-zinc-400 mb-6 max-w-xl leading-relaxed">
             Ranked picks for common situations, one per model, not every trim on file.
           </p>
-          <ShortlistCards />
+          <ErrorBoundary fallback={null}>
+            <ShortlistCards />
+          </ErrorBoundary>
         </section>
       </main>
 

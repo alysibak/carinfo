@@ -3,6 +3,13 @@ import { Link } from 'react-router-dom';
 
 interface Props {
   children: ReactNode;
+  /**
+   * Shown in place of the children when they fail, instead of the full-page
+   * error. For a part of a page the rest can do without, such as the home
+   * page's counts: one widget reading a field its response lacked took the
+   * whole home page down.
+   */
+  fallback?: ReactNode;
 }
 
 interface State {
@@ -22,6 +29,7 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (!this.state.error) return this.props.children;
+    if (this.props.fallback !== undefined) return this.props.fallback;
 
     return (
       <div className="min-h-[50vh] bg-black text-white flex items-center justify-center px-6">
