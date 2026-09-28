@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom';
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useCarStore } from '../stores/carStore';
 import type { CarDashboard, CarSpecs } from '../types/car.types';
 import * as api from '../services/api';
@@ -21,6 +21,7 @@ import { formatCompareIds, parseCompareIds } from '../utils/compareIds';
 import { differentiateCars } from '../utils/differentiateCars';
 import { regionName, useRegionStore } from '../stores/regionStore';
 import { POPULAR_SEARCHES } from '../config/browseTaxonomy';
+import RegionSelect from '../components/RegionSelect';
 
 function isUnavailable(value: string | number): boolean {
   return value === UNAVAILABLE_LABEL;
@@ -42,8 +43,33 @@ interface SpecRow {
   unitOf?: (car: CarSpecs) => string | undefined;
 }
 
-/** Money rows: the page says once that they are estimates in CAD. */
-const MONEY_ROWS = new Set(['price', 'running', 'energy', 'fiveYear']);
+/**
+ * Rows from the records first, then the estimates as a group of their own:
+ * the table used to open with estimated value and costs, above what EPA and
+ * NHTSA measured.
+ */
+const ESTIMATE_ROWS = new Set(['price', 'running', 'energy', 'fiveYear', 'zeroToSixty']);
+const ROW_ORDER = [
+  'fuelUse',
+  'fuelCity',
+  'fuelHighway',
+  'range',
+  'safety',
+  'horsepower',
+  'torque',
+  'engine',
+  'transmission',
+  'driveType',
+  'fuelType',
+  'bodyStyle',
+  'co2',
+  'country',
+  'price',
+  'running',
+  'energy',
+  'fiveYear',
+  'zeroToSixty',
+];
 
 const bodyLabel = (style: string) =>
   style === 'suv'
@@ -357,14 +383,19 @@ export default function Compare() {
     dashboard: dashboardById.get(car.id),
   }));
 
-  const specs = ALL_SPECS.filter((spec) =>
-    pairs.some(({ car, dashboard }) => dashboard && !isUnavailable(spec.getValue(car, dashboard))),
-  );
+  const specs = [...ALL_SPECS]
+    .sort((a, b) => ROW_ORDER.indexOf(a.key) - ROW_ORDER.indexOf(b.key))
+    .filter((spec) =>
+      pairs.some(
+        ({ car, dashboard }) => dashboard && !isUnavailable(spec.getValue(car, dashboard)),
+      ),
+    );
 
   const bestByRow = new Map<string, number>();
   if (pairs.length > 1 && !loading) {
     for (const spec of specs) {
-      if (!spec.getNumeric) continue;
+      // "Best" is for what was measured, not for the cheapest estimate.
+      if (!spec.getNumeric || ESTIMATE_ROWS.has(spec.key)) continue;
       const loaded = pairs.filter((p) => p.dashboard);
       if (spec.unitOf && new Set(loaded.map((p) => spec.unitOf!(p.car))).size > 1) continue;
       const values = loaded
@@ -403,8 +434,7 @@ export default function Compare() {
             <div className="min-w-0">
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Compare</h1>
               <p className="text-sm text-zinc-400 mt-0.5">
-                {comparedCars.length} vehicle{comparedCars.length !== 1 ? 's' : ''} · estimates in
-                CAD for {regionName(region)}
+                {comparedCars.length} vehicle{comparedCars.length !== 1 ? 's' : ''}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -511,80 +541,111 @@ export default function Compare() {
                   </tr>
                 </thead>
                 <tbody>
-                  {specs.map((spec) => (
-                    <tr key={spec.key} className="border-b border-zinc-900">
-                      <th
-                        scope="row"
-                        className="sticky left-0 z-10 bg-black border-r border-zinc-800 px-3 sm:px-4 py-3 text-left font-normal align-top"
-                      >
-                        <span className="block text-[13px] text-zinc-300 leading-snug">
-                          {spec.label}
-                        </span>
-                        {spec.hint && (
-                          <span className="hidden sm:block text-xs text-zinc-500 mt-0.5">
-                            {spec.hint}
-                          </span>
-                        )}
-                        {spec.isEstimatedRow && (
-                          <span className="block text-xs text-zinc-500 mt-0.5">est.</span>
-                        )}
-                      </th>
-                      {pairs.map(({ car, dashboard }) => {
-                        if (!dashboard) {
-                          return (
-                            <td
-                              key={car.id}
-                              className="px-2 sm:px-4 py-3 border-l border-zinc-800 text-zinc-400 text-xs"
+                  {specs.map((spec, index) => {
+                    const estimate = ESTIMATE_ROWS.has(spec.key);
+                    const startsGroup =
+                      index === 0 || ESTIMATE_ROWS.has(specs[index - 1].key) !== estimate;
+                    return (
+                      <Fragment key={spec.key}>
+                        {startsGroup && (
+                          <tr className="border-b border-zinc-800">
+                            <th
+                              colSpan={pairs.length + 1}
+                              scope="colgroup"
+                              className="sticky left-0 bg-black px-3 sm:px-4 pt-6 pb-2.5 text-left font-normal"
                             >
-                              …
-                            </td>
-                          );
-                        }
-                        const best = bestByRow.get(spec.key);
-                        const numeric = spec.getNumeric?.(car, dashboard) ?? null;
-                        const isBest = best != null && numeric != null && numeric === best;
-                        const raw = spec.getValue(car, dashboard);
-                        const missing = isUnavailable(raw);
-                        const sub = missing ? null : spec.getSub?.(car, dashboard);
-                        const prov = resolveProvenance(dashboard, spec);
-                        return (
-                          <td
-                            key={car.id}
-                            className={`px-2 sm:px-4 py-3 border-l border-zinc-800 align-top sm:text-center ${
-                              isBest && !missing ? 'compare-win' : ''
-                            }`}
-                          >
-                            {missing ? (
-                              <span className="text-xs text-zinc-500 italic">Not on file</span>
-                            ) : (
-                              <>
-                                <span
-                                  className={`text-sm sm:text-[15px] tabular-nums break-words ${
-                                    isBest ? 'font-bold text-white' : 'text-zinc-100'
-                                  }`}
-                                >
-                                  {raw}
+                              <span className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                                <span className="eyebrow">
+                                  {estimate ? 'Estimates' : 'From EPA and NHTSA'}
                                 </span>
-                                {isBest && (
-                                  <span className="ml-1.5 inline-block text-xs font-semibold text-accent align-middle">
-                                    Best
-                                  </span>
+                                {estimate && (
+                                  <>
+                                    <span className="text-xs text-zinc-500">
+                                      Model figures in CAD, not quotes
+                                    </span>
+                                    <RegionSelect />
+                                  </>
                                 )}
-                                {sub && (
-                                  <span className="block text-xs text-zinc-500 mt-0.5">{sub}</span>
-                                )}
-                                {prov === 'estimated' &&
-                                  !MONEY_ROWS.has(spec.key) &&
-                                  !spec.isEstimatedRow && (
-                                    <span className="block text-xs text-zinc-500 mt-0.5">est.</span>
-                                  )}
-                              </>
+                              </span>
+                            </th>
+                          </tr>
+                        )}
+                        <tr className="border-b border-zinc-900">
+                          <th
+                            scope="row"
+                            className="sticky left-0 z-10 bg-black border-r border-zinc-800 px-3 sm:px-4 py-3 text-left font-normal align-top"
+                          >
+                            <span className="block text-[13px] text-zinc-300 leading-snug">
+                              {spec.label}
+                            </span>
+                            {spec.hint && (
+                              <span className="hidden sm:block text-xs text-zinc-500 mt-0.5">
+                                {spec.hint}
+                              </span>
                             )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
+                          </th>
+                          {pairs.map(({ car, dashboard }) => {
+                            if (!dashboard) {
+                              return (
+                                <td
+                                  key={car.id}
+                                  className="px-2 sm:px-4 py-3 border-l border-zinc-800 text-zinc-400 text-xs"
+                                >
+                                  …
+                                </td>
+                              );
+                            }
+                            const best = bestByRow.get(spec.key);
+                            const numeric = spec.getNumeric?.(car, dashboard) ?? null;
+                            const isBest = best != null && numeric != null && numeric === best;
+                            const raw = spec.getValue(car, dashboard);
+                            const missing = isUnavailable(raw);
+                            const sub = missing ? null : spec.getSub?.(car, dashboard);
+                            const prov = resolveProvenance(dashboard, spec);
+                            return (
+                              <td
+                                key={car.id}
+                                className={`px-2 sm:px-4 py-3 border-l border-zinc-800 align-top sm:text-center ${
+                                  isBest && !missing ? 'compare-win' : ''
+                                }`}
+                              >
+                                {missing ? (
+                                  <span className="text-xs text-zinc-500 italic">Not on file</span>
+                                ) : (
+                                  <>
+                                    <span
+                                      className={`text-sm sm:text-[15px] tabular-nums break-words ${
+                                        isBest ? 'font-bold text-white' : 'text-zinc-100'
+                                      }`}
+                                    >
+                                      {raw}
+                                    </span>
+                                    {isBest && (
+                                      <span className="ml-1.5 inline-block text-xs font-semibold text-accent align-middle">
+                                        Best
+                                      </span>
+                                    )}
+                                    {sub && (
+                                      <span className="block text-xs text-zinc-500 mt-0.5">
+                                        {sub}
+                                      </span>
+                                    )}
+                                    {prov === 'estimated' &&
+                                      !ESTIMATE_ROWS.has(spec.key) &&
+                                      !spec.isEstimatedRow && (
+                                        <span className="block text-xs text-zinc-500 mt-0.5">
+                                          est.
+                                        </span>
+                                      )}
+                                  </>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      </Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

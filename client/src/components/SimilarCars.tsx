@@ -56,7 +56,7 @@ export default function SimilarCars({ car }: { car: CarSpecs }) {
           <ul className="border-t border-zinc-800">
             {cars.map((alt) => {
               const efficiency = efficiencyOf(alt);
-              const price = formatPriceShort(alt.price?.msrp, true);
+              const price = formatPriceShort(alt.price?.msrp, false);
               const inCompare = comparedCars.some((c) => c.id === alt.id);
               return (
                 <li key={alt.id} className="border-b border-zinc-900">
@@ -73,9 +73,10 @@ export default function SimilarCars({ car }: { car: CarSpecs }) {
                       <p className="text-xs text-zinc-500 mt-1.5">
                         {[
                           efficiency?.text,
-                          price !== 'Not on file' ? `est. ${price}` : null,
+                          alt.engine.horsepower ? `${alt.engine.horsepower} hp` : null,
                           bodyStyleLabel(alt.bodyStyle),
                           alt.driveType,
+                          price !== 'Not on file' ? `est. value ~${price}` : null,
                         ]
                           .filter(Boolean)
                           .join(' · ')}

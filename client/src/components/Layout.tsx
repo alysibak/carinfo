@@ -72,6 +72,13 @@ export default function Layout() {
               Methodology &amp; data policy
             </Link>
             <span aria-hidden="true"> · </span>
+            <Link
+              to="/value-matrix"
+              className="text-zinc-400 hover:text-white underline underline-offset-2"
+            >
+              Value chart
+            </Link>
+            <span aria-hidden="true"> · </span>
             <span className="text-zinc-400">Body-type illustrations only, no listing photos</span>
           </p>
         </div>

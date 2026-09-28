@@ -84,3 +84,9 @@ function round1(n: number): number {
 export function rangeKm(miles: number): number {
   return Math.round(miles * KM_PER_MILE);
 }
+
+/** EPA's tailpipe CO₂, published in grams per mile, as "210 g/km (338 g/mi)". */
+export function formatCo2(gramsPerMile: number): string {
+  if (gramsPerMile === 0) return '0 g/km';
+  return `${Math.round(gramsPerMile / KM_PER_MILE)} g/km (${Math.round(gramsPerMile)} g/mi)`;
+}

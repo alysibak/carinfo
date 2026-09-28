@@ -1,6 +1,5 @@
 import type { CarDashboard, CarSpecs } from '../types/car.types';
 import { efficiencyOf, rangeKm } from './efficiency';
-import { formatMoney, formatMoneyShort } from './money';
 import { displayModelLabel } from './trimLabel';
 
 export interface ComparePair {
@@ -63,9 +62,9 @@ function joinWords(parts: string[]): string {
 }
 
 /**
- * What each car on a compare page has that the others do not, in a sentence:
- * the only SUV, the only AWD, the cheapest to buy or run, the thriftiest, the
- * best NHTSA rating, the most power. The section used to print "Body styles:
+ * What each car on a compare page has that the others do not, in a sentence,
+ * from the records: the only SUV, the only AWD, the least fuel, the best NHTSA
+ * rating, the most power, the longest range. The section used to print "Body styles:
  * sedan, suv" and "Different shape — the sedan in this set".
  */
 export function summarizeComparison(pairs: ComparePair[]): CompareLine[] {
@@ -101,36 +100,8 @@ export function summarizeComparison(pairs: ComparePair[]): CompareLine[] {
     }
   }
 
-  const value = leader(
-    pairs.flatMap(({ car, dashboard }) => {
-      const mid =
-        dashboard && !dashboard.ownership.unvalued ? dashboard.ownership.marketValue.mid : 0;
-      return mid > 0 ? [{ id: car.id, value: mid }] : [];
-    }),
-    true,
-    (best, next) => next - best >= 1500 && (next - best) / next >= 0.06,
-  );
-  if (value) {
-    add(
-      value.id,
-      `the cheapest to buy (~${formatMoneyShort(value.best)} against ~${formatMoneyShort(value.next)})`,
-    );
-  }
-
-  const running = leader(
-    pairs.flatMap(({ car, dashboard }) => {
-      const mid = dashboard?.annualRunningCost?.mid;
-      return mid && mid > 0 && !dashboard.ownership.unvalued ? [{ id: car.id, value: mid }] : [];
-    }),
-    true,
-    (best, next) => next - best >= 250 && (next - best) / next >= 0.05,
-  );
-  if (running) {
-    add(
-      running.id,
-      `the cheapest to run (about ${formatMoney(Math.round((running.next - running.best) / 50) * 50)} a year less)`,
-    );
-  }
+  // The cheapest to buy or run is an estimate; the summary sticks to what was
+  // measured. The estimates have their own rows further down the table.
 
   // Litres and kilowatt-hours do not compare: only when every car shares a unit.
   const efficiencies = cars.map((car) => ({ car, eff: efficiencyOf(car) }));

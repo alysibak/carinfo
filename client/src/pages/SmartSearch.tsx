@@ -389,13 +389,13 @@ export default function SmartSearch() {
                       )}
                       <p className="text-xs text-zinc-500 mt-2">
                         {[
-                          car.price?.msrp != null
-                            ? `est. ${formatPriceShort(car.price.msrp, false)}`
-                            : null,
                           efficiencyOf(car)?.text,
                           formatPowerForCard(car.engine.horsepower),
                           bodyStyleLabel(car.bodyStyle),
                           formatCarFuelLabel(car),
+                          car.price?.msrp != null
+                            ? `est. value ~${formatPriceShort(car.price.msrp, false)}`
+                            : null,
                         ]
                           .filter((x) => x && x !== 'Not on file')
                           .join(' · ')}

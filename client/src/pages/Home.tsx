@@ -457,16 +457,21 @@ export default function Home() {
                         ...(searchText || sortField === 'relevance'
                           ? [{ value: 'relevance', label: 'Best match' }]
                           : []),
+                        // What EPA and NHTSA recorded first; the estimates last, and named so.
+                        {
+                          value: 'fuelEconomy',
+                          label: isEvBrowse ? 'Energy use (EPA)' : 'Fuel use (EPA)',
+                        },
+                        ...(isEvBrowse || sortField === 'range'
+                          ? [{ value: 'range', label: 'EPA range' }]
+                          : []),
+                        { value: 'safety', label: 'NHTSA rating' },
+                        { value: 'horsepower', label: 'Horsepower' },
                         { value: 'year', label: 'Year' },
                         { value: 'make', label: 'Make' },
                         { value: 'model', label: 'Model' },
                         { value: 'price', label: 'Est. value (CAD)' },
-                        { value: 'runningCost', label: 'Running cost / yr' },
-                        { value: 'horsepower', label: 'Horsepower' },
-                        ...(isEvBrowse || sortField === 'range'
-                          ? [{ value: 'range', label: 'EPA range' }]
-                          : []),
-                        { value: 'fuelEconomy', label: isEvBrowse ? 'MPGe' : 'MPG' },
+                        { value: 'runningCost', label: 'Est. running cost' },
                       ]}
                     />
                     <button

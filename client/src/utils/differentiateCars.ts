@@ -79,17 +79,6 @@ const METRICS: MetricDef[] = [
     axisLabel: (spread) => `Fuel use runs ${spread}`,
   },
   {
-    key: 'price',
-    get: (car) => car.price?.msrp ?? null,
-    higherIsBetter: false,
-    minAbsDelta: 1500,
-    minRelDelta: 0.08,
-    labelBest: (_car, value, peers) =>
-      `Costs the least to buy (est. ${formatMoneyShort(value)}${peers ? ` vs ${peers}` : ''})`,
-    labelWorst: (_car, value) => `Costs the most to buy (est. ${formatMoneyShort(value)})`,
-    axisLabel: (spread) => `Estimated values run ${spread}`,
-  },
-  {
     key: 'hp',
     get: (car) => car.engine.horsepower ?? null,
     higherIsBetter: true,
@@ -132,6 +121,17 @@ const METRICS: MetricDef[] = [
     labelBest: (_car, value, peers) =>
       `The longest electric range (${rangeKm(value)} km${peers ? ` vs ${peers}` : ''})`,
     axisLabel: (spread) => `Electric range runs ${spread}`,
+  },
+  {
+    key: 'price',
+    get: (car) => car.price?.msrp ?? null,
+    higherIsBetter: false,
+    minAbsDelta: 1500,
+    minRelDelta: 0.08,
+    labelBest: (_car, value, peers) =>
+      `Costs the least to buy (est. ${formatMoneyShort(value)}${peers ? ` vs ${peers}` : ''})`,
+    labelWorst: (_car, value) => `Costs the most to buy (est. ${formatMoneyShort(value)})`,
+    axisLabel: (spread) => `Estimated values run ${spread}`,
   },
 ];
 
@@ -192,7 +192,7 @@ function categoricalEdge(car: CarSpecs, set: CarSpecs[]): string | null {
 }
 
 function pickMetricEdge(car: CarSpecs, set: CarSpecs[]): string | null {
-  const candidates: { score: number; text: string }[] = [];
+  const candidates: { score: number; text: string; estimate: boolean }[] = [];
 
   for (const metric of METRICS) {
     if (metric.key === 'mpg' && !sharedFuelUnit(set)) continue;
@@ -221,6 +221,7 @@ function pickMetricEdge(car: CarSpecs, set: CarSpecs[]): string | null {
             ? (n: number) => `${rangeKm(n)}`
             : (n: number) => String(n);
 
+    const estimate = metric.key === 'price';
     if (mine.value === best && uniqueBest) {
       const peers =
         metric.key === 'mpg'
@@ -232,22 +233,26 @@ function pickMetricEdge(car: CarSpecs, set: CarSpecs[]): string | null {
       candidates.push({
         score: Math.abs(best - worst) / (metric.minAbsDelta || 1),
         text: metric.labelBest(car, mine.value, peers),
+        estimate,
       });
     } else if (mine.value === worst && uniqueWorst && metric.labelWorst && set.length <= 4) {
       candidates.push({
         score: (Math.abs(best - worst) / (metric.minAbsDelta || 1)) * 0.55,
         text: metric.labelWorst(car, mine.value, ''),
+        estimate,
       });
     }
   }
 
-  candidates.sort((a, b) => b.score - a.score);
+  // An estimated price speaks only when no measured figure sets the car apart.
+  candidates.sort((a, b) => Number(a.estimate) - Number(b.estimate) || b.score - a.score);
   return candidates[0]?.text ?? null;
 }
 
 function buildAxes(set: CarSpecs[]): string[] {
   const axes: string[] = [];
 
+  let priceAxis: string | null = null;
   for (const metric of METRICS) {
     if (metric.key === 'mpg' && !sharedFuelUnit(set)) continue;
     const scored = set
@@ -257,21 +262,26 @@ function buildAxes(set: CarSpecs[]): string[] {
     const values = scored.map((x) => x.value);
     if (!meaningfulSpread(values, metric.minAbsDelta, metric.minRelDelta)) continue;
 
+    if (metric.key === 'price') {
+      priceAxis = metric.axisLabel(
+        `${formatMoneyShort(Math.min(...values))}–${formatMoneyShort(Math.max(...values))}`,
+      );
+      continue;
+    }
+
     if (metric.key === 'mpg') {
       axes.push(metric.axisLabel(`${fuelSpread(set[0], values)} ${fuelUnit(set[0])}`));
       continue;
     }
 
     const fmt =
-      metric.key === 'price'
-        ? formatMoneyShort
-        : metric.key === 'hp'
-          ? (n: number) => `${Math.round(n)} hp`
-          : metric.key === 'safety'
-            ? (n: number) => `${n}/5`
-            : metric.key === 'range'
-              ? (n: number) => `${rangeKm(n)} km`
-              : (n: number) => String(n);
+      metric.key === 'hp'
+        ? (n: number) => `${Math.round(n)} hp`
+        : metric.key === 'safety'
+          ? (n: number) => `${n}/5`
+          : metric.key === 'range'
+            ? (n: number) => `${rangeKm(n)} km`
+            : (n: number) => String(n);
 
     const lo = Math.min(...values);
     const hi = Math.max(...values);
@@ -291,6 +301,8 @@ function buildAxes(set: CarSpecs[]): string[] {
     ),
   ];
   if (bodies.length > 1) axes.push(`Different shapes: ${bodies.join(', ')}`);
+  // The records first; the estimated values only if there is room.
+  if (priceAxis) axes.push(priceAxis);
 
   return axes.slice(0, 3);
 }
@@ -394,6 +406,15 @@ interface PairMetric {
   text: (better: boolean, alt: number, anchor: number, car: CarSpecs) => string;
 }
 
+const PRICE_METRIC: PairMetric = {
+  get: (car) => car.price?.msrp ?? null,
+  minAbs: 1500,
+  minRel: 0.08,
+  higherIsBetter: false,
+  text: (better, a, b) =>
+    `${better ? 'Costs less' : 'Costs more'} (est. ${formatMoneyShort(a)} vs ${formatMoneyShort(b)})`,
+};
+
 const PAIR_METRICS: PairMetric[] = [
   {
     get: (car) => car.fuelEconomy.combined ?? null,
@@ -403,14 +424,7 @@ const PAIR_METRICS: PairMetric[] = [
     text: (better, a, b, car) =>
       `${better ? 'Uses less fuel' : 'Uses more fuel'} (${fuelUse(car, a)} vs ${fuelUse(car, b)} ${fuelUnit(car)})`,
   },
-  {
-    get: (car) => car.price?.msrp ?? null,
-    minAbs: 1500,
-    minRel: 0.08,
-    higherIsBetter: false,
-    text: (better, a, b) =>
-      `${better ? 'Costs less' : 'Costs more'} (est. ${formatMoneyShort(a)} vs ${formatMoneyShort(b)})`,
-  },
+  PRICE_METRIC,
   {
     get: (car) => car.engine.horsepower ?? null,
     minAbs: 25,
@@ -449,9 +463,14 @@ const PAIR_METRICS: PairMetric[] = [
   },
 ];
 
-/** The biggest measured difference worth a sentence, favouring the alternative's strengths. */
+/**
+ * The biggest measured difference worth a sentence, favouring the
+ * alternative's strengths. The estimated price speaks only when no measured
+ * figure differs enough.
+ */
 function metricDifference(anchor: CarSpecs, alt: CarSpecs, skipMpg: boolean): string | null {
   let best: { score: number; text: string } | null = null;
+  let priceText: string | null = null;
   for (const metric of PAIR_METRICS) {
     if (skipMpg && metric === PAIR_METRICS[0]) continue;
     const a = metric.get(alt);
@@ -464,10 +483,14 @@ function metricDifference(anchor: CarSpecs, alt: CarSpecs, skipMpg: boolean): st
     const better = metric.higherIsBetter ? a > b : a < b;
     // Relative to each threshold, so 121 hp of 301 does not outshout 6 MPG of 26.
     const size = metric.minRel > 0 && b > 0 ? delta / b / metric.minRel : delta / metric.minAbs;
+    if (metric === PRICE_METRIC) {
+      priceText = metric.text(better, a, b, alt);
+      continue;
+    }
     const score = size * (better ? 1.25 : 1);
     if (!best || score > best.score) best = { score, text: metric.text(better, a, b, alt) };
   }
-  return best?.text ?? null;
+  return best?.text ?? priceText;
 }
 
 /** No difference worth a sentence: the near-equal figures, so the note still says something. */

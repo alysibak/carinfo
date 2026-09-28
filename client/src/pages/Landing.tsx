@@ -22,8 +22,8 @@ function homeLinkFromPreset(preset: (typeof LIFESTYLE_PRESETS)[number]) {
 
 export default function Landing() {
   usePageMeta(
-    'What a car really costs in Canada',
-    'Browse 35,000+ vehicles with EPA fuel economy, NHTSA safety when on file, and labeled Ontario/CAD market estimates.',
+    'Car specs from the EPA and NHTSA',
+    'Browse 35,000+ vehicles with EPA fuel economy and range in Canadian units, NHTSA crash ratings when on file, and rated power, each marked with its source.',
   );
   const [showQuiz, setShowQuiz] = useState(false);
 
@@ -99,11 +99,12 @@ export default function Landing() {
             <div className="max-w-xl min-w-0">
               {/* The promise, not the brand: the header already says CarInfo. */}
               <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-bold tracking-tight leading-[1.05] mb-4 animate-hero-rise">
-                Know what a car really costs in Canada
+                Car specs from the EPA and NHTSA
               </h1>
               <p className="text-base md:text-lg text-zinc-300 leading-relaxed mb-6 md:mb-8 animate-hero-rise [animation-delay:40ms]">
-                What it&apos;s worth, what it costs a year to run, what it burns and how it did in
-                crash tests, for 35,000+ vehicles. EPA and NHTSA data, estimates in CAD.
+                Fuel use and range from EPA tests, crash ratings from NHTSA, and rated power for
+                35,000+ vehicles, in Canadian units and marked with their source. Anything we
+                estimate is labeled as an estimate.
               </p>
 
               <div className="animate-hero-rise [animation-delay:80ms]">

@@ -5,6 +5,7 @@ import { engineLayoutLabel, formatCarFuelLabel } from '../utils/fuelDisplay';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 import { displayTrimLabel, formatTransmissionLabel } from '../utils/trimLabel';
 import { efficiencyUnit } from '../utils/fuelLabels';
+import { formatCo2 } from '../utils/efficiency';
 import { fiveYearFuelSavings, fuelSavingsShort, phevModes } from '../utils/epaContent';
 import { formatAnnualEnergyCost } from '../utils/fuelLabels';
 import type { SpecGlossaryKey } from '../utils/specGlossary';
@@ -341,7 +342,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
       glossary: 'charge120',
     });
   }
-  // The server's figure for the viewer's cost region, as in "Cost to keep".
+  // The server's figure for the viewer's cost region, as in "Estimated costs".
   const annualFuelCad = formatAnnualEnergyCost(ownership.annualCost.energy);
   if (annualFuelCad) {
     pushIf(fuel, {
@@ -357,7 +358,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
     pushIf(environment, {
       key: 'co2',
       label: 'CO₂ emissions',
-      value: `${car.epa.co2} g/mi`,
+      value: formatCo2(car.epa.co2),
       glossary: 'co2',
     });
   }

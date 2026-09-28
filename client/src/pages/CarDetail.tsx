@@ -15,15 +15,16 @@ import TCOCalculator from '../components/TCOCalculator';
 import { StatusToast } from '../components/ui';
 import ValuationLinks from '../components/ValuationLinks';
 import VehiclePlaceholder from '../components/VehiclePlaceholder';
-import DecisionStats from '../components/DecisionStats';
+import KeyFigures from '../components/KeyFigures';
+import RegionSelect from '../components/RegionSelect';
 import PinnedCarBar from '../components/PinnedCarBar';
 import KeySpecs from '../components/KeySpecs';
 import SimilarCars from '../components/SimilarCars';
 import SiblingConfigs from '../components/SiblingConfigs';
 import DataTrustPanel from '../components/DataTrustPanel';
 import { DataRow } from '../components/DataValue';
-import { buildDecisionStats, buildSpecLine } from '../utils/decisionStats';
-import { efficiencyOf, type Efficiency } from '../utils/efficiency';
+import { buildKeyFigures, buildSpecLine } from '../utils/keyFigures';
+import { efficiencyOf, formatCo2, type Efficiency } from '../utils/efficiency';
 import { formatCarFuelLabel } from '../utils/fuelDisplay';
 import { formatKwhPer100KmFromMi } from '../utils/fuelEconomyUnits';
 import { formatTransmissionLabel } from '../utils/trimLabel';
@@ -306,7 +307,7 @@ export default function CarDetail() {
     hasNumericValue(car.epa?.barrelsPerYear) ||
     fiveYearFuelSavings(car) != null;
 
-  const statIds = new Set(buildDecisionStats(dashboard).map((stat) => stat.id));
+  const keyFigures = buildKeyFigures(dashboard);
   const hasCityHwy =
     hasNumericValue(car.fuelEconomy.city) || hasNumericValue(car.fuelEconomy.highway);
   const hasEvExtras =
@@ -329,7 +330,7 @@ export default function CarDetail() {
     (hasEconomics ||
       Boolean(marketValue.batteryHealth) ||
       (marketValue.conditionBands?.length ?? 0) > 0 ||
-      (hasMarketValue && !statIds.has('value')));
+      hasMarketValue);
 
   const specOmitKeys = [
     'mpgCity',
@@ -469,7 +470,7 @@ export default function CarDetail() {
           </div>
 
           <div ref={statsRef} className="mt-5 sm:mt-6">
-            <DecisionStats dashboard={dashboard} regionLabel={regionName(region)} />
+            <KeyFigures dashboard={dashboard} hasEstimates={showOwnership} />
           </div>
         </div>
       </section>
@@ -478,15 +479,13 @@ export default function CarDetail() {
         <PinnedCarBar
           title={title}
           figures={
-            [
-              hasMarketValue && !unvalued
-                ? `${formatMoneyRange(marketValue.low, marketValue.high)} value`
-                : null,
-              dashboard.annualRunningCost && !unvalued
-                ? `${formatMoneyRange(dashboard.annualRunningCost.low, dashboard.annualRunningCost.high)} a year`
-                : null,
-            ]
-              .filter(Boolean)
+            keyFigures
+              .filter((figure) => !figure.missing && figure.id !== 'engine')
+              .map((figure) =>
+                figure.id === 'safety'
+                  ? `NHTSA ${figure.value}/5`
+                  : `${figure.value}${figure.unit ? ` ${figure.unit}` : ''}`,
+              )
               .join(' · ') || null
           }
           inCompare={isInCompare}
@@ -628,7 +627,7 @@ export default function CarDetail() {
                   {car.epa?.co2 != null && (
                     <DataRow
                       label="CO₂"
-                      value={`${car.epa.co2} g/mi`}
+                      value={formatCo2(car.epa.co2)}
                       allowZero
                       glossaryKey="co2"
                     />
@@ -673,14 +672,15 @@ export default function CarDetail() {
       </section>
 
       {showOwnership && (
-        <section className="border-b border-zinc-900">
+        <section id="costs" className="border-b border-zinc-900 scroll-mt-32">
           <div className="page-wrap-wide section-y-tight">
             <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2 mb-4">
               <div className="min-w-0">
-                <h2 className="text-base font-bold tracking-tight mb-1">Cost to keep</h2>
-                <p className="text-xs text-zinc-500 leading-relaxed">
+                <h2 className="text-base font-bold tracking-tight mb-1">Estimated costs</h2>
+                <p className="text-xs text-zinc-500 leading-relaxed max-w-2xl">
                   {currencySectionNote(regionName(region))}
                 </p>
+                <RegionSelect className="mt-3" />
               </div>
               <ValuationLinks
                 compact
@@ -693,7 +693,7 @@ export default function CarDetail() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 md:gap-x-10 gap-y-5 md:gap-y-6">
               <div className="min-w-0">
-                {hasMarketValue && !statIds.has('value') && (
+                {hasMarketValue && (
                   <DataRow
                     label="Est. value range"
                     value={formatMoneyRange(marketValue.low, marketValue.high)}

@@ -90,6 +90,26 @@ describe('differentiateCars', () => {
     expect(byCarId.a.edge.length).toBeGreaterThan(10);
     expect(byCarId.b.edge.length).toBeGreaterThan(10);
   });
+
+  it('gives a measured edge before an estimated price', () => {
+    const thrifty = car({
+      id: 'thrifty',
+      make: 'Toyota',
+      model: 'Corolla',
+      fuelEconomy: { city: 31, highway: 40, combined: 35 },
+      price: { msrp: 19000, isEstimated: true },
+    });
+    const b = car({ id: 'b', make: 'Honda', model: 'Civic' });
+    const c = car({
+      id: 'c',
+      make: 'Mazda',
+      model: '3',
+      price: { msrp: 29000, isEstimated: true },
+    });
+    const { byCarId, axes } = differentiateCars([thrifty, b, c]);
+    expect(byCarId.thrifty.edge).toMatch(/least fuel/);
+    expect(axes[0]).toMatch(/^Fuel use runs/);
+  });
 });
 
 describe('differentiateVsAnchor', () => {
@@ -178,5 +198,38 @@ describe('differentiateVsAnchor', () => {
     expect(differentiateVsAnchor(camry, [twin]).twin).toBe(
       'Much the same on paper (9.0 vs 9.0 L/100 km, 290 vs 301 hp)',
     );
+  });
+
+  it('leans on a measured difference before the estimated price', () => {
+    const camry = car({
+      id: 'camry',
+      make: 'Toyota',
+      model: 'Camry',
+      year: 2023,
+      engine: { fuelType: 'gasoline', horsepower: 301 },
+      fuelEconomy: { city: 22, highway: 33, combined: 26 },
+      price: { msrp: 29000, isEstimated: true },
+    });
+    const optima = car({
+      id: 'optima',
+      make: 'Kia',
+      model: 'Optima',
+      year: 2020,
+      engine: { fuelType: 'gasoline', horsepower: 245 },
+      fuelEconomy: { city: 21, highway: 30, combined: 24 },
+      price: { msrp: 23000, isEstimated: true },
+    });
+    expect(differentiateVsAnchor(camry, [optima]).optima).toBe('Less power (245 vs 301 hp)');
+    // With nothing measured apart, the estimate may speak, marked as one.
+    const cheaper = car({
+      id: 'cheaper',
+      make: 'Toyota',
+      model: 'Camry',
+      year: 2023,
+      engine: { fuelType: 'gasoline', horsepower: 301 },
+      fuelEconomy: { city: 22, highway: 33, combined: 26 },
+      price: { msrp: 23000, isEstimated: true },
+    });
+    expect(differentiateVsAnchor(camry, [cheaper]).cheaper).toBe('Costs less (est. $23k vs $29k)');
   });
 });

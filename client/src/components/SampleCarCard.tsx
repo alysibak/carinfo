@@ -3,14 +3,16 @@ import { Link } from 'react-router-dom';
 import * as api from '../services/api';
 import type { CarDashboard, CarSpecs } from '../types/car.types';
 import { useRegionStore } from '../stores/regionStore';
-import { buildDecisionStats } from '../utils/decisionStats';
+import { buildKeyFigures } from '../utils/keyFigures';
+import ProvenanceChip from './ProvenanceChip';
 import { displayVehicleTitle } from '../utils/trimLabel';
 import VehiclePlaceholder from './VehiclePlaceholder';
 
 /**
  * A real car's page in miniature, for the home page: the figures every car
- * page leads with. It replaced a large grey drawing of the same car, which
- * showed a shape and said nothing about what the site does.
+ * page leads with, what EPA and NHTSA recorded, each with its source. It
+ * replaced a large grey drawing of the same car, which showed a shape and said
+ * nothing about what the site does.
  */
 export default function SampleCarCard({ car }: { car: CarSpecs }) {
   const region = useRegionStore((s) => s.region);
@@ -29,7 +31,7 @@ export default function SampleCarCard({ car }: { car: CarSpecs }) {
     };
   }, [car.id, region]);
 
-  const stats = dashboard ? buildDecisionStats(dashboard).slice(0, 4) : null;
+  const stats = dashboard ? buildKeyFigures(dashboard).slice(0, 4) : null;
 
   return (
     <Link
@@ -50,7 +52,10 @@ export default function SampleCarCard({ car }: { car: CarSpecs }) {
           <div key={stat?.id ?? i} className="bg-zinc-950 px-4 py-3 min-h-[76px]">
             {stat ? (
               <>
-                <dt className="text-xs text-zinc-400">{stat.label}</dt>
+                <dt className="text-xs text-zinc-400 flex items-start justify-between gap-2">
+                  <span className="min-w-0">{stat.label}</span>
+                  {stat.source && <ProvenanceChip source={stat.source} className="shrink-0" />}
+                </dt>
                 <dd className="mt-0.5">
                   <span
                     className={`text-lg font-bold tabular-nums ${stat.missing ? 'text-zinc-400' : 'text-white'}`}

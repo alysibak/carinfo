@@ -30,24 +30,23 @@ A full-stack car discovery and comparison platform. **Specs-first** — EPA fuel
 17. [Smart search & persona quiz](#smart-search--persona-quiz)
 18. [Garage & sharing](#garage--sharing)
 19. [Spec glossary](#spec-glossary)
-20. [Glance metrics](#glance-metrics)
-21. [KeySpecs groups](#keyspecs-groups)
-22. [Ownership & valuation model](#ownership--valuation-model)
-23. [Similar vehicles](#similar-vehicles)
-24. [VIN decoder](#vin-decoder)
-25. [Provenance system](#provenance-system)
-26. [Missing-data policy & labels](#missing-data-policy--labels)
-27. [Complete file inventory](#complete-file-inventory)
-28. [State management](#state-management)
-29. [Client utilities reference](#client-utilities-reference)
-30. [Server utilities reference](#server-utilities-reference)
-31. [Deployment](#deployment)
-32. [Scripts reference](#scripts-reference)
-33. [Dependencies](#dependencies)
-34. [Code reference](#code-reference)
-35. [Known limitations](#known-limitations)
-36. [Roadmap](#roadmap)
-37. [License](#license)
+20. [KeySpecs groups](#keyspecs-groups)
+21. [Ownership & valuation model](#ownership--valuation-model)
+22. [Similar vehicles](#similar-vehicles)
+23. [VIN decoder](#vin-decoder)
+24. [Provenance system](#provenance-system)
+25. [Missing-data policy & labels](#missing-data-policy--labels)
+26. [Complete file inventory](#complete-file-inventory)
+27. [State management](#state-management)
+28. [Client utilities reference](#client-utilities-reference)
+29. [Server utilities reference](#server-utilities-reference)
+30. [Deployment](#deployment)
+31. [Scripts reference](#scripts-reference)
+32. [Dependencies](#dependencies)
+33. [Code reference](#code-reference)
+34. [Known limitations](#known-limitations)
+35. [Roadmap](#roadmap)
+36. [License](#license)
 
 ---
 
@@ -525,10 +524,11 @@ Loaded once at startup into memory:
 
 ### UI conventions
 
+- **Records first:** every page leads with what EPA and NHTSA recorded (fuel use or range, crash ratings) and rated power, each marked with its source (`ProvenanceChip`: EPA, NHTSA, Curated, Est.). Estimated value and running costs follow, labelled as estimates, with the region picker (`RegionSelect`) beside them; they no longer lead a card, a car page, a shortlist or a comparison.
 - **One accent**, `accent` in `tailwind.config.js` (#34d399): main buttons, active filters and nav, "better than its class", compare's "Best", focus rings. Everything else stays neutral.
 - **Type roles** in `index.css`: nothing under 12px; labels and buttons in sentence case; capitals only for `.eyebrow` section labels; figures in the text face with tabular numerals (`.tabular-nums`), not the monospace face.
 - **Canadian units first:** fuel use in L/100 km (kWh/100 km for EVs, kg/100 km for hydrogen) with EPA's MPG as the secondary line (`utils/efficiency.ts`); range in km; money in CAD, said once per section (`utils/money.ts`) rather than "CAD (est.)" on each figure.
-- **Results** (`CarCard.tsx`): a thumbnail, value, fuel use or range, power, a "why this matched" line (`utils/matchReasons.ts`) and a compare toggle, as a grid or a list (`useResultsView`; phones start on the list).
+- **Results** (`CarCard.tsx`): a thumbnail, fuel use or EPA range, power and the NHTSA rating, the estimated value in small type beneath, a "why this matched" line (`utils/matchReasons.ts`) and a compare toggle, as a grid or a list (`useResultsView`; phones start on the list). The garage and shared garages use the same card.
 - **Visits** are still counted once per session (`useRecordVisit`, readable at `GET /api/stats`) but no longer printed in every footer.
 
 ---
@@ -537,7 +537,7 @@ Loaded once at startup into memory:
 
 ### Site header links
 
-Search · Browse · Compare (badge) · Value chart · VIN · Garage (badge), and the "Costs for" region menu. The phone menu adds Methodology. ("Guides" used to open a page titled "Start from a situation", and the value chart was only in the phone menu.)
+Search · Browse · Compare (badge) · VIN · Garage (badge). The phone menu adds the value chart and Methodology, and the footer links both. The region ("Costs for") is chosen where estimates are shown, in a car page's Estimated costs and compare's Estimates rows, not in the header. ("Guides" used to open a page titled "Start from a situation".)
 
 ### Primary flows
 
@@ -555,17 +555,19 @@ Search · Browse · Compare (badge) · Value chart · VIN · Garage (badge), and
 
 ## Curated collections
 
-Defined in `server/src/shared/collections.ts` (re-exported by `client/src/config/collections.ts`), with each list's ranking, so the home page's previews (`GET /api/cars/collections/previews`, the first three picks, worked out once per data version) are the first three of `/collection/:id`. Each list ranks one car per model by what it promises; the old score multiplied MPG by safety and divided by price, so EVs' MPGe led "Gas savers" and a 1995 Mitsubishi pickup led "Work horses".
+Defined in `server/src/shared/collections.ts` (re-exported by `client/src/config/collections.ts`), with each list's ranking, so the home page's previews (`GET /api/cars/collections/previews`, the first three picks, worked out once per data version) are the first three of `/collection/:id`. Each list ranks one car per model on the records, by what it promises: EPA fuel economy, NHTSA stars, rated power, EPA range, newer model years among equals. An estimated price only bounds a list (its search); it never ranks one. The first score multiplied MPG by safety and divided by price, so EVs' MPGe led "Gas savers" and a 1995 Mitsubishi pickup led "Work horses"; the next ranked on price plus running costs. Beside each pick, previews and list pages show the record the list ranks on (`utils/rankedFigure.ts`), where the estimated price was.
 
 | ID                 | Title              | Search                                                            | Ranked by                                   |
 | ------------------ | ------------------ | ----------------------------------------------------------------- | ------------------------------------------- |
-| `goldilocks`       | The Goldilocks zone | Gas/hybrid cars and SUVs, 2021+, $20–35k                         | Price plus three years' running cost        |
-| `gas-savers`       | Gas savers         | Gas/hybrid, 2019+, 40+ MPG, under $40k                            | Combined MPG                                |
-| `luxury-less`      | Luxury for less    | Ten luxury makes, gas/hybrid/diesel, 2018+, under $50k            | Newest for the money                        |
-| `family-fortress`  | Family fortress    | Three rows (`filters.threeRow`), 2020+                            | Price plus five years' running cost, stars  |
-| `weekend-warriors` | Weekend warriors   | "sports car", carmakers (not tuners), gasoline, 2018+, under $70k | Power per dollar                            |
-| `work-horses`      | Work horses        | "full size pickup", six truck makes, 4WD/AWD, 2019+, under $70k   | Power per dollar                            |
-| `future-proof`     | Future-proof       | EVs, 2022+, 250+ mi range (`filters.rangeMiles`), under $60k      | Range per dollar                            |
+| `goldilocks`       | The Goldilocks zone | Gas/hybrid cars and SUVs, 2021+, $20–35k                         | NHTSA stars, then EPA combined MPG          |
+| `gas-savers`       | Gas savers         | Gas/hybrid, 2019+, 40+ MPG, under $40k                            | EPA combined MPG                            |
+| `luxury-less`      | Luxury for less    | Ten luxury makes, gas/hybrid/diesel, 2018–2023, under $50k        | Newest, then NHTSA stars                    |
+| `family-fortress`  | Family fortress    | Three rows (`filters.threeRow`), 2020+                            | NHTSA stars, then EPA combined MPG          |
+| `weekend-warriors` | Weekend warriors   | "sports car", carmakers (not tuners), gasoline, 2018+, under $70k | Rated power                                 |
+| `work-horses`      | Work horses        | "full size pickup", six truck makes, 4WD/AWD, 2019+, under $70k   | Rated power                                 |
+| `future-proof`     | Future-proof       | EVs, 2022+, 250+ mi range (`filters.rangeMiles`), under $60k      | EPA range                                   |
+
+Prices here are estimated CAD values. A star outweighs any MPG gap in the NHTSA-first lists, so a 4-star hybrid never leads 5-star cars in "the best crash ratings".
 
 The search API reads `filters.threeRow` and `filters.rangeMiles` from a request body as well as from words; it dropped them before, so "Family fortress" listed every car of 2020 on.
 
@@ -608,11 +610,11 @@ Defined in `client/src/config/browseTaxonomy.ts`.
 
 ### Hero (`Landing.tsx`)
 
-- The promise as the headline ("Know what a car really costs in Canada"; the header already says CarInfo), `SearchBar`, and the quiz
+- The promise as the headline ("Car specs from the EPA and NHTSA"; the header already says CarInfo), a line on what is on record and that estimates are labelled, `SearchBar`, and the quiz
 - VIN detect: 17-char pattern → `/vin`
-- `SampleCarCard`: a real car's page in miniature (the hero preview car's value, yearly cost, fuel use and safety, with its class comparisons), in place of a large grey drawing of the same car
+- `SampleCarCard`: a real car's page in miniature (the hero preview car's key figures: fuel use, crash rating, power and engine, each with its source), in place of a large grey drawing of the same car
 - Start paths as bordered panels of chips (I know the car · I'm still deciding · I have a VIN · I'm comparing options), not underlined words
-- `ShortlistCards`: each shortlist with its first three picks
+- `ShortlistCards`: each shortlist with its first three picks and the record each is ranked on
 
 ### Persona quiz → `/smart-search?persona=...&minPrice=...&maxPrice=...&priority=...&usage=...`
 
@@ -637,19 +639,19 @@ Modal explaining EPA vs estimated data. Dismissible per session (`sessionStorage
 ### Layout order
 
 1. **Hydrogen banner** — FCEV disclaimer (amber) when applicable
-2. **Header** — back; the name as the page title and tab title (`displayVehicleTitle`: the top bar said "Civic 4Dr" while the heading said "Civic Si"); body, class and fuel; a spec line (power, engine, gearbox, drive, 0–60); Add to compare and Save to garage
-3. **DecisionStats** (`utils/decisionStats.ts`) — estimated value, yearly cost, fuel use (L/100 km, the EPA MPG beneath) and NHTSA safety, each against a typical car of its class from `classComparison` ("7% less than a typical sport compact"; green better, amber worse, grey for a price); an EV shows EPA range in km and energy use; a car the site does not value leads with power and engine. One line says once that the figures are estimates in CAD for the region and names the rivals.
-4. **PinnedCarBar** — once the figures scroll away: name, value, yearly cost, compare and garage
+2. **Header** — back; the name as the page title and tab title (`displayVehicleTitle`: the top bar said "Civic 4Dr" while the heading said "Civic Si"); body, class and fuel; a spec line (gearbox, drive, and a 0–60 time only when one is measured: a predicted time waits with the estimates); Add to compare and Save to garage
+3. **KeyFigures** (`utils/keyFigures.ts`) — fuel use (L/100 km, the EPA MPG beneath), the NHTSA crash rating, power and engine, each with its source chip; an EV shows EPA range in km, energy use, crash rating and power. Fuel use is set against a typical car of its class from `classComparison` ("1.3 L/100 km less than a typical midsize car"; green better, amber worse) and power as a fact in grey ("23 hp more than…"). Power's chip says where the figure comes from (an EPA test-car or manufacturer rating is Curated; one borrowed from the same engine is Est.). One line names the rivals and links to the estimates further down.
+4. **PinnedCarBar** — once the figures scroll away: name, fuel use or range, crash rating, power, compare and garage
 5. **Ownership profile** — when taxonomy provides it
 6. **City and highway** (in L/100 km; a longer bar is a thirstier car), crash tests, tailpipe
-7. **Cost to keep** — plain figures under one note ("Estimates in CAD for Ontario…"), not "CAD (est.)" on every row; the calculator as a button
+7. **Estimated costs** (`#costs`) — the estimated value range, yearly and five-year costs under one note ("Estimates in CAD for Ontario…"), not "CAD (est.)" on every row, with the region picker; the calculator as a button
 8. **More specs** (`KeySpecs`) — what the header does not already show; EPA's vehicle category ("Car") is gone
 9. **DataTrustPanel**, **Other configurations** (named by engine, fuel, gearbox and drive, since EPA lists configurations rather than trim names), **SimilarCars** (L/100 km)
 10. **TCOCalculator** modal
 
 ### Missing-data rules on dossier
 
-- No NHTSA chip, glance cell, KeySpecs group, or expandable when unrated
+- No NHTSA chip or KeySpecs group when unrated: the crash-rating figure says "Not rated"
 - No "not on file" rows in KeySpecs (`pushIf` skips empty)
 - Value expandable hidden entirely when no data
 
@@ -661,13 +663,15 @@ Modal explaining EPA vs estimated data. Dismissible per session (`sessionStorage
 
 On load, fetches a full `CarDashboard` per compared car (same depth as the dossier), in the reader's cost region. The current set is persisted locally and synced to `/compare?cars=id1,id2` so a refresh or share keeps the same lineup.
 
-**In short** (`utils/compareSummary.ts`): a sentence per car on what it has that the others do not ("The SUV: the only AWD (better in snow) and the only one NHTSA has rated (5/5)"), from dashboards; near-ties crown nobody. It replaced "Body styles: sedan, suv" and "Different shape — the sedan in this set".
+**In short** (`utils/compareSummary.ts`): a sentence per car on what it has that the others do not ("The SUV: the only AWD (better in snow) and the only one NHTSA has rated (5/5)"), from the records; near-ties crown nobody, and the cheapest or cheapest to run is not a reason. It replaced "Body styles: sedan, suv" and "Different shape — the sedan in this set".
 
-### Rows, in decision order (rows with no data for any car are dropped)
+### Rows, records first (rows with no data for any car are dropped)
 
-Est. value · Yearly cost · Fuel a year · 5-year cost (all CAD, the reader's region) · Fuel use, City, Highway (L/100 km or kWh/100 km, the EPA figure beneath) · EPA range (km) · NHTSA rating · Power · Torque · 0–60 mph · Engine · Gearbox · Drive · Fuel · Body · CO₂ (g/km) · Origin. EPA's US-dollar fuel cost and the Year row (the column heading says it) are gone.
+**From EPA and NHTSA:** Fuel use, City, Highway (L/100 km or kWh/100 km, the EPA figure beneath) · EPA range (km) · NHTSA rating · Power · Torque · Engine · Gearbox · Drive · Fuel · Body · CO₂ (g/km) · Origin.
 
-"Best" marks a figure ahead of the runner-up by 5% or more, and only across one unit. On a phone the label column is pinned and narrow, so two cars show whole; more scroll sideways (the second car used to be cut off mid-word).
+**Estimates** (CAD, the reader's region, with the region picker in the group heading): Est. value · Yearly cost · Fuel a year · 5-year cost · 0–60 mph. EPA's US-dollar fuel cost and the Year row (the column heading says it) are gone.
+
+"Best" marks a record ahead of the runner-up by 5% or more, and only across one unit; estimates get no "Best". On a phone the label column is pinned and narrow, so two cars show whole; more scroll sideways (the second car used to be cut off mid-word).
 
 ---
 
@@ -697,7 +701,7 @@ Est. value · Yearly cost · Fuel a year · 5-year cost (all CAD, the reader's r
 ### Dream Garage (`/garage`)
 
 - Zustand + `localStorage` key `dreamGarage`
-- Add/remove/clear, total value, avg MPG, unique makes
+- Add/remove/clear; a summary of NHTSA 5-star cars, the most power and the makes, with the estimated total value last (an "Avg MPG" averaged an EV's MPGe with a pickup's MPG); saved cars as result cards (`CarCard`) with Remove
 - Empty: the leading pick of each shortlist, each savable in one tap (it showed a padlock)
 - **Share:** copies `/shared-garage?cars=id1,id2,...`
 
@@ -722,31 +726,6 @@ Click `?` via `SpecExplain.tsx` (what + why from `getSpecEntry`)
 ### Keys
 
 `engine` · `displacement` · `configuration` · `cylinders` · `horsepower` · `torque` · `drivetrain` · `transmission` · `fuel` · `body` · `category` · `epaClass` · `mpgCity` · `mpgHighway` · `mpgCombined` · `mpge` · `epaRange` · `co2` · `ghgScore` · `annualFuelCost` · `barrelsPerYear` · `fuelSavings5yr` · `kwhPer100mi` · `charge240` · `charge120` · `phevElectricRange` · `phevGasMpg` · `phevElectricMpge` · `phevBlendedMpge` · `zeroToSixty` · `safetyOverall` · `safetyFrontal` · `safetySide` · `safetyRollover` · `countryOfOrigin` · `trim` · `shoppingSegment` · `msrp` · `power` · `efficiency` · `range`
-
----
-
-## Glance metrics
-
-**File:** `client/src/utils/glanceMetrics.ts` · up to **4 cells**
-
-### Profiles (what leads)
-
-| Profile       | Priority order                        |
-| ------------- | ------------------------------------- |
-| `ev`          | range → mpg → power → engine → safety |
-| `performance` | power → engine → mpg → safety         |
-| `efficient`   | mpg → power → engine → safety         |
-| `standard`    | power → engine → mpg → safety         |
-
-Performance marques: Porsche, Ferrari, Lamborghini, Aston Martin, McLaren, Maserati, Bentley, Rolls-Royce, Lotus, Alfa Romeo, Jaguar, Dodge
-
-### Candidate metrics
-
-Engine · Horsepower · Est. value · Combined MPG/MPGe · EPA range · Running cost · Safety (NHTSA only)
-
-PHEV MPG cell shows gas-mode MPG with electric range detail.
-
-**Fallback** (`GlanceRow`): categorical chips only — no "data not available" message.
 
 ---
 
@@ -830,10 +809,10 @@ Landing detects 17-char VIN in search → redirects to `/vin`.
 | ----------- | -------------------- |
 | `epa`       | EPA FuelEconomy.gov  |
 | `nhtsa`     | NHTSA crash tests    |
-| `curated`   | EPA test car list HP |
+| `curated`   | EPA test-car or manufacturer HP |
 | `estimated` | Model/heuristic      |
 
-`ProvenanceChip.tsx` shows badges on cards. Dashboard adds `fieldProvenance` for analytics fields (`analytics.annualCost`, `price.msrp`, etc.).
+`ProvenanceChip.tsx` shows the source beside each key figure on car pages and the home page's sample car. Dashboard adds `fieldProvenance` for analytics fields (`analytics.annualCost`, `price.msrp`, etc.).
 
 ---
 
@@ -916,17 +895,17 @@ gasoline, so the dossier and its own TCO calculator showed different totals.
 | `.gitignore`             | Ignores `node_modules`, `dist`, `server/data/raw/`, `.env`, `.vercel` |
 | `.cursor/worktrees.json` | Cursor worktree config                                                |
 
-### Client — pages (16)
+### Client — pages (17)
 
 `Landing.tsx` · `Browse.tsx` · `Explore.tsx` · `VehicleGrid.tsx` · `CarDetail.tsx` · `Home.tsx` · `Compare.tsx` · `Collection.tsx` · `SmartSearch.tsx` · `DreamGarage.tsx` · `SharedGarage.tsx` · `BattleMode.tsx` · `ValueMatrix.tsx` · `VinDecoder.tsx` · `Methodology.tsx` · `Account.tsx` · `NotFound.tsx`
 
-### Client — components (30)
+### Client — components (40)
 
-`AboutData` · `BodyTypeIllustration` · `CarCard` · `DataValue` · `FilterPills` · `FilterSidebar` · `GlanceMetricCell` · `GlanceRow` · `KeySpecs` · `Layout` · `PageHeader` · `PersonaQuiz` · `ProvenanceChip` · `ScrollToTop` · `SearchBar` · `SimilarCars` · `SiteHeader` · `SpecExplain` · `TCOCalculator` · `ui` · `ValuationLinks` · `VehiclePlaceholder`
+`AboutData` · `AccountAuth` · `AccountClerkPanel` · `AuthHeaderSlot` · `AuthProvider` · `BodyTypeIllustration` · `CarCard` · `ClerkShell` · `CompareTray` · `DataTrustPanel` · `DataValue` · `ErrorBoundary` · `FilterPills` · `FilterSidebar` · `KeyFigures` · `KeySpecs` · `Layout` · `PageHeader` · `PageShell` · `PersonaQuiz` · `PinnedCarBar` · `ProvenanceChip` · `RegionSelect` · `SampleCarCard` · `ScrollToTop` · `SearchBar` · `SelectMenu` · `ShortlistCards` · `SiblingConfigs` · `SignInPromptSlot` · `SimilarCars` · `SiteHeader` · `SpecExplain` · `TCOCalculator` · `ToolPageHeader` · `ValuationLinks` · `ValueMatrixHeatmap` · `VehiclePlaceholder` · `VinScanner` · `ui`
 
-### Client — utils (18)
+### Client — utils (32)
 
-`carImages` · `collectionCuration` · `currency` · `dataValue` · `epaContent` · `filterState` · `fuelDisplay` · `fuelEconomyUnits` · `fuelLabels` · `glanceMetrics` · `landingShowcase` · `searchParams` · `tco` · `specGlossary` · `trimLabel`
+`authConfig` · `bodyStyleLabel` · `carImages` · `clerkMounted` · `collectionCuration` · `compareIds` · `compareSummary` · `currency` · `dataTrust` · `dataValue` · `differentiateCars` · `efficiency` · `epaContent` · `filterState` · `fuelDisplay` · `fuelEconomyUnits` · `fuelLabels` · `keyFigures` · `landingShowcase` · `matchReasons` · `money` · `pageMeta` · `quizReasons` · `rankedFigure` · `searchInterpretation` · `searchParams` · `specGlossary` · `staleBuildRecovery` · `tco` · `trimLabel` · `vin` · `visualTiers`
 
 ### Client — config (2)
 

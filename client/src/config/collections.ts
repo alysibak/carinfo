@@ -3,4 +3,5 @@ export {
   COLLECTIONS,
   type CollectionConfig,
   type CollectionDisplayConfig,
+  type CollectionRankBy,
 } from '@carinfo/shared/collections';

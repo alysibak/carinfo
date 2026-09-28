@@ -33,7 +33,7 @@ test.describe('Trust UI smoke path', () => {
     // URL and bounce the user back to the results.
     await expect(page).toHaveURL(/\/car\//);
     await expect(page.getByRole('button', { name: /data sources/i })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Cost to keep' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Estimated costs' })).toBeVisible();
 
     await page
       .getByRole('button', { name: /^add to compare$/i })

@@ -23,6 +23,8 @@ interface CarCardProps {
   layout?: CarCardLayout;
   /** Why the car is in these results, from utils/matchReasons.ts. */
   reasons?: string[];
+  /** Offers a "Remove" button beside Compare, as the garage does. */
+  onRemove?: () => void;
 }
 
 interface Figure {
@@ -32,21 +34,15 @@ interface Figure {
 }
 
 /**
- * The figures a result is chosen on: what it is worth, what it burns (or, for
- * an EV, how far it goes), and its power. The body-style drawing that used to
- * fill half of every card is a thumbnail: in a list of SUVs it was the same
- * white SUV thirty times over, and it pushed the numbers below the fold.
+ * The figures a result is chosen on, from the records: what it burns (or, for
+ * an EV, how far it goes), its power, and its NHTSA crash rating. The
+ * estimated value rides below them, labelled, rather than leading the card.
  */
 function figuresFor(car: CarSpecs): Figure[] {
   const figures: Figure[] = [];
-  const price = formatPriceShort(car.price?.msrp, false);
-  figures.push({
-    label: 'Est. value',
-    value: price === 'Not on file' ? '—' : `${car.price?.isEstimated !== false ? '~' : ''}${price}`,
-  });
   const isEv = car.engine.fuelType === 'electric';
   if (isEv && car.epa?.rangeMiles) {
-    figures.push({ label: 'Range', value: String(rangeKm(car.epa.rangeMiles)), unit: 'km' });
+    figures.push({ label: 'EPA range', value: String(rangeKm(car.epa.rangeMiles)), unit: 'km' });
   } else {
     const efficiency = efficiencyOf(car);
     const [number, ...unit] = efficiency?.text.split(' ') ?? [];
@@ -61,7 +57,20 @@ function figuresFor(car: CarSpecs): Figure[] {
     value: car.engine.horsepower ? String(car.engine.horsepower) : '—',
     unit: car.engine.horsepower ? 'hp' : undefined,
   });
+  const stars = car.safetyRating?.overall;
+  figures.push({
+    label: 'NHTSA',
+    value: stars && stars > 0 ? String(stars) : '—',
+    unit: stars && stars > 0 ? '/5 stars' : 'not rated',
+  });
   return figures;
+}
+
+/** "Est. value ~$35k", or nothing for a car the site does not value. */
+function estimatedValue(car: CarSpecs): string | null {
+  const price = formatPriceShort(car.price?.msrp, false);
+  if (price === 'Not on file') return null;
+  return `Est. value ~${price}`;
 }
 
 function CompareToggle({
@@ -140,6 +149,7 @@ export default function CarCard({
   showCompare = true,
   layout = 'grid',
   reasons = [],
+  onRemove,
 }: CarCardProps) {
   const [toast, setToast] = useState<string | null>(null);
 
@@ -160,9 +170,8 @@ export default function CarCard({
   ]
     .filter(Boolean)
     .join(' · ');
-  const safety = car.safetyRating?.overall;
-  const rated = safety != null && safety > 0;
   const figures = figuresFor(car);
+  const estValue = estimatedValue(car);
 
   const titleLink = (
     <Link
@@ -203,21 +212,24 @@ export default function CarCard({
             <h3 className="text-[15px] font-semibold text-white leading-snug min-w-0">
               {titleLink}
             </h3>
-            <p className="text-[15px] font-bold tabular-nums text-white shrink-0">
-              {figures[0].value}
-            </p>
+            {figures[0].value !== '—' && (
+              <p className="text-[15px] font-bold tabular-nums text-white shrink-0">
+                {figures[0].value}
+                {figures[0].unit && (
+                  <span className="text-xs font-normal text-zinc-400"> {figures[0].unit}</span>
+                )}
+              </p>
+            )}
           </div>
           {subtitle && <p className="text-xs text-zinc-400 mt-0.5 line-clamp-1">{subtitle}</p>}
           <p className="text-[13px] text-zinc-300 tabular-nums mt-1">
             {[
-              ...figures
-                .slice(1)
-                .filter((f) => f.value !== '—')
-                .map((f) => `${f.value}${f.unit ? ` ${f.unit}` : ''}`),
-              rated ? `${safety}/5 NHTSA` : null,
+              figures[1].value !== '—' ? `${figures[1].value} hp` : null,
+              figures[2].value !== '—' ? `NHTSA ${figures[2].value}/5` : 'No NHTSA rating',
             ]
               .filter(Boolean)
               .join(' · ')}
+            {estValue && <span className="text-zinc-500"> · {estValue.toLowerCase()}</span>}
           </p>
           {reasonLine && <div className="mt-1">{reasonLine}</div>}
         </div>
@@ -268,21 +280,26 @@ export default function CarCard({
       </dl>
 
       <div className="p-3 pt-2.5 flex flex-col gap-2 flex-1">
-        {rated && (
-          <p className="text-xs text-zinc-400">
-            <span className="text-amber-200/90" aria-hidden>
-              {'★'.repeat(safety!)}
-            </span>{' '}
-            {safety}/5 NHTSA
-          </p>
-        )}
+        {estValue && <p className="text-xs text-zinc-500">{estValue}</p>}
         {reasonLine}
-        {showCompare && (
+        {(showCompare || onRemove) && (
           <div className="mt-auto pt-1 flex items-center justify-between gap-2">
             <span className="text-[13px] text-zinc-400 group-hover:text-white transition-colors">
               Details →
             </span>
-            <CompareToggle car={car} onToast={setToast} />
+            <div className="flex items-center gap-1">
+              {onRemove && (
+                <button
+                  type="button"
+                  onClick={onRemove}
+                  aria-label={`Remove the ${title}`}
+                  className="relative z-10 min-h-[40px] px-2.5 text-[13px] text-zinc-400 hover:text-red-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+                >
+                  Remove
+                </button>
+              )}
+              {showCompare && <CompareToggle car={car} onToast={setToast} />}
+            </div>
           </div>
         )}
       </div>

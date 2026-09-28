@@ -54,7 +54,7 @@ describe('summarizeComparison', () => {
       {
         carId: 'civic',
         name: '2026 Honda Civic Si',
-        sentence: 'The sedan: the only manual and the cheapest to run (about $600 a year less).',
+        sentence: 'The sedan: the only manual.',
       },
       {
         carId: 'rav4',

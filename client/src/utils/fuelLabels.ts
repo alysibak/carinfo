@@ -20,7 +20,7 @@ export function efficiencyUnit(car: CarSpecs): 'MPG' | 'MPGe' {
  * for the viewer's cost region (the dashboard's `ownership.annualCost.energy`)
  * rather than working one out here: this file used to carry its own copy of
  * the cost engine, fixed to the default region, so choosing B.C. changed the
- * "Cost to keep" section while the glance row and spec list kept Ontario prices.
+ * cost section while the glance row and spec list kept Ontario prices.
  */
 export function formatAnnualEnergyCost(annualCad: number | null | undefined): string | null {
   if (annualCad == null || !(annualCad > 0)) return null;

@@ -5,6 +5,7 @@ import type { CarSpecs } from '../types/car.types';
 import { calculateCollectionScore, dedupeByModel } from '../utils/collectionCuration';
 import { COLLECTIONS } from '../config/collections';
 import { formatPowerForCard, formatPriceShort } from '../utils/dataValue';
+import { rankedFigure } from '../utils/rankedFigure';
 import { efficiencyOf } from '../utils/efficiency';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 import { displayModelLabel } from '../utils/trimLabel';
@@ -154,7 +155,9 @@ export default function Collection() {
             <ol className="border-t border-zinc-800">
               {cars.map((car, i) => {
                 const efficiency = efficiencyOf(car);
-                const price = formatPriceShort(car.price?.msrp, true);
+                const price = formatPriceShort(car.price?.msrp, false);
+                const power = formatPowerForCard(car.engine.horsepower);
+                const figure = rankedFigure(car, collection.display?.rankBy);
                 return (
                   <li key={car.id} className="border-b border-zinc-900">
                     <Link
@@ -175,20 +178,21 @@ export default function Collection() {
                         )}
                         <p className="text-xs text-zinc-500 mt-1.5 truncate">
                           {[
-                            (() => {
-                              const p = formatPowerForCard(car.engine.horsepower);
-                              return p === 'Not on file' ? null : p;
-                            })(),
+                            power === 'Not on file' ? null : power,
                             efficiency?.text,
                             bodyStyleLabel(car.bodyStyle),
+                            price === 'Not on file' ? null : `est. value ~${price}`,
                           ]
-                            .filter(Boolean)
+                            .filter((part) => part && part !== figure)
                             .join(' · ')}
                         </p>
                       </div>
-                      <span className="shrink-0 text-xs tabular-nums text-zinc-500">
-                        {price !== 'Not on file' ? `~${price}` : ''}
-                      </span>
+                      {/* The record the list ranks on, where the estimated price was. */}
+                      {figure && (
+                        <span className="shrink-0 text-sm tabular-nums text-zinc-200">
+                          {figure}
+                        </span>
+                      )}
                       <span className="shrink-0 text-zinc-600 group-hover:text-white text-sm">
                         →
                       </span>

@@ -146,8 +146,8 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
     why: 'Real range varies with cold weather, speed, and hills. Use it to compare models.',
   },
   co2: {
-    plain: 'Tailpipe emissions per mile',
-    what: 'Grams of CO₂ out the tailpipe each mile. EVs show 0 at the pipe.',
+    plain: 'Tailpipe emissions per kilometre',
+    what: 'Grams of CO₂ out the tailpipe each kilometre (EPA publishes grams per mile, shown beside it). EVs show 0 at the pipe.',
     why: 'Lower = less climate impact from driving this car.',
   },
   ghgScore: {

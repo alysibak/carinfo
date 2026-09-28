@@ -1,21 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGarageStore, FREE_GARAGE_LIMIT } from '../stores/garageStore';
-import {
-  cardStatClass,
-  formatEngineForCard,
-  formatMpgForCard,
-  formatPriceShort,
-} from '../utils/dataValue';
+import { formatMoneyShort } from '../utils/money';
 import SignInPromptSlot from '../components/SignInPromptSlot';
 import ToolPageHeader from '../components/ToolPageHeader';
 import { ConfirmDialog, Modal, StatusToast } from '../components/ui';
-import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 import * as api from '../services/api';
 import type { CarSpecs } from '../types/car.types';
 import { COLLECTIONS } from '../config/collections';
 import { displayModelLabel } from '../utils/trimLabel';
+import { rankedFigure } from '../utils/rankedFigure';
 import VehiclePlaceholder from '../components/VehiclePlaceholder';
+import CarCard from '../components/CarCard';
 
 /**
  * An empty garage offers cars to start with, the leading pick of each
@@ -23,7 +19,9 @@ import VehiclePlaceholder from '../components/VehiclePlaceholder';
  * outline: an odd picture for "nothing saved yet", and nothing to do.
  */
 function GarageSuggestions({ onSaved }: { onSaved: (message: string) => void }) {
-  const [cars, setCars] = useState<{ car: CarSpecs; list: string }[] | null>(null);
+  const [cars, setCars] = useState<{ car: CarSpecs; list: string; figure: string | null }[] | null>(
+    null,
+  );
   const add = useGarageStore((s) => s.add);
   const saved = useGarageStore((s) => s.cars);
 
@@ -34,12 +32,16 @@ function GarageSuggestions({ onSaved }: { onSaved: (message: string) => void }) 
       .then((previews) => {
         if (!active) return;
         const seen = new Set<string>();
-        const picks: { car: CarSpecs; list: string }[] = [];
+        const picks: { car: CarSpecs; list: string; figure: string | null }[] = [];
         for (const collection of Object.values(COLLECTIONS)) {
           const car = previews[collection.id]?.find((c) => !seen.has(c.id));
           if (!car) continue;
           seen.add(car.id);
-          picks.push({ car, list: collection.title });
+          picks.push({
+            car,
+            list: collection.title,
+            figure: rankedFigure(car, collection.display?.rankBy),
+          });
         }
         setCars(picks.slice(0, 6));
       })
@@ -64,9 +66,8 @@ function GarageSuggestions({ onSaved }: { onSaved: (message: string) => void }) 
 
   return (
     <ul className="grid sm:grid-cols-2 gap-2">
-      {cars.map(({ car, list }) => {
+      {cars.map(({ car, list, figure }) => {
         const isSaved = saved.some((c) => c.id === car.id);
-        const price = formatPriceShort(car.price?.msrp, false);
         return (
           <li
             key={car.id}
@@ -80,8 +81,7 @@ function GarageSuggestions({ onSaved }: { onSaved: (message: string) => void }) 
                 {car.year} {car.make} {displayModelLabel(car)}
               </span>
               <span className="block text-xs text-zinc-400 truncate">
-                {list}
-                {price !== 'Not on file' ? ` · ~${price}` : ''}
+                {[list, figure].filter(Boolean).join(' · ')}
               </span>
             </Link>
             <button
@@ -138,18 +138,27 @@ export default function DreamGarage() {
     }
   };
 
-  const totalValue = garage.reduce((sum, car) => sum + (car.price?.msrp || 0), 0);
-  const formattedValue =
-    totalValue >= 1_000_000
-      ? `$${(totalValue / 1_000_000).toFixed(2)}M`
-      : `$${Math.round(totalValue / 1000)}k`;
+  // The records first; the estimated total comes last and says it is one.
+  // "Avg MPG" averaged an EV's MPGe with a pickup's MPG.
+  const fiveStar = garage.filter((car) => (car.safetyRating?.overall ?? 0) >= 5).length;
+  const mostPower = garage.reduce((max, car) => Math.max(max, car.engine.horsepower ?? 0), 0);
   const uniqueMakes = new Set(garage.map((car) => car.make)).size;
-  const avgMPG =
-    garage.length > 0
-      ? Math.round(
-          garage.reduce((sum, car) => sum + (car.fuelEconomy.combined || 0), 0) / garage.length,
-        )
-      : 0;
+  const totalValue = garage.reduce((sum, car) => sum + (car.price?.msrp || 0), 0);
+  const garageStats = [
+    { label: 'NHTSA 5-star', value: `${fiveStar} of ${garage.length}` },
+    { label: 'Most power', value: mostPower > 0 ? `${mostPower} hp` : '—' },
+    { label: 'Makes', value: String(uniqueMakes) },
+    {
+      label: 'Est. total value',
+      value:
+        totalValue <= 0
+          ? '—'
+          : totalValue >= 1_000_000
+            ? `$${(totalValue / 1_000_000).toFixed(2)}M`
+            : formatMoneyShort(totalValue),
+      estimate: true,
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -223,27 +232,22 @@ export default function DreamGarage() {
           </div>
         ) : (
           <div>
-            {/* Garage Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-zinc-800 border border-zinc-800 mb-12">
-              <div className="bg-zinc-950 p-4">
-                <p className="text-xs text-zinc-400 mb-2">Est. total value</p>
-                <p className="text-3xl font-bold tabular-nums text-white">{formattedValue}</p>
-              </div>
-              <div className="bg-zinc-950 p-4">
-                <p className="text-xs text-zinc-400 mb-2">Makes</p>
-                <p className="text-3xl font-bold tabular-nums text-white">{uniqueMakes}</p>
-              </div>
-              <div className="bg-zinc-950 p-4">
-                <p className="text-xs text-zinc-400 mb-2">Avg MPG</p>
-                <p className="text-3xl font-bold tabular-nums text-white">{avgMPG}</p>
-              </div>
-              <div className="bg-zinc-950 p-4">
-                <p className="text-xs text-zinc-400 mb-2">Vehicles</p>
-                <p className="text-3xl font-bold tabular-nums text-white">{garage.length}</p>
-              </div>
-            </div>
+            <dl className="grid grid-cols-2 md:grid-cols-4 gap-px bg-zinc-800 border border-zinc-800 mb-8">
+              {garageStats.map((stat) => (
+                <div key={stat.label} className="bg-zinc-950 p-4">
+                  <dt className="field-label mb-2">{stat.label}</dt>
+                  <dd
+                    className={`text-2xl sm:text-3xl font-bold tabular-nums ${
+                      stat.estimate ? 'text-zinc-300' : 'text-white'
+                    }`}
+                  >
+                    {stat.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
 
-            <div className="flex items-center justify-center gap-3 mb-12">
+            <div className="flex flex-wrap items-center gap-3 mb-8">
               <button
                 onClick={() =>
                   navigate(
@@ -263,111 +267,13 @@ export default function DreamGarage() {
               </button>
             </div>
 
-            {/* Garage Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-zinc-900">
-              {garage.map((car, index) => (
-                <div
-                  key={car.id}
-                  className="bg-black p-8 hover:bg-zinc-950 transition-all duration-300 border border-zinc-900 hover:border-zinc-700 group relative"
-                >
-                  {/* Position Badge */}
-                  <div className="absolute top-4 left-4 w-10 h-10 bg-zinc-950 border border-zinc-800 flex items-center justify-center">
-                    <span className="text-lg font-bold text-zinc-300">#{index + 1}</span>
-                  </div>
-
-                  {/* Remove Button */}
-                  <button
-                    onClick={() => removeFromGarage(car.id)}
-                    className="absolute top-4 right-4 w-10 h-10 bg-zinc-950 border border-zinc-800 flex items-center justify-center hover:bg-red-600 hover:border-red-600 transition-all group/remove"
-                  >
-                    <svg
-                      className="w-5 h-5 text-zinc-300 group-hover/remove:text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-
-                  {/* Year */}
-                  <div className="mb-4 mt-12">
-                    <p className="text-3xl sm:text-5xl font-bold text-zinc-300 group-hover:text-zinc-400 transition-colors">
-                      {car.year}
-                    </p>
-                  </div>
-
-                  {/* Make & Model */}
-                  <div className="mb-6">
-                    <h3 className="text-2xl font-bold tracking-tight mb-1 group-hover:tracking-wide transition-all">
-                      {car.make.toUpperCase()}
-                    </h3>
-                    <p className="text-lg font-light tracking-wider text-zinc-400 group-hover:text-zinc-400 transition-colors">
-                      {car.model}
-                    </p>
-                  </div>
-
-                  {/* Divider */}
-                  <div className="h-px bg-zinc-900 group-hover:bg-zinc-700 transition-colors mb-6" />
-
-                  {/* Specs Grid */}
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div>
-                      <p className="text-xs text-zinc-300 mb-1">Engine</p>
-                      <p
-                        className={cardStatClass(
-                          formatEngineForCard(car.engine.fuelType, car.engine.displacement),
-                        )}
-                      >
-                        {formatEngineForCard(car.engine.fuelType, car.engine.displacement)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-zinc-300 mb-1">MPG</p>
-                      <p className={cardStatClass(formatMpgForCard(car.fuelEconomy.combined))}>
-                        {formatMpgForCard(car.fuelEconomy.combined)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-zinc-300 mb-1">Est. Value</p>
-                      <p className={cardStatClass(formatPriceShort(car.price?.msrp))}>
-                        {formatPriceShort(car.price?.msrp)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-zinc-300 mb-1">Type</p>
-                      <p className="text-lg font-bold">{bodyStyleLabel(car.bodyStyle)}</p>
-                    </div>
-                  </div>
-
-                  {/* View Button */}
-                  <button
-                    onClick={() => navigate(`/car/${car.id}`)}
-                    className="w-full flex items-center justify-center gap-2 text-xs text-zinc-300 group-hover:text-white transition-all py-2 border border-zinc-900 group-hover:border-zinc-700"
-                  >
-                    <span>VIEW DETAILS</span>
-                    <svg
-                      className="w-4 h-4 group-hover:translate-x-1 transition-transform"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1}
-                        d="M17 8l4 4m0 0l-4 4m4-4H3"
-                      />
-                    </svg>
-                  </button>
-                </div>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {garage.map((car) => (
+                <li key={car.id}>
+                  <CarCard car={car} onRemove={() => removeFromGarage(car.id)} />
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
         )}
       </div>

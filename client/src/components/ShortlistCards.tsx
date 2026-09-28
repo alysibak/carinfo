@@ -4,13 +4,14 @@ import * as api from '../services/api';
 import type { CarSpecs } from '../types/car.types';
 import { COLLECTIONS } from '../config/collections';
 import { displayModelLabel } from '../utils/trimLabel';
-import { formatPriceShort } from '../utils/dataValue';
+import { rankedFigure } from '../utils/rankedFigure';
 import VehiclePlaceholder from './VehiclePlaceholder';
 
 /**
  * The curated shortlists as cards that show what is in them: each list's
- * first three picks. They were seven full-width rows with a small "Picks →"
- * at the far end, so nobody could tell what a list held without opening it.
+ * first three picks, each with the record the list ranks on. They were seven
+ * full-width rows with a small "Picks →" at the far end, so nobody could tell
+ * what a list held without opening it.
  */
 export default function ShortlistCards() {
   const [previews, setPreviews] = useState<Record<string, CarSpecs[]> | null>(null);
@@ -55,7 +56,7 @@ export default function ShortlistCards() {
               ) : picks && picks.length > 0 ? (
                 <ol className="space-y-1.5">
                   {picks.map((car) => {
-                    const price = formatPriceShort(car.price?.msrp, false);
+                    const figure = rankedFigure(car, collection.display?.rankBy);
                     return (
                       <li key={car.id} className="flex items-center gap-2.5 min-w-0">
                         <span className="w-11 h-7 shrink-0 overflow-hidden" aria-hidden>
@@ -64,9 +65,9 @@ export default function ShortlistCards() {
                         <span className="text-sm text-zinc-200 truncate min-w-0">
                           {car.year} {car.make} {displayModelLabel(car)}
                         </span>
-                        {price !== 'Not on file' && (
+                        {figure && (
                           <span className="ml-auto text-xs text-zinc-400 tabular-nums shrink-0">
-                            ~{price}
+                            {figure}
                           </span>
                         )}
                       </li>
