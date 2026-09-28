@@ -170,6 +170,13 @@ describe('vehicle-taxonomy', () => {
     expect(body('Mazda', '5', 'wagon', 'Midsize Station Wagons')).toBe('minivan');
     expect(body('Suzuki', 'SX4 AWD', 'sedan', 'Subcompact Cars')).toBe('hatchback');
     expect(body('Suzuki', 'SX4 Sedan', 'sedan', 'Compact Cars')).toBe('sedan');
+    // The 2025 A5 is a liftback sedan; the A5 before it a coupe.
+    expect(body('Audi', 'S5', 'sedan', 'Subcompact Cars')).toBe('coupe');
+    expect(
+      inferBodyStyle(
+        minimalCar({ make: 'Audi', model: 'S5 Sport Sedan', year: 2026, bodyStyle: 'sedan' }),
+      ),
+    ).toBe('sedan');
     // Every Impreza five-door since 2008 is a hatchback, whatever EPA named it;
     // the GG before it was a wagon.
     expect(body('Subaru', 'Impreza', 'wagon', 'Small Station Wagons')).toBe('hatchback');

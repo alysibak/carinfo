@@ -101,6 +101,12 @@ describe('describeSearchInterpretation', () => {
     ]);
   });
 
+  it('names the engine position, read by model', () => {
+    expect(describeSearchInterpretation({ enginePosition: 'mid' })).toEqual([
+      'Mid-engined cars, by model: EPA records no engine position.',
+    ]);
+  });
+
   it('names engine layouts and what an engine name was read as', () => {
     expect(describeSearchInterpretation({ layouts: ['Flat-4', 'Flat-6'] })).toEqual([
       'Flat-4 and Flat-6 engines only: EPA records a cylinder count, so the layout comes from the engine family.',

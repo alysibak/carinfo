@@ -2,6 +2,7 @@ import { LATEST_FULL_MODEL_YEAR } from '../config/model-years.js';
 import type { ShoppingSegment } from '../types/car.types.js';
 import type { CompetitiveSet } from './competitive-sets.js';
 import type { EngineFamilyId } from './engine-families.js';
+import type { EnginePosition } from './engine-position.js';
 
 export type SortIntent =
   'price' | 'fuelEconomy' | 'horsepower' | 'range' | 'safety' | 'runningCost';
@@ -49,6 +50,8 @@ export interface QueryModifiers {
   engineSize?: number;
   /** "hemi", "ecoboost", "duramax": an engine family (utils/engine-families.ts). */
   engineFamily?: EngineFamilyId;
+  /** "mid engine", "rear-engined": where the engine sits (utils/engine-position.ts). */
+  enginePosition?: EnginePosition;
 }
 
 export type FuelEconomyUnit = 'MPG' | 'MPGe' | 'L/100 km';
@@ -68,6 +71,12 @@ export interface VehicleClassQuery {
   segments?: ShoppingSegment[];
   /** Luxury makes only. */
   luxury?: boolean;
+  /** Drives kept, where the kind of car implies one ("drift car"). */
+  drive?: string[];
+  /** An order the kind of car implies, where the query gives none ("car for uber"). */
+  sortedBy?: SortIntent;
+  /** What the phrase asked that nothing on file measures ("tow vehicle": towing capacity). */
+  unmeasured?: string;
   /** What was read, for the results page: "compact SUVs", "luxury sedans". */
   label: string;
 }
@@ -140,6 +149,54 @@ const BODY_GROUPS: Array<[RegExp, BodyGroup, string]> = [
 
 /** Kinds of vehicle named outright. Each takes its whole phrase. */
 const CLASS_PHRASES: Array<[RegExp, Omit<VehicleClassQuery, 'luxury'>]> = [
+  // Cars bought to drive: "track car" found the Chevrolet Tracker, "fun to
+  // drive" a Cherokee "Active Drive II", and "drift car" nothing.
+  [
+    /\bdrift(?:ing)?(?: cars?| machines?)?\b/,
+    {
+      segments: ['sports-car', 'muscle', 'supercar'],
+      drive: ['RWD'],
+      label: 'rear-drive sports cars',
+    },
+  ],
+  [
+    /\b(?:track(?:[- ]day)?|autocross|weekend|enthusiast'?s?'?|driver'?s?'?) cars?\b|\btrack toys?\b|\bfun[- ]to[- ]drive(?: cars?)?\b|\bfun cars?\b/,
+    {
+      segments: ['sports-car', 'hot-hatch', 'sport-compact', 'muscle', 'supercar'],
+      label: 'sports cars and hot hatches',
+    },
+  ],
+  // No towing capacity is on file; pickups and body-on-frame SUVs tow.
+  [
+    /\b(?:tow(?:ing)?|haul(?:ing)?|trailer) (?:vehicles?|rigs?|cars?|machines?)\b|\b(?:to|for) (?:tow(?:ing)?|haul(?:ing)?)\b/,
+    {
+      sets: ['midsize-pickup', 'full-size-pickup', 'heavy-duty-pickup', 'full-size-suv'],
+      unmeasured: 'towing capacity',
+      label: 'pickups and full-size SUVs',
+    },
+  ],
+  // Ride-hailing: "car for uber" fuzzy-matched a Saleen "Supercharged" F-150.
+  [
+    /\b(?:uber|lyft|ride[- ]?shar(?:e|ing)|ride[- ]?hail(?:ing)?|taxis?)\b/,
+    {
+      sets: [
+        'subcompact-car',
+        'compact-car',
+        'midsize-car',
+        'large-car',
+        'small-ev',
+        'ev-sedan',
+        'subcompact-suv',
+        'compact-suv',
+        'midsize-suv',
+        'three-row-suv',
+        'ev-suv',
+        'minivan',
+      ],
+      sortedBy: 'runningCost',
+      label: 'sedans, hatchbacks, SUVs and minivans for ride-hailing',
+    },
+  ],
   [/\bmuscle cars?\b/, { segments: ['muscle'], label: 'muscle cars' }],
   [/\bpony cars?\b/, { sets: ['pony-car'], label: 'pony cars' }],
   [
@@ -160,7 +217,7 @@ const CLASS_PHRASES: Array<[RegExp, Omit<VehicleClassQuery, 'luxury'>]> = [
   [/\b(?:grand tourers?|gt cars?)\b/, { sets: ['grand-tourer'], label: 'grand tourers' }],
   [/\boff[- ]?road(?:ers?|ing)?\b/, { sets: ['off-roader'], label: 'off-roaders' }],
   [
-    /\b(?:economy|commuter|city) cars?\b|\bcommut(?:ing|e|er)\b/,
+    /\b(?:economy|commuter|city) cars?\b|\b(?:long |daily )?commut(?:ing|es?|er)\b/,
     { sets: ['subcompact-car', 'compact-car', 'small-ev'], label: 'economy cars' },
   ],
 ];
@@ -345,7 +402,7 @@ const LISTING_WORDS =
  * read as a name.
  */
 const UNMEASURED =
-  /\b(?:best|good|great|top|reliable|dependable|quality|nice|decent|perfect|ideal|recommended|popular|comfortable|fun|cool|first|beginner|starter|tow|towing|haul|hauling|seniors?|elderly|kids?|son|daughter|wife|husband|mom|dad|girlfriend|boyfriend|grand(?:ma|pa|mother|father)|roomy|spacious|cargo space|cargo room|(?:big|large|huge|roomy|spacious) (?:trunk|boot)s?|trunk space|legroom|headroom|dogs?|pets?|(?:tall|short|big) (?:people|persons?|drivers?|guys?)|work(?= (?:trucks?|vans?|pickups?)\b))\b/g;
+  /\b(?:best|good|great|top|reliable|dependable|quality|nice|decent|perfect|ideal|recommended|popular|comfortable|fun|cool|first|beginner|starter|tow|towing|haul|hauling|seniors?|elderly|kids?|son|daughter|wife|husband|mom|dad|girlfriend|boyfriend|grand(?:ma|pa|mother|father)|roomy|spacious|cargo space|cargo room|(?:big|large|huge|roomy|spacious) (?:trunk|boot)s?|trunk space|legroom|headroom|dogs?|pets?|(?:tall|short|big) (?:people|persons?|drivers?|guys?)|road[- ]?trips?|long drives?|highway driving|deliver(?:y|ies|ing)|work(?= (?:trucks?|vans?|pickups?)\b))\b/g;
 
 /**
  * A first car, or a car for someone learning: "good first car for a teenager"
@@ -436,6 +493,13 @@ const ENGINE_FAMILY_PHRASES: Array<[RegExp, EngineFamilyId]> = [
   [/\bduramax\b/, 'duramax'],
   [/\beco-? ?diesel\b/, 'ecodiesel'],
   [/\btdi\b/, 'tdi'],
+];
+
+/** Where the engine sits, which EPA does not record: read by model instead. */
+const ENGINE_POSITION_PHRASES: Array<[RegExp, EnginePosition]> = [
+  [/\bmid[- ]?engine[sd]?\b/, 'mid'],
+  [/\brear[- ]?engine[sd]?\b/, 'rear'],
+  [/\bfront[- ]?engine[sd]?\b/, 'front'],
 ];
 
 const THREE_ROW_PHRASE =
@@ -655,6 +719,13 @@ export function extractQueryModifiers(
     const classRead = readVehicleClass(text);
     text = classRead.text;
     if (classRead.vehicleClass) out.vehicleClass = classRead.vehicleClass;
+    if (classRead.vehicleClass?.unmeasured) setAside.push(classRead.vehicleClass.unmeasured);
+  }
+  for (const [re, position] of ENGINE_POSITION_PHRASES) {
+    if (take(re)) {
+      out.enginePosition = position;
+      break;
+    }
   }
 
   // Before "hybrid" is read as a fuel.
@@ -705,6 +776,7 @@ export function extractQueryModifiers(
       break;
     }
   }
+  if (!out.sortedBy && out.vehicleClass?.sortedBy) out.sortedBy = out.vehicleClass.sortedBy;
   // No acceleration is on file: the most powerful cars come nearest.
   if (!out.sortedBy && setAside.some((name) => name.startsWith('0-'))) out.sortedBy = 'horsepower';
   if (text.match(SNOW)) {

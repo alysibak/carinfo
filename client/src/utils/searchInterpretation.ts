@@ -169,6 +169,10 @@ export function describeSearchInterpretation(
   if (interpretation.twoSeater) {
     lines.push("Two-seaters: EPA's two-seater class.");
   }
+  if (interpretation.enginePosition) {
+    const kind = { front: 'Front', mid: 'Mid', rear: 'Rear' }[interpretation.enginePosition];
+    lines.push(`${kind}-engined cars, by model: EPA records no engine position.`);
+  }
   if (interpretation.doors != null) {
     lines.push(
       `${interpretation.doors}-door models: named so, or ${

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { enrichCar } from '../services/content-enrichment.js';
 import {
+  correctCylinderCount,
   normalizeCarRecord,
   unifyMakeSpelling,
   unifyModelSpelling,
@@ -71,6 +72,39 @@ describe('car-normalize', () => {
     // A stepped automatic stays one.
     const stepped = findCar((c) => c.transmission?.description === 'Automatic (S8)');
     expect(normalizeCarRecord(stepped!).transmission.type).toBe('automatic');
+  });
+});
+
+describe('correctCylinderCount', () => {
+  const engine = (
+    make: string,
+    model: string,
+    year: number,
+    displacement: number,
+    cylinders: number,
+  ) =>
+    ({
+      id: 'x',
+      make,
+      model,
+      year,
+      engine: { fuelType: 'gasoline', displacement, cylinders },
+      provenance: {},
+    }) as unknown as Car;
+
+  it('puts back the cylinders EPA mistyped', () => {
+    // EPA lists the 2025 M340i's 3.0-litre straight six as a four.
+    const m340i = correctCylinderCount(engine('BMW', 'M340i xDrive Sedan', 2025, 3, 4));
+    expect(m340i.engine.cylinders).toBe(6);
+    expect(m340i.provenance['engine.cylinders']).toBe('curated');
+    expect(correctCylinderCount(engine('Lexus', 'LX 470', 2000, 4.7, 6)).engine.cylinders).toBe(8);
+  });
+
+  it("leaves real fours and other years alone, the 968's 3.0 among them", () => {
+    const porsche = engine('Porsche', '968', 1995, 3, 4);
+    expect(correctCylinderCount(porsche)).toBe(porsche);
+    const m340i = engine('BMW', 'M340i Sedan', 2024, 3, 6);
+    expect(correctCylinderCount(m340i)).toBe(m340i);
   });
 });
 

@@ -206,6 +206,8 @@ export interface CarFilter {
   threeRow?: boolean;
   /** EPA's two-seater class. */
   twoSeater?: boolean;
+  /** Where the engine sits, by model (utils/engine-position.ts): EPA records none. */
+  enginePosition?: 'front' | 'mid' | 'rear';
   /** Doors, from the model name or the body style. */
   doors?: number;
   /** EPA range in miles (EVs and plug-in hybrids' electric range). */
@@ -282,6 +284,8 @@ export interface SearchInterpretation {
   twoRow?: boolean;
   /** "2 seater": EPA's two-seater class. */
   twoSeater?: boolean;
+  /** "mid engine": where the engine sits, read by model. */
+  enginePosition?: 'front' | 'mid' | 'rear';
   /** "2 door": doors asked for, read from names and body styles. */
   doors?: number;
   /** "accord vs camry": the searches shown together. */

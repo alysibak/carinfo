@@ -166,8 +166,60 @@ export function unifyModelSpelling<T extends { make: string; model: string; year
   });
 }
 
+/**
+ * Cylinder counts EPA mistyped, found where a model's count disagrees with
+ * every other year of the same engine: the 2025 M340i, M440i and X3 M50i list
+ * their 3.0-litre straight six as a four (which also kept their horsepower
+ * from being filled from other years), the 2025 Panamera E-Hybrids their 2.9
+ * V6 as an eight, a 2019 S560e its V6 as a four, a 2007 Sebring its 3.5 V6 as
+ * a four and a 2000 LX 470 its V8 as a six. A generic rule cannot tell these
+ * from Porsche's real 3.0-litre four in the 968.
+ */
+const CYLINDER_FIXES: Array<{
+  make: string;
+  model: RegExp;
+  years: [number, number];
+  litres: number;
+  cylinders: number;
+}> = [
+  {
+    make: 'BMW',
+    model: /^(?:M340i|M440i|X3 M50i)\b/,
+    years: [2025, 2025],
+    litres: 3,
+    cylinders: 6,
+  },
+  {
+    make: 'Porsche',
+    model: /^Panamera 4S? e-hybrid\b/i,
+    years: [2025, 2025],
+    litres: 2.9,
+    cylinders: 6,
+  },
+  { make: 'Mercedes-Benz', model: /^S560e\b/, years: [2019, 2019], litres: 3, cylinders: 6 },
+  { make: 'Chrysler', model: /^Sebring\b/, years: [2007, 2007], litres: 3.5, cylinders: 6 },
+  { make: 'Lexus', model: /^LX 470\b/, years: [2000, 2000], litres: 4.7, cylinders: 8 },
+];
+
+export function correctCylinderCount(car: Car): Car {
+  const fix = CYLINDER_FIXES.find(
+    (f) =>
+      f.make === car.make &&
+      f.model.test(car.model) &&
+      car.year >= f.years[0] &&
+      car.year <= f.years[1] &&
+      car.engine.displacement === f.litres,
+  );
+  if (!fix || car.engine.cylinders === fix.cylinders) return car;
+  return {
+    ...car,
+    engine: { ...car.engine, cylinders: fix.cylinders },
+    provenance: { ...car.provenance, 'engine.cylinders': 'curated' },
+  };
+}
+
 export function normalizeCarRecord(car: Car): Car {
-  let normalized = correctDriveType(car);
+  let normalized = correctDriveType(correctCylinderCount(car));
 
   if (isFuelCellVehicle(normalized)) {
     normalized = {

@@ -27,6 +27,7 @@ import { TRIM_QUERY_FORMS } from '../utils/performance-trims.js';
 import { extractQueryModifiers, withoutFigures } from '../utils/search-modifiers.js';
 import { ENGINE_FAMILIES, isEngineFamilyId } from '../utils/engine-families.js';
 import { isThreeRow } from '../utils/three-row.js';
+import { enginePosition } from '../utils/engine-position.js';
 import { competitiveSets } from '../utils/competitive-sets.js';
 import { isLuxuryBrand } from '../utils/vehicle-taxonomy.js';
 import { findSimilarCars, sameModelLine } from '../utils/similar-vehicles.js';
@@ -1185,6 +1186,10 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
     filters.twoSeater = true;
     interpretation.twoSeater = true;
   }
+  if (modifiers.enginePosition && !explicit?.enginePosition) {
+    filters.enginePosition = modifiers.enginePosition;
+    interpretation.enginePosition = modifiers.enginePosition;
+  }
   if (modifiers.fuelEconomy && !explicit?.fuelEconomy) {
     const { min, max, unit, basis } = modifiers.fuelEconomy;
     // L/100 km falls as MPG rises: a ceiling in litres is a floor in MPG. The
@@ -1215,10 +1220,11 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
   }
   if (modifiers.unmeasured?.length) interpretation.unmeasured = modifiers.unmeasured;
   if (modifiers.vehicleClass) {
-    const { sets, segments, luxury, label } = modifiers.vehicleClass;
+    const { sets, segments, luxury, drive, label } = modifiers.vehicleClass;
     if (sets?.length) filters.classes = sets;
     if (segments?.length) filters.segments = segments;
     if (luxury) filters.luxury = true;
+    if (drive?.length && !explicit?.driveType?.length) filters.driveType = drive;
     interpretation.vehicleClass = label;
   }
   let sort = query.sort;
@@ -1269,7 +1275,10 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
   const applyDoors = () => {
     if (modifiers.doors == null) return;
     const bodies = filters.bodyStyle ?? [];
-    if (bodies.length && bodies.every((b) => !DOORS_BY_BODY[b])) {
+    // SUVs are counted (two doors or four); a pickup's or van's doors are not.
+    const counted = (body: string) =>
+      DOORS_BY_BODY[body] != null || (body === 'suv' && modifiers.doors! <= 4);
+    if (bodies.length && !bodies.some(counted)) {
       interpretation.unmeasured = [...(interpretation.unmeasured ?? []), `${modifiers.doors}-door`];
     } else {
       filters.doors = modifiers.doors;
@@ -1438,12 +1447,24 @@ const DOOR_NAME = /\b([2-5])[- ]?(?:dr|doors?)\b|\b(two|three|four|five)[- ]door
 const DOOR_COUNT_WORDS: Record<string, number> = { two: 2, three: 3, four: 4, five: 5 };
 
 /**
+ * SUVs with two doors that their names do not count: the Wrangler before
+ * "Unlimited" and "4dr", the Explorer Sport, Defender 90, Amigo, Rodeo Sport,
+ * X-90, soft-top Trackers and the Evoque and Murano with a folding roof.
+ */
+const TWO_DOOR_SUV =
+  /^(?:jeep (?:new )?wrangler(?!.*\b(?:unlimited|4dr)\b)|ford explorer sport\b(?! trac)|land rover defender 90\b|land rover range rover evoque (?:coupe|convertible)|isuzu (?:amigo|rodeo sport)\b|suzuki x-90\b|nissan murano crosscabriolet|(?:chevrolet|geo) tracker\b.*\bconvertible\b)/;
+
+/**
  * A car's doors: from its name ("Wrangler 2dr", "Civic 5Dr", "Cooper (5-doors)"),
- * else from its body. Undefined for a hatchback, SUV, truck or van not named.
+ * else from its body; an SUV has four unless it is one of the two-doors above.
+ * Undefined for a hatchback, truck or van not named.
  */
 function doorCount(car: Car): number | undefined {
   const named = DOOR_NAME.exec(car.model);
   if (named) return named[1] ? Number(named[1]) : DOOR_COUNT_WORDS[named[2].toLowerCase()];
+  if (car.bodyStyle === 'suv') {
+    return TWO_DOOR_SUV.test(`${car.make} ${car.model}`.toLowerCase()) ? 2 : 4;
+  }
   return DOORS_BY_BODY[car.bodyStyle];
 }
 
@@ -2062,6 +2083,7 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
   const threeRow = filters?.threeRow === true;
   const twoRow = filters?.threeRow === false;
   const twoSeater = filters?.twoSeater === true;
+  const positionWanted = filters?.enginePosition;
   const doors = filters?.doors;
   const rangeMin = filters?.rangeMiles?.min;
   const rangeMax = filters?.rangeMiles?.max;
@@ -2088,6 +2110,7 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
     threeRow ||
     twoRow ||
     twoSeater ||
+    !!positionWanted ||
     doors != null ||
     rangeMin != null ||
     rangeMax != null ||
@@ -2163,6 +2186,7 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
     if (threeRow && !isThreeRow(car)) continue;
     if (twoRow && isThreeRow(car)) continue;
     if (twoSeater && car.epa?.vClass !== 'Two Seaters') continue;
+    if (positionWanted && enginePosition(car) !== positionWanted) continue;
     if (doors != null && doorCount(car) !== doors) continue;
     if (classSet && !competitiveSets(car).some((set) => classSet.has(set))) continue;
     if (

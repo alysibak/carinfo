@@ -107,6 +107,8 @@ export const MAKER_RATINGS: Correction[] = [
   rate('BMW', /^X2 [sx]Drive28i$/, [2018, 2023], 2, true, 228),
   rate('BMW', /^X2 xDrive28i$/, [2024, 2026], 2, true, 241),
   rate('BMW', /^X3 [sx]Drive ?28i$/, [2011, 2017], 2, true, 240),
+  // The 2025 X3 M50, new that year, so no other year's rating to borrow.
+  rate('BMW', /^X3 M50i? xDrive$/, [2025, 2025], 3, true, 393),
   rate('BMW', /^X4 xDrive28i$/, [2015, 2018], 2, true, 240),
   rate('BMW', /^X4 xDrive30i$/, [2019, 2025], 2, true, 248),
   rate('BMW', /^X4 M40i$/, [2020, 2025], 3, true, 382),

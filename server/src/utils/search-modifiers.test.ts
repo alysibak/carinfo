@@ -342,4 +342,40 @@ describe('extractQueryModifiers', () => {
       'economy cars',
     );
   });
+
+  it('reads where the engine sits', () => {
+    expect(extractQueryModifiers('mid engine v8')).toEqual({
+      text: '',
+      layouts: ['V8'],
+      enginePosition: 'mid',
+    });
+    expect(extractQueryModifiers('rear-engined sports car').enginePosition).toBe('rear');
+  });
+
+  it('reads the kind of car a use asks for', () => {
+    // "track car" found the Chevrolet Tracker, "fun to drive" a Cherokee
+    // "Active Drive II", "drift car" nothing.
+    for (const query of ['track car', 'fun to drive', "driver's car", 'fun car']) {
+      const read = extractQueryModifiers(query);
+      expect(read.text, query).toBe('');
+      expect(read.vehicleClass?.segments, query).toContain('sports-car');
+    }
+    expect(extractQueryModifiers('drift car').vehicleClass?.drive).toEqual(['RWD']);
+    // No towing capacity is on file: pickups and full-size SUVs, said so.
+    const tow = extractQueryModifiers('tow vehicle');
+    expect(tow.vehicleClass?.sets).toContain('full-size-pickup');
+    expect(tow.unmeasured).toEqual(['towing capacity']);
+    expect(extractQueryModifiers('towing suv')).toEqual({ text: 'suv', unmeasured: ['towing'] });
+    // Ride-hailing: cheapest to run, unless another order is asked.
+    expect(extractQueryModifiers('car for uber').sortedBy).toBe('runningCost');
+    expect(extractQueryModifiers('fastest car for uber').sortedBy).toBe('horsepower');
+    // "road trip car" matched a Buick Roadmaster, "delivery van" found nothing,
+    // and "car for long commute" a Kona "Long Range".
+    expect(extractQueryModifiers('road trip car')).toEqual({ text: '', unmeasured: ['road trip'] });
+    expect(extractQueryModifiers('delivery van')).toEqual({
+      text: 'van',
+      unmeasured: ['delivery'],
+    });
+    expect(extractQueryModifiers('car for long commute').text).toBe('');
+  });
 });

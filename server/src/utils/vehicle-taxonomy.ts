@@ -421,6 +421,9 @@ export function inferBodyStyle(car: CarSpecs, displayModel?: string): BodyStyle 
   }
   if (car.bodyStyle === 'sedan') {
     const name = makeModel;
+    // From 2025 the A5 and S5 are the A4's successor, a four-door liftback;
+    // the coupe ended with 2024, and "S5 Sport Sedan" read as one.
+    if (/^audi (?:a5|s5|rs ?5)\b/.test(name) && car.year >= 2025) return 'sedan';
     if (FIVE_DOOR_CAR.test(name)) return 'hatchback';
     if (CONVERTIBLE_NAMES.test(name)) return 'convertible';
     if (COUPE_NAMES.test(name) || TWO_DOOR_CAR.test(name)) return 'coupe';
@@ -474,7 +477,7 @@ const COUPE_NAMES = new RegExp(
     'saturn sc',
     'clk\\d+',
     'audi tts?',
-    // Before 2018 the A5 and S5 were coupes; the four-door says "Sportback".
+    // Before 2025 the A5 and S5 were coupes; the four-door said "Sportback".
     'audi (?:a5|s5|rs ?5)(?! sportback| cabriolet)',
     'bmw i8',
     'cadillac elr',

@@ -924,6 +924,20 @@ describe('car.service natural language search', () => {
     expect(s580).toContain('S580 4matic Maybach');
   });
 
+  it('finds cars by where the engine sits and by what they are for', () => {
+    const mid = searchCars({ query: 'mid engine', limit: 300 });
+    expect(mid.total).toBeGreaterThan(50);
+    expect(mid.results.some((c) => c.make === 'Chevrolet' && /^Corvette/.test(c.model))).toBe(true);
+    expect(mid.results.every((c) => c.model !== 'Urus')).toBe(true);
+    expect(mid.interpretation?.enginePosition).toBe('mid');
+    const drift = searchCars({ query: 'drift car', limit: 100 });
+    expect(drift.total).toBeGreaterThan(20);
+    expect(drift.results.every((c) => c.driveType === 'RWD')).toBe(true);
+    const tow = searchCars({ query: 'tow vehicle', limit: 100 });
+    expect(tow.results.every((c) => c.bodyStyle === 'truck' || c.bodyStyle === 'suv')).toBe(true);
+    expect(tow.interpretation?.unmeasured).toContain('towing capacity');
+  });
+
   it('ranks without the body and fuel words read into filters', () => {
     // A 2004 "C320 4matic Sedan" led "mercedes sedan" on the word "sedan".
     const sedans = searchCars({ query: 'mercedes sedan', limit: 3, collapseByModel: true });
