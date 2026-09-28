@@ -97,6 +97,14 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
       glossary: 'configuration',
     });
   }
+  if (dashboard.enginePosition) {
+    pushIf(powertrain, {
+      key: 'enginePosition',
+      label: 'Engine position',
+      value: dashboard.enginePosition === 'mid' ? 'Mid-engine' : 'Rear-engine',
+      glossary: 'enginePosition',
+    });
+  }
   if (!isEv && !isFcev && hasNumericValue(car.engine.cylinders)) {
     pushIf(powertrain, {
       key: 'cylinders',
@@ -202,6 +210,14 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
       label: 'Competes as',
       value: dashboard.competitiveClass,
       glossary: 'competitiveClass',
+    });
+  }
+  if (dashboard.generation) {
+    pushIf(vehicle, {
+      key: 'generation',
+      label: 'Generation',
+      value: dashboard.generation,
+      glossary: 'generation',
     });
   }
   if (car.shoppingSegment) {

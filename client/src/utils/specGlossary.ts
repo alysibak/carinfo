@@ -41,6 +41,8 @@ export type SpecGlossaryKey =
   | 'variant'
   | 'shoppingSegment'
   | 'competitiveClass'
+  | 'generation'
+  | 'enginePosition'
   | 'msrp'
   | 'charge120'
   | 'phevBlendedMpge'
@@ -236,6 +238,16 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
     plain: 'The rivals it is shopped against',
     what: "The class shoppers compare it within, by model: a Camry is a midsize car beside an Accord and a Sonata, whatever EPA's interior-volume class says. A second class qualifies the first: a G-Class is a full-size luxury SUV and an off-roader.",
     why: 'Similar vehicles are drawn from it first.',
+  },
+  generation: {
+    plain: 'Which version of the model',
+    what: "The model's generation, by the maker's chassis code and count, in North American model years. EPA files years, not generations, so this comes from a table of the best-known lines.",
+    why: 'Parts, known problems and how a car drives follow the generation more than the year: a 2006 3 Series may be an E46 or an E90.',
+  },
+  enginePosition: {
+    plain: 'Where the engine sits',
+    what: 'Behind the seats (mid-engine) or behind the rear axle (rear-engine), by model: EPA does not record it.',
+    why: 'It shapes the balance and handling, and how much luggage room there is.',
   },
   shoppingSegment: {
     plain: 'What kind of buyer it targets',

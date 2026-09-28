@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readGeneration } from './generations.js';
+import { generationOf, readGeneration } from './generations.js';
 
 describe('readGeneration', () => {
   it('reads a chassis code beside the model', () => {
@@ -59,5 +59,28 @@ describe('readGeneration', () => {
   it('reads nicknames', () => {
     expect(readGeneration('new edge mustang')?.year).toEqual({ min: 1999, max: 2004 });
     expect(readGeneration('bugeye wrx')?.year).toEqual({ min: 2002, max: 2003 });
+  });
+
+  it('places a car in its generation for its page', () => {
+    const car = (make: string, model: string, year: number, variant?: string) => ({
+      make,
+      model,
+      year,
+      variant,
+    });
+    expect(generationOf(car('BMW', '330i', 2003))).toBe('E46 · 4th generation (1999–2006)');
+    expect(generationOf(car('BMW', 'M340i xDrive Sedan', 2021))).toBe(
+      'G20 · 7th generation (2019 on)',
+    );
+    expect(generationOf(car('Mercedes-Benz', 'C63 AMG', 2012))).toBe('W204 (2008–2014)');
+    expect(generationOf(car('Toyota', 'Tacoma 4WD', 2010))).toBe('2nd generation (2005–2015)');
+    expect(generationOf(car('Mazda', '3 5-Door', 2016))).toBe('BM · 3rd generation (2014–2018)');
+    // A year two generations share says nothing: a 2006 3 Series is an E46 or an E90.
+    expect(generationOf(car('BMW', '330i', 2006))).toBeUndefined();
+    // A plain Impreza is not on the WRX's chassis; a Volvo C70 is no C-Class.
+    expect(generationOf(car('Subaru', 'Impreza', 2012))).toBeUndefined();
+    expect(generationOf(car('Subaru', 'Impreza AWD', 2010, 'WRX'))).toBe('GR (2008–2014)');
+    expect(generationOf(car('Volvo', 'C70', 2010))).toBeUndefined();
+    expect(generationOf(car('Porsche', 'Carrera GT', 2004))).toBeUndefined();
   });
 });

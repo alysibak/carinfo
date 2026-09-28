@@ -233,6 +233,8 @@ Types live in `client/src/types/car.types.ts` and `server/src/types/car.types.ts
 | `fieldProvenance`   | Merged provenance for analytics fields                                                                                                                                                                                                            |
 | `zeroToSixty`       | `{ value, method: 'actual'\|'predicted', confidence }`                                                                                                                                                                                            |
 | `competitiveClass`  | The class it is shopped in (`"Compact SUV"`), from `utils/competitive-sets.ts`, with a second that qualifies it where it has one (`"Full-size luxury SUV · Off-roader"`, `"Midsize SUV · Three-row SUV"`); absent for the ~1% of listings in none |
+| `generation`        | The model's generation, from `utils/generations.ts` (`"E46 · 4th generation (1999–2006)"`, `"2nd generation (2005–2015)"`), for about 30% of listings; absent in a year two generations share (a 2006 3 Series is an E46 or an E90)               |
+| `enginePosition`    | `"mid"` or `"rear"` from `utils/engine-position.ts`; absent for front-engined and electric cars                                                                                                                                                   |
 
 ### Enums
 

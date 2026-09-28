@@ -485,4 +485,8 @@ export interface CarDashboard {
   };
   /** The class it is shopped in ("Compact SUV"), from utils/competitive-sets.ts. */
   competitiveClass?: string;
+  /** Its generation, from utils/generations.ts: "E46 · 4th generation (1999–2006)". */
+  generation?: string;
+  /** Where the engine sits, when not in front (utils/engine-position.ts). */
+  enginePosition?: 'mid' | 'rear';
 }

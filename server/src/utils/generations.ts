@@ -14,11 +14,17 @@ interface Generation {
   insert?: string;
   /** For the results page, when narrower than the line ("Honda Civic Type R"). */
   name?: string;
+  /** A nickname for part of a generation ("new edge", "bugeye"), not a generation. */
+  nickname?: boolean;
 }
 
 interface Line {
   /** For the results page: "BMW 3 Series". */
   name: string;
+  /** The makes that build it, for placing a car in a generation. */
+  makes: string[];
+  /** Where EPA's model names differ from how shoppers type them (EPA's "3 4-Door" is a Mazda3). */
+  carWords?: RegExp;
   /** The words that name this line in a query. */
   words: RegExp;
   /** Trims that name it only beside a code: "wk2 srt" is a Grand Cherokee SRT. */
@@ -39,7 +45,8 @@ const g = (gen: number | undefined, from: number, to: number, ...codes: string[]
 const LINES: Line[] = [
   {
     name: 'BMW 3 Series',
-    words: /\b(?:3[- ]?series|m3|3\d\d(?:[a-z]{1,2})?)\b/,
+    makes: ['BMW'],
+    words: /\b(?:3[- ]?series|m3|m?3\d\d(?:[a-z]{1,2})?)\b/,
     insert: 'bmw 3 series',
     generations: [
       g(3, 1992, 1999, 'e36'),
@@ -51,7 +58,8 @@ const LINES: Line[] = [
   },
   {
     name: 'BMW 4 Series',
-    words: /\b(?:4[- ]?series|m4|4\d\d(?:[a-z]{1,2})?)\b/,
+    makes: ['BMW'],
+    words: /\b(?:4[- ]?series|m4|m?4\d\d(?:[a-z]{1,2})?)\b/,
     insert: 'bmw 4 series',
     generations: [
       g(1, 2014, 2020, 'f32', 'f33', 'f36', 'f82', 'f83'),
@@ -60,7 +68,8 @@ const LINES: Line[] = [
   },
   {
     name: 'BMW 5 Series',
-    words: /\b(?:5[- ]?series|m5|5\d\d(?:[a-z]{1,2})?)\b/,
+    makes: ['BMW'],
+    words: /\b(?:5[- ]?series|m5|m?5\d\d(?:[a-z]{1,2})?)\b/,
     insert: 'bmw 5 series',
     generations: [
       g(4, 1997, 2003, 'e39'),
@@ -72,18 +81,21 @@ const LINES: Line[] = [
   },
   {
     name: 'BMW M2',
+    makes: ['BMW'],
     words: /\bm2\b/,
     insert: 'bmw m2',
     generations: [g(1, 2016, 2021, 'f87'), g(2, 2023, 2027, 'g87')],
   },
   {
     name: 'BMW Z4',
+    makes: ['BMW'],
     words: /\bz4\b/,
     insert: 'bmw z4',
     generations: [g(1, 2003, 2008, 'e85', 'e86'), g(2, 2009, 2016, 'e89'), g(3, 2019, 2027, 'g29')],
   },
   {
     name: 'BMW X5',
+    makes: ['BMW'],
     words: /\bx5\b/,
     insert: 'bmw x5',
     generations: [
@@ -95,6 +107,7 @@ const LINES: Line[] = [
   },
   {
     name: 'BMW X3',
+    makes: ['BMW'],
     words: /\bx3\b/,
     insert: 'bmw x3',
     generations: [
@@ -106,6 +119,7 @@ const LINES: Line[] = [
   },
   {
     name: 'Mercedes-Benz C-Class',
+    makes: ['Mercedes-Benz'],
     words: /\b(?:c[- ]?class|c ?\d{2,3}|amg c ?\d{2})\b/,
     insert: 'mercedes c class',
     generations: [
@@ -118,6 +132,7 @@ const LINES: Line[] = [
   },
   {
     name: 'Mercedes-Benz E-Class',
+    makes: ['Mercedes-Benz'],
     words: /\b(?:e[- ]?class|e ?\d{2,3}|amg e ?\d{2})\b/,
     insert: 'mercedes e class',
     generations: [
@@ -130,6 +145,7 @@ const LINES: Line[] = [
   },
   {
     name: 'Mercedes-Benz S-Class',
+    makes: ['Mercedes-Benz'],
     words: /\b(?:s[- ]?class|s ?\d{3}|amg s ?\d{2})\b/,
     insert: 'mercedes s class',
     generations: [
@@ -142,7 +158,8 @@ const LINES: Line[] = [
   },
   {
     name: 'Porsche 911',
-    words: /\b(?:911|carrera|gt3|gt2|targa)\b/,
+    makes: ['Porsche'],
+    words: /\b(?:911|carrera(?! gt\b)|gt3|gt2|targa)\b/,
     trims: /\b(?:turbo|gts|speedster|4s)\b/,
     insert: 'porsche 911',
     generations: [
@@ -155,6 +172,7 @@ const LINES: Line[] = [
   },
   {
     name: 'Porsche Boxster and Cayman',
+    makes: ['Porsche'],
     words: /\b(?:boxster|cayman|718)\b/,
     insert: 'porsche boxster',
     generations: [
@@ -166,6 +184,7 @@ const LINES: Line[] = [
   },
   {
     name: 'Chevrolet Corvette',
+    makes: ['Chevrolet'],
     words: /\b(?:corvette|vette)\b/,
     trims: /\b(?:z06|zr1|zr1x|z51|grand sport|stingray|e-ray)\b/,
     insert: 'chevrolet corvette',
@@ -179,6 +198,7 @@ const LINES: Line[] = [
   },
   {
     name: 'Chevrolet Camaro',
+    makes: ['Chevrolet'],
     words: /\bcamaro\b/,
     trims: /\b(?:ss|zl1|z28|z\/28)\b/,
     insert: 'chevrolet camaro',
@@ -186,7 +206,8 @@ const LINES: Line[] = [
   },
   {
     name: 'Chevrolet Silverado and GMC Sierra',
-    words: /\b(?:silverado|sierra)\b/,
+    makes: ['Chevrolet', 'GMC'],
+    words: /\b(?:silverado|sierra)\b(?! ev)/,
     insert: 'chevrolet silverado',
     generations: [
       g(undefined, 1988, 1998, 'gmt400'),
@@ -198,7 +219,8 @@ const LINES: Line[] = [
   },
   {
     name: 'GM full-size SUVs',
-    words: /\b(?:tahoe|suburban|yukon|escalade|avalanche)\b/,
+    makes: ['Chevrolet', 'GMC', 'Cadillac'],
+    words: /\b(?:tahoe|suburban|yukon|escalade|avalanche)\b(?! iq)/,
     insert: 'chevrolet tahoe',
     generations: [
       g(undefined, 1992, 1999, 'gmt400'),
@@ -210,12 +232,13 @@ const LINES: Line[] = [
   },
   {
     name: 'Ford Mustang',
+    makes: ['Ford'],
     words: /\bmustang\b(?! mach)/,
     trims: /\b(?:gt|gt350|gt500|ecoboost|mach 1|bullitt|shelby|cobra)\b/,
     insert: 'ford mustang',
     generations: [
       g(4, 1994, 2004, 'sn95'),
-      g(undefined, 1999, 2004, 'new edge'),
+      { ...g(undefined, 1999, 2004, 'new edge'), nickname: true },
       g(5, 2005, 2014, 's197'),
       g(6, 2015, 2023, 's550'),
       g(7, 2024, 2027, 's650'),
@@ -223,6 +246,7 @@ const LINES: Line[] = [
   },
   {
     name: 'Ford F-150',
+    makes: ['Ford'],
     words: /\bf[- ]?150\b/,
     insert: 'ford f150',
     generations: [
@@ -236,6 +260,7 @@ const LINES: Line[] = [
   },
   {
     name: 'Ford Explorer',
+    makes: ['Ford'],
     words: /\bexplorer\b(?! sport)/,
     insert: 'ford explorer',
     generations: [
@@ -248,18 +273,21 @@ const LINES: Line[] = [
   },
   {
     name: 'Ford Focus',
+    makes: ['Ford'],
     words: /\bfocus\b/,
     insert: 'ford focus',
     generations: [g(1, 2000, 2007, 'mk1'), g(2, 2008, 2011, 'mk2'), g(3, 2012, 2018, 'mk3')],
   },
   {
     name: 'Ford Bronco',
+    makes: ['Ford'],
     words: /\bbronco\b(?! sport)/,
     insert: 'ford bronco',
     generations: [g(5, 1992, 1996), g(6, 2021, 2027)],
   },
   {
     name: 'Toyota Camry',
+    makes: ['Toyota'],
     words: /\bcamry\b/,
     insert: 'toyota camry',
     generations: [
@@ -274,6 +302,7 @@ const LINES: Line[] = [
   },
   {
     name: 'Toyota Corolla',
+    makes: ['Toyota'],
     words: /\bcorolla\b(?! cross)/,
     insert: 'toyota corolla',
     generations: [
@@ -287,6 +316,7 @@ const LINES: Line[] = [
   },
   {
     name: 'Toyota RAV4',
+    makes: ['Toyota'],
     words: /\brav ?4\b/,
     insert: 'toyota rav4',
     generations: [
@@ -300,30 +330,35 @@ const LINES: Line[] = [
   },
   {
     name: 'Toyota Tacoma',
+    makes: ['Toyota'],
     words: /\btacoma\b/,
     insert: 'toyota tacoma',
     generations: [g(1, 1995, 2004), g(2, 2005, 2015), g(3, 2016, 2023), g(4, 2024, 2027)],
   },
   {
     name: 'Toyota Tundra',
+    makes: ['Toyota'],
     words: /\btundra\b/,
     insert: 'toyota tundra',
     generations: [g(1, 2000, 2006), g(2, 2007, 2021), g(3, 2022, 2027)],
   },
   {
     name: 'Toyota 4Runner',
+    makes: ['Toyota'],
     words: /\b4 ?runner\b/,
     insert: 'toyota 4runner',
     generations: [g(3, 1996, 2002), g(4, 2003, 2009), g(5, 2010, 2024), g(6, 2025, 2027)],
   },
   {
     name: 'Toyota Highlander',
+    makes: ['Toyota'],
     words: /\bhighlander\b/,
     insert: 'toyota highlander',
     generations: [g(1, 2001, 2007), g(2, 2008, 2013), g(3, 2014, 2019), g(4, 2020, 2027)],
   },
   {
     name: 'Toyota Prius',
+    makes: ['Toyota'],
     words: /\bprius\b/,
     insert: 'toyota prius',
     generations: [
@@ -336,28 +371,43 @@ const LINES: Line[] = [
   },
   {
     name: 'Toyota Sienna',
+    makes: ['Toyota'],
     words: /\bsienna\b/,
     insert: 'toyota sienna',
     generations: [g(1, 1998, 2003), g(2, 2004, 2010), g(3, 2011, 2020), g(4, 2021, 2027)],
   },
   {
     name: 'Toyota Supra',
+    makes: ['Toyota'],
     words: /\bsupra\b/,
     insert: 'toyota supra',
     generations: [g(4, 1993, 1998, 'a80', 'mk4', 'mkiv'), g(5, 2020, 2027, 'a90', 'mk5', 'mkv')],
   },
   {
     name: 'Honda Civic',
+    makes: ['Honda'],
     words: /\bcivic\b/,
     trims: /\b(?:si|type[- ]r)\b/,
     insert: 'honda civic',
     generations: [
       g(5, 1992, 1995, 'eg'),
       g(6, 1996, 2000, 'ek'),
-      g(7, 2001, 2005),
+      g(7, 2001, 2005, 'es', 'em2'),
       { years: [2002, 2005], codes: ['ep3'], insert: 'honda civic si', name: 'Honda Civic Si' },
-      g(8, 2006, 2011, 'fa5', 'fg2'),
-      g(9, 2012, 2015, 'fb6', 'fg4'),
+      g(8, 2006, 2011, 'fa', 'fg'),
+      {
+        years: [2006, 2011],
+        codes: ['fa5', 'fg2'],
+        insert: 'honda civic si',
+        name: 'Honda Civic Si',
+      },
+      g(9, 2012, 2015, 'fb', 'fg3'),
+      {
+        years: [2012, 2015],
+        codes: ['fb6', 'fg4'],
+        insert: 'honda civic si',
+        name: 'Honda Civic Si',
+      },
       g(10, 2016, 2021, 'fc', 'fk'),
       {
         years: [2017, 2021],
@@ -383,6 +433,7 @@ const LINES: Line[] = [
   },
   {
     name: 'Honda Accord',
+    makes: ['Honda'],
     words: /\baccord\b/,
     insert: 'honda accord',
     generations: [
@@ -397,6 +448,7 @@ const LINES: Line[] = [
   },
   {
     name: 'Honda CR-V',
+    makes: ['Honda'],
     words: /\bcr-?v\b/,
     insert: 'honda cr-v',
     generations: [
@@ -410,24 +462,28 @@ const LINES: Line[] = [
   },
   {
     name: 'Honda S2000',
+    makes: ['Honda'],
     words: /\bs2000\b/,
     insert: 'honda s2000',
     generations: [g(undefined, 2000, 2003, 'ap1'), g(undefined, 2004, 2009, 'ap2')],
   },
   {
     name: 'Honda Pilot',
+    makes: ['Honda'],
     words: /\bpilot\b/,
     insert: 'honda pilot',
     generations: [g(1, 2003, 2008), g(2, 2009, 2015), g(3, 2016, 2022), g(4, 2023, 2027)],
   },
   {
     name: 'Honda Odyssey',
+    makes: ['Honda'],
     words: /\bodyssey\b/,
     insert: 'honda odyssey',
     generations: [g(2, 1999, 2004), g(3, 2005, 2010), g(4, 2011, 2017), g(5, 2018, 2027)],
   },
   {
     name: 'Nissan Z',
+    makes: ['Nissan'],
     words: /\b(?:350 ?z|370 ?z|nissan z)\b/,
     insert: 'nissan z',
     generations: [
@@ -438,12 +494,14 @@ const LINES: Line[] = [
   },
   {
     name: 'Nissan GT-R',
+    makes: ['Nissan'],
     words: /\bgt-?r\b/,
     insert: 'nissan gt-r',
     generations: [g(undefined, 2009, 2027, 'r35')],
   },
   {
     name: 'Mazda MX-5',
+    makes: ['Mazda'],
     words: /\b(?:miata|mx-?5)\b/,
     insert: 'mazda mx-5',
     generations: [
@@ -455,6 +513,8 @@ const LINES: Line[] = [
   },
   {
     name: 'Mazda3',
+    makes: ['Mazda'],
+    carWords: /^(?:mazda ?)?3\b/,
     words: /\bmazda ?3\b/,
     insert: 'mazda 3',
     generations: [
@@ -466,20 +526,24 @@ const LINES: Line[] = [
   },
   {
     name: 'Mazda RX-7',
+    makes: ['Mazda'],
     words: /\brx-?7\b/,
     insert: 'mazda rx-7',
     generations: [g(3, 1993, 1995, 'fd')],
   },
   {
     name: 'Subaru WRX and Impreza',
+    makes: ['Subaru'],
+    // A plain Impreza of these years is not on the WRX's chassis.
+    carWords: /\b(?:wrx|sti)\b/,
     words: /\b(?:wrx|sti|impreza)\b/,
     insert: 'subaru wrx',
     generations: [
       g(undefined, 1993, 2001, 'gc'),
       g(undefined, 2002, 2007, 'gd', 'gg'),
-      g(undefined, 2002, 2003, 'bugeye'),
-      g(undefined, 2004, 2005, 'blobeye'),
-      g(undefined, 2006, 2007, 'hawkeye'),
+      { ...g(undefined, 2002, 2003, 'bugeye'), nickname: true },
+      { ...g(undefined, 2004, 2005, 'blobeye'), nickname: true },
+      { ...g(undefined, 2006, 2007, 'hawkeye'), nickname: true },
       g(undefined, 2008, 2014, 'gr', 'gv', 'gh'),
       g(undefined, 2015, 2021, 'va'),
       g(undefined, 2022, 2027, 'vb'),
@@ -487,12 +551,14 @@ const LINES: Line[] = [
   },
   {
     name: 'Subaru BRZ and Toyota 86',
+    makes: ['Subaru', 'Toyota', 'Scion'],
     words: /\b(?:brz|gr ?86|fr-?s|86)\b/,
     insert: 'subaru brz',
     generations: [g(1, 2013, 2020, 'zc6', 'zn6'), g(2, 2022, 2027, 'zd8', 'zn8')],
   },
   {
     name: 'Volkswagen Golf',
+    makes: ['Volkswagen'],
     words: /\b(?:golf|gti|rabbit)\b/,
     insert: 'volkswagen golf',
     generations: [
@@ -500,12 +566,13 @@ const LINES: Line[] = [
       g(4, 1999, 2006, 'mk4', 'mkiv'),
       g(5, 2006, 2009, 'mk5', 'mkv'),
       g(6, 2010, 2014, 'mk6', 'mkvi'),
-      g(7, 2015, 2021, 'mk7.5', 'mk7', 'mkvii'),
+      g(7, 2015, 2021, 'mk7', 'mkvii', 'mk7.5'),
       g(8, 2022, 2027, 'mk8', 'mkviii'),
     ],
   },
   {
     name: 'Volkswagen Jetta',
+    makes: ['Volkswagen'],
     words: /\b(?:jetta|gli)\b/,
     insert: 'volkswagen jetta',
     generations: [
@@ -518,6 +585,7 @@ const LINES: Line[] = [
   },
   {
     name: 'Jeep Wrangler',
+    makes: ['Jeep'],
     words: /\bwrangler\b/,
     trims: /\b(?:rubicon|sahara|unlimited|392|4xe)\b/,
     insert: 'jeep wrangler',
@@ -531,6 +599,7 @@ const LINES: Line[] = [
   },
   {
     name: 'Jeep Grand Cherokee',
+    makes: ['Jeep'],
     words: /\bgrand cherokee\b/,
     trims: /\b(?:srt8?|trackhawk|overland|summit|laredo|trailhawk)\b/,
     insert: 'jeep grand cherokee',
@@ -544,12 +613,15 @@ const LINES: Line[] = [
   },
   {
     name: 'Jeep Cherokee',
+    makes: ['Jeep'],
     words: /\b(?<!grand )cherokee\b/,
     insert: 'jeep cherokee',
     generations: [g(undefined, 1984, 2001, 'xj'), g(undefined, 2014, 2023, 'kl')],
   },
   {
     name: 'Ram 1500',
+    makes: ['Ram', 'Dodge'],
+    carWords: /^(?:ram )?1500\b/,
     words: /\bram(?: 1500)?\b/,
     insert: 'ram 1500',
     generations: [
@@ -561,36 +633,41 @@ const LINES: Line[] = [
   },
   {
     name: 'Dodge Charger',
+    makes: ['Dodge'],
     words: /\bcharger\b/,
     insert: 'dodge charger',
     generations: [g(6, 2006, 2010, 'lx'), g(7, 2011, 2023, 'ld'), g(8, 2024, 2027)],
   },
   {
     name: 'Audi A4 and S4',
+    makes: ['Audi'],
     words: /\b(?:a4|s4|rs ?4|allroad)\b/,
     insert: 'audi a4',
     generations: [
       g(undefined, 1996, 2001, 'b5'),
       g(undefined, 2002, 2005, 'b6'),
       g(undefined, 2005, 2008, 'b7'),
-      g(undefined, 2009, 2016, 'b8.5', 'b8'),
-      g(undefined, 2017, 2025, 'b9.5', 'b9'),
+      g(undefined, 2009, 2016, 'b8', 'b8.5'),
+      g(undefined, 2017, 2025, 'b9', 'b9.5'),
     ],
   },
   {
     name: 'Audi A5 and S5',
+    makes: ['Audi'],
     words: /\b(?:a5|s5|rs ?5)\b/,
     insert: 'audi a5',
-    generations: [g(1, 2008, 2017, 'b8.5', 'b8'), g(2, 2018, 2024, 'b9.5', 'b9')],
+    generations: [g(1, 2008, 2017, 'b8', 'b8.5'), g(2, 2018, 2024, 'b9', 'b9.5')],
   },
   {
     name: 'Audi TT',
+    makes: ['Audi'],
     words: /\btts?\b/,
     insert: 'audi tt',
     generations: [g(1, 2000, 2006, '8n'), g(2, 2008, 2015, '8j'), g(3, 2016, 2023, '8s')],
   },
   {
     name: 'Lexus IS',
+    makes: ['Lexus'],
     words: /\bis ?\d{3}|\bis[- ]?f\b/,
     insert: 'lexus is',
     generations: [g(1, 2001, 2005, 'xe10'), g(2, 2006, 2013, 'xe20'), g(3, 2014, 2027, 'xe30')],
@@ -706,4 +783,36 @@ export function readGeneration(
     }
   }
   return null;
+}
+
+const ordinal = (n: number) =>
+  `${n}${n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th'}`;
+const codeLabel = (code: string) =>
+  /^mk/.test(code) ? `Mk${code.slice(2).toUpperCase()}` : code.toUpperCase();
+
+/**
+ * The generation a car belongs to, for its page: "E46 · 4th generation
+ * (1999–2006)", "2nd generation (2005–2015)". Nothing in a year two
+ * generations share (a 2006 3 Series is an E46 convertible or an E90 sedan).
+ */
+export function generationOf(car: {
+  make: string;
+  model: string;
+  year: number;
+  variant?: string;
+}): string | undefined {
+  const name = `${car.model} ${car.variant ?? ''}`.toLowerCase();
+  const line = LINES.find((l) => l.makes.includes(car.make) && (l.carWords ?? l.words).test(name));
+  if (!line) return undefined;
+  const hits = line.generations.filter(
+    (gen) => !gen.nickname && !gen.name && car.year >= gen.years[0] && car.year <= gen.years[1],
+  );
+  if (hits.length !== 1) return undefined;
+  const [gen] = hits;
+  // The current generation runs on: "(2020 on)", not to the last year on file.
+  const years = gen.years[1] >= 2027 ? `(${gen.years[0]} on)` : `(${gen.years[0]}–${gen.years[1]})`;
+  const code = gen.codes?.[0];
+  const number = gen.gen != null ? `${ordinal(gen.gen)} generation` : undefined;
+  const parts = [code && codeLabel(code), number].filter(Boolean).join(' · ');
+  return parts ? `${parts} ${years}` : undefined;
 }

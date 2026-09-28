@@ -34,6 +34,28 @@ describe('KeySpecs omit-when-empty', () => {
   });
 });
 
+describe('KeySpecs generation and engine position', () => {
+  it('shows the generation, and the engine position only when not in front', () => {
+    render(
+      <KeySpecs
+        dashboard={{
+          ...sparseDashboard,
+          generation: 'E46 · 4th generation (1999–2006)',
+          enginePosition: 'mid',
+        }}
+      />,
+    );
+    expect(screen.getByText('E46 · 4th generation (1999–2006)')).toBeInTheDocument();
+    expect(screen.getByText('Mid-engine')).toBeInTheDocument();
+  });
+
+  it('shows neither row when the dashboard has none', () => {
+    render(<KeySpecs dashboard={sparseDashboard} />);
+    expect(screen.queryByText('Generation')).not.toBeInTheDocument();
+    expect(screen.queryByText('Engine position')).not.toBeInTheDocument();
+  });
+});
+
 describe('KeySpecs long values', () => {
   // A long value used to keep its full width beside the label and punch out of
   // the card, overlapping the next column and forcing horizontal page scroll.
