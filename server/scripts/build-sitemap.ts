@@ -24,7 +24,7 @@ import {
 } from '../src/seo/sitemap.js';
 import { siteUrl } from '../src/seo/site.js';
 import { absolutizeShareImage } from '../src/seo/html-shell.js';
-import { COLLECTIONS } from '../../client/src/config/collections.js';
+import { COLLECTIONS } from '../src/shared/collections.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const DIST = resolve(here, '..', '..', 'client', 'dist');
