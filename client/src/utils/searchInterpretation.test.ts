@@ -101,6 +101,12 @@ describe('describeSearchInterpretation', () => {
     ]);
   });
 
+  it('names the generation read from a chassis code', () => {
+    expect(describeSearchInterpretation({ generation: 'E46 BMW 3 Series, 1999–2006' })).toEqual([
+      'Read as the E46 BMW 3 Series, 1999–2006.',
+    ]);
+  });
+
   it('names the engine position, read by model', () => {
     expect(describeSearchInterpretation({ enginePosition: 'mid' })).toEqual([
       'Mid-engined cars, by model: EPA records no engine position.',

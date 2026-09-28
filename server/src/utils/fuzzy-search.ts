@@ -106,6 +106,13 @@ const NAMED_LINEUPS: Record<string, Lineup> = {
   // The SVT Lightning (1993-2004) is "Lightning Pickup", the electric truck
   // (2022 on) "F-150 Lightning": "ford lightning" found only the old one.
   lightning: { make: 'Ford', label: 'Lightning', pattern: /^(?:f-?150 )?lightning\b/i },
+  // EPA filed the 2003-09 cars as "Carrera 2 Coupe", "Targa" and "Turbo 4 911":
+  // "porsche 911" found none of them.
+  '911': {
+    make: 'Porsche',
+    label: '911',
+    pattern: /^(?:new )?911\b|^carrera [24]\b|^targa\b|^turbo\b/i,
+  },
 };
 
 export function lineupForToken(token: string): Lineup | null {

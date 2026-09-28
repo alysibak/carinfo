@@ -246,6 +246,26 @@ const REFERENCES: Reference[] = [
     observedCad: 33_500,
     source: 'CarGurus Canada average, GT Premium Coupe RWD, September 2026',
   },
+  // Older Corvettes hold level: collectors keep the C5 and C6 near their
+  // prices of a decade ago. US averages at the ~1.2 Canada/US listing ratio.
+  {
+    label: '2004 Chevrolet Corvette',
+    find: named('Chevrolet', /^Corvette$/, 2004),
+    observedCad: 28_600,
+    source: 'CarGurus US average US$23,821 (2026) at 1.2',
+  },
+  {
+    label: '2008 Chevrolet Corvette',
+    find: withEngine('Chevrolet', /^Corvette$/, 2008, 6.2),
+    observedCad: 39_650,
+    source: 'CarGurus US average US$33,042 (2026) at 1.2',
+  },
+  {
+    label: '2011 Chevrolet Corvette Z06 (C6)',
+    find: withEngine('Chevrolet', /^Corvette$/, 2011, 7),
+    observedCad: 67_100,
+    source: 'C6 Z06 average US$55,900 (Vettes of Atlanta, 2026) at 1.2',
+  },
   {
     label: '2021 Chevrolet Corvette',
     find: named('Chevrolet', /^Corvette$/, 2021),

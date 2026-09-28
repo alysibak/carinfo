@@ -938,6 +938,22 @@ describe('car.service natural language search', () => {
     expect(tow.interpretation?.unmeasured).toContain('towing capacity');
   });
 
+  it('reads generations by chassis code and number', () => {
+    // "e46 m3" found nothing, and "c7 corvette" a 2026 C8.
+    const m3 = searchCars({ query: 'e46 m3', limit: 50 });
+    expect(m3.total).toBeGreaterThan(0);
+    expect(m3.results.every((c) => c.model.startsWith('M3') && c.year <= 2006)).toBe(true);
+    expect(m3.interpretation?.generation).toBe('E46 BMW 3 Series, 1999–2006');
+    const c7 = searchCars({ query: 'c7 corvette', limit: 50 });
+    expect(c7.results.every((c) => c.year >= 2014 && c.year <= 2019)).toBe(true);
+    // EPA files the C6 Z06 as a plain "Corvette"; its 7.0-litre engine names it.
+    const z06 = searchCars({ query: 'c6 z06', limit: 20 });
+    expect(z06.total).toBeGreaterThan(0);
+    expect(z06.results.every((c) => c.engine.displacement === 7)).toBe(true);
+    const tacoma = searchCars({ query: '2nd gen tacoma', limit: 100 });
+    expect(tacoma.results.every((c) => c.year >= 2005 && c.year <= 2015)).toBe(true);
+  });
+
   it('ranks without the body and fuel words read into filters', () => {
     // A 2004 "C320 4matic Sedan" led "mercedes sedan" on the word "sedan".
     const sedans = searchCars({ query: 'mercedes sedan', limit: 3, collapseByModel: true });

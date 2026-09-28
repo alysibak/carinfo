@@ -41,6 +41,19 @@ const RULES: TrimRule[] = [
     },
   },
   {
+    // EPA files the C6 Z06 and ZR1 and the C7 Z06 as plain "Corvette": the
+    // 7.0-litre LS7, the supercharged LS9 and the supercharged LT4.
+    make: 'Chevrolet',
+    model: /^corvette$/i,
+    named: /\b(z06|zr1x?|e-ray|grand sport|stingray)\b/i,
+    name: (c) => {
+      if (c.year >= 2006 && c.year <= 2013 && litres(c) === 7) return 'Z06';
+      if (c.year >= 2009 && c.year <= 2013 && supercharged(c)) return 'ZR1';
+      if (c.year >= 2015 && c.year <= 2018 && supercharged(c)) return 'Z06';
+      return undefined;
+    },
+  },
+  {
     make: 'Chevrolet',
     model: /^camaro\b/i,
     named: /\b(ss|zl1|z\/?28|iroc)\b/i,
@@ -201,6 +214,8 @@ export const TRIM_QUERY_FORMS: ReadonlyArray<readonly string[]> = [
   ['srt8'],
   ['srt'],
   ['zl1'],
+  ['zr1'],
+  ['z06'],
   ['sti'],
   ['wrx'],
   ['ss'],

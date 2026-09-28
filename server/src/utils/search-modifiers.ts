@@ -402,7 +402,7 @@ const LISTING_WORDS =
  * read as a name.
  */
 const UNMEASURED =
-  /\b(?:best|good|great|top|reliable|dependable|quality|nice|decent|perfect|ideal|recommended|popular|comfortable|fun|cool|first|beginner|starter|tow|towing|haul|hauling|seniors?|elderly|kids?|son|daughter|wife|husband|mom|dad|girlfriend|boyfriend|grand(?:ma|pa|mother|father)|roomy|spacious|cargo space|cargo room|(?:big|large|huge|roomy|spacious) (?:trunk|boot)s?|trunk space|legroom|headroom|dogs?|pets?|(?:tall|short|big) (?:people|persons?|drivers?|guys?)|road[- ]?trips?|long drives?|highway driving|deliver(?:y|ies|ing)|work(?= (?:trucks?|vans?|pickups?)\b))\b/g;
+  /\b(?:best|good|great|top|reliable|dependable|quality|nice|decent|perfect|ideal|recommended|popular|comfortable|fun|cool|first|beginner|starter|tow|towing|haul|hauling|seniors?|elderly|kids?|son|daughter|wife|husband|mom|dad|girlfriend|boyfriend|grand(?:ma|pa|mother|father)|roomy|spacious|cargo space|cargo room|(?:big|large|huge|roomy|spacious) (?:trunk|boot)s?|trunk space|legroom|headroom|dogs?|pets?|(?:tall|short|big) (?:people|persons?|drivers?|guys?)|road[- ]?trips?|long drives?|highway driving|flex[- ]?fuel(?:ed)?|e85|deliver(?:y|ies|ing)|work(?= (?:trucks?|vans?|pickups?)\b))\b/g;
 
 /**
  * A first car, or a car for someone learning: "good first car for a teenager"

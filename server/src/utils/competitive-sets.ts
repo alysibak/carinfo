@@ -283,7 +283,8 @@ const SETS: Record<CompetitiveSet, Member[]> = {
     /^ford (expedition|excursion)\b/,
     /^toyota sequoia\b/,
     /^nissan armada\b/,
-    /^jeep (wagoneer|grand wagoneer)\b/,
+    // Not the Wagoneer S, a mid-size electric SUV.
+    /^jeep (wagoneer(?! s\b)|grand wagoneer)\b/,
     /^chrysler aspen\b/,
   ],
   'off-roader': [
@@ -508,6 +509,7 @@ const SETS: Record<CompetitiveSet, Member[]> = {
     /^lucid gravity\b/,
     /^rivian r[23]\b/,
     /^vinfast\b/,
+    /^jeep wagoneer s\b/,
     /^subaru (uncharted|trailseeker)\b/,
   ],
   'ev-pickup': [

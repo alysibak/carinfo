@@ -618,21 +618,26 @@ const PERFORMANCE_VARIANT_RULES: ModelMsrpRule[] = [
   },
   // Chevrolet Corvette
   { test: (c) => c.make === 'Chevrolet' && /corvette zr1x/i.test(c.model), msrp: 208000 },
+  // EPA files the C6 ZR1 and Z06 and the C7 Z06 as plain "Corvette"; the
+  // derived trim names them (the 7.0-litre Z06 read as a base car).
   {
-    test: (c) => c.make === 'Chevrolet' && /corvette zr1/i.test(c.model),
-    msrp: (c) => (c.year >= 2025 ? 175000 : 120000),
+    test: (c) => c.make === 'Chevrolet' && (/corvette zr1/i.test(c.model) || trimOf(c) === 'ZR1'),
+    // The C6 ZR1 anchors at today's, as the C5 and C6 below do.
+    msrp: (c) => (c.year >= 2025 || c.year < 2014 ? 175000 : 120000),
   },
   {
     test: (c) =>
       c.make === 'Chevrolet' &&
       /^corvette/i.test(c.model) &&
-      (/z06/i.test(c.model) || c.engine.aspiration === 'supercharged'),
-    msrp: (c) => (c.year >= 2023 ? 110000 : 80000),
+      (/z06/i.test(c.model) || trimOf(c) === 'Z06' || c.engine.aspiration === 'supercharged'),
+    msrp: (c) => (c.year >= 2023 || c.year < 2014 ? 110000 : 80000),
   },
   { test: (c) => c.make === 'Chevrolet' && /corvette e-ray/i.test(c.model), msrp: 105000 },
   {
+    // A C5 or C6 anchors at today's C8: collectors hold them level where the
+    // curve keeps falling (2004 ~US$23,800, 2008 ~US$33,000 on CarGurus, 2026).
     test: (c) => c.make === 'Chevrolet' && /^corvette/i.test(c.model),
-    msrp: (c) => (c.year >= 2020 ? 68000 : c.year >= 2014 ? 56000 : 48000),
+    msrp: (c) => (c.year >= 2014 && c.year < 2020 ? 56000 : 68000),
   },
   // Dodge Challenger / Charger
   { test: (c) => c.make === 'Dodge' && /demon/i.test(c.model), msrp: 100000 },
@@ -1624,7 +1629,10 @@ function retentionFraction(
  * so these read as "close to sticker", never as appreciating.
  */
 const HIGH_RETENTION_MODELS: Array<[(c: CarSpecs) => boolean, number]> = [
-  [(c) => c.make === 'Chevrolet' && /^corvette/i.test(c.model) && c.year >= 2014, 1.5],
+  // The C5 and C6 too: a 2004 lists at ~US$23,800 and a 2008 at ~US$33,000 on
+  // CarGurus (2026), and a C6 Z06 averages ~US$55,900; the plain curve gave a
+  // 2008 $17,000 and a 2013 Z06 $22,500.
+  [(c) => c.make === 'Chevrolet' && /^corvette/i.test(c.model) && c.year >= 1997, 1.5],
   [
     (c) =>
       c.make === 'Chevrolet' &&

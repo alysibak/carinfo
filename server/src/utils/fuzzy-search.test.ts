@@ -108,5 +108,12 @@ describe('fuzzy-search', () => {
     expect(lineupForToken('m-class')!.pattern.test('ML350 4matic')).toBe(true);
     expect(lineupForToken('g-class')!.pattern.test('G 580 with EQ Technology')).toBe(true);
     expect(lineupForToken('camry')).toBeNull();
+    // EPA named the 2003-09 911s "Carrera 2 Coupe", "Targa" and "Turbo 4 911".
+    const nineEleven = lineupForToken('911')!;
+    expect(nineEleven.make).toBe('Porsche');
+    for (const model of ['911 Carrera S', 'Carrera 2 Coupe', 'Targa', 'Turbo 4 911']) {
+      expect(nineEleven.pattern.test(model), model).toBe(true);
+    }
+    expect(nineEleven.pattern.test('Carrera GT')).toBe(false);
   });
 });

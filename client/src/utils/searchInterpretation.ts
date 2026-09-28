@@ -100,6 +100,7 @@ export function describeSearchInterpretation(
     lines.push(`${interpretation.engineSize.toFixed(1)}-litre engines only.`);
   }
   if (interpretation.engineFamily) lines.push(`Read as ${interpretation.engineFamily}.`);
+  if (interpretation.generation) lines.push(`Read as the ${interpretation.generation}.`);
   if (interpretation.layouts?.length) {
     const names = interpretation.layouts.join(' and ');
     lines.push(

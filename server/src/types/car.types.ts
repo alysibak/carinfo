@@ -286,6 +286,8 @@ export interface SearchInterpretation {
   twoSeater?: boolean;
   /** "mid engine": where the engine sits, read by model. */
   enginePosition?: 'front' | 'mid' | 'rear';
+  /** "e46 m3", "2nd gen tacoma": the generation read, "E46 BMW 3 Series, 1999–2006". */
+  generation?: string;
   /** "2 door": doors asked for, read from names and body styles. */
   doors?: number;
   /** "accord vs camry": the searches shown together. */

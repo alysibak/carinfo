@@ -28,6 +28,7 @@ import { extractQueryModifiers, withoutFigures } from '../utils/search-modifiers
 import { ENGINE_FAMILIES, isEngineFamilyId } from '../utils/engine-families.js';
 import { isThreeRow } from '../utils/three-row.js';
 import { enginePosition } from '../utils/engine-position.js';
+import { readGeneration } from '../utils/generations.js';
 import { competitiveSets } from '../utils/competitive-sets.js';
 import { isLuxuryBrand } from '../utils/vehicle-taxonomy.js';
 import { findSimilarCars, sameModelLine } from '../utils/similar-vehicles.js';
@@ -719,6 +720,8 @@ const SUBMODEL_KEYS: Record<string, Array<[RegExp, string]>> = {
     [/^(mustang mach-e|bronco sport|explorer sport(?: trac)?|taurus x|transit connect)\b/, '$1'],
   ],
   fiat: [[/^500 ?([lx])\b/, '500$1']],
+  // EPA's 2003-09 "Carrera 2 Coupe", "Targa" and "Turbo 4 911" are 911s.
+  porsche: [[/^(?:911|carrera [24]|targa|turbo)\b/, '911']],
   honda: [[/^accord crosstour\b/, 'accord crosstour']],
   jeep: [[/^(grand \w+|wagoneer s)\b/, '$1']],
   pontiac: [[/^(grand \w+)/, '$1']],
@@ -1125,12 +1128,21 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
 
   const filters = { ...(query.filters || {}) };
   const explicit = query.filters;
-  const modifiers = extractQueryModifiers(typed, { classes: !query.keepClassWords });
+  // Before the modifiers: the "new" of "new edge mustang" is not the newest.
+  const generation = query.ignoreYearWords ? null : readGeneration(typed, namesAVehicle);
+  const modifiers = extractQueryModifiers(generation?.text ?? typed, {
+    classes: !query.keepClassWords,
+  });
   const price = extractPricePhrases(modifiers.text);
   const interpretation: NonNullable<SearchQuery['interpretation']> = {};
   if ((price.min != null || price.max != null) && !explicit?.price) {
     filters.price = { min: price.min, max: price.max };
     interpretation.price = { min: price.min, max: price.max };
+  }
+  // A year typed with a generation is narrower: "2003 e46 m3".
+  if (generation && !explicit?.year && !modifiers.year) {
+    filters.year = generation.year;
+    interpretation.generation = generation.label;
   }
   if (modifiers.year && !explicit?.year && !query.ignoreYearWords) {
     filters.year = modifiers.year;
@@ -1331,7 +1343,7 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
   // not the 1990s models EPA calls "Truck 2WD".
   const isKeyword = (t: string) =>
     !!(BODY_WORDS[t] || FUEL_WORDS[t] || DRIVE_WORDS[t] || ASPIRATION_WORDS[t]);
-  const filterWords: string[] = [];
+  const filterWords: string[] = [...(generation?.words ?? [])];
   const readKeywords = () => {
     const kept = applyKeywordFilters(textTokens, filters, query.filters);
     filterWords.push(...textTokens.filter((t) => !kept.includes(t)));
@@ -1744,6 +1756,12 @@ function resolveMakeFromTokens(
 const modelWordCache = new Map<string, boolean>();
 
 /** Whether a word is a whole model name ("beetle", "camry"), not a prefix of one ("land"). */
+/** Words that name a make or a model: "mercedes", "amg", "civic". */
+function namesAVehicle(words: string): boolean {
+  const tokens = normalizeSearchQuery(words).split(/\s+/).filter(Boolean);
+  return !!resolveMakeFromTokens(tokens) || tokens.some(namesAModel);
+}
+
 function namesAModel(token: string): boolean {
   const word = token.toLowerCase();
   let hit = modelWordCache.get(word);
@@ -2161,8 +2179,7 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
   for (const car of cars) {
     // Text search: every token must match at least one field (exact or fuzzy typo)
     if (hasTextSearch) {
-      const haystack =
-        `${car.make} ${car.model} ${car.year} ${car.trim ?? ''} ${car.variant ?? ''}`.toLowerCase();
+      const haystack = `${car.make} ${car.model} ${car.year} ${car.variant ?? ''}`.toLowerCase();
       let allMatch = true;
       for (const token of searchTokens) {
         const short = shortTokens.get(token);
