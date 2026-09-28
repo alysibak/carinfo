@@ -2110,6 +2110,8 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
   const doors = filters?.doors;
   const rangeMin = filters?.rangeMiles?.min;
   const rangeMax = filters?.rangeMiles?.max;
+  const safetyMin = filters?.safety?.min;
+  const safetyMax = filters?.safety?.max;
   const classSet = filters?.classes?.length ? new Set(filters.classes) : null;
   const segmentSet = filters?.segments?.length ? new Set(filters.segments) : null;
   const luxuryOnly = filters?.luxury === true;
@@ -2137,6 +2139,8 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
     doors != null ||
     rangeMin != null ||
     rangeMax != null ||
+    safetyMin != null ||
+    safetyMax != null ||
     hasTextSearch ||
     hasModel ||
     !!query.trimForms?.length ||
@@ -2225,6 +2229,12 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
       if (range == null) continue;
       if (rangeMin != null && range < rangeMin) continue;
       if (rangeMax != null && range > rangeMax) continue;
+    }
+    if (safetyMin != null || safetyMax != null) {
+      const stars = car.safetyRating?.overall;
+      if (!stars) continue;
+      if (safetyMin != null && stars < safetyMin) continue;
+      if (safetyMax != null && stars > safetyMax) continue;
     }
 
     // A trim the query ended in ("mustang gt"): the model shares its name
@@ -2391,6 +2401,9 @@ function computeStatistics() {
 
   return {
     totalCars,
+    // Model lines ("Civic", "RAV4"), the way one-per-model search counts them:
+    // EPA lists each engine, gearbox and drive of a model year on its own.
+    totalModels: new Set(cachedCars.map(modelLineKey)).size,
     totalMakes: makeIndex.size,
     totalCountries: countryIndex.size,
     countries: Object.keys(countries).sort(),

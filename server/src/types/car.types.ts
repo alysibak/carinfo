@@ -212,6 +212,8 @@ export interface CarFilter {
   doors?: number;
   /** EPA range in miles (EVs and plug-in hybrids' electric range). */
   rangeMiles?: { min?: number; max?: number };
+  /** NHTSA overall crash-test stars; a car NHTSA has not rated never matches. */
+  safety?: { min?: number; max?: number };
   /** Competitive sets ("compact-suv", "midsize-car"), any of which a car must be in. */
   classes?: string[];
   /** Shopping segments ("sports-car", "muscle"), any of which a car must be in. */

@@ -430,7 +430,7 @@ Base: `/api` (Vite proxies to `:5000` in dev; Vercel routes to `api/index.ts`)
 | POST   | `/cars/search`             | max 500/request | Filtered search                                 |
 | GET    | `/cars/search/suggestions` | max 20          | Autocomplete                                    |
 | POST   | `/cars/compare`            | max 5 IDs       | Batch lookup                                    |
-| GET    | `/cars/stats/overview`     | —               | DB statistics                                   |
+| GET    | `/cars/stats/overview`     | —               | DB statistics: versions, model lines, makes, years, NHTSA coverage |
 | GET    | `/cars/stats/chart-points` | query params    | Scatter plot sample                             |
 | GET    | `/cars/collections/previews` | —             | First three picks of every curated shortlist    |
 | GET    | `/cars/:id`                | —               | Single vehicle                                  |
@@ -443,7 +443,7 @@ Base: `/api` (Vite proxies to `:5000` in dev; Vercel routes to `api/index.ts`)
 
 **Sort fields:** `make`, `model`, `year`, `horsepower`, `price`, `fuelEconomy`, `range`, `evScore`, `relevance`
 
-**Filters:** make, model, year, countryOfOrigin, bodyStyle, fuelType, transmission, driveType, price, horsepower, displacement, fuelEconomy
+**Filters:** make, model, year, countryOfOrigin, bodyStyle, fuelType, transmission, driveType, price, horsepower, displacement, fuelEconomy, safety (NHTSA overall stars: `{ min: 5 }`; a car NHTSA has not rated never matches), threeRow, rangeMiles. The GET form reads `safetyMin`/`safetyMax`; the search page's URL keeps `nhtsaMin`, `rows` (3 or 2) and `rangeMin` (miles).
 
 **Natural language:** `"2024 camry"`, `"toyota rav4"` → parsed into filters (user filters win over parsed)
 
@@ -529,6 +529,7 @@ Loaded once at startup into memory:
 - **Type roles** in `index.css`: nothing under 12px; labels and buttons in sentence case; capitals only for `.eyebrow` section labels; figures in the text face with tabular numerals (`.tabular-nums`), not the monospace face.
 - **Canadian units first:** fuel use in L/100 km (kWh/100 km for EVs, kg/100 km for hydrogen) with EPA's MPG as the secondary line (`utils/efficiency.ts`); range in km; money in CAD, said once per section (`utils/money.ts`) rather than "CAD (est.)" on each figure.
 - **Results** (`CarCard.tsx`): a thumbnail, fuel use or EPA range, power and the NHTSA rating, the estimated value in small type beneath, a "why this matched" line (`utils/matchReasons.ts`) and a compare toggle, as a grid or a list (`useResultsView`; phones start on the list). The garage and shared garages use the same card.
+- **Filters** (`Home.tsx`): a bar under the search box, sticky while the results scroll, with a Filters button, the filters in use (tap to remove) and one-tap common filters (`utils/quickFilters.ts`: SUV, Sedan, Pickup, Hybrid, Electric, NHTSA 5 stars, AWD, 2020+, Three rows, Manual). On a phone or tablet the button opens every filter full screen (`FilterSheet`), applied as they are tapped, with a button that counts the results ("Show 49 models"); a wide screen shows them beside the results (`FilterSidebar`). Records first: vehicle type, make, model year, powertrain, EPA fuel use (and EPA range once Electric is picked), NHTSA stars (with the share of versions NHTSA has rated), power, drive, seats and gearbox, then the estimated value, then origin, engine size and shortcuts. On a phone the filters used to be a "Show" link above the results that scrolled away with them and opened a 6,000-pixel panel in front of them; Make was under "More filters", and there was no filter for crash ratings, power, seats or gearbox.
 - **Visits** are still counted once per session (`useRecordVisit`, readable at `GET /api/stats`) but no longer printed in every footer.
 
 ---
@@ -612,6 +613,7 @@ Defined in `client/src/config/browseTaxonomy.ts`.
 
 - The promise as the headline ("Car specs from the EPA and NHTSA"; the header already says CarInfo), a line on what is on record and that estimates are labelled, `SearchBar`, and the quiz
 - VIN detect: 17-char pattern → `/vin`
+- `CatalogueStats`: what is on file, live from `/cars/stats/overview` (35,823 versions EPA tested, 1,096 models, 91 makes, 1995–2027), labelled for what each counts: EPA lists each engine, gearbox and drive of a model year separately, so "35,000 cars" would promise more than the models a shopper thinks of as cars. Rounded figures hold the space until the counts load. It ends in a link that opens search with the filters open (`/home?filters=open`).
 - `SampleCarCard`: a real car's page in miniature (the hero preview car's key figures: fuel use, crash rating, power and engine, each with its source), in place of a large grey drawing of the same car
 - Start paths as bordered panels of chips (I know the car · I'm still deciding · I have a VIN · I'm comparing options), not underlined words
 - `ShortlistCards`: each shortlist with its first three picks and the record each is ranked on
@@ -899,13 +901,13 @@ gasoline, so the dossier and its own TCO calculator showed different totals.
 
 `Landing.tsx` · `Browse.tsx` · `Explore.tsx` · `VehicleGrid.tsx` · `CarDetail.tsx` · `Home.tsx` · `Compare.tsx` · `Collection.tsx` · `SmartSearch.tsx` · `DreamGarage.tsx` · `SharedGarage.tsx` · `BattleMode.tsx` · `ValueMatrix.tsx` · `VinDecoder.tsx` · `Methodology.tsx` · `Account.tsx` · `NotFound.tsx`
 
-### Client — components (40)
+### Client — components (42)
 
-`AboutData` · `AccountAuth` · `AccountClerkPanel` · `AuthHeaderSlot` · `AuthProvider` · `BodyTypeIllustration` · `CarCard` · `ClerkShell` · `CompareTray` · `DataTrustPanel` · `DataValue` · `ErrorBoundary` · `FilterPills` · `FilterSidebar` · `KeyFigures` · `KeySpecs` · `Layout` · `PageHeader` · `PageShell` · `PersonaQuiz` · `PinnedCarBar` · `ProvenanceChip` · `RegionSelect` · `SampleCarCard` · `ScrollToTop` · `SearchBar` · `SelectMenu` · `ShortlistCards` · `SiblingConfigs` · `SignInPromptSlot` · `SimilarCars` · `SiteHeader` · `SpecExplain` · `TCOCalculator` · `ToolPageHeader` · `ValuationLinks` · `ValueMatrixHeatmap` · `VehiclePlaceholder` · `VinScanner` · `ui`
+`AboutData` · `AccountAuth` · `AccountClerkPanel` · `AuthHeaderSlot` · `AuthProvider` · `BodyTypeIllustration` · `CarCard` · `CatalogueStats` · `ClerkShell` · `CompareTray` · `DataTrustPanel` · `DataValue` · `ErrorBoundary` · `FilterPills` · `FilterSheet` · `FilterSidebar` · `KeyFigures` · `KeySpecs` · `Layout` · `PageHeader` · `PageShell` · `PersonaQuiz` · `PinnedCarBar` · `ProvenanceChip` · `RegionSelect` · `SampleCarCard` · `ScrollToTop` · `SearchBar` · `SelectMenu` · `ShortlistCards` · `SiblingConfigs` · `SignInPromptSlot` · `SimilarCars` · `SiteHeader` · `SpecExplain` · `TCOCalculator` · `ToolPageHeader` · `ValuationLinks` · `ValueMatrixHeatmap` · `VehiclePlaceholder` · `VinScanner` · `ui`
 
-### Client — utils (32)
+### Client — utils (33)
 
-`authConfig` · `bodyStyleLabel` · `carImages` · `clerkMounted` · `collectionCuration` · `compareIds` · `compareSummary` · `currency` · `dataTrust` · `dataValue` · `differentiateCars` · `efficiency` · `epaContent` · `filterState` · `fuelDisplay` · `fuelEconomyUnits` · `fuelLabels` · `keyFigures` · `landingShowcase` · `matchReasons` · `money` · `pageMeta` · `quizReasons` · `rankedFigure` · `searchInterpretation` · `searchParams` · `specGlossary` · `staleBuildRecovery` · `tco` · `trimLabel` · `vin` · `visualTiers`
+`authConfig` · `bodyStyleLabel` · `carImages` · `clerkMounted` · `collectionCuration` · `compareIds` · `compareSummary` · `currency` · `dataTrust` · `dataValue` · `differentiateCars` · `efficiency` · `epaContent` · `filterState` · `fuelDisplay` · `fuelEconomyUnits` · `fuelLabels` · `keyFigures` · `landingShowcase` · `matchReasons` · `money` · `pageMeta` · `quickFilters` · `quizReasons` · `rankedFigure` · `searchInterpretation` · `searchParams` · `specGlossary` · `staleBuildRecovery` · `tco` · `trimLabel` · `vin` · `visualTiers`
 
 ### Client — config (2)
 

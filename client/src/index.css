@@ -192,6 +192,14 @@ code {
     @apply inline-flex items-center min-h-[36px] px-3 py-1.5 text-[13px] text-zinc-300 border border-zinc-700 rounded-none transition-colors duration-150 hover:text-white hover:border-zinc-400 bg-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60;
   }
 
+  /* A row that scrolls sideways by touch, without a bar under it. */
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
   /* A chip that is switched on (a filter in use, the view in use). */
   .chip-on {
     @apply border-accent/70 text-accent bg-accent/10 hover:text-accent hover:border-accent;

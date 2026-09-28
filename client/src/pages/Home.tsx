@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCarStore } from '../stores/carStore';
 import FilterSidebar from '../components/FilterSidebar';
+import FilterSheet from '../components/FilterSheet';
 import CarCard from '../components/CarCard';
 import SearchBar from '../components/SearchBar';
 import SelectMenu from '../components/SelectMenu';
@@ -16,7 +17,12 @@ import {
   searchQueryToParams,
   withoutYearTokens,
 } from '../utils/searchParams';
-import { isElectricOnlyBrowse } from '../utils/filterState';
+import {
+  countActiveFilterFields,
+  isElectricOnlyBrowse,
+  sortForFilters,
+} from '../utils/filterState';
+import { QUICK_FILTERS } from '../utils/quickFilters';
 import { LIFESTYLE_PRESETS, POPULAR_SEARCHES } from '../config/browseTaxonomy';
 import type { CarFilter } from '../types/car.types';
 import { usePageMeta } from '../utils/pageMeta';
@@ -29,7 +35,7 @@ const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/i;
 export default function Home() {
   usePageMeta(
     'Search',
-    'Filter and search 35,000+ vehicles by make, fuel type, body style, and price.',
+    'Search and filter 1,000+ models by type, make, year, EPA fuel use, NHTSA crash rating and power.',
   );
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -41,7 +47,14 @@ export default function Home() {
   // paint instead of one effect later, which shifted the results down.
   const [searchText, setSearchText] = useState(() => searchParams.get('q') ?? '');
   const [hasSearched, setHasSearched] = useState(() => hasActiveSearch(searchParams));
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  // "Filter them by type…" on the home page lands here with the filters open
+  // (on a phone; a wide screen shows them beside the results anyway).
+  const [filtersOpen, setFiltersOpen] = useState(
+    () =>
+      searchParams.get('filters') === 'open' &&
+      typeof window !== 'undefined' &&
+      !window.matchMedia?.('(min-width: 1024px)').matches,
+  );
   const [view, setView] = useResultsView();
   const pageSize = getDefaultPageSize();
 
@@ -55,6 +68,13 @@ export default function Home() {
     },
     [performSearch, setSearchQuery],
   );
+
+  useEffect(() => {
+    if (searchParams.get('filters') !== 'open') return;
+    const next = new URLSearchParams(searchParams);
+    next.delete('filters');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   // Keep results in sync with the URL (back/forward, shared links).
   useEffect(() => {
@@ -208,6 +228,30 @@ export default function Home() {
     });
   };
 
+  const applyQuickFilter = (toggle: (filters: CarFilter) => CarFilter) => {
+    const nextFilters = toggle(searchQuery.filters ?? {});
+    pushSearch({
+      ...searchQuery,
+      filters: nextFilters,
+      sort: sortForFilters(nextFilters, searchQuery.query, searchQuery.sort),
+      offset: 0,
+    });
+  };
+
+  // What the sheet's button offers to show: "309 models".
+  const resultLabel =
+    hasSearched && searchResults && !searchError
+      ? `${searchResults.total.toLocaleString()} ${
+          searchQuery.collapseByModel
+            ? searchResults.total === 1
+              ? 'model'
+              : 'models'
+            : searchResults.total === 1
+              ? 'vehicle'
+              : 'vehicles'
+        }`
+      : null;
+
   const toggleOnePerModel = () => {
     pushSearch({
       ...searchQuery,
@@ -217,12 +261,33 @@ export default function Home() {
   };
 
   const activeFilterChips = describeActiveFilters(searchQuery.filters);
+  const activeFilterCount = countActiveFilterFields(searchQuery.filters);
+  const quickFilters = QUICK_FILTERS.filter((q) => !q.isOn(searchQuery.filters ?? {}));
+  // Wide screens have the filters beside the results; this row then only
+  // carries what is switched on.
+  const rowHasDesktopContent = activeFilterChips.length > 0 || hasSearched;
   const sortField = searchQuery.sort?.field ?? 'year';
   const sortOrder = searchQuery.sort?.order ?? 'desc';
   const isEvBrowse = isElectricOnlyBrowse(searchQuery.filters);
 
+  const onFiltersApplied = (text?: string) => {
+    if (text !== undefined) setSearchText(text);
+    const q = useCarStore.getState().searchQuery;
+    const words = text !== undefined ? text : searchText;
+    const params = searchQueryToParams({ ...q, query: words || undefined }, 1);
+    setSearchParams(params);
+    setHasSearched(true);
+  };
+
   return (
     <PageShell className="pb-12">
+      <FilterSheet
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        onFiltersApplied={onFiltersApplied}
+        resultLabel={resultLabel}
+        updating={isSearching}
+      />
       <div className="sticky top-[var(--header-height)] z-20 bg-black/90 border-b border-zinc-900 backdrop-blur-md">
         <div className="page-wrap py-3 sm:py-4 space-y-2.5 relative">
           <SearchBar
@@ -234,94 +299,90 @@ export default function Home() {
             showButton={false}
             placeholder="Keep typing — typos are OK (e.g. toyata camry)"
           />
-          {/* Overlaid rather than inserted: mounting this line pushed the whole
-              results list down on every keystroke. Always present so screen
-              readers hear the status change. */}
-          <p
-            role="status"
-            className="absolute right-4 sm:right-6 bottom-0.5 text-xs text-zinc-600 pointer-events-none"
-          >
+          {/* For screen readers: sighted readers see the results dim. Shown, it
+              sat on top of the filter chips under the search box. Always
+              present so the status change is announced. */}
+          <p role="status" className="sr-only">
             {isSearching && searchText.trim().length >= 2 ? 'Updating results…' : ''}
           </p>
 
-          {(activeFilterChips.length > 0 || searchQuery.collapseByModel) && (
-            <div className="flex flex-wrap gap-2 items-center">
-              {activeFilterChips.map((chip) => (
-                <button
-                  key={chip.key}
-                  type="button"
-                  onClick={() => removeChip(chip.key)}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs text-zinc-300 border border-zinc-700 hover:border-zinc-500 hover:text-white"
-                  aria-label={`Remove filter ${chip.label}`}
-                >
-                  {chip.label}
-                  <span aria-hidden className="text-zinc-500">
-                    ×
-                  </span>
-                </button>
-              ))}
+          {/* Filters stay one tap away however far down the results go: the
+              button opens every filter, the chips switch the common ones. */}
+          <div
+            className={`flex items-center gap-2 overflow-x-auto scrollbar-none -mx-4 px-4 sm:-mx-5 sm:px-5 md:-mx-10 md:px-10 lg:mx-0 lg:px-0 lg:flex-wrap lg:overflow-visible ${
+              rowHasDesktopContent ? '' : 'lg:hidden'
+            }`}
+          >
+            <button
+              type="button"
+              onClick={() => setFiltersOpen(true)}
+              aria-haspopup="dialog"
+              className={`lg:hidden chip shrink-0 gap-2 font-medium ${
+                activeFilterCount > 0 ? 'chip-on' : 'text-white border-zinc-500'
+              }`}
+            >
+              <svg
+                viewBox="0 0 20 20"
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                aria-hidden
+              >
+                <path d="M3 5h14M6 10h8M8.5 15h3" strokeLinecap="round" />
+              </svg>
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="tabular-nums">
+                  <span className="sr-only">, </span>
+                  {activeFilterCount}
+                  <span className="sr-only"> on</span>
+                </span>
+              )}
+            </button>
+            {activeFilterChips.map((chip) => (
+              <button
+                key={chip.key}
+                type="button"
+                onClick={() => removeChip(chip.key)}
+                className="chip chip-on shrink-0 gap-1.5 whitespace-nowrap"
+                aria-label={`Remove filter ${chip.label}`}
+              >
+                {chip.label}
+                <span aria-hidden>×</span>
+              </button>
+            ))}
+            {quickFilters.map((quick) => (
+              <button
+                key={quick.id}
+                type="button"
+                onClick={() => applyQuickFilter(quick.toggle)}
+                className="lg:hidden chip shrink-0 whitespace-nowrap"
+              >
+                {quick.label}
+              </button>
+            ))}
+            {hasSearched && (
               <button
                 type="button"
                 onClick={toggleOnePerModel}
-                className={`inline-flex items-center px-2.5 py-1 text-xs border ${
-                  searchQuery.collapseByModel
-                    ? 'border-white text-white'
-                    : 'border-zinc-700 text-zinc-400 hover:text-white'
+                aria-pressed={!!searchQuery.collapseByModel}
+                className={`chip shrink-0 whitespace-nowrap ${
+                  searchQuery.collapseByModel ? 'chip-on' : ''
                 }`}
               >
                 One per model
               </button>
-            </div>
-          )}
-
-          {hasSearched && activeFilterChips.length === 0 && !searchQuery.collapseByModel && (
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={toggleOnePerModel}
-                className="inline-flex items-center px-2.5 py-1 text-xs border border-zinc-700 text-zinc-400 hover:text-white"
-              >
-                One per model
-              </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
       <PageBody>
         <div className="grid grid-cols-1 lg:grid-cols-[15rem_minmax(0,1fr)] gap-6 lg:gap-8">
-          <aside>
-            <button
-              type="button"
-              onClick={() => setFiltersOpen((o) => !o)}
-              className="lg:hidden w-full mb-3 flex items-center justify-between min-h-[44px] py-2.5 text-sm font-medium text-white border-b border-zinc-800"
-            >
-              <span>Filters</span>
-              <span className="text-zinc-500">{filtersOpen ? 'Hide' : 'Show'}</span>
-            </button>
-            <div
-              className={`${filtersOpen ? 'block' : 'hidden lg:block'} lg:sticky lg:top-[calc(var(--header-height)+1rem)]`}
-            >
-              <FilterSidebar
-                onFiltersApplied={(text) => {
-                  if (text !== undefined) setSearchText(text);
-                  const q = useCarStore.getState().searchQuery;
-                  const words = text !== undefined ? text : searchText;
-                  const params = searchQueryToParams({ ...q, query: words || undefined }, 1);
-                  setSearchParams(params);
-                  setHasSearched(true);
-                  // Keep the mobile filter panel open so people can stack filters.
-                }}
-              />
-              {filtersOpen && (
-                <button
-                  type="button"
-                  onClick={() => setFiltersOpen(false)}
-                  className="lg:hidden mt-4 w-full py-2.5 text-xs border border-zinc-700 text-zinc-300 hover:border-white hover:text-white"
-                >
-                  Done with filters
-                </button>
-              )}
+          <aside className="hidden lg:block">
+            <div className="lg:sticky lg:top-[calc(var(--header-height)+1rem)]">
+              <FilterSidebar onFiltersApplied={onFiltersApplied} />
             </div>
           </aside>
 

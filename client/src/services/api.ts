@@ -132,6 +132,8 @@ export function apiErrorMessage(error: unknown): string | null {
 /** Shape of GET /cars/stats/overview (see computeStatistics on the server). */
 export interface DatabaseStatistics {
   totalCars: number;
+  /** Model lines: "Civic", "RAV4", across years and configurations. */
+  totalModels: number;
   totalMakes: number;
   totalCountries: number;
   countries: string[];

@@ -4,6 +4,7 @@ import PersonaQuiz, { type PersonaResult } from '../components/PersonaQuiz';
 import SearchBar from '../components/SearchBar';
 import SiteHeader from '../components/SiteHeader';
 import SampleCarCard from '../components/SampleCarCard';
+import CatalogueStats from '../components/CatalogueStats';
 import ShortlistCards from '../components/ShortlistCards';
 import * as api from '../services/api';
 import type { CarSpecs } from '../types/car.types';
@@ -102,9 +103,9 @@ export default function Landing() {
                 Car specs from the EPA and NHTSA
               </h1>
               <p className="text-base md:text-lg text-zinc-300 leading-relaxed mb-6 md:mb-8 animate-hero-rise [animation-delay:40ms]">
-                Fuel use and range from EPA tests, crash ratings from NHTSA, and rated power for
-                35,000+ vehicles, in Canadian units and marked with their source. Anything we
-                estimate is labeled as an estimate.
+                Fuel use and range from EPA tests, crash ratings from NHTSA, and rated power, in
+                Canadian units and marked with their source. Anything we estimate is labeled as an
+                estimate.
               </p>
 
               <div className="animate-hero-rise [animation-delay:80ms]">
@@ -126,6 +127,7 @@ export default function Landing() {
                   </button>
                 </div>
               </div>
+              <CatalogueStats className="mt-8 pt-6 border-t border-zinc-800/80 animate-hero-rise [animation-delay:100ms]" />
             </div>
             {heroCar && (
               <div className="animate-hero-rise [animation-delay:120ms] w-full max-w-md lg:max-w-none">

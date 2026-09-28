@@ -76,6 +76,7 @@ export function normalizeSearchQuery(body: unknown): SearchQuery {
       // every car of 2020 on and "Future-proof" every EV.
       threeRow: typeof filtersRaw.threeRow === 'boolean' ? filtersRaw.threeRow : undefined,
       rangeMiles: asRange(filtersRaw.rangeMiles),
+      safety: asRange(filtersRaw.safety),
     };
   }
 
@@ -143,6 +144,7 @@ export function parseSearchQueryString(q: Record<string, unknown>): SearchQuery 
     displacement: range(q.dispMin, q.dispMax),
     fuelEconomy: range(q.mpgMin, q.mpgMax),
     price: range(q.priceMin, q.priceMax),
+    safety: range(q.safetyMin, q.safetyMax),
   };
   if (Object.values(filters).some((v) => v !== undefined)) {
     query.filters = filters;

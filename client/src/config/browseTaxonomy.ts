@@ -172,6 +172,30 @@ export const MPG_BUCKETS: BucketOption[] = [
   },
 ];
 
+/** Rated power, from EPA's test-car list or the manufacturer. */
+export const POWER_BUCKETS: BucketOption[] = [
+  { id: 'hp-under-150', label: 'Under 150 hp', filters: { horsepower: { max: 149 } } },
+  { id: 'hp-150', label: '150–249 hp', filters: { horsepower: { min: 150, max: 249 } } },
+  { id: 'hp-250', label: '250–399 hp', filters: { horsepower: { min: 250, max: 399 } } },
+  { id: 'hp-400', label: '400+ hp', filters: { horsepower: { min: 400 } } },
+];
+
+/** NHTSA overall stars. A car NHTSA has not rated matches neither. */
+export const SAFETY_BUCKETS: BucketOption[] = [
+  { id: 'nhtsa-5', label: '5 stars', filters: { safety: { min: 5 } } },
+  { id: 'nhtsa-4', label: '4 stars or more', filters: { safety: { min: 4 } } },
+];
+
+/**
+ * EPA range for EVs, in km. The API filters on EPA's miles; each bound is the
+ * mile figure that reads back as the round number of kilometres.
+ */
+export const RANGE_BUCKETS: BucketOption[] = [
+  { id: 'range-300', label: '300+ km', filters: { rangeMiles: { min: 186.4 } } },
+  { id: 'range-400', label: '400+ km', filters: { rangeMiles: { min: 248.5 } } },
+  { id: 'range-500', label: '500+ km', filters: { rangeMiles: { min: 310.7 } } },
+];
+
 export const BODY_TYPES: { id: string; label: string; description: string }[] = [
   { id: 'sedan', label: 'Sedan', description: 'Daily comfort' },
   { id: 'hatchback', label: 'Hatchback', description: 'Compact & practical' },

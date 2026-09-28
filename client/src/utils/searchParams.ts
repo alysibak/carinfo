@@ -1,6 +1,8 @@
 import type { CarFilter, SearchQuery } from '../types/car.types';
+import { bodyStyleLabel } from './bodyStyleLabel';
 import { formatFuelTypeLabel } from './fuelDisplay';
 import { isElectricOnlyBrowse } from './filterState';
+import { rangeKm } from './efficiency';
 
 const PAGE_SIZE = 36;
 
@@ -73,6 +75,9 @@ export function hasActiveSearch(params: URLSearchParams): boolean {
     'dispMax',
     'hpMin',
     'hpMax',
+    'nhtsaMin',
+    'rows',
+    'rangeMin',
   ];
   return filterKeys.some((k) => params.get(k));
 }
@@ -111,8 +116,19 @@ export function paramsToSearchQuery(params: URLSearchParams): { query: SearchQue
   const hpMax = numParam(params.get('hpMax'));
   if (hpMin != null || hpMax != null) filters.horsepower = { min: hpMin, max: hpMax };
 
+  const nhtsaMin = numParam(params.get('nhtsaMin'));
+  if (nhtsaMin != null) filters.safety = { min: nhtsaMin };
+
+  const rows = params.get('rows');
+  if (rows === '3') filters.threeRow = true;
+  else if (rows === '2') filters.threeRow = false;
+
+  const rangeMin = numParam(params.get('rangeMin'));
+  if (rangeMin != null) filters.rangeMiles = { min: rangeMin };
+
   const hasFilters = Object.values(filters).some((v) => {
     if (v == null) return false;
+    if (typeof v === 'boolean') return true;
     if (Array.isArray(v)) return v.length > 0;
     return (
       (v as { min?: number; max?: number }).min != null ||
@@ -184,6 +200,9 @@ export function searchQueryToParams(query: SearchQuery, page: number): URLSearch
   if (f.displacement?.max != null) params.set('dispMax', String(f.displacement.max));
   if (f.horsepower?.min != null) params.set('hpMin', String(f.horsepower.min));
   if (f.horsepower?.max != null) params.set('hpMax', String(f.horsepower.max));
+  if (f.safety?.min != null) params.set('nhtsaMin', String(f.safety.min));
+  if (f.threeRow != null) params.set('rows', f.threeRow ? '3' : '2');
+  if (f.rangeMiles?.min != null) params.set('rangeMin', String(f.rangeMiles.min));
   // Only persist when it differs from the dynamic default so heuristic can
   // adapt as q changes (e.g. "mazda" → dense, "mazda 3" → years).
   const collapseDefault = defaultCollapseByModel(query.query, query.filters);
@@ -201,10 +220,12 @@ export function describeActiveFilters(filters: CarFilter = {}): { key: string; l
 
   filters.make?.forEach((m) => chips.push({ key: `make-${m}`, label: m }));
   filters.model?.forEach((m) => chips.push({ key: `model-${m}`, label: m }));
-  filters.bodyStyle?.forEach((b) => chips.push({ key: `body-${b}`, label: b }));
+  filters.bodyStyle?.forEach((b) => chips.push({ key: `body-${b}`, label: bodyStyleLabel(b) }));
   filters.fuelType?.forEach((f) => chips.push({ key: `fuel-${f}`, label: formatFuelTypeLabel(f) }));
   filters.driveType?.forEach((d) => chips.push({ key: `drive-${d}`, label: d }));
-  filters.transmission?.forEach((t) => chips.push({ key: `trans-${t}`, label: t }));
+  filters.transmission?.forEach((t) =>
+    chips.push({ key: `trans-${t}`, label: t === 'cvt' ? 'CVT' : bodyStyleLabel(t) }),
+  );
   filters.countryOfOrigin?.forEach((c) => chips.push({ key: `country-${c}`, label: c }));
 
   if (filters.year?.min != null || filters.year?.max != null) {
@@ -227,8 +248,12 @@ export function describeActiveFilters(filters: CarFilter = {}): { key: string; l
     chips.push({ key: 'price', label });
   }
   if (filters.fuelEconomy?.min != null) {
-    const unit = filters.fuelEconomy.min >= 100 ? 'MPGe' : 'MPG';
-    chips.push({ key: 'mpg', label: `${filters.fuelEconomy.min}+ ${unit}` });
+    // In L/100 km like the filter that set it; the API keeps EPA's MPG.
+    const min = filters.fuelEconomy.min;
+    chips.push({
+      key: 'mpg',
+      label: min >= 100 ? `${min}+ MPGe` : `Under ${(235.215 / min).toFixed(1)} L/100 km`,
+    });
   }
   if (filters.displacement?.min != null || filters.displacement?.max != null) {
     chips.push({ key: 'disp', label: 'Engine size filter' });
@@ -240,6 +265,18 @@ export function describeActiveFilters(filters: CarFilter = {}): { key: string; l
       label:
         min != null && max != null ? `${min}-${max} hp` : min != null ? `${min}+ hp` : `≤${max} hp`,
     });
+  }
+  if (filters.safety?.min != null) {
+    chips.push({
+      key: 'nhtsa',
+      label: filters.safety.min >= 5 ? 'NHTSA 5 stars' : `NHTSA ${filters.safety.min}+ stars`,
+    });
+  }
+  if (filters.threeRow != null) {
+    chips.push({ key: 'rows', label: filters.threeRow ? 'Three rows' : 'Two rows' });
+  }
+  if (filters.rangeMiles?.min != null) {
+    chips.push({ key: 'range', label: `${rangeKm(filters.rangeMiles.min)}+ km range` });
   }
 
   return chips;
@@ -269,6 +306,9 @@ export function removeActiveFilterChip(filters: CarFilter, chipKey: string): Car
   else if (chipKey === 'mpg') delete next.fuelEconomy;
   else if (chipKey === 'disp') delete next.displacement;
   else if (chipKey === 'hp') delete next.horsepower;
+  else if (chipKey === 'nhtsa') delete next.safety;
+  else if (chipKey === 'rows') delete next.threeRow;
+  else if (chipKey === 'range') delete next.rangeMiles;
 
   return next;
 }

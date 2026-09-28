@@ -36,6 +36,15 @@ describe('car.service search smoke', () => {
     expect(results.every((c) => c.engine.fuelType === 'plug-in hybrid')).toBe(true);
   });
 
+  it('filters by NHTSA stars, leaving out cars NHTSA has not rated', () => {
+    const fiveStar = searchCars({ filters: { safety: { min: 5 } }, limit: 200 });
+    expect(fiveStar.total).toBeGreaterThan(500);
+    expect(fiveStar.results.every((c) => c.safetyRating?.overall === 5)).toBe(true);
+    const fourUp = searchCars({ filters: { safety: { min: 4 } }, limit: 1 });
+    expect(fourUp.total).toBeGreaterThan(fiveStar.total);
+    expect(fourUp.total).toBeLessThan(searchCars({ limit: 1 }).total);
+  });
+
   it('returns normalized dossier-ready records by id', () => {
     const car = getCarById('porsche-cayenne-e-hybrid-2019-cayenne-automatic-s8');
     expect(car).not.toBeNull();
@@ -235,6 +244,14 @@ describe('car.service natural language search', () => {
     // The UI's newest-year chip and example searches read these; bump them
     // when a data refresh adds a model year.
     expect(getStatistics().yearRange).toEqual({ min: FIRST_MODEL_YEAR, max: LATEST_MODEL_YEAR });
+  });
+
+  it('counts model lines the way one-per-model search does', () => {
+    const stats = getStatistics();
+    const collapsed = searchCars({ collapseByModel: true, limit: 1 }).total;
+    expect(stats.totalModels).toBe(collapsed);
+    expect(stats.totalModels).toBeGreaterThan(900);
+    expect(stats.totalModels).toBeLessThan(stats.totalCars / 10);
   });
 
   it('calls a year "full" only while the next one is still partial', () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   defaultCollapseByModel,
+  hasActiveSearch,
   removeActiveFilterChip,
   describeActiveFilters,
   paramsToSearchQuery,
@@ -77,6 +78,53 @@ describe('removeActiveFilterChip', () => {
   it('describeActiveFilters includes horsepower chips', () => {
     const chips = describeActiveFilters({ horsepower: { min: 300 } });
     expect(chips.some((c) => c.key === 'hp' && c.label.includes('300'))).toBe(true);
+  });
+
+  it('names the record filters the way the page does', () => {
+    const chips = describeActiveFilters({
+      bodyStyle: ['suv'],
+      transmission: ['manual'],
+      safety: { min: 5 },
+      threeRow: true,
+      rangeMiles: { min: 248.5 },
+      fuelEconomy: { min: 35 },
+    });
+    expect(chips.map((c) => c.label)).toEqual([
+      'SUV',
+      'Manual',
+      'Under 6.7 L/100 km',
+      'NHTSA 5 stars',
+      'Three rows',
+      '400+ km range',
+    ]);
+    expect(removeActiveFilterChip({ safety: { min: 5 }, threeRow: true }, 'nhtsa')).toEqual({
+      threeRow: true,
+    });
+  });
+});
+
+describe('new filters in the URL', () => {
+  it('round-trips NHTSA stars, rows and EV range', () => {
+    const params = searchQueryToParams(
+      { filters: { safety: { min: 5 }, threeRow: true, rangeMiles: { min: 248.5 } } },
+      1,
+    );
+    expect(params.get('nhtsaMin')).toBe('5');
+    expect(params.get('rows')).toBe('3');
+    expect(params.get('rangeMin')).toBe('248.5');
+    expect(hasActiveSearch(params)).toBe(true);
+    const { query } = paramsToSearchQuery(params);
+    expect(query.filters).toMatchObject({
+      safety: { min: 5 },
+      threeRow: true,
+      rangeMiles: { min: 248.5 },
+    });
+  });
+
+  it('keeps a two-row filter, which is false rather than absent', () => {
+    const params = searchQueryToParams({ filters: { threeRow: false } }, 1);
+    expect(params.get('rows')).toBe('2');
+    expect(paramsToSearchQuery(params).query.filters?.threeRow).toBe(false);
   });
 });
 

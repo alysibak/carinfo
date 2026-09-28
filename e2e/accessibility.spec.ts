@@ -67,6 +67,9 @@ for (const { name, viewport } of VIEWPORTS) {
       const pages = [
         '/',
         '/home',
+        // Results with the filter bar; on a phone, the filter sheet open.
+        '/home?q=suv&sort=relevance&nhtsaMin=5',
+        '/home?filters=open',
         '/browse',
         `/car/${a}`,
         `/compare?cars=${a},${b}`,

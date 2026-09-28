@@ -37,4 +37,23 @@ describe('search-validation', () => {
     expect(query.filters?.year).toEqual({ min: 2020, max: 2024 });
     expect(query.sort).toEqual({ field: 'price', order: 'asc' });
   });
+
+  it('keeps the filters the search page sends beyond the basics', () => {
+    const query = normalizeSearchQuery({
+      filters: {
+        safety: { min: 5 },
+        horsepower: { min: 250, max: 399 },
+        transmission: ['manual'],
+        threeRow: true,
+        rangeMiles: { min: 249 },
+      },
+    });
+    expect(query.filters).toMatchObject({
+      safety: { min: 5 },
+      horsepower: { min: 250, max: 399 },
+      transmission: ['manual'],
+      threeRow: true,
+      rangeMiles: { min: 249 },
+    });
+  });
 });

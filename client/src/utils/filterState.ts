@@ -86,7 +86,7 @@ export function sortForFilters(
 
 export function toggleRangeBucket(
   filters: CarFilter,
-  key: 'price' | 'year' | 'fuelEconomy',
+  key: 'price' | 'year' | 'fuelEconomy' | 'horsepower' | 'safety' | 'rangeMiles',
   bucketRange: { min?: number; max?: number } | undefined,
   activeBucketId: string | null,
   bucketId: string,
