@@ -23,6 +23,10 @@ export default defineConfig({
           environment: 'node',
           include: ['src/**/*.test.ts', 'scripts/**/*.test.ts'],
           testTimeout: 120_000,
+          // Suites that read cars in beforeAll load the whole corpus there.
+          // Without the prebuilt cars-ready.json, as in CI, that means
+          // enriching all of cars.json: ~50 s under coverage.
+          hookTimeout: 120_000,
           // Suites fire many requests from one IP; limits are exercised
           // explicitly in app.production.test.ts instead.
           env: { DISABLE_RATE_LIMIT: 'true' },
