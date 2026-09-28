@@ -266,6 +266,37 @@ const REFERENCES: Reference[] = [
     observedCad: 67_100,
     source: 'C6 Z06 average US$55,900 (Vettes of Atlanta, 2026) at 1.2',
   },
+  // Cars that hold level late in life, and a Civic filed as a subcompact.
+  {
+    label: '2008 Toyota Tacoma V6',
+    find: withEngine('Toyota', /^Tacoma 4WD$/, 2008, 4),
+    observedCad: 15_960,
+    source: 'CarGurus US average ~US$13,300 (2026) at 1.2',
+  },
+  {
+    label: '2010 Jeep Wrangler (JK)',
+    find: withEngine('Jeep', /^Wrangler 4WD$/, 2010, 3.8),
+    observedCad: 14_160,
+    source: 'CarGurus US average ~US$11,800 (2026) at 1.2',
+  },
+  {
+    label: '2010 Toyota FJ Cruiser',
+    find: named('Toyota', /^FJ Cruiser 4WD$/, 2010),
+    observedCad: 24_680,
+    source: 'CarGurus US average US$20,565 (2026) at 1.2',
+  },
+  {
+    label: '2012 Nissan 370Z',
+    find: named('Nissan', /^370Z$/, 2012),
+    observedCad: 19_200,
+    source: 'CarGurus US average US$15,998 (2026) at 1.2',
+  },
+  {
+    label: '2008 Honda Civic',
+    find: named('Honda', /^Civic$/, 2008),
+    observedCad: 7_800,
+    source: 'CarGurus US average US$6,502 (2026) at 1.2',
+  },
   {
     label: '2021 Chevrolet Corvette',
     find: named('Chevrolet', /^Corvette$/, 2021),

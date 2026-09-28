@@ -687,6 +687,17 @@ const PERFORMANCE_VARIANT_RULES: ModelMsrpRule[] = [
     msrp: (c) => (/red sport/i.test(c.model) ? 58000 : 44000),
   },
   { test: (c) => c.make === 'Honda' && /^civic 2dr/i.test(c.model), msrp: 23000 },
+  // A Civic filed as a subcompact priced as one and fell on the economy curve:
+  // a 2008 read $4,900 against ~US$6,500 (CarGurus, 2026). It is a compact.
+  {
+    test: (c) =>
+      c.make === 'Honda' &&
+      /^civic\b(?! (?:si|type r|hybrid|natural gas|cng|gx))/i.test(c.model) &&
+      !trimOf(c) &&
+      c.engine.fuelType === 'gasoline' &&
+      c.year < 2016,
+    msrp: 24000,
+  },
   { test: (c) => c.make === 'Kia' && /forte koup/i.test(c.model), msrp: 21000 },
   { test: (c) => c.make === 'Toyota' && /^celica/i.test(c.model), msrp: 22000 },
   { test: (c) => c.make === 'Honda' && /^prelude/i.test(c.model), msrp: 26000 },
@@ -936,6 +947,8 @@ const TRUCK_SUV_RULES: ModelMsrpRule[] = [
     test: (c) => c.make === 'Ford' && /^bronco\b(?! sport)/i.test(c.model) && c.year >= 2021,
     msrp: (c) => (litres(c) >= 2.6 ? 50000 : 42000),
   },
+  // A cult off-roader since it went out of production: a 2010 lists at ~US$20,600.
+  { test: (c) => c.make === 'Toyota' && /^fj cruiser/i.test(c.model), msrp: 40000 },
   {
     test: (c) => c.make === 'Toyota' && /^4runner/i.test(c.model),
     msrp: (c) => (c.year >= 2025 ? 48000 : c.year >= 2010 ? 40000 : 34000),
@@ -1655,7 +1668,16 @@ const HIGH_RETENTION_MODELS: Array<[(c: CarSpecs) => boolean, number]> = [
   // A small, much-missed hybrid coupe: a 2016 CR-Z averages about US$13,500
   // in listings (Cars.com) against about $20,000-24,000 new.
   [(c) => c.make === 'Honda' && /^cr-z/i.test(c.model), 1.15],
+  // Older Toyota trucks, Wranglers and the Z hold level late in life: a 2008
+  // Tacoma lists at ~US$13,300, a 2010 Wrangler ~US$11,800, a 2010 FJ Cruiser
+  // ~US$20,600 and a 2012 370Z ~US$16,000 (CarGurus, 2026), 26-51% over the
+  // curve; newer ones are on it (the 2019 Tacoma and 2018 Wrangler references).
+  [(c) => c.make === 'Toyota' && /^tacoma/i.test(c.model) && c.year < 2016, 1.75],
   [(c) => c.make === 'Toyota' && /^tacoma/i.test(c.model), 1.3],
+  // The JK and TJ; EPA's 2018 JL is the "New Wrangler".
+  [(c) => c.make === 'Jeep' && /^wrangler\b/i.test(c.model) && c.year <= 2018, 1.5],
+  [(c) => c.make === 'Toyota' && /^fj cruiser/i.test(c.model), 1.6],
+  [(c) => c.make === 'Nissan' && /^370z/i.test(c.model), 1.3],
   [(c) => c.make === 'Toyota' && /^4runner/i.test(c.model), 1.4],
   [(c) => c.make === 'Toyota' && /^land cruiser/i.test(c.model), 1.3],
   [(c) => c.make === 'Toyota' && /^rav4 (prime|plug-in)/i.test(c.model), 1.4],
