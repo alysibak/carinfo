@@ -1,16 +1,12 @@
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as api from '../services/api';
 import { isHttpError } from '../services/http';
 import type { CarDashboard, CarSpecs } from '../types/car.types';
 import { displayConfigSubtitle, displayModelLabel, displayVehicleTitle } from '../utils/trimLabel';
-import {
-  formatCurrency,
-  formatCurrencyRange,
-  hasNumericValue,
-  NHTSA_CHIP_UNAVAILABLE,
-} from '../utils/dataValue';
+import { hasNumericValue } from '../utils/dataValue';
 import { currencySectionNote } from '../utils/currency';
+import { formatMoney, formatMoneyRange } from '../utils/money';
 import { getRegionalAssumptions } from '@carinfo/config/regional-assumptions';
 import { useCarStore } from '../stores/carStore';
 import { useGarageStore } from '../stores/garageStore';
@@ -19,16 +15,18 @@ import TCOCalculator from '../components/TCOCalculator';
 import { StatusToast } from '../components/ui';
 import ValuationLinks from '../components/ValuationLinks';
 import VehiclePlaceholder from '../components/VehiclePlaceholder';
-import GlanceRow from '../components/GlanceRow';
+import DecisionStats from '../components/DecisionStats';
+import PinnedCarBar from '../components/PinnedCarBar';
 import KeySpecs from '../components/KeySpecs';
 import SimilarCars from '../components/SimilarCars';
 import SiblingConfigs from '../components/SiblingConfigs';
 import DataTrustPanel from '../components/DataTrustPanel';
 import { DataRow } from '../components/DataValue';
-import { buildGlanceMetrics } from '../utils/glanceMetrics';
-import { efficiencyUnit } from '../utils/fuelLabels';
-import { formatCarFuelBadge } from '../utils/fuelDisplay';
-import { efficiencySecondaryLine, formatKwhPer100KmFromMi } from '../utils/fuelEconomyUnits';
+import { buildDecisionStats, buildSpecLine } from '../utils/decisionStats';
+import { efficiencyOf, type Efficiency } from '../utils/efficiency';
+import { formatCarFuelLabel } from '../utils/fuelDisplay';
+import { formatKwhPer100KmFromMi } from '../utils/fuelEconomyUnits';
+import { formatTransmissionLabel } from '../utils/trimLabel';
 import {
   ghgFraming,
   phevModes,
@@ -42,13 +40,18 @@ import { usePageMeta } from '../utils/pageMeta';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 
 function Subheading({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-[10px] tracking-widest text-zinc-400 uppercase pt-2 pb-1">{children}</p>
-  );
+  return <p className="text-sm font-semibold text-zinc-200 pt-3 pb-1">{children}</p>;
 }
 
-/** Fixed scale so city / highway / combined bars are comparable on the dossier. */
-const FUEL_BAR_SCALE_MAX = 60;
+/**
+ * Bar scales, so city and highway bars compare across every dossier. The bar
+ * is fuel used, so a longer bar is a thirstier car, like the number beside it.
+ */
+const FUEL_BAR_SCALE: Record<Efficiency['unit'], number> = {
+  'L/100 km': 20,
+  'kWh/100 km': 40,
+  'kg/100 km': 2,
+};
 
 const ANNUAL_COST_SEGMENTS: {
   key: keyof Pick<
@@ -103,26 +106,19 @@ function AnnualCostStackBar({ annualCost }: { annualCost: AnnualCostBreakdown })
   );
 }
 
-function FuelBar({
-  label,
-  value,
-  max,
-  secondary,
-}: {
-  label: string;
-  value: number | undefined;
-  max: number;
-  secondary?: string;
-}) {
-  if (!hasNumericValue(value)) return null;
-  const pct = Math.min(100, (value! / max) * 100);
+function FuelBar({ label, efficiency }: { label: string; efficiency: Efficiency | null }) {
+  if (!efficiency) return null;
+  const pct = Math.min(100, (efficiency.value / FUEL_BAR_SCALE[efficiency.unit]) * 100);
   return (
     <div className="py-2 border-b border-zinc-900 last:border-b-0">
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-[10px] tracking-widest text-zinc-400 uppercase">{label}</span>
+        <span className="text-[13px] text-zinc-400">{label}</span>
         <div className="text-right">
-          <span className="text-xl font-bold tabular-nums text-white">{Math.round(value!)}</span>
-          {secondary && <p className="text-[11px] text-zinc-400 mt-0.5">{secondary}</p>}
+          <span className="text-xl font-bold tabular-nums text-white">
+            {efficiency.value.toFixed(efficiency.unit === 'kg/100 km' ? 2 : 1)}
+          </span>
+          <span className="text-sm text-zinc-400"> {efficiency.unit}</span>
+          {efficiency.epa && <p className="text-xs text-zinc-500 mt-0.5">{efficiency.epa}</p>}
         </div>
       </div>
       <div className="meter-track">
@@ -139,15 +135,13 @@ function PhevDualModeBlock({ modes }: { modes: PhevModes }) {
       {hasNumericValue(modes.electricMpge) && (
         <div>
           <div className="flex items-baseline justify-between gap-4">
-            <span className="text-[10px] tracking-[0.25em] text-zinc-300 uppercase">
-              Electric mode
-            </span>
+            <span className="text-xs text-zinc-300">Electric mode</span>
             <span className="text-sm font-bold text-white">
               {modes.electricMpge} MPGe
               {hasNumericValue(modes.electricRangeMi) ? ` · ${modes.electricRangeMi} mi` : ''}
             </span>
           </div>
-          <p className="text-[11px] text-zinc-400 leading-relaxed mt-1">
+          <p className="text-xs text-zinc-400 leading-relaxed mt-1">
             Drives on battery power
             {hasNumericValue(modes.electricRangeMi)
               ? ` for about ${modes.electricRangeMi} miles`
@@ -159,17 +153,17 @@ function PhevDualModeBlock({ modes }: { modes: PhevModes }) {
       {hasNumericValue(modes.gasMpg) && (
         <div>
           <div className="flex items-baseline justify-between gap-4">
-            <span className="text-[10px] tracking-[0.25em] text-zinc-300 uppercase">Gas mode</span>
+            <span className="text-xs text-zinc-300">Gas mode</span>
             <span className="text-sm font-bold text-white">{modes.gasMpg} MPG</span>
           </div>
-          <p className="text-[11px] text-zinc-400 leading-relaxed mt-1">
+          <p className="text-xs text-zinc-400 leading-relaxed mt-1">
             Once the battery is used up it runs like a regular hybrid on gasoline. No plugging in
             required.
           </p>
         </div>
       )}
       {hasNumericValue(modes.chargeL2Hours) && (
-        <p className="text-[11px] text-zinc-400 leading-relaxed">
+        <p className="text-xs text-zinc-400 leading-relaxed">
           Recharges in about {modes.chargeL2Hours} h on a 240V Level 2 charger.
         </p>
       )}
@@ -192,6 +186,8 @@ export default function CarDetail() {
   const [error, setError] = useState<string | null>(null);
   const [showTCO, setShowTCO] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [pinned, setPinned] = useState(false);
+  const statsRef = useRef<HTMLDivElement>(null);
   const { addOrReplaceOldestInComparison, comparedCars } = useCarStore();
   const addToGarage = useGarageStore((s) => s.add);
   const region = useRegionStore((s) => s.region);
@@ -222,10 +218,25 @@ export default function CarDetail() {
     return () => clearTimeout(t);
   }, [toast]);
 
+  // Pin the car's name and actions under the header once its figures scroll away.
+  useEffect(() => {
+    const el = statsRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setPinned(!entry.isIntersecting && entry.boundingClientRect.top < 0),
+      { threshold: 0 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [dashboard]);
+
+  // The page's name is the one in its heading: the tab said "Civic 4Dr" while
+  // the page said "Civic Si".
+  const pageTitle = dashboard ? displayVehicleTitle(dashboard.car) : undefined;
   usePageMeta(
-    dashboard ? `${dashboard.car.year} ${dashboard.car.make} ${dashboard.car.model}` : undefined,
-    dashboard
-      ? `EPA-verified specs, safety when available, and Ontario/CAD estimates for the ${dashboard.car.year} ${dashboard.car.make} ${dashboard.car.model}.`
+    pageTitle,
+    pageTitle
+      ? `EPA-verified specs, safety when available, and Ontario/CAD estimates for the ${pageTitle}.`
       : undefined,
   );
 
@@ -234,7 +245,7 @@ export default function CarDetail() {
       <div className="min-h-[40vh] bg-black flex items-center justify-center opacity-50 py-16">
         <div className="text-center">
           <div className="inline-block w-12 h-12 border-2 border-zinc-800 border-t-zinc-500 mb-4" />
-          <p className="text-xs tracking-widest text-zinc-300 uppercase">Loading dossier</p>
+          <p className="text-xs text-zinc-300">Loading dossier</p>
         </div>
       </div>
     );
@@ -273,9 +284,15 @@ export default function CarDetail() {
   } = ownership;
   const isHydrogen = car.engine.fuelType === 'hydrogen';
   const hydrogenPrice = getRegionalAssumptions(region).hydrogenCadPerKg;
-  const efficiencyLabel = efficiencyUnit(car);
   const isInCompare = comparedCars.some((c) => c.id === car.id);
+  const title = displayVehicleTitle(car);
+  const transmissionLabel = car.transmission?.type
+    ? formatTransmissionLabel(car.transmission)
+    : null;
+  // The line under the title names the configuration; the gearbox is in the spec line.
   const trimLabel = displayConfigSubtitle(car);
+  const configLabel = trimLabel && trimLabel !== transmissionLabel ? trimLabel : null;
+  const specLine = buildSpecLine(dashboard);
   const isPhev = car.engine.fuelType === 'plug-in hybrid';
   const phev = phevModes(car);
   const ghg = ghgFraming(car);
@@ -289,7 +306,7 @@ export default function CarDetail() {
     hasNumericValue(car.epa?.barrelsPerYear) ||
     fiveYearFuelSavings(car) != null;
 
-  const glanceIds = new Set(buildGlanceMetrics(dashboard).cells.map((cell) => cell.id));
+  const statIds = new Set(buildDecisionStats(dashboard).map((stat) => stat.id));
   const hasCityHwy =
     hasNumericValue(car.fuelEconomy.city) || hasNumericValue(car.fuelEconomy.highway);
   const hasEvExtras =
@@ -312,7 +329,7 @@ export default function CarDetail() {
     (hasEconomics ||
       Boolean(marketValue.batteryHealth) ||
       (marketValue.conditionBands?.length ?? 0) > 0 ||
-      (hasMarketValue && !glanceIds.has('value')));
+      (hasMarketValue && !statIds.has('value')));
 
   const specOmitKeys = [
     'mpgCity',
@@ -342,12 +359,15 @@ export default function CarDetail() {
     'trim',
     'fuel',
     'drivetrain',
+    // In the header's spec line or figures.
+    'horsepower',
+    'engine',
+    'displacement',
+    'cylinders',
+    'configuration',
+    'transmission',
+    'zeroToSixty',
   ];
-  if (glanceIds.has('power')) specOmitKeys.push('horsepower');
-  if (glanceIds.has('engine')) {
-    specOmitKeys.push('engine', 'displacement', 'cylinders', 'configuration');
-  }
-  if (glanceIds.has('range')) specOmitKeys.push('epaRange');
 
   const handleAddToComparison = () => {
     const res = addOrReplaceOldestInComparison(car);
@@ -381,36 +401,6 @@ export default function CarDetail() {
     <div className="bg-black text-white">
       <StatusToast message={toast} />
 
-      <div className="border-b border-zinc-900">
-        <div className="page-wrap-wide py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="text-xs text-zinc-500 hover:text-white transition-colors shrink-0 min-h-[44px] min-w-[44px] inline-flex items-center"
-          >
-            <span aria-hidden>←</span> <span className="sr-only sm:not-sr-only">Back</span>
-          </button>
-          <p className="hidden sm:block text-sm font-semibold tracking-tight truncate text-center min-w-0 px-1">
-            {car.year} {car.make} {car.model}
-          </p>
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-auto sm:ml-0">
-            <button
-              onClick={handleAddToGarage}
-              className="text-xs text-zinc-400 hover:text-white transition-colors min-h-[44px] px-2"
-            >
-              + Garage
-            </button>
-            <button
-              onClick={handleAddToComparison}
-              className={`text-xs transition-colors min-h-[44px] px-2 ${
-                isInCompare ? 'text-white' : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              {isInCompare ? 'In compare' : '+ Compare'}
-            </button>
-          </div>
-        </div>
-      </div>
-
       {isHydrogen && (
         <div className="border-b border-amber-900/50 bg-amber-950/20">
           <div className="page-wrap py-4 text-sm text-amber-200/90 leading-relaxed">
@@ -423,33 +413,92 @@ export default function CarDetail() {
         </div>
       )}
 
-      <div className="border-b border-zinc-900">
-        <div className="page-wrap-wide py-4 sm:py-5 md:py-6">
-          <div className="grid grid-cols-[minmax(0,5.5rem)_1fr] sm:grid-cols-[minmax(0,120px)_1fr] gap-3 sm:gap-5 items-end">
-            <div className="h-14 sm:h-20 md:h-24 overflow-hidden">
-              <VehiclePlaceholder car={car} compact hideCaption />
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight mb-1 break-words">
-                {displayVehicleTitle(car)}
-              </h1>
-              {trimLabel && <p className="text-sm text-zinc-500 mb-1.5 sm:mb-2">{trimLabel}</p>}
-              <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-zinc-400">
-                {car.bodyStyle && <span>{bodyStyleLabel(car.bodyStyle)}</span>}
-                {car.driveType && <span>{car.driveType}</span>}
-                {car.engine.fuelType && <span>{formatCarFuelBadge(car)}</span>}
+      <section className="border-b border-zinc-900">
+        <div className="page-wrap-wide pt-2 pb-6 sm:pb-8">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="text-sm text-zinc-400 hover:text-white transition-colors min-h-[44px] inline-flex items-center gap-1.5"
+          >
+            <span aria-hidden>←</span> Back
+          </button>
+
+          <div className="mt-1 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 lg:gap-8">
+            <div className="grid grid-cols-[5.5rem_1fr] sm:grid-cols-[9rem_1fr] gap-4 sm:gap-6 items-center min-w-0">
+              <div className="h-14 sm:h-20 overflow-hidden">
+                <VehiclePlaceholder car={car} compact hideCaption />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight break-words">
+                  {title}
+                </h1>
+                <p className="text-sm sm:text-[15px] text-zinc-300 mt-1">
+                  {(() => {
+                    // "Electric SUV" already says SUV and electric: no "SUV · Electric SUV · Electric".
+                    const cls = dashboard.competitiveClass?.toLowerCase() ?? '';
+                    const body = car.bodyStyle ? bodyStyleLabel(car.bodyStyle) : null;
+                    const fuel = car.engine.fuelType ? formatCarFuelLabel(car) : null;
+                    return [
+                      configLabel,
+                      body && !cls.includes(body.toLowerCase()) ? body : null,
+                      dashboard.competitiveClass,
+                      fuel && !cls.includes(fuel.toLowerCase()) ? fuel : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ');
+                  })()}
+                </p>
+                {specLine.length > 0 && (
+                  <p className="text-sm text-zinc-500 mt-1 tabular-nums">{specLine.join(' · ')}</p>
+                )}
               </div>
             </div>
+
+            <div className="flex gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleAddToComparison}
+                className={isInCompare ? 'btn-secondary' : 'btn-primary'}
+              >
+                {isInCompare ? 'In compare' : 'Add to compare'}
+              </button>
+              <button type="button" onClick={handleAddToGarage} className="btn-secondary">
+                Save to garage
+              </button>
+            </div>
+          </div>
+
+          <div ref={statsRef} className="mt-5 sm:mt-6">
+            <DecisionStats dashboard={dashboard} regionLabel={regionName(region)} />
           </div>
         </div>
+      </section>
 
-        <GlanceRow dashboard={dashboard} />
-      </div>
+      {pinned && (
+        <PinnedCarBar
+          title={title}
+          figures={
+            [
+              hasMarketValue && !unvalued
+                ? `${formatMoneyRange(marketValue.low, marketValue.high)} value`
+                : null,
+              dashboard.annualRunningCost && !unvalued
+                ? `${formatMoneyRange(dashboard.annualRunningCost.low, dashboard.annualRunningCost.high)} a year`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(' · ') || null
+          }
+          inCompare={isInCompare}
+          onCompare={handleAddToComparison}
+          onGarage={handleAddToGarage}
+        />
+      )}
 
       {car.ownershipProfile && (
         <div className="border-b border-zinc-900">
           <div className="page-wrap-wide py-3.5 flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4">
-            <p className="text-xs uppercase tracking-wider text-zinc-500 shrink-0">Best for</p>
+            <p className="eyebrow shrink-0">Best for</p>
             <p className="text-sm text-zinc-300 min-w-0">
               <span className="font-semibold text-white">{car.ownershipProfile.label}</span>
               <span className="text-zinc-500"> · </span>
@@ -476,30 +525,17 @@ export default function CarDetail() {
                   </h2>
                   <p className="text-xs text-zinc-500 mb-3 leading-relaxed">
                     {isPhev
-                      ? 'Glance figure is gas-mode, not a blend.'
+                      ? 'The figure above is gas mode, not a blend.'
                       : hasEvExtras && !hasCityHwy
                         ? 'Range is above; charge times below.'
-                        : 'Combined is above; this is the EPA split.'}
+                        : 'The combined figure is above; this is EPA’s city and highway split.'}
                   </p>
                   {isPhev && phev ? (
                     <PhevDualModeBlock modes={phev} />
                   ) : (
                     <>
-                      <FuelBar
-                        label={`City ${efficiencyLabel}`}
-                        value={car.fuelEconomy.city}
-                        max={FUEL_BAR_SCALE_MAX}
-                        secondary={efficiencySecondaryLine(car.fuelEconomy.city, efficiencyLabel)}
-                      />
-                      <FuelBar
-                        label={`Highway ${efficiencyLabel}`}
-                        value={car.fuelEconomy.highway}
-                        max={FUEL_BAR_SCALE_MAX}
-                        secondary={efficiencySecondaryLine(
-                          car.fuelEconomy.highway,
-                          efficiencyLabel,
-                        )}
-                      />
+                      <FuelBar label="City" efficiency={efficiencyOf(car, 'city')} />
+                      <FuelBar label="Highway" efficiency={efficiencyOf(car, 'highway')} />
                     </>
                   )}
                   {hasEvExtras && (
@@ -571,12 +607,10 @@ export default function CarDetail() {
                             key={score.key}
                             className="bg-black px-2 sm:px-3 py-3.5 sm:py-4 text-center min-w-0"
                           >
-                            <p className="text-[9px] uppercase tracking-wider text-zinc-500 mb-1 break-words">
-                              {score.label}
-                            </p>
+                            <p className="text-xs text-zinc-500 mb-1 break-words">{score.label}</p>
                             <p className="text-lg sm:text-xl font-bold tabular-nums">
                               {score.value}
-                              <span className="text-[10px] text-zinc-500">/5</span>
+                              <span className="text-xs text-zinc-500">/5</span>
                             </p>
                           </div>
                         ))}
@@ -628,18 +662,6 @@ export default function CarDetail() {
             </div>
           )}
 
-          {!hasOverallSafety && !hasSafetyBreakdown && (
-            <p className="text-xs text-zinc-500 leading-snug">
-              <span className="font-medium text-zinc-400">Crash tests</span>
-              {' · '}
-              {NHTSA_CHIP_UNAVAILABLE} on file
-              {' · '}
-              <Link to="/methodology" className="underline underline-offset-2 hover:text-zinc-400">
-                How we match NHTSA
-              </Link>
-            </p>
-          )}
-
           {hasOverallSafety && !hasSafetyBreakdown && (
             <p className="text-xs text-zinc-500 leading-snug">
               <span className="font-medium text-zinc-400">Crash tests</span>
@@ -671,10 +693,10 @@ export default function CarDetail() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 md:gap-x-10 gap-y-5 md:gap-y-6">
               <div className="min-w-0">
-                {hasMarketValue && !glanceIds.has('value') && (
+                {hasMarketValue && !statIds.has('value') && (
                   <DataRow
                     label="Est. value range"
-                    value={formatCurrencyRange(marketValue.low, marketValue.high)}
+                    value={formatMoneyRange(marketValue.low, marketValue.high)}
                     valueTier={1}
                     pairLayout
                   />
@@ -682,7 +704,7 @@ export default function CarDetail() {
                 {marketValue.batteryHealth && (
                   <>
                     <DataRow
-                      label="Battery health (est.)"
+                      label="Battery health"
                       value={marketValue.batteryHealth.label}
                       valueTier={2}
                       pairLayout
@@ -699,7 +721,7 @@ export default function CarDetail() {
                   <DataRow
                     key={band.label}
                     label={band.label}
-                    value={formatCurrencyRange(band.low, band.high)}
+                    value={formatMoneyRange(band.low, band.high)}
                     valueTier={2}
                     pairLayout
                   />
@@ -711,7 +733,7 @@ export default function CarDetail() {
                     {annualCost.energy != null ? (
                       <DataRow
                         label="Fuel / energy"
-                        value={formatCurrency(annualCost.energy, true)}
+                        value={formatMoney(annualCost.energy)}
                         valueTier={2}
                         pairLayout
                       />
@@ -727,19 +749,19 @@ export default function CarDetail() {
                     )}
                     <DataRow
                       label="Insurance"
-                      value={formatCurrency(annualCost.insurance, true)}
+                      value={formatMoney(annualCost.insurance)}
                       valueTier={2}
                       pairLayout
                     />
                     <DataRow
                       label="Maintenance"
-                      value={formatCurrency(annualCost.maintenance, true)}
+                      value={formatMoney(annualCost.maintenance)}
                       valueTier={2}
                       pairLayout
                     />
                     <DataRow
                       label="Tires"
-                      value={formatCurrency(annualCost.tires, true)}
+                      value={formatMoney(annualCost.tires)}
                       valueTier={2}
                       pairLayout
                     />
@@ -748,20 +770,22 @@ export default function CarDetail() {
                       value={
                         annualCost.registration === 0
                           ? 'No renewal fee'
-                          : formatCurrency(annualCost.registration, true)
+                          : formatMoney(annualCost.registration)
                       }
                       valueTier={2}
                       pairLayout
                     />
-                    {!glanceIds.has('running') && (
-                      <DataRow
-                        label="Total per year"
-                        value={formatCurrencyRange(annualCost.totalLow, annualCost.totalHigh)}
-                        valueTier={1}
-                        pairLayout
-                        total
-                      />
-                    )}
+                    <DataRow
+                      label="Total per year"
+                      value={
+                        annualCost.totalLow != null && annualCost.totalHigh != null
+                          ? formatMoneyRange(annualCost.totalLow, annualCost.totalHigh)
+                          : formatMoney(annualCost.total!)
+                      }
+                      valueTier={1}
+                      pairLayout
+                      total
+                    />
                     <AnnualCostStackBar annualCost={annualCost} />
                   </>
                 ) : (
@@ -780,7 +804,7 @@ export default function CarDetail() {
                   </p>
                   <DataRow
                     label="Projected resale"
-                    value={formatCurrencyRange(
+                    value={formatMoneyRange(
                       resaleImpact.projectedResale5Year.low,
                       resaleImpact.projectedResale5Year.high,
                     )}
@@ -788,8 +812,8 @@ export default function CarDetail() {
                     pairLayout
                   />
                   <DataRow
-                    label="Est. value loss"
-                    value={formatCurrencyRange(
+                    label="Value lost"
+                    value={formatMoneyRange(
                       resaleImpact.estimatedLoss5Year.low,
                       resaleImpact.estimatedLoss5Year.high,
                     )}
@@ -803,7 +827,7 @@ export default function CarDetail() {
                           ? 'Annual running cost'
                           : '5-year total'
                       }
-                      value={formatCurrencyRange(ownership.tco5Year.low, ownership.tco5Year.high)}
+                      value={formatMoneyRange(ownership.tco5Year.low, ownership.tco5Year.high)}
                       valueTier={2}
                       pairLayout
                     />
@@ -811,21 +835,17 @@ export default function CarDetail() {
                   <button
                     type="button"
                     onClick={() => setShowTCO(true)}
-                    className="mt-4 text-sm text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700"
+                    className="btn-secondary mt-4"
                   >
-                    Custom TCO calculator
+                    Work out my own costs
                   </button>
                 </div>
               )}
             </div>
 
             {!hasEconomics && (
-              <button
-                type="button"
-                onClick={() => setShowTCO(true)}
-                className="mt-4 text-sm text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700"
-              >
-                Custom TCO calculator
+              <button type="button" onClick={() => setShowTCO(true)} className="btn-secondary mt-4">
+                Work out my own costs
               </button>
             )}
           </div>
@@ -841,7 +861,7 @@ export default function CarDetail() {
         </section>
       )}
 
-      <KeySpecs dashboard={dashboard} omitKeys={specOmitKeys} heading="Also on file" />
+      <KeySpecs dashboard={dashboard} omitKeys={specOmitKeys} heading="More specs" />
 
       <DataTrustPanel dashboard={dashboard} />
 

@@ -51,8 +51,8 @@ describe('differentiateCars', () => {
     });
 
     const { byCarId, axes } = differentiateCars([a, b, c]);
-    expect(byCarId.a.edge).toMatch(/efficiency|MPG/i);
-    expect(axes.some((x) => /efficiency/i.test(x))).toBe(true);
+    expect(byCarId.a.edge).toMatch(/least fuel.*L\/100 km/);
+    expect(axes).toContain('Fuel use runs 6.9–8.4 L/100 km');
   });
 
   it('flags a unique powertrain in the set', () => {
@@ -162,7 +162,7 @@ describe('differentiateVsAnchor', () => {
     expect(edges.legacy).toBe(
       'AWD, which this car lacks: better in snow · Less power (182 vs 301 hp)',
     );
-    expect(edges.hybrid).toBe('Hybrid, not gas (52 vs 26 MPG) · Less power (208 vs 301 hp)');
+    expect(edges.hybrid).toBe('Hybrid, not gas (4.5 vs 9.0 L/100 km) · Less power (208 vs 301 hp)');
     expect(edges.rav4).toMatch(/^An SUV, not a sedan/);
     expect(edges.manual).toBe('Manual, not automatic');
     for (const line of Object.values(edges)) expect(line).not.toMatch(/than this car|vs this car/);
@@ -176,7 +176,7 @@ describe('differentiateVsAnchor', () => {
       price: { msrp: 27500, isEstimated: true },
     });
     expect(differentiateVsAnchor(camry, [twin]).twin).toBe(
-      'Much the same on paper (26 vs 26 MPG, 290 vs 301 hp)',
+      'Much the same on paper (9.0 vs 9.0 L/100 km, 290 vs 301 hp)',
     );
   });
 });

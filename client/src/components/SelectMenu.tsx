@@ -236,7 +236,7 @@ export default function SelectMenu({
 
   const triggerClass =
     size === 'sm'
-      ? 'min-h-[30px] px-2.5 py-1 text-[10px] tracking-[0.2em] uppercase gap-2'
+      ? 'min-h-[30px] px-2.5 py-1 text-xs gap-2'
       : 'min-h-[42px] px-3 py-2 text-sm gap-3';
 
   optionRefs.current.length = options.length;
@@ -277,9 +277,7 @@ export default function SelectMenu({
               onClick={() => pick(option.value)}
               onMouseEnter={() => setActiveIndex(index)}
               className={`cursor-pointer select-none border-b border-zinc-900 last:border-b-0 transition-colors ${
-                size === 'sm'
-                  ? 'px-2.5 py-2 text-[10px] tracking-[0.15em] uppercase'
-                  : 'px-3 py-2.5 text-sm'
+                size === 'sm' ? 'px-2.5 py-2 text-xs' : 'px-3 py-2.5 text-sm'
               } ${
                 isSelected
                   ? 'bg-zinc-800 text-white'

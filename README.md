@@ -235,6 +235,7 @@ Types live in `client/src/types/car.types.ts` and `server/src/types/car.types.ts
 | `competitiveClass`  | The class it is shopped in (`"Compact SUV"`), from `utils/competitive-sets.ts`, with a second that qualifies it where it has one (`"Full-size luxury SUV · Off-roader"`, `"Midsize SUV · Three-row SUV"`); absent for the ~1% of listings in none |
 | `generation`        | The model's generation, from `utils/generations.ts` (`"E46 · 4th generation (1999–2006)"`, `"2nd generation (2005–2015)"`), for about 30% of listings; absent in a year two generations share (a 2006 3 Series is an E46 or an E90)               |
 | `enginePosition`    | `"mid"` or `"rear"` from `utils/engine-position.ts`; absent for front-engined and electric cars                                                                                                                                                   |
+| `classComparison`   | The car against its class (`utils/class-comparison.ts`): rivals in its first competitive set within a model year either side, one median per model line (the search's one-per-model key), for fuel use (L/100 km; kWh/100 km against EVs only), running cost, value and power; absent with fewer than three rival lines |
 
 ### Enums
 
@@ -432,6 +433,7 @@ Base: `/api` (Vite proxies to `:5000` in dev; Vercel routes to `api/index.ts`)
 | POST   | `/cars/compare`            | max 5 IDs       | Batch lookup                                    |
 | GET    | `/cars/stats/overview`     | —               | DB statistics                                   |
 | GET    | `/cars/stats/chart-points` | query params    | Scatter plot sample                             |
+| GET    | `/cars/collections/previews` | —             | First three picks of every curated shortlist    |
 | GET    | `/cars/:id`                | —               | Single vehicle                                  |
 | GET    | `/cars/:id/dashboard`      | —               | Full dossier                                    |
 | GET    | `/cars/:id/raw`            | —               | Debug: `{ raw, enriched, normalized }` pipeline |
@@ -502,8 +504,8 @@ Loaded once at startup into memory:
 
 | Route                              | File               | Layout | Description                                              |
 | ---------------------------------- | ------------------ | ------ | -------------------------------------------------------- |
-| `/`                                | `Landing.tsx`      | No     | Hero, stats, search, persona quiz, collections, showcase |
-| `/browse`                          | `Browse.tsx`       | Yes    | Lifestyle presets + taxonomy                             |
+| `/`                                | `Landing.tsx`      | No     | Promise, search, quiz, sample car card, start paths, shortlist previews |
+| `/browse`                          | `Browse.tsx`       | Yes    | Situations, body styles, classes, budgets, years, makes, shortlists |
 | `/explore/:category`               | `Explore.tsx`      | Yes    | Category drill-down                                      |
 | `/vehicles/:category/:subcategory` | `VehicleGrid.tsx`  | Yes    | Filtered grid + sidebar                                  |
 | `/car/:id`                         | `CarDetail.tsx`    | Yes    | Vehicle dossier                                          |
@@ -521,13 +523,21 @@ Loaded once at startup into memory:
 
 `Layout.tsx` wraps all non-landing routes with `SiteHeader`.
 
+### UI conventions
+
+- **One accent**, `accent` in `tailwind.config.js` (#34d399): main buttons, active filters and nav, "better than its class", compare's "Best", focus rings. Everything else stays neutral.
+- **Type roles** in `index.css`: nothing under 12px; labels and buttons in sentence case; capitals only for `.eyebrow` section labels; figures in the text face with tabular numerals (`.tabular-nums`), not the monospace face.
+- **Canadian units first:** fuel use in L/100 km (kWh/100 km for EVs, kg/100 km for hydrogen) with EPA's MPG as the secondary line (`utils/efficiency.ts`); range in km; money in CAD, said once per section (`utils/money.ts`) rather than "CAD (est.)" on each figure.
+- **Results** (`CarCard.tsx`): a thumbnail, value, fuel use or range, power, a "why this matched" line (`utils/matchReasons.ts`) and a compare toggle, as a grid or a list (`useResultsView`; phones start on the list).
+- **Visits** are still counted once per session (`useRecordVisit`, readable at `GET /api/stats`) but no longer printed in every footer.
+
 ---
 
 ## Navigation & user flows
 
 ### Site header links
 
-Browse · Search · Compare (badge) · Value Chart · VIN Lookup · Methodology · Garage (badge)
+Search · Browse · Compare (badge) · Value chart · VIN · Garage (badge), and the "Costs for" region menu. The phone menu adds Methodology. ("Guides" used to open a page titled "Start from a situation", and the value chart was only in the phone menu.)
 
 ### Primary flows
 
@@ -545,17 +555,19 @@ Browse · Search · Compare (badge) · Value Chart · VIN Lookup · Methodology 
 
 ## Curated collections
 
-Defined in `client/src/config/collections.ts`. Used by Landing (cards + counts) and `/collection/:id`.
+Defined in `server/src/shared/collections.ts` (re-exported by `client/src/config/collections.ts`), with each list's ranking, so the home page's previews (`GET /api/cars/collections/previews`, the first three picks, worked out once per data version) are the first three of `/collection/:id`. Each list ranks one car per model by what it promises; the old score multiplied MPG by safety and divided by price, so EVs' MPGe led "Gas savers" and a 1995 Mitsubishi pickup led "Work horses".
 
-| ID                 | Title               | Filters (summary)                                  |
-| ------------------ | ------------------- | -------------------------------------------------- |
-| `goldilocks`       | The Goldilocks Zone | $15–35k, 30+ MPG, dedupe by model, rank best-value |
-| `gas-savers`       | Best Gas Savers     | 35+ MPG, <$40k                                     |
-| `luxury-less`      | Luxury for Less     | Mercedes/BMW/Audi/Lexus/etc., <$50k, 2015+         |
-| `family-fortress`  | Family Fortress     | SUV + minivan                                      |
-| `weekend-warriors` | Weekend Warriors    | Coupe, 3.0L+                                       |
-| `work-horses`      | Work Horses         | Truck, AWD/4WD                                     |
-| `future-proof`     | Future Proof        | EV/hybrid/PHEV, 2018+                              |
+| ID                 | Title              | Search                                                            | Ranked by                                   |
+| ------------------ | ------------------ | ----------------------------------------------------------------- | ------------------------------------------- |
+| `goldilocks`       | The Goldilocks zone | Gas/hybrid cars and SUVs, 2021+, $20–35k                         | Price plus three years' running cost        |
+| `gas-savers`       | Gas savers         | Gas/hybrid, 2019+, 40+ MPG, under $40k                            | Combined MPG                                |
+| `luxury-less`      | Luxury for less    | Ten luxury makes, gas/hybrid/diesel, 2018+, under $50k            | Newest for the money                        |
+| `family-fortress`  | Family fortress    | Three rows (`filters.threeRow`), 2020+                            | Price plus five years' running cost, stars  |
+| `weekend-warriors` | Weekend warriors   | "sports car", carmakers (not tuners), gasoline, 2018+, under $70k | Power per dollar                            |
+| `work-horses`      | Work horses        | "full size pickup", six truck makes, 4WD/AWD, 2019+, under $70k   | Power per dollar                            |
+| `future-proof`     | Future-proof       | EVs, 2022+, 250+ mi range (`filters.rangeMiles`), under $60k      | Range per dollar                            |
+
+The search API reads `filters.threeRow` and `filters.rangeMiles` from a request body as well as from words; it dropped them before, so "Family fortress" listed every car of 2020 on.
 
 ---
 
@@ -580,7 +592,7 @@ Defined in `client/src/config/browseTaxonomy.ts`.
 
 - **Price:** under $15k · $15–25k · $25–40k · $40–60k · $60k+
 - **Year:** 2024 · 2020+ · 2015+ · 2010–2019 · 2000–2009 · 1995–1999
-- **MPG:** 25+ · 35+ · 45+ · 100+ MPGe
+- **Efficiency:** under 9.4 · under 6.7 · under 5.2 L/100 km (25+, 35+, 45+ MPG) · electric (100+ MPGe)
 
 ### Reference lists
 
@@ -596,9 +608,11 @@ Defined in `client/src/config/browseTaxonomy.ts`.
 
 ### Hero (`Landing.tsx`)
 
-- Specs-first copy, database stats, `SearchBar`
-- Quick chips: Electric, SUV, Under $20k, Best MPG (live counts)
+- The promise as the headline ("Know what a car really costs in Canada"; the header already says CarInfo), `SearchBar`, and the quiz
 - VIN detect: 17-char pattern → `/vin`
+- `SampleCarCard`: a real car's page in miniature (the hero preview car's value, yearly cost, fuel use and safety, with its class comparisons), in place of a large grey drawing of the same car
+- Start paths as bordered panels of chips (I know the car · I'm still deciding · I have a VIN · I'm comparing options), not underlined words
+- `ShortlistCards`: each shortlist with its first three picks
 
 ### Persona quiz → `/smart-search?persona=...&minPrice=...&maxPrice=...&priority=...&usage=...`
 
@@ -606,15 +620,9 @@ Defined in `client/src/config/browseTaxonomy.ts`.
 
 Personas: `commuter` · `gearhead` · `family` · `work`
 
-### Showcase cards (`landingShowcase.ts`)
+### Hero preview car (`landingShowcase.ts`)
 
-Queries for fuel / power / safety insights. `isLandingShowcaseEligible()` requires price, MPG, and (safety or HP).
-
-**Hero preview priority:** Camry → Civic → Accord → RAV4 → F-150
-
-### Dossier example cards
-
-Topic labels: Engine & displacement · Horsepower · NHTSA safety · Fuel economy
+`isLandingShowcaseEligible()` requires price, MPG, and (safety or HP). **Priority:** Camry → Civic → Accord → RAV4 → F-150. (The fuel/power/safety showcase it replaced led with a 1,250 hp Corvette ZR1X.)
 
 ### `AboutData.tsx`
 
@@ -628,22 +636,16 @@ Modal explaining EPA vs estimated data. Dismissible per session (`sessionStorage
 
 ### Layout order
 
-1. **Nav bar** — back, title, +Garage, +Compare
-2. **Hydrogen banner** — FCEV disclaimer (amber) when applicable
-3. **Hero** — year, make, model, trim, chips (body, drive, fuel, powertrain, HP, NHTSA if rated, origin)
-4. **Ownership profile** — when taxonomy provides it (label, tags, bestFor)
-5. **ValuationLinks** — compact market/assumptions
-6. **GlanceRow** — up to 4 metrics (filterable via trust filter)
-7. **DataTrustPanel** — field-level provenance + confidence; All / Verified / Estimated filter
-8. **KeySpecs** — grouped spec grid
-9. **Mobile actions** — Garage, TCO calc
-10. **Expandables:**
-    - Fuel economy (EPA bars, PHEV dual-mode, EV charge)
-    - Emissions (CO₂, GHG score, oil use, 5-yr savings) — **kept, not top priority**
-    - Crash safety (only when NHTSA rated)
-    - Value & ownership (only when market value or cost data exists)
-11. **SimilarCars**
-12. **TCOCalculator** modal
+1. **Hydrogen banner** — FCEV disclaimer (amber) when applicable
+2. **Header** — back; the name as the page title and tab title (`displayVehicleTitle`: the top bar said "Civic 4Dr" while the heading said "Civic Si"); body, class and fuel; a spec line (power, engine, gearbox, drive, 0–60); Add to compare and Save to garage
+3. **DecisionStats** (`utils/decisionStats.ts`) — estimated value, yearly cost, fuel use (L/100 km, the EPA MPG beneath) and NHTSA safety, each against a typical car of its class from `classComparison` ("7% less than a typical sport compact"; green better, amber worse, grey for a price); an EV shows EPA range in km and energy use; a car the site does not value leads with power and engine. One line says once that the figures are estimates in CAD for the region and names the rivals.
+4. **PinnedCarBar** — once the figures scroll away: name, value, yearly cost, compare and garage
+5. **Ownership profile** — when taxonomy provides it
+6. **City and highway** (in L/100 km; a longer bar is a thirstier car), crash tests, tailpipe
+7. **Cost to keep** — plain figures under one note ("Estimates in CAD for Ontario…"), not "CAD (est.)" on every row; the calculator as a button
+8. **More specs** (`KeySpecs`) — what the header does not already show; EPA's vehicle category ("Car") is gone
+9. **DataTrustPanel**, **Other configurations** (named by engine, fuel, gearbox and drive, since EPA lists configurations rather than trim names), **SimilarCars** (L/100 km)
+10. **TCOCalculator** modal
 
 ### Missing-data rules on dossier
 
@@ -657,15 +659,15 @@ Modal explaining EPA vs estimated data. Dismissible per session (`sessionStorage
 
 **File:** `client/src/pages/Compare.tsx` · max 5 cars from `carStore`
 
-On load, fetches a full `CarDashboard` per compared car (same depth as the dossier). Uses `fieldProvenance`, `ownership.marketValue.confidenceLabel`, and per-field `ProvenanceChip` on analytics rows. The current set is persisted locally and synced to `/compare?cars=id1,id2` so a refresh or share keeps the same lineup.
+On load, fetches a full `CarDashboard` per compared car (same depth as the dossier), in the reader's cost region. The current set is persisted locally and synced to `/compare?cars=id1,id2` so a refresh or share keeps the same lineup.
 
-### Spec rows (rows with zero data across all cars are dropped)
+**In short** (`utils/compareSummary.ts`): a sentence per car on what it has that the others do not ("The SUV: the only AWD (better in snow) and the only one NHTSA has rated (5/5)"), from dashboards; near-ties crown nobody. It replaced "Body styles: sedan, suv" and "Different shape — the sedan in this set".
 
-YEAR · ORIGIN · TYPE · ENGINE · POWER · TORQUE · FUEL · TRANS · DRIVE · 0-60 · TOP SPEED · EFF CITY/HWY/AVG · FUEL $/YR · CO2 G/MI · EST. VALUE
+### Rows, in decision order (rows with no data for any car are dropped)
 
-Trust filter: All fields · Verified only · Estimates only.
+Est. value · Yearly cost · Fuel a year · 5-year cost (all CAD, the reader's region) · Fuel use, City, Highway (L/100 km or kWh/100 km, the EPA figure beneath) · EPA range (km) · NHTSA rating · Power · Torque · 0–60 mph · Engine · Gearbox · Drive · Fuel · Body · CO₂ (g/km) · Origin. EPA's US-dollar fuel cost and the Year row (the column heading says it) are gone.
 
-Best value highlighted when 2+ cars have numeric data. Missing cells use `UNAVAILABLE_LABEL` with muted styling when some cars have data.
+"Best" marks a figure ahead of the runner-up by 5% or more, and only across one unit. On a phone the label column is pinned and narrow, so two cars show whole; more scroll sideways (the second car used to be cut off mid-word).
 
 ---
 
@@ -686,6 +688,7 @@ Best value highlighted when 2+ cars have numeric data. Missing cells use `UNAVAI
 - Fetches a bounded candidate pool with `searchCars()` (widening the query if the first pass is thin), then ranks it client-side
 - Client-side fuel type filter + persona defaults
 - Shows the top-ranked picks, not an infinite list
+- Each pick says why it fits the answers (`utils/quizReasons.ts`: its fuel use for a commuter, its NHTSA stars when safety comes first, its budget), then how it differs from the other two; the answers are restated in words ("For a daily commute · fuel economy matters most · $20k–$35k")
 
 ---
 
@@ -695,6 +698,7 @@ Best value highlighted when 2+ cars have numeric data. Missing cells use `UNAVAI
 
 - Zustand + `localStorage` key `dreamGarage`
 - Add/remove/clear, total value, avg MPG, unique makes
+- Empty: the leading pick of each shortlist, each savable in one tap (it showed a padlock)
 - **Share:** copies `/shared-garage?cars=id1,id2,...`
 
 ### Shared Garage (`/shared-garage`)

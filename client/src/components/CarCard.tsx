@@ -8,32 +8,140 @@ import {
   displayVehicleTitle,
   formatTransmissionLabel,
 } from '../utils/trimLabel';
-import {
-  UNAVAILABLE_LABEL,
-  formatEngineDetailForCard,
-  formatMpgForCard,
-  formatPriceShort,
-  formatRangeForCard,
-} from '../utils/dataValue';
-import { usesMpge, formatCarFuelBadge } from '../utils/fuelDisplay';
+import { formatPriceShort } from '../utils/dataValue';
+import { efficiencyOf, rangeKm } from '../utils/efficiency';
+import { formatCarFuelLabel } from '../utils/fuelDisplay';
 import VehiclePlaceholder from './VehiclePlaceholder';
 import { StatusToast } from './ui';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 
+export type CarCardLayout = 'grid' | 'list';
+
 interface CarCardProps {
   car: CarSpecs;
   showCompare?: boolean;
+  layout?: CarCardLayout;
+  /** Why the car is in these results, from utils/matchReasons.ts. */
+  reasons?: string[];
 }
 
-/** Search/browse card — compact illustration; specs stay the focus. */
-export default function CarCard({ car, showCompare = true }: CarCardProps) {
-  const { comparedCars, addOrReplaceOldestInComparison, removeCarFromComparison } = useCarStore();
-  const [toast, setToast] = useState<string | null>(null);
-  const isInComparison = comparedCars.some((c) => c.id === car.id);
+interface Figure {
+  label: string;
+  value: string;
+  unit?: string;
+}
+
+/**
+ * The figures a result is chosen on: what it is worth, what it burns (or, for
+ * an EV, how far it goes), and its power. The body-style drawing that used to
+ * fill half of every card is a thumbnail: in a list of SUVs it was the same
+ * white SUV thirty times over, and it pushed the numbers below the fold.
+ */
+function figuresFor(car: CarSpecs): Figure[] {
+  const figures: Figure[] = [];
+  const price = formatPriceShort(car.price?.msrp, false);
+  figures.push({
+    label: 'Est. value',
+    value: price === 'Not on file' ? '—' : `${car.price?.isEstimated !== false ? '~' : ''}${price}`,
+  });
   const isEv = car.engine.fuelType === 'electric';
-  const isHydrogen = car.engine.fuelType === 'hydrogen';
-  const isAltPowertrain = isEv || isHydrogen;
-  const variantLabel = displayConfigSubtitle(car);
+  if (isEv && car.epa?.rangeMiles) {
+    figures.push({ label: 'Range', value: String(rangeKm(car.epa.rangeMiles)), unit: 'km' });
+  } else {
+    const efficiency = efficiencyOf(car);
+    const [number, ...unit] = efficiency?.text.split(' ') ?? [];
+    figures.push({
+      label: efficiency?.label === 'Gas-mode fuel use' ? 'Gas mode' : 'Fuel use',
+      value: number ?? '—',
+      unit: unit.join(' ') || undefined,
+    });
+  }
+  figures.push({
+    label: 'Power',
+    value: car.engine.horsepower ? String(car.engine.horsepower) : '—',
+    unit: car.engine.horsepower ? 'hp' : undefined,
+  });
+  return figures;
+}
+
+function CompareToggle({
+  car,
+  compact = false,
+  onToast,
+}: {
+  car: CarSpecs;
+  compact?: boolean;
+  onToast: (message: string) => void;
+}) {
+  const { comparedCars, addOrReplaceOldestInComparison, removeCarFromComparison } = useCarStore();
+  const isInComparison = comparedCars.some((c) => c.id === car.id);
+
+  const toggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isInComparison) {
+      removeCarFromComparison(car.id);
+      onToast('Removed from compare');
+      return;
+    }
+    const res = addOrReplaceOldestInComparison(car);
+    if (!res.ok) {
+      onToast(res.message);
+      return;
+    }
+    onToast(
+      res.swappedOut
+        ? `Replaced ${res.swappedOut.year} ${res.swappedOut.make} ${displayModelLabel(res.swappedOut)}`
+        : 'Added to compare',
+    );
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-pressed={isInComparison}
+      aria-label={`Compare the ${displayVehicleTitle(car)}`}
+      className={`relative z-10 inline-flex shrink-0 border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 ${
+        compact
+          ? 'flex-col items-center justify-center gap-1 min-h-[52px] min-w-[64px] px-1.5 text-xs'
+          : 'items-center gap-2 min-h-[40px] px-2.5 text-[13px]'
+      } ${
+        isInComparison
+          ? 'border-accent/70 bg-accent/10 text-accent'
+          : 'border-zinc-700 text-zinc-300 hover:border-zinc-400 hover:text-white'
+      }`}
+    >
+      <span
+        aria-hidden
+        className={`inline-flex items-center justify-center w-4 h-4 border ${
+          isInComparison ? 'border-accent bg-accent text-accent-ink' : 'border-zinc-500'
+        }`}
+      >
+        {isInComparison && (
+          <svg viewBox="0 0 16 16" className="w-3 h-3" fill="none" stroke="currentColor">
+            <path
+              d="M3 8.5l3 3 7-7"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )}
+      </span>
+      <span>{compact && isInComparison ? 'Added' : 'Compare'}</span>
+    </button>
+  );
+}
+
+/** Search/browse result: a card in the grid, a row in the list. */
+export default function CarCard({
+  car,
+  showCompare = true,
+  layout = 'grid',
+  reasons = [],
+}: CarCardProps) {
+  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     if (!toast) return;
@@ -41,138 +149,140 @@ export default function CarCard({ car, showCompare = true }: CarCardProps) {
     return () => clearTimeout(t);
   }, [toast]);
 
-  const toggleComparison = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (isInComparison) {
-      removeCarFromComparison(car.id);
-      setToast('Removed from compare');
-      return;
-    }
-    const res = addOrReplaceOldestInComparison(car);
-    if (!res.ok) {
-      setToast(res.message);
-      return;
-    }
-    if (res.swappedOut) {
-      setToast(
-        `Replaced ${res.swappedOut.year} ${res.swappedOut.make} ${displayModelLabel(res.swappedOut)}`,
-      );
-      return;
-    }
-    setToast('Added to compare');
-  };
-
-  const mpgLabel = usesMpge(car.engine.fuelType) ? 'MPGe' : 'MPG';
-  const mpgValue = formatMpgForCard(car.fuelEconomy.combined);
-  const engineValue = formatEngineDetailForCard(car.engine);
-  const rangeValue = formatRangeForCard(car.epa?.rangeMiles);
-  const priceShort = formatPriceShort(car.price?.msrp, false);
-  const transLabel = car.transmission?.type ? formatTransmissionLabel(car.transmission) : null;
-  const hasMpg = mpgValue && mpgValue !== 'Not on file';
-  const hasPrice = priceShort && priceShort !== 'Not on file';
-  const hasRange = rangeValue && rangeValue !== 'Not on file';
+  const title = displayVehicleTitle(car);
+  const config = displayConfigSubtitle(car);
+  const transmission = car.transmission?.type ? formatTransmissionLabel(car.transmission) : null;
+  const subtitle = [
+    car.bodyStyle ? bodyStyleLabel(car.bodyStyle) : null,
+    config ?? transmission,
+    car.driveType,
+    car.engine.fuelType && car.engine.fuelType !== 'gasoline' ? formatCarFuelLabel(car) : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
   const safety = car.safetyRating?.overall;
+  const rated = safety != null && safety > 0;
+  const figures = figuresFor(car);
 
-  const metaParts: string[] = [];
-  if (engineValue && engineValue !== 'Not on file') metaParts.push(engineValue);
-  if (!isAltPowertrain && transLabel && !variantLabel) metaParts.push(transLabel);
-  if (car.driveType) metaParts.push(car.driveType);
-  // An EV's engine already reads "Electric"; don't repeat it as the fuel.
-  const fuelBadge = car.engine.fuelType ? formatCarFuelBadge(car) : '';
-  if (fuelBadge && !metaParts.some((part) => part.toLowerCase() === fuelBadge.toLowerCase())) {
-    metaParts.push(fuelBadge);
+  const titleLink = (
+    <Link
+      to={`/car/${car.id}`}
+      className="after:absolute after:inset-0 focus:outline-none focus-visible:underline hover:underline underline-offset-2 decoration-zinc-600"
+    >
+      {title}
+    </Link>
+  );
+
+  const reasonLine = reasons.length > 0 && (
+    <p className="flex items-start gap-1.5 text-xs text-accent leading-snug">
+      <svg
+        viewBox="0 0 16 16"
+        className="w-3.5 h-3.5 mt-px shrink-0"
+        fill="none"
+        stroke="currentColor"
+        aria-hidden
+      >
+        <path d="M3 8.5l3 3 7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      <span>
+        <span className="sr-only">Matches: </span>
+        {reasons.join(' · ')}
+      </span>
+    </p>
+  );
+
+  if (layout === 'list') {
+    return (
+      <article className="group relative flex gap-3 px-3 py-3 border-b border-zinc-900 hover:bg-zinc-950 focus-within:bg-zinc-950">
+        <StatusToast message={toast} />
+        <div className="w-16 h-10 sm:w-20 sm:h-12 shrink-0 overflow-hidden mt-0.5">
+          <VehiclePlaceholder car={car} compact hideCaption />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline justify-between gap-3">
+            <h3 className="text-[15px] font-semibold text-white leading-snug min-w-0">
+              {titleLink}
+            </h3>
+            <p className="text-[15px] font-bold tabular-nums text-white shrink-0">
+              {figures[0].value}
+            </p>
+          </div>
+          {subtitle && <p className="text-xs text-zinc-400 mt-0.5 line-clamp-1">{subtitle}</p>}
+          <p className="text-[13px] text-zinc-300 tabular-nums mt-1">
+            {[
+              ...figures
+                .slice(1)
+                .filter((f) => f.value !== '—')
+                .map((f) => `${f.value}${f.unit ? ` ${f.unit}` : ''}`),
+              rated ? `${safety}/5 NHTSA` : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </p>
+          {reasonLine && <div className="mt-1">{reasonLine}</div>}
+        </div>
+        {showCompare && (
+          <div className="self-center">
+            <CompareToggle car={car} compact onToast={setToast} />
+          </div>
+        )}
+      </article>
+    );
   }
 
   return (
-    <article className="surface-card-hover group relative flex flex-col h-full overflow-hidden focus-within:border-zinc-400 focus-within:ring-1 focus-within:ring-white/10">
+    <article className="surface-card-hover group relative flex flex-col h-full overflow-hidden focus-within:border-zinc-400">
       <StatusToast message={toast} />
 
-      <div className="h-28 sm:h-32 border-b border-zinc-900 overflow-hidden">
-        <VehiclePlaceholder car={car} compact hideCaption />
+      <div className="flex items-center gap-3 p-3 pb-2.5">
+        <div className="w-20 h-12 shrink-0 overflow-hidden">
+          <VehiclePlaceholder car={car} compact hideCaption />
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-[15px] font-semibold text-white leading-snug line-clamp-2">
+            {titleLink}
+          </h3>
+          {subtitle && <p className="text-xs text-zinc-400 mt-0.5 line-clamp-1">{subtitle}</p>}
+        </div>
       </div>
 
-      <div className="p-3 flex flex-col flex-1">
-        {/* The title takes the full width: beside the chips, a three-column
-            grid cut "2026 Nissan Sentra" to "2026 Nissan…". */}
-        <h3 className="text-sm sm:text-base font-bold text-white leading-snug line-clamp-2">
-          <Link
-            to={`/car/${car.id}`}
-            className="after:absolute after:inset-0 focus:outline-none hover:underline underline-offset-2 decoration-zinc-600"
-          >
-            {displayVehicleTitle(car)}
-          </Link>
-        </h3>
-        <div className="flex items-center gap-1.5 mt-1 min-w-0">
-          {car.bodyStyle && (
-            <span className="spec-chip shrink-0">{bodyStyleLabel(car.bodyStyle)}</span>
-          )}
-          {safety != null && safety > 0 && (
-            <span
-              className="spec-chip shrink-0 text-amber-200/90 border-amber-800/50"
-              title={`NHTSA ${safety}-star overall rating`}
-            >
-              {'★'.repeat(safety)}
-            </span>
-          )}
-          {variantLabel && (
-            <span className="text-[11px] text-zinc-500 truncate min-w-0">{variantLabel}</span>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-px bg-zinc-900 border border-zinc-900 mt-2.5">
-          <div className="bg-black px-2.5 py-2">
-            <p className="text-[9px] uppercase tracking-widest text-zinc-600">
-              {isAltPowertrain && hasRange ? 'Range' : mpgLabel}
-            </p>
-            {isAltPowertrain && hasRange ? (
-              <p className="text-lg font-bold tabular-nums text-white leading-tight">
-                {rangeValue}
-              </p>
-            ) : hasMpg ? (
-              <p className="text-lg font-bold tabular-nums text-white leading-tight">{mpgValue}</p>
-            ) : (
-              <p className="text-xs font-normal italic text-zinc-500 leading-tight mt-1">
-                {UNAVAILABLE_LABEL}
-              </p>
-            )}
+      <dl className="grid grid-cols-3 border-y border-zinc-900 divide-x divide-zinc-900">
+        {figures.map((figure) => (
+          <div key={figure.label} className="px-3 py-2 min-w-0">
+            <dt className="text-xs text-zinc-500">{figure.label}</dt>
+            <dd className="mt-0.5">
+              <span
+                className={`block text-lg font-bold tabular-nums leading-tight ${
+                  figure.value === '—' ? 'text-zinc-500' : 'text-white'
+                }`}
+              >
+                {figure.value}
+              </span>
+              {/* Under the figure: beside it, "L/100 km" ran into the next column. */}
+              <span className="block text-xs text-zinc-500 whitespace-nowrap">
+                {figure.unit ?? '\u00a0'}
+              </span>
+            </dd>
           </div>
-          <div className="bg-black px-2.5 py-2">
-            <p className="text-[9px] uppercase tracking-widest text-zinc-600">Est. CAD</p>
-            {hasPrice ? (
-              <p className="text-lg font-bold tabular-nums text-white leading-tight truncate">
-                {car.price?.isEstimated !== false ? `~${priceShort}` : priceShort}
-              </p>
-            ) : (
-              <p className="text-xs font-normal italic text-zinc-500 leading-tight mt-1 truncate">
-                {UNAVAILABLE_LABEL}
-              </p>
-            )}
-          </div>
-        </div>
+        ))}
+      </dl>
 
-        {metaParts.length > 0 && (
-          <p className="text-[11px] text-zinc-600 mt-2 leading-snug line-clamp-1">
-            {metaParts.join(' · ')}
+      <div className="p-3 pt-2.5 flex flex-col gap-2 flex-1">
+        {rated && (
+          <p className="text-xs text-zinc-400">
+            <span className="text-amber-200/90" aria-hidden>
+              {'★'.repeat(safety!)}
+            </span>{' '}
+            {safety}/5 NHTSA
           </p>
         )}
-
+        {reasonLine}
         {showCompare && (
-          <div className="mt-auto pt-3 flex items-center justify-between gap-2 relative z-10">
-            <span className="text-[10px] uppercase tracking-widest text-zinc-600 group-hover:text-zinc-400">
-              Dossier →
+          <div className="mt-auto pt-1 flex items-center justify-between gap-2">
+            <span className="text-[13px] text-zinc-400 group-hover:text-white transition-colors">
+              Details →
             </span>
-            <button
-              type="button"
-              onClick={toggleComparison}
-              className={`text-[10px] uppercase tracking-widest px-2.5 py-1.5 border transition-colors ${
-                isInComparison
-                  ? 'border-white text-white'
-                  : 'border-zinc-700 text-zinc-500 hover:border-zinc-400 hover:text-white'
-              }`}
-            >
-              {isInComparison ? 'In compare' : '+ Compare'}
-            </button>
+            <CompareToggle car={car} onToast={setToast} />
           </div>
         )}
       </div>

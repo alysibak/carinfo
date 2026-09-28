@@ -37,7 +37,7 @@ export function StatPill({ label, value }: { label: string; value: string }) {
   return (
     <div className="surface-card px-4 py-3 text-center min-w-[100px]">
       <p className="text-lg font-semibold text-white">{value}</p>
-      <p className="text-[11px] text-zinc-400 mt-0.5">{label}</p>
+      <p className="text-xs text-zinc-400 mt-0.5">{label}</p>
     </div>
   );
 }

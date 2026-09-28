@@ -12,18 +12,21 @@ interface NavLinkItem {
   badge?: number;
 }
 
+// "Guides" opened a page titled "Start from a situation", and the value chart
+// was only in the phone menu: the labels now name the pages they open.
 const NAV_LINKS: NavLinkItem[] = [
   { to: '/home', label: 'Search' },
+  { to: '/browse', label: 'Browse' },
   { to: '/compare', label: 'Compare' },
+  { to: '/value-matrix', label: 'Value chart' },
   { to: '/vin', label: 'VIN' },
   { to: '/garage', label: 'Garage' },
-  { to: '/browse', label: 'Guides' },
 ];
 
 function Badge({ count }: { count: number }) {
   if (count <= 0) return null;
   return (
-    <span className="ml-1.5 text-[10px] font-semibold tabular-nums text-zinc-300 border border-zinc-700 px-1.5 py-0.5 rounded-none">
+    <span className="ml-1.5 text-xs font-semibold tabular-nums text-accent-ink bg-accent px-1.5 leading-5 rounded-none">
       {count}
     </span>
   );
@@ -104,7 +107,7 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
       <div className="page-wrap py-3 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-3">
         <Link
           to="/"
-          className="text-sm font-bold uppercase tracking-widest text-white hover:text-zinc-300 transition-colors shrink-0 min-h-[44px] inline-flex items-center"
+          className="text-sm font-bold uppercase tracking-[0.18em] text-white hover:text-zinc-300 transition-colors shrink-0 min-h-[44px] inline-flex items-center"
           onClick={() => setMenuOpen(false)}
         >
           CarInfo
@@ -116,10 +119,10 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `text-xs uppercase tracking-widest px-2.5 xl:px-3 min-h-[44px] inline-flex items-center transition-colors border-b-2 whitespace-nowrap ${
+                `text-sm px-2.5 xl:px-3 min-h-[44px] inline-flex items-center transition-colors border-b-2 whitespace-nowrap ${
                   isActive
-                    ? 'text-white border-white'
-                    : 'text-zinc-400 border-transparent hover:text-zinc-300'
+                    ? 'text-white border-accent'
+                    : 'text-zinc-400 border-transparent hover:text-white'
                 }`
               }
             >
@@ -130,13 +133,14 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
         </nav>
 
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          <label className="hidden md:flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-zinc-500">
-            <span className="sr-only">Cost region</span>
+          {/* Named on screen: a bare "Ontario" menu said nothing about what it set. */}
+          <label className="hidden md:flex items-center gap-2 text-xs text-zinc-400">
+            <span>Costs for</span>
             <select
               value={region}
               onChange={(e) => setRegion(e.target.value as typeof region)}
-              className="bg-transparent border border-zinc-800 text-zinc-300 text-[10px] uppercase tracking-wider px-2 py-1.5 focus:outline-none focus:border-zinc-500 max-w-[9.5rem]"
-              aria-label="Cost estimate region"
+              className="bg-transparent border border-zinc-700 text-zinc-200 text-[13px] px-2 py-1.5 focus:outline-none focus:border-accent max-w-[9.5rem]"
+              aria-label="Costs for region"
             >
               {REGION_OPTIONS.map((opt) => (
                 <option key={opt.id} value={opt.id} className="bg-zinc-950 text-white">
@@ -214,8 +218,8 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
               to={item.to}
               onClick={() => setMenuOpen(false)}
               className={({ isActive }) =>
-                `flex items-center justify-between min-h-[48px] py-3 text-xs uppercase tracking-widest transition-colors ${
-                  isActive ? 'text-white' : 'text-zinc-400 hover:text-white'
+                `flex items-center justify-between min-h-[48px] py-3 text-base transition-colors ${
+                  isActive ? 'text-white font-semibold' : 'text-zinc-300 hover:text-white'
                 }`
               }
             >
@@ -224,13 +228,13 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
             </NavLink>
           ))}
           <div className="py-4">
-            <label className="flex flex-col gap-2 text-[10px] uppercase tracking-wider text-zinc-500">
-              Cost region (CAD estimates)
+            <label className="flex flex-col gap-2 text-sm text-zinc-400">
+              Costs for (estimates in CAD)
               <select
                 value={region}
                 onChange={(e) => setRegion(e.target.value as typeof region)}
-                className="bg-zinc-950 border border-zinc-800 text-zinc-200 text-xs uppercase tracking-wider px-3 py-2.5 focus:outline-none focus:border-zinc-500"
-                aria-label="Cost estimate region"
+                className="bg-zinc-950 border border-zinc-700 text-zinc-100 text-base px-3 py-2.5 focus:outline-none focus:border-accent"
+                aria-label="Costs for region"
               >
                 {REGION_OPTIONS.map((opt) => (
                   <option key={opt.id} value={opt.id} className="bg-zinc-950 text-white">
@@ -243,14 +247,7 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
           <div className="py-4">
             <AuthHeaderSlot onNavigate={() => setMenuOpen(false)} />
           </div>
-          <div className="py-4 flex flex-col gap-3 text-xs uppercase tracking-widest text-zinc-500">
-            <NavLink
-              to="/value-matrix"
-              onClick={() => setMenuOpen(false)}
-              className="hover:text-white"
-            >
-              Value chart
-            </NavLink>
+          <div className="py-4 flex flex-col gap-3 text-sm text-zinc-400">
             <NavLink
               to="/methodology"
               onClick={() => setMenuOpen(false)}

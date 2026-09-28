@@ -3,33 +3,18 @@ import { useEffect, useState } from 'react';
 import PersonaQuiz, { type PersonaResult } from '../components/PersonaQuiz';
 import SearchBar from '../components/SearchBar';
 import SiteHeader from '../components/SiteHeader';
-import VehiclePlaceholder from '../components/VehiclePlaceholder';
+import SampleCarCard from '../components/SampleCarCard';
+import ShortlistCards from '../components/ShortlistCards';
 import * as api from '../services/api';
 import type { CarSpecs } from '../types/car.types';
-import { COLLECTIONS } from '../config/collections';
 import { LIFESTYLE_PRESETS, POPULAR_SEARCHES, presetToSearchQuery } from '../config/browseTaxonomy';
 import { searchQueryToParams } from '../utils/searchParams';
-import { formatFuelBadge, usesMpge } from '../utils/fuelDisplay';
-import { displayModelLabel, displayListingSubtitle } from '../utils/trimLabel';
-import { formatLPer100KmFromMpg, formatKwhPer100KmFromMpge } from '../utils/fuelEconomyUnits';
-import {
-  HERO_PREVIEW_QUERY,
-  pickHeroPreviewCar,
-  pickFirstEligible,
-  SHOWCASE_QUERIES,
-  type ShowcaseQuery,
-} from '../utils/landingShowcase';
+import { HERO_PREVIEW_QUERY, pickHeroPreviewCar } from '../utils/landingShowcase';
 import { usePageMeta } from '../utils/pageMeta';
 import CompareTray from '../components/CompareTray';
-import VisitCounter from '../components/VisitCounter';
 import { useCarStore } from '../stores/carStore';
 
 const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/i;
-
-interface ShowcaseItem {
-  car: CarSpecs;
-  insight: ShowcaseQuery['insight'];
-}
 
 function homeLinkFromPreset(preset: (typeof LIFESTYLE_PRESETS)[number]) {
   return `/home?${searchQueryToParams(presetToSearchQuery(preset), 1).toString()}`;
@@ -37,7 +22,7 @@ function homeLinkFromPreset(preset: (typeof LIFESTYLE_PRESETS)[number]) {
 
 export default function Landing() {
   usePageMeta(
-    'Car reference with verified specs',
+    'What a car really costs in Canada',
     'Browse 35,000+ vehicles with EPA fuel economy, NHTSA safety when on file, and labeled Ontario/CAD market estimates.',
   );
   const [showQuiz, setShowQuiz] = useState(false);
@@ -53,7 +38,6 @@ export default function Landing() {
   }, []);
   const [heroQuery, setHeroQuery] = useState('');
   const [heroCar, setHeroCar] = useState<CarSpecs | null>(null);
-  const [showcase, setShowcase] = useState<ShowcaseItem[]>([]);
   const navigate = useNavigate();
   const compareCount = useCarStore((s) => s.comparedCars.length);
   const trayPad = compareCount > 0 ? 'pb-[calc(4.25rem+env(safe-area-inset-bottom))]' : '';
@@ -92,23 +76,6 @@ export default function Landing() {
         if (car) setHeroCar(car);
       })
       .catch(() => {});
-
-    const used = new Set<string>();
-    (async () => {
-      const items: ShowcaseItem[] = [];
-      await Promise.all(
-        SHOWCASE_QUERIES.map(async ({ insight, query }) => {
-          try {
-            const res = await api.searchCars(query);
-            const car = pickFirstEligible(res.results, insight, used);
-            if (car) items.push({ car, insight });
-          } catch {
-            /* skip */
-          }
-        }),
-      );
-      setShowcase(items);
-    })();
   }, []);
 
   const situationPresets = LIFESTYLE_PRESETS.slice(0, 4);
@@ -128,23 +95,15 @@ export default function Landing() {
 
       <main id="main-content" tabIndex={-1} className="focus:outline-none">
         <section className="mesh-hero">
-          {heroCar && (
-            <div className="hero-plane hidden lg:block" aria-hidden>
-              <div className="absolute inset-y-0 right-0 w-[58%] opacity-50">
-                <VehiclePlaceholder car={heroCar} hideCaption className="h-full" />
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-r from-black via-black/85 to-transparent" />
-            </div>
-          )}
-
-          <div className="hero-content page-wrap pt-10 pb-10 md:pt-16 md:pb-16 lg:pt-20 lg:pb-20">
+          <div className="hero-content page-wrap pt-10 pb-10 md:pt-16 md:pb-16 lg:pt-20 lg:pb-20 grid lg:grid-cols-[minmax(0,1fr)_23rem] gap-10 lg:gap-14 items-center">
             <div className="max-w-xl min-w-0">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05] mb-4 animate-hero-rise">
-                CarInfo
+              {/* The promise, not the brand: the header already says CarInfo. */}
+              <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-bold tracking-tight leading-[1.05] mb-4 animate-hero-rise">
+                Know what a car really costs in Canada
               </h1>
-              <p className="text-base md:text-lg text-zinc-400 leading-relaxed mb-6 md:mb-8 animate-hero-rise [animation-delay:40ms]">
-                Specs you can trust — EPA, NHTSA when on file, and labeled Ontario estimates. Look
-                up a car, or answer three questions.
+              <p className="text-base md:text-lg text-zinc-300 leading-relaxed mb-6 md:mb-8 animate-hero-rise [animation-delay:40ms]">
+                What it&apos;s worth, what it costs a year to run, what it burns and how it did in
+                crash tests, for 35,000+ vehicles. EPA and NHTSA data, estimates in CAD.
               </p>
 
               <div className="animate-hero-rise [animation-delay:80ms]">
@@ -155,98 +114,90 @@ export default function Landing() {
                   size="hero"
                   placeholder="Make, model, or VIN"
                 />
-                <p className="mt-3 text-sm text-zinc-500">
-                  Paste a 17-character VIN in the same box.{' '}
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                  <span className="text-zinc-400">A 17-character VIN works too.</span>
                   <button
                     type="button"
                     onClick={() => setShowQuiz(true)}
-                    className="text-zinc-300 hover:text-white transition-colors underline underline-offset-4 decoration-zinc-700"
+                    className="text-accent hover:text-accent-hover font-medium min-h-[44px] inline-flex items-center"
                   >
-                    Or answer 3 questions
+                    Not sure yet? Answer 3 questions →
                   </button>
-                </p>
+                </div>
               </div>
             </div>
+            {heroCar && (
+              <div className="animate-hero-rise [animation-delay:120ms] w-full max-w-md lg:max-w-none">
+                <SampleCarCard car={heroCar} />
+              </div>
+            )}
           </div>
         </section>
 
         <section className="page-wrap section-y border-t border-zinc-900">
           <h2 className="section-title mb-2">How do you want to start?</h2>
-          <p className="text-sm text-zinc-400 mb-6 md:mb-8 max-w-xl leading-relaxed">
-            Most people arrive with one of these in mind. Pick the path that matches.
+          <p className="text-[15px] text-zinc-400 mb-6 md:mb-8 max-w-xl leading-relaxed">
+            Most people arrive with one of these in mind.
           </p>
 
-          <div>
-            <div className="intent-row">
-              <p className="text-sm font-semibold text-white">I know the car</p>
-              <div className="flex flex-wrap gap-x-4 gap-y-2.5 text-sm">
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="border border-zinc-800 bg-zinc-950 p-4 sm:p-5">
+              <h3 className="text-base font-semibold text-white mb-3">I know the car</h3>
+              <div className="flex flex-wrap gap-2">
                 {POPULAR_SEARCHES.map((s) => (
                   <Link
                     key={s.query}
                     to={`/home?${new URLSearchParams({ q: s.query, sort: 'relevance' }).toString()}`}
-                    className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 py-1"
+                    className="chip"
                   >
                     {s.label}
                   </Link>
                 ))}
-                <Link to="/home" className="text-zinc-500 hover:text-zinc-300 py-1">
+                <Link to="/home" className="chip border-transparent text-zinc-400">
                   Open search →
                 </Link>
               </div>
             </div>
 
-            <div className="intent-row">
-              <p className="text-sm font-semibold text-white">I&apos;m still deciding</p>
-              <div className="flex flex-wrap gap-x-4 gap-y-2.5 text-sm">
-                <button
-                  type="button"
-                  onClick={() => setShowQuiz(true)}
-                  className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 py-1"
-                >
-                  3-question quiz
+            <div className="border border-zinc-800 bg-zinc-950 p-4 sm:p-5">
+              <h3 className="text-base font-semibold text-white mb-3">I&apos;m still deciding</h3>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => setShowQuiz(true)} className="chip chip-on">
+                  Take the 3-question quiz
                 </button>
                 {situationPresets.map((preset) => (
-                  <Link
-                    key={preset.id}
-                    to={homeLinkFromPreset(preset)}
-                    className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 py-1"
-                  >
+                  <Link key={preset.id} to={homeLinkFromPreset(preset)} className="chip">
                     {preset.label}
                   </Link>
                 ))}
-                <Link to="/browse" className="text-zinc-500 hover:text-zinc-300 py-1">
-                  All guides →
+                <Link to="/browse" className="chip border-transparent text-zinc-400">
+                  All situations →
                 </Link>
               </div>
             </div>
 
-            <div className="intent-row">
-              <p className="text-sm font-semibold text-white">I have a VIN</p>
-              <p className="text-sm text-zinc-400 leading-relaxed">
-                Drop it in the search above, or use{' '}
-                <Link
-                  to="/vin"
-                  className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700"
-                >
-                  VIN lookup
-                </Link>{' '}
-                if you want the scanner.
+            <div className="border border-zinc-800 bg-zinc-950 p-4 sm:p-5">
+              <h3 className="text-base font-semibold text-white mb-1">I have a VIN</h3>
+              <p className="text-[13px] text-zinc-400 mb-3">
+                Paste it in the search above, or scan the barcode with your phone.
               </p>
+              <Link to="/vin" className="chip">
+                Decode a VIN →
+              </Link>
             </div>
 
-            <div className="intent-row border-b-0">
-              <p className="text-sm font-semibold text-white">I&apos;m comparing options</p>
-              <div className="flex flex-wrap gap-x-4 gap-y-2.5 text-sm">
-                <Link
-                  to="/compare"
-                  className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 py-1"
-                >
+            <div className="border border-zinc-800 bg-zinc-950 p-4 sm:p-5">
+              <h3 className="text-base font-semibold text-white mb-1">
+                I&apos;m comparing options
+              </h3>
+              <p className="text-[13px] text-zinc-400 mb-3">
+                Put cars side by side, or see the whole market on one chart.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Link to="/compare" className="chip">
                   Side-by-side compare
                 </Link>
-                <Link
-                  to="/value-matrix"
-                  className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 py-1"
-                >
+                <Link to="/value-matrix" className="chip">
                   Value chart
                 </Link>
               </div>
@@ -254,46 +205,12 @@ export default function Landing() {
           </div>
         </section>
 
-        {showcase.length > 0 && (
-          <section className="border-t border-zinc-900">
-            <div className="page-wrap pt-10 md:pt-14 pb-6 md:pb-8">
-              <h2 className="section-title mb-2">What a dossier looks like</h2>
-              <p className="text-sm text-zinc-400 max-w-xl leading-relaxed">
-                Every vehicle page leads with the numbers people actually weigh: efficiency, safety,
-                and estimated value.
-              </p>
-            </div>
-            <div className="grid sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-zinc-800 border-y border-zinc-800">
-              {showcase.map(({ car, insight }, index) => (
-                <ShowcaseCard
-                  key={`${car.id}-${insight}`}
-                  car={car}
-                  insight={insight}
-                  style={{ animationDelay: `${index * 80}ms` }}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
         <section className="page-wrap section-y border-t border-zinc-900">
           <h2 className="section-title mb-2">Curated shortlists</h2>
-          <p className="text-sm text-zinc-400 mb-6 max-w-xl leading-relaxed">
-            A few ranked picks for common situations — not every matching trim in the archive.
+          <p className="text-[15px] text-zinc-400 mb-6 max-w-xl leading-relaxed">
+            Ranked picks for common situations, one per model, not every trim on file.
           </p>
-          <div>
-            {Object.values(COLLECTIONS).map((c) => (
-              <Link key={c.id} to={`/collection/${c.id}`} className="list-row group">
-                <div className="min-w-0 pr-4">
-                  <p className="text-base font-semibold text-white tracking-tight group-hover:text-zinc-300 transition-colors">
-                    {c.title}
-                  </p>
-                  <p className="text-sm text-zinc-400 mt-0.5 line-clamp-2">{c.subtitle}</p>
-                </div>
-                <p className="text-xs text-zinc-500 whitespace-nowrap shrink-0">Picks →</p>
-              </Link>
-            ))}
-          </div>
+          <ShortlistCards />
         </section>
       </main>
 
@@ -312,7 +229,6 @@ export default function Landing() {
             <Link to="/methodology" className="hover:text-white">
               Methodology
             </Link>
-            <VisitCounter className="text-zinc-500" />
             <span>© {new Date().getFullYear()}</span>
           </div>
         </div>
@@ -320,117 +236,5 @@ export default function Landing() {
 
       <CompareTray />
     </div>
-  );
-}
-
-function ShowcaseCard({
-  car,
-  insight,
-  style,
-}: {
-  car: CarSpecs;
-  insight: ShowcaseQuery['insight'];
-  style?: React.CSSProperties;
-}) {
-  const mpgLabel = usesMpge(car.engine.fuelType) ? 'MPGe' : 'MPG';
-  const combined = car.fuelEconomy?.combined ?? 0;
-  const safety = car.safetyRating?.overall;
-  const subtitle = displayListingSubtitle(car);
-  const hp = car.engine.horsepower;
-
-  const theme =
-    insight === 'fuel'
-      ? 'Fuel efficiency'
-      : insight === 'power'
-        ? 'Powertrain'
-        : safety
-          ? 'Safety record'
-          : 'Efficiency';
-
-  const secondaryLine = (() => {
-    if (insight === 'fuel') {
-      return usesMpge(car.engine.fuelType)
-        ? formatKwhPer100KmFromMpge(combined)
-        : formatLPer100KmFromMpg(combined);
-    }
-    if (insight === 'power' && hp) {
-      return `${car.driveType} · ${formatFuelBadge(car.engine.fuelType)}`;
-    }
-    if (safety) {
-      return `${car.year} ${displayModelLabel(car)}`;
-    }
-    return formatLPer100KmFromMpg(combined) || formatFuelBadge(car.engine.fuelType);
-  })();
-
-  const primaryMetric = (() => {
-    if (insight === 'fuel') {
-      return { value: String(Math.round(combined)), unit: mpgLabel };
-    }
-    if (insight === 'power' && hp) {
-      return { value: String(Math.round(hp)), unit: 'HP' };
-    }
-    if (safety) {
-      return {
-        value: String(safety),
-        unit: '/5',
-      };
-    }
-    return { value: String(Math.round(combined)), unit: mpgLabel };
-  })();
-
-  const tertiary =
-    insight === 'fuel'
-      ? `${car.year} ${car.make} ${displayModelLabel(car)}`
-      : insight === 'power'
-        ? `${car.year} ${car.make} ${displayModelLabel(car)}`
-        : safety
-          ? `${safety}/5 overall`
-          : `${combined} ${mpgLabel}`;
-
-  return (
-    <Link
-      to={`/car/${car.id}`}
-      className="group bg-black overflow-hidden flex flex-col animate-fade-in opacity-0 [animation-fill-mode:forwards] hover:bg-zinc-950 transition-colors"
-      style={style}
-    >
-      <p className="text-[10px] uppercase tracking-widest text-zinc-500 px-4 sm:px-5 md:px-6 pt-4">
-        {theme}
-      </p>
-      <div className="relative h-20 sm:h-24 overflow-hidden">
-        <VehiclePlaceholder car={car} compact hideCaption className="!absolute inset-0" />
-      </div>
-      <div className="px-4 sm:px-5 md:px-6 pb-5 pt-3 flex flex-col gap-3">
-        <div className="min-w-0">
-          <p className="text-xs text-zinc-500">
-            {car.year} {car.make}
-          </p>
-          <h3 className="text-base sm:text-lg font-semibold text-white tracking-tight truncate">
-            {displayModelLabel(car)}
-          </h3>
-          {subtitle && <p className="text-xs text-zinc-500 mt-0.5 truncate">{subtitle}</p>}
-        </div>
-
-        <div>
-          {primaryMetric.unit ? (
-            <div className="flex items-baseline gap-2 min-w-0">
-              <span className="text-3xl sm:text-4xl font-bold text-white leading-none tabular-nums">
-                {primaryMetric.value}
-              </span>
-              <span className="text-sm uppercase text-zinc-500 tracking-wider shrink-0">
-                {primaryMetric.unit}
-              </span>
-            </div>
-          ) : (
-            <p className="text-2xl font-bold text-white leading-tight tabular-nums">
-              {primaryMetric.value}
-            </p>
-          )}
-          {secondaryLine && (
-            <p className="text-xs text-zinc-500 mt-1.5 truncate">{secondaryLine}</p>
-          )}
-          <p className="text-xs text-zinc-500 mt-1 truncate">{tertiary}</p>
-        </div>
-      </div>
-    </Link>
   );
 }

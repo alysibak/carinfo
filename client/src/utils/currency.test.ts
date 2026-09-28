@@ -4,7 +4,7 @@ import { currencyMethodologyNote, currencySectionNote } from './currency';
 describe('currency notes', () => {
   it('name the region they describe', () => {
     expect(currencySectionNote('British Columbia')).toMatch(
-      /^All figures are British Columbia-baseline model estimates in CAD, not live listing quotes\./,
+      /^Estimates in CAD for British Columbia, from our cost model rather than quotes/,
     );
     expect(currencyMethodologyNote('Ontario')).toContain('built for Ontario drivers');
   });

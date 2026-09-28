@@ -21,6 +21,8 @@ import { LIFESTYLE_PRESETS, POPULAR_SEARCHES } from '../config/browseTaxonomy';
 import type { CarFilter } from '../types/car.types';
 import { usePageMeta } from '../utils/pageMeta';
 import { describeSearchInterpretation } from '../utils/searchInterpretation';
+import { matchReasons } from '../utils/matchReasons';
+import { useResultsView } from '../hooks/useResultsView';
 
 const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/i;
 
@@ -40,6 +42,7 @@ export default function Home() {
   const [searchText, setSearchText] = useState(() => searchParams.get('q') ?? '');
   const [hasSearched, setHasSearched] = useState(() => hasActiveSearch(searchParams));
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [view, setView] = useResultsView();
   const pageSize = getDefaultPageSize();
 
   const runSearchFromParams = useCallback(
@@ -236,7 +239,7 @@ export default function Home() {
               readers hear the status change. */}
           <p
             role="status"
-            className="absolute right-4 sm:right-6 bottom-0.5 text-[10px] uppercase tracking-wider text-zinc-600 pointer-events-none"
+            className="absolute right-4 sm:right-6 bottom-0.5 text-xs text-zinc-600 pointer-events-none"
           >
             {isSearching && searchText.trim().length >= 2 ? 'Updating results…' : ''}
           </p>
@@ -314,7 +317,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => setFiltersOpen(false)}
-                  className="lg:hidden mt-4 w-full py-2.5 text-xs uppercase tracking-wider border border-zinc-700 text-zinc-300 hover:border-white hover:text-white"
+                  className="lg:hidden mt-4 w-full py-2.5 text-xs border border-zinc-700 text-zinc-300 hover:border-white hover:text-white"
                 >
                   Done with filters
                 </button>
@@ -475,35 +478,79 @@ export default function Home() {
                     >
                       {sortOrder === 'asc' ? '↑' : '↓'}
                     </button>
+                    <div className="flex shrink-0" role="group" aria-label="Show results as">
+                      {(['list', 'grid'] as const).map((option) => (
+                        <button
+                          key={option}
+                          type="button"
+                          onClick={() => setView(option)}
+                          aria-pressed={view === option}
+                          className={`chip !min-h-[42px] ${option === 'grid' ? '-ml-px' : ''} ${
+                            view === option ? 'chip-on relative' : ''
+                          }`}
+                        >
+                          {option === 'list' ? 'List' : 'Grid'}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
                 {isSearching ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 opacity-50 pointer-events-none">
-                    {[0, 1, 2, 3, 4, 5].map((i) => (
-                      <div key={i} className="surface-card h-52 sm:h-56" />
-                    ))}
-                  </div>
+                  view === 'list' ? (
+                    <div className="border-t border-zinc-900 opacity-50 pointer-events-none">
+                      {[0, 1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} className="h-24 border-b border-zinc-900" />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 opacity-50 pointer-events-none">
+                      {[0, 1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} className="surface-card h-52" />
+                      ))}
+                    </div>
+                  )
                 ) : searchError ? (
                   <div className="empty-panel">
                     <p className="text-base text-zinc-300 mb-5">
                       Something went wrong while searching.
                     </p>
-                    <button
-                      type="button"
-                      onClick={performSearch}
-                      className="px-6 py-2.5 bg-white text-black text-xs font-black tracking-[0.3em] uppercase hover:bg-zinc-200"
-                    >
+                    <button type="button" onClick={performSearch} className="btn-primary">
                       Try again
                     </button>
                   </div>
                 ) : searchResults && searchResults.results.length > 0 ? (
                   <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
-                      {searchResults.results.map((car) => (
-                        <CarCard key={car.id} car={car} />
-                      ))}
-                    </div>
+                    {view === 'list' ? (
+                      <div className="border-t border-zinc-900 -mx-3 sm:mx-0">
+                        {searchResults.results.map((car) => (
+                          <CarCard
+                            key={car.id}
+                            car={car}
+                            layout="list"
+                            reasons={matchReasons(
+                              car,
+                              searchQuery.filters,
+                              searchResults.interpretation,
+                            )}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+                        {searchResults.results.map((car) => (
+                          <CarCard
+                            key={car.id}
+                            car={car}
+                            reasons={matchReasons(
+                              car,
+                              searchQuery.filters,
+                              searchResults.interpretation,
+                            )}
+                          />
+                        ))}
+                      </div>
+                    )}
 
                     {totalPages > 1 && (
                       <div className="flex items-center justify-center gap-3 sm:gap-4 mt-8">
@@ -511,9 +558,9 @@ export default function Home() {
                           type="button"
                           disabled={currentPage <= 1}
                           onClick={() => goToPage(currentPage - 1)}
-                          className="min-h-[44px] px-4 sm:px-5 py-2 border border-zinc-700 text-xs uppercase tracking-widest disabled:opacity-40 hover:border-zinc-400 transition-colors"
+                          className="chip !min-h-[44px] px-5 disabled:opacity-40 disabled:hover:border-zinc-700"
                         >
-                          Previous
+                          ← Previous
                         </button>
                         <span className="text-sm text-zinc-400 tabular-nums">
                           {currentPage} / {totalPages}
@@ -522,9 +569,9 @@ export default function Home() {
                           type="button"
                           disabled={currentPage >= totalPages || !searchResults.hasMore}
                           onClick={() => goToPage(currentPage + 1)}
-                          className="min-h-[44px] px-4 sm:px-5 py-2 border border-zinc-700 text-xs uppercase tracking-widest disabled:opacity-40 hover:border-zinc-400 transition-colors"
+                          className="chip !min-h-[44px] px-5 disabled:opacity-40 disabled:hover:border-zinc-700"
                         >
-                          Next
+                          Next →
                         </button>
                       </div>
                     )}
@@ -547,7 +594,7 @@ export default function Home() {
                       <button
                         type="button"
                         onClick={searchEveryYear}
-                        className="min-h-[44px] mr-6 text-xs tracking-widest text-zinc-200 hover:text-white underline underline-offset-4"
+                        className="min-h-[44px] mr-6 text-xs text-zinc-200 hover:text-white underline underline-offset-4"
                       >
                         {textWithoutYears
                           ? `Search “${textWithoutYears}” in every year`
@@ -568,7 +615,7 @@ export default function Home() {
                           offset: 0,
                         });
                       }}
-                      className="min-h-[44px] text-xs tracking-widest text-zinc-400 hover:text-white underline underline-offset-4"
+                      className="min-h-[44px] text-xs text-zinc-400 hover:text-white underline underline-offset-4"
                     >
                       Clear and start over
                     </button>

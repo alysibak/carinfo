@@ -87,10 +87,7 @@ function MethodologyModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4 mb-4">
-          <h2
-            id="methodology-title"
-            className="text-sm font-black tracking-[0.2em] uppercase text-white"
-          >
+          <h2 id="methodology-title" className="text-sm font-bold text-white">
             How these estimates work
           </h2>
           <button
@@ -136,7 +133,7 @@ function MethodologyBody({
       )}
       {assumptions && (
         <div className="space-y-2">
-          <p className="text-[10px] tracking-[0.2em] text-zinc-400 uppercase">Assumptions</p>
+          <p className="text-xs text-zinc-400">Assumptions</p>
           <ul className="space-y-1 list-none">
             <li>Annual driving: {assumptions.annualKm}</li>
             <li>Energy / fuel: {assumptions.energyPriceNote}</li>
@@ -148,9 +145,7 @@ function MethodologyBody({
       )}
       {derivedComparison && (
         <div className="space-y-2">
-          <p className="text-[10px] tracking-[0.2em] text-zinc-400 uppercase">
-            Derived comparison only
-          </p>
+          <p className="text-xs text-zinc-400">Derived comparison only</p>
           <p className="text-zinc-400">{derivedComparison.disclaimer}</p>
           {derivedComparison.fuelCostPerMile != null && (
             <p>Fuel / energy per km: {formatCostPerKm(derivedComparison.fuelCostPerMile)}</p>

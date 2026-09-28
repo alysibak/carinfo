@@ -19,7 +19,7 @@ export default function TrustLabel({
   if (estimated) {
     return (
       <span
-        className={`text-[9px] tracking-widest text-zinc-400 uppercase border border-dashed border-zinc-700 px-1.5 py-0.5 rounded-none ${className}`}
+        className={`text-xs text-zinc-400 border border-dashed border-zinc-700 px-1.5 py-0.5 rounded-none ${className}`}
       >
         Est.
       </span>
@@ -32,7 +32,7 @@ export function BackLink({ to, label = 'Back' }: { to: string; label?: string })
   return (
     <Link
       to={to}
-      className="inline-flex items-center gap-2 sm:gap-3 text-xs tracking-[0.25em] sm:tracking-[0.3em] text-zinc-400 hover:text-white transition-colors group min-h-[44px] shrink-0"
+      className="inline-flex items-center gap-2 sm:gap-3 text-xs text-zinc-400 hover:text-white transition-colors group min-h-[44px] shrink-0"
     >
       <svg
         className="w-5 h-5 group-hover:-translate-x-1 transition-transform shrink-0"
@@ -63,7 +63,7 @@ export function LoadingScreen({ label = 'Loading' }: { label?: string }) {
           className="inline-block w-12 h-12 border-2 border-zinc-800 border-t-zinc-500 mb-4 opacity-60 animate-spin"
           aria-hidden
         />
-        <p className="text-xs tracking-[0.3em] text-zinc-300 uppercase">{label}</p>
+        <p className="text-xs text-zinc-300">{label}</p>
       </div>
     </div>
   );
@@ -85,15 +85,11 @@ export function ErrorState({
   return (
     <div className="min-h-[40vh] bg-black flex items-center justify-center text-white py-16">
       <div className="text-center px-6 max-w-md">
-        <h2 className="text-2xl sm:text-3xl font-black tracking-tighter mb-3">{title}</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold tracking-tighter mb-3">{title}</h2>
         <p className="text-sm tracking-wide text-zinc-400 mb-6">{message}</p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           {onRetry && (
-            <button
-              type="button"
-              onClick={onRetry}
-              className="btn-primary text-xs tracking-[0.25em]"
-            >
+            <button type="button" onClick={onRetry} className="btn-primary text-xs">
               Try again
             </button>
           )}
@@ -136,7 +132,7 @@ export function Modal({
         className="relative max-w-2xl w-full bg-black border border-zinc-800 p-6 md:p-8 max-h-[min(90vh,720px)] overflow-y-auto"
       >
         <div className="flex items-start justify-between gap-4 mb-6">
-          <h2 id={titleId} className="text-xl md:text-2xl font-black tracking-tight">
+          <h2 id={titleId} className="text-xl md:text-2xl font-bold tracking-tight">
             {title}
           </h2>
           <button
@@ -207,16 +203,12 @@ export function ConfirmDialog({
         aria-labelledby={titleId}
         className="relative max-w-md w-full bg-black border border-zinc-800 p-6 md:p-8"
       >
-        <h2 id={titleId} className="text-xl font-black tracking-tight mb-3">
+        <h2 id={titleId} className="text-xl font-bold tracking-tight mb-3">
           {title}
         </h2>
         <p className="text-sm text-zinc-400 leading-relaxed mb-6">{message}</p>
         <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
-          <button
-            type="button"
-            onClick={onClose}
-            className="btn-secondary text-xs tracking-[0.2em]"
-          >
+          <button type="button" onClick={onClose} className="btn-secondary text-xs">
             {cancelLabel}
           </button>
           <button
@@ -225,10 +217,10 @@ export function ConfirmDialog({
               onConfirm();
               onClose();
             }}
-            className={`text-xs tracking-[0.2em] px-5 py-2.5 font-medium uppercase transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 ${
+            className={`text-xs px-5 py-2.5 font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 ${
               danger
                 ? 'bg-red-600 text-white hover:bg-red-500'
-                : 'bg-white text-black hover:bg-zinc-200'
+                : 'bg-accent text-accent-ink hover:bg-accent-hover'
             }`}
           >
             {confirmLabel}
@@ -296,7 +288,7 @@ export function InfoTip({
         onClick={toggle}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
-        className={`relative w-4 h-4 border text-[10px] shrink-0 transition-colors before:absolute before:-inset-2 before:content-[''] ${
+        className={`relative w-4 h-4 border text-xs shrink-0 transition-colors before:absolute before:-inset-2 before:content-[''] ${
           open
             ? 'border-zinc-400 text-white bg-zinc-800'
             : 'border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500'
@@ -310,7 +302,7 @@ export function InfoTip({
           <div
             id={panelId}
             role="dialog"
-            className={`fixed z-[200] -translate-x-1/2 -translate-y-full px-3 py-2.5 bg-zinc-950 border border-zinc-700 shadow-xl text-[11px] leading-relaxed normal-case tracking-normal ${
+            className={`fixed z-[200] -translate-x-1/2 -translate-y-full px-3 py-2.5 bg-zinc-950 border border-zinc-700 shadow-xl text-xs leading-relaxed normal-case tracking-normal ${
               wide ? 'w-72 max-w-[calc(100vw-2rem)]' : 'w-56 max-w-[calc(100vw-2rem)]'
             }`}
             style={{ top: coords.top, left: coords.left }}
@@ -365,11 +357,9 @@ export function ExpandableSection({
         className="w-full px-4 py-3.5 flex items-center gap-4 text-left hover:bg-zinc-950/80 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/25"
       >
         <div className="flex-1 min-w-0">
-          <span className="text-xs font-bold tracking-widest text-white uppercase block break-words">
-            {title}
-          </span>
+          <span className="text-xs font-bold text-white block break-words">{title}</span>
           {summary && !open && (
-            <p className="text-[11px] text-zinc-400 mt-1 leading-snug normal-case tracking-normal truncate">
+            <p className="text-xs text-zinc-400 mt-1 leading-snug normal-case tracking-normal truncate">
               {summary}
             </p>
           )}
@@ -390,7 +380,7 @@ export function StatusToast({ message }: { message: string | null }) {
   return (
     <div
       role="status"
-      className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-white text-black text-xs font-black tracking-[0.25em] uppercase"
+      className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-5 py-3 bg-zinc-100 text-black text-sm font-semibold shadow-lg"
     >
       {message}
     </div>

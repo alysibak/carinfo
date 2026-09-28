@@ -13,10 +13,8 @@ export default function Methodology() {
     <div className="bg-black text-white">
       <div className="border-b border-zinc-900">
         <div className="page-wrap section-y max-w-3xl">
-          <p className="text-[10px] tracking-[0.3em] text-zinc-400 uppercase mb-3">Architecture</p>
-          <h1 className="text-3xl md:text-4xl font-black tracking-tight uppercase mb-4">
-            Methodology
-          </h1>
+          <p className="text-xs text-zinc-400 mb-3">Architecture</p>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">Methodology</h1>
           <p className="text-sm text-zinc-400 leading-relaxed">
             CarInfo is a rules-driven reference over public automotive data. Every number is either
             a verified fact with a named source, or a clearly labeled estimate with a stated method
@@ -27,9 +25,7 @@ export default function Methodology() {
 
       <div className="page-wrap section-y max-w-3xl space-y-10 md:space-y-12">
         <section>
-          <h2 className="text-xs font-black tracking-[0.25em] uppercase text-white mb-4">
-            Data pipeline
-          </h2>
+          <h2 className="text-xs font-bold text-white mb-4">Data pipeline</h2>
           <ol className="space-y-4 text-sm text-zinc-400 leading-relaxed list-decimal list-inside marker:text-zinc-400">
             <li>
               <strong className="text-zinc-200 font-medium">Raw master record</strong> (
@@ -63,9 +59,7 @@ export default function Methodology() {
         </section>
 
         <section>
-          <h2 className="text-xs font-black tracking-[0.25em] uppercase text-white mb-4">
-            PHEV / BEV reclassification
-          </h2>
+          <h2 className="text-xs font-bold text-white mb-4">PHEV / BEV reclassification</h2>
           <p className="text-sm text-zinc-400 leading-relaxed mb-4">
             EPA bulk data often tags plug-in hybrids as &quot;electric&quot; when electricity
             appears in the fuel-type string. CarInfo reclassifies at runtime using naming patterns
@@ -81,9 +75,7 @@ export default function Methodology() {
         </section>
 
         <section>
-          <h2 className="text-xs font-black tracking-[0.25em] uppercase text-white mb-4">
-            Canadian (CAD) valuation model
-          </h2>
+          <h2 className="text-xs font-bold text-white mb-4">Canadian (CAD) valuation model</h2>
           <p className="text-sm text-zinc-400 leading-relaxed mb-4">
             Market value, running cost, resale, and TCO are{' '}
             <strong className="text-zinc-200 font-medium">always estimated</strong> in Canadian
@@ -172,9 +164,7 @@ export default function Methodology() {
         </section>
 
         <section>
-          <h2 className="text-xs font-black tracking-[0.25em] uppercase text-white mb-4">
-            Confidence scoring
-          </h2>
+          <h2 className="text-xs font-bold text-white mb-4">Confidence scoring</h2>
           <p className="text-sm text-zinc-400 leading-relaxed mb-4">
             Confidence reflects how much the model trusts its own estimate given data completeness
             and segment fit, not dealer quote accuracy.
@@ -201,7 +191,7 @@ export default function Methodology() {
         </section>
 
         <section>
-          <h2 className="text-xs font-black tracking-[0.25em] uppercase text-white mb-4">
+          <h2 className="text-xs font-bold text-white mb-4">
             Visual identity: specs first, no glamour photos
           </h2>
           <p className="text-sm text-zinc-400 leading-relaxed">
@@ -213,9 +203,7 @@ export default function Methodology() {
         </section>
 
         <section>
-          <h2 className="text-xs font-black tracking-[0.25em] uppercase text-white mb-4">
-            What we omit
-          </h2>
+          <h2 className="text-xs font-bold text-white mb-4">What we omit</h2>
           <p className="text-sm text-zinc-400 leading-relaxed">
             Dimensions, torque, real 0-60 times, and listing photos are not in the EPA bulk source.
             Missing fields are left empty on the dossier (no row, no chip) and dropped from compare
@@ -227,7 +215,7 @@ export default function Methodology() {
         <div className="pt-6 border-t border-zinc-900">
           <Link
             to="/home"
-            className="inline-block px-6 py-3 bg-white text-black text-xs font-black tracking-[0.25em] uppercase hover:bg-zinc-200 transition-colors"
+            className="inline-block px-6 py-3 bg-accent text-accent-ink text-xs font-semibold hover:bg-accent-hover transition-colors"
           >
             Search vehicles
           </Link>

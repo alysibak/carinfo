@@ -36,16 +36,19 @@ test.describe('Trust UI smoke path', () => {
     await expect(page.getByRole('heading', { name: 'Cost to keep' })).toBeVisible();
 
     await page
-      .getByRole('button', { name: /\+ compare/i })
+      .getByRole('button', { name: /^add to compare$/i })
       .first()
       .click();
     await expect(page.getByRole('button', { name: /in compare/i }).first()).toBeVisible();
 
     await page.getByRole('navigation').getByRole('link', { name: 'Compare' }).click();
     await expect(page.getByRole('heading', { name: 'Compare', exact: true })).toBeVisible();
-    await expect(page.getByText('Loading comparison data')).toBeHidden({ timeout: 60_000 });
-    // Measured and modeled numbers stay distinguishable side by side.
-    await expect(page.getByText(/USD \(EPA\)$/).first()).toBeVisible();
-    await expect(page.getByText(/CAD \(est\.\)$/).first()).toBeVisible();
+    await expect(page.getByText('Loading comparison')).toBeHidden({ timeout: 60_000 });
+    // Measured and modeled numbers stay distinguishable side by side: the
+    // estimates are named once as estimates in CAD, and EPA's fuel figures
+    // arrive converted to litres with the EPA rating beneath.
+    await expect(page.getByRole('rowheader', { name: 'Est. value' })).toBeVisible();
+    await expect(page.getByText(/estimates in\s+CAD/i).first()).toBeVisible();
+    await expect(page.getByText(/ L\/100 km$/).first()).toBeVisible();
   });
 });

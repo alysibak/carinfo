@@ -168,14 +168,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
       glossary: 'body',
     });
   }
-  if (car.vehicleCategory) {
-    pushIf(vehicle, {
-      key: 'category',
-      label: 'Category',
-      value: bodyStyleLabel(car.vehicleCategory),
-      glossary: 'category',
-    });
-  }
+  // EPA's vehicle category ("Car") said less than the body style beside it.
   if (car.epa?.vClass) {
     pushIf(vehicle, {
       key: 'epaClass',
@@ -486,7 +479,7 @@ function SpecGroupBlock({ group }: { group: SpecGroup }) {
                   }`}
                 />
                 {spec.provenanceSource === 'estimated' && (
-                  <span className="text-[10px] text-zinc-600">est.</span>
+                  <span className="text-xs text-zinc-600">est.</span>
                 )}
               </div>
             </div>
@@ -522,7 +515,9 @@ export default function KeySpecs({
       <div className="page-wrap-wide section-y-tight">
         <h2 className="text-base font-bold tracking-tight mb-1">{heading}</h2>
         {omit.size > 0 && (
-          <p className="text-xs text-zinc-500 mb-4">Leftover fields for this configuration.</p>
+          <p className="text-xs text-zinc-500 mb-4">
+            Everything else on file for this configuration.
+          </p>
         )}
         <div
           className={`grid grid-cols-1 md:grid-cols-2 gap-x-8 md:gap-x-10 gap-y-5 md:gap-y-6 ${omit.size > 0 ? '' : 'mt-4'}`}

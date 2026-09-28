@@ -4,8 +4,8 @@ import * as api from '../services/api';
 import type { CarSpecs } from '../types/car.types';
 import { calculateCollectionScore, dedupeByModel } from '../utils/collectionCuration';
 import { COLLECTIONS } from '../config/collections';
-import { formatMpgForCard, formatPowerForCard, formatPriceShort } from '../utils/dataValue';
-import { usesMpge } from '../utils/fuelDisplay';
+import { formatPowerForCard, formatPriceShort } from '../utils/dataValue';
+import { efficiencyOf } from '../utils/efficiency';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 import { displayModelLabel } from '../utils/trimLabel';
 import { searchQueryToParams } from '../utils/searchParams';
@@ -128,9 +128,7 @@ export default function Collection() {
 
         {shortlistDiff.axes.length > 0 && (
           <div className="mb-6 pb-5 border-b border-zinc-800">
-            <p className="text-xs uppercase tracking-wider text-zinc-500 mb-2">
-              How the top picks differ
-            </p>
+            <p className="text-xs text-zinc-500 mb-2">How the top picks differ</p>
             <ul className="space-y-2">
               {shortlistDiff.axes.map((axis) => (
                 <li key={axis} className="text-base text-zinc-200 leading-snug">
@@ -155,8 +153,7 @@ export default function Collection() {
           <>
             <ol className="border-t border-zinc-800">
               {cars.map((car, i) => {
-                const mpgLabel = usesMpge(car.engine.fuelType) ? 'MPGe' : 'MPG';
-                const mpg = formatMpgForCard(car.fuelEconomy.combined);
+                const efficiency = efficiencyOf(car);
                 const price = formatPriceShort(car.price?.msrp, true);
                 return (
                   <li key={car.id} className="border-b border-zinc-900">
@@ -182,7 +179,7 @@ export default function Collection() {
                               const p = formatPowerForCard(car.engine.horsepower);
                               return p === 'Not on file' ? null : p;
                             })(),
-                            mpg !== 'Not on file' ? `${mpg} ${mpgLabel}` : null,
+                            efficiency?.text,
                             bodyStyleLabel(car.bodyStyle),
                           ]
                             .filter(Boolean)
@@ -204,7 +201,7 @@ export default function Collection() {
             <div className="mt-8 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
               <Link
                 to={searchHref}
-                className="text-xs uppercase tracking-wider text-white border border-zinc-600 px-4 py-2.5 hover:border-white text-center sm:text-left"
+                className="text-xs text-white border border-zinc-600 px-4 py-2.5 hover:border-white text-center sm:text-left"
               >
                 {moreInSearch > 0
                   ? `Browse all ${totalMatching.toLocaleString()} in Search`

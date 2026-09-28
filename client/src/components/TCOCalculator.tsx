@@ -39,7 +39,7 @@ function NumberField({
   const hintId = hint ? `${id}-hint` : undefined;
   return (
     <div>
-      <label htmlFor={id} className="block text-xs tracking-widest text-zinc-300 mb-2 uppercase">
+      <label htmlFor={id} className="block text-xs text-zinc-300 mb-2">
         {label}
         {suffix && <span className="text-zinc-500 normal-case tracking-normal"> ({suffix})</span>}
       </label>
@@ -72,7 +72,7 @@ function NumberField({
 function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
     <div className="flex justify-between items-baseline gap-4 pb-3 border-b border-zinc-900">
-      <dt className="tracking-widest text-zinc-300 uppercase text-xs">{label}</dt>
+      <dt className="text-zinc-300 text-xs">{label}</dt>
       <dd
         className={`tabular-nums ${strong ? 'text-lg font-bold text-white' : 'text-lg font-bold'}`}
       >
@@ -141,10 +141,10 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
       >
         <div className="flex items-start justify-between gap-4 mb-8 pb-8 border-b border-zinc-900">
           <div>
-            <h2 id={titleId} className="text-2xl md:text-3xl font-black tracking-tighter mb-2">
+            <h2 id={titleId} className="text-2xl md:text-3xl font-bold tracking-tighter mb-2">
               TOTAL COST OF OWNERSHIP
             </h2>
-            <p className="text-sm tracking-wider text-zinc-400 uppercase">
+            <p className="text-sm text-zinc-400">
               {car.year} {car.make} {car.model}
             </p>
           </div>
@@ -174,12 +174,12 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12">
           <form onSubmit={(e) => e.preventDefault()} aria-label="Assumptions">
             <div className="flex items-baseline justify-between gap-4 mb-6">
-              <h3 className="text-xl font-black tracking-tight uppercase">Your assumptions</h3>
+              <h3 className="text-xl font-bold tracking-tight">Your assumptions</h3>
               <button
                 type="button"
                 onClick={() => setInputs(defaults)}
                 disabled={atDefaults}
-                className="text-xs uppercase tracking-widest text-zinc-400 hover:text-white disabled:opacity-40 disabled:hover:text-zinc-400"
+                className="text-xs text-zinc-400 hover:text-white disabled:opacity-40 disabled:hover:text-zinc-400"
               >
                 Reset
               </button>
@@ -252,7 +252,7 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
 
               <fieldset className="border border-zinc-900 p-4">
                 <legend className="px-1">
-                  <label className="flex items-center gap-2 text-xs tracking-widest text-zinc-300 uppercase cursor-pointer">
+                  <label className="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={inputs.financed}
@@ -291,26 +291,21 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
           </form>
 
           <section aria-labelledby={`${titleId}-results`}>
-            <h3
-              id={`${titleId}-results`}
-              className="text-xl font-black tracking-tight mb-6 uppercase"
-            >
+            <h3 id={`${titleId}-results`} className="text-xl font-bold tracking-tight mb-6">
               Your total cost
             </h3>
 
             <div
-              className="bg-white text-black p-6 md:p-8 mb-6"
+              className="border border-accent/40 bg-accent/[0.06] p-6 md:p-8 mb-6"
               aria-live="polite"
               aria-atomic="true"
             >
-              <p className="text-xs tracking-[0.3em] font-bold uppercase mb-2">
-                {years}-year total
-              </p>
-              <p className="text-4xl md:text-5xl font-black tracking-tighter mb-4 tabular-nums">
+              <p className="text-sm text-zinc-300 mb-2">{years}-year total</p>
+              <p className="text-4xl md:text-5xl font-bold tracking-tight mb-4 tabular-nums text-white">
                 {money(result.total)}
               </p>
-              <div className="h-px bg-black mb-4" />
-              <p className="text-sm tracking-wider uppercase tabular-nums">
+              <div className="h-px bg-zinc-700 mb-4" />
+              <p className="text-sm tabular-nums text-zinc-200">
                 {money(result.monthly)} per month
               </p>
             </div>
@@ -363,31 +358,23 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
 
             <div className="mt-8 pt-8 border-t border-zinc-900 grid grid-cols-2 gap-4">
               <div className="bg-zinc-950 border border-zinc-900 p-4">
-                <p className="text-xs tracking-widest text-zinc-300 mb-2 uppercase">
-                  Resale after {years} yr
-                </p>
-                <p className="text-2xl font-black tabular-nums">{money(result.resaleValue)}</p>
+                <p className="text-xs text-zinc-300 mb-2">Resale after {years} yr</p>
+                <p className="text-2xl font-bold tabular-nums">{money(result.resaleValue)}</p>
               </div>
               <div className="bg-zinc-950 border border-zinc-900 p-4">
-                <p className="text-xs tracking-widest text-zinc-300 mb-2 uppercase">
-                  {efficiencyLabel}
-                </p>
-                <p className="text-2xl font-black tabular-nums">{efficiency ? efficiency : '—'}</p>
+                <p className="text-xs text-zinc-300 mb-2">{efficiencyLabel}</p>
+                <p className="text-2xl font-bold tabular-nums">{efficiency ? efficiency : '—'}</p>
               </div>
               {result.energy && (
                 <div className="bg-zinc-950 border border-zinc-900 p-4">
-                  <p className="text-xs tracking-widest text-zinc-300 mb-2 uppercase">
-                    {energyLabel} / yr
-                  </p>
-                  <p className="text-2xl font-black tabular-nums">{money(result.energy.annual)}</p>
+                  <p className="text-xs text-zinc-300 mb-2">{energyLabel} / yr</p>
+                  <p className="text-2xl font-bold tabular-nums">{money(result.energy.annual)}</p>
                 </div>
               )}
               {inputs.financed && (
                 <div className="bg-zinc-950 border border-zinc-900 p-4">
-                  <p className="text-xs tracking-widest text-zinc-300 mb-2 uppercase">
-                    Loan payment
-                  </p>
-                  <p className="text-2xl font-black tabular-nums">
+                  <p className="text-xs text-zinc-300 mb-2">Loan payment</p>
+                  <p className="text-2xl font-bold tabular-nums">
                     {money(result.monthlyLoanPayment)}/mo
                   </p>
                 </div>

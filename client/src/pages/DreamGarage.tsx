@@ -11,6 +11,96 @@ import SignInPromptSlot from '../components/SignInPromptSlot';
 import ToolPageHeader from '../components/ToolPageHeader';
 import { ConfirmDialog, Modal, StatusToast } from '../components/ui';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
+import * as api from '../services/api';
+import type { CarSpecs } from '../types/car.types';
+import { COLLECTIONS } from '../config/collections';
+import { displayModelLabel } from '../utils/trimLabel';
+import VehiclePlaceholder from '../components/VehiclePlaceholder';
+
+/**
+ * An empty garage offers cars to start with, the leading pick of each
+ * shortlist, each savable in one tap. It used to show a large padlock
+ * outline: an odd picture for "nothing saved yet", and nothing to do.
+ */
+function GarageSuggestions({ onSaved }: { onSaved: (message: string) => void }) {
+  const [cars, setCars] = useState<{ car: CarSpecs; list: string }[] | null>(null);
+  const add = useGarageStore((s) => s.add);
+  const saved = useGarageStore((s) => s.cars);
+
+  useEffect(() => {
+    let active = true;
+    api
+      .getCollectionPreviews()
+      .then((previews) => {
+        if (!active) return;
+        const seen = new Set<string>();
+        const picks: { car: CarSpecs; list: string }[] = [];
+        for (const collection of Object.values(COLLECTIONS)) {
+          const car = previews[collection.id]?.find((c) => !seen.has(c.id));
+          if (!car) continue;
+          seen.add(car.id);
+          picks.push({ car, list: collection.title });
+        }
+        setCars(picks.slice(0, 6));
+      })
+      .catch(() => {
+        if (active) setCars([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (cars == null) {
+    return (
+      <div className="grid sm:grid-cols-2 gap-2" aria-hidden>
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="h-[68px] border border-zinc-900 bg-zinc-950" />
+        ))}
+      </div>
+    );
+  }
+  if (cars.length === 0) return null;
+
+  return (
+    <ul className="grid sm:grid-cols-2 gap-2">
+      {cars.map(({ car, list }) => {
+        const isSaved = saved.some((c) => c.id === car.id);
+        const price = formatPriceShort(car.price?.msrp, false);
+        return (
+          <li
+            key={car.id}
+            className="flex items-center gap-3 border border-zinc-800 bg-zinc-950 p-3"
+          >
+            <span className="w-14 h-9 shrink-0 overflow-hidden" aria-hidden>
+              <VehiclePlaceholder car={car} compact hideCaption />
+            </span>
+            <Link to={`/car/${car.id}`} className="min-w-0 flex-1 group">
+              <span className="block text-sm font-semibold text-white truncate group-hover:underline underline-offset-2">
+                {car.year} {car.make} {displayModelLabel(car)}
+              </span>
+              <span className="block text-xs text-zinc-400 truncate">
+                {list}
+                {price !== 'Not on file' ? ` · ~${price}` : ''}
+              </span>
+            </Link>
+            <button
+              type="button"
+              disabled={isSaved}
+              onClick={async () => {
+                const res = await Promise.resolve(add(car));
+                onSaved(res.ok ? 'Saved to garage' : (res.message ?? 'Could not save'));
+              }}
+              className={`chip shrink-0 ${isSaved ? 'chip-on' : ''}`}
+            >
+              {isSaved ? 'Saved' : 'Save'}
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
 
 export default function DreamGarage() {
   const [shareLink, setShareLink] = useState('');
@@ -84,7 +174,7 @@ export default function DreamGarage() {
             <button
               type="button"
               onClick={() => setShowClearConfirm(true)}
-              className="min-h-[44px] px-2 -mr-2 text-xs tracking-[0.2em] sm:tracking-[0.3em] text-zinc-400 hover:text-red-500 transition-colors"
+              className="min-h-[44px] px-2 -mr-2 text-xs text-zinc-400 hover:text-red-500 transition-colors"
             >
               Clear
             </button>
@@ -107,10 +197,7 @@ export default function DreamGarage() {
                 {syncMode === 'cloud' ? ' · synced' : ' · this device'}
               </p>
               {import.meta.env.VITE_CLERK_PUBLISHABLE_KEY && (
-                <Link
-                  to="/account"
-                  className="text-xs uppercase tracking-widest text-white hover:underline shrink-0"
-                >
+                <Link to="/account" className="text-xs text-white hover:underline shrink-0">
                   Upgrade to Pro →
                 </Link>
               )}
@@ -118,51 +205,40 @@ export default function DreamGarage() {
           )}
         </div>
         {garage.length === 0 ? (
-          <div className="max-w-4xl mx-auto text-center py-32">
-            <svg
-              className="w-32 h-32 mx-auto mb-8 text-zinc-900"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1}
-                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-              />
-            </svg>
-
-            <h2 className="text-2xl font-bold tracking-tight mb-3 uppercase">
-              No vehicles saved yet
-            </h2>
-            <p className="text-sm text-zinc-400 mb-8 max-w-md mx-auto leading-relaxed">
-              Browse or search to save cars here. Use Compare when you&apos;re ready to decide.
+          <div className="max-w-4xl py-8 sm:py-12">
+            <h2 className="text-2xl font-bold tracking-tight mb-2">Nothing saved yet</h2>
+            <p className="text-[15px] text-zinc-400 mb-6 max-w-lg leading-relaxed">
+              Save cars from any search result or car page to keep a shortlist here, on this device.
+              Start with one of these, or search for your own.
             </p>
-            <Link to="/home" className="btn-primary text-xs">
-              Browse vehicles
-            </Link>
+            <GarageSuggestions onSaved={setToast} />
+            <div className="flex flex-wrap gap-2 mt-6">
+              <Link to="/home" className="btn-primary">
+                Search cars
+              </Link>
+              <Link to="/browse" className="btn-secondary">
+                Browse
+              </Link>
+            </div>
           </div>
         ) : (
           <div>
             {/* Garage Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-zinc-800 border border-zinc-800 mb-12">
               <div className="bg-zinc-950 p-4">
-                <p className="text-[10px] uppercase tracking-widest text-zinc-400 mb-2">
-                  Est. total value
-                </p>
+                <p className="text-xs text-zinc-400 mb-2">Est. total value</p>
                 <p className="text-3xl font-bold tabular-nums text-white">{formattedValue}</p>
               </div>
               <div className="bg-zinc-950 p-4">
-                <p className="text-[10px] uppercase tracking-widest text-zinc-400 mb-2">Makes</p>
+                <p className="text-xs text-zinc-400 mb-2">Makes</p>
                 <p className="text-3xl font-bold tabular-nums text-white">{uniqueMakes}</p>
               </div>
               <div className="bg-zinc-950 p-4">
-                <p className="text-[10px] uppercase tracking-widest text-zinc-400 mb-2">Avg MPG</p>
+                <p className="text-xs text-zinc-400 mb-2">Avg MPG</p>
                 <p className="text-3xl font-bold tabular-nums text-white">{avgMPG}</p>
               </div>
               <div className="bg-zinc-950 p-4">
-                <p className="text-[10px] uppercase tracking-widest text-zinc-400 mb-2">Vehicles</p>
+                <p className="text-xs text-zinc-400 mb-2">Vehicles</p>
                 <p className="text-3xl font-bold tabular-nums text-white">{garage.length}</p>
               </div>
             </div>
@@ -196,7 +272,7 @@ export default function DreamGarage() {
                 >
                   {/* Position Badge */}
                   <div className="absolute top-4 left-4 w-10 h-10 bg-zinc-950 border border-zinc-800 flex items-center justify-center">
-                    <span className="text-lg font-black text-zinc-300">#{index + 1}</span>
+                    <span className="text-lg font-bold text-zinc-300">#{index + 1}</span>
                   </div>
 
                   {/* Remove Button */}
@@ -221,14 +297,14 @@ export default function DreamGarage() {
 
                   {/* Year */}
                   <div className="mb-4 mt-12">
-                    <p className="text-3xl sm:text-5xl font-black text-zinc-300 group-hover:text-zinc-400 transition-colors">
+                    <p className="text-3xl sm:text-5xl font-bold text-zinc-300 group-hover:text-zinc-400 transition-colors">
                       {car.year}
                     </p>
                   </div>
 
                   {/* Make & Model */}
                   <div className="mb-6">
-                    <h3 className="text-2xl font-black tracking-tight mb-1 group-hover:tracking-wide transition-all">
+                    <h3 className="text-2xl font-bold tracking-tight mb-1 group-hover:tracking-wide transition-all">
                       {car.make.toUpperCase()}
                     </h3>
                     <p className="text-lg font-light tracking-wider text-zinc-400 group-hover:text-zinc-400 transition-colors">
@@ -242,7 +318,7 @@ export default function DreamGarage() {
                   {/* Specs Grid */}
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     <div>
-                      <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">Engine</p>
+                      <p className="text-xs text-zinc-300 mb-1">Engine</p>
                       <p
                         className={cardStatClass(
                           formatEngineForCard(car.engine.fuelType, car.engine.displacement),
@@ -252,21 +328,19 @@ export default function DreamGarage() {
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">MPG</p>
+                      <p className="text-xs text-zinc-300 mb-1">MPG</p>
                       <p className={cardStatClass(formatMpgForCard(car.fuelEconomy.combined))}>
                         {formatMpgForCard(car.fuelEconomy.combined)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">
-                        Est. Value
-                      </p>
+                      <p className="text-xs text-zinc-300 mb-1">Est. Value</p>
                       <p className={cardStatClass(formatPriceShort(car.price?.msrp))}>
                         {formatPriceShort(car.price?.msrp)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">Type</p>
+                      <p className="text-xs text-zinc-300 mb-1">Type</p>
                       <p className="text-lg font-bold">{bodyStyleLabel(car.bodyStyle)}</p>
                     </div>
                   </div>
@@ -274,7 +348,7 @@ export default function DreamGarage() {
                   {/* View Button */}
                   <button
                     onClick={() => navigate(`/car/${car.id}`)}
-                    className="w-full flex items-center justify-center gap-2 text-xs tracking-widest text-zinc-300 group-hover:text-white transition-all py-2 border border-zinc-900 group-hover:border-zinc-700"
+                    className="w-full flex items-center justify-center gap-2 text-xs text-zinc-300 group-hover:text-white transition-all py-2 border border-zinc-900 group-hover:border-zinc-700"
                   >
                     <span>VIEW DETAILS</span>
                     <svg
@@ -323,14 +397,14 @@ export default function DreamGarage() {
                 setToast('Could not copy — select the link above');
               }
             }}
-            className="flex-1 btn-primary text-xs tracking-[0.2em]"
+            className="flex-1 btn-primary text-xs"
           >
             {copiedAgain ? 'Copied' : 'Copy link'}
           </button>
           <button
             type="button"
             onClick={() => setShowShareModal(false)}
-            className="flex-1 btn-secondary text-xs tracking-[0.2em]"
+            className="flex-1 btn-secondary text-xs"
           >
             Close
           </button>

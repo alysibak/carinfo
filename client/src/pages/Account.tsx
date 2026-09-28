@@ -34,7 +34,7 @@ export default function AccountPage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-black flex items-center justify-center">
-          <p className="text-xs uppercase tracking-widest text-zinc-500">Loading account</p>
+          <p className="text-xs text-zinc-500">Loading account</p>
         </div>
       }
     >

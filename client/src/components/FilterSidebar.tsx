@@ -24,9 +24,7 @@ import {
 } from '../utils/filterState';
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <h3 className="text-xs tracking-[0.2em] text-zinc-300 uppercase mb-3 font-bold">{children}</h3>
-  );
+  return <h3 className="text-xs text-zinc-300 mb-3 font-bold">{children}</h3>;
 }
 
 function RangeInputs({
@@ -229,14 +227,14 @@ export default function FilterSidebar({
   return (
     <div className="surface-card p-5 space-y-7 lg:max-h-[calc(100vh-var(--header-height)-2rem)] lg:overflow-y-auto rounded-none">
       <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
-        <h2 className="text-base font-black tracking-tight text-white uppercase">
+        <h2 className="text-base font-bold tracking-tight text-white">
           Refine{activeFilterCount > 0 ? ` · ${activeFilterCount}` : ''}
         </h2>
         {activeFilterCount > 0 && (
           <button
             type="button"
             onClick={clearFilters}
-            className="text-[10px] tracking-[0.2em] text-zinc-400 hover:text-white uppercase"
+            className="text-xs text-zinc-400 hover:text-white"
           >
             Clear
           </button>
@@ -385,7 +383,7 @@ export default function FilterSidebar({
                 step={0.5}
                 onCommit={(range) => commitFilters({ ...filters, displacement: range })}
               />
-              <p className="text-[10px] text-zinc-400 mt-2">Excludes EVs</p>
+              <p className="text-xs text-zinc-400 mt-2">Excludes EVs</p>
             </div>
           </div>
         </ExpandableSection>

@@ -296,7 +296,7 @@ export default function ValueMatrix() {
     const data = payload[0].payload;
     return (
       <div className="bg-zinc-950 border border-zinc-600 p-4 max-w-xs">
-        <p className="text-base font-black text-white mb-0.5">
+        <p className="text-base font-bold text-white mb-0.5">
           {data.year} {data.make}
         </p>
         <p className="text-sm text-zinc-300 mb-3">{data.model}</p>
@@ -306,7 +306,7 @@ export default function ValueMatrix() {
             <span className="font-bold text-white">
               ${data.price.toLocaleString()}
               {data.priceIsEstimated && (
-                <span className="ml-1.5 text-[10px] font-normal text-zinc-500">est.</span>
+                <span className="ml-1.5 text-xs font-normal text-zinc-500">est.</span>
               )}
             </span>
           </div>
@@ -321,7 +321,7 @@ export default function ValueMatrix() {
                   ? data.co2
                   : `${data.displacement}L`}
               {data.ySource !== 'epa' && (
-                <span className="ml-1.5 text-[10px] font-normal text-zinc-500">est.</span>
+                <span className="ml-1.5 text-xs font-normal text-zinc-500">est.</span>
               )}
             </span>
           </div>
@@ -358,7 +358,7 @@ export default function ValueMatrix() {
           {phase === 'choose' ? (
             <div className="max-w-3xl mx-auto">
               <div className="text-center mb-10">
-                <h2 className="text-2xl md:text-3xl font-black tracking-tight mb-3">
+                <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-3">
                   What do you want to compare?
                 </h2>
                 <p className="text-base text-zinc-300 leading-relaxed">
@@ -376,7 +376,7 @@ export default function ValueMatrix() {
                     onClick={() => applyPreset(preset)}
                     className="flex flex-col items-start text-left p-6 border border-zinc-700 bg-zinc-950 hover:border-white hover:bg-zinc-900 transition-colors group"
                   >
-                    <p className="text-sm font-black tracking-wide text-white mb-2 group-hover:underline underline-offset-4">
+                    <p className="text-sm font-bold tracking-wide text-white mb-2 group-hover:underline underline-offset-4">
                       {preset.title}
                     </p>
                     <p className="text-sm text-zinc-400 leading-relaxed">{preset.description}</p>
@@ -404,7 +404,7 @@ export default function ValueMatrix() {
                 <button
                   type="button"
                   onClick={() => setPhase('choose')}
-                  className="text-xs tracking-widest text-zinc-400 hover:text-white uppercase border border-zinc-700 px-4 py-2"
+                  className="text-xs text-zinc-400 hover:text-white border border-zinc-700 px-4 py-2"
                 >
                   ← Change focus
                 </button>
@@ -421,9 +421,7 @@ export default function ValueMatrix() {
               {/* Filters — compact, readable labels */}
               <div className="mb-6 p-5 border border-zinc-800 bg-zinc-950 space-y-5">
                 <div>
-                  <p className="text-xs font-bold tracking-widest text-zinc-300 uppercase mb-3">
-                    Y-axis metric
-                  </p>
+                  <p className="text-xs font-bold text-zinc-300 mb-3">Y-axis metric</p>
                   <div className="flex flex-wrap gap-2">
                     {(['mpg', 'displacement', 'co2'] as AxisMode[]).map((mode) => (
                       <button
@@ -433,9 +431,9 @@ export default function ValueMatrix() {
                           setActivePresetId(null);
                           setAxisMode(mode);
                         }}
-                        className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wide transition-colors ${
+                        className={`px-4 py-2.5 text-xs font-bold transition-colors ${
                           axisMode === mode
-                            ? 'bg-white text-black'
+                            ? 'bg-accent text-accent-ink'
                             : 'border border-zinc-600 text-zinc-300 hover:border-zinc-400 hover:text-white'
                         }`}
                       >
@@ -450,7 +448,7 @@ export default function ValueMatrix() {
                 </div>
 
                 <div>
-                  <p className="text-xs font-bold tracking-widest text-zinc-300 uppercase mb-3">
+                  <p className="text-xs font-bold text-zinc-300 mb-3">
                     Body style {selectedBodyStyles.size === 0 && '(all types)'}
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -461,7 +459,7 @@ export default function ValueMatrix() {
                           key={style}
                           type="button"
                           onClick={() => toggleBodyStyle(style)}
-                          className={`inline-flex items-center gap-2 px-3 py-2 text-xs uppercase tracking-wide border transition-colors ${
+                          className={`inline-flex items-center gap-2 px-3 py-2 text-xs border transition-colors ${
                             active
                               ? 'border-zinc-400 bg-zinc-800 text-white'
                               : 'border-zinc-700 text-zinc-400 line-through'
@@ -484,7 +482,7 @@ export default function ValueMatrix() {
                         setActivePresetId(null);
                         setSelectedBodyStyles(new Set());
                       }}
-                      className="px-3 py-2 text-xs uppercase tracking-wide border border-zinc-600 text-zinc-400 hover:text-white"
+                      className="px-3 py-2 text-xs border border-zinc-600 text-zinc-400 hover:text-white"
                     >
                       All types
                     </button>
@@ -492,7 +490,7 @@ export default function ValueMatrix() {
                 </div>
 
                 <div>
-                  <p className="text-xs font-bold tracking-widest text-zinc-300 uppercase mb-2">
+                  <p className="text-xs font-bold text-zinc-300 mb-2">
                     Est. value: ${(priceRange[0] / 1000).toFixed(0)}k - $
                     {(priceRange[1] / 1000).toFixed(0)}k
                   </p>
@@ -536,7 +534,7 @@ export default function ValueMatrix() {
                   <button
                     type="button"
                     onClick={() => setPointLimit(nextLimit)}
-                    className="text-xs font-bold tracking-wide text-zinc-300 hover:text-white uppercase border border-dashed border-zinc-600 w-full py-3 hover:border-zinc-400 transition-colors"
+                    className="text-xs font-bold text-zinc-300 hover:text-white border border-dashed border-zinc-600 w-full py-3 hover:border-zinc-400 transition-colors"
                   >
                     Show more vehicles (up to {nextLimit.toLocaleString()} dots)
                   </button>
@@ -556,7 +554,7 @@ export default function ValueMatrix() {
                     onClick={() => setViewMode('market')}
                     className={`px-3 py-1.5 text-xs font-medium transition-colors ${
                       viewMode === 'market'
-                        ? 'bg-white text-black'
+                        ? 'bg-accent text-accent-ink'
                         : 'text-zinc-400 hover:text-white'
                     }`}
                   >
@@ -567,7 +565,7 @@ export default function ValueMatrix() {
                     onClick={() => setViewMode('chart')}
                     className={`px-3 py-1.5 text-xs font-medium transition-colors ${
                       viewMode === 'chart'
-                        ? 'bg-white text-black'
+                        ? 'bg-accent text-accent-ink'
                         : 'text-zinc-400 hover:text-white'
                     }`}
                   >
@@ -577,7 +575,9 @@ export default function ValueMatrix() {
                     type="button"
                     onClick={() => setViewMode('list')}
                     className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                      viewMode === 'list' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
+                      viewMode === 'list'
+                        ? 'bg-accent text-accent-ink'
+                        : 'text-zinc-400 hover:text-white'
                     }`}
                   >
                     List
@@ -610,9 +610,7 @@ export default function ValueMatrix() {
                   <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/70">
                     <div className="text-center">
                       <div className="inline-block w-10 h-10 border-2 border-zinc-600 border-t-zinc-400 mb-3 opacity-50" />
-                      <p className="text-xs text-zinc-300 uppercase tracking-widest">
-                        Updating chart
-                      </p>
+                      <p className="text-xs text-zinc-300">Updating chart</p>
                     </div>
                   </div>
                 )}
@@ -622,7 +620,7 @@ export default function ValueMatrix() {
                     <button
                       type="button"
                       onClick={loadChartData}
-                      className="px-6 py-3 bg-white text-black text-xs font-bold uppercase"
+                      className="px-6 py-3 bg-accent text-accent-ink text-xs font-bold"
                     >
                       Retry
                     </button>
@@ -772,26 +770,18 @@ export default function ValueMatrix() {
               {totalMatched > 0 && (
                 <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-px bg-zinc-800 border border-zinc-800">
                   <div className="bg-zinc-950 p-5">
-                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">
-                      Matching fleet
-                    </p>
-                    <p className="text-2xl font-black text-white">
-                      {totalMatched.toLocaleString()}
-                    </p>
+                    <p className="text-xs font-bold text-zinc-400 mb-1">Matching fleet</p>
+                    <p className="text-2xl font-bold text-white">{totalMatched.toLocaleString()}</p>
                   </div>
                   <div className="bg-zinc-950 p-5">
-                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">
-                      Avg est. value
-                    </p>
-                    <p className="text-2xl font-black text-white">
+                    <p className="text-xs font-bold text-zinc-400 mb-1">Avg est. value</p>
+                    <p className="text-2xl font-bold text-white">
                       ${(avgPrice / 1000).toFixed(0)}k
                     </p>
                   </div>
                   <div className="bg-zinc-950 p-5">
-                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">
-                      Sample plotted
-                    </p>
-                    <p className="text-2xl font-black text-white">
+                    <p className="text-xs font-bold text-zinc-400 mb-1">Sample plotted</p>
+                    <p className="text-2xl font-bold text-white">
                       {chartData.length.toLocaleString()}
                     </p>
                   </div>

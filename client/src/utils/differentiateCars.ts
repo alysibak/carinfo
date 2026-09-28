@@ -1,4 +1,5 @@
 import type { CarSpecs } from '../types/car.types';
+import { efficiencyOf, rangeKm } from './efficiency';
 import { formatFuelBadge, usesMpge } from './fuelDisplay';
 import { displayModelLabel } from './trimLabel';
 
@@ -34,8 +35,30 @@ function mpgUnit(car: CarSpecs): string {
   return usesMpge(car.engine.fuelType) ? 'MPGe' : 'MPG';
 }
 
-function roundMpg(n: number): number {
-  return Math.round(n);
+/**
+ * Efficiency is compared on EPA's miles-per-gallon figure (the thresholds are
+ * in it) but said in L/100 km or kWh/100 km, as Canadians read it. Litres
+ * fall as miles-per-gallon rise, so a spread is re-ordered after converting.
+ */
+function fuelUse(car: CarSpecs, mpg: number): string {
+  const eff = efficiencyOf({ ...car, fuelEconomy: { ...car.fuelEconomy, combined: mpg } });
+  return eff ? eff.text.split(' ')[0] : String(Math.round(mpg));
+}
+
+function fuelUnit(car: CarSpecs): string {
+  return efficiencyOf(car)?.unit ?? mpgUnit(car);
+}
+
+function fuelSpread(car: CarSpecs, values: number[]): string {
+  const converted = values.map((v) => Number(fuelUse(car, v))).sort((a, b) => a - b);
+  const lo = converted[0].toFixed(1);
+  const hi = converted[converted.length - 1].toFixed(1);
+  return lo === hi ? lo : `${lo}–${hi}`;
+}
+
+/** One efficiency unit across a set, or none: litres and kilowatt-hours do not compare. */
+function sharedFuelUnit(set: CarSpecs[]): boolean {
+  return new Set(set.map(fuelUnit)).size === 1;
 }
 
 function formatMoneyShort(n: number): string {
@@ -51,10 +74,9 @@ const METRICS: MetricDef[] = [
     minAbsDelta: 2,
     minRelDelta: 0.06,
     labelBest: (car, value, peers) =>
-      `Best efficiency here (${roundMpg(value)} ${mpgUnit(car)}${peers ? ` vs ${peers}` : ''})`,
-    labelWorst: (car, value) =>
-      `Thirstiest in this set (${roundMpg(value)} ${mpgUnit(car)} combined)`,
-    axisLabel: (spread) => `Efficiency spreads ${spread}`,
+      `Uses the least fuel here (${fuelUse(car, value)} ${fuelUnit(car)}${peers ? ` vs ${peers}` : ''})`,
+    labelWorst: (car, value) => `Uses the most fuel here (${fuelUse(car, value)} ${fuelUnit(car)})`,
+    axisLabel: (spread) => `Fuel use runs ${spread}`,
   },
   {
     key: 'price',
@@ -63,9 +85,9 @@ const METRICS: MetricDef[] = [
     minAbsDelta: 1500,
     minRelDelta: 0.08,
     labelBest: (_car, value, peers) =>
-      `Lowest estimated value (${formatMoneyShort(value)}${peers ? ` vs ${peers}` : ''})`,
-    labelWorst: (_car, value) => `Highest estimated value (${formatMoneyShort(value)})`,
-    axisLabel: (spread) => `Estimated value spreads ${spread}`,
+      `Costs the least to buy (est. ${formatMoneyShort(value)}${peers ? ` vs ${peers}` : ''})`,
+    labelWorst: (_car, value) => `Costs the most to buy (est. ${formatMoneyShort(value)})`,
+    axisLabel: (spread) => `Estimated values run ${spread}`,
   },
   {
     key: 'hp',
@@ -74,9 +96,9 @@ const METRICS: MetricDef[] = [
     minAbsDelta: 25,
     minRelDelta: 0.12,
     labelBest: (_car, value, peers) =>
-      `Most power here (${Math.round(value)} hp${peers ? ` vs ${peers}` : ''})`,
-    labelWorst: (_car, value) => `Least power here (${Math.round(value)} hp)`,
-    axisLabel: (spread) => `Power spreads ${spread}`,
+      `The most power here (${Math.round(value)} hp${peers ? ` vs ${peers}` : ''})`,
+    labelWorst: (_car, value) => `The least power here (${Math.round(value)} hp)`,
+    axisLabel: (spread) => `Power runs ${spread}`,
   },
   {
     key: 'safety',
@@ -86,17 +108,17 @@ const METRICS: MetricDef[] = [
     },
     higherIsBetter: true,
     minAbsDelta: 1,
-    labelBest: (_car, value) => `Higher NHTSA rating (${value}/5)`,
-    axisLabel: (spread) => `NHTSA ratings ${spread}`,
+    labelBest: (_car, value) => `The best NHTSA rating here (${value}/5)`,
+    axisLabel: (spread) => `NHTSA ratings run ${spread}`,
   },
   {
     key: 'year',
     get: (car) => car.year,
     higherIsBetter: true,
     minAbsDelta: 2,
-    labelBest: (car) => `Newest here (${car.year})`,
-    labelWorst: (car) => `Oldest here (${car.year})`,
-    axisLabel: (spread) => `Model years ${spread}`,
+    labelBest: (car) => `The newest here (${car.year})`,
+    labelWorst: (car) => `The oldest here (${car.year})`,
+    axisLabel: (spread) => `Model years run ${spread}`,
   },
   {
     key: 'range',
@@ -108,8 +130,8 @@ const METRICS: MetricDef[] = [
     minAbsDelta: 20,
     minRelDelta: 0.1,
     labelBest: (_car, value, peers) =>
-      `Longest electric range (${Math.round(value)} mi${peers ? ` vs ${peers}` : ''})`,
-    axisLabel: (spread) => `Electric range spreads ${spread}`,
+      `The longest electric range (${rangeKm(value)} km${peers ? ` vs ${peers}` : ''})`,
+    axisLabel: (spread) => `Electric range runs ${spread}`,
   },
 ];
 
@@ -140,7 +162,7 @@ function categoricalEdge(car: CarSpecs, set: CarSpecs[]): string | null {
   if (fuels.size > 1) {
     const sameFuel = set.filter((c) => c.engine.fuelType === car.engine.fuelType);
     if (sameFuel.length === 1) {
-      return `Only ${formatFuelBadge(car.engine.fuelType).toLowerCase()} in this set`;
+      return `The only ${formatFuelBadge(car.engine.fuelType).toLowerCase()} here`;
     }
   }
 
@@ -150,10 +172,9 @@ function categoricalEdge(car: CarSpecs, set: CarSpecs[]): string | null {
     const othersAwd = set.some(
       (c) => c.id !== car.id && (c.driveType === 'AWD' || c.driveType === '4WD'),
     );
-    if (awdish && !othersAwd)
-      return `Only ${car.driveType} here — better for snow / light off-road`;
+    if (awdish && !othersAwd) return `The only ${car.driveType} here: better in snow`;
     if (!awdish && othersAwd && set.filter((c) => c.driveType === car.driveType).length === 1) {
-      return `${car.driveType} — usually simpler and more efficient than AWD`;
+      return `${car.driveType} rather than AWD: lighter, and usually uses less fuel`;
     }
   }
 
@@ -161,8 +182,9 @@ function categoricalEdge(car: CarSpecs, set: CarSpecs[]): string | null {
   if (bodies.size > 1 && car.bodyStyle) {
     const alone = set.filter((c) => c.bodyStyle === car.bodyStyle).length === 1;
     if (alone) {
-      const label = car.bodyStyle === 'suv' ? 'SUV' : car.bodyStyle;
-      return `Different shape — the ${label} in this set`;
+      const label =
+        car.bodyStyle === 'suv' ? 'SUV' : car.bodyStyle === 'truck' ? 'pickup' : car.bodyStyle;
+      return `The only ${label} here`;
     }
   }
 
@@ -173,6 +195,7 @@ function pickMetricEdge(car: CarSpecs, set: CarSpecs[]): string | null {
   const candidates: { score: number; text: string }[] = [];
 
   for (const metric of METRICS) {
+    if (metric.key === 'mpg' && !sharedFuelUnit(set)) continue;
     const scored = set
       .map((c) => ({ car: c, value: metric.get(c) }))
       .filter((x): x is { car: CarSpecs; value: number } => x.value != null);
@@ -190,18 +213,22 @@ function pickMetricEdge(car: CarSpecs, set: CarSpecs[]): string | null {
     const uniqueWorst = values.filter((v) => v === worst).length === 1;
 
     const fmt =
-      metric.key === 'mpg'
-        ? (n: number) => String(roundMpg(n))
-        : metric.key === 'price'
-          ? formatMoneyShort
-          : metric.key === 'hp'
-            ? (n: number) => `${Math.round(n)}`
-            : metric.key === 'range'
-              ? (n: number) => `${Math.round(n)}`
-              : (n: number) => String(n);
+      metric.key === 'price'
+        ? formatMoneyShort
+        : metric.key === 'hp'
+          ? (n: number) => `${Math.round(n)}`
+          : metric.key === 'range'
+            ? (n: number) => `${rangeKm(n)}`
+            : (n: number) => String(n);
 
     if (mine.value === best && uniqueBest) {
-      const peers = peerRange(values, mine.value, fmt);
+      const peers =
+        metric.key === 'mpg'
+          ? fuelSpread(
+              car,
+              values.filter((v) => v !== mine.value),
+            )
+          : peerRange(values, mine.value, fmt);
       candidates.push({
         score: Math.abs(best - worst) / (metric.minAbsDelta || 1),
         text: metric.labelBest(car, mine.value, peers),
@@ -222,6 +249,7 @@ function buildAxes(set: CarSpecs[]): string[] {
   const axes: string[] = [];
 
   for (const metric of METRICS) {
+    if (metric.key === 'mpg' && !sharedFuelUnit(set)) continue;
     const scored = set
       .map((c) => ({ car: c, value: metric.get(c) }))
       .filter((x): x is { car: CarSpecs; value: number } => x.value != null);
@@ -229,18 +257,21 @@ function buildAxes(set: CarSpecs[]): string[] {
     const values = scored.map((x) => x.value);
     if (!meaningfulSpread(values, metric.minAbsDelta, metric.minRelDelta)) continue;
 
+    if (metric.key === 'mpg') {
+      axes.push(metric.axisLabel(`${fuelSpread(set[0], values)} ${fuelUnit(set[0])}`));
+      continue;
+    }
+
     const fmt =
-      metric.key === 'mpg'
-        ? (n: number) => `${roundMpg(n)}`
-        : metric.key === 'price'
-          ? formatMoneyShort
-          : metric.key === 'hp'
-            ? (n: number) => `${Math.round(n)} hp`
-            : metric.key === 'safety'
-              ? (n: number) => `${n}/5`
-              : metric.key === 'range'
-                ? (n: number) => `${Math.round(n)} mi`
-                : (n: number) => String(n);
+      metric.key === 'price'
+        ? formatMoneyShort
+        : metric.key === 'hp'
+          ? (n: number) => `${Math.round(n)} hp`
+          : metric.key === 'safety'
+            ? (n: number) => `${n}/5`
+            : metric.key === 'range'
+              ? (n: number) => `${rangeKm(n)} km`
+              : (n: number) => String(n);
 
     const lo = Math.min(...values);
     const hi = Math.max(...values);
@@ -248,31 +279,33 @@ function buildAxes(set: CarSpecs[]): string[] {
   }
 
   const fuels = [...new Set(set.map((c) => formatFuelBadge(c.engine.fuelType)))];
-  if (fuels.length > 1) axes.unshift(`Powertrains differ: ${fuels.join(' · ')}`);
+  if (fuels.length > 1) axes.unshift(`Different powertrains: ${fuels.join(', ')}`);
 
-  const bodies = [...new Set(set.map((c) => c.bodyStyle).filter(Boolean))];
-  if (bodies.length > 1) axes.push(`Body styles: ${bodies.join(', ')}`);
+  const bodies = [
+    ...new Set(
+      set
+        .map((c) =>
+          c.bodyStyle === 'suv' ? 'SUV' : c.bodyStyle === 'truck' ? 'pickup' : c.bodyStyle,
+        )
+        .filter(Boolean),
+    ),
+  ];
+  if (bodies.length > 1) axes.push(`Different shapes: ${bodies.join(', ')}`);
 
   return axes.slice(0, 3);
 }
 
 function closeCallFallback(car: CarSpecs, set: CarSpecs[]): string {
-  const parts: string[] = [];
-  if (car.bodyStyle) parts.push(car.bodyStyle);
-  if (car.driveType) parts.push(car.driveType);
-  parts.push(formatFuelBadge(car.engine.fuelType));
-  const mpg = car.fuelEconomy.combined;
-  if (mpg) parts.push(`${roundMpg(mpg)} ${mpgUnit(car)}`);
-
+  // In a long shortlist nearly every car is "close to" two others: a line
+  // that says nothing, so it is left out there.
+  if (set.length > 3) return '';
   const similarNames = set
     .filter((c) => c.id !== car.id)
     .slice(0, 2)
     .map((c) => `${c.make} ${displayModelLabel(c)}`);
-
-  if (similarNames.length > 0) {
-    return `Close to ${similarNames.join(' / ')} — compare ${parts.slice(0, 3).join(', ')}`;
-  }
-  return `Compare on ${parts.slice(0, 3).join(', ')}`;
+  return similarNames.length > 0
+    ? `Close to the ${similarNames.join(' and the ')} on every figure on file`
+    : 'Close to the others on every figure on file';
 }
 
 /**
@@ -329,8 +362,8 @@ function kindDifference(anchor: CarSpecs, alt: CarSpecs): string | null {
     const text = `${capitalize(POWERTRAIN[fuel] ?? fuel)}, not ${POWERTRAIN[anchor.engine.fuelType] ?? anchor.engine.fuelType}`;
     const a = alt.fuelEconomy.combined;
     const b = anchor.fuelEconomy.combined;
-    return a && b && mpgUnit(alt) === mpgUnit(anchor)
-      ? `${text} (${roundMpg(a)} vs ${roundMpg(b)} ${mpgUnit(alt)})`
+    return a && b && fuelUnit(alt) === fuelUnit(anchor)
+      ? `${text} (${fuelUse(alt, a)} vs ${fuelUse(anchor, b)} ${fuelUnit(alt)})`
       : text;
   }
   if (alt.driveType && anchor.driveType && alt.driveType !== anchor.driveType) {
@@ -368,7 +401,7 @@ const PAIR_METRICS: PairMetric[] = [
     minRel: 0.06,
     higherIsBetter: true,
     text: (better, a, b, car) =>
-      `${better ? 'Better fuel economy' : 'Uses more fuel'} (${roundMpg(a)} vs ${roundMpg(b)} ${mpgUnit(car)})`,
+      `${better ? 'Uses less fuel' : 'Uses more fuel'} (${fuelUse(car, a)} vs ${fuelUse(car, b)} ${fuelUnit(car)})`,
   },
   {
     get: (car) => car.price?.msrp ?? null,
@@ -405,7 +438,7 @@ const PAIR_METRICS: PairMetric[] = [
     minRel: 0.1,
     higherIsBetter: true,
     text: (better, a, b) =>
-      `${better ? 'Longer' : 'Shorter'} electric range (${Math.round(a)} vs ${Math.round(b)} mi)`,
+      `${better ? 'Longer' : 'Shorter'} electric range (${rangeKm(a)} vs ${rangeKm(b)} km)`,
   },
   {
     get: (car) => car.year,
@@ -424,8 +457,8 @@ function metricDifference(anchor: CarSpecs, alt: CarSpecs, skipMpg: boolean): st
     const a = metric.get(alt);
     const b = metric.get(anchor);
     if (a == null || b == null) continue;
-    // MPG and MPGe do not compare.
-    if (metric === PAIR_METRICS[0] && mpgUnit(alt) !== mpgUnit(anchor)) continue;
+    // Litres and kilowatt-hours do not compare.
+    if (metric === PAIR_METRICS[0] && fuelUnit(alt) !== fuelUnit(anchor)) continue;
     const delta = Math.abs(a - b);
     if (delta < metric.minAbs || (b > 0 && delta / b < metric.minRel)) continue;
     const better = metric.higherIsBetter ? a > b : a < b;
@@ -442,8 +475,8 @@ function muchTheSame(anchor: CarSpecs, alt: CarSpecs): string {
   const figures: string[] = [];
   const a = alt.fuelEconomy.combined;
   const b = anchor.fuelEconomy.combined;
-  if (a && b && mpgUnit(alt) === mpgUnit(anchor)) {
-    figures.push(`${roundMpg(a)} vs ${roundMpg(b)} ${mpgUnit(alt)}`);
+  if (a && b && fuelUnit(alt) === fuelUnit(anchor)) {
+    figures.push(`${fuelUse(alt, a)} vs ${fuelUse(anchor, b)} ${fuelUnit(alt)}`);
   }
   const hpA = alt.engine.horsepower;
   const hpB = anchor.engine.horsepower;
@@ -466,8 +499,8 @@ export function differentiateVsAnchor(
   const out: Record<string, string> = {};
   for (const other of others) {
     const kind = kindDifference(anchor, other);
-    // "Hybrid, not gas (52 vs 26 MPG)" has said the fuel economy already.
-    const metric = metricDifference(anchor, other, !!kind && / MPGe?\)$/.test(kind));
+    // "Hybrid, not gas (4.5 vs 9.0 L/100 km)" has said the fuel use already.
+    const metric = metricDifference(anchor, other, !!kind && /\/100 km\)$/.test(kind));
     const parts = [kind, metric].filter((part): part is string => !!part);
     out[other.id] = parts.length ? parts.join(' · ') : muchTheSame(anchor, other);
   }

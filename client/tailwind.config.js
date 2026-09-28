@@ -27,6 +27,16 @@ export default {
           900: '#1a1a1d',
           950: '#141416',
         },
+        // The one accent: main buttons, active filters and nav, the "best"
+        // marks in compare, focus rings. Everything else stays neutral, so the
+        // eye goes where the colour is. #34d399 reads 10:1 on the page and
+        // takes near-black text at 10:1 when it is the fill.
+        accent: {
+          DEFAULT: '#34d399',
+          hover: '#6ee7b7',
+          strong: '#10b981',
+          ink: '#03150e',
+        },
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',

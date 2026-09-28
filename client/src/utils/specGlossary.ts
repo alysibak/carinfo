@@ -286,16 +286,6 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
   },
 };
 
-export const GLANCE_GLOSSARY: Partial<Record<string, SpecGlossaryKey>> = {
-  power: 'power',
-  engine: 'engine',
-  mpg: 'efficiency',
-  range: 'range',
-  safety: 'safetyOverall',
-  value: 'msrp',
-  running: 'annualFuelCost',
-};
-
 export function getSpecEntry(key: SpecGlossaryKey): SpecGlossaryEntry {
   return SPEC_GLOSSARY[key];
 }

@@ -97,7 +97,7 @@ export default function PersonaQuiz({ onComplete }: PersonaQuizProps) {
               />
             ))}
           </div>
-          <p className="text-center text-xs tracking-[0.2em] text-zinc-400">Step {step} of 3</p>
+          <p className="text-center text-xs text-zinc-400">Step {step} of 3</p>
         </div>
 
         {step === 1 && (
@@ -183,7 +183,7 @@ export default function PersonaQuiz({ onComplete }: PersonaQuizProps) {
         <div className="text-center mt-8 sm:mt-12">
           <button
             onClick={handleSkip}
-            className="text-xs tracking-[0.2em] text-zinc-500 hover:text-white transition-colors"
+            className="text-xs text-zinc-500 hover:text-white transition-colors"
           >
             Skip and browse all
           </button>

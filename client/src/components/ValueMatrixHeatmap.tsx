@@ -238,7 +238,7 @@ export default function ValueMatrixHeatmap({
           <p className="text-zinc-500 mt-1">Click to zoom in</p>
         </div>
       )}
-      <div className="flex items-center justify-end gap-2 mt-2 text-[10px] text-zinc-500 uppercase tracking-widest">
+      <div className="flex items-center justify-end gap-2 mt-2 text-xs text-zinc-500">
         <span>Low density</span>
         <div className="flex h-2 w-24 rounded-sm overflow-hidden border border-zinc-700">
           {Array.from({ length: 8 }, (_, i) => (
@@ -253,9 +253,7 @@ export default function ValueMatrixHeatmap({
       </div>
       {busiest.length > 0 && (
         <div className="mt-4">
-          <p className="text-[10px] tracking-[0.2em] uppercase text-zinc-500 mb-2">
-            Busiest areas · select to zoom in
-          </p>
+          <p className="text-xs text-zinc-500 mb-2">Busiest areas · select to zoom in</p>
           <ul className="grid gap-1 sm:grid-cols-2">
             {busiest.map((cell) => (
               <li key={`${cell.priceMin}:${cell.yMin}`}>

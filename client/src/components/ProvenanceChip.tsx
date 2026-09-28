@@ -23,7 +23,7 @@ export default function ProvenanceChip({ source, className = '' }: ProvenanceChi
   if (!source) return null;
   return (
     <span
-      className={`inline-block text-[9px] uppercase tracking-widest px-1.5 py-0.5 border rounded-none ${STYLES[source]} ${className}`}
+      className={`inline-block text-xs px-1.5 py-0.5 border rounded-none ${STYLES[source]} ${className}`}
       title={
         source === 'epa'
           ? 'EPA verified via FuelEconomy.gov'

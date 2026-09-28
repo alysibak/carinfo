@@ -9,6 +9,6 @@ export const TIER1_EXPANDABLE = 'text-xl font-bold text-zinc-50 tabular-nums';
 
 export const TIER2_VALUE = 'text-sm font-medium text-zinc-200 tabular-nums';
 
-export const TIER3_LABEL = 'text-xs font-normal text-zinc-400 uppercase tracking-wide';
+export const TIER3_LABEL = 'text-[13px] font-normal text-zinc-400';
 
 export const TIER_HELPER = 'text-xs text-zinc-400';

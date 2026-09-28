@@ -84,7 +84,7 @@ export default function AccountClerkPanel() {
       )}
 
       {!isLoaded ? (
-        <p className="text-xs uppercase tracking-widest text-zinc-500">Loading…</p>
+        <p className="text-xs text-zinc-500">Loading…</p>
       ) : !isSignedIn ? (
         <div className="border border-zinc-800 bg-zinc-950 p-6 space-y-4">
           <p className="text-sm text-zinc-300">
@@ -110,7 +110,7 @@ export default function AccountClerkPanel() {
       ) : (
         <div className="space-y-6">
           <section className="border border-zinc-800 bg-zinc-950 p-5 space-y-3">
-            <h2 className="text-xs uppercase tracking-widest text-zinc-500">Garage</h2>
+            <h2 className="text-xs text-zinc-500">Garage</h2>
             <p className="text-lg font-semibold">
               {garageCount} saved · limit {limitLabel}
             </p>
@@ -127,7 +127,7 @@ export default function AccountClerkPanel() {
               <button
                 type="button"
                 onClick={() => void syncFromCloud()}
-                className="text-xs uppercase tracking-widest text-zinc-400 hover:text-white"
+                className="text-xs text-zinc-400 hover:text-white"
               >
                 Sync now
               </button>
@@ -135,7 +135,7 @@ export default function AccountClerkPanel() {
           </section>
 
           <section className="border border-zinc-800 bg-zinc-950 p-5 space-y-4">
-            <h2 className="text-xs uppercase tracking-widest text-zinc-500">Plan</h2>
+            <h2 className="text-xs text-zinc-500">Plan</h2>
             <div className="flex items-baseline justify-between gap-4">
               <p className="text-2xl font-bold tracking-tight">{plan === 'pro' ? 'Pro' : 'Free'}</p>
               {plan === 'free' && (

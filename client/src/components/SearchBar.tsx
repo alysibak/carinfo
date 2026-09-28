@@ -160,10 +160,10 @@ export default function SearchBar({
 
   const buttonClass =
     size === 'hero'
-      ? 'h-12 sm:h-14 lg:h-16 px-5 sm:px-8 lg:px-10 bg-white text-black text-sm font-semibold uppercase tracking-wider sm:tracking-widest rounded-none hover:bg-zinc-200 transition-colors disabled:opacity-50 border-0 w-full sm:w-auto'
+      ? 'h-12 sm:h-14 lg:h-16 px-5 sm:px-8 lg:px-10 bg-accent text-accent-ink text-[15px] font-semibold rounded-none hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:ring-accent transition-colors disabled:opacity-50 border-0 w-full sm:w-auto'
       : size === 'large'
-        ? 'px-8 py-4 bg-white text-black text-sm font-semibold uppercase tracking-wider rounded-none hover:bg-zinc-200 transition-colors disabled:opacity-50'
-        : 'px-6 py-3 bg-white text-black text-sm font-semibold uppercase tracking-wider rounded-none hover:bg-zinc-200 transition-colors disabled:opacity-50';
+        ? 'px-8 py-4 bg-accent text-accent-ink text-[15px] font-semibold rounded-none hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:ring-accent transition-colors disabled:opacity-50'
+        : 'px-6 py-3 bg-accent text-accent-ink text-[15px] font-semibold rounded-none hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:ring-accent transition-colors disabled:opacity-50';
 
   const iconSize = size === 'default' ? 'w-4 h-4' : 'w-5 h-5';
 

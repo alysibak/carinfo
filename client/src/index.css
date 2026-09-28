@@ -50,8 +50,9 @@ code {
 }
 
 @layer utilities {
+  /* Figures line up in columns in the text face itself: numbers set in the
+     monospace face made every value on a page look like a code listing. */
   .tabular-nums {
-    font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
   }
 }
@@ -68,8 +69,19 @@ code {
   }
 
   .font-tabular {
-    font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
+  }
+
+  /*
+   * Type roles. Capitals are kept for the few section eyebrows; labels and
+   * buttons are sentence case, and nothing is smaller than 12px.
+   */
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.08em] text-zinc-400;
+  }
+
+  .field-label {
+    @apply text-[13px] text-zinc-400;
   }
 
   .page-wrap {
@@ -94,7 +106,7 @@ code {
   }
 
   .skip-link {
-    @apply absolute left-4 top-4 z-[100] -translate-y-16 px-4 py-2 bg-white text-black text-xs font-bold uppercase tracking-widest transition-transform focus:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40;
+    @apply absolute left-4 top-4 z-[100] -translate-y-16 px-4 py-2 bg-accent text-accent-ink text-sm font-semibold transition-transform focus:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60;
   }
 
   .surface-card {
@@ -106,19 +118,24 @@ code {
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25;
+    @apply inline-flex items-center justify-center gap-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60;
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 text-sm font-medium uppercase tracking-widest transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 px-5 py-2.5 bg-white text-black hover:bg-zinc-200 rounded-none;
+    @apply inline-flex items-center justify-center gap-2 min-h-[44px] text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:ring-accent px-5 py-2.5 bg-accent text-accent-ink hover:bg-accent-hover rounded-none;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 text-sm font-medium uppercase tracking-wider transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 px-5 py-2.5 border border-zinc-600 text-zinc-300 hover:border-zinc-400 hover:text-white bg-transparent rounded-none;
+    @apply inline-flex items-center justify-center gap-2 min-h-[44px] text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 px-5 py-2.5 border border-zinc-600 text-zinc-200 hover:border-zinc-300 hover:text-white bg-transparent rounded-none;
   }
 
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 px-3 py-2 text-zinc-400 hover:text-white;
+    @apply inline-flex items-center justify-center gap-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 px-3 py-2 text-zinc-400 hover:text-white;
+  }
+
+  /* A choice that reads as clickable: a bordered tile with a title and a line. */
+  .choice-tile {
+    @apply flex items-center justify-between gap-3 min-h-[56px] px-4 py-3 border border-zinc-800 bg-zinc-950 text-left transition-colors duration-150 hover:border-zinc-500 hover:bg-zinc-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60;
   }
 
   @keyframes battle-slide-in-left {
@@ -152,11 +169,11 @@ code {
   }
 
   .label-sm {
-    @apply text-[10px] uppercase tracking-widest text-zinc-400;
+    @apply text-xs text-zinc-400;
   }
 
   .section-heading {
-    @apply text-lg font-semibold text-white tracking-tight uppercase;
+    @apply text-lg font-semibold text-white tracking-tight;
   }
 
   .section-title {
@@ -164,7 +181,7 @@ code {
   }
 
   .kicker {
-    @apply text-[10px] font-medium text-zinc-400 uppercase tracking-widest;
+    @apply eyebrow;
   }
 
   .surface-card-glass {
@@ -172,15 +189,20 @@ code {
   }
 
   .chip {
-    @apply inline-flex items-center min-h-[36px] px-3 py-1.5 text-xs uppercase tracking-widest text-zinc-400 border border-zinc-800 rounded-none transition-colors duration-150 hover:text-white hover:border-zinc-600 bg-transparent;
+    @apply inline-flex items-center min-h-[36px] px-3 py-1.5 text-[13px] text-zinc-300 border border-zinc-700 rounded-none transition-colors duration-150 hover:text-white hover:border-zinc-400 bg-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60;
+  }
+
+  /* A chip that is switched on (a filter in use, the view in use). */
+  .chip-on {
+    @apply border-accent/70 text-accent bg-accent/10 hover:text-accent hover:border-accent;
   }
 
   .spec-chip {
-    @apply inline-flex items-center px-2 py-0.5 text-[10px] uppercase tracking-widest text-zinc-400 border border-zinc-700 bg-transparent;
+    @apply inline-flex items-center px-2 py-0.5 text-xs text-zinc-300 border border-zinc-700 bg-transparent;
   }
 
   .eyebrow-pill {
-    @apply text-xs font-medium text-zinc-400 uppercase tracking-widest;
+    @apply eyebrow;
   }
 
   .mesh-hero {
@@ -231,7 +253,7 @@ code {
   }
 
   .nav-link {
-    @apply text-xs uppercase tracking-widest text-zinc-400 transition-colors duration-150 hover:text-white;
+    @apply text-sm text-zinc-400 transition-colors duration-150 hover:text-white;
   }
 
   .list-row {
@@ -255,7 +277,7 @@ code {
   }
 
   .hero-stat-label {
-    @apply text-[10px] uppercase tracking-[0.25em] text-zinc-400 mt-1;
+    @apply text-xs text-zinc-400 mt-1;
   }
 
   .explore-card {
@@ -272,7 +294,7 @@ code {
   }
 
   .compare-win {
-    @apply bg-emerald-950/30 ring-1 ring-emerald-500/20;
+    @apply bg-accent/[0.07] ring-1 ring-inset ring-accent/25;
   }
 
   .meter-fill-animated {
@@ -298,7 +320,7 @@ code {
 }
 
 input[type='range'] {
-  accent-color: var(--text-primary);
+  accent-color: #34d399;
   height: 6px;
 }
 

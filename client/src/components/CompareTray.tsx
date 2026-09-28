@@ -22,7 +22,7 @@ export default function CompareTray() {
       aria-label="Compare shortlist"
     >
       <div className="page-wrap py-2.5 flex items-center gap-2 sm:gap-3">
-        <p className="text-[10px] uppercase tracking-wider text-zinc-500 shrink-0 tabular-nums">
+        <p className="text-xs text-zinc-500 shrink-0 tabular-nums">
           {comparedCars.length}/{MAX_COMPARE}
         </p>
 
@@ -54,13 +54,13 @@ export default function CompareTray() {
         <button
           type="button"
           onClick={clearComparison}
-          className="text-[10px] uppercase tracking-wider text-zinc-500 hover:text-zinc-300 shrink-0 hidden sm:inline"
+          className="text-xs text-zinc-500 hover:text-zinc-300 shrink-0 hidden sm:inline"
         >
           Clear
         </button>
         <Link
           to={compareHref}
-          className="shrink-0 px-3 py-2 bg-white text-black text-[10px] font-semibold uppercase tracking-wider hover:bg-zinc-200"
+          className="shrink-0 px-3 py-2 bg-accent text-accent-ink text-xs font-semibold hover:bg-accent-hover"
         >
           Compare
         </Link>

@@ -6,8 +6,10 @@ import SelectMenu from '../components/SelectMenu';
 import ToolPageHeader from '../components/ToolPageHeader';
 import PageShell, { PageBody } from '../components/PageShell';
 import { ErrorState, LoadingScreen } from '../components/ui';
-import { formatMpgForCard, formatPowerForCard, formatPriceShort } from '../utils/dataValue';
-import { usesMpge, formatCarFuelBadge } from '../utils/fuelDisplay';
+import { formatPowerForCard, formatPriceShort } from '../utils/dataValue';
+import { formatCarFuelLabel } from '../utils/fuelDisplay';
+import { efficiencyOf } from '../utils/efficiency';
+import { describeAnswers, quizReasons } from '../utils/quizReasons';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 import { displayModelLabel } from '../utils/trimLabel';
 import { searchQueryToParams } from '../utils/searchParams';
@@ -225,14 +227,8 @@ export default function SmartSearch() {
   const compareHref =
     picks.length >= 2 ? `/compare?cars=${picks.map((c) => c.id).join(',')}` : null;
 
-  const answerLine = [
-    persona,
-    priority && `cares about ${priority}`,
-    usage && `for ${usage}`,
-    `est. $${minPrice.toLocaleString()}–$${maxPrice >= 999999 ? '100k+' : maxPrice.toLocaleString()} CAD`,
-  ]
-    .filter(Boolean)
-    .join(' · ');
+  const answers = { priority, usage, minPrice, maxPrice };
+  const answerLine = describeAnswers(answers);
 
   if (loading) {
     return <LoadingScreen label="Picking three cars" />;
@@ -268,19 +264,18 @@ export default function SmartSearch() {
       />
 
       <PageBody>
-        <p className="text-sm text-zinc-400 mb-1">{answerLine}</p>
-        <p className="text-xs text-zinc-600 mb-6">
-          Three cars that fit — with plain-English notes on how they differ, so you can choose.
+        <p className="text-[15px] text-zinc-200 mb-1">{answerLine}</p>
+        <p className="text-[13px] text-zinc-400 mb-6">
+          Three cars that fit, why each one does, and how they differ, so you can choose. Values are
+          estimates in CAD.
         </p>
 
         {pickDiff.axes.length > 0 && picks.length > 1 && (
           <div className="mb-6 pb-5 border-b border-zinc-800">
-            <p className="text-xs uppercase tracking-wider text-zinc-500 mb-2">
-              How these three differ
-            </p>
-            <ul className="space-y-2">
+            <h2 className="eyebrow mb-2">How these three differ</h2>
+            <ul className="space-y-1.5">
               {pickDiff.axes.map((axis) => (
-                <li key={axis} className="text-base text-zinc-200 leading-snug">
+                <li key={axis} className="text-[15px] text-zinc-200 leading-snug">
                   {axis}
                 </li>
               ))}
@@ -302,7 +297,7 @@ export default function SmartSearch() {
               { value: 'power', label: 'Power / $' },
             ]}
           />
-          <div className="flex gap-1">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Powertrain">
             {(
               [
                 ['all', 'All'],
@@ -315,9 +310,8 @@ export default function SmartSearch() {
                 key={value}
                 type="button"
                 onClick={() => setFuelTypeFilter(value)}
-                className={`px-2 py-1 text-[10px] uppercase tracking-wider ${
-                  fuelTypeFilter === value ? 'text-white' : 'text-zinc-600 hover:text-zinc-400'
-                }`}
+                aria-pressed={fuelTypeFilter === value}
+                className={`chip ${fuelTypeFilter === value ? 'chip-on' : ''}`}
               >
                 {label}
               </button>
@@ -357,7 +351,7 @@ export default function SmartSearch() {
                       {i + 1}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[10px] uppercase tracking-wider text-zinc-600 mb-1">
+                      <p className="text-xs text-zinc-600 mb-1">
                         {i === 0
                           ? 'Start here'
                           : i === 1
@@ -373,33 +367,44 @@ export default function SmartSearch() {
                           {car.year} {car.make} {displayModelLabel(car)}
                         </h2>
                       </Link>
-                      <p className="text-base sm:text-lg text-white font-medium mt-2 leading-snug">
-                        {pickDiff.byCarId[car.id]?.edge ?? 'Open the dossier for full specs'}
-                      </p>
+                      {quizReasons(car, answers).length > 0 && (
+                        <ul className="mt-2 space-y-1">
+                          {quizReasons(car, answers).map((reason) => (
+                            <li
+                              key={reason}
+                              className="flex items-start gap-2 text-[15px] text-white leading-snug"
+                            >
+                              <span className="text-accent" aria-hidden>
+                                ✓
+                              </span>
+                              {reason}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {pickDiff.byCarId[car.id]?.edge && (
+                        <p className="text-sm text-zinc-300 mt-2 leading-snug">
+                          {pickDiff.byCarId[car.id].edge}
+                        </p>
+                      )}
                       <p className="text-xs text-zinc-500 mt-2">
                         {[
-                          formatPowerForCard(car.engine.horsepower),
-                          `${formatMpgForCard(car.fuelEconomy.combined)} ${
-                            usesMpge(car.engine.fuelType) ? 'MPGe' : 'MPG'
-                          }`,
                           car.price?.msrp != null
-                            ? `est. ${formatPriceShort(car.price.msrp, true)}`
+                            ? `est. ${formatPriceShort(car.price.msrp, false)}`
                             : null,
+                          efficiencyOf(car)?.text,
+                          formatPowerForCard(car.engine.horsepower),
                           bodyStyleLabel(car.bodyStyle),
-                          formatCarFuelBadge(car),
+                          formatCarFuelLabel(car),
                         ]
                           .filter((x) => x && x !== 'Not on file')
                           .join(' · ')}
                       </p>
                       <Link
                         to={`/car/${car.id}`}
-                        className={`inline-block mt-3 text-[10px] uppercase tracking-wider ${
-                          i === 0
-                            ? 'bg-white text-black px-3 py-2 font-semibold hover:bg-zinc-200'
-                            : 'text-zinc-400 border-b border-zinc-700 hover:text-white hover:border-white pb-0.5'
-                        }`}
+                        className={`mt-3 ${i === 0 ? 'btn-primary' : 'btn-secondary'} !min-h-[40px] !py-2`}
                       >
-                        {i === 0 ? 'Open this car' : 'View'}
+                        See this car
                       </Link>
                     </div>
                   </div>
@@ -409,14 +414,11 @@ export default function SmartSearch() {
 
             <div className="mt-8 pt-6 border-t border-zinc-800 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
               {compareHref && (
-                <Link
-                  to={compareHref}
-                  className="text-xs uppercase tracking-wider text-white border border-zinc-600 px-4 py-2.5 hover:border-white text-center sm:text-left"
-                >
+                <Link to={compareHref} className="btn-primary">
                   Compare these {picks.length}
                 </Link>
               )}
-              <Link to="/?quiz=1" className="text-xs text-zinc-500 hover:text-white">
+              <Link to="/?quiz=1" className="btn-ghost">
                 Change answers
               </Link>
               {moreCount > 0 && (

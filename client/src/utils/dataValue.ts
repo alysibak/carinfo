@@ -183,7 +183,7 @@ export function formatPowerForCard(
   _options?: { fuelType?: string; powerProvenance?: string },
 ): string {
   if (hasNumericValue(horsepower)) {
-    return `${Math.round(horsepower!)} HP`;
+    return `${Math.round(horsepower!)} hp`;
   }
   if (_options?.fuelType && usesMpge(_options.fuelType)) {
     return 'Not in EPA dataset';

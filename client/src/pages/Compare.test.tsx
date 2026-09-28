@@ -46,11 +46,13 @@ describe('Compare provenance', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('EFF AVG')).toBeInTheDocument();
+      expect(screen.getByText('Fuel use')).toBeInTheDocument();
     });
 
     expect(screen.getAllByText('est.').length).toBeGreaterThan(0);
-    expect(screen.getByText(/EST\. VALUE/)).toBeInTheDocument();
+    expect(screen.getByText('Est. value')).toBeInTheDocument();
+    // Litres first, with EPA's figure beneath: 33 mpg is 7.1 L/100 km.
+    expect(screen.getByText('7.1 L/100 km')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Estimates only' })).not.toBeInTheDocument();
   });
 
@@ -63,7 +65,7 @@ describe('Compare provenance', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Compare' })).toBeInTheDocument();
-    expect(screen.getByText(/Add up to 5 vehicles/i)).toBeInTheDocument();
+    expect(screen.getByText(/Put up to five cars side by side/i)).toBeInTheDocument();
 
     mockCompareStore([trustDashboard.car]);
     expect(() =>

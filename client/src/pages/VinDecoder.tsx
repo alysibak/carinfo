@@ -19,18 +19,14 @@ function hpPlain(hp: number): string {
 }
 
 function Subheading({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-[10px] tracking-[0.25em] text-zinc-400 uppercase pt-5 pb-2 border-b border-zinc-900">
-      {children}
-    </p>
-  );
+  return <p className="text-xs text-zinc-400 pt-5 pb-2 border-b border-zinc-900">{children}</p>;
 }
 
 function Row({ label, value }: { label: string; value: string | number | undefined }) {
   if (value == null || value === '') return null;
   return (
     <div className="flex items-center justify-between py-3 border-b border-zinc-900 last:border-b-0 gap-4">
-      <span className="text-[10px] tracking-[0.25em] text-zinc-400 uppercase">{label}</span>
+      <span className="text-xs text-zinc-400">{label}</span>
       <span className="text-sm font-bold text-white text-right">{value}</span>
     </div>
   );
@@ -93,8 +89,8 @@ export default function VinDecoder() {
   return (
     <div className="bg-black text-white">
       <div className="page-wrap section-y">
-        <p className="text-[10px] tracking-[0.3em] text-zinc-400 uppercase mb-3">Tools</p>
-        <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-3">VIN Lookup</h1>
+        <p className="text-xs text-zinc-400 mb-3">Tools</p>
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tighter mb-3">VIN Lookup</h1>
         <p className="text-sm text-zinc-400 leading-relaxed max-w-2xl mb-2">
           Paste a vehicle’s 17-character VIN to pull its official specs straight from{' '}
           <span className="text-zinc-200">NHTSA’s free U.S. government database</span>, including{' '}
@@ -118,7 +114,7 @@ export default function VinDecoder() {
             autoComplete="off"
             autoCapitalize="characters"
             spellCheck={false}
-            className="flex-1 min-w-0 h-12 sm:h-14 bg-zinc-950 border-0 px-3 sm:px-4 text-sm sm:text-base font-mono tracking-normal sm:tracking-widest text-white placeholder:text-zinc-500 focus:outline-none uppercase rounded-none"
+            className="w-full sm:w-auto sm:flex-1 min-w-0 h-12 sm:h-14 bg-zinc-950 border-0 px-3 sm:px-4 text-base font-mono tracking-normal text-white placeholder:text-zinc-500 focus:outline-none rounded-none"
           />
           <div className="flex border-t sm:border-t-0 sm:border-l border-zinc-700 shrink-0">
             <button
@@ -151,14 +147,14 @@ export default function VinDecoder() {
             <button
               onClick={() => run(vin)}
               disabled={loading || vin.trim().length < 11}
-              className="flex-1 sm:flex-none h-12 sm:h-14 px-5 sm:px-8 bg-white text-black text-xs font-semibold uppercase tracking-widest hover:bg-zinc-200 disabled:opacity-40 border-l border-zinc-700 rounded-none transition-colors"
+              className="flex-1 sm:flex-none h-12 sm:h-14 px-5 sm:px-8 bg-accent text-accent-ink text-[15px] font-semibold hover:bg-accent-hover disabled:opacity-40 border-l border-zinc-700 rounded-none transition-colors"
             >
               {loading ? '…' : 'Decode'}
             </button>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 mt-3 text-[11px] text-zinc-400">
+        <div className="flex flex-wrap items-center gap-2 mt-3 text-xs text-zinc-400">
           <button
             type="button"
             onClick={() => {
@@ -199,10 +195,8 @@ export default function VinDecoder() {
             {result.make ? (
               <>
                 <div className="border-b border-zinc-900 pb-5 mb-1">
-                  <p className="text-[10px] tracking-[0.3em] text-zinc-400 uppercase mb-1">
-                    Decoded vehicle
-                  </p>
-                  <h2 className="text-2xl md:text-3xl font-black tracking-tight">
+                  <p className="text-xs text-zinc-400 mb-1">Decoded vehicle</p>
+                  <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
                     {result.year} {result.make} {result.model}
                   </h2>
                   {(result.trim || result.series || result.bodyClass) && (
@@ -210,13 +204,11 @@ export default function VinDecoder() {
                       {[result.trim || result.series, result.bodyClass].filter(Boolean).join(' · ')}
                     </p>
                   )}
-                  <p className="font-mono text-[11px] tracking-widest text-zinc-400 mt-2">
-                    {result.vin}
-                  </p>
+                  <p className="font-mono text-xs text-zinc-400 mt-2">{result.vin}</p>
                 </div>
 
                 {!result.decodedClean && (
-                  <p className="text-[11px] text-amber-300/80 leading-relaxed py-3">
+                  <p className="text-xs text-amber-300/80 leading-relaxed py-3">
                     NHTSA flagged a checksum issue on this VIN ({result.errorText}). The decode
                     below may be partial. Double-check the VIN for typos.
                   </p>
@@ -232,7 +224,7 @@ export default function VinDecoder() {
                 {eng?.hp != null ? (
                   <div className="py-4">
                     <div className="flex items-baseline gap-3">
-                      <span className="text-3xl sm:text-5xl font-black tracking-tighter text-white">
+                      <span className="text-3xl sm:text-5xl font-bold tracking-tighter text-white">
                         {eng.hp}
                       </span>
                       <span className="text-lg font-bold text-zinc-400">hp</span>
@@ -244,7 +236,7 @@ export default function VinDecoder() {
                       {hpPlain(eng.hp)}
                     </p>
                     {eng.hpFromKw && (
-                      <p className="text-[10px] text-zinc-400 mt-1">
+                      <p className="text-xs text-zinc-400 mt-1">
                         Converted from NHTSA’s kilowatt figure.
                       </p>
                     )}
@@ -290,7 +282,7 @@ export default function VinDecoder() {
                   }
                 />
 
-                <p className="text-[10px] text-zinc-400 leading-relaxed pt-5 mt-2 border-t border-zinc-900">
+                <p className="text-xs text-zinc-400 leading-relaxed pt-5 mt-2 border-t border-zinc-900">
                   Source: NHTSA vPIC (vpic.nhtsa.dot.gov), decoded live from the VIN. Horsepower and
                   other fields are shown only where NHTSA has them on record.
                 </p>
@@ -317,7 +309,7 @@ export default function VinDecoder() {
                       },
                       1,
                     ).toString()}`}
-                    className="px-4 py-2 bg-white text-black text-xs font-semibold uppercase tracking-wider hover:bg-zinc-200"
+                    className="px-4 py-2 bg-accent text-accent-ink text-xs font-semibold hover:bg-accent-hover"
                   >
                     Search catalog
                   </Link>
@@ -337,7 +329,7 @@ export default function VinDecoder() {
                         },
                         1,
                       ).toString()}`}
-                      className="px-4 py-2 border border-zinc-600 text-xs font-semibold uppercase tracking-wider text-zinc-200 hover:border-zinc-400"
+                      className="px-4 py-2 border border-zinc-600 text-xs font-semibold text-zinc-200 hover:border-zinc-400"
                     >
                       Filter by make / model
                     </Link>

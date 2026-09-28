@@ -15,6 +15,7 @@ export type {
   BodyStyle,
   CarDashboard,
   CarFilter,
+  ClassComparison,
   ConditionValueBand,
   DerivedComparisonMetric,
   DriveType,

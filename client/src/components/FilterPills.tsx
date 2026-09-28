@@ -23,16 +23,16 @@ export default function FilterPills({
             onClick={() => onToggle(opt.id)}
             title={opt.description}
             className={`text-left border transition-colors ${
-              compact ? 'px-3 py-1.5 text-xs' : 'px-3 py-2 text-xs'
+              compact ? 'px-3 py-1.5 text-[13px]' : 'px-3 py-2 text-[13px]'
             } ${
               active
-                ? 'bg-white text-black border-white'
+                ? 'bg-accent text-accent-ink border-accent'
                 : 'border-zinc-700 text-zinc-300 hover:border-zinc-400 hover:text-white bg-black'
             }`}
           >
-            <span className="font-semibold tracking-wide">{opt.label}</span>
+            <span className="font-medium">{opt.label}</span>
             {opt.count != null && (
-              <span className={`ml-1.5 ${active ? 'text-zinc-600' : 'text-zinc-400'}`}>
+              <span className={`ml-1.5 ${active ? 'text-accent-ink/70' : 'text-zinc-400'}`}>
                 ({opt.count.toLocaleString()})
               </span>
             )}

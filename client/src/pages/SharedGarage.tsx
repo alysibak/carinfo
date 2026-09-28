@@ -101,7 +101,7 @@ export default function SharedGarage() {
           <button
             type="button"
             onClick={saveAllToLocalGarage}
-            className="min-h-[44px] px-2 -mr-2 text-[10px] sm:text-xs tracking-[0.15em] sm:tracking-[0.25em] text-zinc-400 hover:text-white transition-colors text-right"
+            className="min-h-[44px] px-2 -mr-2 text-xs text-zinc-400 hover:text-white transition-colors text-right"
           >
             Save all
           </button>
@@ -111,15 +111,13 @@ export default function SharedGarage() {
       <div className="pt-8 pb-16 page-wrap-wide">
         {cars.length === 0 ? (
           <div className="max-w-4xl mx-auto text-center py-32">
-            <h2 className="text-3xl font-black tracking-tighter mb-4">
-              NO VEHICLES IN THIS GARAGE
-            </h2>
+            <h2 className="text-3xl font-bold tracking-tighter mb-4">NO VEHICLES IN THIS GARAGE</h2>
             <p className="text-lg tracking-wider text-zinc-400 mb-8">
               This shared garage link does not contain any vehicles.
             </p>
             <Link
               to="/"
-              className="inline-block bg-white text-black px-8 py-4 font-black tracking-widest text-sm hover:bg-zinc-300 transition-all"
+              className="inline-block bg-accent text-accent-ink px-8 py-4 font-semibold text-sm hover:bg-accent-hover transition-all"
             >
               BROWSE CARS
             </Link>
@@ -134,19 +132,19 @@ export default function SharedGarage() {
                 >
                   {/* Position Badge */}
                   <div className="absolute top-4 left-4 w-10 h-10 bg-zinc-950 border border-zinc-800 flex items-center justify-center">
-                    <span className="text-lg font-black text-zinc-300">#{index + 1}</span>
+                    <span className="text-lg font-bold text-zinc-300">#{index + 1}</span>
                   </div>
 
                   {/* Year */}
                   <div className="mb-4 mt-12">
-                    <p className="text-3xl sm:text-5xl font-black text-zinc-400 group-hover:text-zinc-300 transition-colors">
+                    <p className="text-3xl sm:text-5xl font-bold text-zinc-400 group-hover:text-zinc-300 transition-colors">
                       {car.year}
                     </p>
                   </div>
 
                   {/* Make & Model */}
                   <div className="mb-6">
-                    <h3 className="text-2xl font-black tracking-tight mb-1 group-hover:tracking-wide transition-all">
+                    <h3 className="text-2xl font-bold tracking-tight mb-1 group-hover:tracking-wide transition-all">
                       {car.make.toUpperCase()}
                     </h3>
                     <p className="text-lg font-light tracking-wider text-zinc-400 group-hover:text-zinc-400 transition-colors">
@@ -160,7 +158,7 @@ export default function SharedGarage() {
                   {/* Specs Grid */}
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     <div>
-                      <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">Engine</p>
+                      <p className="text-xs text-zinc-300 mb-1">Engine</p>
                       <p
                         className={cardStatClass(
                           formatEngineForCard(car.engine.fuelType, car.engine.displacement),
@@ -170,21 +168,19 @@ export default function SharedGarage() {
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">MPG</p>
+                      <p className="text-xs text-zinc-300 mb-1">MPG</p>
                       <p className={cardStatClass(formatMpgForCard(car.fuelEconomy.combined))}>
                         {formatMpgForCard(car.fuelEconomy.combined)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">
-                        Est. Value
-                      </p>
+                      <p className="text-xs text-zinc-300 mb-1">Est. Value</p>
                       <p className={cardStatClass(formatPriceShort(car.price?.msrp))}>
                         {formatPriceShort(car.price?.msrp)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs tracking-widest text-zinc-300 mb-1 uppercase">Type</p>
+                      <p className="text-xs text-zinc-300 mb-1">Type</p>
                       <p className="text-lg font-bold">{bodyStyleLabel(car.bodyStyle)}</p>
                     </div>
                   </div>
@@ -192,7 +188,7 @@ export default function SharedGarage() {
                   {/* View Button */}
                   <button
                     onClick={() => navigate(`/car/${car.id}`)}
-                    className="w-full flex items-center justify-center gap-2 text-xs tracking-widest text-zinc-300 group-hover:text-white transition-all py-2 border border-zinc-900 group-hover:border-zinc-700"
+                    className="w-full flex items-center justify-center gap-2 text-xs text-zinc-300 group-hover:text-white transition-all py-2 border border-zinc-900 group-hover:border-zinc-700"
                   >
                     <span>VIEW DETAILS</span>
                     <svg

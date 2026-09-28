@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 import * as api from '../services/api';
 import type { CarSpecs } from '../types/car.types';
 import { differentiateVsAnchor } from '../utils/differentiateCars';
-import { formatMpgForCard, formatPriceShort } from '../utils/dataValue';
-import { usesMpge } from '../utils/fuelDisplay';
+import { formatPriceShort } from '../utils/dataValue';
+import { efficiencyOf } from '../utils/efficiency';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 import { displayModelLabel, displayVehicleTitle } from '../utils/trimLabel';
 import { useCarStore } from '../stores/carStore';
@@ -55,8 +55,7 @@ export default function SimilarCars({ car }: { car: CarSpecs }) {
         ) : (
           <ul className="border-t border-zinc-800">
             {cars.map((alt) => {
-              const mpgLabel = usesMpge(alt.engine.fuelType) ? 'MPGe' : 'MPG';
-              const mpg = formatMpgForCard(alt.fuelEconomy.combined);
+              const efficiency = efficiencyOf(alt);
               const price = formatPriceShort(alt.price?.msrp, true);
               const inCompare = comparedCars.some((c) => c.id === alt.id);
               return (
@@ -73,7 +72,7 @@ export default function SimilarCars({ car }: { car: CarSpecs }) {
                       )}
                       <p className="text-xs text-zinc-500 mt-1.5">
                         {[
-                          mpg !== 'Not on file' ? `${mpg} ${mpgLabel}` : null,
+                          efficiency?.text,
                           price !== 'Not on file' ? `est. ${price}` : null,
                           bodyStyleLabel(alt.bodyStyle),
                           alt.driveType,
@@ -85,13 +84,10 @@ export default function SimilarCars({ car }: { car: CarSpecs }) {
                     <button
                       type="button"
                       onClick={() => addOrReplaceOldestInComparison(alt)}
-                      className={`shrink-0 self-start text-[10px] uppercase tracking-wider px-2.5 py-2 min-h-[40px] border ${
-                        inCompare
-                          ? 'border-white text-white'
-                          : 'border-zinc-700 text-zinc-500 hover:border-zinc-400 hover:text-white'
-                      }`}
+                      aria-pressed={inCompare}
+                      className={`chip shrink-0 self-start ${inCompare ? 'chip-on' : ''}`}
                     >
-                      {inCompare ? 'In compare' : '+ Compare'}
+                      {inCompare ? 'In compare' : 'Add to compare'}
                     </button>
                   </div>
                 </li>

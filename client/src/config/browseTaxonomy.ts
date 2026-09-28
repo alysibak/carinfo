@@ -62,7 +62,7 @@ export const LIFESTYLE_PRESETS: BrowsePreset[] = [
   {
     id: 'commuter',
     label: 'Long commute',
-    description: '40+ MPG combined',
+    description: 'Under 5.9 L/100 km combined',
     filters: { fuelEconomy: { min: 40 }, price: { max: 45000 } },
     sort: { field: 'fuelEconomy', order: 'desc' },
   },
@@ -160,12 +160,13 @@ export const YEAR_BUCKETS: BucketOption[] = [
 ];
 
 export const MPG_BUCKETS: BucketOption[] = [
-  { id: 'mpg-25', label: '25+ MPG', filters: { fuelEconomy: { min: 25 } } },
-  { id: 'mpg-35', label: '35+ MPG', filters: { fuelEconomy: { min: 35 } } },
-  { id: 'mpg-45', label: '45+ MPG', filters: { fuelEconomy: { min: 45 } } },
+  // Labelled in L/100 km, Canada's unit; the filter keeps EPA's MPG (25 MPG = 9.4 L/100 km).
+  { id: 'mpg-25', label: 'Under 9.4 L/100 km', filters: { fuelEconomy: { min: 25 } } },
+  { id: 'mpg-35', label: 'Under 6.7 L/100 km', filters: { fuelEconomy: { min: 35 } } },
+  { id: 'mpg-45', label: 'Under 5.2 L/100 km', filters: { fuelEconomy: { min: 45 } } },
   {
     id: 'mpg-100',
-    label: '100+ MPGe',
+    label: 'Electric (100+ MPGe)',
     description: 'EVs & plug-in hybrids',
     filters: { fuelEconomy: { min: 100 } },
   },

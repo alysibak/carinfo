@@ -13,7 +13,7 @@ import {
   fuelTypeFilter,
   makeFilter,
 } from '../config/browseTaxonomy';
-import { COLLECTIONS } from '../config/collections';
+import ShortlistCards from '../components/ShortlistCards';
 import BodyTypeIllustration from '../components/BodyTypeIllustration';
 import { searchQueryToParams } from '../utils/searchParams';
 
@@ -30,24 +30,27 @@ export default function Browse() {
     <div className="bg-black text-white pb-12 sm:pb-16">
       <div className="page-wrap pt-8 sm:pt-10 pb-4">
         <PageHeader
-          title="Start from a situation"
-          subtitle="People rarely shop the whole archive. They shop a use, a shape, or a budget."
+          title="Browse"
+          subtitle="Start from a situation, a shape, a budget or a badge. People rarely shop the whole archive."
         />
       </div>
 
       <section className="page-wrap pb-10 sm:pb-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 md:gap-x-10">
+        <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-4">A situation</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {LIFESTYLE_PRESETS.map((preset) => (
             <Link
               key={preset.id}
               to={homeLink(presetToSearchQuery(preset))}
-              className="list-row group"
+              className="choice-tile group"
             >
-              <div className="min-w-0">
-                <p className="font-semibold text-white group-hover:text-zinc-200">{preset.label}</p>
-                <p className="text-sm text-zinc-500 mt-0.5">{preset.description}</p>
-              </div>
-              <span className="text-zinc-600 group-hover:text-zinc-400 text-sm shrink-0">→</span>
+              <span className="min-w-0">
+                <span className="block text-[15px] font-semibold text-white">{preset.label}</span>
+                <span className="block text-[13px] text-zinc-400 mt-0.5">{preset.description}</span>
+              </span>
+              <span className="text-zinc-500 group-hover:text-white shrink-0" aria-hidden>
+                →
+              </span>
             </Link>
           ))}
         </div>
@@ -55,7 +58,7 @@ export default function Browse() {
 
       <section className="border-t border-zinc-900">
         <div className="page-wrap section-y">
-          <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2">Or a body style</h2>
+          <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2">A body style</h2>
           <p className="text-sm text-zinc-500 mb-6 md:mb-8">
             What the vehicle is, before the badge.
           </p>
@@ -80,16 +83,16 @@ export default function Browse() {
 
       <section className="border-t border-zinc-900">
         <div className="page-wrap section-y">
-          <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2">Or a class</h2>
+          <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2">A class</h2>
           <p className="text-sm text-zinc-500 mb-6">
             The rivals shoppers compare: a Camry against an Accord, not a Civic.
           </p>
-          <div className="flex flex-wrap gap-x-5 gap-y-3">
+          <div className="flex flex-wrap gap-2">
             {CLASS_LINKS.map((item) => (
               <Link
                 key={item.query}
                 to={`/home?${new URLSearchParams({ q: item.query }).toString()}`}
-                className="text-sm text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-800 hover:decoration-zinc-500 min-h-[36px] inline-flex items-center"
+                className="chip"
               >
                 {item.label}
               </Link>
@@ -103,14 +106,10 @@ export default function Browse() {
           <div>
             <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2">A budget</h2>
             <p className="text-sm text-zinc-500 mb-6">Estimated CAD value, not asking price.</p>
-            <div className="flex flex-col">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {PRICE_BUCKETS.map((bucket) => (
-                <Link
-                  key={bucket.id}
-                  to={filterLink(bucket.filters)}
-                  className="list-row text-sm text-zinc-300 hover:text-white"
-                >
-                  {bucket.label}
+                <Link key={bucket.id} to={filterLink(bucket.filters)} className="choice-tile">
+                  <span className="text-[15px] text-white tabular-nums">{bucket.label}</span>
                 </Link>
               ))}
             </div>
@@ -118,14 +117,10 @@ export default function Browse() {
           <div>
             <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2">A model year</h2>
             <p className="text-sm text-zinc-500 mb-6">Current gen, last decade, or older.</p>
-            <div className="flex flex-col">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {YEAR_BUCKETS.map((bucket) => (
-                <Link
-                  key={bucket.id}
-                  to={filterLink(bucket.filters)}
-                  className="list-row text-sm text-zinc-300 hover:text-white"
-                >
-                  {bucket.label}
+                <Link key={bucket.id} to={filterLink(bucket.filters)} className="choice-tile">
+                  <span className="text-[15px] text-white tabular-nums">{bucket.label}</span>
                 </Link>
               ))}
             </div>
@@ -137,27 +132,19 @@ export default function Browse() {
         <div className="page-wrap section-y">
           <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2">A manufacturer</h2>
           <p className="text-sm text-zinc-500 mb-6">If you already know the badge.</p>
-          <div className="flex flex-wrap gap-x-5 gap-y-3">
+          <div className="flex flex-wrap gap-2">
             {TOP_MAKES.map((make) => (
-              <Link
-                key={make}
-                to={filterLink(makeFilter(make))}
-                className="text-sm text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-800 hover:decoration-zinc-500 min-h-[36px] inline-flex items-center"
-              >
+              <Link key={make} to={filterLink(makeFilter(make))} className="chip">
                 {make}
               </Link>
             ))}
           </div>
 
           <div className="mt-10">
-            <h3 className="text-sm font-semibold text-white mb-4">Powertrain</h3>
-            <div className="flex flex-wrap gap-x-5 gap-y-3">
+            <h3 className="text-base font-semibold text-white mb-3">Powertrain</h3>
+            <div className="flex flex-wrap gap-2">
               {FUEL_TYPES.map((fuel) => (
-                <Link
-                  key={fuel.id}
-                  to={filterLink(fuelTypeFilter(fuel.id))}
-                  className="text-sm text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-800 hover:decoration-zinc-500 min-h-[36px] inline-flex items-center"
-                >
+                <Link key={fuel.id} to={filterLink(fuelTypeFilter(fuel.id))} className="chip">
                   {fuel.label}
                 </Link>
               ))}
@@ -169,16 +156,10 @@ export default function Browse() {
       <section className="border-t border-zinc-900">
         <div className="page-wrap section-y">
           <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2">Curated shortlists</h2>
-          <p className="text-sm text-zinc-500 mb-6">Ranked picks for common situations.</p>
-          {Object.values(COLLECTIONS).map((c) => (
-            <Link key={c.id} to={`/collection/${c.id}`} className="list-row group">
-              <div className="min-w-0 pr-4">
-                <p className="text-sm font-semibold text-white">{c.title}</p>
-                <p className="text-sm text-zinc-500">{c.subtitle}</p>
-              </div>
-              <span className="text-zinc-600 text-sm shrink-0">→</span>
-            </Link>
-          ))}
+          <p className="text-sm text-zinc-500 mb-6">
+            Ranked picks for common situations, one per model.
+          </p>
+          <ShortlistCards />
         </div>
       </section>
     </div>

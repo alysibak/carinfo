@@ -32,7 +32,7 @@ export default function AboutData({ compact = false }: { compact?: boolean }) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="inline-flex min-h-[36px] items-center text-[10px] tracking-[0.25em] text-zinc-400 hover:text-white uppercase transition-colors underline underline-offset-4"
+          className="inline-flex min-h-[36px] items-center text-xs text-zinc-400 hover:text-white transition-colors underline underline-offset-4"
         >
           About the data
         </button>
@@ -47,7 +47,7 @@ export default function AboutData({ compact = false }: { compact?: boolean }) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="text-[10px] tracking-[0.25em] text-zinc-400 hover:text-white uppercase transition-colors"
+          className="text-xs text-zinc-400 hover:text-white transition-colors"
         >
           About the data
         </button>
@@ -61,9 +61,7 @@ export default function AboutData({ compact = false }: { compact?: boolean }) {
       <div className="max-w-3xl mx-auto mb-10 border border-zinc-900 bg-zinc-950 px-6 py-5 text-left">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] tracking-[0.3em] text-zinc-400 uppercase mb-2">
-              About the data
-            </p>
+            <p className="text-xs text-zinc-400 mb-2">About the data</p>
             <p className="text-sm text-zinc-400 leading-relaxed">
               Fuel economy and engine specs from{' '}
               <strong className="text-zinc-200 font-medium">EPA</strong>. Crash safety from{' '}
@@ -87,7 +85,7 @@ export default function AboutData({ compact = false }: { compact?: boolean }) {
         </div>
         <Link
           to="/methodology"
-          className="mt-3 inline-block text-[10px] tracking-[0.2em] text-zinc-400 hover:text-white uppercase transition-colors"
+          className="mt-3 inline-block text-xs text-zinc-400 hover:text-white transition-colors"
         >
           Read full methodology →
         </Link>
@@ -114,7 +112,7 @@ function AboutDataModal({ onClose }: { onClose: () => void }) {
         className="max-w-lg w-full bg-black border border-zinc-800 p-8 max-h-[85vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 id="about-data-title" className="text-lg font-black tracking-tight uppercase mb-6">
+        <h2 id="about-data-title" className="text-lg font-bold tracking-tight mb-6">
           How CarInfo works
         </h2>
         <div className="space-y-4 text-sm text-zinc-400 leading-relaxed">
@@ -148,14 +146,14 @@ function AboutDataModal({ onClose }: { onClose: () => void }) {
         <Link
           to="/methodology"
           onClick={onClose}
-          className="mt-6 block text-center text-[10px] tracking-[0.2em] text-zinc-400 hover:text-white uppercase"
+          className="mt-6 block text-center text-xs text-zinc-400 hover:text-white"
         >
           Full methodology page →
         </Link>
         <button
           type="button"
           onClick={onClose}
-          className="mt-4 w-full py-3 bg-white text-black text-xs font-black tracking-[0.25em] uppercase hover:bg-zinc-200 transition-colors"
+          className="mt-4 w-full py-3 bg-accent text-accent-ink text-xs font-semibold hover:bg-accent-hover transition-colors"
         >
           Got it
         </button>

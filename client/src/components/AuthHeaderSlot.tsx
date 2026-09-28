@@ -21,7 +21,7 @@ export default function AuthHeaderSlot({ onNavigate }: { onNavigate?: () => void
       <Link
         to="/account"
         onClick={onNavigate}
-        className="text-[10px] uppercase tracking-widest text-zinc-400 hover:text-white transition-colors px-2 py-1"
+        className="text-xs text-zinc-400 hover:text-white transition-colors px-2 py-1"
       >
         Account
       </Link>

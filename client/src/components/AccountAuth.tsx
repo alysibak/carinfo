@@ -38,7 +38,7 @@ export function AuthHeaderControls({ onNavigate }: { onNavigate?: () => void }) 
   const syncMode = useGarageStore((s) => s.syncMode);
 
   if (!isLoaded) {
-    return <span className="text-[10px] uppercase tracking-widest text-zinc-600">…</span>;
+    return <span className="text-xs text-zinc-600">…</span>;
   }
 
   if (!isSignedIn) {
@@ -50,7 +50,7 @@ export function AuthHeaderControls({ onNavigate }: { onNavigate?: () => void }) 
             onNavigate?.();
             void openSignIn({});
           }}
-          className="text-[10px] uppercase tracking-widest text-zinc-400 hover:text-white transition-colors px-2 py-1"
+          className="text-xs text-zinc-400 hover:text-white transition-colors px-2 py-1"
         >
           Sign in
         </button>
@@ -60,7 +60,7 @@ export function AuthHeaderControls({ onNavigate }: { onNavigate?: () => void }) 
             onNavigate?.();
             void openSignUp({});
           }}
-          className="text-[10px] uppercase tracking-widest bg-white text-black px-2.5 py-1.5 hover:bg-zinc-200 transition-colors"
+          className="text-xs bg-accent text-accent-ink px-2.5 py-1.5 hover:bg-accent-hover transition-colors"
         >
           Sign up
         </button>
@@ -73,7 +73,7 @@ export function AuthHeaderControls({ onNavigate }: { onNavigate?: () => void }) 
       <Link
         to="/account"
         onClick={onNavigate}
-        className="hidden sm:inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-zinc-400 hover:text-white transition-colors px-2 py-1"
+        className="hidden sm:inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors px-2 py-1"
         title={user?.primaryEmailAddress?.emailAddress ?? 'Account'}
       >
         {plan === 'pro' ? (
@@ -89,7 +89,7 @@ export function AuthHeaderControls({ onNavigate }: { onNavigate?: () => void }) 
       <Link
         to="/account"
         onClick={onNavigate}
-        className="sm:hidden text-[10px] uppercase tracking-widest text-zinc-400 hover:text-white px-2 py-1"
+        className="sm:hidden text-xs text-zinc-400 hover:text-white px-2 py-1"
       >
         Account
       </Link>
@@ -99,7 +99,7 @@ export function AuthHeaderControls({ onNavigate }: { onNavigate?: () => void }) 
           onNavigate?.();
           void signOut();
         }}
-        className="text-[10px] uppercase tracking-widest text-zinc-500 hover:text-white transition-colors px-2 py-1"
+        className="text-xs text-zinc-500 hover:text-white transition-colors px-2 py-1"
       >
         Sign out
       </button>
@@ -131,7 +131,7 @@ export function SignInPromptBanner() {
       <button
         type="button"
         onClick={() => void openSignIn({})}
-        className="shrink-0 text-xs uppercase tracking-widest bg-white text-black px-4 py-2 hover:bg-zinc-200"
+        className="shrink-0 text-xs bg-accent text-accent-ink px-4 py-2 hover:bg-accent-hover"
       >
         Sign in
       </button>

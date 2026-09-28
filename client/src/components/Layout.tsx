@@ -1,7 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import SiteHeader from './SiteHeader';
 import CompareTray from './CompareTray';
-import VisitCounter from './VisitCounter';
 import { useCarStore } from '../stores/carStore';
 import { regionName, useRegionStore } from '../stores/regionStore';
 
@@ -75,7 +74,6 @@ export default function Layout() {
             <span aria-hidden="true"> · </span>
             <span className="text-zinc-400">Body-type illustrations only, no listing photos</span>
           </p>
-          <VisitCounter className="text-zinc-500" />
         </div>
       </footer>
 

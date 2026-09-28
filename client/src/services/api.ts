@@ -98,6 +98,11 @@ export async function getSimilarCars(id: string, limit = 6): Promise<CarSpecs[]>
   return api.get(`${carPath(id)}/similar?limit=${limit}`);
 }
 
+/** The first picks of every curated shortlist, keyed by shortlist id. */
+export async function getCollectionPreviews(): Promise<Record<string, CarSpecs[]>> {
+  return api.get('/cars/collections/previews');
+}
+
 /** Same year/make/model EPA configs (other trims/transmissions). */
 export async function getSiblingConfigs(id: string, limit = 24): Promise<CarSpecs[]> {
   return api.get(`${carPath(id)}/siblings?limit=${limit}`);

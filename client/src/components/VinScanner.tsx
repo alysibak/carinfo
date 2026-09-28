@@ -200,7 +200,7 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
 
         {!ready && !error && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <p className="text-xs uppercase tracking-widest text-zinc-400">Starting camera…</p>
+            <p className="text-xs text-zinc-400">Starting camera…</p>
           </div>
         )}
 
@@ -212,7 +212,7 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
       </div>
 
       <div className="shrink-0 bg-black border-t border-zinc-800 px-5 py-4 flex items-center justify-between gap-4">
-        <p className="text-[11px] text-zinc-400 leading-relaxed">
+        <p className="text-xs text-zinc-400 leading-relaxed">
           Point at the VIN barcode — driver&rsquo;s door sticker or the plate at the base of the
           windshield.
         </p>
@@ -220,7 +220,7 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
           type="button"
           onClick={onClose}
           autoFocus
-          className="shrink-0 px-5 py-2.5 border border-zinc-600 text-xs font-semibold uppercase tracking-widest text-white hover:border-zinc-400 transition-colors"
+          className="shrink-0 px-5 py-2.5 border border-zinc-600 text-xs font-semibold text-white hover:border-zinc-400 transition-colors"
         >
           Cancel
         </button>

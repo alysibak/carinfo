@@ -4,19 +4,21 @@ import { useCarStore } from '../stores/carStore';
 import type { CarDashboard, CarSpecs } from '../types/car.types';
 import * as api from '../services/api';
 import { formatEngineForDetail, UNAVAILABLE_LABEL } from '../utils/dataValue';
-import { usesMpge, formatCarFuelLabel } from '../utils/fuelDisplay';
+import { formatCarFuelLabel } from '../utils/fuelDisplay';
 import {
   displayListingSubtitle,
   displayModelLabel,
   formatTransmissionLabel,
 } from '../utils/trimLabel';
+import { efficiencyOf, rangeKm } from '../utils/efficiency';
+import { formatMoney, formatMoneyRange, formatMoneyShort } from '../utils/money';
+import { summarizeComparison } from '../utils/compareSummary';
 import { fieldProvenanceSource } from '../utils/dataTrust';
 import VehiclePlaceholder from '../components/VehiclePlaceholder';
 import { StatusToast, LoadingScreen } from '../components/ui';
 import { usePageMeta } from '../utils/pageMeta';
 import { formatCompareIds, parseCompareIds } from '../utils/compareIds';
 import { differentiateCars } from '../utils/differentiateCars';
-import { DISPLAY_CURRENCY } from '../utils/currency';
 import { regionName, useRegionStore } from '../stores/regionStore';
 import { POPULAR_SEARCHES } from '../config/browseTaxonomy';
 
@@ -27,37 +29,121 @@ function isUnavailable(value: string | number): boolean {
 interface SpecRow {
   key: string;
   label: string;
+  /** A second line under the label: "CAD", "combined". */
+  hint?: string;
   provenanceKey?: string;
   isEstimatedRow?: boolean;
   getValue: (car: CarSpecs, dash: CarDashboard) => string | number;
+  /** A small line under the value: the EPA figure beside a converted one. */
+  getSub?: (car: CarSpecs, dash: CarDashboard) => string | null;
   getNumeric?: (car: CarSpecs, dash: CarDashboard) => number | null;
   higherIsBetter?: boolean;
+  /** Numbers only compare in one unit: litres against kilowatt-hours crowns nobody. */
+  unitOf?: (car: CarSpecs) => string | undefined;
 }
 
+/** Money rows: the page says once that they are estimates in CAD. */
+const MONEY_ROWS = new Set(['price', 'running', 'energy', 'fiveYear']);
+
+const bodyLabel = (style: string) =>
+  style === 'suv'
+    ? 'SUV'
+    : style === 'truck'
+      ? 'Pickup'
+      : style.charAt(0).toUpperCase() + style.slice(1);
+
+function efficiencyRow(
+  key: string,
+  label: string,
+  basis: 'combined' | 'city' | 'highway',
+): SpecRow {
+  return {
+    key,
+    label,
+    provenanceKey: 'fuelEconomy.combined',
+    getValue: (car) => efficiencyOf(car, basis)?.text ?? UNAVAILABLE_LABEL,
+    getSub: (car) => efficiencyOf(car, basis)?.epa || null,
+    getNumeric: (car) => efficiencyOf(car, basis)?.value ?? null,
+    higherIsBetter: false,
+    unitOf: (car) => efficiencyOf(car, basis)?.unit,
+  };
+}
+
+/**
+ * Rows in the order a decision is made: what it costs to buy and to keep,
+ * what it burns, how safe it is, then what it is. Values are in CAD and
+ * litres; the EPA's US-dollar fuel cost and its miles per gallon, the two
+ * figures a Canadian shopper cannot use, are gone or demoted to a sub-line.
+ */
 const ALL_SPECS: SpecRow[] = [
-  { key: 'year', label: 'YEAR', getValue: (car) => car.year },
-  { key: 'country', label: 'ORIGIN', getValue: (car) => car.countryOfOrigin || UNAVAILABLE_LABEL },
-  { key: 'bodyStyle', label: 'TYPE', getValue: (car) => car.bodyStyle.toUpperCase() },
   {
-    key: 'engine',
-    label: 'ENGINE',
-    getValue: (car) => {
-      const label = formatEngineForDetail(car.engine);
-      return label === UNAVAILABLE_LABEL ? UNAVAILABLE_LABEL : label.toUpperCase();
+    key: 'price',
+    label: 'Est. value',
+    provenanceKey: 'price.msrp',
+    getValue: (car, dash) => {
+      if (dash.ownership.unvalued) return `${dash.ownership.unvalued.label}: not valued`;
+      const { low, high, mid } = dash.ownership.marketValue;
+      if (low > 0 && high > 0) return formatMoneyRange(low, high);
+      if (mid > 0) return formatMoneyShort(mid);
+      return car.price?.msrp ? formatMoneyShort(car.price.msrp) : UNAVAILABLE_LABEL;
     },
+    getNumeric: (car, dash) =>
+      dash.ownership.unvalued ? null : dash.ownership.marketValue.mid || car.price?.msrp || null,
+    higherIsBetter: false,
   },
   {
-    key: 'horsepower',
-    label: 'POWER',
-    provenanceKey: 'engine.horsepower',
+    key: 'running',
+    label: 'Yearly cost',
+    hint: 'Fuel, insurance, upkeep',
+    provenanceKey: 'analytics.annualCost',
+    getValue: (_car, dash) =>
+      dash.annualRunningCost && !dash.ownership.unvalued
+        ? formatMoneyRange(dash.annualRunningCost.low, dash.annualRunningCost.high)
+        : UNAVAILABLE_LABEL,
+    getNumeric: (_car, dash) =>
+      dash.ownership.unvalued ? null : (dash.annualRunningCost?.mid ?? null),
+    higherIsBetter: false,
+  },
+  {
+    key: 'energy',
+    label: 'Fuel a year',
+    provenanceKey: 'analytics.annualCost',
+    getValue: (_car, dash) =>
+      dash.ownership.annualCost.energy != null && !dash.ownership.unvalued
+        ? formatMoney(dash.ownership.annualCost.energy)
+        : UNAVAILABLE_LABEL,
+    getNumeric: (_car, dash) =>
+      dash.ownership.unvalued ? null : (dash.ownership.annualCost.energy ?? null),
+    higherIsBetter: false,
+  },
+  {
+    key: 'fiveYear',
+    label: '5-year cost',
+    hint: 'Running costs and value lost',
+    provenanceKey: 'analytics.tco5Year',
+    getValue: (_car, dash) =>
+      dash.tco5Year && !dash.ownership.unvalued
+        ? formatMoneyRange(dash.tco5Year.low, dash.tco5Year.high)
+        : UNAVAILABLE_LABEL,
+    getNumeric: (_car, dash) => (dash.ownership.unvalued ? null : (dash.tco5Year?.mid ?? null)),
+    higherIsBetter: false,
+  },
+  efficiencyRow('fuelUse', 'Fuel use', 'combined'),
+  efficiencyRow('fuelCity', 'City', 'city'),
+  efficiencyRow('fuelHighway', 'Highway', 'highway'),
+  {
+    key: 'range',
+    label: 'EPA range',
+    provenanceKey: 'epa.rangeMiles',
     getValue: (car) =>
-      car.engine.horsepower != null ? `${car.engine.horsepower} HP` : UNAVAILABLE_LABEL,
-    getNumeric: (car) => car.engine.horsepower ?? null,
+      car.epa?.rangeMiles ? `${rangeKm(car.epa.rangeMiles)} km` : UNAVAILABLE_LABEL,
+    getSub: (car) => (car.epa?.rangeMiles ? `${Math.round(car.epa.rangeMiles)} mi` : null),
+    getNumeric: (car) => car.epa?.rangeMiles ?? null,
     higherIsBetter: true,
   },
   {
     key: 'safety',
-    label: 'NHTSA',
+    label: 'NHTSA rating',
     provenanceKey: 'safetyRating.overall',
     getValue: (car) =>
       car.safetyRating?.overall != null && car.safetyRating.overall > 0
@@ -67,31 +153,29 @@ const ALL_SPECS: SpecRow[] = [
     higherIsBetter: true,
   },
   {
-    key: 'torque',
-    label: 'TORQUE',
+    key: 'horsepower',
+    label: 'Power',
+    provenanceKey: 'engine.horsepower',
     getValue: (car) =>
-      car.engine.torque != null ? `${car.engine.torque} LB-FT` : UNAVAILABLE_LABEL,
+      car.engine.horsepower != null ? `${car.engine.horsepower} hp` : UNAVAILABLE_LABEL,
+    getNumeric: (car) => car.engine.horsepower ?? null,
+    higherIsBetter: true,
+  },
+  {
+    key: 'torque',
+    label: 'Torque',
+    getValue: (car) =>
+      car.engine.torque != null ? `${car.engine.torque} lb-ft` : UNAVAILABLE_LABEL,
     getNumeric: (car) => car.engine.torque ?? null,
     higherIsBetter: true,
   },
   {
-    key: 'fuelType',
-    label: 'FUEL',
-    getValue: (car) => formatCarFuelLabel(car).toUpperCase(),
-  },
-  {
-    key: 'transmission',
-    label: 'TRANS',
-    getValue: (car) => formatTransmissionLabel(car.transmission).toUpperCase(),
-  },
-  { key: 'driveType', label: 'DRIVE', getValue: (car) => car.driveType },
-  {
     key: 'zeroToSixty',
-    label: '0-60',
+    label: '0–60 mph',
     provenanceKey: 'performance.zeroToSixty',
     getValue: (car, dash) => {
-      if (dash.zeroToSixty) return `~${dash.zeroToSixty.value}s`;
-      if (car.performance?.zeroToSixty) return `${car.performance.zeroToSixty.toFixed(1)}S`;
+      if (dash.zeroToSixty) return `~${dash.zeroToSixty.value} s`;
+      if (car.performance?.zeroToSixty) return `${car.performance.zeroToSixty.toFixed(1)} s`;
       return UNAVAILABLE_LABEL;
     },
     getNumeric: (car, dash) => dash.zeroToSixty?.value ?? car.performance?.zeroToSixty ?? null,
@@ -99,76 +183,28 @@ const ALL_SPECS: SpecRow[] = [
     isEstimatedRow: true,
   },
   {
-    key: 'mpgCity',
-    label: 'EFF CITY',
-    provenanceKey: 'fuelEconomy.combined',
-    getValue: (car) =>
-      car.fuelEconomy.city
-        ? `${car.fuelEconomy.city} ${usesMpge(car.engine.fuelType) ? 'MPGe' : 'MPG'}`
-        : UNAVAILABLE_LABEL,
-    getNumeric: (car) => car.fuelEconomy.city ?? null,
-    higherIsBetter: true,
+    key: 'engine',
+    label: 'Engine',
+    getValue: (car) => formatEngineForDetail(car.engine),
   },
   {
-    key: 'mpgHighway',
-    label: 'EFF HWY',
-    provenanceKey: 'fuelEconomy.combined',
-    getValue: (car) =>
-      car.fuelEconomy.highway
-        ? `${car.fuelEconomy.highway} ${usesMpge(car.engine.fuelType) ? 'MPGe' : 'MPG'}`
-        : UNAVAILABLE_LABEL,
-    getNumeric: (car) => car.fuelEconomy.highway ?? null,
-    higherIsBetter: true,
+    key: 'transmission',
+    label: 'Gearbox',
+    getValue: (car) => formatTransmissionLabel(car.transmission),
   },
-  {
-    key: 'mpgCombined',
-    label: 'EFF AVG',
-    provenanceKey: 'fuelEconomy.combined',
-    getValue: (car) =>
-      car.fuelEconomy.combined
-        ? `${car.fuelEconomy.combined} ${usesMpge(car.engine.fuelType) ? 'MPGe' : 'MPG'}`
-        : UNAVAILABLE_LABEL,
-    getNumeric: (car) => car.fuelEconomy.combined ?? null,
-    higherIsBetter: true,
-  },
-  {
-    key: 'annualFuelCost',
-    label: 'EPA FUEL $/YR',
-    provenanceKey: 'epa.annualFuelCost',
-    getValue: (car) =>
-      car.epa?.annualFuelCost != null
-        ? `$${car.epa.annualFuelCost.toLocaleString()} USD (EPA)`
-        : UNAVAILABLE_LABEL,
-    getNumeric: (car) => car.epa?.annualFuelCost ?? null,
-    higherIsBetter: false,
-  },
+  { key: 'driveType', label: 'Drive', getValue: (car) => car.driveType },
+  { key: 'fuelType', label: 'Fuel', getValue: (car) => formatCarFuelLabel(car) },
+  { key: 'bodyStyle', label: 'Body', getValue: (car) => bodyLabel(car.bodyStyle) },
   {
     key: 'co2',
-    label: 'CO2 G/MI',
+    label: 'CO₂',
     provenanceKey: 'epa.co2',
-    getValue: (car) => (car.epa?.co2 != null ? `${car.epa.co2}` : UNAVAILABLE_LABEL),
+    getValue: (car) =>
+      car.epa?.co2 != null ? `${Math.round(car.epa.co2 / 1.609344)} g/km` : UNAVAILABLE_LABEL,
     getNumeric: (car) => car.epa?.co2 ?? null,
     higherIsBetter: false,
   },
-  {
-    key: 'price',
-    // The label already says "EST."; no separate row marker.
-    label: `EST. VALUE (${DISPLAY_CURRENCY})`,
-    provenanceKey: 'price.msrp',
-    getValue: (car, dash) => {
-      if (dash.ownership.unvalued) return `${dash.ownership.unvalued.label}: not valued`;
-      const mid = dash.ownership.marketValue.mid;
-      if (mid > 0) {
-        return `$${Math.round(mid).toLocaleString()} ${DISPLAY_CURRENCY} (est.)`;
-      }
-      return car.price?.msrp
-        ? `$${Math.round(car.price.msrp).toLocaleString()} ${DISPLAY_CURRENCY} (est.)`
-        : UNAVAILABLE_LABEL;
-    },
-    getNumeric: (car, dash) =>
-      dash.ownership.unvalued ? null : dash.ownership.marketValue.mid || car.price?.msrp || null,
-    higherIsBetter: false,
-  },
+  { key: 'country', label: 'Origin', getValue: (car) => car.countryOfOrigin || UNAVAILABLE_LABEL },
 ];
 
 export default function Compare() {
@@ -265,45 +301,51 @@ export default function Compare() {
   if (comparedCars.length === 0) {
     return (
       <div className="bg-black text-white">
-        <div className="page-wrap section-y">
+        <div className="page-wrap section-y max-w-3xl">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">Compare</h1>
-          <p className="text-sm text-zinc-400 mb-8 max-w-lg leading-relaxed">
-            Add up to 5 vehicles from a dossier or search card. Start with a name you already have,
-            or a situation.
+          <p className="text-[15px] text-zinc-300 mb-8 max-w-xl leading-relaxed">
+            Put up to five cars side by side: what each costs to buy and to run, what it burns, and
+            how NHTSA rated it. Add cars from any search result or car page.
           </p>
-          <div className="max-w-xl">
-            <div className="intent-row">
-              <p className="text-sm font-semibold text-white">I have names</p>
-              <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
-                {POPULAR_SEARCHES.map((s) => (
-                  <Link
-                    key={s.query}
-                    to={`/home?${new URLSearchParams({ q: s.query, sort: 'relevance' }).toString()}`}
-                    className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700"
-                  >
-                    {s.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-            <div className="intent-row">
-              <p className="text-sm font-semibold text-white">I don&apos;t yet</p>
+          <h2 className="eyebrow mb-3">Start with a name</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-8">
+            {POPULAR_SEARCHES.map((s) => (
               <Link
-                to="/browse"
-                className="text-sm text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700"
+                key={s.query}
+                to={`/home?${new URLSearchParams({ q: s.query, sort: 'relevance' }).toString()}`}
+                className="choice-tile"
               >
-                Start from a situation →
+                <span className="text-[15px] text-white">{s.label}</span>
+                <span aria-hidden className="text-zinc-500">
+                  →
+                </span>
               </Link>
-            </div>
-            <div className="intent-row border-b-0">
-              <p className="text-sm font-semibold text-white">I want the market</p>
-              <Link
-                to="/value-matrix"
-                className="text-sm text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700"
-              >
-                Open the value chart →
-              </Link>
-            </div>
+            ))}
+          </div>
+          <h2 className="eyebrow mb-3">Or start from</h2>
+          <div className="grid sm:grid-cols-2 gap-2">
+            <Link to="/browse" className="choice-tile">
+              <span>
+                <span className="block text-[15px] text-white">A situation</span>
+                <span className="block text-[13px] text-zinc-400">
+                  Daily driver, family hauler, first car
+                </span>
+              </span>
+              <span aria-hidden className="text-zinc-500">
+                →
+              </span>
+            </Link>
+            <Link to="/value-matrix" className="choice-tile">
+              <span>
+                <span className="block text-[15px] text-white">The whole market</span>
+                <span className="block text-[13px] text-zinc-400">
+                  Value against fuel use, on one chart
+                </span>
+              </span>
+              <span aria-hidden className="text-zinc-500">
+                →
+              </span>
+            </Link>
           </div>
         </div>
       </div>
@@ -315,35 +357,38 @@ export default function Compare() {
     dashboard: dashboardById.get(car.id),
   }));
 
-  const specs = ALL_SPECS.filter((spec) => {
-    const hasAnyData = pairs.some(({ car, dashboard }) => {
-      if (!dashboard) return false;
-      return !isUnavailable(spec.getValue(car, dashboard));
-    });
-    return hasAnyData;
-  });
+  const specs = ALL_SPECS.filter((spec) =>
+    pairs.some(({ car, dashboard }) => dashboard && !isUnavailable(spec.getValue(car, dashboard))),
+  );
 
   const bestByRow = new Map<string, number>();
   if (pairs.length > 1 && !loading) {
     for (const spec of specs) {
       if (!spec.getNumeric) continue;
-      const values = pairs
-        .filter((p) => p.dashboard)
+      const loaded = pairs.filter((p) => p.dashboard);
+      if (spec.unitOf && new Set(loaded.map((p) => spec.unitOf!(p.car))).size > 1) continue;
+      const values = loaded
         .map((p) => spec.getNumeric!(p.car, p.dashboard!))
         .filter((v): v is number => v != null);
       if (values.length < 2) continue;
-      const best = spec.higherIsBetter ? Math.max(...values) : Math.min(...values);
-      const worst = spec.higherIsBetter ? Math.min(...values) : Math.max(...values);
-      if (best !== worst) bestByRow.set(spec.key, best);
+      const sorted = [...values].sort((a, b) => (spec.higherIsBetter ? b - a : a - b));
+      const [best, next] = sorted;
+      // "Best" only where it is ahead by enough to matter: 203 hp against 200,
+      // or 7.6 L/100 km against 7.8, crowned a winner nobody would notice.
+      if (best !== next && Math.abs(best - next) / Math.abs(next || 1) >= 0.05) {
+        bestByRow.set(spec.key, best);
+      }
     }
   }
+
+  const summary = loading ? [] : summarizeComparison(pairs);
 
   function resolveProvenance(dashboard: CarDashboard, spec: SpecRow) {
     if (!spec.provenanceKey) return null;
     if (spec.provenanceKey === 'performance.zeroToSixty' && dashboard.zeroToSixty) {
       return dashboard.zeroToSixty.method === 'actual' ? 'curated' : 'estimated';
     }
-    if (spec.provenanceKey === 'epa.annualFuelCost' || spec.provenanceKey === 'epa.co2') {
+    if (spec.provenanceKey === 'epa.co2' || spec.provenanceKey === 'epa.rangeMiles') {
       return fieldProvenanceSource(dashboard, spec.provenanceKey) ?? 'epa';
     }
     return fieldProvenanceSource(dashboard, spec.provenanceKey);
@@ -354,14 +399,15 @@ export default function Compare() {
       <StatusToast message={toast} />
       <div className="border-b border-zinc-900">
         <div className="page-wrap py-4 sm:py-5">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Compare</h1>
-              <p className="text-xs sm:text-sm text-zinc-400 mt-0.5">
-                {comparedCars.length} vehicle{comparedCars.length !== 1 ? 's' : ''}
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Compare</h1>
+              <p className="text-sm text-zinc-400 mt-0.5">
+                {comparedCars.length} vehicle{comparedCars.length !== 1 ? 's' : ''} · estimates in
+                CAD for {regionName(region)}
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={async () => {
@@ -372,27 +418,20 @@ export default function Compare() {
                     setToast('Copy the URL from the address bar');
                   }
                 }}
-                className="text-xs sm:text-sm text-zinc-400 hover:text-white transition-colors shrink-0 min-h-[44px] inline-flex items-center"
+                className="btn-secondary !min-h-[40px] !py-2"
               >
-                Share
+                Copy link
               </button>
               <button
                 type="button"
                 onClick={clearComparison}
-                className="text-xs sm:text-sm text-zinc-400 hover:text-red-400 transition-colors shrink-0 min-h-[44px] inline-flex items-center"
+                className="btn-ghost min-h-[40px] hover:!text-red-300"
               >
                 Clear all
               </button>
             </div>
           </div>
-          {loadError && <p className="text-xs text-amber-300/90 mt-3">{loadError}</p>}
-          <p className="text-[10px] text-zinc-500 mt-3 leading-relaxed">
-            Estimated values use your cost region ({regionName(region)}), CAD. EPA fuel $/yr is a
-            US-dollar reference from EPA tests.{' '}
-            <Link to="/methodology" className="underline underline-offset-2 hover:text-zinc-300">
-              Methodology
-            </Link>
-          </p>
+          {loadError && <p className="text-sm text-amber-300/90 mt-3">{loadError}</p>}
         </div>
       </div>
 
@@ -400,55 +439,49 @@ export default function Compare() {
         {loading ? (
           <div className="text-center py-12" role="status">
             <div className="inline-block w-10 h-10 border-2 border-zinc-800 border-t-zinc-500 mb-3 animate-spin" />
-            <p className="text-[10px] tracking-widest text-zinc-400 uppercase">
-              Loading comparison data
-            </p>
+            <p className="text-sm text-zinc-400">Loading comparison</p>
           </div>
         ) : (
           <div className="max-w-7xl mx-auto min-w-0">
-            {diff.axes.length > 0 && comparedCars.length > 1 && (
-              <div className="mb-6 sm:mb-8 pb-5 sm:pb-6 border-b border-zinc-800">
-                <p className="text-xs uppercase tracking-wider text-zinc-500 mb-3">
-                  How they differ
-                </p>
-                <ul className="space-y-2 mb-5">
-                  {diff.axes.map((axis) => (
-                    <li key={axis} className="text-sm sm:text-base text-zinc-100 leading-snug">
-                      {axis}
+            {summary.length > 0 && (
+              <section className="mb-6 sm:mb-8 pb-5 sm:pb-6 border-b border-zinc-800">
+                <h2 className="eyebrow mb-3">In short</h2>
+                <ul className="space-y-2.5">
+                  {summary.map((line) => (
+                    <li key={line.carId} className="text-[15px] sm:text-base leading-snug">
+                      <span className="font-semibold text-white">{line.name}</span>
+                      <span className="text-zinc-500"> — </span>
+                      <span className="text-zinc-200">{line.sentence}</span>
                     </li>
                   ))}
                 </ul>
-                <ul className="space-y-3">
-                  {comparedCars.map((car) => (
-                    <li key={car.id} className="text-sm sm:text-base leading-snug">
-                      <span className="text-zinc-500">
-                        {car.year} {car.make} {displayModelLabel(car)} —{' '}
-                      </span>
-                      <span className="text-white font-medium">{diff.byCarId[car.id]?.edge}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                {diff.axes.length > 0 && (
+                  <p className="text-[13px] text-zinc-400 mt-4">{diff.axes.join(' · ')}</p>
+                )}
+              </section>
             )}
-            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-              <table className="w-full border-collapse min-w-[28rem]">
+            {/* A phone shows the label column and two cars at once; more scroll sideways
+                with the labels pinned. It used to cut the second car off mid-word. */}
+            <div className="overflow-x-auto -mx-4 sm:mx-0 overscroll-x-contain">
+              <table className="w-full border-collapse table-fixed min-w-full">
+                <colgroup>
+                  <col className="w-[5.75rem] sm:w-40" />
+                  {pairs.map(({ car }) => (
+                    <col key={car.id} className="w-[8.5rem] sm:w-auto" />
+                  ))}
+                </colgroup>
                 <thead>
                   <tr className="border-b border-zinc-700">
-                    <th className="px-2 sm:px-4 py-3 sm:py-4 text-left sticky left-0 bg-black z-10 min-w-[68px] sm:min-w-[100px]">
-                      <span className="text-[10px] sm:text-xs uppercase tracking-widest text-zinc-400">
-                        Spec
-                      </span>
+                    <th className="sticky left-0 z-10 bg-black px-3 sm:px-4 py-3 text-left align-bottom">
+                      <span className="sr-only">Spec</span>
                     </th>
                     {pairs.map(({ car }) => (
                       <th
                         key={car.id}
-                        className="px-2 sm:px-4 py-3 sm:py-4 min-w-[120px] sm:min-w-[180px] border-l border-zinc-800 align-top"
+                        className="px-2 sm:px-4 py-3 border-l border-zinc-800 align-top text-left sm:text-center font-normal"
                       >
-                        <Link
-                          to={`/car/${car.id}`}
-                          className="block text-center group/col hover:opacity-90 transition-opacity"
-                        >
-                          <div className="relative h-10 sm:h-12 mb-2 border border-zinc-800 overflow-hidden mx-auto max-w-[100px] sm:max-w-[120px]">
+                        <Link to={`/car/${car.id}`} className="block group/col">
+                          <div className="relative h-9 sm:h-12 mb-2 overflow-hidden max-w-[96px] sm:max-w-[120px] sm:mx-auto">
                             <VehiclePlaceholder
                               car={car}
                               compact
@@ -456,17 +489,11 @@ export default function Compare() {
                               className="!absolute inset-0"
                             />
                           </div>
-                          <p className="text-lg sm:text-2xl md:text-3xl font-black text-zinc-300 tabular-nums group-hover/col:text-white transition-colors">
-                            {car.year}
-                          </p>
-                          <h2 className="text-xs sm:text-base font-black tracking-tight uppercase mt-1 sm:mt-2 group-hover/col:underline underline-offset-4 decoration-zinc-600 break-words">
-                            {car.make}
+                          <h2 className="text-sm sm:text-base font-semibold text-white leading-snug group-hover/col:underline underline-offset-4 decoration-zinc-600 break-words">
+                            {car.year} {car.make} {displayModelLabel(car)}
                           </h2>
-                          <p className="text-xs sm:text-sm font-medium text-zinc-400 break-words">
-                            {displayModelLabel(car)}
-                          </p>
                           {displayListingSubtitle(car) && (
-                            <p className="text-xs text-zinc-500 mt-1 line-clamp-2">
+                            <p className="text-xs text-zinc-400 mt-0.5 line-clamp-2">
                               {displayListingSubtitle(car)}
                             </p>
                           )}
@@ -474,7 +501,8 @@ export default function Compare() {
                         <button
                           type="button"
                           onClick={() => removeCarFromComparison(car.id)}
-                          className="mt-2 sm:mt-3 px-2 py-2 min-h-[40px] text-[10px] tracking-widest text-zinc-500 hover:text-red-400 transition-colors uppercase w-full"
+                          className="mt-1.5 min-h-[36px] text-xs text-zinc-400 hover:text-red-300 transition-colors"
+                          aria-label={`Remove the ${car.year} ${car.make} ${displayModelLabel(car)}`}
                         >
                           Remove
                         </button>
@@ -485,20 +513,28 @@ export default function Compare() {
                 <tbody>
                   {specs.map((spec) => (
                     <tr key={spec.key} className="border-b border-zinc-900">
-                      <td className="px-2 sm:px-4 py-3 sticky left-0 z-10 bg-black border-r border-zinc-800">
-                        <span className="text-xs tracking-widest text-zinc-400 uppercase block">
+                      <th
+                        scope="row"
+                        className="sticky left-0 z-10 bg-black border-r border-zinc-800 px-3 sm:px-4 py-3 text-left font-normal align-top"
+                      >
+                        <span className="block text-[13px] text-zinc-300 leading-snug">
                           {spec.label}
                         </span>
-                        {spec.isEstimatedRow && (
-                          <span className="text-[10px] text-zinc-600 mt-0.5 block">est.</span>
+                        {spec.hint && (
+                          <span className="hidden sm:block text-xs text-zinc-500 mt-0.5">
+                            {spec.hint}
+                          </span>
                         )}
-                      </td>
+                        {spec.isEstimatedRow && (
+                          <span className="block text-xs text-zinc-500 mt-0.5">est.</span>
+                        )}
+                      </th>
                       {pairs.map(({ car, dashboard }) => {
                         if (!dashboard) {
                           return (
                             <td
                               key={car.id}
-                              className="px-2 sm:px-4 py-3 text-center border-l border-zinc-800 text-zinc-400 text-xs"
+                              className="px-2 sm:px-4 py-3 border-l border-zinc-800 text-zinc-400 text-xs"
                             >
                               …
                             </td>
@@ -509,40 +545,41 @@ export default function Compare() {
                         const isBest = best != null && numeric != null && numeric === best;
                         const raw = spec.getValue(car, dashboard);
                         const missing = isUnavailable(raw);
+                        const sub = missing ? null : spec.getSub?.(car, dashboard);
                         const prov = resolveProvenance(dashboard, spec);
                         return (
                           <td
                             key={car.id}
-                            className={`px-2 sm:px-4 py-3 text-center border-l border-zinc-800 ${
+                            className={`px-2 sm:px-4 py-3 border-l border-zinc-800 align-top sm:text-center ${
                               isBest && !missing ? 'compare-win' : ''
                             }`}
                           >
-                            <span
-                              className={`text-sm inline-flex flex-col items-center gap-1 ${
-                                missing
-                                  ? 'text-zinc-400 text-xs italic'
-                                  : isBest
-                                    ? 'font-black text-white tabular-nums'
-                                    : numeric != null
-                                      ? 'font-medium tabular-nums text-white'
-                                      : 'text-zinc-300'
-                              }`}
-                            >
-                              <span>
-                                {raw}
-                                {isBest && !missing && (
-                                  <span className="ml-1.5 text-[9px] text-emerald-400 align-middle not-italic font-bold uppercase tracking-wider bg-emerald-950/50 px-1.5 py-0.5 border border-emerald-800/40">
+                            {missing ? (
+                              <span className="text-xs text-zinc-500 italic">Not on file</span>
+                            ) : (
+                              <>
+                                <span
+                                  className={`text-sm sm:text-[15px] tabular-nums break-words ${
+                                    isBest ? 'font-bold text-white' : 'text-zinc-100'
+                                  }`}
+                                >
+                                  {raw}
+                                </span>
+                                {isBest && (
+                                  <span className="ml-1.5 inline-block text-xs font-semibold text-accent align-middle">
                                     Best
                                   </span>
                                 )}
-                              </span>
-                              {prov === 'estimated' &&
-                                !missing &&
-                                // Values that carry their own "(est.)" need no second mark.
-                                !String(raw).endsWith('(est.)') && (
-                                  <span className="text-[10px] text-zinc-600">est.</span>
+                                {sub && (
+                                  <span className="block text-xs text-zinc-500 mt-0.5">{sub}</span>
                                 )}
-                            </span>
+                                {prov === 'estimated' &&
+                                  !MONEY_ROWS.has(spec.key) &&
+                                  !spec.isEstimatedRow && (
+                                    <span className="block text-xs text-zinc-500 mt-0.5">est.</span>
+                                  )}
+                              </>
+                            )}
                           </td>
                         );
                       })}
@@ -551,6 +588,13 @@ export default function Compare() {
                 </tbody>
               </table>
             </div>
+            <p className="text-xs text-zinc-500 mt-4 leading-relaxed">
+              Values and costs are estimates in CAD for {regionName(region)}; fuel use and CO₂ are
+              EPA ratings, converted to litres and grams per kilometre.{' '}
+              <Link to="/methodology" className="underline underline-offset-2 hover:text-zinc-300">
+                How we estimate
+              </Link>
+            </p>
           </div>
         )}
       </div>

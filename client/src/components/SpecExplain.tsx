@@ -52,7 +52,7 @@ export function SpecExplain({ glossaryKey }: { glossaryKey: SpecGlossaryKey }) {
         onClick={toggle}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
-        className={`relative w-4 h-4 border text-[10px] shrink-0 transition-colors before:absolute before:-inset-2 before:content-[''] ${
+        className={`relative w-4 h-4 border text-xs shrink-0 transition-colors before:absolute before:-inset-2 before:content-[''] ${
           open
             ? 'border-zinc-400 text-white bg-zinc-800'
             : 'border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500'
@@ -66,7 +66,7 @@ export function SpecExplain({ glossaryKey }: { glossaryKey: SpecGlossaryKey }) {
           <div
             id={panelId}
             role="dialog"
-            className="fixed z-[200] w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-full px-3 py-2.5 bg-zinc-950 border border-zinc-700 shadow-xl text-[11px] leading-relaxed"
+            className="fixed z-[200] w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-full px-3 py-2.5 bg-zinc-950 border border-zinc-700 shadow-xl text-xs leading-relaxed"
             style={{ top: coords.top, left: coords.left }}
           >
             <p className="text-zinc-300">{what}</p>
