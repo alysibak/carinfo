@@ -2,6 +2,7 @@ import type { ProvenanceSource } from '../types/car.types';
 
 const LABELS: Record<ProvenanceSource, string> = {
   epa: 'EPA',
+  nrcan: 'NRCan',
   nhtsa: 'NHTSA',
   estimated: 'Est.',
   curated: 'Curated',
@@ -9,6 +10,7 @@ const LABELS: Record<ProvenanceSource, string> = {
 
 const STYLES: Record<ProvenanceSource, string> = {
   epa: 'bg-transparent text-zinc-300 border-zinc-600',
+  nrcan: 'bg-transparent text-zinc-300 border-zinc-600',
   nhtsa: 'bg-transparent text-zinc-400 border-zinc-600',
   estimated: 'bg-transparent text-zinc-400 border-zinc-700 border-dashed',
   curated: 'bg-transparent text-zinc-400 border-zinc-600',
@@ -27,13 +29,15 @@ export default function ProvenanceChip({ source, className = '' }: ProvenanceChi
       title={
         source === 'epa'
           ? 'EPA verified via FuelEconomy.gov'
-          : source === 'nhtsa'
-            ? 'NHTSA verified'
-            : source === 'estimated'
-              ? 'Estimated value'
-              : source === 'curated'
-                ? "EPA test-car rated horsepower, or the manufacturer's rating (not FuelEconomy.gov)"
-                : 'Curated data'
+          : source === 'nrcan'
+            ? "Natural Resources Canada's fuel consumption ratings (a car EPA never rated)"
+            : source === 'nhtsa'
+              ? 'NHTSA verified'
+              : source === 'estimated'
+                ? 'Estimated value'
+                : source === 'curated'
+                  ? "EPA test-car rated horsepower, or the manufacturer's rating (not FuelEconomy.gov)"
+                  : 'Curated data'
       }
     >
       {LABELS[source]}

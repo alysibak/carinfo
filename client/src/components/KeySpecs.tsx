@@ -312,7 +312,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if ((isEv || isFcev) && hasNumericValue(rangeMi)) {
     pushIf(fuel, {
       key: 'epaRange',
-      label: 'EPA range',
+      label: car.provenance?.['epa.rangeMiles'] === 'nrcan' ? 'Range' : 'EPA range',
       value: `${Math.round(rangeMi!)} mi`,
       glossary: 'epaRange',
     });

@@ -1,4 +1,4 @@
-export type ProvenanceSource = 'epa' | 'nhtsa' | 'estimated' | 'curated';
+export type ProvenanceSource = 'epa' | 'nrcan' | 'nhtsa' | 'estimated' | 'curated';
 export type Provenance = Record<string, ProvenanceSource>;
 
 /** Forced induction. Naturally aspirated engines carry no value. */

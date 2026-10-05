@@ -182,6 +182,7 @@ Slug derived from EPA record, e.g. `acura-nsx-1995-nsx-2mode-clkup-automatic-4-s
 | `server/data/nhtsa-by-car-id.json`            | `id`                | Pre-resolved NHTSA per vehicle                 | New/untracked                |
 | `server/data/raw/vehicles.csv`                | —                   | EPA source CSV                                 | Gitignored                   |
 | `server/data/raw/nhtsa-enrichment-cache.json` | —                   | NHTSA API cache                                | Gitignored                   |
+| `server/data/raw/nrcan/*.csv`                 | —                   | NRCan fuel consumption ratings                 | Gitignored                   |
 | `server/data/raw/test-car-data/*.csv`         | —                   | EPA test car list per year                     | Gitignored                   |
 | `server/data/manual-prices.json`              | —                   | Optional MSRP overrides keyed by car id        | Not present (build skips it) |
 
@@ -244,7 +245,7 @@ Types live in `client/src/types/car.types.ts` and `server/src/types/car.types.ts
 
 **ShoppingSegment:** `hot-hatch` · `sport-compact` · `sport-sedan` · `muscle` · `sports-car` · `supercar` · `luxury` · `mainstream` · `utility` · `ev` · `truck`
 
-**ProvenanceSource:** `epa` · `nhtsa` · `estimated` · `curated`
+**ProvenanceSource:** `epa` · `nrcan` · `nhtsa` · `estimated` · `curated`
 
 ---
 
@@ -272,7 +273,7 @@ npm run build-enrichment --workspace=server
 
 ### Refresh on GitHub (`.github/workflows/epa-refresh.yml`)
 
-Every Monday, on demand from the Actions tab, and whenever the workflow file changes, GitHub's runners add the cars EPA has listed since the last refresh (`backfill-epa-variants`), check fuel types against EPA, rebuild horsepower from EPA's test-car lists, fetch NHTSA ratings for the last two model years, rebuild enrichment and run the tests. The result is force-pushed to the `epa-refresh` branch with `epa-refresh-report.txt` (what was added and left out, by model) and the EPA file it read (`server/data/raw/vehicles.csv.gz`); a run on `main` opens a pull request when cars were added. Leave the report and the `.gz` out when merging.
+Every Monday, on demand from the Actions tab, and whenever the workflow file changes, GitHub's runners add the cars EPA has listed since the last refresh (`backfill-epa-variants`), refresh the Canadian cars from NRCan (`import-nrcan`), check fuel types against EPA, rebuild horsepower from EPA's test-car lists, fetch NHTSA ratings for the last two model years, rebuild enrichment and run the tests. The result is force-pushed to the `epa-refresh` branch with `epa-refresh-report.txt` (what was added and left out, by model) and the EPA file it read (`server/data/raw/vehicles.csv.gz`); a run on `main` opens a pull request when cars were added. Leave the report and the `.gz` out when merging.
 
 ### `build-verified-database.ts`
 
@@ -318,6 +319,16 @@ Reads `vehicles.csv` columns:
 - EV: `comb08`, `city08`, `highway08`, `combE`, `range`, `charge120`, `charge240`
 
 Writes `epa-enrichment.json`, `nhtsa-safety.json`, `nhtsa-by-car-id.json`. Ratings in the raw NHTSA cache add to and update the committed `nhtsa-safety.json`, so a cache that holds only recent years keeps every other year's ratings.
+
+### `import-nrcan.ts` (Canadian cars EPA never rated)
+
+Natural Resources Canada rates every car sold in Canada, so it has the ones EPA never saw: models built for Canada (Acura 1.6EL, 1.7EL and CSX, Chevrolet Orlando, Pontiac Firefly, Sunrunner and Pursuit, Mercedes A 250 and B-Class, Nissan Micra and X-Trail, VW City Golf and City Jetta, smart fortwo CDI, Kia EV4), years a model stayed on sale here after it left the US (2016 Venza, 2014–17 Rondo, 2013–14 Trax, 2007–09 Montana SV6, 2022 CX-3, 2024 MX-30, 2020 e-Golf) and Canadian names (Kia Magentis for the Optima, Mitsubishi RVR for the Outlander Sport, Nissan Qashqai for the Rogue Sport, Chrysler Grand Caravan for the Voyager, the Chrysler-badged Intrepid and Neon). NRCan's files also repeat most of EPA's catalogue under other spellings ("A8L", "TJ" for the Wrangler, "C1500 Silverado"), so only the models listed in `scripts/lib/nrcan.ts` are imported, each checked against `cars.json`; a row EPA has since listed is skipped and reported.
+
+Its figures are stored in EPA's units (L/100 km as mpg to a tenth, so the litres survive the trip back; Le/100 km as MPGe; g/km as g/mi) and credited to `nrcan`, which the site shows as an "NRCan" chip. IDs follow EPA's pattern with `-ca` at the end. Re-running replaces the Canadian listings with NRCan's current figures and never touches an EPA listing; run it after `backfill-epa-variants`.
+
+```bash
+npm run import-nrcan --workspace=server -- [path/to/folder] [--dry-run]   # downloads from open.canada.ca unless given a folder
+```
 
 ### `build-nhtsa-backfill.ts`
 
@@ -814,6 +825,7 @@ Landing detects 17-char VIN in search → redirects to `/vin`.
 | Source      | Meaning              |
 | ----------- | -------------------- |
 | `epa`       | EPA FuelEconomy.gov  |
+| `nrcan`     | Natural Resources Canada's fuel consumption ratings (cars EPA never rated) |
 | `nhtsa`     | NHTSA crash tests    |
 | `curated`   | EPA test-car or manufacturer HP |
 | `estimated` | Model/heuristic      |
@@ -1120,6 +1132,7 @@ No `.env` required for local development of the public catalog.
 | `build-nhtsa-backfill`                    | NHTSA safety backfill                                                                                                                                                                                                                                              |
 | `reconcile-fuel-types`                    | Re-derive fuel types from EPA's `vehicles.csv` and fix `cars.json` in place (`-- --write`)                                                                                                                                                                         |
 | `backfill-epa-variants`                   | Add EPA listings `cars.json` is missing (other engines, Special Purpose SUVs/minivans, next model year) without touching existing IDs, and record aspiration. Downloads EPA's current file unless given one: `-- [path/to/vehicles.csv] [--dry-run]`. Reports, by model, what it adds, what it leaves out and why (before 1995, specialty conversions, no fuel economy), and cars whose EPA row is gone, so `--dry-run` checks the site is missing nothing; then run `build-enrichment -- --csv=…` and `build-runtime-db` |
+| `import-nrcan`                            | Add the Canadian cars EPA never rated from NRCan's fuel consumption ratings (`scripts/lib/nrcan.ts` lists them); downloads NRCan's current files unless given a folder: `-- [path/to/folder] [--dry-run]`. Run after `backfill-epa-variants` |
 | `build-runtime-db`                        | Enrich + normalize into `cars-ready.json` (format 2: provenance maps interned)                                                                                                                                                                                     |
 
 ## Dependencies

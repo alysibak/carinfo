@@ -1,9 +1,11 @@
 name: EPA refresh
 
 # Adds the cars EPA has listed since cars.json was last refreshed, with their
-# horsepower and NHTSA ratings. The data scripts download from fueleconomy.gov,
-# www.epa.gov and api.nhtsa.gov, which GitHub's runners reach. The result goes
-# to the epa-refresh branch for review, never straight to main.
+# horsepower and NHTSA ratings, and refreshes the Canadian cars EPA never
+# rated from Natural Resources Canada. The data scripts download from
+# fueleconomy.gov, www.epa.gov, api.nhtsa.gov and open.canada.ca, which
+# GitHub's runners reach. The result goes to the epa-refresh branch for
+# review, never straight to main.
 on:
   schedule:
     - cron: '23 9 * * 1' # Mondays: EPA adds certifications all year
@@ -44,6 +46,10 @@ jobs:
       # adds, what it leaves out and why, and any car whose EPA row is gone.
       - name: Add EPA's new listings
         run: npm run backfill-epa-variants --workspace=server | tee epa-refresh-report.txt
+
+      # After EPA's: a Canadian row EPA has since listed is skipped, not doubled.
+      - name: Canadian cars from NRCan
+        run: npm run import-nrcan --workspace=server | tee -a epa-refresh-report.txt
 
       - name: Check fuel types against EPA
         run: npm run reconcile-fuel-types --workspace=server | tee -a epa-refresh-report.txt

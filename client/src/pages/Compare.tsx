@@ -159,7 +159,7 @@ const ALL_SPECS: SpecRow[] = [
   efficiencyRow('fuelHighway', 'Highway', 'highway'),
   {
     key: 'range',
-    label: 'EPA range',
+    label: 'Range',
     provenanceKey: 'epa.rangeMiles',
     getValue: (car) =>
       car.epa?.rangeMiles ? `${rangeKm(car.epa.rangeMiles)} km` : UNAVAILABLE_LABEL,

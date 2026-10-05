@@ -40,7 +40,7 @@ const FUEL_TYPES = new Set([
   'natural gas',
 ]);
 const TRANSMISSIONS = new Set(['automatic', 'manual', 'cvt', 'dual-clutch']);
-const PROVENANCE_SOURCES = new Set(['epa', 'nhtsa', 'estimated', 'curated']);
+const PROVENANCE_SOURCES = new Set(['epa', 'nrcan', 'nhtsa', 'estimated', 'curated']);
 
 const CURRENT_YEAR = new Date().getFullYear();
 const MIN_YEAR = 1984; // fueleconomy.gov coverage starts here

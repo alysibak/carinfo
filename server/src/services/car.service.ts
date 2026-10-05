@@ -2377,7 +2377,7 @@ function computeStatistics() {
   const bodyStyles: Record<string, number> = {};
   const fuelTypes: Record<string, number> = {};
   const countries: Record<string, number> = {};
-  const provenanceCounts = { epa: 0, nhtsa: 0, estimated: 0, curated: 0 };
+  const provenanceCounts = { epa: 0, nrcan: 0, nhtsa: 0, estimated: 0, curated: 0 };
   let withEpaMpg = 0;
   let withNhtsaSafety = 0;
   let withEstimatedPrice = 0;

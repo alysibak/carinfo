@@ -104,15 +104,18 @@ export function buildKeyFigures(dashboard: CarDashboard): KeyFigure[] {
     epa: { ...car.epa, kWhPer100Mi: evCharge?.kWhPer100Mi ?? car.epa?.kWhPer100Mi },
   });
   const rangeMiles = evCharge?.rangeMiles ?? car.epa?.rangeMiles;
+  // EPA's record, or Natural Resources Canada's for a car EPA never rated.
+  const recordSource: ProvenanceSource =
+    car.provenance?.['fuelEconomy.combined'] === 'nrcan' ? 'nrcan' : 'epa';
 
   if (isEv && hasNumericValue(rangeMiles)) {
     figures.push({
       id: 'range',
-      label: 'EPA range',
+      label: recordSource === 'epa' ? 'EPA range' : 'Range',
       value: String(rangeKm(rangeMiles!)),
       unit: 'km',
       detail: `${Math.round(rangeMiles!)} mi on a full charge`,
-      source: 'epa',
+      source: recordSource,
       glossaryKey: 'range',
     });
   }
@@ -130,7 +133,7 @@ export function buildKeyFigures(dashboard: CarDashboard): KeyFigure[] {
       detail: efficiency.epa
         ? `${gasMode ? 'In gas mode, ' : ''}${efficiency.epa} combined`
         : undefined,
-      source: 'epa',
+      source: recordSource,
       glossaryKey: 'efficiency',
       comparison:
         cls?.fuel && className && cls.fuel.unit === efficiency.unit
@@ -184,7 +187,7 @@ export function buildKeyFigures(dashboard: CarDashboard): KeyFigure[] {
         id: 'engine',
         label: 'Engine',
         value: engine,
-        source: 'epa',
+        source: recordSource,
         glossaryKey: 'engine',
       });
     }

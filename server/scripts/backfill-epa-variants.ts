@@ -185,8 +185,12 @@ async function main(): Promise<void> {
   if (named.length)
     console.log(`[backfill] left out from ${MIN_MODEL_YEAR} on, by model:\n${byModel(named)}`);
 
-  // EPA withdraws or renumbers a row now and then; the car's figures are then unverified.
-  const gone = file.cars.filter((car) => car.epaId == null || !rowByEpaId.has(String(car.epaId)));
+  // EPA withdraws or renumbers a row now and then; the car's figures are then
+  // unverified. Canadian listings (import-nrcan) never had an EPA row.
+  const gone = file.cars.filter(
+    (car) =>
+      car.provenance?.make !== 'nrcan' && (car.epaId == null || !rowByEpaId.has(String(car.epaId))),
+  );
   if (gone.length) {
     console.log(
       `[backfill] ${gone.length} cars on file have no row in this EPA file:\n${gone.map((car) => `  ${car.id} (EPA ${car.epaId ?? 'none'})`).join('\n')}`,

@@ -6,7 +6,7 @@ import { formatAnnualEnergyCost } from './fuelLabels';
 export type TrustFilter = 'all' | 'verified' | 'estimated';
 
 export function isVerifiedSource(source: ProvenanceSource): boolean {
-  return source === 'epa' || source === 'nhtsa' || source === 'curated';
+  return source === 'epa' || source === 'nrcan' || source === 'nhtsa' || source === 'curated';
 }
 
 /** Single map from provenance field key to human label for Data Sources and related trust UI. */
@@ -23,7 +23,7 @@ export const PROVENANCE_FIELD_LABELS: Record<string, string> = {
   'epa.charge120Hours': '120V charge time',
   'epa.charge240Hours': '240V charge time',
   'epa.co2': 'CO₂ emissions',
-  'epa.rangeMiles': 'EPA range',
+  'epa.rangeMiles': 'Range',
   'epa.kWhPer100Mi': 'Energy consumption',
   'fuelEconomy.city': 'City fuel economy',
   'fuelEconomy.highway': 'Highway fuel economy',

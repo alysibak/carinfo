@@ -814,8 +814,10 @@ describe('car.service natural language search', () => {
     const litres = searchCars({ query: 'suv under 8 l/100 km', limit: 500 });
     expect(litres.interpretation?.fuelEconomy).toEqual({ max: 8, unit: 'L/100 km' });
     expect(litres.total).toBeGreaterThan(20);
-    // 8 L/100 km is 29.4 MPG: a 29 MPG SUV burns 8.1.
-    expect(litres.results.every((c) => (c.fuelEconomy.combined ?? 0) >= 30)).toBe(true);
+    // 8 L/100 km is 29.4 MPG: a 29 MPG SUV burns 8.1. Canadian ratings carry
+    // tenths (an RVR 4WD's 29.6 MPG is 7.95 L), so test the litres as shown.
+    const litresShown = (mpg = 0) => Math.round((235.215 / mpg) * 10) / 10;
+    expect(litres.results.every((c) => litresShown(c.fuelEconomy.combined) <= 8)).toBe(true);
     expect(litres.results.filter((c) => c.engine.fuelType === 'electric')).toEqual([]);
     expect(litres.results.every((c) => c.bodyStyle === 'suv')).toBe(true);
 

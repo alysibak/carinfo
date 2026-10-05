@@ -42,7 +42,8 @@ function figuresFor(car: CarSpecs): Figure[] {
   const figures: Figure[] = [];
   const isEv = car.engine.fuelType === 'electric';
   if (isEv && car.epa?.rangeMiles) {
-    figures.push({ label: 'EPA range', value: String(rangeKm(car.epa.rangeMiles)), unit: 'km' });
+    const label = car.provenance?.['epa.rangeMiles'] === 'nrcan' ? 'Range' : 'EPA range';
+    figures.push({ label, value: String(rangeKm(car.epa.rangeMiles)), unit: 'km' });
   } else {
     const efficiency = efficiencyOf(car);
     const [number, ...unit] = efficiency?.text.split(' ') ?? [];
