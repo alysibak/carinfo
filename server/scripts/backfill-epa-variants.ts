@@ -12,7 +12,11 @@
  * (lib/epa-row.ts configurationKey), and records turbo/supercharger on every
  * car from EPA's flags.
  *
- * Usage (EPA's vehicles.csv from https://fueleconomy.gov/feg/epadata/vehicles.csv):
+ * It reports, by model, what it adds, which EPA rows it leaves out and why,
+ * and any car on file whose EPA row is gone, so --dry-run answers "is every
+ * car EPA lists on the site?".
+ *
+ * Usage: downloads EPA's current vehicles.csv, or reads the one given:
  *   tsx scripts/backfill-epa-variants.ts [path/to/vehicles.csv] [--dry-run]
  */
 import { createReadStream, readFileSync, writeFileSync } from 'fs';
@@ -21,12 +25,17 @@ import { fileURLToPath } from 'url';
 import { parse } from 'csv-parse';
 import type { Car } from '../src/types/car.types.js';
 import { estimatePriceMsrp } from '../src/utils/ownership-economics.js';
+import { downloadEpaCsv } from './lib/epa-csv.js';
 import {
   aspirationOf,
   baseCarId,
   configurationKey,
   type EpaRow,
+  exclusionReason,
+  type ExclusionReason,
   mapEpaRow,
+  maxModelYear,
+  MIN_MODEL_YEAR,
   variantCarId,
 } from './lib/epa-row.js';
 
@@ -34,14 +43,42 @@ const scriptDir = dirname(fileURLToPath(import.meta.url));
 const CARS_PATH = resolve(scriptDir, '..', 'data', 'cars.json');
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
-const csvPath = resolve(
-  args.find((a) => !a.startsWith('--')) ?? join(scriptDir, '..', 'data', 'raw', 'vehicles.csv'),
-);
+const csvArg = args.find((a) => !a.startsWith('--'));
 
 interface CarsFile {
   cars: Car[];
   lastUpdated: string;
   sources?: string[];
+}
+
+interface Listed {
+  make: string;
+  model: string;
+  year: number | string;
+}
+
+/** One line per model with its years ("  Toyota GR86: 2026"), to check a gap by name. */
+function byModel(items: Listed[]): string {
+  const years = new Map<string, Set<number>>();
+  for (const { make, model, year } of items) {
+    const name = `${make.trim()} ${model.trim()}`;
+    const set = years.get(name) ?? new Set<number>();
+    set.add(Number(year));
+    years.set(name, set);
+  }
+  return [...years.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([name, set]) => `  ${name}: ${[...set].sort((a, b) => a - b).join(' ')}`)
+    .join('\n');
+}
+
+function byYear(items: Listed[]): string {
+  const counts = new Map<number, number>();
+  for (const { year } of items) counts.set(Number(year), (counts.get(Number(year)) ?? 0) + 1);
+  return [...counts.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([year, n]) => `${year}:${n}`)
+    .join(' ');
 }
 
 function readRows(path: string): Promise<EpaRow[]> {
@@ -56,10 +93,17 @@ function readRows(path: string): Promise<EpaRow[]> {
 }
 
 async function main(): Promise<void> {
+  const csvPath = csvArg
+    ? resolve(csvArg)
+    : await downloadEpaCsv(join(scriptDir, '..', 'data', 'raw'));
   const file = JSON.parse(readFileSync(CARS_PATH, 'utf8')) as CarsFile;
   const rows = await readRows(csvPath);
   const rowByEpaId = new Map(rows.map((row) => [row.id, row]));
-  console.log(`[backfill] ${rows.length} EPA rows, ${file.cars.length} cars on file`);
+  const rowYears = rows.map((row) => parseInt(row.year, 10)).filter((y) => !Number.isNaN(y));
+  const newestRowId = Math.max(...rows.map((row) => parseInt(row.id, 10) || 0));
+  console.log(
+    `[backfill] ${csvPath}: ${rows.length} EPA rows, model years ${Math.min(...rowYears)}–${Math.max(...rowYears)}, newest row ID ${newestRowId}; ${file.cars.length} cars on file`,
+  );
 
   // 1. Existing cars: record forced induction, which the importer never read.
   let aspirated = 0;
@@ -93,17 +137,24 @@ async function main(): Promise<void> {
 
   // 3. Every other listing that is a configuration not yet on file.
   const added: Car[] = [];
-  const reasons = { duplicate: 0, excluded: 0 };
+  let duplicates = 0;
+  const excluded: Record<ExclusionReason, EpaRow[]> = {
+    'before-first-year': [],
+    'future-year': [],
+    specialty: [],
+    'no-fuel-economy': [],
+  };
   for (const row of rows) {
     if (onFile.has(row.id)) continue;
     const car = mapEpaRow(row);
     if (!car) {
-      reasons.excluded++;
+      // mapEpaRow leaves a row out exactly when exclusionReason gives a reason.
+      excluded[exclusionReason(row) as ExclusionReason].push(row);
       continue;
     }
     const configs = configsById.get(car.id);
     if (configs?.has(configurationKey(row))) {
-      reasons.duplicate++;
+      duplicates++;
       continue;
     }
     const id = ids.has(car.id) ? variantCarId(row) : car.id;
@@ -118,17 +169,29 @@ async function main(): Promise<void> {
     note(row);
   }
 
-  const byYear = new Map<number, number>();
-  for (const car of added) byYear.set(car.year, (byYear.get(car.year) ?? 0) + 1);
   console.log(
-    `[backfill] ${added.length} listings added (${reasons.duplicate} emissions/test duplicates and ${reasons.excluded} out-of-scope rows skipped); aspiration recorded on ${aspirated} existing cars`,
+    `[backfill] ${added.length} listings added (${duplicates} emissions/test duplicates of listings on file skipped); aspiration recorded on ${aspirated} existing cars`,
   );
+  if (added.length) {
+    console.log(`[backfill] added by year: ${byYear(added)}`);
+    console.log(`[backfill] added, by model:\n${byModel(added)}`);
+  }
+
+  const outOfYears = excluded['before-first-year'];
   console.log(
-    `[backfill] added by year: ${[...byYear.entries()]
-      .sort((a, b) => a[0] - b[0])
-      .map(([year, n]) => `${year}:${n}`)
-      .join(' ')}`,
+    `[backfill] left out: ${outOfYears.length} rows before ${MIN_MODEL_YEAR}${outOfYears.length ? ` (${byYear(outOfYears)})` : ''}, ${excluded['future-year'].length} after ${maxModelYear()}, ${excluded.specialty.length} hearse/limousine/livery/taxi/postal conversions, ${excluded['no-fuel-economy'].length} with no fuel economy figures`,
   );
+  const named = [...excluded['future-year'], ...excluded.specialty, ...excluded['no-fuel-economy']];
+  if (named.length)
+    console.log(`[backfill] left out from ${MIN_MODEL_YEAR} on, by model:\n${byModel(named)}`);
+
+  // EPA withdraws or renumbers a row now and then; the car's figures are then unverified.
+  const gone = file.cars.filter((car) => car.epaId == null || !rowByEpaId.has(String(car.epaId)));
+  if (gone.length) {
+    console.log(
+      `[backfill] ${gone.length} cars on file have no row in this EPA file:\n${gone.map((car) => `  ${car.id} (EPA ${car.epaId ?? 'none'})`).join('\n')}`,
+    );
+  }
 
   if (dryRun) {
     console.log('[backfill] --dry-run: cars.json left unchanged');

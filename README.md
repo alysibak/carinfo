@@ -272,7 +272,7 @@ npm run build-enrichment --workspace=server
 
 ### `build-verified-database.ts`
 
-- Downloads `https://fueleconomy.gov/feg/epadata/vehicles.csv`
+- Downloads EPA's current `https://fueleconomy.gov/feg/epadata/vehicles.csv` on every run (`--offline` reads the copy saved in `server/data/raw/`, which lacks any car EPA added since)
 - Row mapping lives in `scripts/lib/epa-row.ts`, shared with the backfill below
 - Maps EPA `VClass` → bodyStyle (sedan, suv, truck, wagon, minivan, van, coupe); EPA's
   "Special Purpose Vehicle" class (most 1990s–2000s SUVs and minivans) is read from the
@@ -291,7 +291,7 @@ npm run build-verified-db:fast --workspace=server   # --skip-nhtsa
 npm run build-verified-db --workspace=server
 ```
 
-Flags: `--skip-nhtsa`, `--nhtsa-from=2011`, `--limit=N`
+Flags: `--skip-nhtsa`, `--nhtsa-from=2011`, `--limit=N`, `--offline`
 
 ### `build-horsepower-enrichment.ts`
 
@@ -1115,7 +1115,7 @@ No `.env` required for local development of the public catalog.
 | `build-enrichment`                        | EPA extras (GHG, PHEV modes) and NHTSA indexes                                                                                                                                                                                                                     |
 | `build-nhtsa-backfill`                    | NHTSA safety backfill                                                                                                                                                                                                                                              |
 | `reconcile-fuel-types`                    | Re-derive fuel types from EPA's `vehicles.csv` and fix `cars.json` in place (`-- --write`)                                                                                                                                                                         |
-| `backfill-epa-variants`                   | Add EPA listings `cars.json` is missing (other engines, Special Purpose SUVs/minivans, next model year) without touching existing IDs, and record aspiration. `-- path/to/vehicles.csv [--dry-run]`; then run `build-enrichment -- --csv=…` and `build-runtime-db` |
+| `backfill-epa-variants`                   | Add EPA listings `cars.json` is missing (other engines, Special Purpose SUVs/minivans, next model year) without touching existing IDs, and record aspiration. Downloads EPA's current file unless given one: `-- [path/to/vehicles.csv] [--dry-run]`. Reports, by model, what it adds, what it leaves out and why (before 1995, specialty conversions, no fuel economy), and cars whose EPA row is gone, so `--dry-run` checks the site is missing nothing; then run `build-enrichment -- --csv=…` and `build-runtime-db` |
 | `build-runtime-db`                        | Enrich + normalize into `cars-ready.json` (format 2: provenance maps interned)                                                                                                                                                                                     |
 
 ## Dependencies

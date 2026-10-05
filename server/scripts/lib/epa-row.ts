@@ -329,37 +329,52 @@ export function configurationKey(row: EpaRow): string {
   ].join('|');
 }
 
-export function mapEpaRow(row: EpaRow, maxYear = maxModelYear()): Car | null {
+function fuelEconomyOf(row: EpaRow, fuelType: Car['engine']['fuelType']): Car['fuelEconomy'] {
+  if (fuelType === 'electric') {
+    const combined = parseNum(row.combE);
+    return { city: parseNum(row.cityE), highway: combined, combined };
+  }
+  return {
+    city: parseNum(row.city08),
+    highway: parseNum(row.highway08),
+    combined:
+      fuelType === 'plug-in hybrid' && row.phevBlended === 'true'
+        ? (parseNum(row.combA08) ?? parseNum(row.comb08))
+        : parseNum(row.comb08),
+  };
+}
+
+export type ExclusionReason = 'before-first-year' | 'future-year' | 'specialty' | 'no-fuel-economy';
+
+/**
+ * Why the import leaves an EPA row out, or undefined when it lists it: a model
+ * year before MIN_MODEL_YEAR or past next year, a hearse, limousine, livery,
+ * taxi or postal conversion (specialPurposeBodyStyle), or no fuel economy
+ * figures to show.
+ */
+export function exclusionReason(
+  row: EpaRow,
+  maxYear = maxModelYear(),
+): ExclusionReason | undefined {
   const year = parseInt(row.year, 10);
-  if (Number.isNaN(year) || year < MIN_MODEL_YEAR || year > maxYear) return null;
+  if (Number.isNaN(year) || year < MIN_MODEL_YEAR) return 'before-first-year';
+  if (year > maxYear) return 'future-year';
+  if (!mapVClassToBodyStyle(row.VClass || '', row.model || '')) return 'specialty';
+  const { city, highway, combined } = fuelEconomyOf(row, mapEpaFuelType(row));
+  if (!combined && !city && !highway) return 'no-fuel-economy';
+  return undefined;
+}
 
-  const bodyStyle = mapVClassToBodyStyle(row.VClass || '', row.model || '');
-  if (!bodyStyle) return null;
+export function mapEpaRow(row: EpaRow, maxYear = maxModelYear()): Car | null {
+  if (exclusionReason(row, maxYear)) return null;
 
+  const year = parseInt(row.year, 10);
+  const bodyStyle = mapVClassToBodyStyle(row.VClass || '', row.model || '') as BodyStyle;
   const fuelType = mapEpaFuelType(row);
   const provenance: Provenance = {};
   const trim = buildTrim(row);
   const id = baseCarId(row);
-
-  let city: number | undefined;
-  let highway: number | undefined;
-  let combined: number | undefined;
-
-  if (fuelType === 'electric') {
-    city = parseNum(row.cityE);
-    combined = parseNum(row.combE);
-    highway = combined;
-  } else if (fuelType === 'plug-in hybrid' && row.phevBlended === 'true') {
-    city = parseNum(row.city08);
-    highway = parseNum(row.highway08);
-    combined = parseNum(row.combA08) ?? parseNum(row.comb08);
-  } else {
-    city = parseNum(row.city08);
-    highway = parseNum(row.highway08);
-    combined = parseNum(row.comb08);
-  }
-
-  if (!combined && !city && !highway) return null;
+  const { city, highway, combined } = fuelEconomyOf(row, fuelType);
 
   const displacement = parseNum(row.displ);
   const cylinders = parseInt(row.cylinders, 10);
