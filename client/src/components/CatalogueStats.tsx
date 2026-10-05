@@ -23,8 +23,8 @@ function yearOr(value: unknown, fallback: number): number {
 /**
  * What is on file, from the live counts (GET /cars/stats/overview), so the
  * numbers move with the data rather than going stale in the copy. The big
- * number is labelled for what it counts: EPA lists each engine, gearbox and
- * drive of a model year separately, so 35,000 "cars" would promise more than
+ * number is labelled for what it counts: EPA (and NRCan, for the Canadian
+ * cars) lists each engine, gearbox and drive of a model year separately, so 35,000 "cars" would promise more than
  * the 1,000-odd models a shopper thinks of as cars.
  *
  * Rounded figures hold the space until the counts arrive, so nothing below
@@ -47,7 +47,7 @@ export default function CatalogueStats({ className = '' }: { className?: string 
   }, []);
 
   const figures = [
-    { value: countOr(stats?.totalCars, '35,000+'), label: 'versions EPA tested' },
+    { value: countOr(stats?.totalCars, '35,000+'), label: 'versions tested' },
     { value: countOr(stats?.totalModels, '1,000+'), label: 'models' },
     { value: countOr(stats?.totalMakes, '90+'), label: 'makes' },
     {
