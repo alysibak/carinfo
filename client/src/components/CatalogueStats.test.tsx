@@ -26,7 +26,7 @@ describe('CatalogueStats', () => {
     renderStats();
     expect(await screen.findByText('35,823')).toBeInTheDocument();
     expect(screen.getByText('1,096')).toBeInTheDocument();
-    expect(screen.getByText('versions EPA tested')).toBeInTheDocument();
+    expect(screen.getByText('versions tested')).toBeInTheDocument();
     expect(screen.getByText('1995–2027')).toBeInTheDocument();
   });
 
