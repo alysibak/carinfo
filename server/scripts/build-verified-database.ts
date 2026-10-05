@@ -213,6 +213,7 @@ async function enrichWithNhtsa(cars: Car[]): Promise<void> {
 function reportCoverage(cars: Car[]): void {
   const provenanceCounts: Record<ProvenanceSource, number> = {
     epa: 0,
+    nrcan: 0,
     nhtsa: 0,
     estimated: 0,
     curated: 0,

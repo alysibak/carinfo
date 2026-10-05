@@ -10,6 +10,7 @@ import { SpecLabel } from './SpecExplain';
 
 const SOURCE_LABEL = {
   epa: 'EPA',
+  nrcan: 'NRCan',
   nhtsa: 'NHTSA',
   curated: 'Curated',
   estimated: 'Estimated',
