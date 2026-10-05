@@ -1,0 +1,103 @@
+name: EPA refresh
+
+# Adds the cars EPA has listed since cars.json was last refreshed, with their
+# horsepower and NHTSA ratings. The data scripts download from fueleconomy.gov,
+# www.epa.gov and api.nhtsa.gov, which GitHub's runners reach. The result goes
+# to the epa-refresh branch for review, never straight to main.
+on:
+  schedule:
+    - cron: '23 9 * * 1' # Mondays: EPA adds certifications all year
+  workflow_dispatch:
+  # Also when this file changes, so an edit can be tried from its own branch.
+  push:
+    paths: ['.github/workflows/epa-refresh.yml']
+
+concurrency:
+  group: epa-refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+defaults:
+  run:
+    shell: bash # -eo pipefail, so a failing script fails its step through `tee`
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  refresh:
+    name: Refresh from EPA and NHTSA
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+
+      # Downloads EPA's current vehicles.csv and reports, by model, what it
+      # adds, what it leaves out and why, and any car whose EPA row is gone.
+      - name: Add EPA's new listings
+        run: npm run backfill-epa-variants --workspace=server | tee epa-refresh-report.txt
+
+      - name: Check fuel types against EPA
+        run: npm run reconcile-fuel-types --workspace=server | tee -a epa-refresh-report.txt
+
+      - name: Horsepower from EPA's test-car lists
+        run: npm run build-horsepower --workspace=server -- --to=$(( $(date +%Y) + 1 ))
+
+      # The last two model years only: NHTSA rates new models through the
+      # year, and a pass back to 2008 takes hours. build-enrichment keeps the
+      # committed ratings for every other year.
+      - name: NHTSA ratings for recent years
+        run: npm run build-nhtsa-backfill --workspace=server -- --from=$(( $(date +%Y) - 1 ))
+
+      - name: Build enrichment
+        run: npm run build-enrichment --workspace=server | tee -a epa-refresh-report.txt
+
+      # New cars can move counts the tests pin; the outcome goes in the
+      # commit message for the reviewer rather than stopping the refresh.
+      - name: Tests
+        id: tests
+        continue-on-error: true
+        run: |
+          npm run build-runtime-db --workspace=server
+          npm test
+
+      - name: Push to the epa-refresh branch
+        run: |
+          gzip -9 -k server/data/raw/vehicles.csv
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -B epa-refresh
+          git add epa-refresh-report.txt server/data/cars.json server/data/epa-enrichment.json \
+            server/data/horsepower-enrichment.json server/data/nhtsa-safety.json \
+            server/data/nhtsa-by-car-id.json
+          # EPA's file as read, so the refresh can be checked against it.
+          git add -f server/data/raw/vehicles.csv.gz
+          git commit -m "Refresh from EPA and NHTSA ($(date -u +%F))" \
+            -m "Tests: ${{ steps.tests.outcome }}. Report: epa-refresh-report.txt."
+          git push -f origin epa-refresh
+          { echo '```'; cat epa-refresh-report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open a pull request
+        # A scheduled run's event carries no repository, so name the branch.
+        if: github.ref_name == 'main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet "origin/$GITHUB_REF_NAME" -- server/data/cars.json; then
+            echo 'No new cars.'
+          elif gh pr view epa-refresh --json state -q .state 2>/dev/null | grep -q OPEN; then
+            echo 'The epa-refresh pull request is already open, now with this run.'
+          else
+            gh pr create --base "$GITHUB_REF_NAME" --head epa-refresh \
+              --title 'Refresh from EPA and NHTSA' \
+              --body 'New EPA listings with their horsepower and NHTSA ratings. epa-refresh-report.txt names what was added and left out. Bump the model-year and count tests if they fail, and drop epa-refresh-report.txt and the vehicles.csv.gz before merging.' \
+              || echo '::warning::Could not open a pull request (Settings > Actions > General lets workflows create them); the epa-refresh branch has the refresh.'
+          fi

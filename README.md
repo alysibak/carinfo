@@ -270,6 +270,10 @@ npm run build-enrichment --workspace=server
 
 **Restart the dev server** after rebuilding enrichment files.
 
+### Refresh on GitHub (`.github/workflows/epa-refresh.yml`)
+
+Every Monday, on demand from the Actions tab, and whenever the workflow file changes, GitHub's runners add the cars EPA has listed since the last refresh (`backfill-epa-variants`), check fuel types against EPA, rebuild horsepower from EPA's test-car lists, fetch NHTSA ratings for the last two model years, rebuild enrichment and run the tests. The result is force-pushed to the `epa-refresh` branch with `epa-refresh-report.txt` (what was added and left out, by model) and the EPA file it read (`server/data/raw/vehicles.csv.gz`); a run on `main` opens a pull request when cars were added. Leave the report and the `.gz` out when merging.
+
 ### `build-verified-database.ts`
 
 - Downloads EPA's current `https://fueleconomy.gov/feg/epadata/vehicles.csv` on every run (`--offline` reads the copy saved in `server/data/raw/`, which lacks any car EPA added since)
@@ -313,7 +317,7 @@ Reads `vehicles.csv` columns:
 - PHEV: `comb08`, `combA08`, `city08`, `cityA08`, `highway08`, `highwayA08`, `rangeA`, `charge240`, `phevComb`
 - EV: `comb08`, `city08`, `highway08`, `combE`, `range`, `charge120`, `charge240`
 
-Writes `epa-enrichment.json`, `nhtsa-safety.json`, `nhtsa-by-car-id.json`.
+Writes `epa-enrichment.json`, `nhtsa-safety.json`, `nhtsa-by-car-id.json`. Ratings in the raw NHTSA cache add to and update the committed `nhtsa-safety.json`, so a cache that holds only recent years keeps every other year's ratings.
 
 ### `build-nhtsa-backfill.ts`
 
