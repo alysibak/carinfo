@@ -178,21 +178,21 @@ export interface SafetyEntry {
 }
 
 function buildNhtsaSafety(): Record<string, SafetyEntry> {
+  // The committed ratings are the base, and the raw cache adds to and updates
+  // them. A cache can hold only some years (the EPA refresh workflow fetches
+  // the last two), and written alone it would drop every other year's ratings.
+  const kept = existsSync(NHTSA_OUT)
+    ? (JSON.parse(readFileSync(NHTSA_OUT, 'utf8')) as Record<string, SafetyEntry>)
+    : {};
   if (!existsSync(CACHE_PATH)) {
-    // Without the raw cache, keep the committed ratings rather than writing an
-    // empty file over them (and re-resolve them onto the current cars).
-    if (existsSync(NHTSA_OUT)) {
-      const kept = JSON.parse(readFileSync(NHTSA_OUT, 'utf8')) as Record<string, SafetyEntry>;
-      console.warn(
-        `No NHTSA cache found — reusing ${Object.keys(kept).length} committed make|model|year ratings.`,
-      );
-      return kept;
-    }
-    console.warn('No NHTSA cache found — skipping safety enrichment.');
-    return {};
+    console.warn(
+      `No NHTSA cache found — reusing ${Object.keys(kept).length} committed make|model|year ratings.`,
+    );
+    return kept;
   }
   const cache = JSON.parse(readFileSync(CACHE_PATH, 'utf8')) as Record<string, CacheEntry>;
-  const out: Record<string, SafetyEntry> = {};
+  const out: Record<string, SafetyEntry> = { ...kept };
+  let fromCache = 0;
   for (const [key, entry] of Object.entries(cache)) {
     const s = entry.safetyRating;
     if (!s || s.overall == null || s.overall <= 0) continue;
@@ -201,8 +201,11 @@ function buildNhtsaSafety(): Record<string, SafetyEntry> {
     if (s.side && s.side > 0) safety.side = s.side;
     if (s.rollover && s.rollover > 0) safety.rollover = s.rollover;
     out[key] = safety;
+    fromCache++;
   }
-  console.log(`NHTSA safety: ${Object.keys(out).length} make|model|year combos with real ratings`);
+  console.log(
+    `NHTSA safety: ${Object.keys(out).length} make|model|year combos with real ratings (${fromCache} from the cache, ${Object.keys(out).length - Object.keys(kept).length} new)`,
+  );
   return out;
 }
 
