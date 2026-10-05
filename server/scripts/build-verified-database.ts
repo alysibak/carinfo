@@ -2,10 +2,13 @@
  * Build verified vehicle database from EPA FuelEconomy.gov bulk CSV + optional NHTSA enrichment.
  *
  * Usage:
- *   tsx scripts/build-verified-database.ts [--skip-nhtsa] [--nhtsa-from=2011] [--limit=N]
+ *   tsx scripts/build-verified-database.ts [--skip-nhtsa] [--nhtsa-from=2011] [--limit=N] [--offline]
+ *
+ * Downloads EPA's current vehicles.csv; --offline reads the copy an earlier
+ * run saved in data/raw/ instead.
  */
 
-import { createReadStream, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { createReadStream, existsSync, readFileSync, writeFileSync } from 'fs';
 import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { parse } from 'csv-parse';
@@ -22,16 +25,13 @@ import {
   maxModelYear,
   variantCarId,
 } from './lib/epa-row.js';
-import { fetchBuffer } from './lib/fetch.js';
+import { downloadEpaCsv } from './lib/epa-csv.js';
 import { fetchNhtsaSafety } from './lib/nhtsa-safety.js';
 
-const EPA_CSV_URL = 'https://fueleconomy.gov/feg/epadata/vehicles.csv';
-const EPA_ZIP_URL = 'https://fueleconomy.gov/feg/epadata/vehicles.csv.zip';
 const __scriptDir = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = resolve(__scriptDir, '..', 'data');
 const RAW_DIR = join(DATA_DIR, 'raw');
 const CSV_PATH = join(RAW_DIR, 'vehicles.csv');
-const ZIP_PATH = join(RAW_DIR, 'vehicles.csv.zip');
 const OUTPUT_PATH = join(DATA_DIR, 'cars.json');
 const NHTSA_CACHE_PATH = join(RAW_DIR, 'nhtsa-enrichment-cache.json');
 /** Optional MSRP overrides keyed by car id. File is not required; missing is a no-op. */
@@ -46,6 +46,7 @@ type NhtsaCache = Record<string, NhtsaCacheEntry>;
 
 const args = process.argv.slice(2);
 const skipNhtsa = args.includes('--skip-nhtsa');
+const offline = args.includes('--offline');
 const limitArg = args.find((a) => a.startsWith('--limit='));
 const limit = limitArg ? parseInt(limitArg.split('=')[1], 10) : undefined;
 const nhtsaFromArg = args.find((a) => a.startsWith('--nhtsa-from='));
@@ -55,39 +56,19 @@ function setProv(provenance: Provenance, field: string, source: ProvenanceSource
   provenance[field] = source;
 }
 
-/** The full EPA file is tens of megabytes; allow a slow link, not a hung one. */
-const DOWNLOAD_TIMEOUT_MS = 5 * 60_000;
-
-async function ensureEpaCsv(): Promise<void> {
-  mkdirSync(RAW_DIR, { recursive: true });
-  if (existsSync(CSV_PATH)) return;
-
-  console.log('Downloading EPA vehicles.csv...');
-  try {
-    writeFileSync(CSV_PATH, await fetchBuffer(EPA_CSV_URL, DOWNLOAD_TIMEOUT_MS));
-    return;
-  } catch {
-    console.log('Direct CSV unavailable, trying zip...');
-  }
-
-  writeFileSync(ZIP_PATH, await fetchBuffer(EPA_ZIP_URL, DOWNLOAD_TIMEOUT_MS));
-
-  const { execSync } = await import('child_process');
-  const isWin = process.platform === 'win32';
-  if (isWin) {
-    execSync(
-      `powershell -Command "Expand-Archive -Path '${ZIP_PATH}' -DestinationPath '${RAW_DIR}' -Force"`,
-      { stdio: 'inherit' },
-    );
-  } else {
-    execSync(`unzip -o "${ZIP_PATH}" -d "${RAW_DIR}"`, { stdio: 'inherit' });
-  }
+async function epaCsv(): Promise<string> {
+  if (!offline) return downloadEpaCsv(RAW_DIR);
+  if (!existsSync(CSV_PATH)) throw new Error(`--offline, but ${CSV_PATH} is missing`);
+  console.log(
+    `Reading the saved ${CSV_PATH} (--offline): it lacks any car EPA added after it was saved`,
+  );
+  return CSV_PATH;
 }
 
-async function parseEpaCsv(): Promise<EpaRow[]> {
+async function parseEpaCsv(csvPath: string): Promise<EpaRow[]> {
   return new Promise((resolvePromise, reject) => {
     const rows: EpaRow[] = [];
-    createReadStream(CSV_PATH)
+    createReadStream(csvPath)
       .pipe(parse({ columns: true, skip_empty_lines: true, relax_column_count: true }))
       .on('data', (row: EpaRow) => rows.push(row))
       .on('end', () => resolvePromise(rows))
@@ -281,9 +262,7 @@ function reportCoverage(cars: Car[]): void {
 
 async function main(): Promise<void> {
   console.log('Building verified database from EPA data...');
-  await ensureEpaCsv();
-
-  const rows = await parseEpaCsv();
+  const rows = await parseEpaCsv(await epaCsv());
   console.log(`Parsed ${rows.length} EPA rows`);
 
   const entries: { row: EpaRow; car: Car }[] = [];

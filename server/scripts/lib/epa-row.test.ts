@@ -5,6 +5,7 @@ import {
   baseCarId,
   configurationKey,
   type EpaRow,
+  exclusionReason,
   lookupCountry,
   mapEpaRow,
   mapVClassToBodyStyle,
@@ -90,6 +91,47 @@ describe('EPA row mapping', () => {
     expect(mapEpaRow(row({ year: '2027' }), 2027)).not.toBeNull();
     expect(mapEpaRow(row({ year: '2028' }), 2027)).toBeNull();
     expect(mapEpaRow(row({ year: '1994' }), 2027)).toBeNull();
+  });
+
+  it('says why it leaves a row out, exactly when it does', () => {
+    const cases = [
+      [row({}), undefined],
+      [row({ year: '1994' }), 'before-first-year'],
+      [row({ year: '2028' }), 'future-year'],
+      [row({ VClass: 'Special Purpose Vehicle 2WD', model: 'XTS Hearse' }), 'specialty'],
+      [row({ city08: '0', highway08: '0', comb08: '0' }), 'no-fuel-economy'],
+      // An EV's figures are its MPGe columns; the gasoline ones read 0.
+      [
+        row({
+          fuelType: 'Electricity',
+          fuelType1: 'Electricity',
+          atvType: 'EV',
+          city08: '0',
+          highway08: '0',
+          comb08: '0',
+          cityE: '0',
+          combE: '0',
+        }),
+        'no-fuel-economy',
+      ],
+      [
+        row({
+          fuelType: 'Electricity',
+          fuelType1: 'Electricity',
+          atvType: 'EV',
+          city08: '0',
+          highway08: '0',
+          comb08: '0',
+          cityE: '0',
+          combE: '112',
+        }),
+        undefined,
+      ],
+    ] as const;
+    for (const [epaRow, reason] of cases) {
+      expect(exclusionReason(epaRow, 2027), `${epaRow.year} ${epaRow.model}`).toBe(reason);
+      expect(mapEpaRow(epaRow, 2027) === null).toBe(reason !== undefined);
+    }
   });
 
   it('knows the home country of every make on file', () => {
