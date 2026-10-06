@@ -4,6 +4,8 @@ import {
   canadianModelOf,
   cleanModel,
   driveFromName,
+  epaSpelling,
+  listedByEpa,
   mapNrcanRow,
   type NrcanRow,
   transmissionDescription,
@@ -49,11 +51,16 @@ describe('NRCan rows', () => {
     expect(cleanModel('Pursuit #')).toBe('Pursuit');
     expect(cleanModel('Intrepid ES (Autostick)')).toBe('Intrepid ES');
     expect(cleanModel('CX-3 (SIL)')).toBe('CX-3');
+    expect(cleanModel('iX xDrive40 (20" Wheels)')).toBe('iX xDrive40 (20 inch Wheels)');
   });
 
   it('imports only the listed models, in their Canadian years', () => {
     expect(canadianModelOf(row({}))?.why).toBe('Canada-only Acura');
     expect(canadianModelOf(row({ 'Model year': '2012' }))).toBeUndefined();
+    // A flex-fuel car's E85 rating: the site lists it by its gasoline one.
+    const montana = { 'Model year': '2007', Make: 'Pontiac', Model: 'Montana SV6 FFV' };
+    expect(canadianModelOf(row({ ...montana, 'Fuel type': 'X' }))).toBeDefined();
+    expect(canadianModelOf(row({ ...montana, 'Fuel type': 'E' }))).toBeUndefined();
     // NRCan's spellings of cars EPA lists are not imported.
     expect(canadianModelOf(row({ Make: 'Audi', Model: 'A8L' }))).toBeUndefined();
     expect(
@@ -144,5 +151,71 @@ describe('NRCan rows', () => {
     expect(a.id).toBe('acura-csx-2006-csx-automatic-s5-ca');
     expect(b.id).toBe('acura-csx-2006-csx-automatic-s5-ca-2-4l');
     expect(c.id).toBe('acura-csx-2006-csx-automatic-s5-ca-2');
+  });
+
+  it("reads a plug-in hybrid's gas and electric modes, as EPA's enrichment gives them", () => {
+    const gle: NrcanRow = {
+      'Model year': '2024',
+      Make: 'Mercedes-Benz',
+      Model: 'GLE 450e 4MATIC SUV ',
+      'Vehicle class': 'Sport utility vehicle: Standard',
+      'Motor (kW)': '100',
+      'Engine size (L)': '2.0',
+      Cylinders: '4',
+      Transmission: 'A9',
+      'Fuel type 1': 'B/Z*',
+      'Combined Le/100 km': '4.1 ([36.4 kWh + 0.0 L]/100 km)',
+      'Range 1 (km)': '77',
+      'Recharge time (h)': '2.75',
+      'Fuel type 2': 'Z',
+      'City (L/100 km)': '10.5',
+      'Highway (L/100 km)': '9.1',
+      'Combined (L/100 km)': '9.9',
+      'Range 2 (km)': '663',
+      'CO2 emissions (g/km)': '63',
+    };
+    const car = mapNrcanRow(gle, canadianModelOf(gle)!);
+    expect(car.engine).toMatchObject({ fuelType: 'plug-in hybrid', displacement: 2, cylinders: 4 });
+    expect(car.fuelEconomy.combined).toBe(23.8); // gas mode: 235.215 / 9.9
+    expect(car.epa).toMatchObject({
+      rangeMiles: 48,
+      charge240Hours: 2.75,
+      phev: { gasMpg: 24, electricMpge: 57, electricRangeMi: 48, chargeL2Hours: 2.75 },
+    });
+    expect(car.driveType).toBe('AWD');
+  });
+
+  it("takes NRCan's spelling of a make and gives the car EPA's", () => {
+    const ineos = row({
+      'Model year': '2026',
+      Make: 'INEOS',
+      Model: 'Grenadier Station Wagon',
+      'Vehicle class': 'Sport utility vehicle: Standard',
+    });
+    const entry = canadianModelOf(ineos)!;
+    expect(mapNrcanRow(ineos, entry)).toMatchObject({ make: 'INEOS Automotive', driveType: '4WD' });
+  });
+
+  it('stops taking a year once EPA lists the model', () => {
+    const gr86 = row({ 'Model year': '2026', Make: 'Toyota', Model: 'GR86' });
+    const entry = canadianModelOf(gr86)!;
+    expect(listedByEpa(entry, 'GR86', ['GR Corolla', 'Camry'])).toBe(false);
+    expect(listedByEpa(entry, 'GR86', ['GR 86'])).toBe(true);
+    // Without EPA's spelling, a model of the same first word: "B 250" is not EPA's "B250e".
+    const b250 = row({ 'Model year': '2016', Make: 'Mercedes-Benz', Model: 'B 250' });
+    expect(listedByEpa(canadianModelOf(b250)!, 'B 250', ['B250e'])).toBe(false);
+    expect(listedByEpa(canadianModelOf(b250)!, 'B 250', ['B250 4matic'])).toBe(true);
+  });
+
+  it("names a year from NRCan as EPA names the model's other years", () => {
+    expect(epaSpelling('GR86', ['GR 86', 'GR Corolla'])).toBe('GR 86');
+    expect(epaSpelling('S 580e 4MATIC Sedan', ['S580 4matic', 'S580e 4matic'])).toBe(
+      'S580e 4matic',
+    );
+    // The SUV keeps EPA's "(SUV)" where EPA has one, rather than the sedan's name.
+    expect(epaSpelling('EQE 350 4MATIC SUV', ['EQE 350 4matic', 'EQE 350 4matic (SUV)'])).toBe(
+      'EQE 350 4matic (SUV)',
+    );
+    expect(epaSpelling('Qashqai', ['Rogue Sport'])).toBeUndefined();
   });
 });

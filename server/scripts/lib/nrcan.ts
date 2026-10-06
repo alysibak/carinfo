@@ -4,7 +4,9 @@
  * the Chevrolet Orlando, the Pontiac Firefly), years a model stayed on sale
  * here after it left the US (a 2016 Venza, a 2014-17 Rondo), and the names
  * Canadians bought some cars under (a Kia Magentis is an Optima, a Nissan
- * Qashqai a Rogue Sport).
+ * Qashqai a Rogue Sport). It also fills the model years EPA's file is
+ * missing though NRCan has them (a 2026 GR86, a 2023 Range Rover), until EPA
+ * lists them.
  *
  * NRCan rates every car sold in Canada, so its files repeat most of EPA's
  * catalogue under other spellings ("A8L" for "A8 L", "TJ" for the Wrangler,
@@ -17,11 +19,14 @@
 import type { BodyStyle, Car, DriveType, FuelType, Provenance } from '../../src/types/car.types.js';
 import { lookupCountry, mapTransmission, mapVClassToBodyStyle, slugify } from './epa-row.js';
 
-/** One row of NRCan's conventional-vehicle or battery-electric CSVs, keyed by header. */
+/** One row of NRCan's conventional, battery-electric or plug-in hybrid CSVs, keyed by header. */
 export type NrcanRow = Record<string, string>;
 
 export interface CanadianModel {
+  /** The make as the site (and EPA) spells it. */
   make: string;
+  /** NRCan's spelling of the make, where it differs ("INEOS"). */
+  nrcanMake?: string;
   /** NRCan's model names this entry takes. */
   model: RegExp;
   years: [number, number];
@@ -29,8 +34,33 @@ export interface CanadianModel {
   drive?: DriveType;
   /** The body, where NRCan's class reads it as another (it files small crossovers as wagons). */
   body?: BodyStyle;
+  /**
+   * EPA's name for the model, for a year EPA's file is missing: once EPA
+   * lists the model that year, NRCan's row is skipped. Without one, a row is
+   * skipped when EPA lists a model of the same make and year by the same
+   * first word ("B 250" against EPA's "B250e" is another car).
+   */
+  epaModel?: RegExp;
   /** Why EPA does not list it, for the report and the README. */
   why: string;
+}
+
+/** A model year EPA's file is missing, though NRCan has it. */
+function missingYear(
+  make: string,
+  model: RegExp,
+  year: number,
+  epaModel: RegExp,
+  more: Partial<CanadianModel> = {},
+): CanadianModel {
+  return {
+    make,
+    model,
+    years: [year, year],
+    epaModel,
+    why: `not in EPA's file for ${year}`,
+    ...more,
+  };
 }
 
 /** The cars sold in Canada that EPA never rated, as NRCan names them. */
@@ -138,6 +168,71 @@ export const CANADIAN_MODELS: CanadianModel[] = [
     why: 'sold only in Canada',
   },
   { make: 'Volkswagen', model: /^e-Golf$/, years: [2020, 2020], why: 'a year longer in Canada' },
+
+  // Model years EPA's file is missing (checked against EPA's file of October
+  // 2026). Each names EPA's spelling, so the import stops taking NRCan's row
+  // once EPA lists that year.
+  missingYear('Toyota', /^GR86$/, 2026, /^GR ?86\b/, { drive: 'RWD' }),
+  missingYear(
+    'Land Rover',
+    /^Range Rover (?!Evoque|Velar)/,
+    2023,
+    /^Range Rover (?!Evoque|Velar)/,
+    {
+      drive: '4WD',
+    },
+  ),
+  missingYear('Porsche', /^911 GT3\b/, 2025, /^911 GT3/, { drive: 'RWD' }),
+  missingYear(
+    'Porsche',
+    /^Cayenne (?:S |Turbo )?(?:Coupe )?Electric\b/,
+    2026,
+    /^Cayenne.*Electric/,
+    {
+      drive: 'AWD',
+    },
+  ),
+  missingYear('Audi', /^(?:A6 60|S6) e-tron\b/, 2025, /^[AS]6\b.*e-tron/, { drive: 'AWD' }),
+  missingYear('Hyundai', /^Kona Electric$/, 2026, /^Kona Electric/),
+  missingYear('Cadillac', /^OPTIQ \(/, 2025, /^OPTIQ/, { drive: 'AWD' }),
+  missingYear('INEOS Automotive', /^Grenadier\b/, 2026, /^Grenadier/, {
+    nrcanMake: 'INEOS',
+    drive: '4WD',
+  }),
+  missingYear('Lotus', /^Eletre\b/, 2026, /^Eletre/, { drive: 'AWD' }),
+  missingYear('Vinfast', /^VF8\b/, 2024, /^VF ?8\b/i, { nrcanMake: 'VinFast', drive: 'AWD' }),
+  missingYear('Vinfast', /^VF8\b/, 2026, /^VF ?8\b/i, { nrcanMake: 'VinFast', drive: 'AWD' }),
+  missingYear('Aston Martin', /^DBS V12$/, 2024, /^DBS/, { drive: 'RWD' }),
+  missingYear('Ferrari', /^12Cilindri\b/, 2025, /^12 ?Cilindri/, { drive: 'RWD' }),
+  missingYear('Ferrari', /^296 GT[BS]$/, 2024, /^296/, { drive: 'RWD' }),
+  missingYear('Ferrari', /^849 Testarossa$/, 2026, /^849/, { drive: 'AWD' }),
+  missingYear('Lamborghini', /^Revuelto$/, 2026, /^Revuelto/, { drive: 'AWD' }),
+  missingYear('Lamborghini', /^Temerario$/, 2026, /^Temerario/, { drive: 'AWD' }),
+  missingYear('Bentley', /^Bentayga Hybrid$/, 2024, /^Bentayga Hybrid/, { drive: 'AWD' }),
+  missingYear('BMW', /^750e\b/, 2024, /^750e/),
+  missingYear('BMW', /^XM Label Red$/, 2024, /^XM Label/, { drive: 'AWD' }),
+  missingYear('Lexus', /^NX 450h\+/, 2026, /^NX 450h(?:\+| Plus)/),
+  missingYear('Lexus', /^RX 450h\+/, 2024, /^RX 450h(?:\+| Plus)/),
+  missingYear('Lexus', /^RX 450h\+/, 2026, /^RX 450h(?:\+| Plus)/),
+  missingYear('Lincoln', /^Corsair Grand Touring$/, 2024, /^Corsair Grand Touring/, {
+    drive: 'AWD',
+  }),
+  missingYear('Mercedes-Benz', /^EQB\b/, 2023, /^EQB/),
+  missingYear('Mercedes-Benz', /^(?:AMG )?EQE\b/, 2023, /^(?:AMG )?EQE/),
+  missingYear('Mercedes-Benz', /^AMG EQS\b/, 2023, /^AMG EQS/),
+  missingYear('Mercedes-Benz', /^EQS 580 4MATIC Sedan$/, 2023, /^EQS ?580 4matic$/i),
+  missingYear('Mercedes-Benz', /^GLC 350e\b/, 2026, /^GLC ?350e/),
+  missingYear('Mercedes-Benz', /^GLE 450e\b/, 2024, /^GLE ?450e/),
+  missingYear('Mercedes-Benz', /^GLE 450e\b/, 2026, /^GLE ?450e/),
+  missingYear('Mercedes-Benz', /^S 580e\b/, 2024, /^S ?580e/),
+  missingYear('Nissan', /^Rogue Plug-in Hybrid$/, 2026, /^Rogue Plug-in/, { drive: 'AWD' }),
+  // Sold only in Canada: the US had the iX's larger batteries, and no Soul EV
+  // after 2020 or gasoline Tonale.
+  missingYear('BMW', /^iX xDrive40\b/, 2023, /^iX xDrive40/, { why: 'not sold in the US' }),
+  missingYear('Kia', /^Soul EV\b/, 2023, /^Soul EV/, { why: 'not sold in the US after 2020' }),
+  missingYear('Alfa Romeo', /^Tonale AWD$/, 2023, /^Tonale/, {
+    why: 'a gasoline Tonale only Canada had',
+  }),
 ];
 
 const MPG_L100 = 235.215; // US mpg × L/100 km
@@ -189,8 +284,9 @@ export function driveFromName(
   return { drive: fallback, named: false };
 }
 
-function fuelOf(code: string, model: string): FuelType {
-  const c = code.trim().toUpperCase();
+function fuelOf(row: NrcanRow, model: string): FuelType {
+  if ('Fuel type 1' in row) return 'plug-in hybrid';
+  const c = (row['Fuel type'] ?? '').trim().toUpperCase();
   if (c === 'B') return 'electric';
   if (c === 'D') return 'diesel';
   if (c === 'N') return 'natural gas';
@@ -207,13 +303,18 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
 /** L/100 km (or Le/100 km) as US mpg (or MPGe), to a tenth so the litres survive the trip back. */
 const toMpg = (l100: number | undefined) => (l100 ? round1(MPG_L100 / l100) : undefined);
 
-/** The curated entry a row belongs to, if any. NRCan's footnote mark ("Pursuit #") is ignored. */
+/**
+ * The curated entry a row belongs to, if any. NRCan's footnote mark
+ * ("Pursuit #") is ignored, and so are its E85 rows: NRCan rates a flex-fuel
+ * car twice, and the site lists it by its gasoline figures, as EPA does.
+ */
 export function canadianModelOf(row: NrcanRow): CanadianModel | undefined {
+  if (row['Fuel type']?.trim().toUpperCase() === 'E') return undefined;
   const year = parseInt(row['Model year'], 10);
   const model = cleanModel(row.Model);
   return CANADIAN_MODELS.find(
     (entry) =>
-      entry.make.toLowerCase() === row.Make.trim().toLowerCase() &&
+      (entry.nrcanMake ?? entry.make).toLowerCase() === row.Make.trim().toLowerCase() &&
       entry.model.test(model) &&
       year >= entry.years[0] &&
       year <= entry.years[1],
@@ -227,21 +328,46 @@ export function canadianModelOf(row: NrcanRow): CanadianModel | undefined {
  * Mazda's idle-stop engine).
  */
 export function cleanModel(model: string): string {
-  return model
-    .replace(/\s*#\s*$/, '')
-    .replace(/\s*\((?:Autostick|SIL)\)/gi, '')
-    .trim();
+  return (
+    model
+      .replace(/\s*#\s*$/, '')
+      .replace(/\s*\((?:Autostick|SIL)\)/gi, '')
+      // Wheel sizes as EPA writes them: '(20" Wheels)' is "(20 inch Wheels)".
+      .replace(/(\d+)"/g, '$1 inch')
+      .trim()
+  );
 }
 
 const AUTOSTICK = /\(Autostick\)/i;
 
-/** A car from one NRCan row. Fuel use is stored in EPA's units, as every other car's is. */
-export function mapNrcanRow(row: NrcanRow, entry: CanadianModel): Car {
+/**
+ * EPA's spelling of the name, where EPA lists it in nearby years and the two
+ * differ only in spaces and punctuation ("GR 86" for NRCan's "GR86"), or in
+ * the "Sedan" or "SUV" NRCan adds where EPA has none ("S580e 4matic" for
+ * "S 580e 4MATIC Sedan"), so a year from NRCan joins the model's other years.
+ * The exact form is tried first, so "EQE 350 4MATIC SUV" takes EPA's
+ * "EQE 350 4matic (SUV)" rather than the sedan's name.
+ */
+export function epaSpelling(model: string, nearbyEpaModels: string[]): string | undefined {
+  const bare = (name: string) => name.toLowerCase().replace(/[^a-z0-9+]/g, '');
+  for (const form of [model, model.replace(/\s+(?:Sedan|SUV)$/i, '')]) {
+    const match = nearbyEpaModels.find((name) => bare(name) === bare(form));
+    if (match) return match;
+  }
+  return undefined;
+}
+
+/**
+ * A car from one NRCan row, under `name` when given (EPA's spelling).
+ * Fuel use is stored in EPA's units, as every other car's is.
+ */
+export function mapNrcanRow(row: NrcanRow, entry: CanadianModel, name?: string): Car {
   const year = parseInt(row['Model year'], 10);
   const make = entry.make;
-  const model = cleanModel(row.Model);
-  const fuelType = fuelOf(row['Fuel type'] ?? '', model);
+  const model = name ?? cleanModel(row.Model);
+  const fuelType = fuelOf(row, model);
   const electric = fuelType === 'electric';
+  const plugIn = fuelType === 'plug-in hybrid';
   // Chrysler's Autostick is an automatic shifted by hand, which EPA writes "(S4)".
   const coded = transmissionDescription(row.Transmission ?? '');
   const description = AUTOSTICK.test(row.Model)
@@ -267,8 +393,11 @@ export function mapNrcanRow(row: NrcanRow, entry: CanadianModel): Car {
       };
   const co2Km = num(row['CO2 emissions (g/km)']);
   const kWh100Km = num(row['Combined (kWh/100 km)']);
-  const rangeKm = num(row['Range (km)']);
+  // A plug-in hybrid's range is its electric range ("Range 1"), as EPA's is.
+  const rangeKm = num(row['Range (km)'] ?? row['Range 1 (km)']);
   const rechargeHours = num(row['Recharge time (h)']);
+  // "2.8 ([24.7 kWh + 0.0 L]/100 km)": the electric mode's Le/100 km comes first.
+  const electricLe = num(row['Combined Le/100 km']);
 
   const provenance: Provenance = {};
   const car: Car = {
@@ -293,11 +422,22 @@ export function mapNrcanRow(row: NrcanRow, entry: CanadianModel): Car {
     epa: {
       vClass,
       ...(co2Km != null ? { co2: Math.round(co2Km * KM_PER_MILE) } : {}),
-      ...(electric
+      ...(electric || plugIn
         ? {
             ...(kWh100Km != null ? { kWhPer100Mi: round2(kWh100Km * KM_PER_MILE) } : {}),
             ...(rangeKm != null ? { rangeMiles: Math.round(rangeKm / KM_PER_MILE) } : {}),
             ...(rechargeHours != null ? { charge240Hours: rechargeHours } : {}),
+          }
+        : {}),
+      // Gas mode and electric mode, as EPA's enrichment gives a plug-in hybrid.
+      ...(plugIn
+        ? {
+            phev: {
+              ...(fuelEconomy.combined != null ? { gasMpg: Math.round(fuelEconomy.combined) } : {}),
+              ...(electricLe != null ? { electricMpge: Math.round(MPG_L100 / electricLe) } : {}),
+              ...(rangeKm != null ? { electricRangeMi: Math.round(rangeKm / KM_PER_MILE) } : {}),
+              ...(rechargeHours != null ? { chargeL2Hours: rechargeHours } : {}),
+            },
           }
         : {}),
     },
@@ -332,6 +472,27 @@ export function mapNrcanRow(row: NrcanRow, entry: CanadianModel): Car {
     provenance.countryOfOrigin = 'estimated';
   }
   return car;
+}
+
+/** "B 250" → "b250", "City Golf" → "city": the word a model line goes by. */
+export function firstWord(model: string): string {
+  return model
+    .toLowerCase()
+    .replace(/^([a-z]{1,3})\s+(\d)/, '$1$2')
+    .split(/\s+/)[0]
+    .replace(/[^a-z0-9+]/g, '');
+}
+
+/**
+ * Whether EPA lists the car a row stands for, given EPA's model names for its
+ * make and year: by the entry's EPA spelling where it has one, else by the
+ * first word of the name.
+ */
+export function listedByEpa(entry: CanadianModel, model: string, epaModels: string[]): boolean {
+  const { epaModel } = entry;
+  if (epaModel) return epaModels.some((name) => epaModel.test(name));
+  const word = firstWord(model);
+  return epaModels.some((name) => firstWord(name) === word);
 }
 
 /**

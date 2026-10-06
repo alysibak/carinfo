@@ -23,6 +23,8 @@ import {
   type CanadianModel,
   canadianModelOf,
   cleanModel,
+  epaSpelling,
+  listedByEpa,
   mapNrcanRow,
   type NrcanRow,
 } from './lib/nrcan.js';
@@ -63,10 +65,7 @@ async function download(): Promise<string> {
   return RAW_DIR;
 }
 
-/**
- * Conventional and battery-electric rows. The plug-in hybrid file is left out:
- * no car on the list is one, and its two fuels need their own mapping.
- */
+/** Conventional, battery-electric and plug-in hybrid rows. */
 function readRows(folder: string): NrcanRow[] {
   const rows: NrcanRow[] = [];
   for (const name of readdirSync(folder).filter(wanted).sort()) {
@@ -77,19 +76,9 @@ function readRows(folder: string): NrcanRow[] {
       relax_column_count: true,
       bom: true,
     }) as NrcanRow[];
-    if (parsed.length && 'Fuel type 1' in parsed[0]) continue;
     rows.push(...parsed);
   }
   return rows;
-}
-
-/** "B 250" → "b250", "City Golf" → "city": the word a model line goes by. */
-function firstWord(model: string): string {
-  return model
-    .toLowerCase()
-    .replace(/^([a-z]{1,3})\s+(\d)/, '$1$2')
-    .split(/\s+/)[0]
-    .replace(/[^a-z0-9+]/g, '');
 }
 
 async function main(): Promise<void> {
@@ -101,9 +90,13 @@ async function main(): Promise<void> {
   const before = new Set(file.cars.filter(isNrcan).map((car) => car.id));
   console.log(`[nrcan] ${folder}: ${rows.length} rows; ${file.cars.length} cars on file`);
 
-  const epaLines = new Set(
-    epaCars.map((car) => `${car.make.toLowerCase()}|${car.year}|${firstWord(car.model)}`),
-  );
+  const epaModels = new Map<string, string[]>();
+  for (const car of epaCars) {
+    const key = `${car.make.toLowerCase()}|${car.year}`;
+    const models = epaModels.get(key) ?? [];
+    models.push(car.model);
+    epaModels.set(key, models);
+  }
   const mapped: Car[] = [];
   const nowOnEpa: string[] = [];
   const matched = new Set<CanadianModel>();
@@ -113,11 +106,14 @@ async function main(): Promise<void> {
     matched.add(entry);
     const year = parseInt(row['Model year'], 10);
     const model = cleanModel(row.Model);
-    if (epaLines.has(`${entry.make.toLowerCase()}|${year}|${firstWord(model)}`)) {
+    if (listedByEpa(entry, model, epaModels.get(`${entry.make.toLowerCase()}|${year}`) ?? [])) {
       nowOnEpa.push(`${entry.make} ${model} ${year}`);
       continue;
     }
-    const car = mapNrcanRow(row, entry);
+    const nearby = [-2, -1, 1, 2].flatMap(
+      (offset) => epaModels.get(`${entry.make.toLowerCase()}|${year + offset}`) ?? [],
+    );
+    const car = mapNrcanRow(row, entry, epaSpelling(model, nearby));
     const msrp = estimatePriceMsrp(car);
     car.price = {
       msrp,
