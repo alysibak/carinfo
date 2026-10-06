@@ -152,11 +152,11 @@ const AUDIT_2026: Correction[] = [
   rate('Mercedes-Benz', /^E550(?: Coupe| Convertible)$/, [2010, 2011], 5.5, false, 382),
   rate('Mercedes-Benz', /^G550$/, [2019, 2020], 4, true, 416),
   rate('Suzuki', /^Verona$/, [2004, 2006], 2.5, false, 155),
-  // VW's 2.0 TSI read the TDI's 140 hp; the 2011 Jetta's 2.0 (115 hp) too.
+  // VW's 2.0 TSI read the TDI's 140 hp; the 2011-14 Jetta's 2.0 (115 hp) too.
   rate('Volkswagen', /^CC$/, [2009, 2009], 2, true, 200),
   rate('Volkswagen', /^CC$/, [2009, 2010], 3.6, false, 280),
   rate('Volkswagen', /^Jetta$/, [2009, 2010], 2, true, 200),
-  rate('Volkswagen', /^Jetta$/, [2011, 2011], 2, false, 115),
+  rate('Volkswagen', /^Jetta$/, [2011, 2014], 2, false, 115),
   rate('Volkswagen', /^Jetta$/, [2010, 2011], 2, true, 140, 'diesel'),
   // The XC70 T6 made 281 hp before 2011's 300; it read the 3.2's 235.
   rate('Volvo', /^XC70 AWD$/, [2009, 2010], 3, true, 281),
