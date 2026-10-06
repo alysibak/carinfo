@@ -430,7 +430,7 @@ const PLUG_IN_SYSTEM: HybridSystem[] = [
   hy('Polestar', /^1\b/i, [2020, 2021], 619),
   hy('Fisker', /^karma/i, [2012, 2012], 403),
   hy('Karma', /^revero gt|^gs-6/i, [2020, 2021], 536),
-  hy('Karma', /^revero/i, [2018, 2019], 403),
+  hy('Karma', /^revero/i, [2017, 2019], 403),
   hy('MINI', /^cooper se countryman/i, [2018, 2023], 221),
   hy('Audi', /^a3 e-tron/i, [2016, 2018], 204),
   hy('Audi', /^(?:q5|a7)\b/i, [2020, 2025], 362),

@@ -111,8 +111,8 @@ This README quotes **actual source** in [Code reference](#code-reference). To re
 
 | Metric                        | Count                           |
 | ----------------------------- | ------------------------------- |
-| Total vehicles                | 36,850 (36,848 after ID merges) |
-| From EPA / from NRCan         | 36,314 / 536                    |
+| Total vehicles                | 36,938 (36,936 after ID merges) |
+| From EPA / from NRCan         | 36,314 / 624                    |
 | Year range                    | 1995–2027 (2027 partial)        |
 | Makes                         | 92                              |
 | EPA enrichment records        | 36,314                          |
@@ -152,13 +152,13 @@ second line of defense and agree with EPA on every record (a test pins that).
 
 | Field                | Records |
 | -------------------- | ------- |
-| trim                 | 36,850  |
+| trim                 | 36,938  |
 | engine.configuration | 31,428  |
-| engine.aspiration    | 11,604  |
-| transmission.speeds  | 23,219  |
-| countryOfOrigin      | 36,850  |
-| epa.co2              | 18,834  |
-| epa.charge240Hours   | 2,128   |
+| engine.aspiration    | 11,618  |
+| transmission.speeds  | 23,304  |
+| countryOfOrigin      | 36,938  |
+| epa.co2              | 18,921  |
+| epa.charge240Hours   | 2,130   |
 | epa.charge120Hours   | 1       |
 | dimensions           | 0       |
 | performance          | 0       |
@@ -323,7 +323,7 @@ Writes `epa-enrichment.json`, `nhtsa-safety.json`, `nhtsa-by-car-id.json`. Ratin
 
 ### `import-nrcan.ts` (Canadian cars EPA never rated)
 
-Natural Resources Canada rates every car sold in Canada, so it has the ones EPA never saw: models built for Canada (Acura 1.6EL, 1.7EL and CSX, Chevrolet Orlando, Pontiac Firefly, Sunrunner and Pursuit, Mercedes A 250 and B-Class, Nissan Micra and X-Trail, VW City Golf and City Jetta, smart fortwo CDI, Kia EV4), years a model stayed on sale here after it left the US (2016 Venza, 2014–17 Rondo, 2013–14 Trax, 2007–09 Montana SV6, 2022 CX-3, 2024 MX-30, 2020 e-Golf) and Canadian names (Kia Magentis for the Optima, Mitsubishi RVR for the Outlander Sport, Nissan Qashqai for the Rogue Sport, Chrysler Grand Caravan for the Voyager, the Chrysler-badged Intrepid and Neon). NRCan's files also repeat most of EPA's catalogue under other spellings ("A8L", "TJ" for the Wrangler, "C1500 Silverado"), so only the models listed in `scripts/lib/nrcan.ts` are imported, each checked against `cars.json`; a row EPA has since listed is skipped and reported. It also fills model years EPA's file is missing though NRCan has them, 88 listings in October 2026: the 2026 GR86, the 2023 Range Rover and Range Rover Sport, the 2026 Cayenne Electric, 2025 911 GT3s, 2023 EQE and EQB, 2024 and 2026 VinFast VF8s, 2026 INEOS Grenadiers, and plug-in hybrids from the Lexus NX and RX 450h+ to the Ferrari 296. And it fills engines EPA's file is missing for models it lists (`missingEngine` entries, checked engine by engine: size, cylinders, plug-in or diesel), 91 listings: EPA's 2024 file left out most of the plug-in hybrids its 2023 and 2025 files have (X3 xDrive30e, X5 xDrive50e, Escape and Niro plug-ins, Mercedes-AMG's E Performance cars, Volvo's S90 and V60 T8), its file has none of Mercedes' 350 BlueTEC diesels, and it lacks the 2024 G70 3.3T, the 2026 Panamera GTS and E-Hybrids, the 2026 Prius and RAV4 plug-ins and the 2020 718s but the Spyder and GT4. Engines only Canada had come in the same way: the CX-5's and CX-30's 2.0, the 2022–23 Rogue's 2.5, the 2024 Trailblazer's 1.2, a V6 C 250 4MATIC, the GLE 550, a gasoline Tonale, the 2014 Fit and the 2015 ILX Hybrid. Each of those entries names EPA's spelling of the model, so it retires on its own once EPA lists the year, and a year from NRCan takes EPA's spelling of the name where it differs only in spacing ("GR 86" for "GR86", "S580e 4matic" for "S 580e 4MATIC Sedan"). Plug-in hybrids store gas-mode figures as their fuel economy and electric range and MPGe in `epa.phev`, as EPA's do after enrichment.
+Natural Resources Canada rates every car sold in Canada, so it has the ones EPA never saw: models built for Canada (Acura 1.6EL, 1.7EL and CSX, Chevrolet Orlando, Pontiac Firefly, Sunrunner and Pursuit, Mercedes A 250 and B-Class, Nissan Micra and X-Trail, VW City Golf and City Jetta, smart fortwo CDI, Kia EV4), years a model stayed on sale here after it left the US (2016 Venza, 2014–17 Rondo, 2013–14 Trax, 2007–09 Montana SV6, 2022 CX-3, 2024 MX-30, 2020 e-Golf) and Canadian names (Kia Magentis for the Optima, Mitsubishi RVR for the Outlander Sport, Nissan Qashqai for the Rogue Sport, Chrysler Grand Caravan for the Voyager, the Chrysler-badged Intrepid and Neon). NRCan's files also repeat most of EPA's catalogue under other spellings ("A8L", "TJ" for the Wrangler, "C1500 Silverado"), so only the models listed in `scripts/lib/nrcan.ts` are imported, each checked against `cars.json`; a row EPA has since listed is skipped and reported. It also fills model years EPA's file is missing though NRCan has them, 88 listings in October 2026: the 2026 GR86, the 2023 Range Rover and Range Rover Sport, the 2026 Cayenne Electric, 2025 911 GT3s, 2023 EQE and EQB, 2024 and 2026 VinFast VF8s, 2026 INEOS Grenadiers, and plug-in hybrids from the Lexus NX and RX 450h+ to the Ferrari 296. And it fills engines EPA's file is missing for models it lists (`missingEngine` entries, checked engine by engine: size, cylinders, plug-in or diesel), 91 listings: EPA's 2024 file left out most of the plug-in hybrids its 2023 and 2025 files have (X3 xDrive30e, X5 xDrive50e, Escape and Niro plug-ins, Mercedes-AMG's E Performance cars, Volvo's S90 and V60 T8), its file has none of Mercedes' 350 BlueTEC diesels, and it lacks the 2024 G70 3.3T, the 2026 Panamera GTS and E-Hybrids, the 2026 Prius and RAV4 plug-ins and the 2020 718s but the Spyder and GT4. Engines only Canada had come in the same way: the CX-5's and CX-30's 2.0, the 2022–23 Rogue's 2.5, the 2024 Trailblazer's 1.2, a V6 C 250 4MATIC, the GLE 550, a gasoline Tonale, the 2014 Fit and the 2015 ILX Hybrid. Before 2023, every NRCan row from 1995 to 2022 was matched against EPA's by name and by engine and fuel use; the real gaps it found are in too (88 listings): model years EPA's file has none of (every 1995–97 Bentley, the 2002 Azure and Continentals, the 2002 Corniche, the 1997 XK8 and XJR, the 1997–98 Prowler, the 2007 Alpina B7, the 2010 SL63, the 2015 ML550, the 2014–16 E 250 BlueTEC, the 2017 Revero, the 2022 I-Pace), years Canada had early or longer (2014 4C, 1999 X5 and Z8, 2012 X1, 2010 B4000) and models only Canada had (the 1995 and 2001–05 320i, the 2007–11 323i, the E 280 and S 450 4MATIC, Suzuki's Swift+, the Transporter and the 1996 EuroVan). NRCan's 2015 S 400 4MATIC row is left out: it gives the 3.0 V6 car a 4.7-litre engine. The other flagged rows are NRCan's names for cars EPA lists ("K1500 Avalanche", "Jeep TJ", the Ford-badged Cougar). Each of those entries names EPA's spelling of the model, so it retires on its own once EPA lists the year, and a year from NRCan takes EPA's spelling of the name where it differs only in spacing ("GR 86" for "GR86", "S580e 4matic" for "S 580e 4MATIC Sedan"). Plug-in hybrids store gas-mode figures as their fuel economy and electric range and MPGe in `epa.phev`, as EPA's do after enrichment.
 
 Its figures are stored in EPA's units (L/100 km as mpg to a tenth, so the litres survive the trip back; Le/100 km as MPGe; g/km as g/mi) and credited to `nrcan`, which the site shows as an "NRCan" chip. IDs follow EPA's pattern with `-ca` at the end. Re-running replaces the Canadian listings with NRCan's current figures and never touches an EPA listing; run it after `backfill-epa-variants`.
 
@@ -639,7 +639,7 @@ Defined in `client/src/config/browseTaxonomy.ts`.
 
 - The promise as the headline ("Car specs from the EPA and NHTSA"; the header already says CarInfo), a line on what is on record and that estimates are labelled, `SearchBar`, and the quiz
 - VIN detect: 17-char pattern → `/vin`
-- `CatalogueStats`: what is on file, live from `/cars/stats/overview` (36,848 versions tested, 1,124 models, 91 makes, 1995–2027), labelled for what each counts: EPA lists each engine, gearbox and drive of a model year separately, so "35,000 cars" would promise more than the models a shopper thinks of as cars. Rounded figures hold the space until the counts load. It ends in a link that opens search with the filters open (`/home?filters=open`).
+- `CatalogueStats`: what is on file, live from `/cars/stats/overview` (36,936 versions tested, 1,127 models, 91 makes, 1995–2027), labelled for what each counts: EPA lists each engine, gearbox and drive of a model year separately, so "35,000 cars" would promise more than the models a shopper thinks of as cars. Rounded figures hold the space until the counts load. It ends in a link that opens search with the filters open (`/home?filters=open`).
 - `SampleCarCard`: a real car's page in miniature (the hero preview car's key figures: fuel use, crash rating, power and engine, each with its source), in place of a large grey drawing of the same car
 - Start paths as bordered panels of chips (I know the car · I'm still deciding · I have a VIN · I'm comparing options), not underlined words
 - `ShortlistCards`: each shortlist with its first three picks and the record each is ranked on

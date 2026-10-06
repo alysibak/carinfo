@@ -262,6 +262,97 @@ export const CANADIAN_MODELS: CanadianModel[] = [
     why: 'a gasoline Tonale only Canada had',
   }),
 
+  // Before 2023: models EPA's file has none of that year (found by matching
+  // every NRCan row from 1995 to 2022 against EPA's by name and by engine).
+  {
+    make: 'Bentley',
+    model: /./,
+    years: [1995, 1997],
+    epaModel: /./,
+    drive: 'RWD',
+    why: "no Bentley in EPA's file for the year",
+  },
+  {
+    make: 'Bentley',
+    model: /^(?:Azure|Continental)\b/,
+    years: [2002, 2002],
+    epaModel: /^(?:Azure|Continental)/,
+    drive: 'RWD',
+    why: "not in EPA's file for 2002",
+  },
+  missingYear('Rolls-Royce', /^Corniche$/, 2002, /^Corniche/, { drive: 'RWD' }),
+  missingYear('Jaguar', /^(?:XK8|XJR)\b/, 1997, /^(?:XK8|XJR)/, { drive: 'RWD' }),
+  {
+    make: 'Plymouth',
+    model: /^Prowler\b/,
+    years: [1997, 1998],
+    epaModel: /^Prowler/,
+    drive: 'RWD',
+    why: "not in EPA's file for 1997 and 1998",
+  },
+  missingYear('BMW', /^Alpina B7$/, 2007, /^Alpina B7/, { drive: 'RWD' }),
+  missingYear('Mercedes-Benz', /^SL 63 AMG$/, 2010, /^SL ?63/, { drive: 'RWD' }),
+  missingYear('Mercedes-Benz', /^ML 550 4MATIC$/, 2015, /^ML ?550/),
+  {
+    make: 'Mercedes-Benz',
+    model: /^E 250 BlueTec 4MATIC$/,
+    years: [2014, 2016],
+    epaModel: /^E ?250 Blue/i,
+    why: "not in EPA's file for 2014 to 2016",
+  },
+  missingYear('Karma', /^Revero$/, 2017, /^Revero/, { drive: 'RWD' }),
+  missingYear('Jaguar', /^I-PACE$/, 2022, /^I-?Pace/i, { drive: 'AWD' }),
+  // A year early in Canada, or longer.
+  missingYear('Alfa Romeo', /^4C$/, 2014, /^4C/, { drive: 'RWD', why: 'in Canada a year early' }),
+  missingYear('BMW', /^X5$/, 1999, /^X5/, { drive: 'AWD', why: 'in Canada a year early' }),
+  missingYear('BMW', /^Z8$/, 1999, /^Z8/, { drive: 'RWD', why: 'in Canada a year early' }),
+  missingYear('BMW', /^X1 xDrive28i$/, 2012, /^X1/, { why: 'in Canada a year early' }),
+  missingYear('Mazda', /^B4000\b/, 2010, /^B4000/, {
+    drive: 'RWD',
+    why: 'a year longer in Canada',
+  }),
+  // Sold only in Canada.
+  {
+    make: 'BMW',
+    model: /^320i$/,
+    years: [1995, 2005],
+    epaModel: /^320i/,
+    drive: 'RWD',
+    why: 'Canada-only 3 Series',
+  },
+  {
+    make: 'BMW',
+    model: /^323i(?: Sedan)?$/,
+    years: [2007, 2011],
+    epaModel: /^323i/,
+    drive: 'RWD',
+    why: 'Canada-only 3 Series',
+  },
+  missingYear('Mercedes-Benz', /^E 280 4MATIC$/, 2007, /^E ?280/, { why: 'Canada-only E-Class' }),
+  {
+    make: 'Mercedes-Benz',
+    model: /^S 450 4MATIC$/,
+    years: [2008, 2010],
+    epaModel: /^S ?450/,
+    // As EPA names the later US car, so the two share a page.
+    rename: [/^S 450 4MATIC$/, 'S450 4matic'],
+    why: 'Canada-only S-Class',
+  },
+  { make: 'Suzuki', model: /^Swift\+$/, years: [2007, 2009], why: "Suzuki's Canada-only Aveo5" },
+  {
+    make: 'Volkswagen',
+    model: /^Transporter\b/,
+    years: [1995, 1997],
+    why: 'the van Canada had while the US had none',
+  },
+  {
+    make: 'Volkswagen',
+    model: /^Eurovan(?: Camper| Diesel)?$/,
+    years: [1996, 1996],
+    epaModel: /^Eurovan/,
+    why: 'a year the US skipped',
+  },
+
   // Engines EPA's file is missing for a model it lists, checked engine by
   // engine: a year EPA lists the engine in the model is skipped, so a span
   // can run over years EPA has. EPA's 2024 file left out most of the plug-in
