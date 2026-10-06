@@ -68,6 +68,8 @@
     "undici": "^7.29.1",
     "postcss-selector-parser": "^6.1.4",
     "baseline-browser-mapping": "^2.11.25",
-    "nanoid": "^6.0.1"
+    "nanoid": "^6.0.1",
+    "proxy-addr": "^2.0.8",
+    "source-map-js": "^1.2.2"
   }
 }
