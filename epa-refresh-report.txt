@@ -1,0 +1,199 @@
+
+> carinfo-server@1.0.0 backfill-epa-variants
+> tsx scripts/backfill-epa-variants.ts
+
+Downloading EPA's current vehicles.csv from https://fueleconomy.gov/feg/epadata/vehicles.csv...
+[backfill] /home/runner/work/carinfo/carinfo/server/data/raw/vehicles.csv: 50407 EPA rows, model years 1984–2027, newest row ID 50875; 36759 cars on file
+[backfill] 0 listings added (207 emissions/test duplicates of listings on file skipped); aspiration recorded on 0 existing cars
+[backfill] left out: 13811 rows before 1995 (1984:1964 1985:1701 1986:1210 1987:1247 1988:1130 1989:1153 1990:1078 1991:1132 1992:1121 1993:1093 1994:982), 0 after 2027, 75 hearse/limousine/livery/taxi/postal conversions, 0 with no fuel economy figures
+[backfill] left out from 1995 on, by model:
+  Buick Coachbuilder Wagon: 1995
+  Buick Funeral Coach/Hearse: 1996
+  Cadillac XT5 Hearse AWD: 2021 2022 2023 2024
+  Cadillac XT5 Hearse FWD: 2021 2022 2023 2024
+  Cadillac XT5 Limo AWD: 2021 2022 2023 2024
+  Cadillac XT5 Limo FWD: 2021 2022 2023 2024
+  Cadillac XTS Hearse: 2013 2014 2015 2016 2017 2018 2019
+  Cadillac XTS Limo: 2013 2014 2015 2016 2017 2018 2019
+  Ford Ranger 2WD Incomplete: 2019 2020 2021
+  Ford Transit Connect USPS: 2019 2020 2021 2022
+  Lincoln MKT Hearse AWD: 2017 2018 2019
+  Lincoln MKT Limo AWD: 2017 2018 2019
+  Lincoln MKT Livery AWD: 2013 2014 2015 2016 2017 2018 2019
+  Lincoln MKT Livery FWD: 2013 2014 2015 2016
+  London Taxi London Taxi: 2003
+  Mercedes-Benz Metris (US Postal Long): 2022 2023
+  Mercedes-Benz Metris (US Postal): 2022 2023
+  Mobility Ventures LLC MV-1: 2014 2015 2016
+  Mobility Ventures LLC MV-1 CNG: 2014
+  Nissan NV200 NYC Taxi: 2015 2016 2017 2018 2019
+  VPG MV-1: 2011 2012 2013
+  VPG MV-1 CNG: 2011 2012
+[backfill] wrote /home/runner/work/carinfo/carinfo/server/data/cars.json (36759 cars)
+
+> carinfo-server@1.0.0 import-nrcan
+> tsx scripts/import-nrcan.ts
+
+Downloading NRCan's fuel consumption ratings (https://open.canada.ca/data/api/action/package_show?id=98f1a129-f628-4ce4-b24d-6f16bf24dd64)...
+[nrcan] /home/runner/work/carinfo/carinfo/server/data/raw/nrcan: 30879 rows; 36759 cars on file
+[nrcan] 445 Canadian listings (0 new, 0 no longer in NRCan's files):
+  Acura 1.6EL: 1997 1998 1999 2000
+  Acura 1.7EL: 2001 2002 2003 2004 2005
+  Acura CSX: 2006 2007 2008 2009 2010 2011
+  Alfa Romeo Tonale AWD: 2023
+  Aston Martin DBS V12: 2024
+  Audi A6 60 e-tron: 2025
+  Audi A6 60 e-tron ultra: 2025
+  Audi S6 e-tron quattro (20 inch Wheels): 2025
+  Audi S6 e-tron quattro (21 inch Wheels): 2025
+  Bentley Bentayga Hybrid: 2024
+  BMW 750e xDrive Sedan: 2024
+  BMW iX xDrive40 (20 inch Wheels): 2023
+  BMW iX xDrive40 (21 inch Wheels): 2023
+  BMW iX xDrive40 (22 inch Wheels): 2023
+  BMW XM Label Red: 2024
+  Cadillac OPTIQ (11.5 kW Charger): 2025
+  Cadillac OPTIQ (19.2 kW Charger): 2025
+  Chevrolet Orlando: 2012 2013 2014
+  Chevrolet Tracker Convertible: 1995
+  Chevrolet Tracker Convertible 4X4: 1995
+  Chevrolet Tracker Van 4X4: 1995
+  Chevrolet Trax: 2013 2014
+  Chevrolet Trax AWD: 2013 2014
+  Chevrolet Uplander: 2009
+  Chrysler Grand Caravan: 2021 2022 2023 2024 2025 2026
+  Chrysler Intrepid: 1996 1997 1998 1999 2000 2001 2002 2003 2004
+  Chrysler Intrepid ES: 1996
+  Chrysler Neon: 2000 2001 2002
+  Chrysler Neon R/T: 2001 2002
+  Dodge Colt: 1995 1996
+  Ferrari 12Cilindri: 2025
+  Ferrari 12Cilindri Spider: 2025
+  Ferrari 296 GTB: 2024
+  Ferrari 296 GTS: 2024
+  Ferrari 849 Testarossa: 2026
+  Hyundai Kona Electric: 2026
+  INEOS Automotive Grenadier Black Edition: 2026
+  INEOS Automotive Grenadier Fieldmaster Edition: 2026
+  INEOS Automotive Grenadier Quartermaster: 2026
+  INEOS Automotive Grenadier Quartermaster Black: 2026
+  INEOS Automotive Grenadier Quartermaster Fieldmaster: 2026
+  INEOS Automotive Grenadier Quartermaster Trialmaster: 2026
+  INEOS Automotive Grenadier Station Wagon: 2026
+  INEOS Automotive Grenadier Trialmaster Edition: 2026
+  Kia EV4 GT-Line: 2026
+  Kia EV4 Light: 2026
+  Kia EV4 Wind: 2026
+  Kia EV4 Wind Premium: 2026
+  Kia Magentis: 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010
+  Kia Rondo: 2014 2015 2016 2017
+  Kia Soul EV (120 Ah): 2023
+  Kia Soul EV (180 Ah): 2023
+  Lamborghini Revuelto: 2026
+  Lamborghini Temerario: 2026
+  Land Rover Range Rover P400: 2023
+  Land Rover Range Rover P400 LWB: 2023
+  Land Rover Range Rover P530: 2023
+  Land Rover Range Rover P530 LWB: 2023
+  Land Rover Range Rover Sport HST P400: 2023
+  Land Rover Range Rover Sport P360: 2023
+  Land Rover Range Rover Sport P530: 2023
+  Land Rover Range Rover SV: 2023
+  Land Rover Range Rover SV LWB: 2023
+  Lexus NX 450h+ AWD: 2026
+  Lexus RX 450h+ AWD: 2024 2026
+  Lincoln Corsair Grand Touring: 2024
+  Lotus Eletre R Long Range: 2026
+  Lotus Eletre R Performance: 2026
+  Lotus Eletre S Long Range: 2026
+  Lotus Eletre S Performance: 2026
+  Mazda CX-3: 2022
+  Mazda CX-3 4WD: 2022
+  Mazda MX-30: 2024
+  Mercedes-Benz A 250: 2019
+  Mercedes-Benz A 250 4MATIC: 2019
+  Mercedes-Benz A 250 4MATIC Hatch: 2020 2021 2022
+  Mercedes-Benz AMG EQE 4MATIC+ Sedan: 2023
+  Mercedes-Benz AMG EQS 4MATIC+ Sedan: 2023
+  Mercedes-Benz B 200: 2006 2007 2008 2009 2010 2011
+  Mercedes-Benz B 200 CVT: 2006 2007
+  Mercedes-Benz B 200 CVT Turbo: 2006 2007
+  Mercedes-Benz B 200 Turbo: 2006 2007 2008 2009 2010 2011
+  Mercedes-Benz B 250: 2013 2014 2015 2016 2017 2018 2019
+  Mercedes-Benz B 250 4MATIC: 2015 2016 2018 2019
+  Mercedes-Benz C 230 4MATIC: 2008 2009
+  Mercedes-Benz EQB 250+: 2023
+  Mercedes-Benz EQB 350 4matic: 2023
+  Mercedes-Benz EQE 350 4matic: 2023
+  Mercedes-Benz EQE 350 4matic (SUV): 2023
+  Mercedes-Benz EQE 500 4matic: 2023
+  Mercedes-Benz EQE 500 4matic (SUV): 2023
+  Mercedes-Benz EQS 580 4matic: 2023
+  Mercedes-Benz GLC 350e 4MATIC SUV: 2026
+  Mercedes-Benz GLE450e 4matic: 2024 2026
+  Mercedes-Benz S580e 4matic: 2024
+  Mitsubishi i-MiEV: 2015
+  Mitsubishi Mirage: 2016
+  Mitsubishi RVR: 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 2025 2026
+  Mitsubishi RVR 4WD: 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 2025 2026
+  Nissan Axxess: 1995
+  Nissan Micra: 2015 2016 2017 2018 2019
+  Nissan Qashqai: 2017 2018 2019 2020 2021 2022 2023
+  Nissan Qashqai AWD: 2017 2018 2019 2020 2021 2022 2023
+  Nissan Rogue Plug-in Hybrid: 2026
+  Nissan X-Trail: 2005 2006
+  Nissan X-Trail AWD: 2005 2006
+  Plymouth Colt: 1995 1996
+  Pontiac Firefly: 1995 1996 1997 1998 1999 2000
+  Pontiac Montana SV6: 2007 2008 2009
+  Pontiac Montana SV6 FFV: 2007 2008
+  Pontiac Pursuit: 2005 2006
+  Pontiac Sunrunner Convertible: 1995 1996 1997
+  Pontiac Sunrunner Convertible 4X4: 1995 1996 1997
+  Pontiac Sunrunner Van 4X4: 1995
+  Pontiac Wave: 2007 2008
+  Pontiac Wave 5: 2007 2008
+  Porsche 911 GT3: 2025
+  Porsche 911 GT3 RS: 2025
+  Porsche 911 GT3 Touring: 2025
+  Porsche Cayenne Coupe Electric: 2026
+  Porsche Cayenne Coupe Electric (Range Setup): 2026
+  Porsche Cayenne Electric: 2026
+  Porsche Cayenne Electric (Range Setup): 2026
+  Porsche Cayenne S Coupe Electric: 2026
+  Porsche Cayenne S Coupe Electric (Range Setup): 2026
+  Porsche Cayenne S Electric: 2026
+  Porsche Cayenne S Electric (Range Setup): 2026
+  Porsche Cayenne Turbo Coupe Electric: 2026
+  Porsche Cayenne Turbo Coupe Electric (21 inch All-Season Tire): 2026
+  Porsche Cayenne Turbo Electric: 2026
+  Porsche Cayenne Turbo Electric (21 inch All-Season Tire): 2026
+  smart fortwo CDI: 2005 2006
+  smart fortwo CDI cabriolet: 2006
+  Toyota GR 86: 2026
+  Toyota Venza: 2016
+  Toyota Venza 4WD: 2016
+  Toyota Yaris: 2006
+  Vinfast VF 8 Eco: 2024 2026
+  Vinfast VF 8 Plus: 2024 2026
+  Vinfast VF8 PLUS Performance: 2024 2026
+  Volkswagen City Golf: 2007 2008 2009 2010
+  Volkswagen City Jetta: 2007 2008 2009
+  Volkswagen e-Golf: 2020
+[nrcan] wrote /home/runner/work/carinfo/carinfo/server/data/cars.json (36759 cars)
+
+> carinfo-server@1.0.0 reconcile-fuel-types
+> tsx scripts/reconcile-fuel-types.ts
+
+36,759 cars, 445 without an EPA row, 0 disagree with EPA.
+
+> carinfo-server@1.0.0 build-enrichment
+> tsx scripts/build-content-enrichment.ts
+
+EPA enrichment: 36314 records (447 with PHEV dual-mode)
+NHTSA safety: 1028 make|model|year combos with real ratings (60 from the cache, 0 new)
+NHTSA per-car index: 4617/36759 vehicles (12.6%)
+
+Wrote /home/runner/work/carinfo/carinfo/server/data/epa-enrichment.json
+Wrote /home/runner/work/carinfo/carinfo/server/data/nhtsa-safety.json
+Wrote /home/runner/work/carinfo/carinfo/server/data/nhtsa-by-car-id.json
