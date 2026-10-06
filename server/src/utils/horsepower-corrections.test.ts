@@ -12,6 +12,7 @@ const car = (
     aspiration?: Car['engine']['aspiration'];
     fuelType?: Car['engine']['fuelType'];
     transmission?: 'manual' | 'automatic';
+    speeds?: number;
   } = {},
 ) =>
   ({
@@ -27,7 +28,7 @@ const car = (
       aspiration: extra.aspiration,
     },
     fuelEconomy: { combined: 28 },
-    transmission: { type: extra.transmission ?? 'automatic' },
+    transmission: { type: extra.transmission ?? 'automatic', speeds: extra.speeds },
     driveType: 'AWD',
     bodyStyle: 'suv',
   }) as Car;
@@ -149,6 +150,29 @@ describe('applyHorsepowerCorrections', () => {
     // The older platform's T5 and T6.
     expect(hp('S60 FWD', 2016, 'turbocharged')).toBe(240);
     expect(hp('S60 FWD', 2016, 'turbocharged and supercharged')).toBe(302);
+  });
+
+  it("fixes the trims the October 2026 audit found at another trim's figure", () => {
+    const { cars } = applyHorsepowerCorrections([
+      // The Cayenne GTS read the Turbo's 500 hp.
+      car('Porsche', 'Cayenne GTS', 2009, 4.8, 500),
+      // The Jetta's 2.0 TSI read the TDI's 140 hp.
+      car('Volkswagen', 'Jetta', 2009, 2, 140, { aspiration: 'turbocharged' }),
+      // A supercharged Range Rover read the plain 5.0's 375 hp.
+      car('Land Rover', 'Range Rover', 2012, 5, 375, { aspiration: 'supercharged' }),
+      // EPA files the STI and the WRX alike; the STI's manual has six speeds.
+      car('Subaru', 'Impreza AWD', 2008, 2.5, 197, {
+        aspiration: 'turbocharged',
+        transmission: 'manual',
+        speeds: 6,
+      }),
+      car('Subaru', 'Impreza AWD', 2008, 2.5, 197, {
+        aspiration: 'turbocharged',
+        transmission: 'manual',
+        speeds: 5,
+      }),
+    ]);
+    expect(cars.map((c) => c.engine.horsepower)).toEqual([405, 200, 510, 305, 224]);
   });
 
   it('leaves other engines, hybrids and years alone', () => {

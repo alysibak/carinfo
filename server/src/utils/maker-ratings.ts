@@ -52,7 +52,201 @@ const gmMidsize = [
   ['GMC', /^Canyon/],
 ] as const;
 
+/** A manual of a given number of speeds (Subaru's STI had six, the WRX five). */
+const manualSpeeds = (n: number) => (c: Car) =>
+  c.transmission?.type === 'manual' && c.transmission.speeds === n;
+
+/**
+ * Found by an October 2026 audit of the whole catalogue: a supercharged or
+ * turbo engine at its plain sibling's figure or the reverse, a figure out of
+ * line with the same engine the years either side, a trim at another trim's
+ * rating. First in the list, so they win over the broader rows below.
+ */
+const AUDIT_2026: Correction[] = [
+  // The Cayenne GTS read the Turbo's 500 hp, then 225; the V6 the 3.6's figure.
+  rate('Porsche', /^Cayenne$/, [2004, 2006], 3.2, false, 247),
+  rate('Porsche', /^Cayenne (?:GTS|TransSiberia)$/, [2008, 2010], 4.8, false, 405),
+  rate('Porsche', /^Cayenne Turbo S$/, [2009, 2010], 4.8, true, 550),
+  rate('Porsche', /^Cayenne Turbo S$/, [2016, 2018], 4.8, true, 570),
+  // The Competition's S58 read the plain X3 M's 473 hp, and the reverse.
+  rate('BMW', /^X3 M Competition$/, [2020, 2021], 3, true, 503),
+  rate('BMW', /^X3 M$/, [2022, 2024], 3, true, 473),
+  rate('Bentley', /^Continental Supersports(?: Convertible)?$/, [2017, 2018], 6, true, 700),
+  // Jaguar's naturally aspirated V8s at the supercharged cars' 350-370 hp,
+  // and the 2007-09 XJR at 350.
+  rate('Jaguar', /^Vanden Plas$/, [1998, 2003], 4, false, 290),
+  rate('Jaguar', /^XJ Sport$/, [2002, 2003], 4, false, 290),
+  rate('Jaguar', /^Vanden Plas S\.?\/?C\.?$/, [1999, 2001], 4, true, 370),
+  rate('Jaguar', /^(?:XJ8L?|XJ|Vdp(?: 4\.2 Litre)?)$/, [2004, 2009], 4.2, false, 300),
+  rate('Jaguar', /^S-Type 4\.2 Litre$/, [2003, 2003], 4.2, false, 300),
+  rate('Jaguar', /^S-Type R$/, [2003, 2004], 4.2, true, 390),
+  rate('Jaguar', /^(?:XJR|Super V8)$/, [2005, 2005], 4.2, true, 390),
+  rate('Jaguar', /^(?:XJR|Super V8)$/, [2006, 2009], 4.2, true, 400),
+  rate('Jaguar', /^S-Type$/, [2001, 2002], 3, false, 240),
+  rate('Jaguar', /^S-type \(X200\) V6$/, [2000, 2000], 3, false, 240),
+  rate('Jaguar', /^S-type \(X200\) V8$/, [2000, 2000], 4, false, 281),
+  rate('Jaguar', /^X-Type$/, [2002, 2003], 3, false, 231),
+  // GM's 3800 V6 without its supercharger read the supercharged car's figure.
+  rate('Buick', /^Park Avenue$/, [1997, 2005], 3.8, false, 205),
+  rate('Buick', /^Park Avenue$/, [1997, 2005], 3.8, true, 240),
+  rate('Buick', /^Regal$/, [1998, 2004], 3.8, false, 200),
+  rate('Buick', /^Regal$/, [1998, 2004], 3.8, true, 240),
+  rate('Pontiac', /^Grand Prix$/, [1997, 2003], 3.1, false, 175),
+  rate('Pontiac', /^Grand Prix$/, [1997, 2008], 3.8, false, 200),
+  rate('Pontiac', /^Grand Prix$/, [1997, 2003], 3.8, true, 240),
+  rate('Pontiac', /^Grand Prix$/, [2004, 2007], 3.8, true, 260),
+  rate('Pontiac', /^Grand Prix$/, [2005, 2008], 5.3, false, 303),
+  // The supercharged 3.3 made 210 hp; it read 180-195.
+  rate('Nissan', /^(?:Frontier|Xterra) V6 [24]WD$/, [2001, 2004], 3.3, true, 210),
+  // Subaru: the 2.5i at the turbo cars' 207-213 hp, the turbo cars at the 2.5i's.
+  rate('Subaru', /^Forester AWD$/, [2004, 2005], 2.5, true, 210),
+  rate('Subaru', /^Forester AWD$/, [2006, 2006], 2.5, true, 230),
+  rate('Subaru', /^Forester AWD$/, [2006, 2008], 2.5, false, 173),
+  rate('Subaru', /^Forester AWD$/, [2009, 2009], 2.5, false, 170),
+  rate('Subaru', /^(?:Legacy|Outback)(?: Wagon)? AWD$/, [2006, 2007], 2.5, false, 175),
+  rate('Subaru', /^(?:Legacy|Outback)(?: Wagon)? AWD$/, [2008, 2009], 2.5, false, 170),
+  rate('Subaru', /^Legacy AWD$/, [2008, 2009], 3, false, 245),
+  rate('Subaru', /^Legacy\/Outback(?: Wagon)? AWD$/, [2004, 2004], 3, false, 212),
+  { ...rate('Subaru', /^Impreza AWD$/, [2004, 2007], 2.5, true, 300), when: manualSpeeds(6) },
+  {
+    ...rate('Subaru', /^Impreza(?: Wagon\/Outback SPT)? AWD$/, [2008, 2009], 2.5, true, 305),
+    when: manualSpeeds(6),
+  },
+  rate('Subaru', /^Impreza AWD$/, [2008, 2008], 2.5, true, 224),
+  rate('Subaru', /^Impreza AWD$/, [2009, 2009], 2.5, true, 265),
+  // Lincoln's 3.7 and EcoBoost 3.5 read each other's figures, by year.
+  rate('Lincoln', /^MKS (?:AWD|FWD)$/, [2009, 2012], 3.7, false, 273),
+  rate('Lincoln', /^MKT (?:AWD|FWD|Hearse AWD)$/, [2010, 2012], 3.7, false, 268),
+  rate('Lincoln', /^MKT (?:AWD|FWD)$/, [2013, 2019], 3.7, false, 303),
+  rate('Lincoln', /^MKT AWD$/, [2010, 2012], 3.5, true, 355),
+  rate('Lincoln', /^MKT AWD$/, [2013, 2019], 3.5, true, 365),
+  // The Lancer Ralliart (EPA's turbo "Lancer") read the base car's 146-152 hp.
+  rate('Mitsubishi', /^Lancer(?: AWD)?$/, [2009, 2015], 2, true, 237),
+  rate('Ford', /^Transit T150 Wagon$/, [2015, 2019], 3.5, true, 310),
+  // The XTS V-Sport's twin-turbo 3.6 made 410 hp throughout, the 3.6 304.
+  rate('Cadillac', /^XTS(?: AWD)?$/, [2013, 2019], 3.6, false, 304),
+  rate('Cadillac', /^XTS AWD$/, [2014, 2019], 3.6, true, 410),
+  // The supercharged Range Rovers read the 5.0's 375 hp.
+  rate('Land Rover', /^Range Rover(?: Sport)?$/, [2010, 2013], 5, true, 510),
+  rate('Chrysler', /^PT Cruiser$/, [2003, 2003], 2.4, true, 215),
+  // The Pentastar 3.6 made 290 hp from its first year; it read 215.
+  rate('Jeep', /^Grand Cherokee [24]WD$/, [2011, 2013], 3.6, false, 290),
+  rate('Dodge', /^Durango [24]WD$/, [2011, 2013], 3.6, false, 290),
+  rate('Dodge', /^Ram 1500 Pickup [24]WD$/, [2010, 2012], 3.7, false, 215),
+  rate(
+    'Chevrolet',
+    /^Colorado(?: Crew Cab| Cab Chassis inc)? [24]WD$/,
+    [2007, 2008],
+    3.7,
+    false,
+    242,
+  ),
+  rate('Chevrolet', /^Colorado(?: Crew Cab)? [24]WD$/, [2007, 2008], 2.9, false, 185),
+  // Ford's Panther cars at 175 hp, then 260-267; the Marauder unrated.
+  rate('Ford', /^Crown Victoria$/, [1998, 2002], 4.6, false, 200),
+  rate('Ford', /^Crown Victoria(?: FFV)?$/, [2003, 2011], 4.6, false, 224),
+  rate('Mercury', /^Grand Marquis$/, [1998, 2002], 4.6, false, 200),
+  rate('Mercury', /^Grand Marquis(?: FFV)?$/, [2003, 2011], 4.6, false, 224),
+  rate('Mercury', /^Marauder$/, [2003, 2004], 4.6, false, 302),
+  // The E550 coupe and convertible at the E350's 268 hp; the 2019-20 G550 at 310.
+  rate('Mercedes-Benz', /^E550(?: Coupe| Convertible)$/, [2010, 2011], 5.5, false, 382),
+  rate('Mercedes-Benz', /^G550$/, [2019, 2020], 4, true, 416),
+  rate('Suzuki', /^Verona$/, [2004, 2006], 2.5, false, 155),
+  // VW's 2.0 TSI read the TDI's 140 hp; the 2011 Jetta's 2.0 (115 hp) too.
+  rate('Volkswagen', /^CC$/, [2009, 2009], 2, true, 200),
+  rate('Volkswagen', /^CC$/, [2009, 2010], 3.6, false, 280),
+  rate('Volkswagen', /^Jetta$/, [2009, 2010], 2, true, 200),
+  rate('Volkswagen', /^Jetta$/, [2011, 2011], 2, false, 115),
+  rate('Volkswagen', /^Jetta$/, [2010, 2011], 2, true, 140, 'diesel'),
+  // The XC70 T6 made 281 hp before 2011's 300; it read the 3.2's 235.
+  rate('Volvo', /^XC70 AWD$/, [2009, 2010], 3, true, 281),
+];
+
+/**
+ * Cars with no EPA test-car figure at all: the Canadian models NRCan rates
+ * (its files give no power, and no turbo flag, so a turbo engine is matched
+ * as naturally aspirated here) and listings too new for EPA's test-car file.
+ */
+const UNRATED: Correction[] = [
+  // Canada-only models, at their makers' figures (most are US cars renamed).
+  rate('Acura', /^1\.6EL$/, [1997, 2000], 1.6, false, 127),
+  rate('Acura', /^1\.7EL$/, [2001, 2005], 1.7, false, 127),
+  { ...rate('Acura', /^CSX$/, [2007, 2011], 2, false, 197), when: manualSpeeds(6) },
+  rate('Acura', /^CSX$/, [2006, 2011], 2, false, 155),
+  rate('Chevrolet', /^Orlando$/, [2012, 2014], 2.4, false, 174),
+  rate('Chevrolet', /^Tracker (?:Convertible|Van)(?: 4X4)?$/, [1995, 1995], 1.6, false, 80),
+  rate('Pontiac', /^Sunrunner (?:Convertible|Van)(?: 4X4)?$/, [1995, 1995], 1.6, false, 80),
+  rate('Pontiac', /^Sunrunner (?:Convertible|Van)(?: 4X4)?$/, [1996, 1997], 1.6, false, 95),
+  rate('Chevrolet', /^Trax(?: AWD)?$/, [2013, 2014], 1.4, false, 138),
+  rate('Chrysler', /^Grand Caravan$/, [2021, 2026], 3.6, false, 287),
+  rate('Chrysler', /^Intrepid$/, [1996, 1997], 3.3, false, 161),
+  rate('Chrysler', /^Intrepid(?: ES)?$/, [1996, 1997], 3.5, false, 214),
+  rate('Chrysler', /^Intrepid$/, [1998, 2004], 2.7, false, 200),
+  rate('Chrysler', /^Intrepid$/, [1998, 2001], 3.2, false, 225),
+  rate('Chrysler', /^Neon R\/T$/, [2001, 2002], 2, false, 150),
+  rate('Chrysler', /^Neon$/, [2000, 2002], 2, false, 132),
+  rate('Dodge', /^Colt$/, [1995, 1996], 1.5, false, 92),
+  rate('Dodge', /^Colt$/, [1995, 1995], 1.8, false, 113),
+  rate('Plymouth', /^Colt$/, [1995, 1996], 1.5, false, 92),
+  rate('Plymouth', /^Colt$/, [1995, 1995], 1.8, false, 113),
+  rate('INEOS Automotive', /^Grenadier\b/, [2026, 2026], 3, false, 282),
+  rate('Kia', /^Magentis$/, [2001, 2005], 2.4, false, 138),
+  rate('Kia', /^Magentis$/, [2006, 2008], 2.4, false, 161),
+  rate('Kia', /^Magentis$/, [2009, 2010], 2.4, false, 175),
+  rate('Kia', /^Magentis$/, [2001, 2001], 2.5, false, 170),
+  rate('Kia', /^Magentis$/, [2002, 2005], 2.7, false, 178),
+  rate('Kia', /^Magentis$/, [2006, 2008], 2.7, false, 185),
+  rate('Kia', /^Magentis$/, [2009, 2010], 2.7, false, 194),
+  rate('Kia', /^Rondo$/, [2014, 2017], 2, false, 164),
+  rate('Land Rover', /^Range Rover(?: Sport HST)? P400(?: LWB)?$/, [2023, 2023], 3, false, 395),
+  rate('Land Rover', /^Range Rover Sport P360$/, [2023, 2023], 3, false, 355),
+  rate('Land Rover', /^Range Rover(?: Sport)? P530(?: LWB)?$/, [2023, 2023], 4.4, false, 523),
+  rate('Land Rover', /^Range Rover SV(?: LWB)?$/, [2023, 2023], 4.4, false, 606),
+  rate('Mercedes-Benz', /^A 250(?: 4MATIC)?(?: Hatch)?$/, [2019, 2022], 2, false, 221),
+  rate('Mercedes-Benz', /^B 200(?: CVT)? Turbo$/, [2006, 2011], 2, false, 193),
+  rate('Mercedes-Benz', /^B 200(?: CVT)?$/, [2006, 2011], 2, false, 134),
+  rate('Mercedes-Benz', /^B 250(?: 4MATIC)?$/, [2013, 2019], 2, false, 208),
+  rate('Mercedes-Benz', /^C 230 4MATIC$/, [2008, 2009], 2.5, false, 201),
+  rate('Mitsubishi', /^RVR(?: 4WD)?$/, [2011, 2026], 2, false, 148),
+  rate('Mitsubishi', /^RVR(?: 4WD)?$/, [2015, 2026], 2.4, false, 168),
+  rate('Nissan', /^Axxess$/, [1995, 1995], 2.4, false, 138),
+  rate('Nissan', /^Micra$/, [2015, 2019], 1.6, false, 109),
+  rate('Nissan', /^Qashqai(?: AWD)?$/, [2017, 2023], 2, false, 141),
+  rate('Nissan', /^X-Trail(?: AWD)?$/, [2005, 2006], 2.5, false, 165),
+  rate('Pontiac', /^Firefly$/, [1995, 2000], 1, false, 55),
+  rate('Pontiac', /^Firefly$/, [1995, 1997], 1.3, false, 70),
+  rate('Pontiac', /^Firefly$/, [1998, 2000], 1.3, false, 79),
+  rate('Pontiac', /^Montana SV6(?: FFV)?$/, [2007, 2009], 3.9, false, 240),
+  rate('Pontiac', /^Pursuit$/, [2005, 2005], 2.2, false, 145),
+  rate('Pontiac', /^Pursuit$/, [2006, 2006], 2.2, false, 148),
+  rate('Pontiac', /^Pursuit$/, [2006, 2006], 2.4, false, 171),
+  rate('Pontiac', /^Wave(?: 5)?$/, [2007, 2008], 1.6, false, 103),
+  rate('Volkswagen', /^City (?:Golf|Jetta)$/, [2007, 2010], 2, false, 115),
+  rate('smart', /^fortwo CDI(?: cabriolet)?$/, [2005, 2006], 0.8, false, 40, 'diesel'),
+
+  // Listings newer than EPA's test-car file.
+  rate('Aston Martin', /^DB12 S$/, [2026, 2027], 4, true, 690),
+  rate('Aston Martin', /^DBX 727$/, [2026, 2026], 4, true, 697),
+  rate('Audi', /^Q5 Sportback S line quattro$/, [2025, 2025], 2, true, 268),
+  rate('Bentley', /^Continental GTC$/, [2024, 2024], 4, true, 542),
+  rate('Ferrari', /^Amalfi$/, [2027, 2027], 3.9, true, 631),
+  rate('Genesis', /^G70 (?:AWD|RWD)$/, [2027, 2027], 2.5, true, 300),
+  rate('Infiniti', /^QX65 AWD$/, [2027, 2027], 2, true, 268),
+  rate('Kia', /^K4\b/, [2027, 2027], 2, false, 147),
+  rate('Kia', /^K5$/, [2027, 2027], 2.5, true, 290),
+  rate('Kia', /^Telluride (?:AWD|FWD|X-Pro)$/, [2027, 2027], 2.5, true, 274),
+  rate('Land Rover', /^Range Rover Evoque$/, [2026, 2026], 2, true, 246),
+  rate('Land Rover', /^Range Rover Sport P360 MHEV$/, [2027, 2027], 3, true, 355),
+  rate('Lincoln', /^Navigator [24]WD$/, [2027, 2027], 3.5, true, 440),
+  rate('Mercedes-Benz', /^GLE350 4matic$/, [2027, 2027], 2, true, 255),
+  rate('Nissan', /^Sentra\b/, [2027, 2027], 2, false, 149),
+  rate('Volkswagen', /^Atlas 4motion$/, [2027, 2027], 2, true, 269),
+];
+
 export const MAKER_RATINGS: Correction[] = [
+  ...AUDIT_2026,
+  ...UNRATED,
+
   // Acura
   rate('Acura', /^TLX/, [2015, 2020], 3.5, false, 290),
   rate('Acura', /^TSX/, [2010, 2014], 3.5, false, 280),
