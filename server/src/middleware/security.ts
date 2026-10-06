@@ -5,10 +5,9 @@ import type { Request, Response } from 'express';
 /**
  * Origins allowed to call the API from a browser.
  *
- * Account endpoints authenticate with a Bearer token rather than a cookie, so a
- * permissive CORS policy was never a session-riding risk — but there is also no
- * reason for arbitrary sites to drive this API, and an allowlist keeps a future
- * cookie-based feature from silently inheriting `*`.
+ * Accounts sign in with a session cookie that only the site's own origin
+ * sends: `credentials: false` below keeps even an allowed origin from making
+ * a signed-in request across sites. The allowlist covers the public reads.
  *
  * Non-browser clients (curl, server-to-server, health checks) send no Origin
  * header at all and are unaffected.

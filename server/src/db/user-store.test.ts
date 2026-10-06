@@ -9,6 +9,8 @@ import { getPool } from './pool.js';
 import {
   GarageLimitError,
   addGarageId,
+  claimLegacyAccount,
+  deleteAccountData,
   ensureUser,
   findUserByStripeCustomerId,
   getGarageIds,
@@ -34,7 +36,7 @@ describe.skipIf(!hasTestDatabase)('user-store (Postgres)', () => {
     });
 
     it('keeps a known email when a later call has none', async () => {
-      // Clerk email lookup is best-effort; a transient miss must not erase it.
+      // The Stripe webhook may not know the email; it must not erase it.
       await ensureUser('user_1', 'a@example.com');
       const again = await ensureUser('user_1', null);
       expect(again.email).toBe('a@example.com');
@@ -142,6 +144,60 @@ describe.skipIf(!hasTestDatabase)('user-store (Postgres)', () => {
       await getPool().query(`DELETE FROM users WHERE id = 'user_1'`);
       const { rows } = await getPool().query(`SELECT count(*)::int AS n FROM garage_items`);
       expect(rows[0].n).toBe(0);
+    });
+  });
+
+  describe('accounts from before Better Auth', () => {
+    /** A sign-in of Better Auth's, as its tables hold one. */
+    async function signIn(id: string, email: string): Promise<void> {
+      await getPool().query(
+        `INSERT INTO auth_user (id, name, email, email_verified) VALUES ($1, $1, $2, true)`,
+        [id, email],
+      );
+    }
+
+    it('moves plan, Stripe customer and garage to the sign-in', async () => {
+      await ensureUser('user_clerk', 'Driver@Example.com');
+      await setUserPlan('user_clerk', 'pro', 'cus_1');
+      await setGarageIds('user_clerk', ['car-a', 'car-b'], 'pro');
+      await signIn('newId', 'driver@example.com');
+
+      expect(await claimLegacyAccount('newId', 'driver@example.com')).toBe(true);
+      expect(await getUser('newId')).toMatchObject({ plan: 'pro', stripeCustomerId: 'cus_1' });
+      expect(await getGarageIds('newId')).toEqual(['car-a', 'car-b']);
+      expect(await getUser('user_clerk')).toBeNull();
+      // Once moved, there is nothing left to move.
+      expect(await claimLegacyAccount('newId', 'driver@example.com')).toBe(false);
+    });
+
+    it('adds to what the new account already holds', async () => {
+      await signIn('newId', 'driver@example.com');
+      await ensureUser('newId', 'driver@example.com');
+      await setGarageIds('newId', ['car-c'], 'free');
+      await ensureUser('user_clerk', 'driver@example.com');
+      await setGarageIds('user_clerk', ['car-a', 'car-c'], 'free');
+
+      await claimLegacyAccount('newId', 'driver@example.com');
+      expect(new Set(await getGarageIds('newId'))).toEqual(new Set(['car-a', 'car-c']));
+      expect((await getUser('newId'))?.plan).toBe('free');
+    });
+
+    it('never takes another sign-in’s account', async () => {
+      await signIn('first', 'shared@example.com');
+      await ensureUser('first', 'shared@example.com');
+      await setGarageIds('first', ['car-a'], 'free');
+      expect(await claimLegacyAccount('second', 'shared@example.com')).toBe(false);
+      expect(await getGarageIds('first')).toEqual(['car-a']);
+    });
+  });
+
+  describe('deleteAccountData', () => {
+    it('removes the account and its garage', async () => {
+      await ensureUser('user_1');
+      await setGarageIds('user_1', ['car-a'], 'free');
+      await deleteAccountData('user_1');
+      expect(await getUser('user_1')).toBeNull();
+      expect(await getGarageIds('user_1')).toEqual([]);
     });
   });
 });

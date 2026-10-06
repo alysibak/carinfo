@@ -198,10 +198,23 @@ describe.skipIf(!hasTestDatabase)('Stripe webhook', () => {
         signedEvent('customer.subscription.created', {
           id: 'sub_9',
           customer: 'cus_new',
-          metadata: { clerkUserId: 'user_2' },
+          metadata: { userId: 'user_2' },
         }),
       );
       expect(await getUser('user_2')).toMatchObject({ plan: 'pro', stripeCustomerId: 'cus_new' });
+    });
+
+    it('still reads the account from subscriptions made under Clerk', async () => {
+      await ensureUser('user_3');
+      liveSubscriptions = [{ id: 'sub_8', status: 'active' }];
+      await post(
+        signedEvent('customer.subscription.created', {
+          id: 'sub_8',
+          customer: 'cus_old',
+          metadata: { clerkUserId: 'user_3' },
+        }),
+      );
+      expect(await getUser('user_3')).toMatchObject({ plan: 'pro', stripeCustomerId: 'cus_old' });
     });
 
     it('acknowledges an event for a customer it cannot place', async () => {

@@ -17,8 +17,8 @@ import './index.css';
 
 installStaleBuildRecovery();
 
-// Clerk is mounted inside App, scoped to the app-shell routes, so the entry
-// chunk stays free of the auth SDK. See components/AuthProvider.tsx.
+// The sign-in client loads in its own chunks, so the entry chunk stays free
+// of it. See components/AuthProvider.tsx and components/AuthHeaderSlot.tsx.
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />

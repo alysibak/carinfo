@@ -16,6 +16,8 @@ import { resolveDataFile } from './utils/data-paths.js';
 import { corsOptions, publicReadLimiter } from './middleware/security.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
 import { requestContext } from './middleware/request-context.js';
+import { authHandler } from './middleware/auth.js';
+import { noStore } from './middleware/cache.js';
 
 // Load .env from the CWD (server/ in dev), then fall back to the repo
 // root so one root .env can configure both workspaces. Missing files no-op.
@@ -37,9 +39,8 @@ app.use(
   helmet({
     // Baseline CSP, matching vercel.json, for the HTML this server renders
     // (vehicle and compare pages, and the SPA under `npm start`). It leaves
-    // script sources open: restricting them means allowlisting the Clerk
-    // Frontend API host for the deployment's key. No upgrade-insecure-requests
-    // here: `npm start` over plain http://localhost would break.
+    // script sources open. No upgrade-insecure-requests here: `npm start`
+    // over plain http://localhost would break.
     contentSecurityPolicy: {
       useDefaults: false,
       directives: {
@@ -66,6 +67,10 @@ app.post(
   express.raw({ type: 'application/json', limit: '1mb' }),
   billingController.handleStripeWebhook,
 );
+
+// Sign-in, sign-up, sign-out and the rest of Better Auth. It reads the body
+// itself, so it too goes before express.json().
+app.all('/api/auth/*', publicReadLimiter(), noStore, authHandler);
 
 app.use(express.json({ limit: '256kb' }));
 

@@ -265,3 +265,18 @@ describe('syncFromCloud', () => {
     expect(ids()).toEqual(['a']);
   });
 });
+
+describe('signing out', () => {
+  it("forgets the account's garage on this device", () => {
+    useGarageStore.setState({ cars: [car('a')], syncMode: 'cloud', plan: 'pro' });
+    useGarageStore.getState().forgetAccountGarage();
+    expect(ids()).toEqual([]);
+    expect(useGarageStore.getState()).toMatchObject({ syncMode: 'local', plan: 'free' });
+  });
+
+  it('keeps cars that never reached the account', () => {
+    useGarageStore.setState({ cars: [car('a')], syncMode: 'local' });
+    useGarageStore.getState().forgetAccountGarage();
+    expect(ids()).toEqual(['a']);
+  });
+});

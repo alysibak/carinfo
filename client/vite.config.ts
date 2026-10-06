@@ -19,9 +19,11 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
+      // The browser's Host (localhost:3000) goes through, so sign-in builds
+      // its links and Google's callback on the site's origin, not the API's.
       '/api': {
         target: 'http://localhost:5000',
-        changeOrigin: true,
+        changeOrigin: false,
       },
     },
   },

@@ -11,7 +11,9 @@ import {
   setGarageIds,
 } from '../db/user-store.js';
 import { FREE_GARAGE_LIMIT, PRO_GARAGE_LIMIT } from '../types/account.types.js';
-import { isClerkConfigured } from '../middleware/auth.js';
+import { isAuthConfigured, isGoogleConfigured } from '../auth/auth.js';
+import { isEmailConfigured } from '../auth/email.js';
+import { isBillingConfigured } from './billing.controller.js';
 
 /** Hard ceiling on one sync payload, checked before any database work. */
 const MAX_GARAGE_PAYLOAD = PRO_GARAGE_LIMIT;
@@ -27,16 +29,27 @@ function storageUnavailable(res: Response): boolean {
   return false;
 }
 
-/** Public capability probe for the client. */
+/** Pro is offered only where it can be bought. */
+function limitMessage(err: GarageLimitError): string {
+  if (isBillingConfigured()) return err.message;
+  return `Your garage holds up to ${err.limit} vehicles. Remove one to save another.`;
+}
+
+/**
+ * Public capability probe for the client: which sign-in methods to offer, and
+ * whether the tools need an account (they do once accounts are configured).
+ */
 export function getAccountStatus(_req: Request, res: Response) {
+  const authConfigured = isAuthConfigured();
   res.json({
     success: true,
     data: {
-      authConfigured: isClerkConfigured(),
+      authConfigured,
       storageConfigured: isAccountsStorageReady(),
-      billingConfigured: Boolean(
-        process.env.STRIPE_SECRET_KEY?.trim() && process.env.STRIPE_PRICE_ID?.trim(),
-      ),
+      billingConfigured: authConfigured && isBillingConfigured(),
+      googleSignIn: authConfigured && isGoogleConfigured(),
+      // Password reset and address confirmation both need email.
+      emailConfigured: authConfigured && isEmailConfigured(),
       freeGarageLimit: FREE_GARAGE_LIMIT,
     },
   });
@@ -137,7 +150,7 @@ export async function putMyGarage(req: Request, res: Response) {
       if (err instanceof GarageLimitError) {
         res.status(403).json({
           success: false,
-          error: err.message,
+          error: limitMessage(err),
           code: 'GARAGE_LIMIT',
           limit: err.limit,
         });
@@ -181,7 +194,7 @@ export async function addMyGarageItem(req: Request, res: Response) {
       if (err instanceof GarageLimitError) {
         res.status(403).json({
           success: false,
-          error: err.message,
+          error: limitMessage(err),
           code: 'GARAGE_LIMIT',
           limit: err.limit,
         });

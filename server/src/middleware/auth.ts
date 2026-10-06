@@ -1,9 +1,12 @@
 import type { NextFunction, Request, Response } from 'express';
-import { createClerkClient, verifyToken } from '@clerk/backend';
+import { fromNodeHeaders, toNodeHandler } from 'better-auth/node';
+import { getAuth, isAuthConfigured, siteOrigins } from '../auth/auth.js';
+import { ensureSchema } from '../db/pool.js';
 
 export interface AuthUser {
   userId: string;
   email: string | null;
+  emailVerified: boolean;
 }
 
 declare global {
@@ -16,66 +19,86 @@ declare global {
   }
 }
 
-export function isClerkConfigured(): boolean {
-  return Boolean(process.env.CLERK_SECRET_KEY?.trim());
-}
-
-function getClerk() {
-  const secretKey = process.env.CLERK_SECRET_KEY;
-  if (!secretKey) throw new Error('CLERK_SECRET_KEY is not configured');
-  return createClerkClient({ secretKey });
+function notConfigured(res: Response): void {
+  res.status(503).json({
+    success: false,
+    error: 'Accounts are not configured (missing DATABASE_URL or BETTER_AUTH_SECRET)',
+  });
 }
 
 /**
- * Require a valid Clerk Bearer token. Attaches req.authUser.
+ * Better Auth's own endpoints (sign-in, sign-up, sign-out, password reset,
+ * Google's callback), under /api/auth. Registered with app.all, which keeps
+ * the full path Better Auth routes on, and before express.json(): Better Auth
+ * reads the body itself.
  */
+export async function authHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
+  if (!isAuthConfigured()) {
+    notConfigured(res);
+    return;
+  }
+  try {
+    await ensureSchema();
+    await toNodeHandler(getAuth())(req, res);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * A write from a page on another site. The session cookie is SameSite=Lax, so
+ * a browser leaves it off such requests anyway; this refuses them outright.
+ */
+function crossSiteWrite(req: Request): boolean {
+  if (req.method === 'GET' || req.method === 'HEAD') return false;
+  const origin = req.headers.origin;
+  return Boolean(origin) && !siteOrigins().includes(origin!.replace(/\/$/, ''));
+}
+
+/** Require a signed-in session. Attaches req.authUser. */
 export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
-  if (!isClerkConfigured()) {
-    res.status(503).json({
-      success: false,
-      error: 'Account features are not configured (missing CLERK_SECRET_KEY)',
-    });
+  if (!isAuthConfigured()) {
+    notConfigured(res);
+    return;
+  }
+  if (crossSiteWrite(req)) {
+    res.status(403).json({ success: false, error: 'Cross-site request refused' });
     return;
   }
 
+  let session;
   try {
-    const header = req.headers.authorization;
-    if (!header?.startsWith('Bearer ')) {
-      res.status(401).json({ success: false, error: 'Missing authorization token' });
-      return;
-    }
-    const token = header.slice('Bearer '.length).trim();
-    if (!token) {
-      res.status(401).json({ success: false, error: 'Missing authorization token' });
-      return;
-    }
-
-    const payload = await verifyToken(token, {
-      secretKey: process.env.CLERK_SECRET_KEY!,
-    });
-
-    const userId = payload.sub;
-    if (!userId) {
-      res.status(401).json({ success: false, error: 'Invalid token' });
-      return;
-    }
-
-    let email: string | null = null;
-    try {
-      const clerk = getClerk();
-      const user = await clerk.users.getUser(userId);
-      email =
-        user.emailAddresses.find((e) => e.id === user.primaryEmailAddressId)?.emailAddress ??
-        user.emailAddresses[0]?.emailAddress ??
-        null;
-    } catch {
-      /* email is optional for garage ops */
-    }
-
-    req.authUser = { userId, email };
-    next();
+    // No ensureSchema() first: without a session cookie this asks nothing of
+    // the database, and a cookie means a sign-in already made the tables.
+    session = await getAuth().api.getSession({ headers: fromNodeHeaders(req.headers) });
   } catch (error) {
-    console.error('[auth] token verification failed:', error);
-    res.status(401).json({ success: false, error: 'Invalid or expired session' });
+    console.error('[auth] session check failed:', error);
+    res.status(503).json({ success: false, error: 'Could not check your sign-in. Try again.' });
+    return;
   }
+  if (!session) {
+    res.status(401).json({ success: false, error: 'Sign in to continue' });
+    return;
+  }
+
+  req.authUser = {
+    userId: session.user.id,
+    email: session.user.email,
+    emailVerified: session.user.emailVerified,
+  };
+  next();
+}
+
+/**
+ * The tools (VIN decoder and the like) are for members once accounts are set
+ * up; before that, a deployment without them keeps the tools open rather
+ * than locking everyone out.
+ */
+export function requireAuthWhenConfigured(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void | Promise<void> {
+  if (!isAuthConfigured()) return next();
+  return requireAuth(req, res, next);
 }

@@ -157,6 +157,7 @@ server/data/cars-ready.json
 
 # Playwright
 test-results/
+e2e/.auth/
 
 # Catch vercel env pull / stray dotenv files; keep the committed template.
 .env*

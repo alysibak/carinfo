@@ -26,8 +26,13 @@ interface GarageStore {
   setPlan: (plan: 'free' | 'pro', garageLimit: number | null) => void;
   /** Merge local IDs into cloud, then replace local with server garage. */
   syncFromCloud: () => Promise<void>;
-  /** Drop cloud mode after sign-out (keep local cars). */
+  /** Drop cloud mode when no one is signed in (keep local cars). */
   detachCloud: () => void;
+  /**
+   * After signing out: forget a garage that lives in the account, so the next
+   * person to sign in on this device does not inherit it.
+   */
+  forgetAccountGarage: () => void;
 }
 
 /**
@@ -74,6 +79,12 @@ export const useGarageStore = create<GarageStore>()(
         });
       },
 
+      forgetAccountGarage: () => {
+        const synced = get().syncMode === 'cloud';
+        get().detachCloud();
+        if (synced) set({ cars: [] });
+      },
+
       add: async (car) => {
         const state = get();
         if (state.cars.some((c) => c.id === car.id)) {
@@ -86,7 +97,7 @@ export const useGarageStore = create<GarageStore>()(
             ok: false,
             reason: 'limit',
             limit,
-            message: `Free plan allows up to ${limit} saved vehicles. Upgrade to Pro for an unlimited garage.`,
+            message: `Your garage holds up to ${limit} vehicles. Remove one to save another.`,
           };
         }
 

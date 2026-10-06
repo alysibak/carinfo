@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { audit, describeViolations } from './axe';
 
 /**
  * Automated WCAG 2.2 A/AA checks with axe-core, at desktop and phone widths
@@ -12,40 +13,10 @@ import { expect, test, type Page } from '@playwright/test';
  *
  * axe catches roughly a third of WCAG issues — the mechanical ones. It is a
  * floor, not a substitute for keyboard and screen-reader testing.
+ *
+ * These pages are seen signed in (where the server has accounts); the
+ * sign-in pages and the visitor's view of the tools are in accounts.spec.ts.
  */
-// Specs compile to CommonJS here, so require.resolve is available directly.
-const AXE_PATH = require.resolve('axe-core/axe.min.js');
-
-const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
-
-interface AxeViolation {
-  id: string;
-  impact: string;
-  help: string;
-  nodes: { target: string[] }[];
-}
-
-async function audit(page: Page): Promise<AxeViolation[]> {
-  await page.addScriptTag({ path: AXE_PATH });
-  return page.evaluate(async (tags) => {
-    // @ts-expect-error — injected global
-    const result = await window.axe.run(document, { runOnly: { type: 'tag', values: tags } });
-    return result.violations;
-  }, WCAG_TAGS);
-}
-
-function describeViolations(violations: AxeViolation[]): string {
-  return violations
-    .map(
-      (v) =>
-        `${v.impact} ${v.id}: ${v.help} — ${v.nodes
-          .map((n) => n.target.join(' '))
-          .slice(0, 3)
-          .join(' | ')}`,
-    )
-    .join('\n');
-}
-
 async function firstCarId(page: Page, query: string): Promise<string> {
   const res = await page.request.get(`/api/cars/search?q=${query}&limit=1`);
   const body = await res.json();
@@ -77,6 +48,7 @@ for (const { name, viewport } of VIEWPORTS) {
         '/smart-search',
         '/vin',
         '/garage',
+        '/account',
         '/methodology',
         '/no-such-page',
       ];

@@ -525,18 +525,28 @@ Loaded once at startup into memory:
 | `/vehicles/:category/:subcategory` | `VehicleGrid.tsx`  | Yes    | Filtered grid + sidebar                                  |
 | `/car/:id`                         | `CarDetail.tsx`    | Yes    | Vehicle dossier                                          |
 | `/home`                            | `Home.tsx`         | Yes    | Main search                                              |
-| `/compare`                         | `Compare.tsx`      | Yes    | Side-by-side table (dashboard API, full provenance)      |
+| `/compare`                         | `Compare.tsx`      | Yes    | Side-by-side table (members; dashboard API, provenance)  |
 | `/collection/:collectionId`        | `Collection.tsx`   | Yes    | Curated collection                                       |
 | `/smart-search`                    | `SmartSearch.tsx`  | Yes    | Persona-ranked search                                    |
-| `/garage`                          | `DreamGarage.tsx`  | Yes    | Saved garage                                             |
+| `/garage`                          | `DreamGarage.tsx`  | Yes    | Saved garage (members)                                   |
 | `/shared-garage`                   | `SharedGarage.tsx` | Yes    | `?cars=id1,id2`                                          |
-| `/battle`                          | `BattleMode.tsx`   | Yes    | 2-car head-to-head (provenance-aware)                    |
-| `/value-matrix`                    | `ValueMatrix.tsx`  | Yes    | Recharts scatter (lazy-loaded chunk)                     |
+| `/battle`                          | `BattleMode.tsx`   | Yes    | 2-car head-to-head (members)                             |
+| `/value-matrix`                    | `ValueMatrix.tsx`  | Yes    | Recharts scatter (members; lazy-loaded chunk)            |
 | `/methodology`                     | `Methodology.tsx`  | Yes    | Data pipeline, PHEV correction, valuation model          |
-| `/vin`                             | `VinDecoder.tsx`   | Yes    | VIN lookup                                               |
-| `/account`                         | `Account.tsx`      | Yes    | Clerk garage sync and billing (when keys exist)          |
+| `/vin`                             | `VinDecoder.tsx`   | Yes    | VIN lookup (members)                                     |
+| `/account`                         | `Account.tsx`      | Yes    | Garage sync, plan, password, sign-out, delete            |
+| `/sign-in` · `/sign-up`            | `SignIn.tsx` …     | Yes    | Email and password, or Google; `?next=` returns there    |
+| `/forgot-password`                 | `ForgotPassword…`  | Yes    | Emails a reset link (when email is configured)           |
+| `/reset-password`                  | `ResetPassword…`   | Yes    | Where the reset link lands                               |
 
 `Layout.tsx` wraps all non-landing routes with `SiteHeader`.
+
+**Who sees what.** Car pages, search, browsing, collections and the methodology
+are open to everyone. The tools (Compare, Dream Garage, Battle Mode, the Value
+Matrix and the VIN decoder) ask for a free account (`RequireAccount.tsx`), and
+the VIN API refuses requests without a session. Pro lifts the garage's
+10-car limit, and is shown only where Stripe is configured. A deployment without
+accounts configured gates nothing.
 
 ### UI conventions
 
@@ -914,17 +924,17 @@ gasoline, so the dossier and its own TCO calculator showed different totals.
 | `.gitignore`             | Ignores `node_modules`, `dist`, `server/data/raw/`, `.env`, `.vercel` |
 | `.cursor/worktrees.json` | Cursor worktree config                                                |
 
-### Client — pages (17)
+### Client — pages (21)
 
-`Landing.tsx` · `Browse.tsx` · `Explore.tsx` · `VehicleGrid.tsx` · `CarDetail.tsx` · `Home.tsx` · `Compare.tsx` · `Collection.tsx` · `SmartSearch.tsx` · `DreamGarage.tsx` · `SharedGarage.tsx` · `BattleMode.tsx` · `ValueMatrix.tsx` · `VinDecoder.tsx` · `Methodology.tsx` · `Account.tsx` · `NotFound.tsx`
+`Landing.tsx` · `Browse.tsx` · `Explore.tsx` · `VehicleGrid.tsx` · `CarDetail.tsx` · `Home.tsx` · `Compare.tsx` · `Collection.tsx` · `SmartSearch.tsx` · `DreamGarage.tsx` · `SharedGarage.tsx` · `BattleMode.tsx` · `ValueMatrix.tsx` · `VinDecoder.tsx` · `Methodology.tsx` · `Account.tsx` · `NotFound.tsx` · `SignIn.tsx` · `SignUp.tsx` · `ForgotPassword.tsx` · `ResetPassword.tsx`
 
 ### Client — components (42)
 
-`AboutData` · `AccountAuth` · `AccountClerkPanel` · `AuthHeaderSlot` · `AuthProvider` · `BodyTypeIllustration` · `CarCard` · `CatalogueStats` · `ClerkShell` · `CompareTray` · `DataTrustPanel` · `DataValue` · `ErrorBoundary` · `FilterPills` · `FilterSheet` · `FilterSidebar` · `KeyFigures` · `KeySpecs` · `Layout` · `PageHeader` · `PageShell` · `PersonaQuiz` · `PinnedCarBar` · `ProvenanceChip` · `RegionSelect` · `SampleCarCard` · `ScrollToTop` · `SearchBar` · `SelectMenu` · `ShortlistCards` · `SiblingConfigs` · `SignInPromptSlot` · `SimilarCars` · `SiteHeader` · `SpecExplain` · `TCOCalculator` · `ToolPageHeader` · `ValuationLinks` · `ValueMatrixHeatmap` · `VehiclePlaceholder` · `VinScanner` · `ui`
+`AboutData` · `AccountControls` · `AccountSync` · `AuthForm` · `AuthHeaderSlot` · `AuthProvider` · `BodyTypeIllustration` · `CarCard` · `CatalogueStats` · `CompareTray` · `DataTrustPanel` · `DataValue` · `ErrorBoundary` · `FilterPills` · `FilterSheet` · `FilterSidebar` · `KeyFigures` · `KeySpecs` · `Layout` · `PageHeader` · `PageShell` · `PersonaQuiz` · `PinnedCarBar` · `ProvenanceChip` · `RegionSelect` · `RequireAccount` · `SampleCarCard` · `ScrollToTop` · `SearchBar` · `SelectMenu` · `ShortlistCards` · `SiblingConfigs` · `SimilarCars` · `SiteHeader` · `SpecExplain` · `TCOCalculator` · `ToolPageHeader` · `ui` · `ValuationLinks` · `ValueMatrixHeatmap` · `VehiclePlaceholder` · `VinScanner`
 
-### Client — utils (33)
+### Client — utils (31)
 
-`authConfig` · `bodyStyleLabel` · `carImages` · `clerkMounted` · `collectionCuration` · `compareIds` · `compareSummary` · `currency` · `dataTrust` · `dataValue` · `differentiateCars` · `efficiency` · `epaContent` · `filterState` · `fuelDisplay` · `fuelEconomyUnits` · `fuelLabels` · `keyFigures` · `landingShowcase` · `matchReasons` · `money` · `pageMeta` · `quickFilters` · `quizReasons` · `rankedFigure` · `searchInterpretation` · `searchParams` · `specGlossary` · `staleBuildRecovery` · `tco` · `trimLabel` · `vin` · `visualTiers`
+`bodyStyleLabel` · `carImages` · `collectionCuration` · `compareIds` · `compareSummary` · `currency` · `dataTrust` · `dataValue` · `differentiateCars` · `efficiency` · `epaContent` · `filterState` · `fuelDisplay` · `fuelEconomyUnits` · `fuelLabels` · `keyFigures` · `landingShowcase` · `matchReasons` · `money` · `pageMeta` · `quickFilters` · `quizReasons` · `rankedFigure` · `searchInterpretation` · `searchParams` · `specGlossary` · `staleBuildRecovery` · `tco` · `trimLabel` · `vin` · `visualTiers`
 
 ### Client — config (2)
 
@@ -1072,8 +1082,11 @@ allow alongside `headers`):
 | `SITE_URL`                                                        | `APP_ORIGIN`, then Vercel's production domain                         | Public origin for canonical URLs, Open Graph, sitemap, robots.txt. Without one, absolute URLs are omitted rather than guessed. |
 | `APP_ORIGIN`                                                      | —                                                                     | Public origin for Stripe return URLs and the CORS allowlist. **Required in production.**                                       |
 | `ADDITIONAL_ORIGINS`                                              | —                                                                     | Extra browser origins allowed to call the API (comma-separated)                                                                |
-| `VITE_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY`                 | —                                                                     | Enable sign-in and cloud garage sync                                                                                           |
-| `DATABASE_URL`                                                    | —                                                                     | Postgres for users and garages; tables are created on first use                                                                |
+| `BETTER_AUTH_SECRET`                                              | —                                                                     | With `DATABASE_URL`, turns on accounts (32+ random characters: `openssl rand -base64 32`)                                      |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`                       | —                                                                     | Adds "Continue with Google"                                                                                                    |
+| `RESEND_API_KEY` / `EMAIL_FROM`                                   | —                                                                     | Password reset and email confirmation, sent through Resend                                                                     |
+| `BETTER_AUTH_URL`                                                 | the request's host, if one of the site's                              | Fixes the sign-in origin (only needed behind an unusual proxy)                                                                 |
+| `DATABASE_URL`                                                    | —                                                                     | Postgres for accounts, sessions and garages; tables are created on first use                                                   |
 | `DATABASE_SSL`                                                    | unset: TLS **without** certificate verification (warns in production) | Set `verify` in production (plus `DATABASE_CA_CERT` for a private CA); `false` for local Postgres                              |
 | `DATABASE_POOL_MAX` / `DATABASE_CONNECT_TIMEOUT_MS`               | `5` / `5000`                                                          | Per-instance pool size and connect timeout                                                                                     |
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` / `STRIPE_PRICE_ID` | —                                                                     | CarInfo Pro billing                                                                                                            |
@@ -1086,20 +1099,26 @@ The public catalog needs none of these.
 
 ### Enabling accounts
 
-The code ships ready — sign-in, the `/account` page, and cloud garage sync all appear automatically once three keys exist:
+Sign-in runs in this server with [Better Auth](https://better-auth.com), its
+accounts and sessions in the site's own Postgres: no sign-in service to pay per
+user, and the sign-in pages are the site's own. It turns on once two values exist:
 
-1. **Clerk** — create a free app at [dashboard.clerk.com](https://dashboard.clerk.com), then copy the **Publishable key** (`pk_...`) and **Secret key** (`sk_...`) from API Keys.
-2. **Postgres** — create a free database (Neon, Vercel Postgres, or Supabase) and copy its connection string. Tables are created automatically on first request; no migration step.
-3. **Vercel** — Project → Settings → Environment Variables, add:
-   - `VITE_CLERK_PUBLISHABLE_KEY` = the `pk_...` key (baked in at build time)
-   - `CLERK_SECRET_KEY` = the `sk_...` key
+1. **Postgres** — create a free database (Neon, Vercel Postgres, or Supabase) and copy its connection string. Tables are created automatically on first request; no migration step.
+2. **Vercel** — Project → Settings → Environment Variables, add:
    - `DATABASE_URL` = the Postgres connection string
+   - `BETTER_AUTH_SECRET` = 32 or more random characters (`openssl rand -base64 32`); changing it signs everyone out
 
-   Then redeploy. For local dev, put the same three in a root `.env`.
+   Then redeploy. For local dev, put the same two in a root `.env`.
 
-4. **Stripe (optional, for Pro)** — add `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, and `STRIPE_WEBHOOK_SECRET` with a webhook pointed at `/api/billing/webhook`.
+3. **Google sign-in (optional)** — in Google Cloud Console → APIs & Services → Credentials, create an OAuth client ID (Web application) with the redirect URI `https://<your domain>/api/auth/callback/google`, then add `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
+4. **Email (optional)** — for "Forgot your password?" and address confirmation, add a [Resend](https://resend.com) `RESEND_API_KEY` and an `EMAIL_FROM` on a domain verified there (`CarInfo <accounts@your-domain>`).
+5. **Stripe (optional, for Pro)** — add `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, and `STRIPE_WEBHOOK_SECRET` with a webhook pointed at `/api/billing/webhook`.
 
-**Accounts API:** `GET /api/me/status`, `GET/PUT /api/me/garage`, `POST /api/billing/checkout`, `POST /api/billing/portal`, `POST /api/billing/webhook`.
+Accounts made under Clerk, which this replaced, are kept: signing up again with
+the same address moves their garage, plan and Stripe customer across once the
+address is confirmed (by Google, or the emailed link).
+
+**Accounts API:** `/api/auth/*` (Better Auth: sign-in, sign-up, sign-out, password reset, Google's callback), `GET /api/me/status`, `GET/PUT /api/me/garage`, `POST /api/billing/checkout`, `POST /api/billing/portal`, `POST /api/billing/webhook`.
 
 No `.env` required for local development of the public catalog.
 
@@ -1138,11 +1157,11 @@ No `.env` required for local development of the public catalog.
 
 ## Dependencies
 
-- **Client:** React 18, React Router 7, Zustand, Recharts (Value Matrix only), Clerk
-  (lazy, app shell only), `@zxing` (VIN scanner, lazy), self-hosted `@fontsource`
+- **Client:** React 18, React Router 7, Zustand, Recharts (Value Matrix only), the
+  Better Auth client (lazy), `@zxing` (VIN scanner, lazy), self-hosted `@fontsource`
   fonts. HTTP is a small typed wrapper over `fetch` (`services/http.ts`).
 - **Server:** Express, helmet, express-rate-limit, compression, `pg`, Stripe,
-  Clerk backend. Data scripts use `csv-parse` and `exceljs`, and `fetch` for
+  Better Auth. Data scripts use `csv-parse` and `exceljs`, and `fetch` for
   downloads.
 - **Tooling:** TypeScript 5.9, Vite 6, Vitest 4 (+ coverage), Playwright,
   axe-core, ESLint 9, Prettier.
@@ -1156,21 +1175,23 @@ the bundle budget and `validate:data`, Playwright E2E, and `npm audit`.
 
 Highlights:
 
-| Suite                                                                    | Pins                                                                                   |
-| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| `fuel-type-inference.test.ts`                                            | Rules agree with EPA on every record; stale-label corrections (Cayenne, Karma, i3 REx) |
-| `validate-data.ts` (CI)                                                  | IDs, enums, physics: CO₂ × MPG vs fuel, BEVs without engines, plausible horsepower     |
-| `energy-cost.test.ts` / `tco.test.ts`                                    | One cost engine for dossier and calculator; natural gas and hydrogen from EPA's figure |
-| `runtime-db.test.ts`                                                     | `cars-ready.json` format 2 round-trip; shared provenance frozen                        |
-| `seo.test.ts`                                                            | Server-rendered shells, JSON-LD, escaping, real 404s                                   |
-| `billing.webhook.test.ts`, `user-store.test.ts`, `me.controller.test.ts` | Real Postgres, per-file schema                                                         |
-| `carStore.test.ts`, `SearchBar.test.tsx`, `garageStore.test.ts`          | Latest-wins search, suggestion cancellation, garage sync rollback                      |
-| `e2e/accessibility.spec.ts`                                              | Zero WCAG 2.1 A/AA axe violations on 11 pages, desktop and phone                       |
-| `e2e/trust-flow.spec.ts`                                                 | Search → dossier → compare, provenance labels throughout                               |
+| Suite                                                                    | Pins                                                                                                                    |
+| ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `fuel-type-inference.test.ts`                                            | Rules agree with EPA on every record; stale-label corrections (Cayenne, Karma, i3 REx)                                  |
+| `validate-data.ts` (CI)                                                  | IDs, enums, physics: CO₂ × MPG vs fuel, BEVs without engines, plausible horsepower                                      |
+| `energy-cost.test.ts` / `tco.test.ts`                                    | One cost engine for dossier and calculator; natural gas and hydrogen from EPA's figure                                  |
+| `runtime-db.test.ts`                                                     | `cars-ready.json` format 2 round-trip; shared provenance frozen                                                         |
+| `seo.test.ts`                                                            | Server-rendered shells, JSON-LD, escaping, real 404s                                                                    |
+| `billing.webhook.test.ts`, `user-store.test.ts`, `me.controller.test.ts` | Real Postgres, per-file schema                                                                                          |
+| `auth/auth.test.ts`                                                      | Sign-in, cross-site refusal, password reset, account deletion, the Clerk-era account move, the tables Better Auth needs |
+| `carStore.test.ts`, `SearchBar.test.tsx`, `garageStore.test.ts`          | Latest-wins search, suggestion cancellation, garage sync rollback                                                       |
+| `e2e/accessibility.spec.ts`                                              | Zero WCAG 2.2 A/AA axe violations on 14 pages, desktop and phone, signed in                                             |
+| `e2e/trust-flow.spec.ts`                                                 | Search → dossier → compare, provenance labels throughout                                                                |
+| `e2e/accounts.spec.ts`                                                   | Visitors see the gate on each tool; sign-up returns to the tool; sign-in and sign-out; axe on the sign-in pages         |
 
 ## Client bundle
 
-Route pages are code-split; Clerk, Recharts and the VIN scanner load only where
+Route pages are code-split; the sign-in client, Recharts and the VIN scanner load only where
 used. `scripts/check-bundle-size.mjs` fails CI if the critical path (entry chunk
 plus modulepreloads) exceeds **95 KB gzip**; it is ~84 KB today. After a deploy,
 a tab still running the previous build reloads once instead of failing on a
@@ -1186,7 +1207,7 @@ renamed chunk (`utils/staleBuildRecovery.ts`).
 | Market value                             | Calibrated against Canadian MSRPs and listing averages (`valuation-calibration.test.ts`, 74 references across compact cars and SUVs, minivans, luxury, performance, supercars, pickups, plug-in hybrids and EVs, all within 25%). Size class is a coarse price signal; trims are distinguished only where the engine gives them away (Mustang GT, Camaro ZL1, Challenger Hellcat, Civic Type R). Exotics, flagships (S-Class, 7 Series, A8, G90), Land Rovers, Cadillac V and Alfa Quadrifoglio models are priced by model line (a 570S apart from a 765LT, a Maybach S 680 apart from an S 450); flagships, big luxury SUVs and Range Rovers then lose value on an age-ramped penalty fitted to US listing averages at the ~1.2 Canada/US listing ratio the reference cars show (a 2018 S 560 ~US$37,200, a 2023 S 580 ~US$79,000, a 2019 Q7 ~US$20,400); full-size SUVs without a V8 have model anchors, since the size class priced a 2024 Expedition at $40,000 against a $66,849 CarGurus.ca average and a 2024 Sequoia at $52,000 against ~$90,500 (both now within 5%, and in `valuation-calibration.test.ts`), as do Maserati's Grecale by trim and Karma, a thin market kept at low confidence, and the Avalanche and Explorer Sport Trac, pickups that anchored on SUV classes (a 2012 Avalanche read $12,000 against ~$15,000); older Tacomas, JK and TJ Wranglers, the FJ Cruiser and the 370Z hold level late in life (a 2010 FJ Cruiser read $12,000 against ~US$20,600, a 2008 Tacoma $11,250 against ~US$13,300), and a Civic EPA filed as a subcompact no longer falls on the economy curve (a 2008 read $4,900 against ~US$6,500); C5 and C6 Corvettes hold value like the later cars and anchor at today's prices (a 2008 read $17,000 against a ~US$33,000 average, a C6 Z06 was priced as a base car), in `valuation-calibration.test.ts` at the ~1.2 Canada/US listing ratio; supercars, BMW M2/M3/M4 and the GT-R follow a flatter curve than the exotic one (a 2017 Huracán keeps ~80% of today's sticker, a Bentayga ~30%), checked against a handful of US listing averages, and are never labelled better than medium confidence. Collector cars (`utils/collector-cars.ts`: first-gen NSX, MkIV Supra, air-cooled 911, limited-run 911s, SLS, Elise, Lancer Evolution, STI S209, Viper (Dodge's and SRT's), Chevrolet SS, Ford GT, 20-year-old Ferraris and Lamborghinis, hypercars…, and the first RAV4 EV, whose 328 retail cars trade among enthusiasts) are deliberately not valued, and neither are cars never sold to the public (`utils/not-retailed.ts`: the leased EV1, EV Plus, Fit EV, Clarity EV and fuel-cell cars, the MINI E and ActiveE trials, fleet cars such as the Ranger EV, EPIC minivans, BYD e6, Lordstown Endurance and Motional's Ioniq 5 robotaxi, and the Postal Service's Explorers): with no used market, the depreciation figure (a 1999 EV1 read $8,750) is a price nobody can pay. Both carry `ownership.unvalued` (`utils/unvalued.ts`) with the reason, which the car page shows in place of its value and costs. |
 | Hydrogen and natural gas fuel cost       | EPA's own annual figure, converted to CAD; the calculator's price inputs do not apply                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | Rate limits                              | In-memory per instance; on serverless each instance counts separately                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| CSP                                      | Baseline only (`base-uri`, `object-src`, `frame-ancestors`); `script-src` would need the Clerk Frontend API host allowlisted                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| CSP                                      | Baseline only (`base-uri`, `object-src`, `frame-ancestors`); no third-party scripts remain, so `script-src 'self'` is now possible                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | Photos                                   | Body-type illustrations only (documented on `/methodology`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `server/data/raw/`                       | Gitignored; the data pipeline needs network access to EPA and NHTSA                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
@@ -1206,7 +1227,7 @@ renamed chunk (`utils/staleBuildRecovery.ts`).
       configuration per page, and 9,818 pages that would duplicate a single dossier. Group by
       model family first (without merging, say, Mustang Mach-E into Mustang), then publish only
       pages with several configurations.
-- [ ] `script-src` CSP with the deployment's Clerk host
+- [ ] `script-src 'self'` CSP (no third-party scripts since Clerk left)
 - [ ] Shared rate-limit store if abuse appears on serverless
 
 ## Git & deployment notes

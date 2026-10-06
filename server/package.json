@@ -22,7 +22,7 @@
     "build-sitemap": "tsx scripts/build-sitemap.ts"
   },
   "dependencies": {
-    "@clerk/backend": "^3.15.0",
+    "better-auth": "^1.7.7",
     "compression": "^1.8.2",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",

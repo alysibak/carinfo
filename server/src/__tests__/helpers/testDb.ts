@@ -1,5 +1,6 @@
 import { randomBytes } from 'crypto';
 import { Client } from 'pg';
+import { __resetAuthForTests } from '../../auth/auth.js';
 import { __resetPoolForTests, ensureSchema, getPool } from '../../db/pool.js';
 import { __resetStatsMemory } from '../../services/stats.service.js';
 
@@ -42,12 +43,13 @@ export async function useTestDatabase(): Promise<void> {
   process.env.DATABASE_URL = withSearchPath(TEST_DATABASE_URL, schema);
   process.env.DATABASE_SSL = 'false';
   await __resetPoolForTests();
+  __resetAuthForTests();
   await ensureSchema();
 }
 
 export async function resetTables(): Promise<void> {
   await getPool().query(
-    'TRUNCATE garage_items, users RESTART IDENTITY CASCADE; DROP TABLE IF EXISTS site_stats;',
+    'TRUNCATE garage_items, users, auth_session, auth_account, auth_verification, auth_rate_limit, auth_user RESTART IDENTITY CASCADE; DROP TABLE IF EXISTS site_stats;',
   );
   __resetStatsMemory();
 }

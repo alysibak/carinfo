@@ -109,7 +109,7 @@ export default tseslint.config(
       'no-restricted-imports': [
         'error',
         {
-          paths: ['fs', 'path', 'crypto', 'pg', 'express', 'axios', 'stripe', '@clerk/backend'].map(
+          paths: ['fs', 'path', 'crypto', 'pg', 'express', 'axios', 'stripe', 'better-auth'].map(
             (name) => ({
               name,
               message: 'server/src/shared is bundled into the client; keep it pure.',

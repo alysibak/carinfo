@@ -163,3 +163,75 @@ export async function removeGarageId(userId: string, carId: string): Promise<str
   ]);
   return getGarageIds(userId);
 }
+
+/**
+ * Move accounts made before the switch to Better Auth (Clerk's, ids
+ * `user_…`) to the signed-in user with the same confirmed address: plan,
+ * Stripe customer and garage. An old account is one with no sign-in of its
+ * own. Callers pass only a confirmed address, or anyone could sign up with
+ * another person's email and take their garage and plan.
+ *
+ * Returns whether anything moved.
+ */
+export async function claimLegacyAccount(userId: string, email: string): Promise<boolean> {
+  await ensureSchema();
+  const client = await getPool().connect();
+  try {
+    await client.query('BEGIN');
+    const { rows: legacy } = await client.query(
+      `SELECT id, plan, stripe_customer_id FROM users u
+       WHERE lower(u.email) = lower($2) AND u.id <> $1
+         AND NOT EXISTS (SELECT 1 FROM auth_user a WHERE a.id = u.id)
+       ORDER BY u.created_at
+       FOR UPDATE`,
+      [userId, email],
+    );
+    if (legacy.length === 0) {
+      await client.query('ROLLBACK');
+      return false;
+    }
+    await client.query(
+      `INSERT INTO users (id, email) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING`,
+      [userId, email],
+    );
+    for (const old of legacy) {
+      // stripe_customer_id is unique: free it before the new row takes it.
+      await client.query(`UPDATE users SET stripe_customer_id = NULL WHERE id = $1`, [old.id]);
+      const { rows } = await client.query(
+        `UPDATE users
+         SET plan = CASE WHEN $2 = 'pro' THEN 'pro' ELSE plan END,
+             stripe_customer_id = COALESCE(stripe_customer_id, $3)
+         WHERE id = $1
+         RETURNING stripe_customer_id`,
+        [userId, old.plan, old.stripe_customer_id],
+      );
+      if (old.stripe_customer_id && rows[0]?.stripe_customer_id !== old.stripe_customer_id) {
+        console.warn(
+          `[account] ${userId} keeps Stripe customer ${rows[0]?.stripe_customer_id}; ` +
+            `${old.stripe_customer_id} from ${old.id} is no longer linked to an account`,
+        );
+      }
+      await client.query(
+        `INSERT INTO garage_items (user_id, car_id, created_at)
+         SELECT $1, car_id, created_at FROM garage_items WHERE user_id = $2
+         ON CONFLICT DO NOTHING`,
+        [userId, old.id],
+      );
+      await client.query(`DELETE FROM users WHERE id = $1`, [old.id]);
+    }
+    await client.query('COMMIT');
+    console.log(`[account] moved ${legacy.map((r) => r.id).join(', ')} to ${userId}`);
+    return true;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+/** A deleted sign-in's plan and garage. */
+export async function deleteAccountData(userId: string): Promise<void> {
+  await ensureSchema();
+  await getPool().query(`DELETE FROM users WHERE id = $1`, [userId]);
+}

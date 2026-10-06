@@ -1,6 +1,8 @@
 import request from 'supertest';
 import { beforeAll, describe, expect, it } from 'vitest';
 import app from './app.js';
+import { __resetAuthForTests } from './auth/auth.js';
+import { __resetPoolForTests } from './db/pool.js';
 import { getAllCars } from './services/car.service.js';
 
 let sampleId: string;
@@ -246,28 +248,53 @@ describe('account API without configuration', () => {
   });
 
   it('refuses account calls when auth is not configured', async () => {
-    const previous = process.env.CLERK_SECRET_KEY;
-    delete process.env.CLERK_SECRET_KEY;
+    const previous = process.env.BETTER_AUTH_SECRET;
+    delete process.env.BETTER_AUTH_SECRET;
     try {
-      const res = await request(app).get('/api/me');
-      expect(res.status).toBe(503);
+      expect((await request(app).get('/api/me')).status).toBe(503);
+      expect((await request(app).post('/api/auth/sign-in/email').send({})).status).toBe(503);
     } finally {
-      if (previous) process.env.CLERK_SECRET_KEY = previous;
+      if (previous) process.env.BETTER_AUTH_SECRET = previous;
     }
   });
 
-  it('demands a bearer token when auth is configured', async () => {
-    const previous = process.env.CLERK_SECRET_KEY;
-    process.env.CLERK_SECRET_KEY = 'sk_test_placeholder';
+  it('keeps the tools open until accounts are configured', async () => {
+    const previous = process.env.BETTER_AUTH_SECRET;
+    delete process.env.BETTER_AUTH_SECRET;
+    try {
+      // 400 from the VIN check, not 401: no sign-in is asked for.
+      expect((await request(app).get('/api/vin/short')).status).toBe(400);
+    } finally {
+      if (previous) process.env.BETTER_AUTH_SECRET = previous;
+    }
+  });
+
+  it('demands a session when auth is configured', async () => {
+    const saved = {
+      secret: process.env.BETTER_AUTH_SECRET,
+      url: process.env.DATABASE_URL,
+    };
+    // Never connected to: neither request carries a session worth looking up.
+    process.env.BETTER_AUTH_SECRET = 'test-secret-test-secret-test-secret-0123';
+    process.env.DATABASE_URL = 'postgresql://nobody@127.0.0.1:9/none';
     try {
       const missing = await request(app).get('/api/me');
       expect(missing.status).toBe(401);
 
-      const garbage = await request(app).get('/api/me').set('authorization', 'Bearer not-a-jwt');
-      expect(garbage.status).toBe(401);
+      const forged = await request(app)
+        .get('/api/me')
+        .set('cookie', 'better-auth.session_token=not-a-session.sig');
+      expect(forged.status).toBe(401);
     } finally {
-      if (previous) process.env.CLERK_SECRET_KEY = previous;
-      else delete process.env.CLERK_SECRET_KEY;
+      for (const [key, value] of [
+        ['BETTER_AUTH_SECRET', saved.secret],
+        ['DATABASE_URL', saved.url],
+      ] as const) {
+        if (value) process.env[key] = value;
+        else delete process.env[key];
+      }
+      await __resetPoolForTests();
+      __resetAuthForTests();
     }
   });
 });

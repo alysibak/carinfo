@@ -1,26 +1,21 @@
 import type { CarSpecs } from '../types/car.types';
 import { API_BASE_URL, API_TIMEOUT_MS, createApiClient, isHttpError, type HttpError } from './http';
 
-let tokenGetter: (() => Promise<string | null>) | null = null;
-
-export function setAccountAuthTokenGetter(getter: (() => Promise<string | null>) | null) {
-  tokenGetter = getter;
-}
-
-/** Its own client so Clerk tokens ride only on account calls, never public car APIs. */
-const accountApi = createApiClient({
-  baseUrl: API_BASE_URL,
-  timeoutMs: API_TIMEOUT_MS,
-  headers: async (): Promise<Record<string, string>> => {
-    const token = tokenGetter ? await tokenGetter() : null;
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  },
-});
+/**
+ * Account calls. The sign-in rides along as the session cookie, which the
+ * browser sends to the site's own /api by itself.
+ */
+const accountApi = createApiClient({ baseUrl: API_BASE_URL, timeoutMs: API_TIMEOUT_MS });
 
 export interface AccountCapabilities {
+  /** Accounts are set up, so the tools need one. */
   authConfigured: boolean;
   storageConfigured: boolean;
+  /** Pro can be bought. */
   billingConfigured: boolean;
+  googleSignIn: boolean;
+  /** Password reset and address confirmation, both of which need email. */
+  emailConfigured: boolean;
   freeGarageLimit: number;
 }
 

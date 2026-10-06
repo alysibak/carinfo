@@ -106,6 +106,25 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     needs: build
+    # Accounts on, as in production: the specs run as a signed-in member
+    # (e2e/global-setup.ts) and accounts.spec.ts checks the visitor's side.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: carinfo
+          POSTGRES_PASSWORD: carinfo
+          POSTGRES_DB: carinfo_e2e
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U carinfo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://carinfo:carinfo@localhost:5432/carinfo_e2e
+      DATABASE_SSL: 'false'
+      BETTER_AUTH_SECRET: ci-only-secret-ci-only-secret-ci-only
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -22,6 +22,12 @@ const SharedGarage = lazy(() => import('./pages/SharedGarage'));
 const VinDecoder = lazy(() => import('./pages/VinDecoder'));
 const Methodology = lazy(() => import('./pages/Methodology'));
 const Account = lazy(() => import('./pages/Account'));
+const SignIn = lazy(() => import('./pages/SignIn'));
+const SignUp = lazy(() => import('./pages/SignUp'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+// Loads alongside the tool it guards, under the same Suspense boundary.
+const RequireAccount = lazy(() => import('./components/RequireAccount'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 function RouteFallback() {
@@ -45,8 +51,8 @@ function App() {
           <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<Landing />} />
-              {/* Auth is scoped to the app shell; the landing route above
-                  never loads the Clerk chunk. */}
+              {/* Account sync is scoped to the app shell; the landing route
+                  above never loads the sign-in client. */}
               <Route element={<AuthProvider />}>
                 <Route element={<Layout />}>
                   <Route path="/browse" element={<Browse />} />
@@ -54,16 +60,55 @@ function App() {
                   <Route path="/vehicles/:category/:subcategory" element={<VehicleGrid />} />
                   <Route path="/car/:id" element={<CarDetail />} />
                   <Route path="/home" element={<Home />} />
-                  <Route path="/compare" element={<Compare />} />
+                  <Route
+                    path="/compare"
+                    element={
+                      <RequireAccount tool="Compare">
+                        <Compare />
+                      </RequireAccount>
+                    }
+                  />
                   <Route path="/collection/:collectionId" element={<Collection />} />
                   <Route path="/smart-search" element={<SmartSearch />} />
-                  <Route path="/garage" element={<DreamGarage />} />
+                  <Route
+                    path="/garage"
+                    element={
+                      <RequireAccount tool="Dream Garage">
+                        <DreamGarage />
+                      </RequireAccount>
+                    }
+                  />
                   <Route path="/shared-garage" element={<SharedGarage />} />
-                  <Route path="/battle" element={<BattleMode />} />
-                  <Route path="/value-matrix" element={<ValueMatrix />} />
-                  <Route path="/vin" element={<VinDecoder />} />
+                  <Route
+                    path="/battle"
+                    element={
+                      <RequireAccount tool="Battle Mode">
+                        <BattleMode />
+                      </RequireAccount>
+                    }
+                  />
+                  <Route
+                    path="/value-matrix"
+                    element={
+                      <RequireAccount tool="the Value Matrix">
+                        <ValueMatrix />
+                      </RequireAccount>
+                    }
+                  />
+                  <Route
+                    path="/vin"
+                    element={
+                      <RequireAccount tool="the VIN decoder">
+                        <VinDecoder />
+                      </RequireAccount>
+                    }
+                  />
                   <Route path="/methodology" element={<Methodology />} />
                   <Route path="/account" element={<Account />} />
+                  <Route path="/sign-in" element={<SignIn />} />
+                  <Route path="/sign-up" element={<SignUp />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="*" element={<NotFound />} />
                 </Route>
               </Route>

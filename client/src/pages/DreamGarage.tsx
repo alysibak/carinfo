@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGarageStore, FREE_GARAGE_LIMIT } from '../stores/garageStore';
 import { formatMoneyShort } from '../utils/money';
-import SignInPromptSlot from '../components/SignInPromptSlot';
+import { useAccountStatus } from '../hooks/useAccountStatus';
 import ToolPageHeader from '../components/ToolPageHeader';
 import { ConfirmDialog, Modal, StatusToast } from '../components/ui';
 import * as api from '../services/api';
@@ -115,6 +115,7 @@ export default function DreamGarage() {
   const garageLimit = useGarageStore((s) => s.garageLimit);
   const syncMode = useGarageStore((s) => s.syncMode);
   const lastSyncError = useGarageStore((s) => s.lastSyncError);
+  const billingConfigured = Boolean(useAccountStatus()?.billingConfigured);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -193,7 +194,6 @@ export default function DreamGarage() {
 
       <div className="pt-8 pb-16 page-wrap-wide">
         <div className="mb-8 space-y-3">
-          <SignInPromptSlot />
           {lastSyncError && (
             <p className="text-sm text-amber-200/90 border border-zinc-800 bg-zinc-950 px-4 py-3">
               {lastSyncError}
@@ -202,10 +202,11 @@ export default function DreamGarage() {
           {plan === 'free' && (
             <div className="border border-zinc-800 bg-zinc-950 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <p className="text-sm text-zinc-400">
-                Free plan · {garage.length}/{garageLimit ?? FREE_GARAGE_LIMIT} vehicles
-                {syncMode === 'cloud' ? ' · synced' : ' · this device'}
+                {billingConfigured ? 'Free plan · ' : ''}
+                {garage.length}/{garageLimit ?? FREE_GARAGE_LIMIT} vehicles
+                {syncMode === 'cloud' ? ' · saved to your account' : ' · this device'}
               </p>
-              {import.meta.env.VITE_CLERK_PUBLISHABLE_KEY && (
+              {billingConfigured && (
                 <Link to="/account" className="text-xs text-white hover:underline shrink-0">
                   Upgrade to Pro →
                 </Link>
@@ -217,8 +218,8 @@ export default function DreamGarage() {
           <div className="max-w-4xl py-8 sm:py-12">
             <h2 className="text-2xl font-bold tracking-tight mb-2">Nothing saved yet</h2>
             <p className="text-[15px] text-zinc-400 mb-6 max-w-lg leading-relaxed">
-              Save cars from any search result or car page to keep a shortlist here, on this device.
-              Start with one of these, or search for your own.
+              Save cars from any search result or car page to keep a shortlist here. Start with one
+              of these, or search for your own.
             </p>
             <GarageSuggestions onSaved={setToast} />
             <div className="flex flex-wrap gap-2 mt-6">

@@ -34,7 +34,7 @@ function getStripe(): Stripe | null {
   return stripeFactory(key);
 }
 
-function isBillingConfigured(): boolean {
+export function isBillingConfigured(): boolean {
   return Boolean(process.env.STRIPE_SECRET_KEY?.trim() && process.env.STRIPE_PRICE_ID?.trim());
 }
 
@@ -48,6 +48,11 @@ function appOrigin(req: Request): string | null {
   if (configured) return configured;
   if (process.env.NODE_ENV === 'production') return null;
   return `${req.protocol}://${req.get('host')}`;
+}
+
+/** The account a checkout or subscription is for; `clerkUserId` on ones from before Better Auth. */
+function userIdOf(metadata: Stripe.Metadata | null | undefined): string | null {
+  return metadata?.userId || metadata?.clerkUserId || null;
 }
 
 function customerIdOf(
@@ -124,7 +129,7 @@ export async function createCheckoutSession(req: Request, res: Response) {
       // The idempotency key makes a double-clicked "Upgrade" create one Stripe
       // customer, not two — the second would orphan the first's subscription.
       const customer = await stripe.customers.create(
-        { email: user.email ?? undefined, metadata: { clerkUserId: user.id } },
+        { email: user.email ?? undefined, metadata: { userId: user.id } },
         { idempotencyKey: `carinfo-customer-${user.id}` },
       );
       customerId = customer.id;
@@ -138,9 +143,9 @@ export async function createCheckoutSession(req: Request, res: Response) {
       success_url: `${origin}/account?checkout=success`,
       cancel_url: `${origin}/account?checkout=cancel`,
       client_reference_id: user.id,
-      metadata: { clerkUserId: user.id },
+      metadata: { userId: user.id },
       subscription_data: {
-        metadata: { clerkUserId: user.id },
+        metadata: { userId: user.id },
       },
     });
 
@@ -222,7 +227,7 @@ export async function handleStripeWebhook(req: Request, res: Response) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
-        const userId = session.client_reference_id || session.metadata?.clerkUserId || null;
+        const userId = session.client_reference_id || userIdOf(session.metadata);
         const customerId = customerIdOf(session.customer);
         if (userId && customerId) {
           await ensureUser(userId, session.customer_details?.email ?? session.customer_email);
@@ -243,7 +248,7 @@ export async function handleStripeWebhook(req: Request, res: Response) {
       case 'customer.subscription.resumed': {
         const sub = event.data.object as Stripe.Subscription;
         const customerId = customerIdOf(sub.customer);
-        if (customerId) await syncPlanFromStripe(stripe, customerId, sub.metadata?.clerkUserId);
+        if (customerId) await syncPlanFromStripe(stripe, customerId, userIdOf(sub.metadata));
         break;
       }
       default:
