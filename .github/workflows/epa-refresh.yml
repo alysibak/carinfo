@@ -1,11 +1,15 @@
 name: EPA refresh
 
 # Adds the cars EPA has listed since cars.json was last refreshed, with their
-# horsepower and NHTSA ratings, and refreshes the Canadian cars EPA never
-# rated from Natural Resources Canada. The data scripts download from
-# fueleconomy.gov, www.epa.gov, api.nhtsa.gov and open.canada.ca, which
-# GitHub's runners reach. The result goes to the epa-refresh branch for
-# review, never straight to main.
+# NHTSA ratings, and refreshes the Canadian cars EPA never rated from Natural
+# Resources Canada. The data scripts download from fueleconomy.gov,
+# api.nhtsa.gov and open.canada.ca, which GitHub's runners reach. The result
+# goes to the epa-refresh branch for review, never straight to main.
+#
+# Horsepower is left as committed: new cars take the site's maker ratings and
+# same-engine fills. A rebuild of horsepower-enrichment.json with today's
+# matcher fixes some ratings and breaks others (October 2026: a 2007 Cayenne
+# 3.6 at 415 hp, a 2009 Sport Trac V8 at 248), so it needs its own review.
 on:
   schedule:
     - cron: '23 9 * * 1' # Mondays: EPA adds certifications all year
@@ -54,9 +58,6 @@ jobs:
       - name: Check fuel types against EPA
         run: npm run reconcile-fuel-types --workspace=server | tee -a epa-refresh-report.txt
 
-      - name: Horsepower from EPA's test-car lists
-        run: npm run build-horsepower --workspace=server -- --to=$(( $(date +%Y) + 1 ))
-
       # The last two model years only: NHTSA rates new models through the
       # year, and a pass back to 2008 takes hours. build-enrichment keeps the
       # committed ratings for every other year.
@@ -82,8 +83,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git checkout -B epa-refresh
           git add epa-refresh-report.txt server/data/cars.json server/data/epa-enrichment.json \
-            server/data/horsepower-enrichment.json server/data/nhtsa-safety.json \
-            server/data/nhtsa-by-car-id.json
+            server/data/nhtsa-safety.json server/data/nhtsa-by-car-id.json
           # EPA's file as read, so the refresh can be checked against it.
           git add -f server/data/raw/vehicles.csv.gz
           git commit -m "Refresh from EPA and NHTSA ($(date -u +%F))" \
@@ -104,6 +104,6 @@ jobs:
           else
             gh pr create --base "$GITHUB_REF_NAME" --head epa-refresh \
               --title 'Refresh from EPA and NHTSA' \
-              --body 'New EPA listings with their horsepower and NHTSA ratings. epa-refresh-report.txt names what was added and left out. Bump the model-year and count tests if they fail, and drop epa-refresh-report.txt and the vehicles.csv.gz before merging.' \
+              --body 'New EPA listings with their NHTSA ratings, and the Canadian cars from NRCan. epa-refresh-report.txt names what was added and left out. Bump the model-year and count tests if they fail, and drop epa-refresh-report.txt and the vehicles.csv.gz before merging.' \
               || echo '::warning::Could not open a pull request (Settings > Actions > General lets workflows create them); the epa-refresh branch has the refresh.'
           fi

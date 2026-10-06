@@ -633,7 +633,10 @@ describe('car.service natural language search', () => {
       limit: 20,
     });
     expect(trucks.interpretation?.vehicleClass).toBe('full-size pickups');
-    expect(trucks.results.some((c) => /Silverado|F150|Ram|Tundra|Sierra/.test(c.model))).toBe(true);
+    // A Ram's make is the name ("Ram 1500 4WD"), so read make and model together.
+    expect(
+      trucks.results.some((c) => /Silverado|F150|Ram|Tundra|Sierra/.test(`${c.make} ${c.model}`)),
+    ).toBe(true);
     expect(trucks.results.filter((c) => /^Truck/.test(c.model))).toEqual([]);
   });
 
@@ -753,10 +756,15 @@ describe('car.service natural language search', () => {
 
   it('names one car per side of a comparison, for the compare page', () => {
     const vs = searchCars({ query: 'civic vs corolla', limit: 10 }).interpretation;
-    expect(vs?.compareWith?.map((c) => c.label)).toEqual([
-      `${LATEST_FULL_MODEL_YEAR} Honda Civic`,
-      `${LATEST_FULL_MODEL_YEAR} Toyota Corolla`,
-    ]);
+    // Each side is its model's newest year, which EPA's early certifications
+    // can put past the newest full year (a 2027 Corolla before any 2027 Civic).
+    const labels = vs?.compareWith?.map((c) => c.label) ?? [];
+    expect(labels).toHaveLength(2);
+    expect(labels[0]).toMatch(/^\d{4} Honda Civic$/);
+    expect(labels[1]).toMatch(/^\d{4} Toyota Corolla$/);
+    for (const label of labels) {
+      expect(Number(label.slice(0, 4))).toBeGreaterThanOrEqual(LATEST_FULL_MODEL_YEAR);
+    }
     for (const { id } of vs!.compareWith!) expect(getCarById(id)).not.toBeNull();
     // A side that names nothing: no pair to compare.
     expect(

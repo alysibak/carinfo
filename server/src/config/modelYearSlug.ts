@@ -106,6 +106,8 @@ const STRIP_PARENTHETICALS: ReadonlySet<string> = new Set([
   // Trim-level range variants. Trims are sections, so these collapse.
   'long-range',
   'standard-range',
+  // Porsche's Cayenne Electric option, as NRCan names it.
+  'range-setup',
 
   // Transmission mode counts — the same EPA family as the 2MODE/3MODE trim
   // codes. Closed set of eight, so listed rather than pattern-matched.
@@ -118,6 +120,11 @@ const STRIP_PARENTHETICALS: ReadonlySet<string> = new Set([
   '3-mode-tm',
   '4-mode',
   '5-mode',
+  // EPA's 2027 Corolla: the same counts spelled out, and hybrid drive modes.
+  '1-mode-transmission',
+  '3-mode-transmission',
+  'normal-eco-modes',
+  'sport-normal-eco-modes',
 
   // Tyre, wheel and chassis codes.
   '2r',
@@ -128,6 +135,8 @@ const STRIP_PARENTHETICALS: ReadonlySet<string> = new Set([
   'falken-tire',
   'pirelli-tire',
   'm-s',
+  // EPA's 2027 GLC 400 electric lists a variant "(ST)", beside one without.
+  'st',
 
   // Engine spec.
   'sohc',
@@ -201,6 +210,7 @@ const BENIGN_DRIVETRAIN_TAILS: ReadonlySet<string> = new Set([
   'diesel',
   'hybrid',
   'bev',
+  'electric',
   'e',
   'recharge',
   'range',
@@ -237,6 +247,7 @@ const BENIGN_DRIVETRAIN_TAILS: ReadonlySet<string> = new Set([
   'plat',
   'platinum',
   'plus',
+  'prestige',
   'pro',
   'r',
   'road',
