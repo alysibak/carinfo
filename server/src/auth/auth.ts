@@ -1,5 +1,4 @@
-import { betterAuth, type BetterAuthOptions } from 'better-auth';
-import { APIError } from 'better-auth/api';
+import type { BetterAuthOptions } from 'better-auth' with { 'resolution-mode': 'import' };
 import type { Pool } from 'pg';
 import { getPool, isDatabaseConfigured } from '../db/pool.js';
 import { claimLegacyAccount, deleteAccountData, getUser } from '../db/user-store.js';
@@ -104,6 +103,7 @@ export function authOptions(pool: Pool) {
         beforeDelete: async (user) => {
           const account = await getUser(user.id);
           if (account?.plan === 'pro') {
+            const { APIError } = await import('better-auth/api');
             throw new APIError('BAD_REQUEST', {
               message: 'Cancel Pro under Manage billing before deleting your account.',
             });
@@ -206,22 +206,35 @@ export function authOptions(pool: Pool) {
   } satisfies BetterAuthOptions;
 }
 
-function createAuth(pool: Pool) {
+/**
+ * Better Auth is an ES module and this server is CommonJS, so it loads with
+ * import(), never require(): Node can require() an ES module only where the
+ * runtime allows it, and Vercel's did not. The require() at startup took down
+ * every API route, sign-in or not. tsconfig's "module": "node16" now refuses
+ * such a require at compile time.
+ */
+async function createAuth(pool: Pool) {
+  const { betterAuth } = await import('better-auth');
   return betterAuth(authOptions(pool));
 }
 
-export type Auth = ReturnType<typeof createAuth>;
+export type Auth = Awaited<ReturnType<typeof createAuth>>;
 
-let auth: Auth | null = null;
+let auth: Promise<Auth> | null = null;
 let authPool: Pool | null = null;
 
 /** The Better Auth instance, made on first use. Callers check isAuthConfigured() first. */
-export function getAuth(): Auth {
+export function getAuth(): Promise<Auth> {
   const pool = getPool();
   // Rebuilt when the pool is (tests swap databases between files).
   if (!auth || authPool !== pool) {
-    auth = createAuth(pool);
     authPool = pool;
+    const made = createAuth(pool);
+    // A failed load is not kept: the next request tries again.
+    made.catch(() => {
+      if (auth === made) auth = null;
+    });
+    auth = made;
   }
   return auth;
 }

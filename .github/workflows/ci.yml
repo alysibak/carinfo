@@ -90,6 +90,10 @@ jobs:
       - run: npm run build
       - name: Enforce critical-path bundle budget
         run: node scripts/check-bundle-size.mjs
+      # The API must load where Node will not require() an ES module, as on
+      # Vercel: a require() of Better Auth there took down every API route.
+      - name: Server loads without require() of ES modules
+        run: node --no-experimental-require-module -e "require('./server/dist/app.js')"
       - name: Validate vehicle dataset
         run: npm run validate:data
       - uses: actions/upload-artifact@v4

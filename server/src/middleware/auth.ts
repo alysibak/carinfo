@@ -1,5 +1,4 @@
 import type { NextFunction, Request, Response } from 'express';
-import { fromNodeHeaders, toNodeHandler } from 'better-auth/node';
 import { getAuth, isAuthConfigured, siteOrigins } from '../auth/auth.js';
 import { ensureSchema } from '../db/pool.js';
 
@@ -39,7 +38,9 @@ export async function authHandler(req: Request, res: Response, next: NextFunctio
   }
   try {
     await ensureSchema();
-    await toNodeHandler(getAuth())(req, res);
+    // import(), not require(): Better Auth is an ES module (see auth/auth.ts).
+    const [{ toNodeHandler }, auth] = await Promise.all([import('better-auth/node'), getAuth()]);
+    await toNodeHandler(auth)(req, res);
   } catch (error) {
     next(error);
   }
@@ -70,7 +71,8 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   try {
     // No ensureSchema() first: without a session cookie this asks nothing of
     // the database, and a cookie means a sign-in already made the tables.
-    session = await getAuth().api.getSession({ headers: fromNodeHeaders(req.headers) });
+    const [{ fromNodeHeaders }, auth] = await Promise.all([import('better-auth/node'), getAuth()]);
+    session = await auth.api.getSession({ headers: fromNodeHeaders(req.headers) });
   } catch (error) {
     console.error('[auth] session check failed:', error);
     res.status(503).json({ success: false, error: 'Could not check your sign-in. Try again.' });
