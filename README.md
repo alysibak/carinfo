@@ -2,7 +2,7 @@
 
 A full-stack car discovery and comparison platform. **Specs-first** — EPA fuel economy, engine, emissions, and safety (when available) — with clearly labeled **estimated** market value, running cost, and TCO analytics.
 
-- **~35,800 vehicles** (1995–2027) across **92 makes**
+- **~36,800 vehicles** (1995–2027) across **92 makes**: EPA's catalogue, and 445 cars sold in Canada that EPA never rated, from Natural Resources Canada
 - Primary data: [EPA FuelEconomy.gov](https://fueleconomy.gov)
 - Secondary: NHTSA safety (when enriched), EPA Test Car List horsepower, heuristic valuation
 - Default regional model: **Ontario, CAD**
@@ -111,28 +111,29 @@ This README quotes **actual source** in [Code reference](#code-reference). To re
 
 | Metric                        | Count                           |
 | ----------------------------- | ------------------------------- |
-| Total vehicles                | 35,825 (35,823 after ID merges) |
+| Total vehicles                | 36,759 (36,757 after ID merges) |
+| From EPA / from NRCan         | 36,314 / 445                    |
 | Year range                    | 1995–2027 (2027 partial)        |
 | Makes                         | 92                              |
-| EPA enrichment records        | 35,825                          |
-| Horsepower enrichment keys    | 20,043 (~56%)                   |
-| NHTSA combo ratings           | 1,025 `make\|model\|year`       |
-| NHTSA per-car index           | 4,518 (12.6%)                   |
-| Turbocharged / supercharged   | 11,369                          |
+| EPA enrichment records        | 36,314                          |
+| Horsepower enrichment keys    | 20,043 (~55%)                   |
+| NHTSA combo ratings           | 1,028 `make\|model\|year`       |
+| NHTSA per-car index           | 4,617 (12.6%)                   |
+| Turbocharged / supercharged   | 11,600                          |
 | NHTSA cache lookups attempted | 13,842                          |
 
 ### Body style breakdown
 
 | Body style | Count  |
 | ---------- | ------ |
-| sedan      | 16,264 |
-| suv        | 10,141 |
-| truck      | 4,095  |
-| coupe      | 2,013  |
-| wagon      | 1,816  |
+| sedan      | 16,599 |
+| suv        | 10,584 |
+| truck      | 4,132  |
+| coupe      | 2,046  |
+| wagon      | 1,869  |
 | van        | 889    |
-| minivan    | 586    |
-| hatchback  | 21     |
+| minivan    | 601    |
+| hatchback  | 39     |
 
 ### Fuel types
 
@@ -151,13 +152,13 @@ second line of defense and agree with EPA on every record (a test pins that).
 
 | Field                | Records |
 | -------------------- | ------- |
-| trim                 | 35,825  |
+| trim                 | 36,759  |
 | engine.configuration | 31,428  |
-| engine.aspiration    | 11,369  |
-| transmission.speeds  | 22,489  |
-| countryOfOrigin      | 32,457  |
-| epa.co2              | 17,859  |
-| epa.charge240Hours   | 1,874   |
+| engine.aspiration    | 11,600  |
+| transmission.speeds  | 23,154  |
+| countryOfOrigin      | 36,759  |
+| epa.co2              | 18,743  |
+| epa.charge240Hours   | 2,098   |
 | epa.charge120Hours   | 1       |
 | dimensions           | 0       |
 | performance          | 0       |
@@ -273,7 +274,7 @@ npm run build-enrichment --workspace=server
 
 ### Refresh on GitHub (`.github/workflows/epa-refresh.yml`)
 
-Every Monday, on demand from the Actions tab, and whenever the workflow file changes, GitHub's runners add the cars EPA has listed since the last refresh (`backfill-epa-variants`), refresh the Canadian cars from NRCan (`import-nrcan`), check fuel types against EPA, rebuild horsepower from EPA's test-car lists, fetch NHTSA ratings for the last two model years, rebuild enrichment and run the tests. The result is force-pushed to the `epa-refresh` branch with `epa-refresh-report.txt` (what was added and left out, by model) and the EPA file it read (`server/data/raw/vehicles.csv.gz`); a run on `main` opens a pull request when cars were added. Leave the report and the `.gz` out when merging.
+Every Monday, on demand from the Actions tab, and whenever the workflow file changes, GitHub's runners add the cars EPA has listed since the last refresh (`backfill-epa-variants`), refresh the Canadian cars from NRCan (`import-nrcan`), check fuel types against EPA, fetch NHTSA ratings for the last two model years, rebuild enrichment and run the tests. The result is force-pushed to the `epa-refresh` branch with `epa-refresh-report.txt` (what was added and left out, by model) and the EPA file it read (`server/data/raw/vehicles.csv.gz`); a run on `main` opens a pull request when cars were added. Leave the report and the `.gz` out when merging.
 
 ### `build-verified-database.ts`
 
@@ -308,7 +309,7 @@ npm run build-horsepower --workspace=server
 
 Flags: `--from=2010 --to=2026`, `--offline`, `--refresh`
 
-**Re-run it.** The committed file predates three fixes. Its third matching tier accepted any engine with the same cylinder count when a listing's own engine was untested, so untested engines took a sibling's rating (2013 F-150 5.0 at the 6.2's 415 hp); the tier now tolerates only displacement rounding (±0.15 L). Its last tier took any same-make test car with the same engine size, even one that was plainly another model on file (the 2010 F-150 and Expedition 5.4 at the supercharged Mustang GT500's 540 hp); it now skips those. And the 7,547 listings restored from EPA's data in 2026 have no rating yet. Until the file is rebuilt, the runtime drops a rating that two engines of one model and year share (`dropRatingsSharedAcrossEngines`, 102 listings), a turbo rating that merely repeats the non-turbo sibling's (`dropInductionMismatchedHorsepower`, 118), and a rating out of line with the same engine's adjacent model years (`dropYearOverYearOutliers`, 42: a 2008 Titan at 417 hp between 305 and 317, a 2019 Corvette at the ZR1's 638), and a rating no engine of that size and induction makes (`dropImplausibleOutput`, 144: a naturally aspirated engine outside sports cars and luxury makes above 94 hp a litre, such as a 2014 F-150 5.0 at 600 hp, or a turbo from 2008 on below 70, such as a Lexus NX 300 at 112), so those read "not on file" rather than wrong. For best-selling engines the matcher got wrong, `utils/horsepower-corrections.ts` sets the manufacturer's rating (2,569 listings: hybrids and plug-in hybrids at their system output, as makers rate them (a RAV4 Prime read 203 hp for 302, a Wrangler 4xe 270 for 375, a Volvo T8 312 for 455, an SF90 770 for 986), where the test-car list gives the engine alone (a Prius read 96–98 hp for 121–134, a RAV4 Hybrid 176 for 219, an Accord Hybrid 146 for 204, a Tucson, Santa Fe or Sorento Hybrid 177 for 226–231, a Fusion or MKZ Hybrid the 2.0 EcoBoost's 240 for 188), which the segment rules do not read as a sporting engine in a four-door; the 2000–06 Golf GTI 1.8T and Golf TDI, which read the eight-valve 2.0's 115 hp; Porsche's 718 by trim, whose 2.0 turbo base car read the GTS's 361 hp and whose naturally aspirated 4.0 EPA sometimes flags as turbocharged; GM's full-size trucks and SUVs, whose 5.3 and 6.2 V8s and 3.0 Duramax were mostly unrated or off by 5-65 hp, Ram's Pentastar and Hemi, Toyota's i-Force Max hybrids at their system ratings; every 2017–22 CR-V turbo read the CR-V Hybrid's 143 hp engine rating instead of 190, Mazda's 2.5 read 207 instead of 186–191, Hyundai and Kia's 2.5 read 236–241 instead of 191, the STI read the WRX's 268, and the F-150's 5.0 the Raptor R's 650). `utils/maker-ratings.ts` carries the makers' US ratings further, to engines the file never matched or matched to another engine (8,047 listings in all now carry a maker's figure). Performance cars fared worst: every 2017–24 Camaro SS read 553 hp for 455, a 2019–23 Charger R/T the Scat Pack's 485 for 370, a 2017–19 Charger Hellcat the 392's 485 for 707, a C7 Corvette Z06 the Stingray's 455 for 650, an F90 M5 the M550i's 455 for 600, a 991 911 GTS the Carrera's 350 for 430 and a GR86 264 for 228; whole lines had no figure, such as every 2015–21 Volvo (EPA names them only by drive, so the supercharger flag tells a T5 from a T6), the 2011–20 Mustang GT and the Genesis V8s. Older best-sellers are covered too (the F-150, Explorer V8, Mustang, Camaro, Camry, Accord V6, Tacoma, Wrangler and GM's trucks and SUVs back to 1995, where a 2001–03 Camry V6 read the 2004 car's 210 hp and a 2001–04 Mustang GT 313), which took rated listings from 89% to 98% of 2015-on cars, 82% to 92% of 2005–14 ones and 47% to 57% of 1995–2004 ones. A row can hold a test (`when`) where one engine came in two tunes the name does not show: a 2010–15 Camaro SS made 426 hp with the manual and 400 with the automatic. Rows cover the years either side of a model change too, since the sibling fill below would otherwise copy a figure across generations (a 2018 A8 L took the 2019 car's 453 hp for 435). Fuel-cell cars (Mirai, Nexo, Clarity) are rated by their motor, as EVs are.
+**Re-run it.** The committed file predates three fixes. Its third matching tier accepted any engine with the same cylinder count when a listing's own engine was untested, so untested engines took a sibling's rating (2013 F-150 5.0 at the 6.2's 415 hp); the tier now tolerates only displacement rounding (±0.15 L). Its last tier took any same-make test car with the same engine size, even one that was plainly another model on file (the 2010 F-150 and Expedition 5.4 at the supercharged Mustang GT500's 540 hp); it now skips those. And the 7,547 listings restored from EPA's data in 2026 have no rating yet. A rebuild in October 2026 (with the 489 listings EPA had added) was not committed: it fixed some ratings (2008–10 Cayenne GTS at 405 hp, not 500 or 225) but broke others (a 2007 Cayenne 3.6 at 415, a 2009 Sport Trac V8 at 248) and moved about 420 existing cars, so it needs a review of its own; the weekly refresh leaves the file alone. Until the file is rebuilt, the runtime drops a rating that two engines of one model and year share (`dropRatingsSharedAcrossEngines`, 102 listings), a turbo rating that merely repeats the non-turbo sibling's (`dropInductionMismatchedHorsepower`, 118), and a rating out of line with the same engine's adjacent model years (`dropYearOverYearOutliers`, 42: a 2008 Titan at 417 hp between 305 and 317, a 2019 Corvette at the ZR1's 638), and a rating no engine of that size and induction makes (`dropImplausibleOutput`, 144: a naturally aspirated engine outside sports cars and luxury makes above 94 hp a litre, such as a 2014 F-150 5.0 at 600 hp, or a turbo from 2008 on below 70, such as a Lexus NX 300 at 112), so those read "not on file" rather than wrong. For best-selling engines the matcher got wrong, `utils/horsepower-corrections.ts` sets the manufacturer's rating (2,569 listings: hybrids and plug-in hybrids at their system output, as makers rate them (a RAV4 Prime read 203 hp for 302, a Wrangler 4xe 270 for 375, a Volvo T8 312 for 455, an SF90 770 for 986), where the test-car list gives the engine alone (a Prius read 96–98 hp for 121–134, a RAV4 Hybrid 176 for 219, an Accord Hybrid 146 for 204, a Tucson, Santa Fe or Sorento Hybrid 177 for 226–231, a Fusion or MKZ Hybrid the 2.0 EcoBoost's 240 for 188), which the segment rules do not read as a sporting engine in a four-door; the 2000–06 Golf GTI 1.8T and Golf TDI, which read the eight-valve 2.0's 115 hp; Porsche's 718 by trim, whose 2.0 turbo base car read the GTS's 361 hp and whose naturally aspirated 4.0 EPA sometimes flags as turbocharged; GM's full-size trucks and SUVs, whose 5.3 and 6.2 V8s and 3.0 Duramax were mostly unrated or off by 5-65 hp, Ram's Pentastar and Hemi, Toyota's i-Force Max hybrids at their system ratings; every 2017–22 CR-V turbo read the CR-V Hybrid's 143 hp engine rating instead of 190, Mazda's 2.5 read 207 instead of 186–191, Hyundai and Kia's 2.5 read 236–241 instead of 191, the STI read the WRX's 268, and the F-150's 5.0 the Raptor R's 650). `utils/maker-ratings.ts` carries the makers' US ratings further, to engines the file never matched or matched to another engine (8,047 listings in all now carry a maker's figure). Performance cars fared worst: every 2017–24 Camaro SS read 553 hp for 455, a 2019–23 Charger R/T the Scat Pack's 485 for 370, a 2017–19 Charger Hellcat the 392's 485 for 707, a C7 Corvette Z06 the Stingray's 455 for 650, an F90 M5 the M550i's 455 for 600, a 991 911 GTS the Carrera's 350 for 430 and a GR86 264 for 228; whole lines had no figure, such as every 2015–21 Volvo (EPA names them only by drive, so the supercharger flag tells a T5 from a T6), the 2011–20 Mustang GT and the Genesis V8s. Older best-sellers are covered too (the F-150, Explorer V8, Mustang, Camaro, Camry, Accord V6, Tacoma, Wrangler and GM's trucks and SUVs back to 1995, where a 2001–03 Camry V6 read the 2004 car's 210 hp and a 2001–04 Mustang GT 313), which took rated listings from 89% to 98% of 2015-on cars, 82% to 92% of 2005–14 ones and 47% to 57% of 1995–2004 ones. A row can hold a test (`when`) where one engine came in two tunes the name does not show: a 2010–15 Camaro SS made 426 hp with the manual and 400 with the automatic. Rows cover the years either side of a model change too, since the sibling fill below would otherwise copy a figure across generations (a 2018 A8 L took the 2019 car's 453 hp for 435). Fuel-cell cars (Mirai, Nexo, Clarity) are rated by their motor, as EVs are.
 
 ### `build-content-enrichment.ts`
 
@@ -322,7 +323,7 @@ Writes `epa-enrichment.json`, `nhtsa-safety.json`, `nhtsa-by-car-id.json`. Ratin
 
 ### `import-nrcan.ts` (Canadian cars EPA never rated)
 
-Natural Resources Canada rates every car sold in Canada, so it has the ones EPA never saw: models built for Canada (Acura 1.6EL, 1.7EL and CSX, Chevrolet Orlando, Pontiac Firefly, Sunrunner and Pursuit, Mercedes A 250 and B-Class, Nissan Micra and X-Trail, VW City Golf and City Jetta, smart fortwo CDI, Kia EV4), years a model stayed on sale here after it left the US (2016 Venza, 2014–17 Rondo, 2013–14 Trax, 2007–09 Montana SV6, 2022 CX-3, 2024 MX-30, 2020 e-Golf) and Canadian names (Kia Magentis for the Optima, Mitsubishi RVR for the Outlander Sport, Nissan Qashqai for the Rogue Sport, Chrysler Grand Caravan for the Voyager, the Chrysler-badged Intrepid and Neon). NRCan's files also repeat most of EPA's catalogue under other spellings ("A8L", "TJ" for the Wrangler, "C1500 Silverado"), so only the models listed in `scripts/lib/nrcan.ts` are imported, each checked against `cars.json`; a row EPA has since listed is skipped and reported.
+Natural Resources Canada rates every car sold in Canada, so it has the ones EPA never saw: models built for Canada (Acura 1.6EL, 1.7EL and CSX, Chevrolet Orlando, Pontiac Firefly, Sunrunner and Pursuit, Mercedes A 250 and B-Class, Nissan Micra and X-Trail, VW City Golf and City Jetta, smart fortwo CDI, Kia EV4), years a model stayed on sale here after it left the US (2016 Venza, 2014–17 Rondo, 2013–14 Trax, 2007–09 Montana SV6, 2022 CX-3, 2024 MX-30, 2020 e-Golf) and Canadian names (Kia Magentis for the Optima, Mitsubishi RVR for the Outlander Sport, Nissan Qashqai for the Rogue Sport, Chrysler Grand Caravan for the Voyager, the Chrysler-badged Intrepid and Neon). NRCan's files also repeat most of EPA's catalogue under other spellings ("A8L", "TJ" for the Wrangler, "C1500 Silverado"), so only the models listed in `scripts/lib/nrcan.ts` are imported, each checked against `cars.json`; a row EPA has since listed is skipped and reported. It also fills model years EPA's file is missing though NRCan has them, 88 listings in October 2026: the 2026 GR86, the 2023 Range Rover and Range Rover Sport, the 2026 Cayenne Electric, 2025 911 GT3s, 2023 EQE and EQB, 2024 and 2026 VinFast VF8s, 2026 INEOS Grenadiers, and plug-in hybrids from the Lexus NX and RX 450h+ to the Ferrari 296. Each of those entries names EPA's spelling of the model, so it retires on its own once EPA lists the year, and a year from NRCan takes EPA's spelling of the name where it differs only in spacing ("GR 86" for "GR86", "S580e 4matic" for "S 580e 4MATIC Sedan"). Plug-in hybrids store gas-mode figures as their fuel economy and electric range and MPGe in `epa.phev`, as EPA's do after enrichment.
 
 Its figures are stored in EPA's units (L/100 km as mpg to a tenth, so the litres survive the trip back; Le/100 km as MPGe; g/km as g/mi) and credited to `nrcan`, which the site shows as an "NRCan" chip. IDs follow EPA's pattern with `-ca` at the end. Re-running replaces the Canadian listings with NRCan's current figures and never touches an EPA listing; run it after `backfill-epa-variants`.
 
@@ -628,7 +629,7 @@ Defined in `client/src/config/browseTaxonomy.ts`.
 
 - The promise as the headline ("Car specs from the EPA and NHTSA"; the header already says CarInfo), a line on what is on record and that estimates are labelled, `SearchBar`, and the quiz
 - VIN detect: 17-char pattern → `/vin`
-- `CatalogueStats`: what is on file, live from `/cars/stats/overview` (35,823 versions EPA tested, 1,096 models, 91 makes, 1995–2027), labelled for what each counts: EPA lists each engine, gearbox and drive of a model year separately, so "35,000 cars" would promise more than the models a shopper thinks of as cars. Rounded figures hold the space until the counts load. It ends in a link that opens search with the filters open (`/home?filters=open`).
+- `CatalogueStats`: what is on file, live from `/cars/stats/overview` (36,757 versions tested, 1,124 models, 91 makes, 1995–2027), labelled for what each counts: EPA lists each engine, gearbox and drive of a model year separately, so "35,000 cars" would promise more than the models a shopper thinks of as cars. Rounded figures hold the space until the counts load. It ends in a link that opens search with the filters open (`/home?filters=open`).
 - `SampleCarCard`: a real car's page in miniature (the hero preview car's key figures: fuel use, crash rating, power and engine, each with its source), in place of a large grey drawing of the same car
 - Start paths as bordered panels of chips (I know the car · I'm still deciding · I have a VIN · I'm comparing options), not underlined words
 - `ShortlistCards`: each shortlist with its first three picks and the record each is ranked on
