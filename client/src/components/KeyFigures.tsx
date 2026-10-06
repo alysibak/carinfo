@@ -26,7 +26,7 @@ function FigureCell({ figure, wide }: { figure: KeyFigure; wide: boolean }) {
       </div>
       <p className="mt-1.5 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 min-w-0">
         <span
-          className={`font-bold tabular-nums tracking-tight leading-tight break-words ${
+          className={`font-bold tabular-nums tracking-tight leading-tight wrap-break-word ${
             figure.missing
               ? 'text-lg text-zinc-400'
               : long

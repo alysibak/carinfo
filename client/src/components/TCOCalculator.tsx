@@ -58,7 +58,7 @@ function NumberField({
           if (Number.isFinite(next))
             onChange(Math.max(min, max != null ? Math.min(max, next) : next));
         }}
-        className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-lg font-bold tabular-nums focus:outline-none focus:border-zinc-500 transition-colors"
+        className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-lg font-bold tabular-nums focus:outline-hidden focus:border-zinc-500 transition-colors"
       />
       {hint && (
         <p id={hintId} className="mt-1.5 text-xs text-zinc-500">
@@ -296,7 +296,7 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
             </h3>
 
             <div
-              className="border border-accent/40 bg-accent/[0.06] p-6 md:p-8 mb-6"
+              className="border border-accent/40 bg-accent/6 p-6 md:p-8 mb-6"
               aria-live="polite"
               aria-atomic="true"
             >

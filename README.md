@@ -541,7 +541,7 @@ Loaded once at startup into memory:
 ### UI conventions
 
 - **Records first:** every page leads with what EPA and NHTSA recorded (fuel use or range, crash ratings) and rated power, each marked with its source (`ProvenanceChip`: EPA, NHTSA, Curated, Est.). Estimated value and running costs follow, labelled as estimates, with the region picker (`RegionSelect`) beside them; they no longer lead a card, a car page, a shortlist or a comparison.
-- **One accent**, `accent` in `tailwind.config.js` (#34d399): main buttons, active filters and nav, "better than its class", compare's "Best", focus rings. Everything else stays neutral.
+- **One accent**, `--color-accent` in the `@theme` block of `client/src/index.css` (#34d399): main buttons, active filters and nav, "better than its class", compare's "Best", focus rings. Everything else stays neutral.
 - **Type roles** in `index.css`: nothing under 12px; labels and buttons in sentence case; capitals only for `.eyebrow` section labels; figures in the text face with tabular numerals (`.tabular-nums`), not the monospace face.
 - **Canadian units first:** fuel use in L/100 km (kWh/100 km for EVs, kg/100 km for hydrogen) with EPA's MPG as the secondary line (`utils/efficiency.ts`); range in km; money in CAD, said once per section (`utils/money.ts`) rather than "CAD (est.)" on each figure.
 - **Results** (`CarCard.tsx`): a thumbnail, fuel use or EPA range, power and the NHTSA rating, the estimated value in small type beneath, a "why this matched" line (`utils/matchReasons.ts`) and a compare toggle, as a grid or a list (`useResultsView`; phones start on the list). The garage and shared garages use the same card.
@@ -932,7 +932,7 @@ gasoline, so the dossier and its own TCO calculator showed different totals.
 
 ### Client — other
 
-`App.tsx` · `main.tsx` · `index.css` · `services/api.ts` · `stores/carStore.ts` · `stores/garageStore.ts` · `types/car.types.ts` · `vite.config.ts` · `tailwind.config.js` · `postcss.config.js` · `tsconfig.json`
+`App.tsx` · `main.tsx` · `index.css` · `services/api.ts` · `stores/carStore.ts` · `stores/garageStore.ts` · `types/car.types.ts` · `vite.config.ts` · `postcss.config.js` · `tsconfig.json`
 
 ### Client — assets
 

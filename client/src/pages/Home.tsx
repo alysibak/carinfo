@@ -288,8 +288,10 @@ export default function Home() {
         resultLabel={resultLabel}
         updating={isSearching}
       />
-      <div className="sticky top-[var(--header-height)] z-20 bg-black/90 border-b border-zinc-900 backdrop-blur-md">
-        <div className="page-wrap py-3 sm:py-4 space-y-2.5 relative">
+      <div className="sticky top-(--header-height) z-20 bg-black/90 border-b border-zinc-900 backdrop-blur-md">
+        {/* A gap, not space-y: the chip row is hidden on desktop when it has
+            nothing to show, and space-y's margin would stay under the box. */}
+        <div className="page-wrap py-3 sm:py-4 flex flex-col gap-2.5 relative">
           <SearchBar
             value={searchText}
             onChange={setSearchText}
@@ -551,7 +553,7 @@ export default function Home() {
                           type="button"
                           onClick={() => setView(option)}
                           aria-pressed={view === option}
-                          className={`chip !min-h-[42px] ${option === 'grid' ? '-ml-px' : ''} ${
+                          className={`chip min-h-[42px]! ${option === 'grid' ? '-ml-px' : ''} ${
                             view === option ? 'chip-on relative' : ''
                           }`}
                         >
@@ -624,7 +626,7 @@ export default function Home() {
                           type="button"
                           disabled={currentPage <= 1}
                           onClick={() => goToPage(currentPage - 1)}
-                          className="chip !min-h-[44px] px-5 disabled:opacity-40 disabled:hover:border-zinc-700"
+                          className="chip min-h-[44px]! px-5 disabled:opacity-40 disabled:hover:border-zinc-700"
                         >
                           ← Previous
                         </button>
@@ -635,7 +637,7 @@ export default function Home() {
                           type="button"
                           disabled={currentPage >= totalPages || !searchResults.hasMore}
                           onClick={() => goToPage(currentPage + 1)}
-                          className="chip !min-h-[44px] px-5 disabled:opacity-40 disabled:hover:border-zinc-700"
+                          className="chip min-h-[44px]! px-5 disabled:opacity-40 disabled:hover:border-zinc-700"
                         >
                           Next →
                         </button>

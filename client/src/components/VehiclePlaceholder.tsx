@@ -23,7 +23,7 @@ export default function VehiclePlaceholder({
 
   return (
     <div
-      className={`relative w-full h-full flex items-center justify-center overflow-hidden bg-gradient-to-b from-zinc-900 to-black ${className}`}
+      className={`relative w-full h-full flex items-center justify-center overflow-hidden bg-linear-to-b from-zinc-900 to-black ${className}`}
       role="img"
       aria-label={`${car.year} ${car.make} ${displayModelLabel(car)}, illustration placeholder`}
     >
@@ -59,7 +59,7 @@ export default function VehiclePlaceholder({
         </svg>
       )}
       {!hideCaption && !compact && (
-        <div className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-black via-black/75 to-transparent">
+        <div className="absolute inset-x-0 bottom-0 p-5 bg-linear-to-t from-black via-black/75 to-transparent">
           <p className="text-xs text-zinc-400">{car.year}</p>
           <p className="text-sm font-bold text-white truncate">
             {car.make} {displayModelLabel(car)}

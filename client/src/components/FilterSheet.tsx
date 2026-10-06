@@ -44,7 +44,7 @@ export default function FilterSheet({
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
-      className="fixed inset-0 z-[60] flex flex-col bg-black"
+      className="fixed inset-0 z-60 flex flex-col bg-black"
     >
       <div className="flex items-center justify-between gap-4 px-4 sm:px-6 h-14 border-b border-zinc-800 shrink-0">
         <h2 id={titleId} className="text-lg font-bold tracking-tight">

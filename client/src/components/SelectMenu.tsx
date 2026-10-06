@@ -252,7 +252,7 @@ export default function SelectMenu({
         role="listbox"
         aria-labelledby={listId}
         aria-activedescendant={activeIndex >= 0 ? optionId(activeIndex) : undefined}
-        className="fixed z-[200] overflow-y-auto border border-zinc-700 bg-zinc-950 shadow-[0_12px_40px_rgba(0,0,0,0.55)]"
+        className="fixed z-200 overflow-y-auto border border-zinc-700 bg-zinc-950 shadow-[0_12px_40px_rgba(0,0,0,0.55)]"
         style={{
           left: menuPosition.left,
           width: menuPosition.width,
@@ -316,7 +316,7 @@ export default function SelectMenu({
         disabled={disabled}
         onClick={() => (open ? closeMenu() : openMenu())}
         onKeyDown={handleKeyDown}
-        className={`w-full flex items-center justify-between border bg-zinc-950 text-left text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 disabled:opacity-40 disabled:cursor-not-allowed ${
+        className={`w-full flex items-center justify-between border bg-zinc-950 text-left text-white transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-white/25 disabled:opacity-40 disabled:cursor-not-allowed ${
           open ? 'border-zinc-500' : 'border-zinc-800 hover:border-zinc-600'
         } ${triggerClass}`}
       >

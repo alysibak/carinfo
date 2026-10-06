@@ -114,7 +114,7 @@ export default function VinDecoder() {
             autoComplete="off"
             autoCapitalize="characters"
             spellCheck={false}
-            className="w-full sm:w-auto sm:flex-1 min-w-0 h-12 sm:h-14 bg-zinc-950 border-0 px-3 sm:px-4 text-base font-mono tracking-normal text-white placeholder:text-zinc-500 focus:outline-none rounded-none"
+            className="w-full sm:w-auto sm:flex-1 min-w-0 h-12 sm:h-14 bg-zinc-950 border-0 px-3 sm:px-4 text-base font-mono tracking-normal text-white placeholder:text-zinc-500 focus:outline-hidden rounded-none"
           />
           <div className="flex border-t sm:border-t-0 sm:border-l border-zinc-700 shrink-0">
             <button

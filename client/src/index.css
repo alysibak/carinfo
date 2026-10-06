@@ -1,143 +1,443 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-:root {
-  color-scheme: dark;
-  /* Near-black charcoal — cool-neutral, not pure #000 glare */
-  --surface: #0c0c0e;
-  --surface-raised: #141416;
-  /* Off-white hierarchy — readable, not pure #fff */
-  --text-primary: #eaeaec;
-  --text-secondary: #c4c4c9;
-  --text-muted: #8f8f98;
-  /* Muted dividers — lower contrast than zinc-700 white edges */
-  --border-default: #35353b;
-  --border-subtle: #242428;
-  --font-sans: 'Archivo', 'IBM Plex Sans', sans-serif;
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-sans: Archivo, 'IBM Plex Sans', sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
-  --font-display: 'Archivo', 'IBM Plex Sans', sans-serif;
-  /* Fallback for first paint only — SiteHeader measures and overwrites this. */
-  --header-height: 69px;
-}
+  --font-display: Archivo, 'IBM Plex Sans', sans-serif;
 
-html {
-  overflow-x: clip;
-}
+  --color-black: #0c0c0e;
+  --color-white: #eaeaec;
 
-body {
-  margin: 0;
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: var(--surface);
-  color: var(--text-primary);
-  line-height: 1.5;
-  letter-spacing: -0.011em;
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
-  overflow-x: clip;
-}
+  --color-zinc-50: #fafafa;
+  --color-zinc-100: #f4f4f5;
+  --color-zinc-200: #e4e4e7;
+  --color-zinc-300: #d4d4d8;
+  --color-zinc-400: #a1a1aa;
+  --color-zinc-500: #71717a;
+  --color-zinc-600: #52525b;
+  --color-zinc-700: #3f3f46;
+  --color-zinc-800: #2c2c30;
+  --color-zinc-900: #1a1a1d;
+  --color-zinc-950: #141416;
 
-@media (min-width: 1024px) {
-  :root {
-    --header-height: 63px;
+  --color-accent: #34d399;
+  --color-accent-hover: #6ee7b7;
+  --color-accent-strong: #10b981;
+  --color-accent-ink: #03150e;
+
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+
+  --color-dark-bg: #0c0c0e;
+  --color-dark-bg-secondary: #141416;
+  --color-dark-bg-tertiary: #1a1a1d;
+  --color-dark-border: #35353b;
+  --color-dark-text: #eaeaec;
+  --color-dark-text-secondary: #8f8f98;
+
+  --text-color-zinc-500: #82828b;
+  --text-color-zinc-600: #82828b;
+
+  --placeholder-color-zinc-500: #82828b;
+  --placeholder-color-zinc-600: #82828b;
+
+  --animate-fade-in: fadeIn 0.5s ease-in-out;
+  --animate-hero-rise: heroRise 0.4s ease-out both;
+  --animate-slide-up: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-scale-in: scaleIn 0.3s ease-out;
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-float-slow: float 11s ease-in-out infinite;
+  --animate-shimmer: shimmer 2.4s linear infinite;
+  --animate-grow-x: growX 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  @keyframes heroRise {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes slideUp {
+    0% {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  @keyframes scaleIn {
+    0% {
+      transform: scale(0.9);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+  @keyframes growX {
+    0% {
+      transform: scaleX(0);
+    }
+    100% {
+      transform: scaleX(1);
+    }
   }
 }
 
-code {
-  font-family: var(--font-mono);
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
 }
 
-@layer utilities {
+@utility tabular-nums {
   /* Figures line up in columns in the text face itself: numbers set in the
      monospace face made every value on a page look like a code listing. */
-  .tabular-nums {
-    font-variant-numeric: tabular-nums;
-  }
+  font-variant-numeric: tabular-nums;
 }
 
-* {
-  box-sizing: border-box;
+@utility font-display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.03em;
 }
 
-@layer components {
-  .font-display {
-    font-family: var(--font-display);
-    font-weight: 600;
-    letter-spacing: -0.03em;
-  }
+@utility font-tabular {
+  font-variant-numeric: tabular-nums;
+}
 
-  .font-tabular {
-    font-variant-numeric: tabular-nums;
-  }
-
+@utility eyebrow {
   /*
    * Type roles. Capitals are kept for the few section eyebrows; labels and
    * buttons are sentence case, and nothing is smaller than 12px.
    */
-  .eyebrow {
-    @apply text-xs font-semibold uppercase tracking-[0.08em] text-zinc-400;
-  }
+  @apply text-xs font-semibold uppercase tracking-[0.08em] text-zinc-400;
+}
 
-  .field-label {
-    @apply text-[13px] text-zinc-400;
-  }
+@utility field-label {
+  @apply text-[13px] text-zinc-400;
+}
 
-  .page-wrap {
-    @apply max-w-6xl mx-auto px-4 sm:px-5 md:px-10;
-  }
+@utility page-wrap {
+  @apply max-w-6xl mx-auto px-4 sm:px-5 md:px-10;
+}
 
-  .page-wrap-wide {
-    @apply max-w-7xl mx-auto px-4 sm:px-5 md:px-10;
-  }
+@utility page-wrap-wide {
+  @apply max-w-7xl mx-auto px-4 sm:px-5 md:px-10;
+}
 
+@utility section-y {
   /* Shared vertical rhythm — keep sections dense; avoid py-20 voids */
-  .section-y {
-    @apply py-9 md:py-12;
-  }
+  @apply py-9 md:py-12;
+}
 
-  .section-y-tight {
-    @apply py-5 md:py-7;
-  }
+@utility section-y-tight {
+  @apply py-5 md:py-7;
+}
 
-  .empty-panel {
-    @apply text-center py-12 sm:py-14 px-6 border border-zinc-800 bg-zinc-950;
-  }
+@utility empty-panel {
+  @apply text-center py-12 sm:py-14 px-6 border border-zinc-800 bg-zinc-950;
+}
 
-  .skip-link {
-    @apply absolute left-4 top-4 z-[100] -translate-y-16 px-4 py-2 bg-accent text-accent-ink text-sm font-semibold transition-transform focus:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60;
-  }
+@utility skip-link {
+  @apply absolute left-4 top-4 z-100 -translate-y-16 px-4 py-2 bg-accent text-accent-ink text-sm font-semibold transition-transform focus:translate-y-0 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60;
+}
 
-  .surface-card {
-    @apply bg-black border border-zinc-800 rounded-none;
-  }
+@utility surface-card {
+  @apply bg-black border border-zinc-800 rounded-none;
+}
 
-  .surface-card-hover {
-    @apply bg-black border border-zinc-800 rounded-none transition-all duration-200 hover:border-zinc-500 hover:bg-zinc-950 hover:-translate-y-0.5;
-  }
+@utility surface-card-hover {
+  @apply bg-black border border-zinc-800 rounded-none transition-all duration-200 hover:border-zinc-500 hover:bg-zinc-950 hover:-translate-y-0.5;
+}
 
-  .btn {
-    @apply inline-flex items-center justify-center gap-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60;
-  }
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 text-sm font-medium transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60;
+}
 
-  .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 min-h-[44px] text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:ring-accent px-5 py-2.5 bg-accent text-accent-ink hover:bg-accent-hover rounded-none;
-  }
+@utility btn-primary {
+  @apply inline-flex items-center justify-center gap-2 min-h-[44px] text-sm font-semibold transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:ring-accent px-5 py-2.5 bg-accent text-accent-ink hover:bg-accent-hover rounded-none;
+}
 
-  .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 min-h-[44px] text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 px-5 py-2.5 border border-zinc-600 text-zinc-200 hover:border-zinc-300 hover:text-white bg-transparent rounded-none;
-  }
+@utility btn-secondary {
+  @apply inline-flex items-center justify-center gap-2 min-h-[44px] text-sm font-medium transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60 px-5 py-2.5 border border-zinc-600 text-zinc-200 hover:border-zinc-300 hover:text-white bg-transparent rounded-none;
+}
 
-  .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 px-3 py-2 text-zinc-400 hover:text-white;
-  }
+@utility btn-ghost {
+  @apply inline-flex items-center justify-center gap-2 text-sm font-medium transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60 px-3 py-2 text-zinc-400 hover:text-white;
+}
 
+@utility choice-tile {
   /* A choice that reads as clickable: a bordered tile with a title and a line. */
-  .choice-tile {
-    @apply flex items-center justify-between gap-3 min-h-[56px] px-4 py-3 border border-zinc-800 bg-zinc-950 text-left transition-colors duration-150 hover:border-zinc-500 hover:bg-zinc-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60;
+  @apply flex items-center justify-between gap-3 min-h-[56px] px-4 py-3 border border-zinc-800 bg-zinc-950 text-left transition-colors duration-150 hover:border-zinc-500 hover:bg-zinc-900 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60;
+}
+
+@utility animate-battle-slide-in-left {
+  animation: battle-slide-in-left 0.6s ease-out;
+}
+
+@utility animate-battle-slide-in-right {
+  animation: battle-slide-in-right 0.6s ease-out;
+}
+
+@utility label-sm {
+  @apply text-xs text-zinc-400;
+}
+
+@utility section-heading {
+  @apply text-lg font-semibold text-white tracking-tight;
+}
+
+@utility section-title {
+  @apply text-2xl md:text-3xl font-bold text-white tracking-tight leading-tight;
+}
+
+@utility kicker {
+  @apply eyebrow;
+}
+
+@utility surface-card-glass {
+  @apply border border-zinc-800 bg-zinc-950/80 rounded-none;
+}
+
+@utility chip {
+  @apply inline-flex items-center min-h-[36px] px-3 py-1.5 text-[13px] text-zinc-300 border border-zinc-700 rounded-none transition-colors duration-150 hover:text-white hover:border-zinc-400 bg-transparent focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60;
+}
+
+@utility scrollbar-none {
+  /* A row that scrolls sideways by touch, without a bar under it. */
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility chip-on {
+  /* A chip that is switched on (a filter in use, the view in use). */
+  @apply border-accent/70 text-accent bg-accent/10 hover:text-accent hover:border-accent;
+}
+
+@utility spec-chip {
+  @apply inline-flex items-center px-2 py-0.5 text-xs text-zinc-300 border border-zinc-700 bg-transparent;
+}
+
+@utility eyebrow-pill {
+  @apply eyebrow;
+}
+
+@utility mesh-hero {
+  @apply bg-black relative overflow-hidden;
+  background-image:
+    linear-gradient(to bottom, transparent 55%, var(--surface) 100%),
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    48px 48px,
+    48px 48px;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background:
+      radial-gradient(ellipse 90% 60% at 50% -10%, rgba(255, 255, 255, 0.055) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 40% at 85% 20%, rgba(161, 161, 170, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+  }
+}
+
+@utility hero-plane {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@utility hero-content {
+  position: relative;
+  z-index: 2;
+}
+
+@utility intent-row {
+  @apply grid gap-1.5 py-4 border-b border-zinc-800 sm:grid-cols-[minmax(0,10.5rem)_1fr] sm:gap-6 lg:gap-8 sm:items-baseline;
+}
+
+@utility tool-card {
+  @apply surface-card-hover p-4 flex flex-col gap-2 min-h-[88px];
+}
+
+@utility step-card {
+  @apply border border-zinc-800 bg-zinc-950 p-4 rounded-none;
+}
+
+@utility nav-link {
+  @apply text-sm text-zinc-400 transition-colors duration-150 hover:text-white;
+}
+
+@utility list-row {
+  @apply flex items-center justify-between gap-4 py-4 border-b border-zinc-800 transition-colors duration-150 hover:border-zinc-600;
+}
+
+@utility text-gradient {
+  @apply bg-clip-text text-transparent bg-linear-to-br from-white via-zinc-100 to-zinc-400;
+}
+
+@utility text-gradient-accent {
+  @apply bg-clip-text text-transparent bg-linear-to-r from-white via-zinc-200 to-zinc-500;
+}
+
+@utility hero-stat {
+  @apply px-4 py-4 text-center;
+}
+
+@utility hero-stat-value {
+  @apply text-2xl sm:text-3xl font-bold tabular-nums text-white tracking-tight;
+}
+
+@utility hero-stat-label {
+  @apply text-xs text-zinc-400 mt-1;
+}
+
+@utility explore-card {
+  @apply surface-card-hover p-4 flex flex-col gap-2 min-h-[96px] relative overflow-hidden;
+
+  &::after {
+    content: '';
+    @apply absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-zinc-600 to-transparent opacity-0 transition-opacity duration-200;
   }
 
+  &:hover::after {
+    @apply opacity-100;
+  }
+}
+
+@utility compare-win {
+  @apply bg-accent/[0.07] ring-1 ring-inset ring-accent/25;
+}
+
+@utility meter-fill-animated {
+  animation: meterGrow 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@utility meter-track {
+  @apply relative h-1 w-full overflow-hidden bg-zinc-900;
+}
+
+@utility meter-fill {
+  @apply absolute inset-y-0 left-0 origin-left bg-white;
+}
+
+@layer utilities {
+  :root {
+    color-scheme: dark;
+    /* Near-black charcoal — cool-neutral, not pure #000 glare */
+    --surface: #0c0c0e;
+    --surface-raised: #141416;
+    /* Off-white hierarchy — readable, not pure #fff */
+    --text-primary: #eaeaec;
+    --text-secondary: #c4c4c9;
+    --text-muted: #8f8f98;
+    /* Muted dividers — lower contrast than zinc-700 white edges */
+    --border-default: #35353b;
+    --border-subtle: #242428;
+    --font-sans: 'Archivo', 'IBM Plex Sans', sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    --font-display: 'Archivo', 'IBM Plex Sans', sans-serif;
+    /* Fallback for first paint only — SiteHeader measures and overwrites this. */
+    --header-height: 69px;
+  }
+
+  html {
+    overflow-x: clip;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: var(--surface);
+    color: var(--text-primary);
+    line-height: 1.5;
+    letter-spacing: -0.011em;
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    overflow-x: clip;
+  }
+
+  @media (min-width: 1024px) {
+    :root {
+      --header-height: 63px;
+    }
+  }
+
+  code {
+    font-family: var(--font-mono);
+  }
+}
+
+@layer utilities {
+  * {
+    box-sizing: border-box;
+  }
+}
+
+@layer components {
   @keyframes battle-slide-in-left {
     from {
       transform: translateX(-100px);
@@ -160,155 +460,6 @@ code {
     }
   }
 
-  .animate-battle-slide-in-left {
-    animation: battle-slide-in-left 0.6s ease-out;
-  }
-
-  .animate-battle-slide-in-right {
-    animation: battle-slide-in-right 0.6s ease-out;
-  }
-
-  .label-sm {
-    @apply text-xs text-zinc-400;
-  }
-
-  .section-heading {
-    @apply text-lg font-semibold text-white tracking-tight;
-  }
-
-  .section-title {
-    @apply text-2xl md:text-3xl font-bold text-white tracking-tight leading-tight;
-  }
-
-  .kicker {
-    @apply eyebrow;
-  }
-
-  .surface-card-glass {
-    @apply border border-zinc-800 bg-zinc-950/80 rounded-none;
-  }
-
-  .chip {
-    @apply inline-flex items-center min-h-[36px] px-3 py-1.5 text-[13px] text-zinc-300 border border-zinc-700 rounded-none transition-colors duration-150 hover:text-white hover:border-zinc-400 bg-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60;
-  }
-
-  /* A row that scrolls sideways by touch, without a bar under it. */
-  .scrollbar-none {
-    scrollbar-width: none;
-  }
-  .scrollbar-none::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* A chip that is switched on (a filter in use, the view in use). */
-  .chip-on {
-    @apply border-accent/70 text-accent bg-accent/10 hover:text-accent hover:border-accent;
-  }
-
-  .spec-chip {
-    @apply inline-flex items-center px-2 py-0.5 text-xs text-zinc-300 border border-zinc-700 bg-transparent;
-  }
-
-  .eyebrow-pill {
-    @apply eyebrow;
-  }
-
-  .mesh-hero {
-    @apply bg-black relative overflow-hidden;
-    background-image:
-      linear-gradient(to bottom, transparent 55%, var(--surface) 100%),
-      linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-    background-size:
-      100% 100%,
-      48px 48px,
-      48px 48px;
-  }
-
-  .mesh-hero::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    background:
-      radial-gradient(ellipse 90% 60% at 50% -10%, rgba(255, 255, 255, 0.055) 0%, transparent 55%),
-      radial-gradient(ellipse 50% 40% at 85% 20%, rgba(161, 161, 170, 0.05) 0%, transparent 50%);
-    pointer-events: none;
-  }
-
-  .hero-plane {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .hero-content {
-    position: relative;
-    z-index: 2;
-  }
-
-  .intent-row {
-    @apply grid gap-1.5 py-4 border-b border-zinc-800 sm:grid-cols-[minmax(0,10.5rem)_1fr] sm:gap-6 lg:gap-8 sm:items-baseline;
-  }
-
-  .tool-card {
-    @apply surface-card-hover p-4 flex flex-col gap-2 min-h-[88px];
-  }
-
-  .step-card {
-    @apply border border-zinc-800 bg-zinc-950 p-4 rounded-none;
-  }
-
-  .nav-link {
-    @apply text-sm text-zinc-400 transition-colors duration-150 hover:text-white;
-  }
-
-  .list-row {
-    @apply flex items-center justify-between gap-4 py-4 border-b border-zinc-800 transition-colors duration-150 hover:border-zinc-600;
-  }
-
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-br from-white via-zinc-100 to-zinc-400;
-  }
-
-  .text-gradient-accent {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-white via-zinc-200 to-zinc-500;
-  }
-
-  .hero-stat {
-    @apply px-4 py-4 text-center;
-  }
-
-  .hero-stat-value {
-    @apply text-2xl sm:text-3xl font-bold tabular-nums text-white tracking-tight;
-  }
-
-  .hero-stat-label {
-    @apply text-xs text-zinc-400 mt-1;
-  }
-
-  .explore-card {
-    @apply surface-card-hover p-4 flex flex-col gap-2 min-h-[96px] relative overflow-hidden;
-  }
-
-  .explore-card::after {
-    content: '';
-    @apply absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-zinc-600 to-transparent opacity-0 transition-opacity duration-200;
-  }
-
-  .explore-card:hover::after {
-    @apply opacity-100;
-  }
-
-  .compare-win {
-    @apply bg-accent/[0.07] ring-1 ring-inset ring-accent/25;
-  }
-
-  .meter-fill-animated {
-    animation: meterGrow 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
-
   @keyframes meterGrow {
     from {
       transform: scaleX(0);
@@ -316,14 +467,6 @@ code {
     to {
       transform: scaleX(1);
     }
-  }
-
-  .meter-track {
-    @apply relative h-1 w-full overflow-hidden bg-zinc-900;
-  }
-
-  .meter-fill {
-    @apply absolute inset-y-0 left-0 origin-left bg-white;
   }
 }
 

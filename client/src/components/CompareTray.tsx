@@ -34,7 +34,7 @@ export default function CompareTray() {
             >
               <Link
                 to={`/car/${car.id}`}
-                className="text-xs text-zinc-200 hover:text-white truncate max-w-[9.5rem]"
+                className="text-xs text-zinc-200 hover:text-white truncate max-w-38"
               >
                 {car.year} {car.make}{' '}
                 <span className="text-zinc-500">{displayModelLabel(car)}</span>

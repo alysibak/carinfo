@@ -112,7 +112,7 @@ function CompareToggle({
       onClick={toggle}
       aria-pressed={isInComparison}
       aria-label={`Compare the ${displayVehicleTitle(car)}`}
-      className={`relative z-10 inline-flex shrink-0 border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 ${
+      className={`relative z-10 inline-flex shrink-0 border transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60 ${
         compact
           ? 'flex-col items-center justify-center gap-1 min-h-[52px] min-w-[64px] px-1.5 text-xs'
           : 'items-center gap-2 min-h-[40px] px-2.5 text-[13px]'
@@ -177,7 +177,7 @@ export default function CarCard({
   const titleLink = (
     <Link
       to={`/car/${car.id}`}
-      className="after:absolute after:inset-0 focus:outline-none focus-visible:underline hover:underline underline-offset-2 decoration-zinc-600"
+      className="after:absolute after:inset-0 focus:outline-hidden focus-visible:underline hover:underline underline-offset-2 decoration-zinc-600"
     >
       {title}
     </Link>
@@ -294,7 +294,7 @@ export default function CarCard({
                   type="button"
                   onClick={onRemove}
                   aria-label={`Remove the ${title}`}
-                  className="relative z-10 min-h-[40px] px-2.5 text-[13px] text-zinc-400 hover:text-red-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+                  className="relative z-10 min-h-[40px] px-2.5 text-[13px] text-zinc-400 hover:text-red-400 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60"
                 >
                   Remove
                 </button>

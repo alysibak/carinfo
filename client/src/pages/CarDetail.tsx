@@ -83,7 +83,7 @@ function AnnualCostStackBar({ annualCost }: { annualCost: AnnualCostBreakdown })
 
   return (
     <div className="max-w-md mt-2 mb-1">
-      <div className="flex h-2 w-full overflow-hidden rounded-sm bg-zinc-900" aria-hidden>
+      <div className="flex h-2 w-full overflow-hidden rounded-xs bg-zinc-900" aria-hidden>
         {segments.map((seg) => (
           <div
             key={seg.key}
@@ -430,7 +430,7 @@ export default function CarDetail() {
                 <VehiclePlaceholder car={car} compact hideCaption />
               </div>
               <div className="min-w-0">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight break-words">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight wrap-break-word">
                   {title}
                 </h1>
                 <p className="text-sm sm:text-[15px] text-zinc-300 mt-1">
@@ -606,7 +606,9 @@ export default function CarDetail() {
                             key={score.key}
                             className="bg-black px-2 sm:px-3 py-3.5 sm:py-4 text-center min-w-0"
                           >
-                            <p className="text-xs text-zinc-500 mb-1 break-words">{score.label}</p>
+                            <p className="text-xs text-zinc-500 mb-1 wrap-break-word">
+                              {score.label}
+                            </p>
                             <p className="text-lg sm:text-xl font-bold tabular-nums">
                               {score.value}
                               <span className="text-xs text-zinc-500">/5</span>

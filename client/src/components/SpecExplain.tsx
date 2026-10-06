@@ -66,7 +66,7 @@ export function SpecExplain({ glossaryKey }: { glossaryKey: SpecGlossaryKey }) {
           <div
             id={panelId}
             role="dialog"
-            className="fixed z-[200] w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-full px-3 py-2.5 bg-zinc-950 border border-zinc-700 shadow-xl text-xs leading-relaxed"
+            className="fixed z-200 w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-full px-3 py-2.5 bg-zinc-950 border border-zinc-700 shadow-xl text-xs leading-relaxed"
             style={{ top: coords.top, left: coords.left }}
           >
             <p className="text-zinc-300">{what}</p>

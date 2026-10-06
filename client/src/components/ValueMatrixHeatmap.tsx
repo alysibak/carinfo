@@ -240,7 +240,7 @@ export default function ValueMatrixHeatmap({
       )}
       <div className="flex items-center justify-end gap-2 mt-2 text-xs text-zinc-500">
         <span>Low density</span>
-        <div className="flex h-2 w-24 rounded-sm overflow-hidden border border-zinc-700">
+        <div className="flex h-2 w-24 rounded-xs overflow-hidden border border-zinc-700">
           {Array.from({ length: 8 }, (_, i) => (
             <div
               key={i}

@@ -475,7 +475,7 @@ function SpecGroupBlock({ group }: { group: SpecGroup }) {
               >
                 <DataValue
                   value={spec.value}
-                  className={`${emphasised ? TIER1_SPEC_EMPHASIS : TIER2_VALUE} break-words max-w-full ${
+                  className={`${emphasised ? TIER1_SPEC_EMPHASIS : TIER2_VALUE} wrap-break-word max-w-full ${
                     stacked ? '' : 'text-right'
                   }`}
                 />

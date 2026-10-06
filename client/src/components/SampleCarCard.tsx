@@ -36,7 +36,7 @@ export default function SampleCarCard({ car }: { car: CarSpecs }) {
   return (
     <Link
       to={`/car/${car.id}`}
-      className="group block border border-zinc-800 bg-zinc-950/90 backdrop-blur-sm hover:border-zinc-600 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+      className="group block border border-zinc-800 bg-zinc-950/90 backdrop-blur-xs hover:border-zinc-600 transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60"
     >
       <div className="flex items-center gap-3 px-4 pt-4">
         <span className="w-16 h-10 shrink-0 overflow-hidden" aria-hidden>

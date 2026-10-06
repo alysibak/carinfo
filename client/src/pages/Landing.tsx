@@ -95,7 +95,7 @@ export default function Landing() {
 
       <SiteHeader transparentUntilScroll />
 
-      <main id="main-content" tabIndex={-1} className="focus:outline-none">
+      <main id="main-content" tabIndex={-1} className="focus:outline-hidden">
         <section className="mesh-hero">
           <div className="hero-content page-wrap pt-10 pb-10 md:pt-16 md:pb-16 lg:pt-20 lg:pb-20 grid lg:grid-cols-[minmax(0,1fr)_23rem] gap-10 lg:gap-14 items-center">
             <div className="max-w-xl min-w-0">

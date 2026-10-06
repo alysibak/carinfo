@@ -81,7 +81,7 @@ export function AuthHeaderControls({ onNavigate }: { onNavigate?: () => void }) 
         ) : (
           <span className="text-zinc-500">Free</span>
         )}
-        <span className="max-w-[7rem] truncate">
+        <span className="max-w-28 truncate">
           {user?.firstName || user?.primaryEmailAddress?.emailAddress?.split('@')[0] || 'Account'}
         </span>
         {syncMode === 'cloud' && <span className="text-zinc-600">· synced</span>}

@@ -217,7 +217,7 @@ export function ConfirmDialog({
               onConfirm();
               onClose();
             }}
-            className={`text-xs px-5 py-2.5 font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 ${
+            className={`text-xs px-5 py-2.5 font-medium transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-white/25 ${
               danger
                 ? 'bg-red-600 text-white hover:bg-red-500'
                 : 'bg-accent text-accent-ink hover:bg-accent-hover'
@@ -302,7 +302,7 @@ export function InfoTip({
           <div
             id={panelId}
             role="dialog"
-            className={`fixed z-[200] -translate-x-1/2 -translate-y-full px-3 py-2.5 bg-zinc-950 border border-zinc-700 shadow-xl text-xs leading-relaxed normal-case tracking-normal ${
+            className={`fixed z-200 -translate-x-1/2 -translate-y-full px-3 py-2.5 bg-zinc-950 border border-zinc-700 shadow-xl text-xs leading-relaxed normal-case tracking-normal ${
               wide ? 'w-72 max-w-[calc(100vw-2rem)]' : 'w-56 max-w-[calc(100vw-2rem)]'
             }`}
             style={{ top: coords.top, left: coords.left }}
@@ -354,10 +354,10 @@ export function ExpandableSection({
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((v) => !v)}
-        className="w-full px-4 py-3.5 flex items-center gap-4 text-left hover:bg-zinc-950/80 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/25"
+        className="w-full px-4 py-3.5 flex items-center gap-4 text-left hover:bg-zinc-950/80 transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/25"
       >
         <div className="flex-1 min-w-0">
-          <span className="text-xs font-bold text-white block break-words">{title}</span>
+          <span className="text-xs font-bold text-white block wrap-break-word">{title}</span>
           {summary && !open && (
             <p className="text-xs text-zinc-400 mt-1 leading-snug normal-case tracking-normal truncate">
               {summary}

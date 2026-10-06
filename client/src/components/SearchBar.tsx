@@ -153,17 +153,17 @@ export default function SearchBar({
 
   const inputClass =
     size === 'hero'
-      ? 'w-full h-12 sm:h-14 lg:h-16 pl-11 sm:pl-12 pr-4 bg-zinc-950 border-0 text-white text-base placeholder-zinc-500 focus:outline-none rounded-none min-w-0'
+      ? 'w-full h-12 sm:h-14 lg:h-16 pl-11 sm:pl-12 pr-4 bg-zinc-950 border-0 text-white text-base placeholder-zinc-500 focus:outline-hidden rounded-none min-w-0'
       : size === 'large'
-        ? 'w-full pl-12 pr-4 py-4 bg-zinc-950 border border-zinc-700 text-white text-base placeholder-zinc-500 focus:outline-none focus:border-zinc-400 rounded-none transition-colors'
-        : 'w-full pl-11 pr-4 py-3 bg-zinc-950 border border-zinc-700 text-white text-sm placeholder-zinc-500 focus:outline-none focus:border-zinc-400 rounded-none transition-colors';
+        ? 'w-full pl-12 pr-4 py-4 bg-zinc-950 border border-zinc-700 text-white text-base placeholder-zinc-500 focus:outline-hidden focus:border-zinc-400 rounded-none transition-colors'
+        : 'w-full pl-11 pr-4 py-3 bg-zinc-950 border border-zinc-700 text-white text-sm placeholder-zinc-500 focus:outline-hidden focus:border-zinc-400 rounded-none transition-colors';
 
   const buttonClass =
     size === 'hero'
-      ? 'h-12 sm:h-14 lg:h-16 px-5 sm:px-8 lg:px-10 bg-accent text-accent-ink text-[15px] font-semibold rounded-none hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:ring-accent transition-colors disabled:opacity-50 border-0 w-full sm:w-auto'
+      ? 'h-12 sm:h-14 lg:h-16 px-5 sm:px-8 lg:px-10 bg-accent text-accent-ink text-[15px] font-semibold rounded-none hover:bg-accent-hover focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:ring-accent transition-colors disabled:opacity-50 border-0 w-full sm:w-auto'
       : size === 'large'
-        ? 'px-8 py-4 bg-accent text-accent-ink text-[15px] font-semibold rounded-none hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:ring-accent transition-colors disabled:opacity-50'
-        : 'px-6 py-3 bg-accent text-accent-ink text-[15px] font-semibold rounded-none hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:ring-accent transition-colors disabled:opacity-50';
+        ? 'px-8 py-4 bg-accent text-accent-ink text-[15px] font-semibold rounded-none hover:bg-accent-hover focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:ring-accent transition-colors disabled:opacity-50'
+        : 'px-6 py-3 bg-accent text-accent-ink text-[15px] font-semibold rounded-none hover:bg-accent-hover focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:ring-accent transition-colors disabled:opacity-50';
 
   const iconSize = size === 'default' ? 'w-4 h-4' : 'w-5 h-5';
 
@@ -229,7 +229,7 @@ export default function SearchBar({
         id={listId}
         data-search-suggest={listId}
         role="listbox"
-        className="fixed z-[200] overflow-y-auto border border-zinc-700 bg-zinc-950 shadow-[0_12px_40px_rgba(0,0,0,0.55)]"
+        className="fixed z-200 overflow-y-auto border border-zinc-700 bg-zinc-950 shadow-[0_12px_40px_rgba(0,0,0,0.55)]"
         style={{
           top: listPosition.top,
           left: listPosition.left,

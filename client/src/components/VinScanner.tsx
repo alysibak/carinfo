@@ -180,7 +180,7 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
       role="dialog"
       aria-modal="true"
       aria-label="Scan VIN barcode"
-      className="fixed inset-0 z-[300] bg-black flex flex-col"
+      className="fixed inset-0 z-300 bg-black flex flex-col"
     >
       <div className="relative flex-1 overflow-hidden">
         <video
@@ -194,7 +194,7 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
         {/* Scan guide */}
         {ready && !error && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-[82%] max-w-md aspect-[3/1] border-2 border-white/70 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]" />
+            <div className="w-[82%] max-w-md aspect-3/1 border-2 border-white/70 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]" />
           </div>
         )}
 

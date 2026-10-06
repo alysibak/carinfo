@@ -29,14 +29,14 @@ export default function PinnedCarBar({
         <button
           type="button"
           onClick={onGarage}
-          className="hidden sm:inline-flex btn-secondary !min-h-[36px] !py-1.5 !px-3 text-[13px]"
+          className="hidden sm:inline-flex btn-secondary min-h-[36px]! py-1.5! px-3! text-[13px]"
         >
           Save to garage
         </button>
         <button
           type="button"
           onClick={onCompare}
-          className={`${inCompare ? 'btn-secondary' : 'btn-primary'} !min-h-[36px] !py-1.5 !px-3 text-[13px] shrink-0`}
+          className={`${inCompare ? 'btn-secondary' : 'btn-primary'} min-h-[36px]! py-1.5! px-3! text-[13px] shrink-0`}
         >
           {inCompare ? 'In compare' : 'Add to compare'}
         </button>

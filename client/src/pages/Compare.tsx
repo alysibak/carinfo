@@ -448,14 +448,14 @@ export default function Compare() {
                     setToast('Copy the URL from the address bar');
                   }
                 }}
-                className="btn-secondary !min-h-[40px] !py-2"
+                className="btn-secondary min-h-[40px]! py-2!"
               >
                 Copy link
               </button>
               <button
                 type="button"
                 onClick={clearComparison}
-                className="btn-ghost min-h-[40px] hover:!text-red-300"
+                className="btn-ghost min-h-[40px] hover:text-red-300!"
               >
                 Clear all
               </button>
@@ -495,9 +495,9 @@ export default function Compare() {
             <div className="overflow-x-auto -mx-4 sm:mx-0 overscroll-x-contain">
               <table className="w-full border-collapse table-fixed min-w-full">
                 <colgroup>
-                  <col className="w-[5.75rem] sm:w-40" />
+                  <col className="w-23 sm:w-40" />
                   {pairs.map(({ car }) => (
-                    <col key={car.id} className="w-[8.5rem] sm:w-auto" />
+                    <col key={car.id} className="w-34 sm:w-auto" />
                   ))}
                 </colgroup>
                 <thead>
@@ -516,10 +516,10 @@ export default function Compare() {
                               car={car}
                               compact
                               hideCaption
-                              className="!absolute inset-0"
+                              className="absolute! inset-0"
                             />
                           </div>
-                          <h2 className="text-sm sm:text-base font-semibold text-white leading-snug group-hover/col:underline underline-offset-4 decoration-zinc-600 break-words">
+                          <h2 className="text-sm sm:text-base font-semibold text-white leading-snug group-hover/col:underline underline-offset-4 decoration-zinc-600 wrap-break-word">
                             {car.year} {car.make} {displayModelLabel(car)}
                           </h2>
                           {displayListingSubtitle(car) && (
@@ -614,7 +614,7 @@ export default function Compare() {
                                 ) : (
                                   <>
                                     <span
-                                      className={`text-sm sm:text-[15px] tabular-nums break-words ${
+                                      className={`text-sm sm:text-[15px] tabular-nums wrap-break-word ${
                                         isBest ? 'font-bold text-white' : 'text-zinc-100'
                                       }`}
                                     >

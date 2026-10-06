@@ -39,7 +39,7 @@ export default function ShortlistCards() {
           <li key={collection.id}>
             <Link
               to={`/collection/${collection.id}`}
-              className="group h-full surface-card-hover p-4 flex flex-col gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+              className="group h-full surface-card-hover p-4 flex flex-col gap-3 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60"
             >
               <div>
                 <h3 className="text-base font-semibold text-white tracking-tight">

@@ -759,7 +759,7 @@ export default function ValueMatrix() {
                     <button
                       type="button"
                       onClick={() => navigate(`/car/${hovered.id}`)}
-                      className="btn-secondary !py-2 !px-4 !text-xs shrink-0"
+                      className="btn-secondary py-2! px-4! text-xs! shrink-0"
                     >
                       View car
                     </button>

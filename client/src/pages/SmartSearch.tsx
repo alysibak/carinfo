@@ -402,7 +402,7 @@ export default function SmartSearch() {
                       </p>
                       <Link
                         to={`/car/${car.id}`}
-                        className={`mt-3 ${i === 0 ? 'btn-primary' : 'btn-secondary'} !min-h-[40px] !py-2`}
+                        className={`mt-3 ${i === 0 ? 'btn-primary' : 'btn-secondary'} min-h-[40px]! py-2!`}
                       >
                         See this car
                       </Link>

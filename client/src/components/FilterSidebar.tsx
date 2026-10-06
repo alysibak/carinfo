@@ -59,7 +59,7 @@ function RangeInputs({
   }, [value]);
 
   const inputClass =
-    'w-full bg-black border border-zinc-700 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 transition-colors';
+    'w-full bg-black border border-zinc-700 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-hidden focus:border-zinc-400 transition-colors';
 
   const commitDraft = () => {
     const min = draft?.min;
@@ -310,7 +310,7 @@ export default function FilterSidebar({
           aria-label="Find a make"
           value={makeSearch}
           onChange={(e) => setMakeSearch(e.target.value)}
-          className="w-full bg-black border border-zinc-700 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 mb-3"
+          className="w-full bg-black border border-zinc-700 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-hidden focus:border-zinc-400 mb-3"
         />
         {makeOptions.length > 0 ? (
           <FilterPills
