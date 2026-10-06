@@ -29,7 +29,7 @@ export default function Methodology() {
           <ol className="space-y-4 text-sm text-zinc-400 leading-relaxed list-decimal list-inside marker:text-zinc-400">
             <li>
               <strong className="text-zinc-200 font-medium">Raw master record</strong> (
-              <code className="text-zinc-400 text-xs">cars.json</code>): ~35,800 EPA FuelEconomy.gov
+              <code className="text-zinc-400 text-xs">cars.json</code>): ~36,300 EPA FuelEconomy.gov
               configurations ({FIRST_MODEL_YEAR}–{LATEST_MODEL_YEAR}), and the cars sold in Canada
               that EPA never rated (an Acura CSX, a Chevrolet Orlando, a Kia Magentis) from Natural
               Resources Canada&rsquo;s fuel consumption ratings, marked NRCan. Deliberately omits
