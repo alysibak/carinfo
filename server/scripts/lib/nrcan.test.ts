@@ -4,6 +4,7 @@ import {
   canadianModelOf,
   cleanModel,
   driveFromName,
+  engineListedByEpa,
   epaSpelling,
   listedByEpa,
   mapNrcanRow,
@@ -52,6 +53,7 @@ describe('NRCan rows', () => {
     expect(cleanModel('Intrepid ES (Autostick)')).toBe('Intrepid ES');
     expect(cleanModel('CX-3 (SIL)')).toBe('CX-3');
     expect(cleanModel('iX xDrive40 (20" Wheels)')).toBe('iX xDrive40 (20 inch Wheels)');
+    expect(cleanModel('AMG S 63 E PERFORMANCE Sedan')).toBe('AMG S 63 E Performance Sedan');
   });
 
   it('imports only the listed models, in their Canadian years', () => {
@@ -217,5 +219,43 @@ describe('NRCan rows', () => {
       'EQE 350 4matic (SUV)',
     );
     expect(epaSpelling('Qashqai', ['Rogue Sport'])).toBeUndefined();
+  });
+
+  it('takes an engine EPA lacks for a model it lists, not one it has', () => {
+    const g70 = (litres: string, cylinders: string) =>
+      row({
+        'Model year': '2024',
+        Make: 'Genesis',
+        Model: 'G70 AWD',
+        'Vehicle class': 'Compact',
+        'Engine size (L)': litres,
+        Cylinders: cylinders,
+        Transmission: 'AS8',
+      });
+    const entry = canadianModelOf(g70('3.3', '6'))!;
+    expect(entry.sameEngineOnly).toBe(true);
+    // EPA's 2024 file has the 2.5T G70 only.
+    const epa = [mapNrcanRow(g70('2.5', '4'), entry, 'G70 AWD')];
+    expect(engineListedByEpa(entry, mapNrcanRow(g70('3.3', '6'), entry), epa)).toBe(false);
+    expect(engineListedByEpa(entry, mapNrcanRow(g70('2.5', '4'), entry), epa)).toBe(true);
+    // A plug-in is another engine than the gasoline car of the same size.
+    const x3 = {
+      'Model year': '2024',
+      Make: 'BMW',
+      Model: 'X3 xDrive30e',
+      'Vehicle class': 'Sport utility vehicle: Small',
+      'Engine size (L)': '2.0',
+      Cylinders: '4',
+      Transmission: 'AS8',
+      'Fuel type 1': 'B/Z*',
+      'Combined Le/100 km': '3.9 ([22.0 kWh + 1.5 L]/100 km)',
+      'Range 1 (km)': '29',
+      'Fuel type 2': 'Z',
+      'Combined (L/100 km)': '9.2',
+      'CO2 emissions (g/km)': '120',
+    };
+    const plugIn = mapNrcanRow(x3, canadianModelOf(x3)!);
+    const gasX3 = { ...mapNrcanRow(g70('2.0', '4'), entry), make: 'BMW', model: 'X3 xDrive30i' };
+    expect(engineListedByEpa(canadianModelOf(x3)!, plugIn, [gasX3])).toBe(false);
   });
 });

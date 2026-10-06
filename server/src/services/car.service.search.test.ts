@@ -408,10 +408,10 @@ describe('car.service natural language search', () => {
     expect(hatch.every((c) => c.make === 'Mazda' && c.bodyStyle === 'hatchback')).toBe(true);
 
     // A model name that contains the word still wins: every RAV4 Hybrid, and
-    // only RAV4 Hybrids.
+    // only RAV4 Hybrids (the 2026 plug-in's name has the word too).
     const rav4 = searchCars({ query: 'rav4 hybrid', limit: 50 }).results;
     expect(rav4.length).toBeGreaterThan(5);
-    expect(rav4.every((c) => /^RAV4 Hybrid/.test(c.model))).toBe(true);
+    expect(rav4.every((c) => /^RAV4 (?:Plug-in )?Hybrid/.test(c.model))).toBe(true);
   });
 
   it('does not read "minivan" as MINI + "van"', () => {

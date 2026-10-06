@@ -41,6 +41,15 @@ export interface CanadianModel {
    * first word ("B 250" against EPA's "B250e" is another car).
    */
   epaModel?: RegExp;
+  /**
+   * Only the engines EPA's file lacks: a row is skipped once EPA lists a car
+   * of `epaModel` that year with the same engine (see engineListedByEpa).
+   * For an engine EPA's file left out of a model it lists, or one sold only
+   * in Canada.
+   */
+  sameEngineOnly?: boolean;
+  /** NRCan's name rewritten as EPA would write it, where NRCan's breaks EPA's pattern. */
+  rename?: [RegExp, string];
   /** Why EPA does not list it, for the report and the README. */
   why: string;
 }
@@ -59,6 +68,25 @@ function missingYear(
     years: [year, year],
     epaModel,
     why: `not in EPA's file for ${year}`,
+    ...more,
+  };
+}
+
+/** Engines EPA's file is missing for a model it lists, over the years given. */
+function missingEngine(
+  make: string,
+  model: RegExp,
+  years: [number, number],
+  epaModel: RegExp,
+  more: Partial<CanadianModel> = {},
+): CanadianModel {
+  return {
+    make,
+    model,
+    years,
+    epaModel,
+    sameEngineOnly: true,
+    why: "an engine not in EPA's file",
     ...more,
   };
 }
@@ -233,6 +261,88 @@ export const CANADIAN_MODELS: CanadianModel[] = [
   missingYear('Alfa Romeo', /^Tonale AWD$/, 2023, /^Tonale/, {
     why: 'a gasoline Tonale only Canada had',
   }),
+
+  // Engines EPA's file is missing for a model it lists, checked engine by
+  // engine: a year EPA lists the engine in the model is skipped, so a span
+  // can run over years EPA has. EPA's 2024 file left out most of the plug-in
+  // hybrids its 2023 and 2025 files have; its file has none of Mercedes'
+  // 350 BlueTEC diesels, and lacks the 2024 G70 3.3T, the 2026 Panamera GTS
+  // and E-Hybrids, and the 2020 718s but the Spyder and GT4.
+  missingEngine('BMW', /^X3 xDrive30e$/, [2020, 2024], /^X3\b/, { drive: 'AWD' }),
+  missingEngine('BMW', /^X5 xDrive50e$/, [2024, 2025], /^X5\b/, { drive: 'AWD' }),
+  missingEngine('Ford', /^Escape Plug-in Hybrid$/, [2020, 2025], /^Escape\b/, { drive: 'FWD' }),
+  missingEngine('Kia', /^Niro Plug-in Hybrid$/, [2018, 2025], /^Niro\b/, { drive: 'FWD' }),
+  missingEngine(
+    'Mercedes-Benz',
+    /^AMG (?:C|GLC|GT|S) 63 (?:S )?E Performance\b/i,
+    [2024, 2026],
+    /^AMG (?:C|GLC|GT|S) ?63\b/,
+    { drive: 'AWD' },
+  ),
+  missingEngine('Volvo', /^S90 T8 AWD Recharge$/, [2022, 2025], /^S90\b/),
+  missingEngine('Volvo', /^V60 T8 AWD Recharge$/, [2022, 2025], /^V60\b/),
+  missingEngine('Subaru', /^Crosstrek Hybrid AWD$/, [2019, 2023], /^Crosstrek\b/),
+  missingEngine('Genesis', /^G70 (?:AWD|RWD)$/, [2022, 2026], /^G70\b/),
+  missingEngine(
+    'Porsche',
+    /^Cayenne (?:S |Turbo )?E-Hybrid(?: Coupe)?$/,
+    [2025, 2026],
+    /^Cayenne\b/,
+    { drive: 'AWD' },
+  ),
+  missingEngine(
+    'Porsche',
+    /^Panamera (?:GTS|Turbo (?:S )?E-Hybrid)$/,
+    [2025, 2026],
+    /^Panamera\b/,
+    {
+      drive: 'AWD',
+    },
+  ),
+  missingEngine('Porsche', /^718 (?:Boxster|Cayman)(?: [ST])?$/, [2020, 2020], /^718\b/, {
+    drive: 'RWD',
+  }),
+  missingEngine('Toyota', /^Prius Plug-in Hybrid\b/, [2026, 2026], /^Prius\b/, { drive: 'FWD' }),
+  // NRCan puts the drive mid-name ("RAV4 Plug-in Hybrid AWD XSE"); EPA last.
+  missingEngine('Toyota', /^RAV4 Plug-in Hybrid\b/, [2026, 2026], /^RAV4\b/, {
+    drive: 'AWD',
+    rename: [/^(RAV4 Plug-in Hybrid) AWD (.+)$/, '$1 $2 AWD'],
+  }),
+  missingEngine(
+    'Mercedes-Benz',
+    /^(?:GL|ML|R) 350 BlueTec(?: 4MATIC)?$/,
+    [2009, 2016],
+    /^(?:GL|ML|R) ?350\b/i,
+    {
+      drive: 'AWD',
+    },
+  ),
+  missingEngine('Mercedes-Benz', /^[ES] 350 BlueTec(?: 4MATIC)?$/, [2009, 2016], /^[ES] ?350\b/i, {
+    drive: 'RWD',
+  }),
+  missingEngine('Volkswagen', /^Passat Wagon 4MOTION$/, [2009, 2010], /^Passat\b/, {
+    drive: 'AWD',
+  }),
+  // Engines sold only in Canada: the CX-5's and CX-30's 2.0, the Rogue's 2.5
+  // after the US took the 1.5 turbo, the Trailblazer's 1.2, a V6 C 250, the
+  // GLE 550 and a gasoline Tonale, and the 2014 Fit and 2015 ILX Hybrid.
+  ...[
+    missingEngine('Mazda', /^CX-5$/, [2013, 2021], /^CX-5\b/, { drive: 'FWD' }),
+    missingEngine('Mazda', /^CX-30(?: 4WD)?$/, [2020, 2024], /^CX-30\b/, { drive: 'FWD' }),
+    missingEngine('Nissan', /^Rogue(?: AWD)?$/, [2021, 2023], /^Rogue (?:FWD|AWD)\b/, {
+      drive: 'FWD',
+    }),
+    missingEngine('Chevrolet', /^Trailblazer(?: AWD)?$/, [2021, 2026], /^Trailblazer\b/, {
+      drive: 'FWD',
+    }),
+    missingEngine('Mercedes-Benz', /^C 250 4MATIC$/, [2010, 2013], /^C ?250\b/, { drive: 'AWD' }),
+    missingEngine('Mercedes-Benz', /^GLE 550 4MATIC$/, [2016, 2018], /^GLE ?550\b/, {
+      drive: 'AWD',
+    }),
+    missingEngine('Alfa Romeo', /^Tonale AWD$/, [2024, 2024], /^Tonale\b/, { drive: 'AWD' }),
+    missingEngine('Honda', /^Fit$/, [2014, 2014], /^Fit\b/, { drive: 'FWD' }),
+    missingEngine('Acura', /^ILX Hybrid$/, [2015, 2015], /^ILX\b/, { drive: 'FWD' }),
+  ].map((entry) => ({ ...entry, why: 'an engine sold only in Canada' })),
 ];
 
 const MPG_L100 = 235.215; // US mpg × L/100 km
@@ -332,6 +442,8 @@ export function cleanModel(model: string): string {
     model
       .replace(/\s*#\s*$/, '')
       .replace(/\s*\((?:Autostick|SIL)\)/gi, '')
+      // NRCan's 2026 files shout Mercedes' plug-ins: "AMG S 63 E PERFORMANCE".
+      .replace(/\bE PERFORMANCE\b/g, 'E Performance')
       // Wheel sizes as EPA writes them: '(20" Wheels)' is "(20 inch Wheels)".
       .replace(/(\d+)"/g, '$1 inch')
       .trim()
@@ -493,6 +605,33 @@ export function listedByEpa(entry: CanadianModel, model: string, epaModels: stri
   if (epaModel) return epaModels.some((name) => epaModel.test(name));
   const word = firstWord(model);
   return epaModels.some((name) => firstWord(name) === word);
+}
+
+/** NRCan's model name as the site lists it, for the entry it falls under. */
+export function modelNameFor(entry: CanadianModel, nrcanModel: string): string {
+  const model = cleanModel(nrcanModel);
+  return entry.rename ? model.replace(entry.rename[0], entry.rename[1]) : model;
+}
+
+/**
+ * Whether EPA lists this car's engine in the entry's model that year: the
+ * same kind (plug-in, diesel, electric or not), and for an engine the same
+ * cylinders and size, to rounding (the Trailblazer's 1.2 and 1.3 are two
+ * engines).
+ */
+export function engineListedByEpa(entry: CanadianModel, car: Car, epaCars: Car[]): boolean {
+  const kind = (c: Car) =>
+    ['plug-in hybrid', 'diesel', 'electric'].indexOf(c.engine.fuelType).toString();
+  return epaCars.some(
+    (c) =>
+      (entry.epaModel
+        ? entry.epaModel.test(c.model)
+        : firstWord(c.model) === firstWord(car.model)) &&
+      kind(c) === kind(car) &&
+      (car.engine.fuelType === 'electric' ||
+        (c.engine.cylinders === car.engine.cylinders &&
+          Math.abs((c.engine.displacement ?? 0) - (car.engine.displacement ?? 0)) <= 0.06)),
+  );
 }
 
 /**

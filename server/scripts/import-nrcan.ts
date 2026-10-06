@@ -5,7 +5,8 @@
  * Re-running replaces the NRCan listings with the current files' figures, so
  * a corrected rating reaches the site; EPA listings are never touched. A row
  * EPA has since listed (same make, year and first word of the model name) is
- * skipped and reported, so a refresh cannot list a car twice.
+ * skipped and reported, so a refresh cannot list a car twice. For an entry
+ * that takes only the engines EPA lacks, the test is the engine instead.
  *
  * Usage: downloads NRCan's current files, or reads the CSVs in the folder given:
  *   tsx scripts/import-nrcan.ts [path/to/folder] [--dry-run]
@@ -22,10 +23,11 @@ import {
   CANADIAN_MODELS,
   type CanadianModel,
   canadianModelOf,
-  cleanModel,
+  engineListedByEpa,
   epaSpelling,
   listedByEpa,
   mapNrcanRow,
+  modelNameFor,
   type NrcanRow,
 } from './lib/nrcan.js';
 
@@ -90,13 +92,12 @@ async function main(): Promise<void> {
   const before = new Set(file.cars.filter(isNrcan).map((car) => car.id));
   console.log(`[nrcan] ${folder}: ${rows.length} rows; ${file.cars.length} cars on file`);
 
-  const epaModels = new Map<string, string[]>();
+  const epaByYear = new Map<string, Car[]>();
   for (const car of epaCars) {
     const key = `${car.make.toLowerCase()}|${car.year}`;
-    const models = epaModels.get(key) ?? [];
-    models.push(car.model);
-    epaModels.set(key, models);
+    epaByYear.set(key, [...(epaByYear.get(key) ?? []), car]);
   }
+  const epaModels = new Map([...epaByYear].map(([key, cars]) => [key, cars.map((c) => c.model)]));
   const mapped: Car[] = [];
   const nowOnEpa: string[] = [];
   const matched = new Set<CanadianModel>();
@@ -105,15 +106,20 @@ async function main(): Promise<void> {
     if (!entry) continue;
     matched.add(entry);
     const year = parseInt(row['Model year'], 10);
-    const model = cleanModel(row.Model);
-    if (listedByEpa(entry, model, epaModels.get(`${entry.make.toLowerCase()}|${year}`) ?? [])) {
+    const model = modelNameFor(entry, row.Model);
+    const key = `${entry.make.toLowerCase()}|${year}`;
+    if (!entry.sameEngineOnly && listedByEpa(entry, model, epaModels.get(key) ?? [])) {
       nowOnEpa.push(`${entry.make} ${model} ${year}`);
       continue;
     }
     const nearby = [-2, -1, 1, 2].flatMap(
       (offset) => epaModels.get(`${entry.make.toLowerCase()}|${year + offset}`) ?? [],
     );
-    const car = mapNrcanRow(row, entry, epaSpelling(model, nearby));
+    const car = mapNrcanRow(row, entry, epaSpelling(model, nearby) ?? model);
+    if (entry.sameEngineOnly && engineListedByEpa(entry, car, epaByYear.get(key) ?? [])) {
+      // EPA has this engine in the model that year; the row is no gap.
+      continue;
+    }
     const msrp = estimatePriceMsrp(car);
     car.price = {
       msrp,
