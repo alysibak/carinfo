@@ -3,8 +3,9 @@ name: EPA refresh
 # Adds the cars EPA has listed since cars.json was last refreshed, with their
 # NHTSA ratings, and refreshes the Canadian cars EPA never rated from Natural
 # Resources Canada. The data scripts download from fueleconomy.gov,
-# api.nhtsa.gov and open.canada.ca, which GitHub's runners reach. The result
-# goes to the epa-refresh branch for review, never straight to main.
+# api.nhtsa.gov and open.canada.ca, which GitHub's runners reach. When the
+# data changes, the result goes to the epa-refresh branch and a pull request
+# for review, never straight to main; otherwise no branch is made.
 #
 # Horsepower is left as committed: new cars take the site's maker ratings and
 # same-engine fills. A rebuild of horsepower-enrichment.json with today's
@@ -14,9 +15,6 @@ on:
   schedule:
     - cron: '23 9 * * 1' # Mondays: EPA adds certifications all year
   workflow_dispatch:
-  # Also when this file changes, so an edit can be tried from its own branch.
-  push:
-    paths: ['.github/workflows/epa-refresh.yml']
 
 concurrency:
   group: epa-refresh
@@ -77,7 +75,14 @@ jobs:
           npm test
 
       - name: Push to the epa-refresh branch
+        id: push
         run: |
+          { echo '```'; cat epa-refresh-report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          if git diff --quiet -- server/data/; then
+            echo 'Nothing new from EPA, NRCan or NHTSA: no branch to push.'
+            exit 0
+          fi
+          echo 'changed=true' >> "$GITHUB_OUTPUT"
           gzip -9 -k server/data/raw/vehicles.csv
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -89,21 +94,18 @@ jobs:
           git commit -m "Refresh from EPA and NHTSA ($(date -u +%F))" \
             -m "Tests: ${{ steps.tests.outcome }}. Report: epa-refresh-report.txt."
           git push -f origin epa-refresh
-          { echo '```'; cat epa-refresh-report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Open a pull request
         # A scheduled run's event carries no repository, so name the branch.
-        if: github.ref_name == 'main'
+        if: steps.push.outputs.changed == 'true' && github.ref_name == 'main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if git diff --quiet "origin/$GITHUB_REF_NAME" -- server/data/cars.json; then
-            echo 'No new cars.'
-          elif gh pr view epa-refresh --json state -q .state 2>/dev/null | grep -q OPEN; then
+          if gh pr view epa-refresh --json state -q .state 2>/dev/null | grep -q OPEN; then
             echo 'The epa-refresh pull request is already open, now with this run.'
           else
             gh pr create --base "$GITHUB_REF_NAME" --head epa-refresh \
               --title 'Refresh from EPA and NHTSA' \
-              --body 'New EPA listings with their NHTSA ratings, and the Canadian cars from NRCan. epa-refresh-report.txt names what was added and left out. Bump the model-year and count tests if they fail, and drop epa-refresh-report.txt and the vehicles.csv.gz before merging.' \
+              --body 'New EPA listings with their NHTSA ratings, and the Canadian cars from NRCan (or updated figures for either). epa-refresh-report.txt names what was added and left out. Bump the model-year and count tests if they fail, and drop epa-refresh-report.txt and the vehicles.csv.gz before merging.' \
               || echo '::warning::Could not open a pull request (Settings > Actions > General lets workflows create them); the epa-refresh branch has the refresh.'
           fi

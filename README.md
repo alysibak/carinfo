@@ -274,7 +274,7 @@ npm run build-enrichment --workspace=server
 
 ### Refresh on GitHub (`.github/workflows/epa-refresh.yml`)
 
-Every Monday, on demand from the Actions tab, and whenever the workflow file changes, GitHub's runners add the cars EPA has listed since the last refresh (`backfill-epa-variants`), refresh the Canadian cars from NRCan (`import-nrcan`), check fuel types against EPA, fetch NHTSA ratings for the last two model years, rebuild enrichment and run the tests. The result is force-pushed to the `epa-refresh` branch with `epa-refresh-report.txt` (what was added and left out, by model) and the EPA file it read (`server/data/raw/vehicles.csv.gz`); a run on `main` opens a pull request when cars were added. Leave the report and the `.gz` out when merging.
+Every Monday, and on demand from the Actions tab, GitHub's runners add the cars EPA has listed since the last refresh (`backfill-epa-variants`), refresh the Canadian cars from NRCan (`import-nrcan`), check fuel types against EPA, fetch NHTSA ratings for the last two model years, rebuild enrichment and run the tests. When the data changed, the result is force-pushed to the `epa-refresh` branch with `epa-refresh-report.txt` (what was added and left out, by model) and the EPA file it read (`server/data/raw/vehicles.csv.gz`), and a pull request is opened; when nothing changed, no branch is made and the report is in the run's summary. Leave the report and the `.gz` out when merging.
 
 ### `build-verified-database.ts`
 
