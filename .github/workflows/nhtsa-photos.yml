@@ -54,6 +54,19 @@ jobs:
           cache: npm
       - run: npm ci
 
+      # Which requests NHTSA answers from here: it has refused GitHub's
+      # runners (403) before. Shown in the log; the listing runs either way.
+      - name: Check NHTSA answers
+        run: |
+          url=https://api.nhtsa.gov/SafetyRatings/modelyear/2020/make/honda
+          for ua in '' 'CarInfo data refresh (+https://github.com/alysibak/carinfo)' 'node' \
+            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36'; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' ${ua:+-A "$ua"} "$url" || true)
+            echo "User-Agent '${ua:-curl default}': $code"
+          done
+          curl -sS -o /dev/null -w 'Photo host: %{http_code} %{size_download} bytes %{content_type}\n' \
+            https://static.nhtsa.gov/images/vehicles/13416_st0640_046.png || true
+
       # The first run lists over 30 model years, at about a thousand requests
       # each. The script saves each year as it goes, so a run cut short still
       # pushes the years it finished, and the next run carries on.

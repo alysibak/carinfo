@@ -4,8 +4,17 @@
  * a timeout, and treating an error status as a failure.
  */
 
+/**
+ * Who is asking. Node's own user agent ("node") is one some hosts refuse:
+ * NHTSA's API answered every request from GitHub's runners with 403.
+ */
+const HEADERS = {
+  'User-Agent': 'CarInfo data refresh (+https://github.com/alysibak/carinfo)',
+  Accept: 'application/json, text/csv, */*',
+};
+
 async function fetchOk(url: string, timeoutMs: number): Promise<Response> {
-  const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+  const res = await fetch(url, { headers: HEADERS, signal: AbortSignal.timeout(timeoutMs) });
   if (!res.ok) throw new Error(`GET ${url} answered ${res.status}`);
   return res;
 }
