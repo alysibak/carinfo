@@ -113,6 +113,8 @@ export interface YearListing {
   refused: boolean;
   /** Rated variants without a photo on NHTSA's image host. */
   withoutPhoto: number;
+  /** A few of those, with what NHTSA gave for pictures, for the log. */
+  withoutPhotoSamples: string[];
 }
 
 export interface ListYearOptions {
@@ -131,6 +133,7 @@ export async function listYear(year: number, options: ListYearOptions): Promise<
   const failures: string[] = [];
   let refused = false;
   let withoutPhoto = 0;
+  const withoutPhotoSamples: string[] = [];
   const attempt = async <T>(path: string): Promise<T[] | undefined> => {
     // Once refused, ask nothing more this run.
     if (refused) return undefined;
@@ -174,11 +177,22 @@ export async function listYear(year: number, options: ListYearOptions): Promise<
   const vehicles = await mapLimit(variants, concurrency, async (v) => {
     const cached = known.get(v.id);
     if (cached) return cached;
-    const detail = (await attempt<{ VehiclePicture?: string }>(`/VehicleId/${v.id}`))?.[0];
+    const detail = (
+      await attempt<Record<string, unknown> & { VehiclePicture?: string }>(`/VehicleId/${v.id}`)
+    )?.[0];
     if (!detail) return undefined;
     const picture = pictureFile(detail.VehiclePicture);
     if (!picture) {
       withoutPhoto++;
+      if (withoutPhotoSamples.length < 3) {
+        const pictures = Object.entries(detail).filter(([key]) => /picture|image|photo/i.test(key));
+        withoutPhotoSamples.push(
+          `${v.id} ${v.description}: ` +
+            (pictures.length
+              ? JSON.stringify(Object.fromEntries(pictures))
+              : `no picture fields among ${Object.keys(detail).join(', ')}`),
+        );
+      }
       return undefined;
     }
     return {
@@ -196,6 +210,7 @@ export async function listYear(year: number, options: ListYearOptions): Promise<
     failures,
     refused,
     withoutPhoto,
+    withoutPhotoSamples,
   };
 }
 

@@ -79,6 +79,7 @@ async function main(): Promise<void> {
       `${year}: ${listing.vehicles.length} photos, ${listing.withoutPhoto} rated without one ` +
         `(${((Date.now() - started) / 1000).toFixed(0)}s)`,
     );
+    for (const sample of listing.withoutPhotoSamples) console.log(`  without a photo: ${sample}`);
     writeFileSync(OUT_PATH, serializePhotoFile(file));
 
     if (listing.refused) {
