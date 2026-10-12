@@ -6,16 +6,19 @@ const fetchMock = vi.fn<typeof fetch>();
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
-/** Answers by path under /SafetyRatings; a missing path is a 404. */
+/** Answers by path under /SafetyRatings: Results, or a status; a missing path is a 404. */
 function serve(routes: Record<string, unknown>) {
   fetchMock.mockImplementation(async (input) => {
     const path = decodeURIComponent(
       new URL(String(input)).pathname.replace('/SafetyRatings', ''),
     ).toLowerCase();
     const hit = Object.entries(routes).find(([p]) => p.toLowerCase() === path);
-    return hit ? json({ Results: hit[1] }) : json({}, 404);
+    if (!hit) return json({}, 404);
+    return typeof hit[1] === 'number' ? json({}, hit[1]) : json({ Results: hit[1] });
   });
 }
+
+const pacing = { intervalMs: 0, retryMs: [0, 0], refusedMs: [0] };
 
 beforeEach(() => {
   fetchMock.mockReset();
@@ -59,7 +62,7 @@ describe('listYear', () => {
 
   it('lists the photo of each rated variant of the makes asked for', async () => {
     serve(routes);
-    const listing = await listYear(2020, { makes, known: new Map() });
+    const listing = await listYear(2020, { makes, known: new Map(), pacing });
     expect(listing.failures).toEqual([]);
     expect(listing.withoutPhoto).toBe(1);
     expect(listing.vehicles).toEqual([
@@ -98,21 +101,46 @@ describe('listYear', () => {
         },
       ],
     ]);
-    const listing = await listYear(2020, { makes, known });
+    const listing = await listYear(2020, { makes, known, pacing });
     expect(listing.vehicles.find((v) => v.id === 3)?.description).toBe('as before');
     expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith('/VehicleId/3'))).toBe(false);
   });
 
   it('reports the requests that failed, after retrying them', async () => {
-    const { '/modelyear/2020/make/ACURA': _gone, ...rest } = routes;
-    serve(rest);
-    const listing = await listYear(2020, { makes, known: new Map(), delays: [0, 0] });
+    serve({ ...routes, '/modelyear/2020/make/ACURA': 503 });
+    const listing = await listYear(2020, { makes, known: new Map(), pacing });
     expect(listing.failures).toHaveLength(1);
     expect(listing.failures[0]).toContain('/make/ACURA');
     expect(
       fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/make/ACURA')),
     ).toHaveLength(3);
     expect(listing.vehicles.map((v) => v.id)).toEqual([3]);
+    expect(listing.refused).toBe(false);
+  });
+
+  it('takes a name NHTSA cannot look up as nothing listed, not a failure', async () => {
+    serve({ ...routes, '/modelyear/2020/make/ACURA/model/MDX': 400 });
+    const listing = await listYear(2020, { makes, known: new Map(), pacing });
+    expect(listing.failures).toEqual([]);
+    expect(listing.vehicles.map((v) => v.id)).toEqual([3]);
+  });
+
+  it('stops asking once NHTSA refuses, after waiting', async () => {
+    serve({ ...routes, '/modelyear/2020/make/ACURA': 403 });
+    const listing = await listYear(2020, { makes, known: new Map(), pacing, concurrency: 1 });
+    expect(listing.refused).toBe(true);
+    expect(
+      fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/make/ACURA')),
+    ).toHaveLength(2);
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes('/VehicleId/'))).toBe(false);
+  });
+
+  it('spaces its requests', async () => {
+    serve(routes);
+    const started = Date.now();
+    await listYear(2020, { makes, known: new Map(), pacing: { ...pacing, intervalMs: 20 } });
+    // Seven requests, 20 ms apart.
+    expect(Date.now() - started).toBeGreaterThanOrEqual(6 * 20 - 5);
   });
 });
 

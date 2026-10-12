@@ -3,7 +3,7 @@ import {
   type NhtsaPhotoFile,
   type NhtsaPhotoVehicle,
 } from '../../src/utils/nhtsa-photos.js';
-import { fetchJson } from './fetch.js';
+import { fetchJson, HttpError } from './fetch.js';
 
 /**
  * NHTSA's 5-Star Safety Ratings API, walked a model year at a time: its
@@ -15,7 +15,6 @@ import { fetchJson } from './fetch.js';
 const API = 'https://api.nhtsa.gov/SafetyRatings';
 const PHOTO_HOST = 'https://static.nhtsa.gov/images/vehicles/';
 const TIMEOUT_MS = 20_000;
-const ATTEMPTS = 3;
 
 interface Results<T> {
   Results?: T[];
@@ -31,16 +30,61 @@ export function pictureFile(url: string | undefined): string | undefined {
 /** Make names compared as letters and digits only: "MERCEDES-BENZ" is Mercedes-Benz. */
 export const makeKey = (make: string) => make.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-async function get<T>(path: string, delays = [1_000, 4_000]): Promise<T[]> {
-  for (let attempt = 1; ; attempt++) {
-    try {
-      const body = await fetchJson<Results<T>>(`${API}${path}`, TIMEOUT_MS);
-      return Array.isArray(body?.Results) ? body.Results : [];
-    } catch (error) {
-      if (attempt >= ATTEMPTS) throw error;
-      await new Promise((r) => setTimeout(r, delays[attempt - 1] ?? 4_000));
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+export interface Pacing {
+  /** Least time between two requests' starts. */
+  intervalMs: number;
+  /** Waits before retrying a failed request. */
+  retryMs: number[];
+  /** Waits before retrying a refusal (403, 429): NHTSA turns away a runner that asks too fast. */
+  refusedMs: number[];
+}
+
+/**
+ * About three requests a second, as build-nhtsa-backfill has always asked.
+ * Four at once with no pause had NHTSA refuse GitHub's runner within a minute.
+ */
+export const NHTSA_PACING: Pacing = {
+  intervalMs: 300,
+  retryMs: [1_000, 4_000],
+  refusedMs: [60_000, 180_000],
+};
+
+/** NHTSA stopped answering: the run should end and try again later. */
+export class RefusedError extends Error {}
+
+function client(pacing: Pacing) {
+  let nextStart = 0;
+  const paced = async () => {
+    const now = Date.now();
+    const start = Math.max(now, nextStart);
+    nextStart = start + pacing.intervalMs;
+    if (start > now) await wait(start - now);
+  };
+
+  return async function get<T>(path: string): Promise<T[]> {
+    let retries = 0;
+    let refusals = 0;
+    for (;;) {
+      await paced();
+      try {
+        const body = await fetchJson<Results<T>>(`${API}${path}`, TIMEOUT_MS);
+        return Array.isArray(body?.Results) ? body.Results : [];
+      } catch (error) {
+        const status = error instanceof HttpError ? error.status : undefined;
+        // A name NHTSA cannot look up ("C/K"): nothing listed under it.
+        if (status === 400 || status === 404) return [];
+        if (status === 403 || status === 429) {
+          if (refusals >= pacing.refusedMs.length) throw new RefusedError((error as Error).message);
+          await wait(pacing.refusedMs[refusals++]);
+          continue;
+        }
+        if (retries >= pacing.retryMs.length) throw error;
+        await wait(pacing.retryMs[retries++]);
+      }
     }
-  }
+  };
 }
 
 /** fn over items, at most `limit` at a time, results in order. */
@@ -65,6 +109,8 @@ export interface YearListing {
   vehicles: NhtsaPhotoVehicle[];
   /** Requests that failed after retries: the year is incomplete. */
   failures: string[];
+  /** NHTSA refused requests even after waiting: stop, and run again later. */
+  refused: boolean;
   /** Rated variants without a photo on NHTSA's image host. */
   withoutPhoto: number;
 }
@@ -75,19 +121,23 @@ export interface ListYearOptions {
   /** Vehicles already fetched, by VehicleId: their photo is not asked for again. */
   known: Map<number, NhtsaPhotoVehicle>;
   concurrency?: number;
-  /** Retry delays, for tests. */
-  delays?: number[];
+  pacing?: Pacing;
 }
 
 /** Every rated variant NHTSA lists for a model year, with its photo. */
 export async function listYear(year: number, options: ListYearOptions): Promise<YearListing> {
-  const { makes, known, concurrency = 4, delays } = options;
+  const { makes, known, concurrency = 2, pacing = NHTSA_PACING } = options;
+  const get = client(pacing);
   const failures: string[] = [];
+  let refused = false;
   let withoutPhoto = 0;
   const attempt = async <T>(path: string): Promise<T[] | undefined> => {
+    // Once refused, ask nothing more this run.
+    if (refused) return undefined;
     try {
-      return await get<T>(path, delays);
+      return await get<T>(path);
     } catch (error) {
+      if (error instanceof RefusedError) refused = true;
       failures.push(`${path}: ${(error as Error).message}`);
       return undefined;
     }
@@ -144,6 +194,7 @@ export async function listYear(year: number, options: ListYearOptions): Promise<
   return {
     vehicles: vehicles.filter((v): v is NhtsaPhotoVehicle => Boolean(v)),
     failures,
+    refused,
     withoutPhoto,
   };
 }

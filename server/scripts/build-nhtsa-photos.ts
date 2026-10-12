@@ -3,9 +3,11 @@
  * data/nhtsa-photos.json. build-runtime-db then gives each car the photo of
  * its own model year, where NHTSA tested it (src/utils/nhtsa-photos.ts).
  *
- * A year already listed is skipped, but for the latest two: NHTSA rates new
- * models through the year. A year with failed requests is left unlisted so
- * the next run tries it again; what it did fetch is kept.
+ * Newest year first. A year already listed is skipped, but for the latest
+ * two: NHTSA rates new models through the year. A year with failed requests
+ * is left unlisted so the next run tries it again; what it did fetch is kept.
+ * The run ends when NHTSA refuses it (run again later), or after three years
+ * in a row with no photo: NHTSA's 1990s ratings came without them.
  *
  * Usage:
  *   tsx scripts/build-nhtsa-photos.ts [--from=1995] [--to=<next year>] [--refresh]
@@ -47,8 +49,10 @@ async function main(): Promise<void> {
   const known = new Map(file.vehicles.map((v) => [v.id, v]));
   const today = new Date().toISOString().slice(0, 10);
   let incomplete = 0;
+  let emptyYears = 0;
+  let stopped = '';
 
-  for (let year = from; year <= to; year++) {
+  for (let year = to; year >= from; year--) {
     if (!years.has(year)) continue;
     if (!refresh && file.years[year] && year < thisYear) continue;
 
@@ -76,12 +80,23 @@ async function main(): Promise<void> {
         `(${((Date.now() - started) / 1000).toFixed(0)}s)`,
     );
     writeFileSync(OUT_PATH, serializePhotoFile(file));
+
+    if (listing.refused) {
+      stopped = `NHTSA refused requests at ${year}; run again later`;
+      break;
+    }
+    emptyYears = listing.vehicles.length === 0 && !listing.failures.length ? emptyYears + 1 : 0;
+    if (emptyYears >= 3) {
+      stopped = `three years in a row without a photo, down to ${year}`;
+      break;
+    }
   }
 
   writeFileSync(OUT_PATH, serializePhotoFile(file));
   console.log(
     `Done: ${file.vehicles.length} photos over ${Object.keys(file.years).length} complete year(s)` +
       (incomplete ? `; ${incomplete} year(s) incomplete, run again` : '') +
+      (stopped ? `; stopped: ${stopped}` : '') +
       `. Re-run: npm run build-runtime-db --workspace=server`,
   );
 }
