@@ -7,7 +7,10 @@
  * two: NHTSA rates new models through the year. A year with failed requests
  * is left unlisted so the next run tries it again; what it did fetch is kept.
  * The run ends when NHTSA refuses it (run again later), or after three years
- * in a row with no photo: NHTSA's 1990s ratings came without them.
+ * in a row with no photo, once it has found some. NHTSA's photo of the car
+ * runs out at both ends: its 1990s ratings came without one, and from the
+ * 2025 models on it publishes only crash photos (FrontCrashPicture and the
+ * like: the car after the test), which the site does not show.
  *
  * Usage:
  *   tsx scripts/build-nhtsa-photos.ts [--from=1995] [--to=<next year>] [--refresh]
@@ -50,11 +53,15 @@ async function main(): Promise<void> {
   const today = new Date().toISOString().slice(0, 10);
   let incomplete = 0;
   let emptyYears = 0;
+  let foundPhotos = false;
   let stopped = '';
 
   for (let year = to; year >= from; year--) {
     if (!years.has(year)) continue;
-    if (!refresh && file.years[year] && year < thisYear) continue;
+    if (!refresh && file.years[year] && year < thisYear) {
+      if (file.vehicles.some((v) => v.year === year)) [foundPhotos, emptyYears] = [true, 0];
+      continue;
+    }
 
     const started = Date.now();
     const listing = await listYear(year, { makes, known });
@@ -86,7 +93,9 @@ async function main(): Promise<void> {
       stopped = `NHTSA refused requests at ${year}; run again later`;
       break;
     }
-    emptyYears = listing.vehicles.length === 0 && !listing.failures.length ? emptyYears + 1 : 0;
+    if (listing.vehicles.length) foundPhotos = true;
+    const empty = listing.vehicles.length === 0 && !listing.failures.length;
+    emptyYears = empty && foundPhotos ? emptyYears + 1 : 0;
     if (emptyYears >= 3) {
       stopped = `three years in a row without a photo, down to ${year}`;
       break;
