@@ -75,3 +75,22 @@ export function getBodySilhouettePath(bodyStyle: BodyStyle | string): string {
       return 'M45 88 L68 50 L115 42 L285 42 L332 50 L355 88 L355 96 L45 96 Z M88 96 L95 70 L305 70 L312 96 M118 70 A15 15 0 1 1 118 69 M282 70 A15 15 0 1 1 282 69';
   }
 }
+
+const NHTSA_PHOTO_HOST = 'https://static.nhtsa.gov/images/vehicles/';
+/** As server/src/utils/nhtsa-photos.ts checks it: a bare file name. */
+const NHTSA_PHOTO_FILE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,80}\.(?:png|jpe?g)$/i;
+
+/** Widths vercel.json lets the image resizer make. */
+export type CarPhotoWidth = 256 | 640;
+
+/**
+ * NHTSA's photo of the car, where it has one: first resized to WebP by
+ * Vercel (its originals are full-size PNGs), then the original should that
+ * fail (as under `npm run dev`, which has no resizer).
+ */
+export function carPhotoSources(car: { photo?: { file: string } }, width: CarPhotoWidth): string[] {
+  const file = car.photo?.file;
+  if (!file || !NHTSA_PHOTO_FILE.test(file)) return [];
+  const original = `${NHTSA_PHOTO_HOST}${file}`;
+  return [`/_vercel/image?url=${encodeURIComponent(original)}&w=${width}&q=75`, original];
+}

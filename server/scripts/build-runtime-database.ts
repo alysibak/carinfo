@@ -17,6 +17,7 @@ import { cleanCorpusHorsepower } from '../src/utils/horsepower-plausibility.js';
 import { resolveDataFile } from '../src/utils/data-paths.js';
 import { ensureUniqueIds } from '../src/utils/unique-ids.js';
 import { withRunningCosts } from '../src/utils/running-cost.js';
+import { loadNhtsaPhotos, withNhtsaPhotos } from '../src/utils/nhtsa-photos.js';
 import { packRuntimeDatabase } from '../src/services/runtime-db.js';
 import type { Car } from '../src/types/car.types.js';
 
@@ -63,8 +64,13 @@ if (hp.filled) {
 
 // Slug collisions made some vehicles unreachable by ID — see utils/unique-ids.ts.
 const { cars: unique, report } = ensureUniqueIds(normalized);
-// Yearly running costs, for "cheapest to own" searches (see utils/running-cost.ts).
-const cars = withRunningCosts(unique);
+// Yearly running costs, for "cheapest to own" searches (see utils/running-cost.ts),
+// and NHTSA's photo of the car where it has one (see utils/nhtsa-photos.ts).
+const cars = withNhtsaPhotos(withRunningCosts(unique), loadNhtsaPhotos());
+const photographed = cars.filter((car) => car.photo).length;
+console.log(
+  `[build-runtime-db] NHTSA photos for ${photographed.toLocaleString()} of ${cars.length.toLocaleString()} cars.`,
+);
 if (report.mergedDuplicates.length || report.renamed.length) {
   console.log(
     `[build-runtime-db] ID collisions: merged ${report.mergedDuplicates.length} duplicate listing(s), ` +

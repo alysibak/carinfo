@@ -10,7 +10,7 @@ import type { CarSpecs } from '../types/car.types';
 import { COLLECTIONS } from '../config/collections';
 import { displayModelLabel } from '../utils/trimLabel';
 import { rankedFigure } from '../utils/rankedFigure';
-import VehiclePlaceholder from '../components/VehiclePlaceholder';
+import CarImage from '../components/CarImage';
 import CarCard from '../components/CarCard';
 
 /**
@@ -74,7 +74,7 @@ function GarageSuggestions({ onSaved }: { onSaved: (message: string) => void }) 
             className="flex items-center gap-3 border border-zinc-800 bg-zinc-950 p-3"
           >
             <span className="w-14 h-9 shrink-0 overflow-hidden" aria-hidden>
-              <VehiclePlaceholder car={car} compact hideCaption />
+              <CarImage car={car} compact hideCaption />
             </span>
             <Link to={`/car/${car.id}`} className="min-w-0 flex-1 group">
               <span className="block text-sm font-semibold text-white truncate group-hover:underline underline-offset-2">

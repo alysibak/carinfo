@@ -11,7 +11,7 @@ import {
 import { formatPriceShort } from '../utils/dataValue';
 import { efficiencyOf, rangeKm } from '../utils/efficiency';
 import { formatCarFuelLabel } from '../utils/fuelDisplay';
-import VehiclePlaceholder from './VehiclePlaceholder';
+import CarImage from './CarImage';
 import { StatusToast } from './ui';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 
@@ -206,7 +206,7 @@ export default function CarCard({
       <article className="group relative flex gap-3 px-3 py-3 border-b border-zinc-900 hover:bg-zinc-950 focus-within:bg-zinc-950">
         <StatusToast message={toast} />
         <div className="w-16 h-10 sm:w-20 sm:h-12 shrink-0 overflow-hidden mt-0.5">
-          <VehiclePlaceholder car={car} compact hideCaption />
+          <CarImage car={car} compact hideCaption />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-3">
@@ -249,7 +249,7 @@ export default function CarCard({
 
       <div className="flex items-center gap-3 p-3 pb-2.5">
         <div className="w-20 h-12 shrink-0 overflow-hidden">
-          <VehiclePlaceholder car={car} compact hideCaption />
+          <CarImage car={car} compact hideCaption />
         </div>
         <div className="min-w-0">
           <h3 className="text-[15px] font-semibold text-white leading-snug line-clamp-2">

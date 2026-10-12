@@ -17,6 +17,7 @@ import {
   normalizeSearchToken,
 } from '../utils/fuzzy-search.js';
 import { enrichCar } from './content-enrichment.js';
+import { loadNhtsaPhotos, withNhtsaPhotos } from '../utils/nhtsa-photos.js';
 import { ensureUniqueIds } from '../utils/unique-ids.js';
 import { withRunningCosts } from '../utils/running-cost.js';
 import { type RuntimeDatabaseFile, unpackRuntimeDatabase } from './runtime-db.js';
@@ -164,9 +165,13 @@ function initDatabase(): void {
       );
     } else {
       // Dev / missing ready file: enrich + normalize at load (slow on large DBs).
-      cachedCars = withRunningCosts(
-        ensureUniqueIds(cleanCorpusHorsepower(db.cars.map(enrichCar).map(normalizeCarRecord)).cars)
-          .cars,
+      cachedCars = withNhtsaPhotos(
+        withRunningCosts(
+          ensureUniqueIds(
+            cleanCorpusHorsepower(db.cars.map(enrichCar).map(normalizeCarRecord)).cars,
+          ).cars,
+        ),
+        loadNhtsaPhotos(),
       );
       rawIdIndex = new Map(db.cars.map((car) => [car.id, car]));
       console.log(

@@ -14,7 +14,7 @@ import { regionName, useRegionStore } from '../stores/regionStore';
 import TCOCalculator from '../components/TCOCalculator';
 import { StatusToast } from '../components/ui';
 import ValuationLinks from '../components/ValuationLinks';
-import VehiclePlaceholder from '../components/VehiclePlaceholder';
+import CarImage from '../components/CarImage';
 import KeyFigures from '../components/KeyFigures';
 import RegionSelect from '../components/RegionSelect';
 import PinnedCarBar from '../components/PinnedCarBar';
@@ -425,9 +425,15 @@ export default function CarDetail() {
           </button>
 
           <div className="mt-1 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 lg:gap-8">
-            <div className="grid grid-cols-[5.5rem_1fr] sm:grid-cols-[9rem_1fr] gap-4 sm:gap-6 items-center min-w-0">
-              <div className="h-14 sm:h-20 overflow-hidden">
-                <VehiclePlaceholder car={car} compact hideCaption />
+            <div
+              className={`grid ${car.photo ? 'grid-cols-[7.5rem_1fr] sm:grid-cols-[13rem_1fr]' : 'grid-cols-[5.5rem_1fr] sm:grid-cols-[9rem_1fr]'} gap-4 sm:gap-6 items-center min-w-0`}
+            >
+              <div
+                className={
+                  car.photo ? 'aspect-4/3 overflow-hidden' : 'h-14 sm:h-20 overflow-hidden'
+                }
+              >
+                <CarImage car={car} compact hideCaption width={640} credit />
               </div>
               <div className="min-w-0">
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight wrap-break-word">

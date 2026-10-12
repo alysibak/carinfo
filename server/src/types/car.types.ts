@@ -157,7 +157,12 @@ export interface CarSpecs {
     confidenceLabel?: string;
   };
 
-  images?: string[];
+  /**
+   * NHTSA's photo of the car it crash-tested for this model year, where the
+   * test car matches this one (utils/nhtsa-photos.ts): the file on its image
+   * host, and NHTSA's name for the car photographed.
+   */
+  photo?: { file: string; caption: string };
   productionYears?: {
     start: number;
     end?: number;
