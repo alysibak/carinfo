@@ -7,6 +7,13 @@ name: NHTSA photos
 # the nhtsa-photos branch and a pull request for review, never straight to
 # main; otherwise no branch is made.
 on:
+  # A change to the lister lists again: the missing years and the latest two.
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/nhtsa-photos.yml
+      - server/scripts/build-nhtsa-photos.ts
+      - server/scripts/lib/nhtsa-photos.ts
   schedule:
     - cron: '41 10 * * 1' # Mondays, after the EPA refresh
   workflow_dispatch:
