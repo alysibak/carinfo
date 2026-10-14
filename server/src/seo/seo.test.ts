@@ -255,6 +255,26 @@ describe('share image', () => {
     }
   });
 
+  it('is the car’s own photo where it has one', () => {
+    const photographed = {
+      ...car(),
+      photo: {
+        src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ab/C.jpg/500px-C.jpg',
+        thumb: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ab/C.jpg/250px-C.jpg',
+        page: 'https://commons.wikimedia.org/wiki/File:C.jpg',
+        credit: 'Jane Doe, CC BY-SA 4.0',
+        generation: 'Honda Civic (eleventh generation)',
+      },
+    };
+    const seo = vehicleSeo(photographed);
+    const html = renderShell(withImage, seo);
+    expect(html).not.toContain('og-image.png');
+    expect(html).toContain(`property="og:image" content="${photographed.photo.src}"`);
+    expect(html).toContain(`name="twitter:image" content="${photographed.photo.src}"`);
+    expect(html).toContain('content="Photo of the Honda Civic (eleventh generation)"');
+    expect(seo.jsonLd?.image).toBe(photographed.photo.src);
+  });
+
   it('stays relative without an origin, and rewriting twice changes nothing', () => {
     expect(absolutizeShareImage(withImage, null)).toBe(withImage);
     const once = absolutizeShareImage(withImage, 'https://carinfo.example');

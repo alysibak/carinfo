@@ -2,6 +2,7 @@ import type { Car } from '../types/car.types.js';
 import { displayListingSubtitle, formatTransmissionLabel } from '../utils/trim-label.js';
 import { escapeHtml } from './html.js';
 import { absoluteUrl } from './site.js';
+import { COMMONS_FILE } from '../utils/car-photos.js';
 
 export interface PageSeo {
   title: string;
@@ -10,6 +11,8 @@ export interface PageSeo {
   canonicalPath: string;
   ogType: 'website' | 'article';
   jsonLd?: Record<string, unknown>;
+  /** A photo for link previews, absolute, in place of the site's own; and what it shows. */
+  image?: { url: string; alt: string };
   /** Server-rendered, crawlable body shown until the SPA mounts. */
   bodyHtml?: string;
   noindex?: boolean;
@@ -105,6 +108,11 @@ export function vehicleSeo(car: Car): PageSeo {
 
   const path = `/car/${encodeURIComponent(car.id)}`;
   const url = absoluteUrl(path);
+  // The generation's photo from Commons (utils/car-photos.ts), for previews and search.
+  const photo =
+    car.photo && COMMONS_FILE.test(car.photo.src)
+      ? { url: car.photo.src, alt: `Photo of the ${car.photo.generation}` }
+      : undefined;
 
   const jsonLd: Record<string, unknown> = {
     '@context': 'https://schema.org',
@@ -113,6 +121,7 @@ export function vehicleSeo(car: Car): PageSeo {
     brand: { '@type': 'Brand', name: car.make },
     manufacturer: { '@type': 'Organization', name: car.make },
     model: car.model,
+    ...(photo ? { image: photo.url } : {}),
     vehicleModelDate: String(car.year),
     bodyType: car.bodyStyle,
     fuelType: SCHEMA_FUEL[car.engine.fuelType] ?? car.engine.fuelType,
@@ -168,6 +177,7 @@ export function vehicleSeo(car: Car): PageSeo {
     canonicalPath: path,
     ogType: 'article',
     jsonLd,
+    ...(photo ? { image: photo } : {}),
     bodyHtml: vehicleSummaryHtml(car, efficiency, fuel),
   };
 }

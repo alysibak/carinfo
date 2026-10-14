@@ -58,6 +58,12 @@ export function absolutizeShareImage(html: string, origin: string | null): strin
   return html.replaceAll(`content="${SHARE_IMAGE_PATH}"`, `content="${origin}${SHARE_IMAGE_PATH}"`);
 }
 
+/** The shell's own preview image, which a page with a photo of its own replaces. */
+const SHARE_IMAGE_TAGS = [
+  /<meta\b[^>]*\bproperty="og:image(?::[a-z]+)?"[^>]*>/gi,
+  /<meta\b[^>]*\bname="twitter:image(?::[a-z]+)?"[^>]*>/gi,
+];
+
 export function renderShell(template: string, seo: PageSeo): string {
   const fullTitle = `${seo.title} | ${SITE_NAME}`;
   const canonical = absoluteUrl(seo.canonicalPath);
@@ -74,6 +80,9 @@ export function renderShell(template: string, seo: PageSeo): string {
     canonical ? `<meta property="og:url" content="${escapeHtml(canonical)}" data-ssr />` : '',
     `<meta name="twitter:title" content="${escapeHtml(fullTitle)}" />`,
     `<meta name="twitter:description" content="${escapeHtml(seo.description)}" />`,
+    seo.image ? `<meta property="og:image" content="${escapeHtml(seo.image.url)}" />` : '',
+    seo.image ? `<meta property="og:image:alt" content="${escapeHtml(seo.image.alt)}" />` : '',
+    seo.image ? `<meta name="twitter:image" content="${escapeHtml(seo.image.url)}" />` : '',
     seo.jsonLd
       ? `<script type="application/ld+json" data-ssr>${serializeJsonLd(seo.jsonLd)}</script>`
       : '',
@@ -83,7 +92,9 @@ export function renderShell(template: string, seo: PageSeo): string {
     .join('\n');
 
   let html = absolutizeShareImage(template, siteUrl());
-  for (const pattern of REPLACED_TAGS) html = html.replace(pattern, '');
+  for (const pattern of [...REPLACED_TAGS, ...(seo.image ? SHARE_IMAGE_TAGS : [])]) {
+    html = html.replace(pattern, '');
+  }
   // Tidy the blank lines the removals leave behind.
   html = html.replace(/\n(\s*\n)+/g, '\n');
   html = html.replace(/<\/head>/i, `${head}\n  </head>`);
