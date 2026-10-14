@@ -1,7 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import CarPhotoButton from './CarPhotoButton';
-import { photoYearsLabel } from '../utils/carImages';
 import { sparseDashboard } from '../test/fixtures';
 
 const car = sparseDashboard.car;
@@ -12,9 +11,8 @@ const photographed = {
     src: `${FILE}/500px-Corolla.jpg`,
     page: 'https://commons.wikimedia.org/wiki/File:Corolla.jpg',
     credit: 'Jane Doe, CC BY-SA 4.0',
+    caption: '2020 Toyota Corolla SE, front 6.27.20',
     generation: 'Toyota Corolla (E210)',
-    years: { from: 2019, to: 2025 },
-    caption: '2020 Corolla SE sedan',
   },
 };
 
@@ -39,11 +37,10 @@ describe('CarPhotoButton', () => {
     fireEvent.click(screen.getByRole('button', { name: 'See photo' }));
 
     const dialog = screen.getByRole('dialog', { name: /2020 Toyota Corolla/ });
-    const img = screen.getByRole('img', { name: 'Photo of the Toyota Corolla (E210)' });
+    const img = screen.getByRole('img', { name: 'Photo: 2020 Toyota Corolla SE, front 6.27.20' });
     expect(img).toHaveAttribute('src', `${FILE}/960px-Corolla.jpg`);
-    expect(dialog).toHaveTextContent('2019–2025 models');
-    expect(dialog).toHaveTextContent('2020 Corolla SE sedan');
-    expect(dialog).toHaveTextContent('not of this exact car');
+    expect(dialog).toHaveTextContent('Toyota Corolla (E210)');
+    expect(dialog).toHaveTextContent('A photo of this model year');
     expect(screen.getByRole('link', { name: 'Jane Doe, CC BY-SA 4.0' })).toHaveAttribute(
       'href',
       'https://commons.wikimedia.org/wiki/File:Corolla.jpg',
@@ -66,15 +63,5 @@ describe('CarPhotoButton', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Photo' }));
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('dialog')).toBeNull();
-  });
-});
-
-describe('photoYearsLabel', () => {
-  it('says model years, or years built, and runs to now', () => {
-    expect(photoYearsLabel({ from: 2016, to: 2021 }, 2026)).toBe('2016–2021 models');
-    expect(photoYearsLabel({ from: 2014, to: 2021, built: true }, 2026)).toBe('built 2014–2021');
-    expect(photoYearsLabel({ from: 2022, to: 2027 }, 2026)).toBe('2022 models on');
-    expect(photoYearsLabel({ from: 2022, to: 2027, built: true }, 2026)).toBe('built since 2022');
-    expect(photoYearsLabel(undefined)).toBeNull();
   });
 });

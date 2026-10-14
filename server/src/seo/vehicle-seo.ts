@@ -111,7 +111,7 @@ export function vehicleSeo(car: Car): PageSeo {
   // The generation's photo from Commons (utils/car-photos.ts), for previews and search.
   const photo =
     car.photo && COMMONS_FILE.test(car.photo.src)
-      ? { url: car.photo.src, alt: `Photo of the ${car.photo.generation}` }
+      ? { url: car.photo.src, alt: `Photo: ${car.photo.caption}` }
       : undefined;
 
   const jsonLd: Record<string, unknown> = {

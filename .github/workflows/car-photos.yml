@@ -1,8 +1,8 @@
 name: Car photos
 
-# Collects a photo of each car's generation from Wikipedia and Wikimedia
-# Commons (scripts/build-car-photos.ts) in server/data/car-photos.json, from
-# en.wikipedia.org, which GitHub's runners reach. When the list changes, the
+# Collects a photo of each car's own model year from Wikimedia Commons, with
+# its generation from Wikipedia (scripts/build-car-photos.ts), in
+# server/data/car-photos.json; GitHub's runners reach both. When the list changes, the
 # result goes to the car-photos branch and a pull request for review, never
 # straight to main; otherwise no branch is made.
 on:
@@ -13,6 +13,7 @@ on:
       - .github/workflows/car-photos.yml
       - server/scripts/build-car-photos.ts
       - server/scripts/lib/wiki-photos.ts
+      - server/scripts/lib/year-photos.ts
       - server/src/utils/car-photos.ts
   schedule:
     - cron: '37 10 1 * *' # Monthly: Wikipedia's photos change slowly
@@ -37,7 +38,7 @@ jobs:
   photos:
     name: Collect car photos
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -46,7 +47,7 @@ jobs:
           cache: npm
       - run: npm ci
 
-      # A few thousand requests to Wikipedia's API, one at a time.
+      # A few thousand requests to Wikipedia's API and as many to Commons', one at a time.
       - name: Collect photos
         run: npm run build-car-photos --workspace=server | tee car-photos-report.txt
 
@@ -78,6 +79,6 @@ jobs:
           else
             gh pr create --base "$GITHUB_REF_NAME" --head car-photos \
               --title 'Collect car photos' \
-              --body 'New or changed photos from Wikipedia and Wikimedia Commons. The site gives each car the photo of its own generation when it builds (server/src/utils/car-photos.ts).' \
+              --body 'New or changed photos from Wikimedia Commons. The site shows a car only a photo of its own model year, make, model and body (server/scripts/lib/year-photos.ts).' \
               || echo '::warning::Could not open a pull request (Settings > Actions > General lets workflows create them); the car-photos branch has the list.'
           fi

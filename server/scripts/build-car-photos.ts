@@ -25,7 +25,9 @@ import {
   queryKey,
 } from '../src/utils/car-photos.js';
 import { unifyMakeSpelling, unifyModelSpelling } from '../src/utils/car-normalize.js';
+import { chooseYearPhoto, makeNames, namedForYear } from './lib/year-photos.js';
 import {
+  COMMONS_API,
   fetchImages,
   fetchWikitext,
   generationLinks,
@@ -36,6 +38,7 @@ import {
   prefixTitles,
   type Resolved,
   resolveTitles,
+  searchFileNames,
   searchMatches,
   searchTitles,
   titleCandidates,
@@ -70,6 +73,8 @@ const ALIASES: Record<string, string[]> = {
   'honda|odyssey': ['Honda Odyssey (North America)'],
 };
 
+const compactName = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+
 function log(message: string): void {
   console.log(`[car-photos] ${message}`);
 }
@@ -91,7 +96,8 @@ function serialize(file: CarPhotoFile): string {
     `  "fetched": ${JSON.stringify(file.fetched)},`,
     block('queries', Object.entries(file.queries)),
     block('articles', Object.entries(file.articles)),
-    block('images', Object.entries(file.images), true),
+    block('images', Object.entries(file.images)),
+    block('yearPhotos', Object.entries(file.yearPhotos ?? {}), true),
     '}',
     '',
   ].join('\n');
@@ -219,15 +225,74 @@ async function main(): Promise<void> {
   const images = Object.fromEntries(await fetchImages(get, files));
   log(`${Object.keys(images).length} of ${files.length} photos are on Commons.`);
 
+  // 6. A photo of each car's own model year: Commons' files named for the
+  // year and make ("2021 BMW ..."), the best for each car chosen by
+  // lib/year-photos.ts.
+  const commons = wikiClient(undefined, undefined, COMMONS_API);
+  const separateModels = new Set<string>();
+  for (const [key, { make, query }] of asked) {
+    const words = query.split(/\s+/);
+    if (words.length !== 2) continue;
+    const two = queries[key];
+    const one = queries[queryKey(make, words[0])];
+    if (two?.length && two[0] !== one?.[0]) separateModels.add(compactName(query));
+  }
+  const pairs = new Map<string, { name: string; year: number }>();
+  for (const car of unified) {
+    for (const name of makeNames(car.make))
+      pairs.set(`${name}|${car.year}`, { name, year: car.year });
+  }
+  const named = new Map<string, string[]>();
+  let listed = 0;
+  for (const [pair, { name, year }] of pairs) {
+    const found = await searchFileNames(
+      commons,
+      `intitle:"${year}" intitle:"${name}" filetype:bitmap`,
+      (file) => namedForYear(file, year),
+    );
+    named.set(pair, found);
+    listed += found.length;
+    if (named.size % 200 === 0) log(`listed ${named.size} of ${pairs.size} makes and years...`);
+  }
+  log(
+    `${listed} photos on Commons named for a make's model year, over ${pairs.size} makes and years.`,
+  );
+  const chosen = new Map<string, string>();
+  for (const car of unified) {
+    const candidates = makeNames(car.make).flatMap(
+      (name) => named.get(`${name}|${car.year}`) ?? [],
+    );
+    const pick = chooseYearPhoto(candidates, car, { separateModels });
+    if (pick) chosen.set(car.id, pick);
+  }
+  const yearImages = await fetchImages(commons, [...new Set(chosen.values())], 'local');
+  const yearPhotos: Record<string, string> = {};
+  for (const [id, pick] of chosen) {
+    const image = yearImages.get(pick);
+    if (!image) continue;
+    yearPhotos[id] = pick;
+    images[pick] = image;
+  }
+  log(`${Object.keys(yearPhotos).length} cars have a photo of their own model year.`);
+
   const file: CarPhotoFile = {
     source:
-      'Wikipedia car articles (infobox photo and years) and Wikimedia Commons (the photo, its author and licence)',
+      'Wikipedia car articles (infobox photo and years) and Wikimedia Commons (the photos, their authors and licences)',
     fetched: new Date().toISOString().slice(0, 10),
     queries,
     articles,
     images,
+    yearPhotos,
   };
   writeFileSync(OUT_PATH, serialize(file));
+
+  // For review: a sample of the year photos chosen.
+  const ids = Object.keys(yearPhotos);
+  for (let i = 0; i < Math.min(60, ids.length); i++) {
+    const car = unified.find((c) => c.id === ids[Math.floor((i * ids.length) / 60)]);
+    if (car)
+      log(`  ${car.year} ${car.make} ${car.model} [${car.bodyStyle}] -> ${yearPhotos[car.id]}`);
+  }
 
   // What the site gets from it.
   const byDecade = new Map<number, [number, number]>();

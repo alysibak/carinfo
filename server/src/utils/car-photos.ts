@@ -3,17 +3,18 @@ import type { Car, CarPhoto } from '../types/car.types.js';
 import { resolveDataFile } from './data-paths.js';
 
 /**
- * Photos of the cars, from Wikipedia and Wikimedia Commons: each model's
- * article (and each generation's) opens with an infobox giving the model
- * years it covers and a photo, which Commons holds under a free licence
- * with its author's name. scripts/build-car-photos.ts collects them in
- * data/car-photos.json; withCarPhotos gives each car the photo of its own
- * generation, found by model year, or none.
+ * Photos of the cars, from Wikimedia Commons, of each car's own model year,
+ * make, model and body: Commons' car photos are mostly named year first
+ * ("2021 BMW M3 Competition Automatic 3.0 Front.jpg"), and
+ * scripts/lib/year-photos.ts picks the best for each car among those named
+ * for its year. A car with none has no photo: one of another year in the same
+ * generation can show lights, bumpers or a body it does not have.
  *
- * The photo is of the generation, not the trim: a 2019 Civic Type R shows
- * the tenth-generation Civic that Wikipedia pictures, which may be a sedan.
- * Its caption says so.
+ * Wikipedia's articles, read for their infoboxes, give each model's
+ * generations: the name the viewer shows beside the photo, and which
+ * two-word names are models of their own ("Corolla Cross").
  *
+ * scripts/build-car-photos.ts collects it all in data/car-photos.json.
  * NHTSA was the first source tried: its API now gives only crash-test
  * photos, and the clean ones it used to link were licensed stock images.
  */
@@ -56,6 +57,12 @@ export interface CarPhotoFile {
   articles: Record<string, PhotoGeneration[]>;
   /** Commons file name to where it is and whose it is. */
   images: Record<string, PhotoImage>;
+  /**
+   * Car id to a photo on Commons of that car's own model year, make, model
+   * and body (scripts/lib/year-photos.ts), where there is one: preferred to
+   * the generation's.
+   */
+  yearPhotos?: Record<string, string>;
 }
 
 /** Commons' files and their resized copies, which Wikimedia serves from thumb.wikimedia.org. */
@@ -210,37 +217,58 @@ function isCommonsImage(image: PhotoImage | undefined): image is PhotoImage {
   return Boolean(image && COMMONS_FILE.test(image.src) && image.page.startsWith(COMMONS_PAGE));
 }
 
-/** The car's photo from the file, or undefined. */
-export function photoFor(
+/** A file's name as its caption: "2021 BMW M3 Competition Automatic 3.0 Front". */
+export function fileCaption(file: string): string {
+  return file
+    .replace(/\.(?:jpe?g|png|webp)$/i, '')
+    .replace(/_/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function credit(image: PhotoImage): string {
+  return [image.artist, image.license].filter(Boolean).join(', ');
+}
+
+/** The generation that pictures the car, by the first of its names Wikipedia has an article for. */
+function generationOf(
   car: Pick<Car, 'make' | 'model' | 'trim' | 'year' | 'bodyStyle'>,
   file: CarPhotoFile,
-): CarPhoto | undefined {
+): PhotoGeneration | undefined {
   for (const query of photoQueries(car)) {
     const articles = file.queries[queryKey(car.make, query)];
     if (!articles?.length) continue;
     const generations = articles.flatMap((article) => file.articles[article] ?? []);
     const generation = generationFor(generations, car.year, car);
-    if (!generation || !showsMake(generation, car.make)) return undefined;
-    const image = file.images[generation.image];
-    if (!isCommonsImage(image)) return undefined;
-    return {
-      src: image.src,
-      page: image.page,
-      credit: [image.artist, image.license].filter(Boolean).join(', '),
-      ...(image.licenseUrl ? { licenseUrl: image.licenseUrl } : {}),
-      generation: generation.title,
-      years: {
-        from: generation.years[0],
-        to: generation.years[1],
-        ...(generation.basis === 'production' ? { built: true as const } : {}),
-      },
-      ...(generation.caption ? { caption: generation.caption } : {}),
-    };
+    return generation && showsMake(generation, car.make) ? generation : undefined;
   }
   return undefined;
 }
 
-/** The cars, each with its generation's photo where Wikipedia has one. */
+/**
+ * The car's photo from the file: one of its own model year, make, model and
+ * body, or none. A photo of its generation is not offered in its place: a
+ * 2021 M3 is not a 2027 M3, whose lights and bumpers changed in between.
+ */
+export function photoFor(
+  car: Pick<Car, 'id' | 'make' | 'model' | 'trim' | 'year' | 'bodyStyle'>,
+  file: CarPhotoFile,
+): CarPhoto | undefined {
+  const yearFile = file.yearPhotos?.[car.id];
+  const image = yearFile ? file.images[yearFile] : undefined;
+  if (!yearFile || !isCommonsImage(image)) return undefined;
+  const generation = generationOf(car, file);
+  return {
+    src: image.src,
+    page: image.page,
+    credit: credit(image),
+    ...(image.licenseUrl ? { licenseUrl: image.licenseUrl } : {}),
+    caption: fileCaption(yearFile),
+    ...(generation ? { generation: generation.title } : {}),
+  };
+}
+
+/** The cars, each with a photo of its own model year where Commons has one. */
 export function withCarPhotos<T extends Car>(cars: T[], file: CarPhotoFile | null): T[] {
   if (!file) return cars;
   // Cars of one generation share one photo object.
@@ -252,7 +280,7 @@ export function withCarPhotos<T extends Car>(cars: T[], file: CarPhotoFile | nul
       const { photo: _stale, ...rest } = car;
       return rest as T;
     }
-    const key = `${found.src}|${found.generation}`;
+    const key = found.src;
     const photo = shared.get(key) ?? found;
     shared.set(key, photo);
     return { ...car, photo };

@@ -158,9 +158,8 @@ export interface CarSpecs {
   };
 
   /**
-   * A photo of the car's generation from Wikimedia Commons, found through
-   * its Wikipedia article (utils/car-photos.ts), with the credit its licence
-   * asks for.
+   * A photo of a car of this model year, make, model and body from Wikimedia
+   * Commons (utils/car-photos.ts), with the credit its licence asks for.
    */
   photo?: CarPhoto;
   productionYears?: {
@@ -179,12 +178,10 @@ export interface CarPhoto {
   /** Author and licence: "Jane Doe, CC BY-SA 4.0". */
   credit: string;
   licenseUrl?: string;
-  /** What it pictures: the generation's article, "Honda Civic (tenth generation)". */
-  generation: string;
-  /** The years the generation covers: model years, or, where Wikipedia gives only those, years built. */
-  years?: { from: number; to: number; built?: true };
-  /** Wikipedia's caption for it: "2016 Honda Civic EX-T sedan". */
-  caption?: string;
+  /** The file's name, which says what it shows: "2021 BMW M3 Competition Automatic 3.0 Front". */
+  caption: string;
+  /** The car's generation, from Wikipedia: "BMW M3 (G80)". */
+  generation?: string;
 }
 
 export interface CarFilter {

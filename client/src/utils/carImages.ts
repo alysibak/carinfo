@@ -91,15 +91,3 @@ export function carPhotoSources(photo: CarSpecs['photo']): string[] {
     ? [photo.src.replace('/500px-', '/960px-'), photo.src]
     : [photo.src];
 }
-
-/** "2016–2021 models", "2022 models on", "built 2014–2021", "built since 2022". */
-export function photoYearsLabel(
-  years: NonNullable<CarSpecs['photo']>['years'],
-  thisYear = new Date().getFullYear(),
-): string | null {
-  if (!years) return null;
-  const open = years.to > thisYear;
-  const span = years.from === years.to ? String(years.from) : `${years.from}–${years.to}`;
-  if (years.built) return open ? `built since ${years.from}` : `built ${span}`;
-  return open ? `${years.from} models on` : `${span} models`;
-}

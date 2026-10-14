@@ -56,6 +56,7 @@ describe('runtime database format', () => {
       src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/C.jpg/500px-C.jpg',
       page: 'https://commons.wikimedia.org/wiki/File:C.jpg',
       credit: 'Jane Doe, CC BY-SA 4.0',
+      caption: '2022 Honda Civic Touring sedan',
       generation: 'Honda Civic (eleventh generation)',
     };
     const photographed = [{ ...cars[0], photo }, { ...cars[1], photo: { ...photo } }, cars[2]];

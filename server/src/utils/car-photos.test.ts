@@ -65,6 +65,12 @@ const file: CarPhotoFile = {
     'W205.jpg': image('W205.jpg'),
     'W206.jpg': image('W206.jpg'),
     'Hotlinked.jpg': { ...image('x.jpg'), src: 'https://example.com/x.jpg' },
+    '2019 Honda Civic EX sedan, front 4.2.19.jpg': image('2019_Honda_Civic.jpg'),
+  },
+  yearPhotos: {
+    'honda-civic-4dr-2019': '2019 Honda Civic EX sedan, front 4.2.19.jpg',
+    'honda-civic-2dr-2020': '2019 Honda Civic EX sedan, front 4.2.19.jpg',
+    'bmw-m3-2021': 'Hotlinked.jpg',
   },
 };
 
@@ -151,35 +157,29 @@ describe('generationFor, where generations overlap', () => {
 });
 
 describe('photoFor', () => {
-  it('gives the generation’s photo with its credit', () => {
-    const photo = photoFor(car(2019, 'Honda', 'Civic 4Dr', 'civic-automatic-av-s7'), file);
-    expect(photo).toEqual({
-      src: image('Civic10.jpg').src,
-      page: image('Civic10.jpg').page,
+  it('gives a photo of the car’s own year, named by its file, with its credit and generation', () => {
+    expect(photoFor(car(2019, 'Honda', 'Civic 4Dr', 'civic-automatic-av-s7'), file)).toEqual({
+      src: image('2019_Honda_Civic.jpg').src,
+      page: image('2019_Honda_Civic.jpg').page,
       credit: 'Jane Doe, CC BY-SA 4.0',
+      caption: '2019 Honda Civic EX sedan, front 4.2.19',
       generation: 'Honda Civic (tenth generation)',
-      years: { from: 2016, to: 2021 },
     });
-    // Years Wikipedia gives as built, not as model years, say so.
-    const cClass = photoFor(car(2015, 'Mercedes-Benz', 'C300', 'c-class-automatic-7-spd'), file);
-    expect(cClass?.years).toEqual({ from: 2014, to: 2021, built: true });
   });
 
-  it('goes on to the next name when one has no article', () => {
-    expect(photoFor(car(2021, 'BMW', 'M3', 'm-manual-6-spd'), file)).toBeUndefined();
+  it('gives none rather than a photo of another year of its generation', () => {
     expect(
-      photoFor(car(2021, 'Mercedes-Benz', 'C300', 'c-class-automatic-9-spd'), file)?.generation,
-    ).toContain('W205');
+      photoFor(car(2018, 'Honda', 'Civic 4Dr', 'civic-automatic-av-s7'), file),
+    ).toBeUndefined();
   });
 
   it('takes only photos on Commons', () => {
-    // BMW M3's only photo is hosted elsewhere.
     expect(photoFor(car(2021, 'BMW', 'M3', 'm3-manual-6-spd'), file)).toBeUndefined();
   });
 });
 
 describe('withCarPhotos', () => {
-  it('shares one photo among a generation’s cars and clears stale ones', () => {
+  it('shares one photo among the cars it pictures and clears stale ones', () => {
     const a = car(2019, 'Honda', 'Civic 4Dr', 'civic-automatic-av-s7');
     const b = car(2020, 'Honda', 'Civic 2Dr', 'civic-manual-6-spd');
     const stale = { ...car(2019, 'Kia', 'Rio', 'rio-manual-6-spd'), photo: photoFor(a, file) };

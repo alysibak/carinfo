@@ -9,6 +9,8 @@ import { fetchJson, HttpError } from './fetch.js';
  */
 
 const API = 'https://en.wikipedia.org/w/api.php';
+/** Wikimedia Commons' API: its photos, searched by name, and whose each is. */
+export const COMMONS_API = 'https://commons.wikimedia.org/w/api.php';
 const TIMEOUT_MS = 60_000;
 /** Wikipedia asks API clients to go one request at a time; a short pause is courteous. */
 const PAUSE_MS = 150;
@@ -45,7 +47,11 @@ export interface WikiPage {
 }
 
 /** One request at a time, paused between, retried when Wikipedia is busy. */
-export function wikiClient(pauseMs = PAUSE_MS, retryMs = [5_000, 30_000, 60_000]): ApiGet {
+export function wikiClient(
+  pauseMs = PAUSE_MS,
+  retryMs = [5_000, 30_000, 60_000],
+  api = API,
+): ApiGet {
   let last = 0;
   return async (params) => {
     const query = new URLSearchParams({
@@ -59,7 +65,7 @@ export function wikiClient(pauseMs = PAUSE_MS, retryMs = [5_000, 30_000, 60_000]
       if (gap > 0) await wait(gap);
       last = Date.now();
       try {
-        const body = await fetchJson<WikiResponse>(`${API}?${query}`, TIMEOUT_MS);
+        const body = await fetchJson<WikiResponse>(`${api}?${query}`, TIMEOUT_MS);
         if (body.error?.code !== 'maxlag') return body;
       } catch (error) {
         const status = error instanceof HttpError ? error.status : 0;
@@ -175,6 +181,38 @@ export async function searchTitles(get: ApiGet, query: string): Promise<string[]
   return (q?.search ?? []).map((r) => r.title);
 }
 
+/**
+ * File names on Commons a search finds, those that `keep` takes, page by
+ * page up to the search's limit of 10,000 results.
+ */
+export async function searchFileNames(
+  get: ApiGet,
+  search: string,
+  keep: (name: string) => boolean,
+): Promise<string[]> {
+  const out: string[] = [];
+  let offset = 0;
+  for (;;) {
+    const body = await get({
+      action: 'query',
+      list: 'search',
+      srsearch: search,
+      srnamespace: '6',
+      srlimit: '500',
+      sroffset: String(offset),
+      srprop: '',
+      srinfo: '',
+    });
+    for (const { title } of body.query?.search ?? []) {
+      const name = title.replace(/^File:/, '');
+      if (keep(name)) out.push(name);
+    }
+    const next = Number(body.continue?.sroffset);
+    if (!next || next + 500 > 10_000) return out;
+    offset = next;
+  }
+}
+
 /** Plain text from a bit of HTML (Commons' Artist field). */
 export function plainText(html: string): string {
   return html
@@ -194,7 +232,12 @@ export function plainText(html: string): string {
  * to use with credit. A file Wikipedia holds itself is non-free, shown under
  * fair use, and left out.
  */
-export async function fetchImages(get: ApiGet, files: string[]): Promise<Map<string, PhotoImage>> {
+export async function fetchImages(
+  get: ApiGet,
+  files: string[],
+  /** Where a file on Commons says it is: "shared" asked through Wikipedia, "local" through Commons. */
+  repository: 'shared' | 'local' = 'shared',
+): Promise<Map<string, PhotoImage>> {
   const out = new Map<string, PhotoImage>();
   for (const batch of chunks([...new Set(files)], 50)) {
     const { query } = await get({
@@ -208,7 +251,7 @@ export async function fetchImages(get: ApiGet, files: string[]): Promise<Map<str
     const renamed = new Map((query?.normalized ?? []).map(({ from, to }) => [to, from]));
     for (const page of query?.pages ?? []) {
       const info = page.imageinfo?.[0];
-      if (page.imagerepository !== 'shared' || !info?.url || !info.descriptionurl) continue;
+      if (page.imagerepository !== repository || !info?.url || !info.descriptionurl) continue;
       if (!/^image\/(?:jpeg|png|webp)$/.test(info.mime ?? '')) continue;
       // Without the tracking query Wikimedia appends ("?utm_source=...").
       const src = (info.thumburl ?? info.url).replace(/\?.*$/, '');

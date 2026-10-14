@@ -262,6 +262,7 @@ describe('share image', () => {
         src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ab/C.jpg/500px-C.jpg',
         page: 'https://commons.wikimedia.org/wiki/File:C.jpg',
         credit: 'Jane Doe, CC BY-SA 4.0',
+        caption: '2022 Honda Civic Touring sedan',
         generation: 'Honda Civic (eleventh generation)',
       },
     };
@@ -270,7 +271,7 @@ describe('share image', () => {
     expect(html).not.toContain('og-image.png');
     expect(html).toContain(`property="og:image" content="${photographed.photo.src}"`);
     expect(html).toContain(`name="twitter:image" content="${photographed.photo.src}"`);
-    expect(html).toContain('content="Photo of the Honda Civic (eleventh generation)"');
+    expect(html).toContain('content="Photo: 2022 Honda Civic Touring sedan"');
     expect(seo.jsonLd?.image).toBe(photographed.photo.src);
   });
 

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import type { CarSpecs } from '../types/car.types';
-import { carPhotoSources, photoYearsLabel } from '../utils/carImages';
+import { carPhotoSources } from '../utils/carImages';
 import { displayVehicleTitle } from '../utils/trimLabel';
 import { Modal } from './ui';
 
@@ -14,10 +14,10 @@ interface CarPhotoButtonProps {
 }
 
 /**
- * A photo of the car's generation, on request. The site shows the same
+ * A photo of a car of this model year, on request. The site shows the same
  * body-type illustration for every car, so its pages look alike whether or
- * not Wikipedia has a photo; where it does, this button opens it. Nothing is
- * downloaded until the button is pointed at or focused.
+ * not Commons has a photo of the year; where it does, this button opens it.
+ * Nothing is downloaded until the button is pointed at or focused.
  */
 export default function CarPhotoButton({
   car,
@@ -81,8 +81,6 @@ function PhotoViewer({
   const [index, setIndex] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const src = sources[index];
-  const years = photoYearsLabel(photo.years);
-
   return (
     <figure>
       <div className="relative aspect-4/3 bg-zinc-950 border border-zinc-900 flex items-center justify-center overflow-hidden">
@@ -104,7 +102,7 @@ function PhotoViewer({
             <img
               key={src}
               src={src}
-              alt={`Photo of the ${photo.generation}`}
+              alt={`Photo: ${photo.caption}`}
               referrerPolicy="no-referrer"
               decoding="async"
               onLoad={() => setLoaded(true)}
@@ -131,13 +129,10 @@ function PhotoViewer({
         )}
       </div>
       <figcaption className="mt-4 space-y-2 text-sm">
-        <p className="text-white">
-          {photo.generation}
-          {years && <span className="text-zinc-400"> · {years}</span>}
-        </p>
-        {photo.caption && <p className="text-zinc-400">{photo.caption}</p>}
+        <p className="text-white">{photo.caption}</p>
+        {photo.generation && <p className="text-zinc-400">{photo.generation}</p>}
         <p className="text-xs text-zinc-500 leading-relaxed">
-          A photo of this generation, not of this exact car: trim, colour and options may differ.
+          A photo of this model year. Trim, colour and options may differ from this car.
         </p>
         <p className="text-xs text-zinc-500">
           Photo:{' '}
