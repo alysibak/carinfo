@@ -79,12 +79,17 @@ describe('epaBaseModel', () => {
 });
 
 describe('photoQueries', () => {
-  it('asks by EPA’s family name, cased from the car’s own, then by its first words', () => {
+  it('asks by the model’s first words and EPA’s family name, cased from the car’s own', () => {
     expect(photoQueries(car(2019, 'Mazda', 'CX-5 2WD', 'cx-5-automatic-s6'))).toEqual(['CX-5']);
     expect(photoQueries(car(2019, 'BMW', 'M3 Competition', 'm-manual-6-spd'))).toEqual([
-      'M',
       'M3 Competition',
+      'M',
       'M3',
+    ]);
+    // A two-word name of its own comes first: the Genesis Coupe is not the Genesis.
+    expect(photoQueries(car(2013, 'Hyundai', 'Genesis Coupe', 'genesis-manual-6-spd'))).toEqual([
+      'Genesis Coupe',
+      'Genesis',
     ]);
     expect(photoQueries(car(2019, 'Volkswagen', 'GTI', 'golf-gti-manual-6-spd'))[0]).toBe(
       'Golf GTI',

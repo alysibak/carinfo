@@ -115,18 +115,20 @@ function familyTitle(base: string[], model: string): string {
 }
 
 /**
- * Names to look the car's model up by, best first: EPA's family name, then
- * the first two words of its model name, then the first. The fetch script
+ * Names to look the car's model up by, best first: the first two words of
+ * its model name, which name a model of their own where there is one
+ * ("Genesis Coupe", "Camry Solara", "Prius c"); then EPA's family name
+ * ("Genesis", "C-Class"); then the model's first word. The fetch script
  * resolves each to an article; the first that has one decides.
  */
 export function photoQueries(car: Pick<Car, 'model' | 'trim'>): string[] {
   const out: string[] = [];
+  const words = nameWords(car.model);
+  if (words.length >= 2) out.push(words.slice(0, 2).join(' '));
   // Less EPA's trailing notes: "C-Class EMS" is the C-Class, "Savana Cargo" the Savana.
   const base = epaBaseModel(car.trim);
   while (base.length > 1 && BASE_NOISE.test(base[base.length - 1])) base.pop();
   if (base.length) out.push(familyTitle(base, car.model));
-  const words = nameWords(car.model);
-  if (words.length >= 2) out.push(words.slice(0, 2).join(' '));
   if (words.length >= 1) out.push(words[0]);
   return [...new Set(out.filter(Boolean))];
 }
@@ -194,6 +196,18 @@ export function generationFor(
   })[0];
 }
 
+/**
+ * Whether the photo is of the car's make. Wikipedia files some cars under
+ * their twins (the GMC Sierra under the Chevrolet Silverado, the Mazda
+ * B-Series under the Ford Ranger), whose photos show the other badge.
+ */
+function showsMake(generation: PhotoGeneration, make: string): boolean {
+  const named = compact(`${generation.title} ${generation.caption ?? ''}`);
+  // Any word of it: the Range Rover is a Land Rover, the Mercedes-AMG GT a Mercedes-Benz.
+  const words = [make, ...make.split(/[\s-]+/)].map(compact).filter((w) => w.length >= 3);
+  return words.some((w) => named.includes(w));
+}
+
 function isCommonsImage(image: PhotoImage | undefined): image is PhotoImage {
   return Boolean(
     image &&
@@ -213,7 +227,7 @@ export function photoFor(
     if (!articles?.length) continue;
     const generations = articles.flatMap((article) => file.articles[article] ?? []);
     const generation = generationFor(generations, car.year, car);
-    if (!generation) return undefined;
+    if (!generation || !showsMake(generation, car.make)) return undefined;
     const image = file.images[generation.image];
     if (!isCommonsImage(image)) return undefined;
     return {

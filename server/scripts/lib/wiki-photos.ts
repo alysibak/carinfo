@@ -234,7 +234,7 @@ export async function fetchImages(get: ApiGet, files: string[]): Promise<Map<str
 /** Every {{Infobox automobile}} (or {{Infobox car}}) in the text, as its parameters. */
 export function infoboxes(wikitext: string): Record<string, string>[] {
   const out: Record<string, string>[] = [];
-  const opener = /\{\{\s*Infobox[ _](?:automobile|car)\s*(?=[|}\n])/gi;
+  const opener = /\{\{\s*Infobox[ _](?:automobile|car)\s*(?=[\s|}<])/gi;
   for (let m = opener.exec(wikitext); m; m = opener.exec(wikitext)) {
     let depth = 0;
     let end = -1;

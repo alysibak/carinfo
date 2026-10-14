@@ -181,6 +181,7 @@ Slug derived from EPA record, e.g. `acura-nsx-1995-nsx-2mode-clkup-automatic-4-s
 | `server/data/horsepower-enrichment.json`      | `epaId`             | EPA test-car rated HP                          | Committed                    |
 | `server/data/nhtsa-safety.json`               | `make\|model\|year` | NHTSA star ratings                             | Committed                    |
 | `server/data/nhtsa-by-car-id.json`            | `id`                | Pre-resolved NHTSA per vehicle                 | New/untracked                |
+| `server/data/car-photos.json`                 | `make\|model name`  | Wikipedia generations and Commons photos       | Committed                    |
 | `server/data/raw/vehicles.csv`                | —                   | EPA source CSV                                 | Gitignored                   |
 | `server/data/raw/nhtsa-enrichment-cache.json` | —                   | NHTSA API cache                                | Gitignored                   |
 | `server/data/raw/nrcan/*.csv`                 | —                   | NRCan fuel consumption ratings                 | Gitignored                   |
@@ -275,6 +276,10 @@ npm run build-enrichment --workspace=server
 ### Refresh on GitHub (`.github/workflows/epa-refresh.yml`)
 
 Every Monday, and on demand from the Actions tab, GitHub's runners add the cars EPA has listed since the last refresh (`backfill-epa-variants`), refresh the Canadian cars from NRCan (`import-nrcan`), check fuel types against EPA, fetch NHTSA ratings for the last two model years, rebuild enrichment and run the tests. When the data changed, the result is force-pushed to the `epa-refresh` branch with `epa-refresh-report.txt` (what was added and left out, by model) and the EPA file it read (`server/data/raw/vehicles.csv.gz`), and a pull request is opened; when nothing changed, no branch is made and the report is in the run's summary. Leave the report and the `.gz` out when merging.
+
+### Car photos (`.github/workflows/car-photos.yml`)
+
+Monthly, and whenever its scripts change, GitHub's runners run `build-car-photos`: each model name the cars carry is looked up on Wikipedia (as a title or redirect, else a search result of the same name), and its article's generations (the articles named for it, and its sections' infoboxes) give the model years each covers and a photo. Only photos on Wikimedia Commons are kept, with their author and licence, which the car page credits. `build-runtime-db` gives each car its own generation's photo by model year (`server/src/utils/car-photos.ts`), and only where the photo is of the car's make. The result goes to the `car-photos` branch, like the EPA refresh.
 
 ### `build-verified-database.ts`
 
