@@ -76,7 +76,8 @@ export function getBodySilhouettePath(bodyStyle: BodyStyle | string): string {
   }
 }
 
-const COMMONS_UPLOAD = 'https://upload.wikimedia.org/wikipedia/commons/';
+/** Commons' files and their resized copies (served from thumb.wikimedia.org). */
+const COMMONS_FILE = /^https:\/\/(?:upload|thumb)\.wikimedia\.org\/wikipedia\/commons\//;
 
 /** Which of the photo's copies: about 250 px for cards and lists, 500 px for the car page. */
 export type CarPhotoSize = 'thumb' | 'large';
@@ -89,5 +90,5 @@ export function carPhotoSources(car: Pick<CarSpecs, 'photo'>, size: CarPhotoSize
   const photo = car.photo;
   if (!photo) return [];
   const order = size === 'thumb' ? [photo.thumb, photo.src] : [photo.src, photo.thumb];
-  return [...new Set(order)].filter((url) => url?.startsWith(COMMONS_UPLOAD));
+  return [...new Set(order)].filter((url) => COMMONS_FILE.test(url ?? ''));
 }

@@ -44,10 +44,10 @@ const file: CarPhotoFile = {
   source: 'test',
   fetched: '2026-10-14',
   queries: {
-    [queryKey('Honda', 'civic')]: 'Honda Civic',
-    [queryKey('Mercedes-Benz', 'C Class')]: 'Mercedes-Benz C-Class',
+    [queryKey('Honda', 'civic')]: ['Honda Civic'],
+    [queryKey('Mercedes-Benz', 'C Class')]: ['Mercedes-Benz C-Class'],
     [queryKey('BMW', 'M')]: null,
-    [queryKey('BMW', 'M3')]: 'BMW M3',
+    [queryKey('BMW', 'M3')]: ['BMW M3'],
   },
   articles: {
     'Honda Civic': [
@@ -92,6 +92,9 @@ describe('photoQueries', () => {
     expect(
       photoQueries(car(2019, 'Mercedes-Benz', 'C300 4matic', 'c-class-automatic-9-spd'))[0],
     ).toBe('C Class');
+    expect(photoQueries(car(2008, 'Mercedes-Benz', 'C230', 'c-class-ems-automatic-5-spd'))[0]).toBe(
+      'C Class',
+    );
     expect(photoQueries(car(2008, 'Chevrolet', 'Silverado C15 2WD'))).toEqual([
       'Silverado C15',
       'Silverado',
@@ -113,6 +116,33 @@ describe('generationFor', () => {
     expect(generationFor(cClass, 2021)?.title).toContain('W205');
     expect(generationFor(cClass, 2022)?.title).toContain('W206');
     expect(generationFor(cClass, 2015)?.title).toContain('W205');
+  });
+});
+
+describe('generationFor, where generations overlap', () => {
+  const sClass: PhotoGeneration[] = [
+    {
+      ...gen('Mercedes-Benz S-Class (W222)', [2013, 2020], 'production', 'W222.jpg'),
+      body: '4-door sedan',
+    },
+    {
+      ...gen('Mercedes-Benz S-Class (C217)', [2014, 2020], 'production', 'C217.jpg'),
+      body: '2-door coupé, 2-door convertible',
+    },
+  ];
+  it('takes the one of the car’s body', () => {
+    const sedan = car(2017, 'Mercedes-Benz', 'S550', 's-class-automatic-9-spd');
+    const coupe = { ...car(2017, 'Mercedes-Benz', 'S550 Coupe', 's-class-automatic-9-spd') };
+    expect(generationFor(sClass, 2017, sedan)?.title).toContain('W222');
+    expect(generationFor(sClass, 2017, coupe)?.title).toContain('C217');
+  });
+
+  it('takes the North American version over another market’s', () => {
+    const taurus = [
+      gen('Ford Taurus (China)', [2015, 2027], 'production', 'TaurusChina.jpg'),
+      gen('Ford Taurus (sixth generation)', [2009, 2019], 'production', 'Taurus6.jpg'),
+    ];
+    expect(generationFor(taurus, 2018)?.title).toBe('Ford Taurus (sixth generation)');
   });
 });
 

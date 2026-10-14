@@ -31,18 +31,44 @@ import {
   generationLinks,
   infoboxes,
   infoboxGeneration,
+  isSideBox,
   namesMake,
+  prefixTitles,
+  type Resolved,
   resolveTitles,
   searchMatches,
   searchTitles,
   titleCandidates,
   wikiClient,
   wikiPlain,
+  yearsSpanned,
 } from './lib/wiki-photos.js';
 
 const DATA_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'data');
 const CARS_PATH = resolve(DATA_DIR, 'cars.json');
 const OUT_PATH = resolve(DATA_DIR, 'car-photos.json');
+
+/**
+ * Names Wikipedia splits across articles, or files under another: the
+ * Mini Cooper is the "Mini Hatch" (the "Mini" is the 1959 car), and the US
+ * Ranger, Fusion, Blazer and Odyssey have articles of their own.
+ */
+const ALIASES: Record<string, string[]> = {
+  'mini|cooper': ['Mini Hatch'],
+  'mini|cooper s': ['Mini Hatch'],
+  'mini|john cooper works': ['Mini Hatch'],
+  'mini|hardtop': ['Mini Hatch'],
+  'mini|clubman': ['Mini Clubman'],
+  'mini|convertible': ['Mini Convertible'],
+  'mini|paceman': ['Mini Paceman'],
+  'mini|coupe': ['Mini Coupé and Roadster'],
+  'mini|roadster': ['Mini Coupé and Roadster'],
+  'ford|ranger': ['Ford Ranger (Americas)', 'Ford Ranger (T6)'],
+  'ford|fusion': ['Ford Fusion (Americas)'],
+  'chevrolet|blazer': ['Chevrolet S-10 Blazer', 'Chevrolet Blazer (crossover)'],
+  'gmc|jimmy': ['Chevrolet S-10 Blazer'],
+  'honda|odyssey': ['Honda Odyssey (North America)'],
+};
 
 function log(message: string): void {
   console.log(`[car-photos] ${message}`);
@@ -86,15 +112,19 @@ async function main(): Promise<void> {
   }
   log(`${asked.size} model names to look up, from ${unified.length} cars.`);
 
-  // 1. Titles as written.
+  // 1. Titles as written, and the articles named outright where Wikipedia
+  // splits a name (ALIASES).
   const candidates = new Map(
-    [...asked].map(([key, { make, query }]) => [key, titleCandidates(make, query)]),
+    [...asked].map(([key, { make, query }]) => [key, ALIASES[key] ?? titleCandidates(make, query)]),
   );
   const resolved = await resolveTitles(get, [...candidates.values()].flat());
-  const found = new Map<string, string>();
+  const found = new Map<string, Resolved[]>();
   for (const [key, titles] of candidates) {
-    const hit = titles.map((t) => resolved.get(t)).find(Boolean);
-    if (hit) found.set(key, hit);
+    const hits = titles.map((t) => resolved.get(t)).filter((r): r is Resolved => Boolean(r));
+    if (!hits.length) continue;
+    // An alias names every article it wants; otherwise the first title that exists.
+    const aliased = Boolean(ALIASES[key]);
+    found.set(key, aliased ? hits.map((h) => ({ ...h, redirected: true })) : [hits[0]]);
   }
   log(`${found.size} names are article titles (or redirect to one).`);
 
@@ -104,49 +134,76 @@ async function main(): Promise<void> {
     if (found.has(key)) continue;
     const results = await searchTitles(get, `${make} ${query}`);
     const hit = results.find((r) => searchMatches(r, make, query));
-    if (hit) found.set(key, hit);
+    if (hit) found.set(key, [{ title: hit, redirected: false }]);
     if (++searched % 200 === 0) log(`searched ${searched}...`);
   }
   log(`${found.size} names found after ${searched} searches.`);
 
-  // 3. The articles: a car's, of the make.
-  const texts = await fetchWikitext(get, [...new Set(found.values())]);
+  // 3. The articles: a car's, and of the make unless a redirect or alias led there.
+  const titles = [...new Set([...found.values()].flat().map((r) => r.title))];
+  const texts = await fetchWikitext(get, titles);
+  log(`${texts.size} of ${titles.length} articles read.`);
   const queries: CarPhotoFile['queries'] = {};
-  const models = new Map<string, string>();
+  const models = new Map<string, { text: string; make: string }>();
+  const rejected = { unread: [] as string[], notCar: [] as string[], otherMake: [] as string[] };
   for (const [key, { make }] of asked) {
-    const title = found.get(key);
-    const text = title ? texts.get(title) : undefined;
-    const boxes = text ? infoboxes(text) : [];
-    const ok = title && boxes.length > 0 && namesMake(title, boxes[0], make);
-    queries[key] = ok ? title : null;
-    if (ok) models.set(title, text!);
+    const accepted: string[] = [];
+    for (const { title, redirected } of found.get(key) ?? []) {
+      const text = texts.get(title);
+      const boxes = text ? infoboxes(text) : [];
+      if (!text) rejected.unread.push(title);
+      else if (!boxes.length)
+        rejected.notCar.push(`${title}: ${text.slice(0, 80).replace(/\s+/g, ' ')}`);
+      else if (!redirected && !namesMake(title, boxes[0], make))
+        rejected.otherMake.push(`${make}: ${title}`);
+      else {
+        accepted.push(title);
+        models.set(title, { text, make });
+      }
+    }
+    queries[key] = accepted.length ? accepted : null;
   }
   log(`${models.size} car articles.`);
+  for (const [why, list] of Object.entries(rejected)) {
+    const unique = [...new Set(list)];
+    log(`  rejected, ${why}: ${unique.length}, e.g. ${unique.slice(0, 12).join(' | ')}`);
+  }
 
-  // 4. Their generations.
+  // 4. Their generations: the articles named for them ("Porsche 911 (991)",
+  // "Volkswagen Golf Mk7"), linked or not, and the infoboxes in their sections.
+  const makes = [...new Set(unified.map((c) => c.make))];
   const linked = new Map<string, string[]>();
-  for (const [title, text] of models) linked.set(title, generationLinks(text, title));
+  for (const [title, { text }] of models) {
+    const named = new Set(generationLinks(text, title));
+    for (const prefix of [`${title} (`, `${title} Mk`, `${title} Mark `]) {
+      for (const t of await prefixTitles(get, prefix)) named.add(t);
+    }
+    linked.set(title, [...named]);
+  }
   const generationTexts = await fetchWikitext(get, [...new Set([...linked.values()].flat())]);
   const articles: CarPhotoFile['articles'] = {};
-  for (const [title, text] of models) {
+  for (const [title, { text, make }] of models) {
     const generations: PhotoGeneration[] = [];
     for (const link of linked.get(title) ?? []) {
       const linkedText = generationTexts.get(link);
       const box = linkedText ? infoboxes(linkedText)[0] : undefined;
       const generation = box && infoboxGeneration(box, link);
-      if (generation) generations.push(generation);
+      if (generation && !isSideBox(link.slice(title.length), make, makes)) {
+        generations.push(generation);
+      }
     }
     const boxes = infoboxes(text);
-    // The infoboxes in its sections; the article's own, atop it, covers
-    // every generation, so it counts only when it is the only one.
     for (const box of boxes.slice(1)) {
       const name = box.name ? wikiPlain(box.name) : '';
+      if (isSideBox(name, make, makes)) continue;
       const generation = infoboxGeneration(box, name ? `${title}, ${name}` : title);
       if (generation) generations.push(generation);
     }
+    // The article's own box, atop it, pictures one generation for all its
+    // years: only when it covers about one generation's worth.
     if (!generations.length && boxes[0]) {
       const generation = infoboxGeneration(boxes[0], title);
-      if (generation) generations.push(generation);
+      if (generation && yearsSpanned(generation) <= 12) generations.push(generation);
     }
     const seen = new Set<string>();
     articles[title] = generations.filter((g) => {

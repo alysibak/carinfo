@@ -172,7 +172,7 @@ export interface CarSpecs {
 export type Car = CarSpecs & { id: string };
 
 export interface CarPhoto {
-  /** About 500 px wide, on upload.wikimedia.org. */
+  /** About 500 px wide, on Wikimedia's servers. */
   src: string;
   /** About 250 px wide, for cards and lists. */
   thumb: string;

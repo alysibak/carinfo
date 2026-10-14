@@ -22,9 +22,10 @@ export interface WikiResponse {
   continue?: Record<string, string>;
   query?: {
     normalized?: { from: string; to: string }[];
-    redirects?: { from: string; to: string }[];
+    redirects?: { from: string; to: string; tofragment?: string }[];
     pages?: WikiPage[];
     search?: { title: string }[];
+    allpages?: { title: string }[];
   };
 }
 
@@ -76,36 +77,73 @@ function chunks<T>(items: T[], size: number): T[][] {
   return out;
 }
 
-/** Each title to the page it lands on after normalising and redirects, or null if none. */
+export interface Resolved {
+  title: string;
+  /** Reached through a redirect, which editors made: it needs no further check of the make. */
+  redirected: boolean;
+}
+
+/**
+ * Each title to the page it lands on after normalising and redirects, or
+ * null if none. A redirect to a section of another article ("Subaru
+ * Impreza Outback Sport" to a part of "Subaru Outback") is no match: the
+ * article is about something else.
+ */
 export async function resolveTitles(
   get: ApiGet,
   titles: string[],
-): Promise<Map<string, string | null>> {
-  const out = new Map<string, string | null>();
+): Promise<Map<string, Resolved | null>> {
+  const out = new Map<string, Resolved | null>();
   for (const batch of chunks([...new Set(titles)], 50)) {
     const { query } = await get({ action: 'query', titles: batch.join('|'), redirects: '1' });
-    const step = new Map<string, string>();
-    for (const { from, to } of [...(query?.normalized ?? []), ...(query?.redirects ?? [])]) {
-      step.set(from, to);
+    const step = new Map<string, { to: string; redirect: boolean; fragment: boolean }>();
+    for (const { from, to } of query?.normalized ?? []) {
+      step.set(from, { to, redirect: false, fragment: false });
+    }
+    for (const { from, to, tofragment } of query?.redirects ?? []) {
+      step.set(from, { to, redirect: true, fragment: Boolean(tofragment) });
     }
     const existing = new Set(
       (query?.pages ?? []).filter((p) => !p.missing && !p.invalid).map((p) => p.title),
     );
     for (const title of batch) {
       let at = title;
-      for (let hops = 0; hops < 5 && step.has(at); hops++) at = step.get(at)!;
-      out.set(title, existing.has(at) ? at : null);
+      let redirected = false;
+      let fragment = false;
+      for (let hops = 0; hops < 5 && step.has(at); hops++) {
+        const next = step.get(at)!;
+        redirected ||= next.redirect;
+        fragment ||= next.fragment;
+        at = next.to;
+      }
+      out.set(title, existing.has(at) && !fragment ? { title: at, redirected } : null);
     }
   }
   return out;
 }
 
+/** Articles whose titles begin with the prefix: "Porsche 911 (" lists its generations. */
+export async function prefixTitles(get: ApiGet, prefix: string): Promise<string[]> {
+  const { query } = await get({
+    action: 'query',
+    list: 'allpages',
+    apprefix: prefix,
+    apfilterredir: 'nonredirects',
+    aplimit: '50',
+  });
+  return (query?.allpages ?? []).map((p) => p.title);
+}
+
 /** Each existing article's wikitext, by its title (after redirects). */
-export async function fetchWikitext(get: ApiGet, titles: string[]): Promise<Map<string, string>> {
+export async function fetchWikitext(
+  get: ApiGet,
+  titles: string[],
+  batchSize = 8,
+): Promise<Map<string, string>> {
   const out = new Map<string, string>();
-  for (const batch of chunks([...new Set(titles)], 20)) {
+  for (const batch of chunks([...new Set(titles)], batchSize)) {
     let cont: Record<string, string> = {};
-    for (;;) {
+    for (let round = 0; round < 20; round++) {
       const body = await get({
         action: 'query',
         titles: batch.join('|'),
@@ -172,7 +210,8 @@ export async function fetchImages(get: ApiGet, files: string[]): Promise<Map<str
       const info = page.imageinfo?.[0];
       if (page.imagerepository !== 'shared' || !info?.url || !info.descriptionurl) continue;
       if (!/^image\/(?:jpeg|png|webp)$/.test(info.mime ?? '')) continue;
-      const src = info.thumburl ?? info.url;
+      // Without the tracking query Wikimedia appends ("?utm_source=...").
+      const src = (info.thumburl ?? info.url).replace(/\?.*$/, '');
       const meta = info.extmetadata ?? {};
       const license = plainText(meta.LicenseShortName?.value ?? '');
       if (!license) continue;
@@ -313,12 +352,14 @@ export function infoboxGeneration(
   const years = modelYears ?? production;
   if (!years) return undefined;
   const caption = params.caption ? wikiPlain(params.caption).slice(0, 140) : '';
+  const body = params.body_style ? wikiPlain(params.body_style).slice(0, 140) : '';
   return {
     title,
     years,
     basis: modelYears ? 'model_years' : 'production',
     image,
     ...(caption ? { caption } : {}),
+    ...(body ? { body } : {}),
   };
 }
 
@@ -367,3 +408,30 @@ export function searchMatches(result: string, make: string, query: string): bool
   const name = compact(result.replace(/\s*\([^)]*\)\s*$/, ''));
   return name === compact(`${make} ${query}`) || name === compact(query);
 }
+
+/**
+ * An infobox in a model's article that is not one of its generations: a
+ * police or military version, a concept, or another make's twin (the
+ * Infiniti QX4 in the Nissan Pathfinder's article).
+ */
+export function isSideBox(name: string, make: string, makes: string[]): boolean {
+  if (
+    /\b(?:LSSV|police|military|concept|prototype|racing|race car|rally|pace car|show car)\b/i.test(
+      name,
+    )
+  ) {
+    return true;
+  }
+  const own = make.toLowerCase();
+  return makes.some((other) => {
+    const o = other.toLowerCase();
+    if (o === own || o.length < 4 || own.includes(o) || o.includes(own)) return false;
+    return new RegExp(
+      `(?:^|[^a-z])${o.replace(/[^a-z0-9]+/g, '[^a-z0-9]*')}(?:$|[^a-z])`,
+      'i',
+    ).test(name);
+  });
+}
+
+/** The years a generation's box spans; an article's own box spanning more covers several. */
+export const yearsSpanned = (g: PhotoGeneration) => g.years[1] - g.years[0];

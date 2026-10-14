@@ -5,6 +5,7 @@ import {
   imageName,
   infoboxes,
   infoboxGeneration,
+  isSideBox,
   namesMake,
   resolveTitles,
   searchMatches,
@@ -75,6 +76,7 @@ describe('infoboxGeneration', () => {
       basis: 'model_years',
       image: '2016 Honda Civic EX-T sedan.jpg',
       caption: '2016 Civic EX-T sedan (US)',
+      body: '4-door sedan 5-door hatchback',
     });
   });
 
@@ -116,6 +118,18 @@ describe('generationLinks', () => {
       'Honda Civic (tenth generation)',
       'Honda Civic (eleventh generation)',
     ]);
+  });
+});
+
+describe('isSideBox', () => {
+  const makes = ['Nissan', 'Infiniti', 'Chevrolet', 'GMC', 'Kia', 'Land Rover', 'Mini', 'Ram'];
+  it('leaves out police and military versions and other makes’ twins', () => {
+    expect(isSideBox('LSSV', 'Chevrolet', makes)).toBe(true);
+    expect(isSideBox('Infiniti QX4', 'Nissan', makes)).toBe(true);
+    expect(isSideBox('Second generation (R50)', 'Nissan', makes)).toBe(false);
+    expect(isSideBox('Kia Optima (first generation)', 'Kia', makes)).toBe(false);
+    expect(isSideBox('Minivan version', 'Kia', makes)).toBe(false);
+    expect(isSideBox('Ramcharger', 'Chevrolet', makes)).toBe(false);
   });
 });
 
@@ -177,8 +191,23 @@ describe('API', () => {
       }),
     );
     const resolved = await resolveTitles(wikiClient(0), ['honda civic', 'Ford F150x']);
-    expect(resolved.get('honda civic')).toBe('Honda Civic');
+    expect(resolved.get('honda civic')).toEqual({ title: 'Honda Civic', redirected: true });
     expect(resolved.get('Ford F150x')).toBeNull();
+  });
+
+  it('takes a redirect to a section of another article as no match', async () => {
+    fetchMock.mockResolvedValueOnce(
+      json({
+        query: {
+          redirects: [
+            { from: 'Subaru Impreza Outback Sport', to: 'Subaru Outback', tofragment: 'Impreza' },
+          ],
+          pages: [{ title: 'Subaru Outback' }],
+        },
+      }),
+    );
+    const resolved = await resolveTitles(wikiClient(0), ['Subaru Impreza Outback Sport']);
+    expect(resolved.get('Subaru Impreza Outback Sport')).toBeNull();
   });
 
   it('keeps Commons photos with their credit, not Wikipedia’s own files', async () => {
@@ -232,7 +261,7 @@ describe('API', () => {
       .mockResolvedValueOnce(json({ error: { code: 'maxlag' } }))
       .mockResolvedValueOnce(json({ query: { pages: [{ title: 'A' }] } }));
     const resolved = await resolveTitles(wikiClient(0, [0]), ['A']);
-    expect(resolved.get('A')).toBe('A');
+    expect(resolved.get('A')).toEqual({ title: 'A', redirected: false });
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
