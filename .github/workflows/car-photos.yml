@@ -1,0 +1,83 @@
+name: Car photos
+
+# Collects a photo of each car's generation from Wikipedia and Wikimedia
+# Commons (scripts/build-car-photos.ts) in server/data/car-photos.json, from
+# en.wikipedia.org, which GitHub's runners reach. When the list changes, the
+# result goes to the car-photos branch and a pull request for review, never
+# straight to main; otherwise no branch is made.
+on:
+  # A change to the collector collects again.
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/car-photos.yml
+      - server/scripts/build-car-photos.ts
+      - server/scripts/lib/wiki-photos.ts
+      - server/src/utils/car-photos.ts
+  schedule:
+    - cron: '37 10 1 * *' # Monthly: Wikipedia's photos change slowly
+  workflow_dispatch:
+
+concurrency:
+  group: car-photos
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  photos:
+    name: Collect car photos
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+
+      # A few thousand requests to Wikipedia's API, one at a time.
+      - name: Collect photos
+        run: npm run build-car-photos --workspace=server | tee car-photos-report.txt
+
+      - name: Push to the car-photos branch
+        id: push
+        run: |
+          { echo '```'; cat car-photos-report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          git add -N server/data/car-photos.json
+          if git diff --quiet -- server/data/car-photos.json; then
+            echo 'No change from Wikipedia: no branch to push.'
+            exit 0
+          fi
+          echo 'changed=true' >> "$GITHUB_OUTPUT"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -B car-photos
+          git add server/data/car-photos.json
+          git commit -m "Collect car photos ($(date -u +%F))" -m "$(grep 'Done:' car-photos-report.txt || true)"
+          git push -f origin car-photos
+
+      - name: Open a pull request
+        # A scheduled run's event carries no repository, so name the branch.
+        if: steps.push.outputs.changed == 'true' && github.ref_name == 'main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh pr view car-photos --json state -q .state 2>/dev/null | grep -q OPEN; then
+            echo 'The car-photos pull request is already open, now with this run.'
+          else
+            gh pr create --base "$GITHUB_REF_NAME" --head car-photos \
+              --title 'Collect car photos' \
+              --body 'New or changed photos from Wikipedia and Wikimedia Commons. The site gives each car the photo of its own generation when it builds (server/src/utils/car-photos.ts).' \
+              || echo '::warning::Could not open a pull request (Settings > Actions > General lets workflows create them); the car-photos branch has the list.'
+          fi

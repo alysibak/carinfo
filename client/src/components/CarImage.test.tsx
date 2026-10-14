@@ -4,38 +4,56 @@ import CarImage from './CarImage';
 import { sparseDashboard } from '../test/fixtures';
 
 const car = sparseDashboard.car;
+const COMMONS = 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Corolla.jpg';
 const photographed = {
   ...car,
-  photo: { file: '13416_st0640_046.png', caption: '2020 Toyota Corolla 4 DR FWD' },
+  photo: {
+    src: `${COMMONS}/500px-Corolla.jpg`,
+    thumb: `${COMMONS}/250px-Corolla.jpg`,
+    page: 'https://commons.wikimedia.org/wiki/File:Corolla.jpg',
+    credit: 'Jane Doe, CC BY-SA 4.0',
+    generation: 'Toyota Corolla (E210)',
+    caption: '2020 Corolla SE sedan',
+  },
 };
 
 describe('CarImage', () => {
-  it('shows NHTSA’s photo, resized, with the test car named', () => {
-    render(<CarImage car={photographed} credit />);
-    const img = screen.getByRole('img', { name: /2020 Toyota Corolla.*photographed by NHTSA/i });
-    expect(img.getAttribute('src')).toBe(
-      `/_vercel/image?url=${encodeURIComponent('https://static.nhtsa.gov/images/vehicles/13416_st0640_046.png')}&w=256&q=75`,
-    );
-    expect(img).toHaveAttribute('title', expect.stringContaining('2020 Toyota Corolla 4 DR FWD'));
-    expect(screen.getByText('Photo: NHTSA')).toBeInTheDocument();
+  it('shows the generation’s photo, small in cards, with what it shows', () => {
+    render(<CarImage car={photographed} />);
+    const img = screen.getByRole('img', { name: /photo of the Toyota Corolla \(E210\)/i });
+    expect(img).toHaveAttribute('src', `${COMMONS}/250px-Corolla.jpg`);
+    expect(img).toHaveAttribute('title', expect.stringContaining('Jane Doe, CC BY-SA 4.0'));
+    expect(screen.queryByRole('link')).toBeNull();
   });
 
-  it('falls back to the original, then to the illustration', () => {
-    render(<CarImage car={photographed} />);
-    fireEvent.error(screen.getByRole('img', { name: /photographed by NHTSA/i }));
-    const original = screen.getByRole('img', { name: /photographed by NHTSA/i });
-    expect(original.getAttribute('src')).toBe(
-      'https://static.nhtsa.gov/images/vehicles/13416_st0640_046.png',
+  it('credits the photographer on the car page, linked to the photo’s page', () => {
+    render(<CarImage car={photographed} size="large" credit />);
+    expect(screen.getByRole('img')).toHaveAttribute('src', `${COMMONS}/500px-Corolla.jpg`);
+    expect(screen.getByRole('link', { name: 'Photo: Jane Doe, CC BY-SA 4.0' })).toHaveAttribute(
+      'href',
+      'https://commons.wikimedia.org/wiki/File:Corolla.jpg',
     );
-    fireEvent.error(original);
-    expect(screen.queryByRole('img', { name: /photographed by NHTSA/i })).toBeNull();
+  });
+
+  it('falls back to the other copy, then to the illustration', () => {
+    render(<CarImage car={photographed} />);
+    fireEvent.error(screen.getByRole('img', { name: /photo of the/i }));
+    const other = screen.getByRole('img', { name: /photo of the/i });
+    expect(other).toHaveAttribute('src', `${COMMONS}/500px-Corolla.jpg`);
+    fireEvent.error(other);
+    expect(screen.queryByRole('img', { name: /photo of the/i })).toBeNull();
     expect(screen.getByRole('img', { name: /illustration placeholder/i })).toBeInTheDocument();
   });
 
-  it('draws the illustration for a car without a photo, or with a bad file name', () => {
+  it('draws the illustration for a car without a photo, or with one from elsewhere', () => {
     const { rerender } = render(<CarImage car={car} />);
     expect(screen.getByRole('img', { name: /illustration placeholder/i })).toBeInTheDocument();
-    rerender(<CarImage car={{ ...car, photo: { file: '../x.png', caption: '' } }} />);
+    const elsewhere = {
+      ...photographed.photo,
+      src: 'https://example.com/a.jpg',
+      thumb: 'https://example.com/b.jpg',
+    };
+    rerender(<CarImage car={{ ...car, photo: elsewhere }} />);
     expect(screen.getByRole('img', { name: /illustration placeholder/i })).toBeInTheDocument();
   });
 });

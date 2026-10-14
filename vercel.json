@@ -25,22 +25,10 @@
       "destination": "/api/index"
     },
     {
-      "source": "/((?!assets/)(?!_vercel/)(?!.*\\.[a-zA-Z0-9]{2,5}$).*)",
+      "source": "/((?!assets/)(?!.*\\.[a-zA-Z0-9]{2,5}$).*)",
       "destination": "/index.html"
     }
   ],
-  "images": {
-    "sizes": [256, 640],
-    "formats": ["image/webp"],
-    "minimumCacheTTL": 2678400,
-    "remotePatterns": [
-      {
-        "protocol": "https",
-        "hostname": "static.nhtsa.gov",
-        "pathname": "/images/vehicles/**"
-      }
-    ]
-  },
   "functions": {
     "api/index.ts": {
       "includeFiles": "{server/data/cars-ready.json,client/dist/index.html}",

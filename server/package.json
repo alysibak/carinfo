@@ -12,7 +12,7 @@
     "build-enrichment": "tsx scripts/build-content-enrichment.ts",
     "build-runtime-db": "tsx scripts/build-runtime-database.ts",
     "build-nhtsa-backfill": "tsx scripts/build-nhtsa-backfill.ts --",
-    "build-nhtsa-photos": "tsx scripts/build-nhtsa-photos.ts --",
+    "build-car-photos": "tsx scripts/build-car-photos.ts",
     "build-horsepower": "tsx scripts/build-horsepower-enrichment.ts",
     "reconcile-fuel-types": "tsx scripts/reconcile-fuel-types.ts",
     "backfill-epa-variants": "tsx scripts/backfill-epa-variants.ts",

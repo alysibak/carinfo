@@ -17,7 +17,7 @@ import { cleanCorpusHorsepower } from '../src/utils/horsepower-plausibility.js';
 import { resolveDataFile } from '../src/utils/data-paths.js';
 import { ensureUniqueIds } from '../src/utils/unique-ids.js';
 import { withRunningCosts } from '../src/utils/running-cost.js';
-import { loadNhtsaPhotos, withNhtsaPhotos } from '../src/utils/nhtsa-photos.js';
+import { loadCarPhotos, withCarPhotos } from '../src/utils/car-photos.js';
 import { packRuntimeDatabase } from '../src/services/runtime-db.js';
 import type { Car } from '../src/types/car.types.js';
 
@@ -41,7 +41,10 @@ console.log(
 );
 
 const { cars: normalized, report: hp } = cleanCorpusHorsepower(
-  unifyModelSpelling(unifyMakeSpelling(db.cars)).map((car) => normalizeCarRecord(enrichCar(car))),
+  // Photos by EPA's own model names, before the display names replace them.
+  withCarPhotos(unifyModelSpelling(unifyMakeSpelling(db.cars)), loadCarPhotos()).map((car) =>
+    normalizeCarRecord(enrichCar(car)),
+  ),
 );
 for (const [count, what] of [
   [hp.induction, 'borrowed from a non-turbo sibling'],
@@ -64,12 +67,11 @@ if (hp.filled) {
 
 // Slug collisions made some vehicles unreachable by ID — see utils/unique-ids.ts.
 const { cars: unique, report } = ensureUniqueIds(normalized);
-// Yearly running costs, for "cheapest to own" searches (see utils/running-cost.ts),
-// and NHTSA's photo of the car where it has one (see utils/nhtsa-photos.ts).
-const cars = withNhtsaPhotos(withRunningCosts(unique), loadNhtsaPhotos());
+// Yearly running costs, for "cheapest to own" searches (see utils/running-cost.ts).
+const cars = withRunningCosts(unique);
 const photographed = cars.filter((car) => car.photo).length;
 console.log(
-  `[build-runtime-db] NHTSA photos for ${photographed.toLocaleString()} of ${cars.length.toLocaleString()} cars.`,
+  `[build-runtime-db] Photos (Wikimedia Commons) for ${photographed.toLocaleString()} of ${cars.length.toLocaleString()} cars.`,
 );
 if (report.mergedDuplicates.length || report.renamed.length) {
   console.log(

@@ -1,0 +1,154 @@
+import { describe, expect, it } from 'vitest';
+import type { Car } from '../types/car.types.js';
+import {
+  type CarPhotoFile,
+  epaBaseModel,
+  generationFor,
+  type PhotoGeneration,
+  photoFor,
+  photoQueries,
+  queryKey,
+  withCarPhotos,
+} from './car-photos.js';
+
+const car = (year: number, make: string, model: string, trim?: string): Car => ({
+  id: `${make}-${model}-${year}`.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+  make,
+  model,
+  year,
+  trim,
+  bodyStyle: 'sedan',
+  driveType: 'FWD',
+  provenance: {},
+  engine: { fuelType: 'gasoline' },
+  fuelEconomy: {},
+  transmission: { type: 'automatic' },
+});
+
+const image = (name: string) => ({
+  src: `https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/${name}/500px-${name}`,
+  thumb: `https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/${name}/250px-${name}`,
+  page: `https://commons.wikimedia.org/wiki/File:${name}`,
+  artist: 'Jane Doe',
+  license: 'CC BY-SA 4.0',
+});
+
+const gen = (
+  title: string,
+  years: [number, number],
+  basis: PhotoGeneration['basis'],
+  img: string,
+): PhotoGeneration => ({ title, years, basis, image: img });
+
+const file: CarPhotoFile = {
+  source: 'test',
+  fetched: '2026-10-14',
+  queries: {
+    [queryKey('Honda', 'civic')]: 'Honda Civic',
+    [queryKey('Mercedes-Benz', 'C Class')]: 'Mercedes-Benz C-Class',
+    [queryKey('BMW', 'M')]: null,
+    [queryKey('BMW', 'M3')]: 'BMW M3',
+  },
+  articles: {
+    'Honda Civic': [
+      gen('Honda Civic (tenth generation)', [2016, 2021], 'model_years', 'Civic10.jpg'),
+      gen('Honda Civic (eleventh generation)', [2022, 2027], 'model_years', 'Civic11.jpg'),
+    ],
+    'Mercedes-Benz C-Class': [
+      gen('Mercedes-Benz C-Class (W205)', [2014, 2021], 'production', 'W205.jpg'),
+      gen('Mercedes-Benz C-Class (W206)', [2021, 2027], 'production', 'W206.jpg'),
+    ],
+    'BMW M3': [gen('BMW M3 (G80)', [2020, 2027], 'production', 'Hotlinked.jpg')],
+  },
+  images: {
+    'Civic10.jpg': image('Civic10.jpg'),
+    'Civic11.jpg': image('Civic11.jpg'),
+    'W205.jpg': image('W205.jpg'),
+    'W206.jpg': image('W206.jpg'),
+    'Hotlinked.jpg': { ...image('x.jpg'), src: 'https://example.com/x.jpg' },
+  },
+};
+
+describe('epaBaseModel', () => {
+  it('reads EPA’s family name from the trim slug', () => {
+    expect(epaBaseModel('c-class-automatic-9-spd')).toEqual(['c', 'class']);
+    expect(epaBaseModel('5-series-3mode-clkup-automatic-s6')).toEqual(['5', 'series']);
+    expect(epaBaseModel(undefined)).toEqual([]);
+    expect(epaBaseModel('no-transmission-here')).toEqual([]);
+  });
+});
+
+describe('photoQueries', () => {
+  it('asks by EPA’s family name, cased from the car’s own, then by its first words', () => {
+    expect(photoQueries(car(2019, 'Mazda', 'CX-5 2WD', 'cx-5-automatic-s6'))).toEqual(['CX-5']);
+    expect(photoQueries(car(2019, 'BMW', 'M3 Competition', 'm-manual-6-spd'))).toEqual([
+      'M',
+      'M3 Competition',
+      'M3',
+    ]);
+    expect(photoQueries(car(2019, 'Volkswagen', 'GTI', 'golf-gti-manual-6-spd'))[0]).toBe(
+      'Golf GTI',
+    );
+    expect(
+      photoQueries(car(2019, 'Mercedes-Benz', 'C300 4matic', 'c-class-automatic-9-spd'))[0],
+    ).toBe('C Class');
+    expect(photoQueries(car(2008, 'Chevrolet', 'Silverado C15 2WD'))).toEqual([
+      'Silverado C15',
+      'Silverado',
+    ]);
+  });
+});
+
+describe('generationFor', () => {
+  const civic = file.articles['Honda Civic'];
+  const cClass = file.articles['Mercedes-Benz C-Class'];
+  it('takes the generation whose model years hold the year', () => {
+    expect(generationFor(civic, 2021)?.title).toContain('tenth');
+    expect(generationFor(civic, 2022)?.title).toContain('eleventh');
+    expect(generationFor(civic, 2015)).toBeUndefined();
+  });
+
+  it('reads production years a year behind', () => {
+    // Built 2014-21: the 2021 car is a W205; the 2022, a W206.
+    expect(generationFor(cClass, 2021)?.title).toContain('W205');
+    expect(generationFor(cClass, 2022)?.title).toContain('W206');
+    expect(generationFor(cClass, 2015)?.title).toContain('W205');
+  });
+});
+
+describe('photoFor', () => {
+  it('gives the generation’s photo with its credit', () => {
+    const photo = photoFor(car(2019, 'Honda', 'Civic 4Dr', 'civic-automatic-av-s7'), file);
+    expect(photo).toEqual({
+      src: image('Civic10.jpg').src,
+      thumb: image('Civic10.jpg').thumb,
+      page: image('Civic10.jpg').page,
+      credit: 'Jane Doe, CC BY-SA 4.0',
+      generation: 'Honda Civic (tenth generation)',
+    });
+  });
+
+  it('goes on to the next name when one has no article', () => {
+    expect(photoFor(car(2021, 'BMW', 'M3', 'm-manual-6-spd'), file)).toBeUndefined();
+    expect(
+      photoFor(car(2021, 'Mercedes-Benz', 'C300', 'c-class-automatic-9-spd'), file)?.generation,
+    ).toContain('W205');
+  });
+
+  it('takes only photos on Commons', () => {
+    // BMW M3's only photo is hosted elsewhere.
+    expect(photoFor(car(2021, 'BMW', 'M3', 'm3-manual-6-spd'), file)).toBeUndefined();
+  });
+});
+
+describe('withCarPhotos', () => {
+  it('shares one photo among a generation’s cars and clears stale ones', () => {
+    const a = car(2019, 'Honda', 'Civic 4Dr', 'civic-automatic-av-s7');
+    const b = car(2020, 'Honda', 'Civic 2Dr', 'civic-manual-6-spd');
+    const stale = { ...car(2019, 'Kia', 'Rio', 'rio-manual-6-spd'), photo: photoFor(a, file) };
+    const [pa, pb, ps] = withCarPhotos([a, b, stale], file);
+    expect(pa.photo).toBe(pb.photo);
+    expect(ps).not.toHaveProperty('photo');
+    expect(withCarPhotos([a], null)[0]).toBe(a);
+  });
+});

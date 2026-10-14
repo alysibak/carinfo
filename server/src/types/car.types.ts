@@ -158,11 +158,11 @@ export interface CarSpecs {
   };
 
   /**
-   * NHTSA's photo of the car it crash-tested for this model year, where the
-   * test car matches this one (utils/nhtsa-photos.ts): the file on its image
-   * host, and NHTSA's name for the car photographed.
+   * A photo of the car's generation from Wikimedia Commons, found through
+   * its Wikipedia article (utils/car-photos.ts), with the credit its licence
+   * asks for.
    */
-  photo?: { file: string; caption: string };
+  photo?: CarPhoto;
   productionYears?: {
     start: number;
     end?: number;
@@ -170,6 +170,22 @@ export interface CarSpecs {
 }
 
 export type Car = CarSpecs & { id: string };
+
+export interface CarPhoto {
+  /** About 500 px wide, on upload.wikimedia.org. */
+  src: string;
+  /** About 250 px wide, for cards and lists. */
+  thumb: string;
+  /** The file's page on Commons: its author, licence and full size. */
+  page: string;
+  /** Author and licence: "Jane Doe, CC BY-SA 4.0". */
+  credit: string;
+  licenseUrl?: string;
+  /** What it pictures: the generation's article, "Honda Civic (tenth generation)". */
+  generation: string;
+  /** Wikipedia's caption for it: "2016 Honda Civic EX-T sedan". */
+  caption?: string;
+}
 
 export interface CarFilter {
   make?: string[];

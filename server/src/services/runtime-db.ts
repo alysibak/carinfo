@@ -1,4 +1,4 @@
-import type { Car, Provenance } from '../types/car.types.js';
+import type { Car, CarPhoto, Provenance } from '../types/car.types.js';
 
 /**
  * The on-disk format of cars-ready.json, the pre-built corpus the API parses
@@ -13,6 +13,8 @@ import type { Car, Provenance } from '../types/car.types.js';
  * every update spreads into a new object) fails loudly instead of silently
  * rewriting the provenance of thousands of other cars.
  *
+ * Photos are interned the same way: the cars of a generation share one.
+ *
  * Files in the original format (a plain `cars` array) still load.
  */
 
@@ -22,12 +24,14 @@ export interface RuntimeDatabaseMeta {
   builtAt?: string;
 }
 
-type StoredCar = Omit<Car, 'provenance'> & { provenance: number };
+type StoredCar = Omit<Car, 'provenance' | 'photo'> & { provenance: number; photo?: number };
 
 export interface RuntimeDatabaseFile extends RuntimeDatabaseMeta {
   ready: true;
   format: 2;
   provenance: Provenance[];
+  /** Absent in files built before photos. */
+  photos?: CarPhoto[];
   cars: StoredCar[];
 }
 
@@ -47,6 +51,8 @@ function canonicalKey(provenance: Provenance): string {
 export function packRuntimeDatabase(cars: Car[], meta: RuntimeDatabaseMeta): RuntimeDatabaseFile {
   const table: Provenance[] = [];
   const indexByKey = new Map<string, number>();
+  const photos: CarPhoto[] = [];
+  const photoIndex = new Map<string, number>();
   const stored = cars.map((car): StoredCar => {
     const provenance = car.provenance ?? {};
     const key = canonicalKey(provenance);
@@ -56,9 +62,18 @@ export function packRuntimeDatabase(cars: Car[], meta: RuntimeDatabaseMeta): Run
       table.push(provenance);
       indexByKey.set(key, index);
     }
-    return { ...car, provenance: index };
+    const { photo, ...rest } = car;
+    if (!photo) return { ...rest, provenance: index };
+    const photoKey = JSON.stringify(photo);
+    let photoAt = photoIndex.get(photoKey);
+    if (photoAt === undefined) {
+      photoAt = photos.length;
+      photos.push(photo);
+      photoIndex.set(photoKey, photoAt);
+    }
+    return { ...rest, provenance: index, photo: photoAt };
   });
-  return { ready: true, format: 2, ...meta, provenance: table, cars: stored };
+  return { ready: true, format: 2, ...meta, provenance: table, photos, cars: stored };
 }
 
 function isFormat2(db: RuntimeDatabaseFile | LegacyDatabaseFile): db is RuntimeDatabaseFile {
@@ -74,6 +89,7 @@ export function unpackRuntimeDatabase(db: RuntimeDatabaseFile | LegacyDatabaseFi
   if (!isFormat2(db)) return db.cars;
 
   const table = db.provenance.map((entry) => Object.freeze(entry));
+  const photos = (db.photos ?? []).map((entry) => Object.freeze(entry));
   const cars = db.cars as unknown as Car[];
   for (let i = 0; i < db.cars.length; i++) {
     const index = db.cars[i].provenance;
@@ -82,6 +98,14 @@ export function unpackRuntimeDatabase(db: RuntimeDatabaseFile | LegacyDatabaseFi
       throw new Error(`cars-ready.json is corrupt: ${db.cars[i].id} has provenance #${index}`);
     }
     cars[i].provenance = provenance;
+    const photoAt = db.cars[i].photo;
+    if (photoAt !== undefined) {
+      const photo = photos[photoAt];
+      if (photo === undefined) {
+        throw new Error(`cars-ready.json is corrupt: ${db.cars[i].id} has photo #${photoAt}`);
+      }
+      cars[i].photo = photo;
+    }
   }
   return cars;
 }

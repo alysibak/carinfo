@@ -51,6 +51,23 @@ describe('runtime database format', () => {
     }).toThrow(TypeError);
   });
 
+  it('stores each photo once and gives it back shared', () => {
+    const photo = {
+      src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/C.jpg/500px-C.jpg',
+      thumb: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/C.jpg/250px-C.jpg',
+      page: 'https://commons.wikimedia.org/wiki/File:C.jpg',
+      credit: 'Jane Doe, CC BY-SA 4.0',
+      generation: 'Honda Civic (eleventh generation)',
+    };
+    const photographed = [{ ...cars[0], photo }, { ...cars[1], photo: { ...photo } }, cars[2]];
+    const file = packRuntimeDatabase(photographed, META);
+    expect(file.photos).toHaveLength(1);
+    expect(file.cars.map((c) => c.photo)).toEqual([0, 0, undefined]);
+    const restored = unpackRuntimeDatabase(throughDisk(file));
+    expect(restored).toEqual(photographed);
+    expect(restored[0].photo).toBe(restored[1].photo);
+  });
+
   it('still reads files in the original format', () => {
     const legacy = { cars: throughDisk(cars), lastUpdated: META.lastUpdated, ready: true };
     expect(unpackRuntimeDatabase(legacy)).toEqual(cars);

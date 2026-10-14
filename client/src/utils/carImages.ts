@@ -1,4 +1,4 @@
-import type { BodyStyle } from '../types/car.types';
+import type { BodyStyle, CarSpecs } from '../types/car.types';
 import sedanImg from '../assets/body-types/sedan.webp';
 import suvImg from '../assets/body-types/suv.webp';
 import truckImg from '../assets/body-types/truck.webp';
@@ -76,21 +76,18 @@ export function getBodySilhouettePath(bodyStyle: BodyStyle | string): string {
   }
 }
 
-const NHTSA_PHOTO_HOST = 'https://static.nhtsa.gov/images/vehicles/';
-/** As server/src/utils/nhtsa-photos.ts checks it: a bare file name. */
-const NHTSA_PHOTO_FILE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,80}\.(?:png|jpe?g)$/i;
+const COMMONS_UPLOAD = 'https://upload.wikimedia.org/wikipedia/commons/';
 
-/** Widths vercel.json lets the image resizer make. */
-export type CarPhotoWidth = 256 | 640;
+/** Which of the photo's copies: about 250 px for cards and lists, 500 px for the car page. */
+export type CarPhotoSize = 'thumb' | 'large';
 
 /**
- * NHTSA's photo of the car, where it has one: first resized to WebP by
- * Vercel (its originals are full-size PNGs), then the original should that
- * fail (as under `npm run dev`, which has no resizer).
+ * The car's photo from Wikimedia Commons, the size asked for first and the
+ * other after it, should that one fail to load.
  */
-export function carPhotoSources(car: { photo?: { file: string } }, width: CarPhotoWidth): string[] {
-  const file = car.photo?.file;
-  if (!file || !NHTSA_PHOTO_FILE.test(file)) return [];
-  const original = `${NHTSA_PHOTO_HOST}${file}`;
-  return [`/_vercel/image?url=${encodeURIComponent(original)}&w=${width}&q=75`, original];
+export function carPhotoSources(car: Pick<CarSpecs, 'photo'>, size: CarPhotoSize): string[] {
+  const photo = car.photo;
+  if (!photo) return [];
+  const order = size === 'thumb' ? [photo.thumb, photo.src] : [photo.src, photo.thumb];
+  return [...new Set(order)].filter((url) => url?.startsWith(COMMONS_UPLOAD));
 }

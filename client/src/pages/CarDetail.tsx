@@ -433,7 +433,7 @@ export default function CarDetail() {
                   car.photo ? 'aspect-4/3 overflow-hidden' : 'h-14 sm:h-20 overflow-hidden'
                 }
               >
-                <CarImage car={car} compact hideCaption width={640} credit />
+                <CarImage car={car} compact hideCaption size="large" credit />
               </div>
               <div className="min-w-0">
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight wrap-break-word">
