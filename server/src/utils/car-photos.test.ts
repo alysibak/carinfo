@@ -27,7 +27,6 @@ const car = (year: number, make: string, model: string, trim?: string): Car => (
 
 const image = (name: string) => ({
   src: `https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/${name}/500px-${name}`,
-  thumb: `https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/${name}/250px-${name}`,
   page: `https://commons.wikimedia.org/wiki/File:${name}`,
   artist: 'Jane Doe',
   license: 'CC BY-SA 4.0',
@@ -156,11 +155,14 @@ describe('photoFor', () => {
     const photo = photoFor(car(2019, 'Honda', 'Civic 4Dr', 'civic-automatic-av-s7'), file);
     expect(photo).toEqual({
       src: image('Civic10.jpg').src,
-      thumb: image('Civic10.jpg').thumb,
       page: image('Civic10.jpg').page,
       credit: 'Jane Doe, CC BY-SA 4.0',
       generation: 'Honda Civic (tenth generation)',
+      years: { from: 2016, to: 2021 },
     });
+    // Years Wikipedia gives as built, not as model years, say so.
+    const cClass = photoFor(car(2015, 'Mercedes-Benz', 'C300', 'c-class-automatic-7-spd'), file);
+    expect(cClass?.years).toEqual({ from: 2014, to: 2021, built: true });
   });
 
   it('goes on to the next name when one has no article', () => {

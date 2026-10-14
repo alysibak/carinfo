@@ -14,7 +14,8 @@ import { efficiencyOf, rangeKm } from '../utils/efficiency';
 import { formatMoney, formatMoneyRange, formatMoneyShort } from '../utils/money';
 import { summarizeComparison } from '../utils/compareSummary';
 import { fieldProvenanceSource } from '../utils/dataTrust';
-import CarImage from '../components/CarImage';
+import VehiclePlaceholder from '../components/VehiclePlaceholder';
+import CarPhotoButton from '../components/CarPhotoButton';
 import { StatusToast, LoadingScreen } from '../components/ui';
 import { usePageMeta } from '../utils/pageMeta';
 import { formatCompareIds, parseCompareIds } from '../utils/compareIds';
@@ -512,7 +513,12 @@ export default function Compare() {
                       >
                         <Link to={`/car/${car.id}`} className="block group/col">
                           <div className="relative h-9 sm:h-12 mb-2 overflow-hidden max-w-[96px] sm:max-w-[120px] sm:mx-auto">
-                            <CarImage car={car} compact hideCaption className="absolute! inset-0" />
+                            <VehiclePlaceholder
+                              car={car}
+                              compact
+                              hideCaption
+                              className="absolute! inset-0"
+                            />
                           </div>
                           <h2 className="text-sm sm:text-base font-semibold text-white leading-snug group-hover/col:underline underline-offset-4 decoration-zinc-600 wrap-break-word">
                             {car.year} {car.make} {displayModelLabel(car)}
@@ -523,14 +529,21 @@ export default function Compare() {
                             </p>
                           )}
                         </Link>
-                        <button
-                          type="button"
-                          onClick={() => removeCarFromComparison(car.id)}
-                          className="mt-1.5 min-h-[36px] text-xs text-zinc-400 hover:text-red-300 transition-colors"
-                          aria-label={`Remove the ${car.year} ${car.make} ${displayModelLabel(car)}`}
-                        >
-                          Remove
-                        </button>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 sm:justify-center">
+                          <CarPhotoButton
+                            car={car}
+                            label="Photo"
+                            className="min-h-[36px] text-xs"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeCarFromComparison(car.id)}
+                            className="min-h-[36px] text-xs text-zinc-400 hover:text-red-300 transition-colors"
+                            aria-label={`Remove the ${car.year} ${car.make} ${displayModelLabel(car)}`}
+                          >
+                            Remove
+                          </button>
+                        </div>
                       </th>
                     ))}
                   </tr>

@@ -174,8 +174,6 @@ export type Car = CarSpecs & { id: string };
 export interface CarPhoto {
   /** About 500 px wide, on Wikimedia's servers. */
   src: string;
-  /** About 250 px wide, for cards and lists. */
-  thumb: string;
   /** The file's page on Commons: its author, licence and full size. */
   page: string;
   /** Author and licence: "Jane Doe, CC BY-SA 4.0". */
@@ -183,6 +181,8 @@ export interface CarPhoto {
   licenseUrl?: string;
   /** What it pictures: the generation's article, "Honda Civic (tenth generation)". */
   generation: string;
+  /** The years the generation covers: model years, or, where Wikipedia gives only those, years built. */
+  years?: { from: number; to: number; built?: true };
   /** Wikipedia's caption for it: "2016 Honda Civic EX-T sedan". */
   caption?: string;
 }

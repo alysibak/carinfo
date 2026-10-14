@@ -54,7 +54,6 @@ describe('runtime database format', () => {
   it('stores each photo once and gives it back shared', () => {
     const photo = {
       src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/C.jpg/500px-C.jpg',
-      thumb: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/C.jpg/250px-C.jpg',
       page: 'https://commons.wikimedia.org/wiki/File:C.jpg',
       credit: 'Jane Doe, CC BY-SA 4.0',
       generation: 'Honda Civic (eleventh generation)',

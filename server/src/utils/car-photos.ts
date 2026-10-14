@@ -36,8 +36,6 @@ export interface PhotoGeneration {
 export interface PhotoImage {
   /** About 500 px wide, on Wikimedia's servers (see COMMONS_FILE). */
   src: string;
-  /** About 250 px wide. */
-  thumb: string;
   /** The file's page on Commons. */
   page: string;
   artist: string;
@@ -209,12 +207,7 @@ function showsMake(generation: PhotoGeneration, make: string): boolean {
 }
 
 function isCommonsImage(image: PhotoImage | undefined): image is PhotoImage {
-  return Boolean(
-    image &&
-    COMMONS_FILE.test(image.src) &&
-    COMMONS_FILE.test(image.thumb) &&
-    image.page.startsWith(COMMONS_PAGE),
-  );
+  return Boolean(image && COMMONS_FILE.test(image.src) && image.page.startsWith(COMMONS_PAGE));
 }
 
 /** The car's photo from the file, or undefined. */
@@ -232,11 +225,15 @@ export function photoFor(
     if (!isCommonsImage(image)) return undefined;
     return {
       src: image.src,
-      thumb: image.thumb,
       page: image.page,
       credit: [image.artist, image.license].filter(Boolean).join(', '),
       ...(image.licenseUrl ? { licenseUrl: image.licenseUrl } : {}),
       generation: generation.title,
+      years: {
+        from: generation.years[0],
+        to: generation.years[1],
+        ...(generation.basis === 'production' ? { built: true as const } : {}),
+      },
       ...(generation.caption ? { caption: generation.caption } : {}),
     };
   }

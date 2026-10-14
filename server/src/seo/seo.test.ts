@@ -260,7 +260,6 @@ describe('share image', () => {
       ...car(),
       photo: {
         src: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ab/C.jpg/500px-C.jpg',
-        thumb: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ab/C.jpg/250px-C.jpg',
         page: 'https://commons.wikimedia.org/wiki/File:C.jpg',
         credit: 'Jane Doe, CC BY-SA 4.0',
         generation: 'Honda Civic (eleventh generation)',

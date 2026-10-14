@@ -218,7 +218,6 @@ export async function fetchImages(get: ApiGet, files: string[]): Promise<Map<str
       const name = (renamed.get(page.title) ?? page.title).replace(/^File:/, '');
       out.set(name, {
         src,
-        thumb: src.includes('/500px-') ? src.replace('/500px-', '/250px-') : src,
         page: info.descriptionurl,
         artist: plainText(meta.Artist?.value ?? '').slice(0, 100),
         license,

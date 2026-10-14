@@ -79,16 +79,27 @@ export function getBodySilhouettePath(bodyStyle: BodyStyle | string): string {
 /** Commons' files and their resized copies (served from thumb.wikimedia.org). */
 const COMMONS_FILE = /^https:\/\/(?:upload|thumb)\.wikimedia\.org\/wikipedia\/commons\//;
 
-/** Which of the photo's copies: about 250 px for cards and lists, 500 px for the car page. */
-export type CarPhotoSize = 'thumb' | 'large';
-
 /**
- * The car's photo from Wikimedia Commons, the size asked for first and the
- * other after it, should that one fail to load.
+ * The photo's copies for the viewer, best first: 960 px wide (a standard
+ * Wikimedia size), then the 500 px copy the car carries should the larger
+ * fail (a photo smaller than 960 px has no larger copy). None for a photo
+ * not on Commons.
  */
-export function carPhotoSources(car: Pick<CarSpecs, 'photo'>, size: CarPhotoSize): string[] {
-  const photo = car.photo;
-  if (!photo) return [];
-  const order = size === 'thumb' ? [photo.thumb, photo.src] : [photo.src, photo.thumb];
-  return [...new Set(order)].filter((url) => COMMONS_FILE.test(url ?? ''));
+export function carPhotoSources(photo: CarSpecs['photo']): string[] {
+  if (!photo || !COMMONS_FILE.test(photo.src)) return [];
+  return photo.src.includes('/500px-')
+    ? [photo.src.replace('/500px-', '/960px-'), photo.src]
+    : [photo.src];
+}
+
+/** "2016–2021 models", "2022 models on", "built 2014–2021", "built since 2022". */
+export function photoYearsLabel(
+  years: NonNullable<CarSpecs['photo']>['years'],
+  thisYear = new Date().getFullYear(),
+): string | null {
+  if (!years) return null;
+  const open = years.to > thisYear;
+  const span = years.from === years.to ? String(years.from) : `${years.from}–${years.to}`;
+  if (years.built) return open ? `built since ${years.from}` : `built ${span}`;
+  return open ? `${years.from} models on` : `${span} models`;
 }

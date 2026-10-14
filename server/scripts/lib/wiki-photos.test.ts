@@ -248,7 +248,6 @@ describe('API', () => {
     expect([...images.keys()]).toEqual(['Civic.jpg']);
     expect(images.get('Civic.jpg')).toEqual({
       src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Civic.jpg/500px-Civic.jpg',
-      thumb: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Civic.jpg/250px-Civic.jpg',
       page: 'https://commons.wikimedia.org/wiki/File:Civic.jpg',
       artist: 'Jane Doe',
       license: 'CC BY-SA 4.0',
