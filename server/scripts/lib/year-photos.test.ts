@@ -236,6 +236,37 @@ describe('scoreYearPhoto among versions', () => {
     );
   });
 
+  it('takes no special edition, race car, cab or photo of several cars', () => {
+    const carrera = car(2019, 'Porsche', '911 Carrera S', 'coupe');
+    expect(score('2019 Porsche 911 (991) Speedster front NYIAS 2019.jpg', carrera)).toBeUndefined();
+    const veloster = car(2020, 'Hyundai', 'Veloster');
+    expect(score('2020 Hyundai Veloster de compétition au SIAM 2020.jpg', veloster)).toBe(
+      undefined,
+    );
+    const highlander = car(2014, 'Toyota', 'Highlander 2WD', 'suv');
+    expect(score('2014 Toyota Highlander XLE NYC yellow cab front.jpg', highlander)).toBe(
+      undefined,
+    );
+    const c4 = car(2013, 'Porsche', '911 Carrera 4 Cabriolet', 'convertible');
+    expect(
+      score('2013 Porsche 911 Carrera Cabriolet, Carrera 4S Cabriolet, and Carrera 4.jpg', c4),
+    ).toBeUndefined();
+    const silverado = car(2007, 'Chevrolet', 'Silverado Classic 15 Hybrid 2WD', 'truck');
+    expect(score('2007 Chevrolet Silverado C2500HD, Front Right, 11-05-2020.jpg', silverado)).toBe(
+      undefined,
+    );
+  });
+
+  it('reads "RS 3" as one name, not the TT RS', () => {
+    const cars = [car(2019, 'Audi', 'RS 3'), car(2019, 'Audi', 'TT RS Coupe', 'coupe')];
+    const withLines = { ...context, lines: makeLines(cars, context.separateModels) };
+    expect(modelKey(cars[0], context.separateModels)).toEqual(['RS', '3']);
+    expect(scoreYearPhoto('2019 Audi TT RS front NYIAS 2019.jpg', cars[0], withLines)).toBe(
+      undefined,
+    );
+    expect(scoreYearPhoto('2019 Audi RS 3 sedan front.jpg', cars[0], withLines)).toBeDefined();
+  });
+
   it('keeps doors apart', () => {
     const twoDoor = car(2021, 'MINI', 'Cooper S Hardtop 2 door');
     expect(score('2021 Mini Cooper S 5-door orange front view.jpg', twoDoor)).toBeUndefined();

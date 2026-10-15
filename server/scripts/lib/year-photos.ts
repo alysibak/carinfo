@@ -73,6 +73,7 @@ export function namedForYear(file: string, year: number): boolean {
 }
 
 /** More than one car: "2013 Lincoln MKZ & 1962 Lincoln Continental". */
+const MORE_CARS = /,[^,]+, and /i;
 const TWO_CARS =
   /(?:&|\+|\band\b|\bvs\.?|\bversus\b|\bwith\b|\bnext to\b)\s+(?:an?\s+|the\s+)?(?:19|20)\d{2}\b/i;
 
@@ -112,6 +113,8 @@ export function modelKey(car: Pick<Car, 'model'>, separateModels: Set<string>): 
   if (!words.length) return [];
   const two = words.slice(0, 2);
   if (words.length >= 2 && TWO_WORD_FIRSTS.has(words[0].toLowerCase())) return two;
+  // "RS 3", "GR 86": letters that name a line, then its number.
+  if (words.length >= 2 && /^[a-z]{1,3}$/i.test(words[0]) && /^\d+$/.test(words[1])) return two;
   if (words.length >= 2 && separateModels.has(compact(two.join(' ')))) return two;
   return [words[0]];
 }
@@ -182,7 +185,10 @@ const NOT_THE_CAR = new Set([
   ...['custom', 'customized', 'customised', 'lifted', 'lowrider', 'slammed', 'bagged', 'replica'],
   ...['challenge', 'cup', 'roadtrek', 'camper', 'motorhome', 'rv', 'campervan', 'conversion'],
   ...['patrol', 'sheriff', 'interceptor', 'rescue', 'btcc', 'dtm', 'wtcc', 'wtcr', 'imsa'],
-  ...['supercup', 'motorsport', 'fascia', 'bumper', 'closeup'],
+  ...['supercup', 'motorsport', 'fascia', 'bumper', 'closeup', 'mod', 'modded'],
+  ...['window', 'quarterwindow', 'handle', 'pillar', 'taxicab', 'hoonitron', 'brake', 'brakes'],
+  ...['disc', 'caliper', 'suspension', 'exhaust', 'muffler', 'tailpipe', 'dragster', 'drag'],
+  ...['whipple', 'wipple'],
 ]);
 
 /** Versions that look unlike the model's others: a Raptor is not an F-150, a GTI not a Golf. */
@@ -207,13 +213,24 @@ const VARIANTS = new Set([
     'polestar',
     've',
     'electrique',
+    'speedster',
+    'gta',
+    'gtam',
+    'gt8',
+    'gt12',
+    'cobra',
+    'svt',
   ],
   // Heavy-duty trucks, whose fronts differ from the light-duty ones the site lists.
   ...['2500', '3500', '4500', '5500', '2500hd', '3500hd', 'hd', 'superduty'],
 ]);
 
 /** A make's versions that look unlike its others: a 911 Turbo is wider than a Carrera. */
-const MAKE_VARIANTS: Record<string, string[]> = { Porsche: ['turbo'] };
+const MAKE_VARIANTS: Record<string, string[]> = {
+  Porsche: ['turbo'],
+  MINI: ['roadster'],
+  GMC: ['xl'],
+};
 /** And in more than a word: a Carrera 4 is wider than a Carrera. */
 const MAKE_PHRASES: Record<string, string[]> = { Porsche: ['carrera 4'] };
 
@@ -240,10 +257,18 @@ const SUBLINES = new Set([
 const OWN_LINES = new Set(['x', 'l', 'im', 'crosstour']);
 
 /** Versions named in more than a word: "SLS AMG Black Series". */
-const VARIANT_PHRASES = ['black series', 'turbo gt', 'gt black'];
+const VARIANT_PHRASES = ['black series', 'turbo gt', 'gt black', 'dark horse', 'project 8'];
+
+/** Not the car as sold, in more than a word: a race car ("de compétition"), a cab. */
+const NOT_THE_CAR_PHRASES = [
+  ...['de competition', 'race car', 'rally car', 'yellow cab', 'taxi cab'],
+  ...['die another day', 'james bond'],
+];
 
 const OPEN = ['convertible', 'cabriolet', 'cabrio', 'roadster', 'spyder', 'spider', 'volante'];
-const WAGON = ['wagon', 'estate', 'avant', 'sportwagen', 'allroad', 'sportbrake', 'shooting'];
+const WAGON = [
+  ...['wagon', 'estate', 'avant', 'sportwagen', 'allroad', 'sportbrake', 'shooting', 'variant'],
+];
 const HATCH = ['hatchback', 'hatch', 'sportback', 'liftback'];
 const SEDAN = ['sedan', 'saloon'];
 
@@ -369,7 +394,9 @@ const ELSEWHERE_PLACES = [
   ...['surabaya', 'manila', 'doha', 'riyadh', 'guangzhou', 'shenzhen', 'chengdu', 'taipei'],
   ...['brunei', 'cambodia', 'pakistan', 'sri lanka', 'bangladesh', 'nepal', 'kenya', 'nigeria'],
   ...['morocco', 'peru', 'ecuador', 'uruguay', 'paraguay', 'bolivia', 'venezuela', 'cuba'],
-  ...['ludwigsburg', 'automesse', 'techno classica', 'retro classics', 'leonberg', 'kuta', 'bali'],
+  ...['ludwigsburg', 'automesse', 'techno classica', 'retro classics', 'leonberg', 'kuta'],
+  ...['bali', 'arese', 'museo', 'buenos aires', 'sao paulo', 'são paulo', 'rio de janeiro'],
+  ...['bogota', 'bogotá', 'gingin', 'western australia', 'perth', 'ascot'],
 ];
 
 /** Where a file says it was taken, from Commons: its camera's place and its categories. */
@@ -412,9 +439,12 @@ const US_STYLE = [
  * "(374PS)"), or an engine North America did not get ("1.6 TDI", "CRDi").
  */
 const CAR_ABROAD = [
-  /\b[A-Z]{2}\d{2} ?[A-Z]{3}\b/,
+  // A British plate, or the age it gives: "2007 (57) Nissan Murano".
+  /\b[A-Z]{2}\d{2} ?[A-Z]{3}\b|^\d{4}(?:[-–]\d{2,4})? \(\d{2}\) /,
   /\b\d{3,4} ?cc\b|\(\d{2,4} ?ps\)/i,
   /\b1\.[2-6] ?tdi\b|\b\d\.\d ?(?:vti|tdci|crdi|dci|hdi|cdti|jtd)\b/i,
+  // Models North America never had, whose versions share a name with its own: an up! GTI.
+  /\bup!|\b(?:polo|lupo|touran|sharan|t-roc|t-cross|amarok|scirocco)\b/i,
 ];
 
 /**
@@ -424,10 +454,11 @@ const CAR_ABROAD = [
  */
 const PHOTO_ABROAD = [
   /\b(?:automatic|auto|manual|s-a|cvt|dsg|dct|steptronic|tiptronic|powershift)\s+\d\.\d\b/i,
-  /\b\d\.\d(?:\s+(?:front|side))?$|\b(?:auto|automatic|manual)(?: -)?(?: front)?$/i,
+  /\b\d\.\d(?:\s+(?:front|side))?$|\b(?:auto|automatic|manual)(?: -)?(?: front)?(?: \d{1,2})?$/i,
   /\bfos ?\d{0,4}\b|\bgoodwood\b/i,
-  /\((?:\d{4}-\d{2}-\d{2}|\d{2}-\d{2}-\d{4})\)(?: \d{1,2})?$/,
-  /\((?:[a-z]{1,3}\d{1,3}[a-z]?|[a-z]{2,4})\) .*\b(?:sedan|wagon|hatchback|coupe|convertible|ute|liftback|van) \d{1,2}$/i,
+  /\((?:\d{4}-\d{2}-\d{2}|\d{2}-\d{2}-\d{4}|\d{8})\)(?: \d{1,2})?$/,
+  /\([a-z]{1,3}\d{1,3}[a-z]?\)[^()]* 0\d$/i,
+  /\((?:[a-z]{1,3}\d{1,3}[a-z]?|[a-z]{2,4})\) .*\b(?:sedan|wagon|hatchback|coupe|convertible|ute|liftback|van)(?: \d{1,2})?$/i,
   /\b(?:1[3-9]|2\d|3[01])[.-](?:0?[1-9]|1[0-2])[.-](?:\d{2}|\d{4})\b/,
 ];
 
@@ -602,7 +633,8 @@ export function fitsCar(file: string, car: YearPhotoCar, context: YearPhotoConte
 /** How well a file's name fits the car, or undefined when it is not the car. */
 function carFit(file: string, car: YearPhotoCar, context: YearPhotoContext): number | undefined {
   if (!/\.(?:jpe?g|png|webp)$/i.test(file) || !namedForYear(file, car.year)) return undefined;
-  if (TWO_CARS.test(fileCaption(file))) return undefined;
+  // "Carrera Cabriolet, Carrera 4S Cabriolet, and Carrera 4": three cars.
+  if (TWO_CARS.test(fileCaption(file)) || MORE_CARS.test(fileCaption(file))) return undefined;
   const name = tokens(fileCaption(file));
   const nameCompact = name.join('');
   if (!makeNames(car.make).some((m) => nameCompact.includes(compact(m)))) return undefined;
@@ -636,6 +668,8 @@ function carFit(file: string, car: YearPhotoCar, context: YearPhotoContext): num
     (w.length >= 3 && ownName.includes(w)) ||
     (isElectric(w) && [...own].some(isElectric));
   if (name.some((w) => VARIANTS.has(w) && !ownVariant(w))) return undefined;
+  // A heavy-duty truck however written: "C2500HD", "K3500".
+  if (name.some((w) => /^[ck]?[2-5]500(?:hd)?$/.test(w) && !own.has(w))) return undefined;
   if ((MAKE_VARIANTS[car.make] ?? []).some((w) => name.includes(w) !== own.has(w))) {
     return undefined;
   }
@@ -685,6 +719,8 @@ function carFit(file: string, car: YearPhotoCar, context: YearPhotoContext): num
   }
   const caption = fileCaption(file).toLowerCase();
   const ownModel = car.model.toLowerCase();
+  const plain = caption.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (NOT_THE_CAR_PHRASES.some((p) => plain.includes(p))) return undefined;
   const phrases = [...VARIANT_PHRASES, ...(MAKE_PHRASES[car.make] ?? [])];
   if (phrases.some((p) => caption.includes(p) !== ownModel.includes(p))) return undefined;
 
@@ -697,7 +733,7 @@ function carFit(file: string, car: YearPhotoCar, context: YearPhotoContext): num
     // EcoSport Freestyle for a Freestyle. (After it, it is a trim: a Ranger Edge.)
     const ownCompact = compact(car.model);
     for (const other of lines.keys) {
-      if (other === keyCompact || /^\d+$/.test(other) || other.length < 3) continue;
+      if (other === keyCompact || /^\d+$/.test(other) || other.length < 2) continue;
       if (ownCompact.includes(other) || lines.together.has(`${keyCompact}|${other}`)) continue;
       if (!nameCompact.includes(other)) continue;
       const at = keySpan(name, other);
