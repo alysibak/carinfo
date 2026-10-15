@@ -91,9 +91,14 @@ describe('cross-cutting behavior', () => {
 describe('caching', () => {
   it('serves read endpoints with a long CDN TTL and an ETag', async () => {
     const res = await request(app).get('/api/cars/makes');
-    expect(res.headers['cache-control']).toMatch(/s-maxage=\d+/);
-    expect(res.headers['cache-control']).toMatch(/stale-while-revalidate/);
+    expect(res.headers['vercel-cdn-cache-control']).toMatch(/max-age=\d+/);
+    expect(res.headers['vercel-cdn-cache-control']).toMatch(/stale-while-revalidate/);
     expect(res.headers.etag).toMatch(/^W\/"/);
+  });
+
+  it('has browsers revalidate data every time, so a deploy shows at once', async () => {
+    const res = await request(app).get('/api/cars/makes');
+    expect(res.headers['cache-control']).toBe('public, max-age=0, must-revalidate');
   });
 
   it('revalidates to 304 with no body', async () => {

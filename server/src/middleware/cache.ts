@@ -10,30 +10,34 @@ import { getDataVersion } from '../services/car.service.js';
  *
  * `stale-while-revalidate` lets the edge keep serving the old copy while it
  * refreshes in the background, so a deploy never produces a latency spike.
+ *
+ * Only the CDN keeps a copy, though (Vercel's starts afresh with each deploy):
+ * browsers revalidate every time, a 304 when nothing changed. A browser that
+ * kept data an hour and could then serve it stale for a week went on showing
+ * cars without the photos a deploy had added, long after it.
  */
 const ONE_HOUR = 3600;
 const ONE_DAY = 86_400;
 
 export interface CachePolicy {
-  /** Seconds a shared (CDN) cache may serve without revalidating. */
-  sMaxAge?: number;
-  /** Seconds a browser may serve without revalidating. */
-  maxAge?: number;
-  /** Seconds a stale copy may be served while revalidating behind the scenes. */
-  staleWhileRevalidate?: number;
+  /** Seconds the CDN may serve without revalidating. */
+  sMaxAge: number;
+  /** Seconds the CDN may serve a stale copy while it revalidates behind the scenes. */
+  staleWhileRevalidate: number;
 }
 
 export const CACHE_IMMUTABLE_DATA: CachePolicy = {
-  maxAge: ONE_HOUR,
   sMaxAge: ONE_DAY,
   staleWhileRevalidate: ONE_DAY * 7,
 };
 
 export const CACHE_SHORT: CachePolicy = {
-  maxAge: 60,
   sMaxAge: 300,
   staleWhileRevalidate: ONE_HOUR,
 };
+
+/** Browsers revalidate every time: the ETag makes that a 304 while the data is the same. */
+const BROWSER_CACHE_CONTROL = 'public, max-age=0, must-revalidate';
 
 /** Stands in for a deployment name where the host gives none: a restart is a deploy there. */
 const PROCESS_STARTED = `started-${Date.now()}`;
@@ -49,14 +53,9 @@ export function deploymentId(): string {
   return process.env.VERCEL_DEPLOYMENT_ID || process.env.VERCEL_GIT_COMMIT_SHA || PROCESS_STARTED;
 }
 
-function formatCacheControl(policy: CachePolicy): string {
-  const parts = ['public'];
-  if (policy.maxAge != null) parts.push(`max-age=${policy.maxAge}`);
-  if (policy.sMaxAge != null) parts.push(`s-maxage=${policy.sMaxAge}`);
-  if (policy.staleWhileRevalidate != null) {
-    parts.push(`stale-while-revalidate=${policy.staleWhileRevalidate}`);
-  }
-  return parts.join(', ');
+/** For Vercel's CDN alone (it reads this over Cache-Control and passes it on to no one). */
+function formatCdnCacheControl(policy: CachePolicy): string {
+  return `public, max-age=${policy.sMaxAge}, stale-while-revalidate=${policy.staleWhileRevalidate}`;
 }
 
 /**
@@ -66,7 +65,7 @@ function formatCacheControl(policy: CachePolicy): string {
  * a short string) and it turns repeat traffic into 304s with no body.
  */
 export function dataCache(policy: CachePolicy = CACHE_IMMUTABLE_DATA) {
-  const cacheControl = formatCacheControl(policy);
+  const cdnCacheControl = formatCdnCacheControl(policy);
 
   return function dataCacheMiddleware(req: Request, res: Response, next: NextFunction): void {
     let version: string;
@@ -82,7 +81,8 @@ export function dataCache(policy: CachePolicy = CACHE_IMMUTABLE_DATA) {
       .update(`${version}|${deploymentId()}|${req.originalUrl}`)
       .digest('base64url')}"`;
 
-    res.setHeader('Cache-Control', cacheControl);
+    res.setHeader('Cache-Control', BROWSER_CACHE_CONTROL);
+    res.setHeader('Vercel-CDN-Cache-Control', cdnCacheControl);
     res.setHeader('ETag', etag);
     res.setHeader('Vary', 'Accept-Encoding');
 

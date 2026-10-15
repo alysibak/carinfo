@@ -428,7 +428,9 @@ export default function CarDetail() {
           <div className="mt-1 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 lg:gap-8">
             <div className="grid grid-cols-[5.5rem_1fr] sm:grid-cols-[9rem_1fr] gap-4 sm:gap-6 items-center min-w-0">
               <div className="h-14 sm:h-20 overflow-hidden">
-                <VehiclePlaceholder car={car} compact hideCaption />
+                <CarPhotoButton car={car} variant="tile">
+                  <VehiclePlaceholder car={car} compact hideCaption />
+                </CarPhotoButton>
               </div>
               <div className="min-w-0">
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight wrap-break-word">
@@ -453,7 +455,7 @@ export default function CarDetail() {
                 {specLine.length > 0 && (
                   <p className="text-sm text-zinc-500 mt-1 tabular-nums">{specLine.join(' · ')}</p>
                 )}
-                <CarPhotoButton car={car} className="mt-1 min-h-[44px] text-sm" />
+                <CarPhotoButton car={car} className="mt-2 min-h-[40px] text-sm" />
               </div>
             </div>
 

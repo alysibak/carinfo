@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import type { CarSpecs } from '../types/car.types';
 import { carPhotoSources } from '../utils/carImages';
 import { displayVehicleTitle } from '../utils/trimLabel';
@@ -11,7 +11,31 @@ interface CarPhotoButtonProps {
   /** "See photo" on the car page; "Photo" in Compare's narrow columns. */
   label?: string;
   className?: string;
+  /**
+   * "tile" makes its children (the car's illustration) open the photo, with a
+   * small "Photo" mark on them; without a photo they show as they are.
+   */
+  variant?: 'button' | 'tile';
+  children?: ReactNode;
 }
+
+const CAMERA = (
+  <svg
+    className="w-4 h-4 shrink-0"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.5}
+    viewBox="0 0 24 24"
+    aria-hidden
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.4l1.5-2h7.2l1.5 2h2.4A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"
+    />
+    <circle cx="12" cy="13" r="3.5" />
+  </svg>
+);
 
 /**
  * A photo of a car of this model year, on request. The site shows the same
@@ -23,11 +47,13 @@ export default function CarPhotoButton({
   car,
   label = 'See photo',
   className = '',
+  variant = 'button',
+  children,
 }: CarPhotoButtonProps) {
   const [open, setOpen] = useState(false);
   const preloaded = useRef(false);
   const sources = carPhotoSources(car.photo);
-  if (!car.photo || sources.length === 0) return null;
+  if (!car.photo || sources.length === 0) return variant === 'tile' ? <>{children}</> : null;
 
   // Pointing at the button starts the download, so the photo is there on click.
   const preload = () => {
@@ -38,32 +64,39 @@ export default function CarPhotoButton({
     img.src = sources[0];
   };
 
-  return (
-    <>
+  const trigger =
+    variant === 'tile' ? (
+      // The keyboard reaches the photo by its button; this is the picture one clicks.
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-label="Open the photo"
+        onClick={() => setOpen(true)}
+        onPointerEnter={preload}
+        className={`group relative block w-full h-full cursor-zoom-in ${className}`}
+      >
+        {children}
+        <span className="absolute bottom-1 right-1 inline-flex items-center gap-1 bg-zinc-950/85 border border-zinc-700 px-1.5 py-0.5 text-[11px] text-zinc-200 group-hover:border-zinc-400 group-hover:text-white transition-colors">
+          {CAMERA}
+          Photo
+        </span>
+      </button>
+    ) : (
       <button
         type="button"
         onClick={() => setOpen(true)}
         onPointerEnter={preload}
         onFocus={preload}
-        className={`inline-flex items-center gap-1.5 text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-600 hover:decoration-zinc-300 transition-colors ${className}`}
+        className={`inline-flex items-center gap-1.5 border border-zinc-700 px-3 text-zinc-200 hover:border-zinc-400 hover:text-white transition-colors ${className}`}
       >
-        <svg
-          className="w-4 h-4 shrink-0"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.5}
-          viewBox="0 0 24 24"
-          aria-hidden
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.4l1.5-2h7.2l1.5 2h2.4A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"
-          />
-          <circle cx="12" cy="13" r="3.5" />
-        </svg>
+        {CAMERA}
         {label}
       </button>
+    );
+
+  return (
+    <>
+      {trigger}
       <Modal open={open} onClose={() => setOpen(false)} title={displayVehicleTitle(car)}>
         <PhotoViewer photo={car.photo} sources={sources} />
       </Modal>

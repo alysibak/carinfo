@@ -58,6 +58,24 @@ describe('CarPhotoButton', () => {
     expect(screen.getByRole('link', { name: 'See it on Wikimedia Commons' })).toBeInTheDocument();
   });
 
+  it('lets the car’s picture open the photo, and leaves it as it is without one', () => {
+    const { rerender } = render(
+      <CarPhotoButton car={photographed} variant="tile">
+        <span>illustration</span>
+      </CarPhotoButton>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Open the photo' }));
+    expect(screen.getByRole('dialog', { name: /2020 Toyota Corolla/ })).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    rerender(
+      <CarPhotoButton car={car} variant="tile">
+        <span>illustration</span>
+      </CarPhotoButton>,
+    );
+    expect(screen.getByText('illustration')).toBeInTheDocument();
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+
   it('closes on Escape', () => {
     render(<CarPhotoButton car={photographed} label="Photo" />);
     fireEvent.click(screen.getByRole('button', { name: 'Photo' }));
