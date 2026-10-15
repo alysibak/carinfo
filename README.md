@@ -181,7 +181,7 @@ Slug derived from EPA record, e.g. `acura-nsx-1995-nsx-2mode-clkup-automatic-4-s
 | `server/data/horsepower-enrichment.json`      | `epaId`             | EPA test-car rated HP                          | Committed                    |
 | `server/data/nhtsa-safety.json`               | `make\|model\|year` | NHTSA star ratings                             | Committed                    |
 | `server/data/nhtsa-by-car-id.json`            | `id`                | Pre-resolved NHTSA per vehicle                 | New/untracked                |
-| `server/data/car-photos.json`                 | `make\|model name`  | Wikipedia generations and Commons photos       | Committed                    |
+| `server/data/car-photos.json`                 | car id              | Commons photos of each car's own model year    | Committed                    |
 | `server/data/raw/vehicles.csv`                | —                   | EPA source CSV                                 | Gitignored                   |
 | `server/data/raw/nhtsa-enrichment-cache.json` | —                   | NHTSA API cache                                | Gitignored                   |
 | `server/data/raw/nrcan/*.csv`                 | —                   | NRCan fuel consumption ratings                 | Gitignored                   |
@@ -279,7 +279,7 @@ Every Monday, and on demand from the Actions tab, GitHub's runners add the cars 
 
 ### Car photos (`.github/workflows/car-photos.yml`)
 
-Monthly, and whenever its scripts change, GitHub's runners run `build-car-photos`: each model name the cars carry is looked up on Wikipedia (as a title or redirect, else a search result of the same name), and its article's generations (the articles named for it, and its sections' infoboxes) give the model years each covers and a photo. Only photos on Wikimedia Commons are kept, with their author and licence, which the car page credits. `build-runtime-db` gives each car its own generation's photo by model year (`server/src/utils/car-photos.ts`), and only where the photo is of the car's make. The result goes to the `car-photos` branch, like the EPA refresh.
+Monthly, and whenever its scripts change, GitHub's runners run `build-car-photos`. Commons' car photos are mostly named year first ("2021 BMW M3 Competition ... Front.jpg"), so for each make and model year it lists the files named for that year, and picks for each car one of its own model year, make, model, body and version (`server/scripts/lib/year-photos.ts`): not another model or line of the make (a Grand Cherokee for a Cherokee, a Range Rover Sport for a Range Rover), not a variant that looks different (a Raptor, a Carrera 4, an EV), not the inside or a part of the car, a race car, a crash test or a conversion. It also takes only a car sold in North America: Commons says where many photos were taken, and names and categories say more (a British plate or dealer's listing, a European engine, an American date). A photo known to be of another market's car is never taken; in a year the model changed generation (by Wikipedia's generations, which it also collects), and for names that are another car abroad (a European Ford Fusion), only one known to be North America's is. A car with no such photo has none: the site never shows another year's or another market's photo in its place. Only photos on Wikimedia Commons are kept, with their author and licence, which the car page credits. The result goes to the `car-photos` branch, like the EPA refresh.
 
 ### `build-verified-database.ts`
 

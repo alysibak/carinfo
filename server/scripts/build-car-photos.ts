@@ -19,13 +19,22 @@ import { fileURLToPath } from 'url';
 import type { Car } from '../src/types/car.types.js';
 import {
   type CarPhotoFile,
+  changesGeneration,
   photoFor,
   type PhotoGeneration,
   photoQueries,
   queryKey,
 } from '../src/utils/car-photos.js';
 import { unifyMakeSpelling, unifyModelSpelling } from '../src/utils/car-normalize.js';
-import { chooseYearPhoto, makeNames, namedForYear } from './lib/year-photos.js';
+import {
+  chooseYearPhoto,
+  type FilePlace,
+  fitsCar,
+  makeLines,
+  makeNames,
+  namedForYear,
+  photoMarket,
+} from './lib/year-photos.js';
 import {
   COMMONS_API,
   fetchImages,
@@ -227,7 +236,8 @@ async function main(): Promise<void> {
 
   // 6. A photo of each car's own model year: Commons' files named for the
   // year and make ("2021 BMW ..."), the best for each car chosen by
-  // lib/year-photos.ts.
+  // lib/year-photos.ts from those taken in North America, or not known to
+  // be taken elsewhere.
   const commons = wikiClient(undefined, undefined, COMMONS_API);
   const separateModels = new Set<string>();
   for (const [key, { make, query }] of asked) {
@@ -257,23 +267,49 @@ async function main(): Promise<void> {
   log(
     `${listed} photos on Commons named for a make's model year, over ${pairs.size} makes and years.`,
   );
-  const chosen = new Map<string, string>();
+  // Where each file that could be some car's was taken, and its licence.
+  const generationsOnly = { queries, articles };
+  // Each make's models and every make's names, so a photo of another is not taken.
+  const lines = makeLines(unified, separateModels);
+  const everyMake = [
+    ...new Set(unified.flatMap((car) => makeNames(car.make)).map(compactName)),
+  ].filter((name) => name.length >= 3);
+  const context = { separateModels, lines, makes: everyMake };
+  const yearCandidates = new Map<string, string[]>();
   for (const car of unified) {
-    const candidates = makeNames(car.make).flatMap(
-      (name) => named.get(`${name}|${car.year}`) ?? [],
-    );
-    const pick = chooseYearPhoto(candidates, car, { separateModels });
-    if (pick) chosen.set(car.id, pick);
+    const files = makeNames(car.make)
+      .flatMap((name) => named.get(`${name}|${car.year}`) ?? [])
+      .filter((f) => fitsCar(f, car, context));
+    if (files.length) yearCandidates.set(car.id, files);
   }
-  const yearImages = await fetchImages(commons, [...new Set(chosen.values())], 'local');
+  const places = new Map<string, FilePlace>();
+  const candidateFiles = [...new Set([...yearCandidates.values()].flat())];
+  log(`Asking Commons where ${candidateFiles.length} photos were taken...`);
+  const yearImages = await fetchImages(commons, candidateFiles, 'local', places);
+  const markets = { na: 0, other: 0, unknown: 0 };
+  for (const f of yearImages.keys()) markets[photoMarket(f, places.get(f))]++;
+  const located = [...places.values()].filter((p) => p.lat !== undefined).length;
+  log(
+    `${yearImages.size} with a licence: ${markets.na} taken in North America, ${markets.other} elsewhere, ` +
+      `${markets.unknown} not known (${located} with the camera's place).`,
+  );
+
   const yearPhotos: Record<string, string> = {};
-  for (const [id, pick] of chosen) {
-    const image = yearImages.get(pick);
-    if (!image) continue;
-    yearPhotos[id] = pick;
+  let changeovers = 0;
+  for (const car of unified) {
+    const files = (yearCandidates.get(car.id) ?? []).filter((f) => yearImages.has(f));
+    const changeover = changesGeneration(car, generationsOnly);
+    if (changeover) changeovers++;
+    const pick = chooseYearPhoto(files, { ...car, changeover }, { ...context, places });
+    const image = pick && yearImages.get(pick);
+    if (!pick || !image) continue;
+    yearPhotos[car.id] = pick;
     images[pick] = image;
   }
-  log(`${Object.keys(yearPhotos).length} cars have a photo of their own model year.`);
+  log(
+    `${Object.keys(yearPhotos).length} cars have a photo of their own model year ` +
+      `(${changeovers} cars are of a year their model changed generation: a photo from North America only).`,
+  );
 
   const file: CarPhotoFile = {
     source:
@@ -286,13 +322,33 @@ async function main(): Promise<void> {
   };
   writeFileSync(OUT_PATH, serialize(file));
 
-  // For review: a sample of the year photos chosen.
+  // For review: a sample of the year photos chosen, and of those for a year
+  // the model changed generation.
+  const byId = new Map(unified.map((car) => [car.id, car]));
+  const sample = (ids: string[], count: number) => {
+    for (let i = 0; i < Math.min(count, ids.length); i++) {
+      const car = byId.get(ids[Math.floor((i * ids.length) / count)]);
+      if (!car) continue;
+      const pick = yearPhotos[car.id];
+      const place = places.get(pick);
+      const where =
+        place?.lat !== undefined ? ` at ${place.lat.toFixed(1)},${place.lon?.toFixed(1)}` : '';
+      log(
+        `  ${car.year} ${car.make} ${car.model} [${car.bodyStyle}] -> ${pick} (${photoMarket(pick, place)}${where})`,
+      );
+    }
+  };
   const ids = Object.keys(yearPhotos);
-  for (let i = 0; i < Math.min(60, ids.length); i++) {
-    const car = unified.find((c) => c.id === ids[Math.floor((i * ids.length) / 60)]);
-    if (car)
-      log(`  ${car.year} ${car.make} ${car.model} [${car.bodyStyle}] -> ${yearPhotos[car.id]}`);
-  }
+  log('A sample of the photos chosen:');
+  sample(ids, 150);
+  log('A sample of those for a year the model changed generation:');
+  sample(
+    ids.filter((id) => {
+      const car = byId.get(id);
+      return car && changesGeneration(car, generationsOnly);
+    }),
+    40,
+  );
 
   // What the site gets from it.
   const byDecade = new Map<number, [number, number]>();

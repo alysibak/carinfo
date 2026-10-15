@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Car } from '../types/car.types.js';
 import {
   type CarPhotoFile,
+  changesGeneration,
   epaBaseModel,
   generationFor,
   type PhotoGeneration,
@@ -153,6 +154,35 @@ describe('generationFor, where generations overlap', () => {
       gen('Ford Taurus (sixth generation)', [2009, 2019], 'production', 'Taurus6.jpg'),
     ];
     expect(generationFor(taurus, 2018)?.title).toBe('Ford Taurus (sixth generation)');
+  });
+});
+
+describe('changesGeneration', () => {
+  it('is the last year of a generation and the first of the next', () => {
+    const civic = (year: number) => changesGeneration(car(year, 'Honda', 'Civic'), file);
+    expect([2019, 2020, 2021, 2022, 2023].map(civic)).toEqual([false, false, true, true, false]);
+  });
+
+  it('counts production years from the year built', () => {
+    const cClass = (year: number) =>
+      changesGeneration(car(year, 'Mercedes-Benz', 'C300', 'c-class-automatic-9-spd'), file);
+    // Built 2014-2021, then from 2021: abroad, a 2021 photo may show either.
+    expect([2019, 2020, 2021, 2022].map(cClass)).toEqual([false, false, true, false]);
+  });
+
+  it('is not a year the model only has the same generation told twice, or a line alongside', () => {
+    const told = {
+      ...file,
+      articles: {
+        ...file.articles,
+        'Honda Civic': [
+          ...file.articles['Honda Civic'],
+          gen('Honda Civic, tenth generation', [2016, 2021], 'model_years', 'Civic10.jpg'),
+          gen('Honda Civic (commercial)', [1990, 2027], 'production', 'Civic10.jpg'),
+        ],
+      },
+    };
+    expect(changesGeneration(car(2018, 'Honda', 'Civic'), told)).toBe(false);
   });
 });
 

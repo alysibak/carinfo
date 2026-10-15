@@ -246,6 +246,39 @@ function generationOf(
 }
 
 /**
+ * Whether the car's model changed generation within a year of its own, by
+ * Wikipedia's generations: a photo named for the year may show either, and
+ * abroad the new one often came a year sooner (Britain's 2022 Kia Sportage is
+ * the one North America had from 2023). Other markets' versions do not count.
+ */
+export function changesGeneration(
+  car: Pick<Car, 'make' | 'model' | 'trim' | 'year' | 'bodyStyle'>,
+  file: Pick<CarPhotoFile, 'queries' | 'articles'>,
+): boolean {
+  for (const query of photoQueries(car)) {
+    const articles = file.queries[queryKey(car.make, query)];
+    if (!articles?.length) continue;
+    const generations = articles
+      .flatMap((article) => file.articles[article] ?? [])
+      .filter((g) => marketFit(g) >= 0);
+    const own = generationFor(generations, car.year, car);
+    if (!own) return false;
+    const [from, to] = own.years;
+    return generations.some((g) => {
+      // The same generation told twice, or a line alongside it (a medium-duty truck).
+      if (g.years[0] === from && g.years[1] === to) return false;
+      if (g.years[0] <= from && g.years[1] >= to) return false;
+      const lead = g.basis === 'model_years' ? 1 : 0;
+      // The next, sold abroad in the calendar year before its first North American model year.
+      if (g.years[0] > from) return g.years[0] <= car.year + lead;
+      // The last, still sold abroad the year after its last North American model year.
+      return g.years[1] >= car.year - lead;
+    });
+  }
+  return false;
+}
+
+/**
  * The car's photo from the file: one of its own model year, make, model and
  * body, or none. A photo of its generation is not offered in its place: a
  * 2021 M3 is not a 2027 M3, whose lights and bumpers changed in between.

@@ -1,5 +1,6 @@
 import type { PhotoGeneration, PhotoImage } from '../../src/utils/car-photos.js';
 import { fetchJson, HttpError } from './fetch.js';
+import type { FilePlace } from './year-photos.js';
 
 /**
  * Wikipedia's API, for build-car-photos.ts: resolving titles, reading
@@ -227,6 +228,21 @@ export function plainText(html: string): string {
     .trim();
 }
 
+/** Where Commons' description of a file says it was taken. */
+function filePlace(meta: Record<string, { value?: unknown } | undefined>): FilePlace {
+  const number = (field: string) => {
+    const value = Number.parseFloat(plainText(String(meta[field]?.value ?? '')));
+    return Number.isFinite(value) ? value : undefined;
+  };
+  const lat = number('GPSLatitude');
+  const lon = number('GPSLongitude');
+  const categories = plainText(String(meta.Categories?.value ?? ''))
+    .split('|')
+    .map((c) => c.replace(/_/g, ' ').trim())
+    .filter(Boolean);
+  return { ...(lat !== undefined && lon !== undefined ? { lat, lon } : {}), categories };
+}
+
 /**
  * Where each file is and whose it is: only files on Commons, which are free
  * to use with credit. A file Wikipedia holds itself is non-free, shown under
@@ -237,8 +253,12 @@ export async function fetchImages(
   files: string[],
   /** Where a file on Commons says it is: "shared" asked through Wikipedia, "local" through Commons. */
   repository: 'shared' | 'local' = 'shared',
+  /** Given, it gets where each file says it was taken: its camera's place and its categories. */
+  places?: Map<string, FilePlace>,
 ): Promise<Map<string, PhotoImage>> {
   const out = new Map<string, PhotoImage>();
+  const fields = ['Artist', 'LicenseShortName', 'LicenseUrl'];
+  if (places) fields.push('GPSLatitude', 'GPSLongitude', 'Categories');
   for (const batch of chunks([...new Set(files)], 50)) {
     const { query } = await get({
       action: 'query',
@@ -246,7 +266,7 @@ export async function fetchImages(
       prop: 'imageinfo',
       iiprop: 'url|mime|extmetadata',
       iiurlwidth: '500',
-      iiextmetadatafilter: 'Artist|LicenseShortName|LicenseUrl',
+      iiextmetadatafilter: fields.join('|'),
     });
     const renamed = new Map((query?.normalized ?? []).map(({ from, to }) => [to, from]));
     for (const page of query?.pages ?? []) {
@@ -259,6 +279,7 @@ export async function fetchImages(
       const license = plainText(meta.LicenseShortName?.value ?? '');
       if (!license) continue;
       const name = (renamed.get(page.title) ?? page.title).replace(/^File:/, '');
+      if (places) places.set(name, filePlace(meta));
       out.set(name, {
         src,
         page: info.descriptionurl,
