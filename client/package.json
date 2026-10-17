@@ -17,7 +17,7 @@
     "@zxing/library": "^0.23.0",
     "better-auth": "^1.7.7",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react-dom": "^19.3.0",
     "react-router-dom": "^7.18.4",
     "recharts": "^2.15.4",
     "zustand": "^4.4.7"
@@ -25,7 +25,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
     "@types/react": "^18.2.43",
-    "@types/react-dom": "^18.2.17",
+    "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^5.1.0",
     "postcss": "^8.5.23",
     "tailwindcss": "^4.3.3",
