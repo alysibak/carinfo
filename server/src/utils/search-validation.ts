@@ -54,7 +54,9 @@ export function normalizeSearchQuery(body: unknown): SearchQuery {
         ? true
         : raw.collapseByModel === false || raw.collapseByModel === '0'
           ? false
-          : undefined,
+          : raw.collapseByModel === 'auto'
+            ? 'auto'
+            : undefined,
   };
 
   if (filtersRaw) {
@@ -130,6 +132,7 @@ export function parseSearchQueryString(q: Record<string, unknown>): SearchQuery 
 
   if (q.collapse === '1' || q.collapse === 'true') query.collapseByModel = true;
   else if (q.collapse === '0' || q.collapse === 'false') query.collapseByModel = false;
+  else if (q.collapse === 'auto') query.collapseByModel = 'auto';
 
   const filters = {
     make: csv(q.make),

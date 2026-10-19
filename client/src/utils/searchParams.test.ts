@@ -11,16 +11,16 @@ import {
 import type { CarFilter } from '../types/car.types';
 
 describe('defaultCollapseByModel', () => {
-  it('defaults on for make-only and empty browse', () => {
-    expect(defaultCollapseByModel('mazda')).toBe(true);
+  it('defaults on for empty browse', () => {
     expect(defaultCollapseByModel('')).toBe(true);
     expect(defaultCollapseByModel(undefined)).toBe(true);
   });
 
-  it('defaults off for specific model queries so years show', () => {
-    expect(defaultCollapseByModel('mazda 3')).toBe(false);
-    expect(defaultCollapseByModel('honda civic')).toBe(false);
-    expect(defaultCollapseByModel('2024 mazda 3')).toBe(false);
+  it('leaves typed words to the server, which knows whether they name a model', () => {
+    // One row per model for "mazda" or "cheap truck", the years of "mazda 3".
+    expect(defaultCollapseByModel('mazda')).toBe('auto');
+    expect(defaultCollapseByModel('mazda 3')).toBe('auto');
+    expect(defaultCollapseByModel('cheap truck')).toBe('auto');
   });
 
   it('defaults off when model filter is set', () => {
@@ -29,9 +29,9 @@ describe('defaultCollapseByModel', () => {
 });
 
 describe('onePerModel URL params', () => {
-  it('uses heuristic when onePerModel is absent', () => {
-    expect(paramsToSearchQuery(new URLSearchParams('q=mazda')).query.collapseByModel).toBe(true);
-    expect(paramsToSearchQuery(new URLSearchParams('q=mazda+3')).query.collapseByModel).toBe(false);
+  it('uses the default when onePerModel is absent', () => {
+    expect(paramsToSearchQuery(new URLSearchParams('q=mazda')).query.collapseByModel).toBe('auto');
+    expect(paramsToSearchQuery(new URLSearchParams('')).query.collapseByModel).toBe(true);
   });
 
   it('honors explicit onePerModel override', () => {
@@ -43,12 +43,18 @@ describe('onePerModel URL params', () => {
     ).toBe(false);
   });
 
-  it('only writes onePerModel when it differs from the heuristic', () => {
-    const modelYears = searchQueryToParams(
-      { query: 'mazda 3', collapseByModel: false, sort: { field: 'relevance', order: 'desc' } },
+  it('only writes onePerModel when it differs from the default', () => {
+    const decided = searchQueryToParams(
+      { query: 'mazda 3', collapseByModel: 'auto', sort: { field: 'relevance', order: 'desc' } },
       1,
     );
-    expect(modelYears.get('onePerModel')).toBeNull();
+    expect(decided.get('onePerModel')).toBeNull();
+
+    const forceYears = searchQueryToParams(
+      { query: 'mazda', collapseByModel: false, sort: { field: 'relevance', order: 'desc' } },
+      1,
+    );
+    expect(forceYears.get('onePerModel')).toBe('0');
 
     const forceCollapse = searchQueryToParams(
       { query: 'mazda 3', collapseByModel: true, sort: { field: 'relevance', order: 'desc' } },

@@ -33,6 +33,7 @@ import { readGeneration } from '../utils/generations.js';
 import { competitiveSets } from '../utils/competitive-sets.js';
 import { isLuxuryBrand } from '../utils/vehicle-taxonomy.js';
 import { findSimilarCars, sameModelLine } from '../utils/similar-vehicles.js';
+import { Speller } from '../utils/spelling.js';
 
 function resolveDbPath(): string | null {
   return resolveDataFile('cars.json');
@@ -339,6 +340,43 @@ export function getCarPipelineDebug(id: string): {
  */
 export function searchCars(query: SearchQuery): SearchResults {
   ensureDatabase();
+  if (query.query) query = { ...query, query: withoutSentencePunctuation(query.query) };
+  // Words in quotes are searched as typed: the results page's "search instead for".
+  const quoted = /^"([^"]+)"$/.exec(query.query ?? '');
+  if (quoted) return searchAsTyped({ ...query, query: quoted[1].trim() });
+  // "telsa model s" found nothing and "camery" a Land Rover Discovery: the
+  // words spelt as the site knows them first, and the results page says so.
+  const typed = query.query ?? '';
+  const corrected = correctSpelling(typed);
+  if (corrected) {
+    const found = searchAsTyped({ ...query, query: corrected });
+    if (found.total > 0) {
+      return {
+        ...found,
+        interpretation: {
+          ...found.interpretation,
+          corrected: { from: typed.trim(), to: corrected },
+        },
+      };
+    }
+  }
+  return searchAsTyped(query);
+}
+
+/**
+ * A question asked as one: "what is the cheapest suv?" read "suv?" as a word of
+ * a name and found two, and "tesla model s?" set the "s?" aside. A full stop
+ * goes only at the end, as "id.4" and "3.5" keep theirs.
+ */
+export function withoutSentencePunctuation(text: string): string {
+  return text
+    .replace(/[?!¿¡]+/g, ' ')
+    .replace(/(?<=[a-z0-9])\.+\s*$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function searchAsTyped(query: SearchQuery): SearchResults {
   const rivals = readRivalsQuery(query.query ?? '');
   if (rivals) {
     const found = searchRivals(query, rivals.lead, rivals.named);
@@ -350,6 +388,69 @@ export function searchCars(query: SearchQuery): SearchResults {
     .filter(Boolean);
   if (parts.length > 1) return searchTogether(query, parts.slice(0, 4));
   return searchOne(query);
+}
+
+let spellerCache: { source: Car[]; speller: Speller } | null = null;
+
+/** The words of every make, model name and trim on file, with how many cars carry each. */
+function speller(): Speller {
+  if (spellerCache?.source === cachedCars) return spellerCache.speller;
+  const words = new Map<string, number>();
+  const count = (text: string | undefined) => {
+    if (!text) return;
+    const lower = text.toLowerCase();
+    for (const word of new Set(lower.split(/[^a-z0-9.]+/).filter((w) => w.length >= 2))) {
+      words.set(word, (words.get(word) ?? 0) + 1);
+    }
+    // Whole names with their hyphens: "mercedes-bens" is one edit from "mercedes-benz".
+    if (/^[a-z-]+$/.test(lower) && lower.includes('-'))
+      words.set(lower, (words.get(lower) ?? 0) + 1);
+  };
+  for (const car of cachedCars) {
+    count(car.make);
+    count(car.model);
+    count(car.variant);
+  }
+  spellerCache = { source: cachedCars, speller: new Speller(words) };
+  return spellerCache.speller;
+}
+
+/**
+ * The query with each word the site does not know respelt as the nearest one
+ * it does, or null when there is none to respell. Words the query reader takes
+ * ("fast", "3 row", "under 30k"), aliases ("chevy", "porche"), figures and words
+ * still being typed ("highl") are left as they are.
+ */
+export function correctSpelling(text: string): string | null {
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return null;
+  const spell = speller();
+  // Only words the query reader leaves: "big trunk" is a cargo ask, though
+  // "trunk" alone is a letter from "truck".
+  const unread = new Set(
+    extractQueryModifiers(text.toLowerCase(), { classes: true })
+      .text.split(/\s+/)
+      .map((word) => word.replace(/[?!,;:]+$/, '')),
+  );
+  let changed = false;
+  const out = words.map((word) => {
+    const lower = word.toLowerCase().replace(/[?!,;:]+$/, '');
+    if (lower.length < 3 || /[^a-z-]/.test(lower) || !unread.has(lower)) return word;
+    if (normalizeSearchToken(lower) !== lower || spell.knows(lower) || spell.begins(lower)) {
+      return word;
+    }
+    // "c-class", "cr-v": names written with a hyphen, each part known.
+    const parts = lower.split('-').filter(Boolean);
+    if (parts.length > 1 && parts.every((part) => part.length < 3 || spell.knows(part))) {
+      return word;
+    }
+    if (extractQueryModifiers(lower, { classes: true }).text.trim() === '') return word;
+    const fixed = spell.correct(lower);
+    if (!fixed) return word;
+    changed = true;
+    return fixed;
+  });
+  return changed ? out.join(' ') : null;
 }
 
 /**
@@ -630,24 +731,39 @@ function runSearch(query: SearchQuery): SearchResults {
   // cleared value made "relevance" a no-op and left oldest EPA rows first.
   // Figures and prices go; words such as "sport sedan" stay, as they can be
   // part of a name (a Saab "9-3 Sport Sedan").
+  // A kind of car or a make is shown one row per model: "cheap truck" listed
+  // the 2016, 2017, 2018 and 2019 Frontier in turn. A model, by its years.
+  const collapse =
+    enriched.collapseByModel === 'auto'
+      ? !enriched.query && !enriched.filters?.model?.length
+      : enriched.collapseByModel;
+  // Fame orders models, one row each: over every trim it clumped one model's
+  // dozens of configurations at the top.
+  const byFame = collapse === true;
   if (wantRelevance && originalText && !keywordsOnly) {
     sortByRelevanceInPlace(
       candidates,
       extractPricePhrases(withoutFigures(originalText)).text,
       enriched.filterWords,
+      byFame,
     );
   } else if (sortField && sortField !== 'relevance') {
     sortResultsInPlace(candidates, sortField, sortOrder);
+  } else if (wantRelevance && originalText && byFame) {
+    // Every result matches "electric suv" alike: the best-known models on sale
+    // first, each by its newest year. Newest first led with a VinFast.
+    const known = prominenceAmong(candidates);
+    candidates.sort((a, b) => (known.get(b) ?? 0) - (known.get(a) ?? 0) || b.year - a.year);
   } else {
     // Stable default so one-per-model collapse keeps a recent, useful trim.
     sortResultsInPlace(candidates, 'year', 'desc');
   }
 
-  if (enriched.collapseByModel === true) {
+  if (collapse === true) {
     // One row per make|family (e.g. a single Mazda 3). Year filters narrow the
     // pool first — "2024 mazda 3" still yields one best trim for that year.
     candidates = collapseCandidatesByModel(candidates, false);
-  } else if (enriched.collapseByModel === false) {
+  } else if (collapse === false) {
     // Explicit opt-out: keep one row per make|family|year so years show without
     // every EPA trim. Omitting the flag leaves results uncollapsed.
     candidates = collapseCandidatesByModel(candidates, true);
@@ -662,6 +778,7 @@ function runSearch(query: SearchQuery): SearchResults {
     total,
     hasMore: offset + limit < total,
     ...(enriched.interpretation ? { interpretation: enriched.interpretation } : {}),
+    ...(collapse != null ? { onePerModel: collapse } : {}),
   };
   if (total === 0) {
     const covered = getStatistics().yearRange;
@@ -721,7 +838,10 @@ const SUBMODEL_KEYS: Record<string, Array<[RegExp, string]>> = {
     [/^([a-z]+)\d{2,3}[a-z]?\b/, '$1'],
   ],
   ford: [
-    [/^(mustang mach-e|bronco sport|explorer sport(?: trac)?|taurus x|transit connect)\b/, '$1'],
+    [
+      /^(mustang mach-e|bronco sport|explorer sport(?: trac)?|taurus x|transit connect|f-150 lightning)\b/,
+      '$1',
+    ],
   ],
   fiat: [[/^500 ?([lx])\b/, '500$1']],
   // EPA's 2003-09 "Carrera 2 Coupe", "Targa" and "Turbo 4 911" are 911s.
@@ -770,13 +890,188 @@ function collapseModelKey(make: string, model: string): string {
     if (m) return key.replace(/\$(\d)/g, (_, i: string) => m[Number(i)]) + suv;
   }
   const parts = family.split(/\s+/).filter(Boolean);
-  if (parts.length >= 2 && parts[0] === 'model') {
-    return `${parts[0]} ${parts[1]}`;
+  // Two words name these: the Grand Highlander is not the Highlander's
+  // relative "Grand", nor the Land Cruiser a "Land".
+  if (parts.length >= 2 && /^(?:model|grand|land|monte|park)$/.test(parts[0])) {
+    return `${parts[0]} ${parts[1]}` + suv;
   }
   // The Range Rover Sport, Evoque and Velar, not "Range Rover P530" apart from "Range Rover LWB".
   const rangeRover = /^range rover(?: (sport|evoque|velar)\b)?/.exec(family);
   if (rangeRover) return rangeRover[0] + suv;
   return (parts[0] || family) + suv;
+}
+
+/** A model as shoppers name it, across its EPA names: every Camry, 1995 to now. */
+interface ModelFamily {
+  /** As collapsed results group them: "toyota|camry". */
+  key: string;
+  make: string;
+  /** "Camry", "Model 3", "Range Rover Sport". */
+  name: string;
+  years: Set<number>;
+  first: number;
+  last: number;
+  /** Configurations on file, all years. */
+  configurations: number;
+}
+
+let familyCache: { source: Car[]; families: Map<string, ModelFamily> } | null = null;
+
+/** Mercedes models gathered by class: "c" is the C-Class (C300, C43…). */
+const MERCEDES_CLASS =
+  /^(a|b|c|e|g|r|s|cl|cla|cle|clk|cls|gl|gla|glb|glc|gle|glk|gls|ml|sl|slc|slk)$/;
+
+/** Every model family, keyed as collapsed results are: "toyota|camry". */
+/** Families EPA spells otherwise than the badge: "F150 Pickup 2WD" is the F-150. */
+const FAMILY_NAMES: Record<string, string> = { 'ford|f150': 'F-150' };
+
+function modelFamilies(): Map<string, ModelFamily> {
+  if (familyCache?.source === cachedCars) return familyCache.families;
+  const families = new Map<string, ModelFamily>();
+  const newest = new Map<string, Car>();
+  for (const car of cachedCars) {
+    const key = `${car.make}|${collapseModelKey(car.make, car.model)}`.toLowerCase();
+    const family = families.get(key) ?? {
+      key,
+      make: car.make,
+      name: '',
+      years: new Set<number>(),
+      first: car.year,
+      last: car.year,
+      configurations: 0,
+    };
+    family.years.add(car.year);
+    family.first = Math.min(family.first, car.year);
+    family.last = Math.max(family.last, car.year);
+    family.configurations += 1;
+    families.set(key, family);
+    const seen = newest.get(key);
+    if (!seen || car.year > seen.year) newest.set(key, car);
+  }
+  for (const [key, family] of families) {
+    const line = key.split('|')[1];
+    const series = /^([1-8]) series$/.exec(line);
+    const klass = MERCEDES_CLASS.exec(line);
+    if (FAMILY_NAMES[key]) {
+      family.name = FAMILY_NAMES[key];
+    } else if (family.make === 'BMW' && series) {
+      family.name = `${series[1]} Series`;
+    } else if (family.make === 'Mercedes-Benz' && klass) {
+      family.name = `${klass[1] === 'ml' ? 'M' : klass[1].toUpperCase()}-Class`;
+    } else if (/^(?:amg|srt|shelby|maybach)\b/.test(line)) {
+      // A badge across models, not one model.
+      family.name = '';
+    } else {
+      // The family's words as the newest car spells them: "camry" → "Camry".
+      const wanted = line.split(/\s+/).length;
+      const words = (newest.get(key)?.model ?? '').split(/\s+/).slice(0, wanted).join(' ');
+      family.name = words.toLowerCase() === line ? words : '';
+    }
+  }
+  familyCache = { source: cachedCars, families };
+  return families;
+}
+
+/**
+ * The best-selling models in Canada and the US of recent years, most sold
+ * first (manufacturers' and registration figures, 2023-2025). Years on the
+ * market cannot tell a Civic from an Odyssey; sales can.
+ */
+const BEST_SELLERS = [
+  ...['ford|f150', 'ram|1500', 'chevrolet|silverado', 'toyota|rav4', 'gmc|sierra'],
+  ...['honda|cr-v', 'tesla|model y', 'toyota|camry', 'chevrolet|equinox', 'toyota|corolla'],
+  ...['honda|civic', 'jeep|grand cherokee', 'toyota|tacoma', 'nissan|rogue', 'hyundai|tucson'],
+  ...['ford|explorer', 'toyota|highlander', 'mazda|cx-5', 'subaru|crosstrek', 'subaru|forester'],
+  ...['kia|sportage', 'hyundai|elantra', 'ford|escape', 'honda|hr-v', 'toyota|tundra'],
+  ...['jeep|wrangler', 'kia|seltos', 'honda|accord', 'subaru|outback', 'chevrolet|trax'],
+  ...['ford|bronco sport', 'ford|bronco', 'hyundai|santa fe', 'kia|telluride', 'honda|pilot'],
+  ...['chevrolet|tahoe', 'nissan|sentra', 'ford|maverick', 'tesla|model 3', 'jeep|compass'],
+  ...['hyundai|kona', 'toyota|4runner', 'kia|forte', 'honda|odyssey', 'toyota|sienna'],
+  ...['chrysler|pacifica', 'volkswagen|tiguan', 'mazda|cx-30', 'mazda|cx-50', 'nissan|kicks'],
+  ...['mitsubishi|rvr', 'buick|encore gx', 'chevrolet|colorado', 'gmc|canyon', 'nissan|frontier'],
+  ...['ford|ranger', 'hyundai|ioniq 5', 'ford|mustang mach-e', 'kia|ev6', 'volkswagen|jetta'],
+];
+const BEST_SELLER_RANK = new Map(BEST_SELLERS.map((key, i) => [key, i]));
+
+/** Up to 60 for the best seller, falling to nothing past the list. */
+function bestSellerBoost(lineKey: string): number {
+  const rank = BEST_SELLER_RANK.get(lineKey);
+  return rank === undefined ? 0 : 60 * (1 - rank / BEST_SELLERS.length);
+}
+
+/**
+ * How much of a name a model has made: years on sale, and versions. The
+ * Camry's 30-odd years and hundreds of configurations put it before a model
+ * new this year, where nothing else tells them apart ("electric suv",
+ * "toyota"). Models on sale now come first.
+ */
+function familyProminence(family: ModelFamily): number {
+  const onSale = family.last >= LATEST_FULL_MODEL_YEAR - 1 ? 100 : 0;
+  return (
+    onSale + bestSellerBoost(family.key) + family.years.size + Math.log2(1 + family.configurations)
+  );
+}
+
+/**
+ * How well known each car's model is among the cars a search found: on sale,
+ * a best seller, years and versions among them. Counted among the results,
+ * so the one electric Explorer (a 2002 mail truck) is not the 30-year
+ * Explorer of "electric suv", nor the 1995 Civic del Sol the Civic of "sports car".
+ */
+function prominenceAmong(cars: Car[]): Map<Car, number> {
+  const lines = new Map<string, { last: number; years: Set<number>; count: number }>();
+  const keys = new Map<Car, string>();
+  for (const car of cars) {
+    const key = modelLineKey(car);
+    keys.set(car, key);
+    const line = lines.get(key) ?? { last: car.year, years: new Set<number>(), count: 0 };
+    line.last = Math.max(line.last, car.year);
+    line.years.add(car.year);
+    line.count += 1;
+    lines.set(key, line);
+  }
+  const out = new Map<Car, number>();
+  for (const [car, key] of keys) {
+    const line = lines.get(key)!;
+    out.set(
+      car,
+      (line.last >= LATEST_FULL_MODEL_YEAR - 1 ? 100 : 0) +
+        bestSellerBoost(key) +
+        line.years.size +
+        Math.log2(1 + line.count),
+    );
+  }
+  return out;
+}
+
+/**
+ * The model families a typed phrase names or begins: "camr" and "toyota cam"
+ * the Camry, "f150" the F-150, "toyota" Toyota's best known. Named exactly
+ * first, then the best known.
+ */
+function familySuggestions(
+  phrase: string,
+): Array<{ key: string; family: ModelFamily; exact: boolean }> {
+  const p = phrase.trim().toLowerCase();
+  if (p.length < 2) return [];
+  // "chevrolet" is the make, not Quantum Technologies' CNG "Chevrolet" conversions.
+  const namedMake = findExactMake(p);
+  const found: Array<{ key: string; family: ModelFamily; exact: boolean; rank: number }> = [];
+  for (const [key, family] of modelFamilies()) {
+    if (!family.name) continue;
+    if (namedMake && family.make !== namedMake) continue;
+    const name = family.name.toLowerCase();
+    const make = family.make.toLowerCase();
+    const full = `${make} ${name}`;
+    const own = p.startsWith(`${make} `) ? p.slice(make.length + 1) : p;
+    const exact = own === name || p === full;
+    const matches =
+      exact || full.startsWith(p) || name.startsWith(own) || modelPhraseMatches(family.name, own);
+    if (!matches) continue;
+    found.push({ key, family, exact, rank: familyProminence(family) });
+  }
+  found.sort((a, b) => Number(b.exact) - Number(a.exact) || b.rank - a.rank);
+  return found;
 }
 
 export interface SearchSuggestion {
@@ -807,7 +1102,7 @@ const RIVALS_PREFIX =
 
 export function getSearchSuggestions(rawQuery: string, limit = 8): SearchSuggestion[] {
   ensureDatabase();
-  const qRaw = rawQuery.trim().toLowerCase();
+  const qRaw = withoutSentencePunctuation(rawQuery.replace(/"/g, ' ')).toLowerCase();
 
   // "cars like a civ": complete the name, keeping the phrase, so the choice
   // opens the Civic's rivals rather than the Civic.
@@ -831,8 +1126,36 @@ export function getSearchSuggestions(rawQuery: string, limit = 8): SearchSuggest
     }
   }
 
-  const q = normalizeSearchQuery(qRaw);
+  // "mercedez", "outbak": suggest for the words as the site spells them.
+  const q = normalizeSearchQuery(correctSpelling(qRaw) ?? qRaw);
   if (!q) return POPULAR_SUGGESTIONS.slice(0, limit);
+
+  // "2018 civic", "civic 2018": the models that year, named with it.
+  const withYear = /^(?:(19[89]\d|20[0-3]\d) (.+)|(.+) (19[89]\d|20[0-3]\d))$/.exec(q);
+  if (withYear) {
+    const year = Number(withYear[1] ?? withYear[4]);
+    const rest = withYear[2] ?? withYear[3];
+    const yearly = familySuggestions(rest)
+      .filter(({ family }) => family.years.has(year))
+      .slice(0, Math.max(0, limit - 1))
+      .map(({ family }) => ({
+        id: `year-${year}-${family.make}-${family.name}`,
+        label: `${year} ${family.make} ${family.name}`,
+        sublabel: 'Model year',
+        query: `${year} ${family.make} ${family.name}`.toLowerCase(),
+      }));
+    if (yearly.length) {
+      return [
+        ...yearly,
+        {
+          id: `raw-${qRaw}`,
+          label: `Search “${rawQuery.trim()}”`,
+          sublabel: 'All makes, models & years',
+          query: rawQuery.trim(),
+        },
+      ];
+    }
+  }
 
   type Ranked = SearchSuggestion & { score: number };
   const ranked: Ranked[] = [];
@@ -863,11 +1186,33 @@ export function getSearchSuggestions(rawQuery: string, limit = 8): SearchSuggest
     );
   }
 
+  // One entry per model as shoppers name it, ahead of EPA's names for its
+  // versions: "camr" offered five lines like "Toyota Camry HEV FF LE".
+  const families = familySuggestions(q);
+  const onlyMake = !!findExactMake(q);
+  // Their versions' EPA names give way to them, offered or not.
+  const suggestedFamilies = new Set(families.map(({ key }) => key));
+  for (const { key, family, exact } of families.slice(0, 4)) {
+    add(
+      {
+        id: `family-${key}`,
+        label: `${family.make} ${family.name}`,
+        sublabel:
+          family.first === family.last
+            ? `Model · ${family.first}`
+            : `Model · ${family.first}–${family.last}`,
+        query: `${family.make} ${family.name}`.toLowerCase(),
+      },
+      (exact ? 99.5 : 96) + familyProminence(family) / 1000,
+    );
+  }
+
   for (const make of cachedMakes) {
     const lower = make.toLowerCase();
     const dist = bestFuzzyScore(q, lower);
     if (dist <= 2 || lower.includes(q) || q.includes(lower)) {
-      const score = dist <= 0.5 ? 100 - dist * 10 : 80 - dist * 15;
+      // Exactly, then begun ("toy"): before the models it makes.
+      const score = dist === 0 ? 100 : dist <= 0.5 ? 98 : 80 - dist * 15;
       if (score > 40) {
         add(
           {
@@ -884,6 +1229,13 @@ export function getSearchSuggestions(rawQuery: string, limit = 8): SearchSuggest
 
   for (const [modelKey, cars] of modelIndex) {
     const car = cars[0];
+    // "ram" is the make: its 1500, not the Dodge Ram Van's EPA names.
+    if (onlyMake && car.make.toLowerCase() !== q) continue;
+    if (
+      suggestedFamilies.has(`${car.make}|${collapseModelKey(car.make, car.model)}`.toLowerCase())
+    ) {
+      continue;
+    }
     const label = `${car.make} ${car.model}`;
     const labelLower = label.toLowerCase();
     const modelLower = car.model.toLowerCase();
@@ -921,12 +1273,12 @@ export function getSearchSuggestions(rawQuery: string, limit = 8): SearchSuggest
   }
 
   // Trims EPA leaves out of the name ("Ford Mustang GT", "Subaru WRX STI").
-  for (const trim of trimSuggestions()) {
+  for (const trim of onlyMake ? [] : trimSuggestions()) {
     const phrase = q.startsWith(`${trim.make.toLowerCase()} `) ? q.slice(trim.make.length + 1) : q;
     if (trim.query.startsWith(phrase) || trim.label.toLowerCase().startsWith(q)) {
       // An exact trim ("mustang gt") ranks with an exact model name, above the
       // Mustang GTD that merely starts the same.
-      const score = trim.query === phrase ? 99 : 96;
+      const score = trim.query === phrase ? 99 : 93;
       add(
         { id: `trim-${trim.label}`, label: trim.label, sublabel: 'Trim', query: trim.query },
         score,
@@ -954,8 +1306,12 @@ export function getSearchSuggestions(rawQuery: string, limit = 8): SearchSuggest
   }
 
   ranked.sort((a, b) => b.score - a.score);
+  // Near misses only when nothing matches: "bmw" offered BYD and GMC, two
+  // letters off, after BMW itself.
+  const matched = ranked.some((s) => s.score >= 90);
+  const kept = matched ? ranked.filter((s) => s.score >= 90) : ranked;
 
-  const results: SearchSuggestion[] = ranked
+  const results: SearchSuggestion[] = kept
     .slice(0, Math.max(0, limit - 1))
     .map(({ score: _s, ...s }) => s);
   results.push({
@@ -1015,6 +1371,12 @@ const KEYWORD_SUGGESTIONS: Array<{ label: string; query: string }> = [
   { label: 'Safest SUVs', query: 'safest suv' },
   { label: 'Safest minivans', query: 'safest minivan' },
   { label: 'SUVs with good gas mileage', query: 'suv good gas mileage' },
+  { label: 'SUVs under $30k', query: 'suv under 30k' },
+  { label: 'SUVs under $40k', query: 'suv under 40k' },
+  { label: 'Sedans under $25k', query: 'sedan under 25k' },
+  { label: 'Trucks under $40k', query: 'truck under 40k' },
+  { label: 'Cheapest cars', query: 'cheapest car' },
+  { label: 'Electric cars under $40k', query: 'electric car under 40k' },
 ];
 
 type TrimSuggestion = { make: string; label: string; query: string };
@@ -1893,7 +2255,9 @@ function sortByRelevanceInPlace(
   cars: Car[],
   searchText: string,
   filterWords: readonly string[] = [],
+  byFame = false,
 ): void {
+  const known = byFame ? prominenceAmong(cars) : new Map<Car, number>();
   const normalized = normalizeSearchQuery(searchText);
   // A body or fuel word read as a filter is on every result: in a name it put
   // a 2004 "C320 4matic Sedan" first for "mercedes sedan".
@@ -1903,8 +2267,12 @@ function sortByRelevanceInPlace(
     return;
   }
 
+  // Of matches alike, the best-known model first: "toyota" led with whichever
+  // model had a 2027 on file, the Prius before the Camry. Worth a few years,
+  // never a better match of the words (12 points and more apart).
+  const score = (car: Car) => scoreRelevance(car, tokens) + (known.get(car) ?? 0) * 0.04;
   cars.sort((a, b) => {
-    const scoreDiff = scoreRelevance(b, tokens) - scoreRelevance(a, tokens);
+    const scoreDiff = score(b) - score(a);
     if (scoreDiff !== 0) return scoreDiff;
     if (a.year !== b.year) return b.year - a.year;
     // Of equals, the plainer name: "2004 camry" showed the Camry Solara

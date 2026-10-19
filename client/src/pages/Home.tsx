@@ -238,11 +238,17 @@ export default function Home() {
     });
   };
 
+  // Whether the rows are models or model years: the server decides for typed
+  // words ("auto"), and says which.
+  const onePerModel = searchResults?.onePerModel ?? searchQuery.collapseByModel === true;
+  // "telsa" searched as "tesla": said, with the way back to the words as typed.
+  const corrected = searchError ? undefined : searchResults?.interpretation?.corrected;
+
   // What the sheet's button offers to show: "309 models".
   const resultLabel =
     hasSearched && searchResults && !searchError
       ? `${searchResults.total.toLocaleString()} ${
-          searchQuery.collapseByModel
+          onePerModel
             ? searchResults.total === 1
               ? 'model'
               : 'models'
@@ -255,7 +261,7 @@ export default function Home() {
   const toggleOnePerModel = () => {
     pushSearch({
       ...searchQuery,
-      collapseByModel: !searchQuery.collapseByModel,
+      collapseByModel: !onePerModel,
       offset: 0,
     });
   };
@@ -368,10 +374,8 @@ export default function Home() {
               <button
                 type="button"
                 onClick={toggleOnePerModel}
-                aria-pressed={!!searchQuery.collapseByModel}
-                className={`chip shrink-0 whitespace-nowrap ${
-                  searchQuery.collapseByModel ? 'chip-on' : ''
-                }`}
+                aria-pressed={onePerModel}
+                className={`chip shrink-0 whitespace-nowrap ${onePerModel ? 'chip-on' : ''}`}
               >
                 One per model
               </button>
@@ -457,7 +461,7 @@ export default function Home() {
                         <span className="text-white font-semibold tabular-nums">
                           {searchResults.total.toLocaleString()}
                         </span>{' '}
-                        {searchQuery.collapseByModel
+                        {onePerModel
                           ? searchResults.total === 1
                             ? 'model'
                             : 'models'
@@ -471,6 +475,20 @@ export default function Home() {
                           </span>
                         )}
                       </h2>
+                    )}
+                    {corrected && (
+                      <p className="text-xs text-zinc-400 mt-1">
+                        Showing results for{' '}
+                        <span className="text-white font-medium">{corrected.to}</span>.{' '}
+                        <button
+                          type="button"
+                          // In quotes, the words are searched as typed.
+                          onClick={() => handleTextSearch(`"${corrected.from}"`)}
+                          className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
+                        >
+                          Search instead for {corrected.from}
+                        </button>
+                      </p>
                     )}
                     {searchResults &&
                       !searchError &&

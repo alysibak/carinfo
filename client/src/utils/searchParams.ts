@@ -43,16 +43,18 @@ export function defaultSortForQuery(
 
 /**
  * Default one-per-model collapse.
- * Make-only / browse stays dense (on). Specific model searches default off so
- * years show unless the user opts in via the toggle / onePerModel URL param.
+ * Browse stays dense (on); a chosen model shows its years. Typed text is left
+ * to the server, which knows whether it named a model: "honda civic" shows
+ * years, "cheap truck" one row per model. Counting words here showed the 2016,
+ * 2017, 2018 and 2019 Frontier in turn for "cheap truck". The toggle and
+ * onePerModel URL param override it.
  */
-export function defaultCollapseByModel(queryText?: string, filters?: CarFilter): boolean {
+export function defaultCollapseByModel(
+  queryText?: string,
+  filters?: CarFilter,
+): NonNullable<SearchQuery['collapseByModel']> {
   if (filters?.model?.length) return false;
-  const tokens = (queryText ?? '').trim().toLowerCase().split(/\s+/).filter(Boolean);
-  if (tokens.length === 0) return true;
-  const nonYear = tokens.filter((t) => !/^(19|20)\d{0,2}$/.test(t));
-  // "mazda 3", "honda civic", "2024 mazda 3" → show years by default
-  return nonYear.length < 2;
+  return queryText?.trim() ? 'auto' : true;
 }
 
 export function hasActiveSearch(params: URLSearchParams): boolean {

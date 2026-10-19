@@ -320,8 +320,9 @@ describe('car.service natural language search', () => {
     expect(top.model).toBe('Golf GTI');
   });
   it('suggests the regular F-150 and puts whole-model suggestions first', () => {
+    // The whole F-150 line, by the name on the truck, not EPA's "F150 Pickup 2WD".
     const f150 = getSearchSuggestions('f150', 6).map((s) => s.label);
-    expect(f150[0]).toMatch(/^Ford F150 Pickup/);
+    expect(f150[0]).toBe('Ford F-150');
 
     // "Toyota Camry" searches every Camry, so it leads the trims.
     expect(getSearchSuggestions('camry', 6)[0].label).toBe('Toyota Camry');
@@ -1015,5 +1016,82 @@ describe('car.service natural language search', () => {
     expect(labels('muscle')).toContain('Muscle cars');
     const typeR = labels('civic type r');
     expect(typeR.filter((l) => l === 'Honda Civic Type R')).toHaveLength(1);
+  });
+});
+
+describe('car.service search: typos, questions and one row per model', () => {
+  const relevance = { field: 'relevance', order: 'desc' } as const;
+
+  it('respells a word it does not know, and says so', () => {
+    const found = searchCars({ query: 'telsa model s', sort: relevance, collapseByModel: 'auto' });
+    expect(found.results[0].model).toMatch(/^Model S\b/);
+    expect(found.interpretation?.corrected).toEqual({
+      from: 'telsa model s',
+      to: 'tesla model s',
+    });
+    const camry = searchCars({ query: 'toyta camery', sort: relevance, limit: 5 });
+    expect(camry.results.every((c) => c.model.startsWith('Camry'))).toBe(true);
+  });
+
+  it('leaves names, cargo asks and quoted words as typed', () => {
+    const cClass = searchCars({ query: 'mercedes c-class', limit: 50 });
+    expect(cClass.interpretation?.corrected).toBeUndefined();
+    expect(cClass.total).toBeGreaterThan(50);
+    expect(
+      searchCars({ query: 'sedan with big trunk', limit: 5 }).interpretation?.corrected,
+    ).toBeUndefined();
+    // The results page's "search instead for".
+    const asTyped = searchCars({ query: '"telsa model s"', limit: 5 });
+    expect(asTyped.interpretation?.corrected).toBeUndefined();
+    expect(asTyped.results.some((c) => c.model.startsWith('Model S'))).toBe(false);
+  });
+
+  it('reads a question as its words', () => {
+    const [top] = searchCars({ query: 'tesla model s?', sort: relevance, limit: 1 }).results;
+    expect(top.model).toMatch(/^Model S\b/);
+    const cheapest = searchCars({ query: 'what is the cheapest suv?', limit: 50 });
+    expect(cheapest.total).toBeGreaterThan(50);
+  });
+
+  it('shows a kind of car one row per model, and a model by its years', () => {
+    const trucks = searchCars({ query: 'cheap truck', collapseByModel: 'auto', limit: 10 });
+    expect(trucks.onePerModel).toBe(true);
+    const lines = trucks.results.map((c) => `${c.make} ${c.model.split(' ')[0]}`);
+    expect(new Set(lines).size).toBe(lines.length);
+
+    const civic = searchCars({ query: 'honda civic', collapseByModel: 'auto', limit: 5 });
+    expect(civic.onePerModel).toBe(false);
+    expect(new Set(civic.results.map((c) => c.year)).size).toBe(5);
+
+    expect(searchCars({ query: 'toyota', collapseByModel: 'auto', limit: 1 }).onePerModel).toBe(
+      true,
+    );
+  });
+
+  it('puts the best-known models first where every result matches alike', () => {
+    const top = searchCars({
+      query: 'electric suv',
+      sort: relevance,
+      collapseByModel: 'auto',
+      limit: 5,
+    }).results.map((c) => `${c.make} ${c.model}`);
+    expect(top.some((label) => label.startsWith('Tesla Model Y'))).toBe(true);
+    const toyota = searchCars({
+      query: 'toyota',
+      sort: relevance,
+      collapseByModel: true,
+      limit: 4,
+    }).results.map((c) => c.model.split(' ')[0]);
+    expect(toyota).toEqual(expect.arrayContaining(['Camry', 'RAV4']));
+  });
+
+  it('suggests whole models through typos and years', () => {
+    const labels = (q: string) => getSearchSuggestions(q, 6).map((s) => s.label);
+    expect(labels('camr')[0]).toBe('Toyota Camry');
+    expect(labels('2018 civic')[0]).toBe('2018 Honda Civic');
+    expect(labels('civic 2018')[0]).toBe('2018 Honda Civic');
+    expect(labels('telsa')).toEqual(expect.arrayContaining(['Tesla', 'Tesla Model Y']));
+    expect(labels('mercedez')).toContain('Mercedes-Benz C-Class');
+    expect(labels('f150')).toContain('Ford F-150 Lightning');
   });
 });

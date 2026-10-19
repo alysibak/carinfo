@@ -257,8 +257,13 @@ export interface SearchQuery {
   };
   limit?: number;
   offset?: number;
-  /** Keep highest-ranking trim per make+model before pagination. */
-  collapseByModel?: boolean;
+  /**
+   * Keep highest-ranking trim per make+model before pagination (true), or per
+   * make+model+year (false). "auto" decides from the query: one per model for
+   * a kind of car or a make ("cheap truck", "toyota"), one per year for a
+   * model ("honda civic"). Omitted, every configuration is kept.
+   */
+  collapseByModel?: boolean | 'auto';
   /**
    * Set by the query parser, not the client: equivalent spellings of a trim
    * the query ended in ("type r", "r t"/"rt"). Results must carry one as
@@ -316,6 +321,8 @@ export interface SearchInterpretation {
   compareWith?: Array<{ id: string; label: string }>;
   /** "compact suv", "sports car", "luxury sedan": the kind of vehicle read. */
   vehicleClass?: string;
+  /** "telsa model s": the words as typed and as searched, respelt as the site knows them. */
+  corrected?: { from: string; to: string };
   /** "best", "reliable": words no data on file can measure, set aside. */
   unmeasured?: string[];
   /** "good gas mileage": EVs left out of an MPG order. */
@@ -374,6 +381,8 @@ export interface SearchResults {
    */
   yearCoverage?: { min: number; max: number };
   interpretation?: SearchInterpretation;
+  /** Whether the rows are one per model (true) or per model year (false), when collapsed. */
+  onePerModel?: boolean;
 }
 
 export interface OwnershipAssumptions {

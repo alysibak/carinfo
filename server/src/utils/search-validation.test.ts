@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeSearchQuery } from '../utils/search-validation.js';
+import { normalizeSearchQuery, parseSearchQueryString } from '../utils/search-validation.js';
 
 describe('search-validation', () => {
+  it('reads one row per model, per year, or the server’s choice', () => {
+    expect(normalizeSearchQuery({ collapseByModel: true }).collapseByModel).toBe(true);
+    expect(normalizeSearchQuery({ collapseByModel: false }).collapseByModel).toBe(false);
+    expect(normalizeSearchQuery({ collapseByModel: 'auto' }).collapseByModel).toBe('auto');
+    expect(normalizeSearchQuery({ collapseByModel: 'yes' }).collapseByModel).toBeUndefined();
+    expect(parseSearchQueryString({ collapse: 'auto' }).collapseByModel).toBe('auto');
+  });
+
   it('drops invalid filter shapes instead of crashing', () => {
     const query = normalizeSearchQuery({
       filters: {
