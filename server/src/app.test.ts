@@ -46,6 +46,20 @@ describe('cross-cutting behavior', () => {
     expect(evil.headers['access-control-allow-origin']).toBeUndefined();
   });
 
+  it('serves a model across every year, and a 404 for one not on file', async () => {
+    const res = await request(app).get('/api/cars/models/honda/civic');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toMatchObject({
+      make: 'Honda',
+      name: 'Civic',
+      path: '/models/honda/civic',
+    });
+    expect(res.body.data.years.length).toBeGreaterThan(25);
+    expect(res.headers['vercel-cdn-cache-control']).toMatch(/max-age/);
+    const missing = await request(app).get('/api/cars/models/honda/hovercraft');
+    expect(missing.status).toBe(404);
+  });
+
   it('answers unknown API paths with JSON, not the SPA', async () => {
     const res = await request(app).get('/api/definitely-not-a-route');
     expect(res.status).toBe(404);

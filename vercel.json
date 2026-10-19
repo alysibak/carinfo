@@ -17,6 +17,14 @@
       "destination": "/api/index"
     },
     {
+      "source": "/models/([^/]+)/([^/]+)",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/models/([^/]+)/([^/]+)/",
+      "destination": "/api/index"
+    },
+    {
       "source": "/compare",
       "destination": "/api/index"
     },

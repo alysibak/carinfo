@@ -4,6 +4,7 @@ import * as carService from '../services/car.service.js';
 import type { Car } from '../types/car.types.js';
 import { loadTemplate, renderShell } from './html-shell.js';
 import { vehicleName, vehicleSeo, type PageSeo } from './vehicle-seo.js';
+import { modelSeo } from './model-seo.js';
 
 /**
  * Server-rendered HTML shells for the pages people share and search engines
@@ -76,6 +77,26 @@ router.get('/car/:id', (req, res) => {
     return;
   }
   send(req, res, vehicleSeo(car));
+});
+
+router.get('/models/:make/:model', (req, res) => {
+  const overview = carService.getModelOverview(req.params.make, req.params.model);
+  if (!overview) {
+    send(
+      req,
+      res,
+      {
+        title: 'Model not found',
+        description: 'This model is not in the CarInfo database.',
+        canonicalPath: req.path,
+        ogType: 'website',
+        noindex: true,
+      },
+      404,
+    );
+    return;
+  }
+  send(req, res, modelSeo(overview));
 });
 
 router.get('/compare', (req, res) => {

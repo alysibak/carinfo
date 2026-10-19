@@ -1,4 +1,10 @@
-import type { Car, SearchQuery, SearchResults } from '../types/car.types.js';
+import type {
+  Car,
+  ModelOverview,
+  ModelYearSummary,
+  SearchQuery,
+  SearchResults,
+} from '../types/car.types.js';
 import { readFileSync } from 'fs';
 import { computeEvScore } from '../utils/ev-scoring.js';
 import { normalizeCarRecord } from '../utils/car-normalize.js';
@@ -29,7 +35,7 @@ import { extractQueryModifiers, withoutFigures } from '../utils/search-modifiers
 import { ENGINE_FAMILIES, isEngineFamilyId } from '../utils/engine-families.js';
 import { isThreeRow } from '../utils/three-row.js';
 import { enginePosition } from '../utils/engine-position.js';
-import { readGeneration } from '../utils/generations.js';
+import { generationOf, readGeneration } from '../utils/generations.js';
 import { competitiveSets } from '../utils/competitive-sets.js';
 import { isLuxuryBrand } from '../utils/vehicle-taxonomy.js';
 import { findSimilarCars, sameModelLine } from '../utils/similar-vehicles.js';
@@ -339,6 +345,22 @@ export function getCarPipelineDebug(id: string): {
  * 4. Paginate
  */
 export function searchCars(query: SearchQuery): SearchResults {
+  return withModelPage(searchSpelt(query));
+}
+
+/**
+ * "honda civic" found Civics, year by year: the Civic's page has them all at
+ * a glance. Offered when every car shown is of one model with a page.
+ */
+function withModelPage(found: SearchResults): SearchResults {
+  if (found.onePerModel !== false || !found.results.length) return found;
+  if (new Set(found.results.map(modelLineKey)).size !== 1) return found;
+  const modelPage = modelPageOf(found.results[0]);
+  if (!modelPage) return found;
+  return { ...found, interpretation: { ...found.interpretation, modelPage } };
+}
+
+function searchSpelt(query: SearchQuery): SearchResults {
   ensureDatabase();
   if (query.query) query = { ...query, query: withoutSentencePunctuation(query.query) };
   // Words in quotes are searched as typed: the results page's "search instead for".
@@ -503,19 +525,24 @@ function baseConfiguration(named: string): Car | undefined {
   const matches = searchOne({ query: named, limit: 500, offset: 0 }).results;
   const top = matches[0];
   if (!top) return undefined;
-  return matches
-    .filter(
+  return baseOf(
+    matches.filter(
       (car) => car.year === top.year && car.bodyStyle === top.bodyStyle && sameModelLine(car, top),
-    )
-    .reduce((base, car) => {
-      const price = car.price?.msrp ?? Infinity;
-      const basePrice = base.price?.msrp ?? Infinity;
-      // At one price, two-wheel drive is the base car (a Camry LE, not an AWD),
-      // then the plainest name (a Corolla, not a Corolla Hybrid SE).
-      if (price !== basePrice) return price < basePrice ? car : base;
-      if (isFourByFour(base) !== isFourByFour(car)) return isFourByFour(car) ? base : car;
-      return plainName(car.model).length < plainName(base.model).length ? car : base;
-    }, top);
+    ),
+  );
+}
+
+/** The base car of configurations: the cheapest, then two-wheel drive, then the plainest name. */
+function baseOf(cars: Car[]): Car {
+  return cars.reduce((base, car) => {
+    const price = car.price?.msrp ?? Infinity;
+    const basePrice = base.price?.msrp ?? Infinity;
+    // At one price, two-wheel drive is the base car (a Camry LE, not an AWD),
+    // then the plainest name (a Corolla, not a Corolla Hybrid SE).
+    if (price !== basePrice) return price < basePrice ? car : base;
+    if (isFourByFour(base) !== isFourByFour(car)) return isFourByFour(car) ? base : car;
+    return plainName(car.model).length < plainName(base.model).length ? car : base;
+  });
 }
 
 const carLabel = (car: Car) => `${car.year} ${car.make} ${shopperModelName(car)}`;
@@ -801,7 +828,7 @@ function runSearch(query: SearchQuery): SearchResults {
 function collapseCandidatesByModel(cars: Car[], includeYear = false): Car[] {
   const best = new Map<string, Car>();
   for (const car of cars) {
-    const base = `${car.make}|${collapseModelKey(car.make, car.model)}`.toLowerCase();
+    const base = modelLineKey(car);
     const key = includeYear ? `${base}|${car.year}` : base;
     if (!best.has(key)) best.set(key, car);
   }
@@ -866,9 +893,18 @@ const SUBMODEL_KEYS: Record<string, Array<[RegExp, string]>> = {
   genesis: [[/^electrified (\w+)/, 'electrified $1']],
 };
 
+const lineKeys = new Map<string, string>();
+
 /** The model line a car belongs to, as "one per model" groups them: "honda|civic". */
 export function modelLineKey(car: Pick<Car, 'make' | 'model'>): string {
-  return `${car.make}|${collapseModelKey(car.make, car.model)}`.toLowerCase();
+  // 37,000 cars share 5,000 names.
+  const name = `${car.make}|${car.model}`;
+  let key = lineKeys.get(name);
+  if (key === undefined) {
+    key = `${car.make}|${collapseModelKey(car.make, car.model)}`.toLowerCase();
+    lineKeys.set(name, key);
+  }
+  return key;
 }
 
 /** Stable one-per-model key from messy EPA model strings. */
@@ -921,16 +957,16 @@ let familyCache: { source: Car[]; families: Map<string, ModelFamily> } | null = 
 const MERCEDES_CLASS =
   /^(a|b|c|e|g|r|s|cl|cla|cle|clk|cls|gl|gla|glb|glc|gle|glk|gls|ml|sl|slc|slk)$/;
 
-/** Every model family, keyed as collapsed results are: "toyota|camry". */
 /** Families EPA spells otherwise than the badge: "F150 Pickup 2WD" is the F-150. */
 const FAMILY_NAMES: Record<string, string> = { 'ford|f150': 'F-150' };
 
+/** Every model family, keyed as collapsed results are: "toyota|camry". */
 function modelFamilies(): Map<string, ModelFamily> {
   if (familyCache?.source === cachedCars) return familyCache.families;
   const families = new Map<string, ModelFamily>();
   const newest = new Map<string, Car>();
   for (const car of cachedCars) {
-    const key = `${car.make}|${collapseModelKey(car.make, car.model)}`.toLowerCase();
+    const key = modelLineKey(car);
     const family = families.get(key) ?? {
       key,
       make: car.make,
@@ -1042,6 +1078,151 @@ function prominenceAmong(cars: Car[]): Map<Car, number> {
     );
   }
   return out;
+}
+
+/** "Mercedes-Benz" → "mercedes-benz", "F-150 Lightning" → "f-150-lightning". */
+export function urlSlug(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+interface ModelPages {
+  source: Car[];
+  byPath: Map<string, ModelFamily>;
+  pathByKey: Map<string, string>;
+  carsByKey: Map<string, Car[]>;
+}
+let modelPageCache: ModelPages | null = null;
+
+/**
+ * Every model with a page of its own, by path ("/models/toyota/camry"), and
+ * the cars of each. A badge across models (AMG, SRT) has none; where two
+ * families would share a path, the better known keeps it.
+ */
+function modelPages(): ModelPages {
+  if (modelPageCache?.source === cachedCars) return modelPageCache;
+  const byPath = new Map<string, ModelFamily>();
+  for (const family of modelFamilies().values()) {
+    if (!family.name) continue;
+    const path = `/models/${urlSlug(family.make)}/${urlSlug(family.name)}`;
+    const held = byPath.get(path);
+    if (!held || familyProminence(family) > familyProminence(held)) byPath.set(path, family);
+  }
+  const pathByKey = new Map([...byPath].map(([path, family]) => [family.key, path]));
+  const carsByKey = new Map<string, Car[]>();
+  for (const car of cachedCars) {
+    const key = modelLineKey(car);
+    if (!pathByKey.has(key)) continue;
+    const list = carsByKey.get(key) ?? [];
+    list.push(car);
+    carsByKey.set(key, list);
+  }
+  modelPageCache = { source: cachedCars, byPath, pathByKey, carsByKey };
+  return modelPageCache;
+}
+
+/** The page of the model a car belongs to, if it has one: "Honda Civic", "/models/honda/civic". */
+export function modelPageOf(
+  car: Pick<Car, 'make' | 'model'>,
+): { label: string; path: string } | undefined {
+  ensureDatabase();
+  const pages = modelPages();
+  const path = pages.pathByKey.get(modelLineKey(car));
+  const family = path ? pages.byPath.get(path) : undefined;
+  return path && family ? { label: `${family.make} ${family.name}`, path } : undefined;
+}
+
+/** Every model page, for the sitemap, the models on sale first. */
+export function getModelPages(): Array<{ path: string; label: string; last: number }> {
+  ensureDatabase();
+  return [...modelPages().byPath]
+    .map(([path, family]) => ({ path, label: `${family.make} ${family.name}`, last: family.last }))
+    .sort((a, b) => b.last - a.last || a.path.localeCompare(b.path));
+}
+
+const range = (values: number[]) =>
+  values.length ? { min: Math.min(...values), max: Math.max(...values) } : undefined;
+const best = (values: number[]) => (values.length ? Math.max(...values) : undefined);
+
+/** One year of a model, across its configurations. */
+function summarizeYear(year: number, cars: Car[]): ModelYearSummary {
+  const base = baseOf(cars);
+  const burnsFuel = cars.filter((car) => car.engine.fuelType !== 'electric');
+  const electric = cars.filter((car) => car.engine.fuelType === 'electric');
+  const generation = generationOf(base);
+  return {
+    year,
+    carId: base.id,
+    configurations: cars.length,
+    price: range(cars.map((car) => car.price?.msrp ?? 0).filter((v) => v > 0)),
+    combinedMpg: best(burnsFuel.map((car) => car.fuelEconomy.combined ?? 0).filter((v) => v > 0)),
+    rangeMiles: best(electric.map((car) => car.epa?.rangeMiles ?? 0).filter((v) => v > 0)),
+    horsepower: range(cars.map((car) => car.engine.horsepower ?? 0).filter((v) => v > 0)),
+    safetyStars: best(cars.map((car) => car.safetyRating?.overall ?? 0).filter((v) => v > 0)),
+    fuelTypes: [...new Set(cars.map((car) => car.engine.fuelType))],
+    bodyStyles: [...new Set(cars.map((car) => car.bodyStyle))],
+    ...(generation ? { generation } : {}),
+  };
+}
+
+/**
+ * A model across every year on file, for its page: "/models/toyota/camry".
+ * Search showed a model a configuration at a time; this is the whole line,
+ * year by year, with what changed and what it is shopped against.
+ */
+export function getModelOverview(makeSlug: string, modelSlug: string): ModelOverview | null {
+  ensureDatabase();
+  const pages = modelPages();
+  const path = `/models/${urlSlug(makeSlug)}/${urlSlug(modelSlug)}`;
+  const family = pages.byPath.get(path);
+  const cars = family && pages.carsByKey.get(family.key);
+  if (!family || !cars?.length) return null;
+
+  const byYear = new Map<number, Car[]>();
+  for (const car of cars) byYear.set(car.year, [...(byYear.get(car.year) ?? []), car]);
+  const years = [...byYear]
+    .sort(([a], [b]) => b - a)
+    .map(([year, list]) => summarizeYear(year, list));
+
+  const generations: ModelOverview['generations'] = [];
+  for (const row of years) {
+    if (!row.generation) continue;
+    const run = generations.at(-1);
+    if (run?.label === row.generation && run.from === row.year + 1) run.from = row.year;
+    else generations.push({ label: row.generation, from: row.year, to: row.year });
+  }
+
+  // The newest year's base car, or one of that year with a photo when it has none.
+  const newest = byYear.get(years[0].year) ?? [];
+  const base = cars.find((car) => car.id === years[0].carId) ?? newest[0];
+  const lead = base.photo ? base : (newest.find((car) => car.photo) ?? base);
+
+  const rivals: ModelOverview['rivals'] = [];
+  const seen = new Set([family.key]);
+  for (const rival of findSimilarCars(base, cachedCars, 24)) {
+    const key = modelLineKey(rival);
+    const rivalPath = pages.pathByKey.get(key);
+    const rivalFamily = rivalPath ? pages.byPath.get(rivalPath) : undefined;
+    if (!rivalPath || !rivalFamily || seen.has(key)) continue;
+    seen.add(key);
+    rivals.push({ make: rivalFamily.make, name: rivalFamily.name, path: rivalPath });
+    if (rivals.length === 6) break;
+  }
+
+  return {
+    make: family.make,
+    name: family.name,
+    path,
+    first: family.first,
+    last: family.last,
+    onSale: family.last >= LATEST_FULL_MODEL_YEAR - 1,
+    lead,
+    years,
+    generations,
+    rivals,
+  };
 }
 
 /**
@@ -1231,9 +1412,7 @@ export function getSearchSuggestions(rawQuery: string, limit = 8): SearchSuggest
     const car = cars[0];
     // "ram" is the make: its 1500, not the Dodge Ram Van's EPA names.
     if (onlyMake && car.make.toLowerCase() !== q) continue;
-    if (
-      suggestedFamilies.has(`${car.make}|${collapseModelKey(car.make, car.model)}`.toLowerCase())
-    ) {
+    if (suggestedFamilies.has(modelLineKey(car))) {
       continue;
     }
     const label = `${car.make} ${car.model}`;

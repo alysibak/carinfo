@@ -1,4 +1,10 @@
-import type { CarDashboard, CarSpecs, SearchQuery, SearchResults } from '../types/car.types';
+import type {
+  CarDashboard,
+  CarSpecs,
+  ModelOverview,
+  SearchQuery,
+  SearchResults,
+} from '../types/car.types';
 import {
   API_BASE_URL,
   API_TIMEOUT_MS,
@@ -24,6 +30,17 @@ export async function getMakes(): Promise<string[]> {
  */
 export async function getModelsByMake(make: string): Promise<string[]> {
   return api.get(`/cars/makes/${encodeURIComponent(make)}/models`);
+}
+
+/**
+ * A model across every year on file, for its page: ("toyota", "camry").
+ */
+export async function getModelOverview(
+  make: string,
+  model: string,
+  options?: RequestOptions,
+): Promise<ModelOverview> {
+  return api.get(`/cars/models/${encodeURIComponent(make)}/${encodeURIComponent(model)}`, options);
 }
 
 /**

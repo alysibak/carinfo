@@ -13,7 +13,7 @@
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { dirname, join, resolve } from 'path';
 import { fileURLToPath } from 'url';
-import { getAllCars, getStatistics } from '../src/services/car.service.js';
+import { getAllCars, getModelPages, getStatistics } from '../src/services/car.service.js';
 import {
   URLS_PER_SITEMAP,
   chunk,
@@ -73,12 +73,22 @@ const vehicles: SitemapEntry[] = [...getAllCars()]
     priority: car.year >= new Date().getFullYear() - 3 ? 0.7 : 0.5,
   }));
 
+// Every year of a model on one page: the pages shoppers search for by name.
+const models: SitemapEntry[] = getModelPages().map((page) => ({
+  path: page.path,
+  lastmod: lastUpdated,
+  changefreq: 'monthly',
+  priority: page.last >= new Date().getFullYear() - 1 ? 0.8 : 0.6,
+}));
+
 rmSync(CHUNK_DIR, { recursive: true, force: true });
 mkdirSync(CHUNK_DIR, { recursive: true });
 
 const files: string[] = [];
 writeFileSync(join(CHUNK_DIR, 'pages.xml'), renderUrlset(origin, pages));
 files.push('sitemaps/pages.xml');
+writeFileSync(join(CHUNK_DIR, 'models.xml'), renderUrlset(origin, models));
+files.push('sitemaps/models.xml');
 
 chunk(vehicles, URLS_PER_SITEMAP).forEach((entries, i) => {
   const name = `vehicles-${i + 1}.xml`;
@@ -88,5 +98,5 @@ chunk(vehicles, URLS_PER_SITEMAP).forEach((entries, i) => {
 
 writeFileSync(join(DIST, 'sitemap.xml'), renderSitemapIndex(origin, files, lastUpdated));
 console.log(
-  `[sitemap] ${pages.length} pages + ${vehicles.length.toLocaleString()} vehicles in ${files.length} files for ${origin}`,
+  `[sitemap] ${pages.length} pages + ${models.length.toLocaleString()} models + ${vehicles.length.toLocaleString()} vehicles in ${files.length} files for ${origin}`,
 );

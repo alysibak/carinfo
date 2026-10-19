@@ -6,9 +6,13 @@ import {
 } from '../config/model-years.js';
 import {
   getCarById,
+  getModelOverview,
+  getModelPages,
   getSearchSuggestions,
   getStatistics,
+  modelPageOf,
   searchCars,
+  urlSlug,
 } from '../services/car.service.js';
 
 describe('car.service search smoke', () => {
@@ -1093,5 +1097,55 @@ describe('car.service search: typos, questions and one row per model', () => {
     expect(labels('telsa')).toEqual(expect.arrayContaining(['Tesla', 'Tesla Model Y']));
     expect(labels('mercedez')).toContain('Mercedes-Benz C-Class');
     expect(labels('f150')).toContain('Ford F-150 Lightning');
+  });
+});
+
+describe('car.service model pages', () => {
+  it('names each model’s page as shoppers write it', () => {
+    expect(urlSlug('Mercedes-Benz')).toBe('mercedes-benz');
+    expect(urlSlug('F-150 Lightning')).toBe('f-150-lightning');
+    const paths = getModelPages().map((page) => page.path);
+    expect(paths).toEqual(
+      expect.arrayContaining([
+        '/models/toyota/camry',
+        '/models/ford/f-150',
+        '/models/bmw/3-series',
+        '/models/mercedes-benz/c-class',
+        '/models/tesla/model-y',
+      ]),
+    );
+    expect(new Set(paths).size).toBe(paths.length);
+  });
+
+  it('gives every year of a model, newest first, by generation, with its rivals', () => {
+    const camry = getModelOverview('toyota', 'camry')!;
+    expect(camry.name).toBe('Camry');
+    expect(camry.first).toBe(1995);
+    const years = camry.years.map((row) => row.year);
+    expect(years).toEqual([...years].sort((a, b) => b - a));
+    // Each row opens that year's car, a Camry of that year.
+    for (const row of camry.years.slice(0, 5)) {
+      const car = getCarById(row.carId)!;
+      expect(car.year).toBe(row.year);
+      expect(car.model).toMatch(/^Camry/);
+    }
+    expect(camry.generations.some((gen) => gen.label.startsWith('XV70'))).toBe(true);
+    expect(camry.rivals.map((rival) => rival.name)).toContain('Accord');
+    expect(camry.lead.year).toBe(camry.last);
+  });
+
+  it('finds the page from a car, a search and any capitalisation, and nothing for a made-up model', () => {
+    const civic = getCarById(searchCars({ query: 'honda civic', limit: 1 }).results[0].id)!;
+    expect(modelPageOf(civic)).toEqual({ label: 'Honda Civic', path: '/models/honda/civic' });
+    expect(
+      searchCars({ query: 'honda civic', collapseByModel: 'auto', limit: 5 }).interpretation
+        ?.modelPage,
+    ).toEqual({ label: 'Honda Civic', path: '/models/honda/civic' });
+    expect(
+      searchCars({ query: 'cheap truck', collapseByModel: 'auto', limit: 5 }).interpretation
+        ?.modelPage,
+    ).toBeUndefined();
+    expect(getModelOverview('Toyota', 'Camry')?.path).toBe('/models/toyota/camry');
+    expect(getModelOverview('toyota', 'flying-car')).toBeNull();
   });
 });

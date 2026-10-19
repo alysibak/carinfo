@@ -213,6 +213,25 @@ describe('SEO routes', () => {
     expect(res.text).toContain('content="noindex"');
   });
 
+  it('serves a model page that links every year and the rivals’ pages', async () => {
+    const res = await request(app).get('/models/toyota/camry');
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/<title>Toyota Camry: every year, 1995–20\d\d \| CarInfo<\/title>/);
+    const ld = jsonLdOf(res.text);
+    expect(ld['@type']).toBe('CollectionPage');
+    expect(ld.mainEntity.numberOfItems).toBeGreaterThan(25);
+    // Crawlable links to the year pages and to the rivals' model pages.
+    expect(res.text).toMatch(/<a href="\/car\/toyota-camry[^"]*">2024 Toyota Camry<\/a>/);
+    expect(res.text).toContain('<a href="/models/honda/accord">Honda Accord</a>');
+    expect(res.text).toContain('/models/toyota/camry');
+  });
+
+  it('answers an unknown model with a real 404, marked noindex', async () => {
+    const res = await request(app).get('/models/toyota/flying-car');
+    expect(res.status).toBe(404);
+    expect(res.text).toContain('<meta name="robots" content="noindex" data-ssr />');
+  });
+
   it('serves the plain SPA shell for a compare with fewer than two known cars', async () => {
     // On Vercel /compare is rewritten to the function; this must not 404.
     for (const url of ['/compare', '/compare?cars=nope', `/compare?cars=${sample.id}`]) {

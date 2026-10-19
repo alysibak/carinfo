@@ -67,6 +67,7 @@ export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard |
 
   const competitiveClass = competitiveClassLabel(car);
   const generation = generationOf(car);
+  const modelPage = carService.modelPageOf(car);
   const position = enginePosition(car);
   const classComparison = compareWithClass(car, carService.getAllCars(), carService.modelLineKey);
   const dashboard: CarDashboard = {
@@ -74,6 +75,7 @@ export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard |
     ...(competitiveClass ? { competitiveClass } : {}),
     ...(classComparison ? { classComparison } : {}),
     ...(generation ? { generation } : {}),
+    ...(modelPage ? { modelPage } : {}),
     // Front is the rule; only the exceptions are worth a row.
     ...(position === 'mid' || position === 'rear' ? { enginePosition: position } : {}),
     segmentCount: segment.length,

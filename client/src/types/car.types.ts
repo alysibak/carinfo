@@ -21,6 +21,8 @@ export type {
   DriveType,
   FuelType,
   MarketValueEstimate,
+  ModelOverview,
+  ModelYearSummary,
   OwnershipAssumptions,
   OwnershipEconomics,
   OwnershipProfile,

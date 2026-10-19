@@ -456,6 +456,16 @@ export default function CarDetail() {
                   <p className="text-sm text-zinc-500 mt-1 tabular-nums">{specLine.join(' · ')}</p>
                 )}
                 <CarPhotoButton car={car} className="mt-2 min-h-[40px] text-sm" />
+                {dashboard.modelPage && (
+                  <p className="mt-2 text-sm">
+                    <Link
+                      to={dashboard.modelPage.path}
+                      className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
+                    >
+                      Every year of the {dashboard.modelPage.label}
+                    </Link>
+                  </p>
+                )}
               </div>
             </div>
 

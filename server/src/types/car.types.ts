@@ -323,6 +323,8 @@ export interface SearchInterpretation {
   vehicleClass?: string;
   /** "telsa model s": the words as typed and as searched, respelt as the site knows them. */
   corrected?: { from: string; to: string };
+  /** "honda civic": the results are all one model, which has a page of every year. */
+  modelPage?: { label: string; path: string };
   /** "best", "reliable": words no data on file can measure, set aside. */
   unmeasured?: string[];
   /** "good gas mileage": EVs left out of an MPG order. */
@@ -383,6 +385,46 @@ export interface SearchResults {
   interpretation?: SearchInterpretation;
   /** Whether the rows are one per model (true) or per model year (false), when collapsed. */
   onePerModel?: boolean;
+}
+
+/** One model year of a model, across its configurations: a row of the model's page. */
+export interface ModelYearSummary {
+  year: number;
+  /** The year's base configuration: the cheapest, two-wheel drive before AWD. */
+  carId: string;
+  configurations: number;
+  /** Estimated value, CAD, cheapest and dearest configuration. */
+  price?: { min: number; max: number };
+  /** EPA combined MPG, the thriftiest configuration that burns fuel. */
+  combinedMpg?: number;
+  /** EPA range, the longest-range electric configuration. */
+  rangeMiles?: number;
+  horsepower?: { min: number; max: number };
+  /** NHTSA overall stars, the best rated configuration. */
+  safetyStars?: number;
+  fuelTypes: FuelType[];
+  bodyStyles: BodyStyle[];
+  /** "XV70 · 8th generation (2018–2024)", where the generation is known. */
+  generation?: string;
+}
+
+/** A model across every year on file: the model's page ("/models/toyota/camry"). */
+export interface ModelOverview {
+  make: string;
+  /** "Camry", "F-150", "3 Series". */
+  name: string;
+  path: string;
+  first: number;
+  last: number;
+  onSale: boolean;
+  /** The newest year's base configuration, for the picture and photo. */
+  lead: Car;
+  /** Newest first. */
+  years: ModelYearSummary[];
+  /** Runs of years in one generation, newest first, where generations are known. */
+  generations: Array<{ label: string; from: number; to: number }>;
+  /** Models shoppers compare it with, each with its own page. */
+  rivals: Array<{ make: string; name: string; path: string }>;
 }
 
 export interface OwnershipAssumptions {
@@ -542,4 +584,6 @@ export interface CarDashboard {
   generation?: string;
   /** Where the engine sits, when not in front (utils/engine-position.ts). */
   enginePosition?: 'mid' | 'rear';
+  /** The page of every year of its model: "Honda Civic", "/models/honda/civic". */
+  modelPage?: { label: string; path: string };
 }

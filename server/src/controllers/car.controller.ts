@@ -107,6 +107,19 @@ export function getCarById(req: Request, res: Response, next: NextFunction) {
 }
 
 /**
+ * A model across every year on file: /api/cars/models/toyota/camry
+ */
+export function getModelOverview(req: Request, res: Response, next: NextFunction) {
+  try {
+    const overview = carService.getModelOverview(req.params.make, req.params.model);
+    if (!overview) throw new HttpError(404, 'Model not found');
+    res.json({ success: true, data: overview });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
  * Compare multiple cars
  */
 export function compareCars(req: Request, res: Response, next: NextFunction) {

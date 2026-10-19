@@ -16,6 +16,9 @@ router.get('/makes', cacheData, carController.getMakes);
 // Get models by make
 router.get('/makes/:make/models', cacheData, carController.getModelsByMake);
 
+// A model across every year on file, for its page
+router.get('/models/:make/:model', cacheData, carController.getModelOverview);
+
 // Search cars with filters
 router.post('/search', searchLimiter(), carController.searchCars);
 // GET mirror of /search so result pages are CDN-cacheable and linkable.
