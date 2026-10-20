@@ -1174,6 +1174,15 @@ describe('car.service model pages', () => {
     expect(model.interpretation?.modelPage?.path).toBe('/models/honda/civic');
   });
 
+  it('says the year NHTSA lists a warning as standard on every version it tested', () => {
+    const rav4 = getModelOverview('toyota', 'rav4')!;
+    const y2018 = rav4.years.find((row) => row.year === 2018)!;
+    expect(y2018.standardTech).toEqual(['fcw', 'ldw']);
+    expect(y2018.changes).toContain('Forward collision warning made standard');
+    // Years before NHTSA's 2011 ratings say nothing either way.
+    expect(rav4.years.find((row) => row.year === 2005)?.standardTech).toBeUndefined();
+  });
+
   it('keeps a search for safety technology to cars NHTSA lists with it', () => {
     const found = searchCars({ query: 'suv with collision warning', limit: 50 });
     expect(found.total).toBeGreaterThan(100);

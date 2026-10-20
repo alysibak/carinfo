@@ -76,6 +76,32 @@ describe('summarizeComparison', () => {
     ]);
   });
 
+  it('names the least rollover risk, and standard warnings only among cars NHTSA lists', () => {
+    const tall = car('tall', {
+      ...civic,
+      id: 'tall',
+      safetyRating: { nhtsaIds: [1], rolloverRisk: 0.17 },
+      safetyTech: { esc: 'standard', fcw: 'optional' },
+    });
+    const low = car('low', {
+      ...civic,
+      id: 'low',
+      make: 'Tesla',
+      model: 'Model 3',
+      safetyRating: { nhtsaIds: [2], rolloverRisk: 0.07 },
+      safetyTech: { esc: 'standard', fcw: 'standard' },
+    });
+    const [first, second] = summarizeComparison([{ car: tall }, { car: low }]);
+    expect(first.sentence).toBe('Much the same as the others on paper.');
+    expect(second.sentence).toBe(
+      'The least rollover risk (7% against 17%) and the only one with forward collision warning standard.',
+    );
+    // A car NHTSA never tested is not one without the warning.
+    const untested = car('untested', { ...civic, id: 'untested', safetyRating: undefined });
+    const lines = summarizeComparison([{ car: untested }, { car: low }]);
+    expect(lines[1].sentence).not.toMatch(/collision warning/);
+  });
+
   it('needs two cars', () => {
     expect(summarizeComparison([{ car: civic }])).toEqual([]);
   });

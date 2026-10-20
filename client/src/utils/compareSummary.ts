@@ -1,6 +1,7 @@
 import type { CarDashboard, CarSpecs } from '../types/car.types';
 import { efficiencyOf, rangeKm } from './efficiency';
 import { displayModelLabel } from './trimLabel';
+import { rolloverRiskText } from './safetyTech';
 
 export interface ComparePair {
   car: CarSpecs;
@@ -131,6 +132,34 @@ export function summarizeComparison(pairs: ComparePair[]): CompareLine[] {
       (best, next) => best - next >= 1,
     );
     if (safety) add(safety.id, `the best NHTSA rating (${safety.best}/5)`);
+  }
+
+  // NHTSA's rollover risk compares across classes, unlike its frontal stars.
+  const rollover = leader(
+    cars.flatMap((c) =>
+      c.safetyRating?.rolloverRisk != null
+        ? [{ id: c.id, value: c.safetyRating.rolloverRisk }]
+        : [],
+    ),
+    true,
+    (best, next) => next - best >= 0.05,
+  );
+  if (rollover) {
+    add(
+      rollover.id,
+      `the least rollover risk (${rolloverRiskText(rollover.best)} against ${rolloverRiskText(rollover.next)})`,
+    );
+  }
+
+  // Only among cars NHTSA lists at all: "not listed" is not "lacks it".
+  if (cars.length > 1 && cars.every((c) => c.safetyRating?.nhtsaIds?.length)) {
+    for (const [feature, name] of [
+      ['fcw', 'forward collision warning'],
+      ['ldw', 'lane departure warning'],
+    ] as const) {
+      const standard = cars.filter((c) => c.safetyTech?.[feature] === 'standard');
+      if (standard.length === 1) add(standard[0].id, `the only one with ${name} standard`);
+    }
   }
 
   const power = leader(

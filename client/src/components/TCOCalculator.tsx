@@ -1,6 +1,11 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import type { CarSpecs, OwnershipEconomics } from '../types/car.types';
-import { getRegionalAssumptions, type RegionId } from '@carinfo/config/regional-assumptions';
+import {
+  getRegionalAssumptions,
+  monthLabel,
+  type RegionId,
+} from '@carinfo/config/regional-assumptions';
+import { PUMP_PRICES } from '@carinfo/config/pump-prices';
 import { DISPLAY_CURRENCY } from '../utils/currency';
 import { usesMpge } from '../utils/fuelDisplay';
 import { useModalFocus } from '../hooks/useModalFocus';
@@ -69,6 +74,11 @@ function NumberField({
   );
 }
 
+/** Statistics Canada's cities, "Canada" (no diesel or premium on file) last. */
+const PUMP_CITIES = (Object.keys(PUMP_PRICES.cities) as Array<keyof typeof PUMP_PRICES.cities>)
+  .filter((place) => place !== 'Canada')
+  .sort();
+
 function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
     <div className="flex justify-between items-baseline gap-4 pb-3 border-b border-zinc-900">
@@ -89,7 +99,21 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
     [car, ownership, region],
   );
   const [inputs, setInputs] = useState<TcoInputs>(defaults);
+  const regionCity = getRegionalAssumptions(region).pumpPrices.place;
+  const [city, setCity] = useState(regionCity);
   const containerRef = useModalFocus(true, onClose);
+
+  // Another city's average pump prices, over the same months as the region's.
+  const pickCity = (place: string) => {
+    setCity(place);
+    const prices = PUMP_PRICES.cities[place as keyof typeof PUMP_PRICES.cities];
+    if (!prices) return;
+    setInputs((current) => ({
+      ...current,
+      gasPriceCadPerL: prices.regular,
+      ...('diesel' in prices ? { dieselPriceCadPerL: prices.diesel } : {}),
+    }));
+  };
 
   // Background scroll would move the page behind a full-screen dialog.
   useEffect(() => {
@@ -177,7 +201,10 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
               <h3 className="text-xl font-bold tracking-tight">Your assumptions</h3>
               <button
                 type="button"
-                onClick={() => setInputs(defaults)}
+                onClick={() => {
+                  setInputs(defaults);
+                  setCity(regionCity);
+                }}
                 disabled={atDefaults}
                 className="text-xs text-zinc-400 hover:text-white disabled:opacity-40 disabled:hover:text-zinc-400"
               >
@@ -208,6 +235,30 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
                 onChange={set('annualKm')}
                 step={1000}
               />
+              {(showGas || showDiesel) && (
+                <div>
+                  <label htmlFor={`${titleId}-city`} className="block text-xs text-zinc-300 mb-2">
+                    Pump prices for
+                  </label>
+                  <select
+                    id={`${titleId}-city`}
+                    value={city}
+                    onChange={(e) => pickCity(e.target.value)}
+                    className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-sm focus:outline-hidden focus:border-zinc-500 transition-colors"
+                  >
+                    {PUMP_CITIES.map((place) => (
+                      <option key={place} value={place}>
+                        {place}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1.5 text-xs text-zinc-500">
+                    Statistics Canada’s self-serve average, {monthLabel(PUMP_PRICES.from)}–
+                    {monthLabel(PUMP_PRICES.through)}. Insurance and registration stay{' '}
+                    {getRegionalAssumptions(region).label}’s.
+                  </p>
+                </div>
+              )}
               {showGas && (
                 <NumberField
                   label="Gas price"

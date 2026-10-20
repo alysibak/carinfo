@@ -1187,6 +1187,11 @@ function summarizeYear(year: number, cars: Car[]): ModelYearSummary {
   const burnsFuel = cars.filter((car) => car.engine.fuelType !== 'electric');
   const electric = cars.filter((car) => car.engine.fuelType === 'electric');
   const generation = generationOf(base);
+  // Standard on every configuration NHTSA tested that year, not just one trim.
+  const tested = cars.filter((car) => car.safetyRating?.nhtsaIds?.length);
+  const standardTech = (['fcw', 'ldw'] as const).filter((feature) =>
+    tested.every((car) => car.safetyTech?.[feature] === 'standard'),
+  );
   return {
     year,
     carId: base.id,
@@ -1201,8 +1206,11 @@ function summarizeYear(year: number, cars: Car[]): ModelYearSummary {
     ...(generation ? { generation } : {}),
     ...(recalls != null ? { recalls } : {}),
     ...(complaints != null ? { complaints } : {}),
+    ...(tested.length ? { standardTech } : {}),
   };
 }
+
+const TECH_NAMES = { fcw: 'Forward collision warning', ldw: 'Lane departure warning' } as const;
 
 const FUEL_NAMES: Record<string, string> = {
   gasoline: 'Gasoline',
@@ -1270,6 +1278,13 @@ function yearChanges(before: ModelYearSummary, after: ModelYearSummary): string[
     const now = Math.round(after.rangeMiles * 1.609344);
     const then = Math.round(before.rangeMiles * 1.609344);
     if (Math.abs(now - then) >= 15) changes.push(`Range up to ${now} km (was ${then})`);
+  }
+  // Only between two years NHTSA tested: an untested year says nothing of it.
+  const then = before.standardTech;
+  if (after.standardTech && then) {
+    for (const feature of after.standardTech.filter((f) => !then.includes(f))) {
+      changes.push(`${TECH_NAMES[feature]} made standard`);
+    }
   }
   return changes;
 }

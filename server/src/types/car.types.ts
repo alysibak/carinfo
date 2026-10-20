@@ -491,8 +491,14 @@ export interface ModelYearSummary {
   /** Owner complaints to NHTSA, where its records for the model are matched. */
   complaints?: number;
   /**
-   * What changed from the model year before it on file, from the EPA records:
-   * "New generation: XV70 · 8th generation", "Hybrid added", "Up to 301 hp (was 268)".
+   * Safety technology NHTSA lists as standard on every configuration of the
+   * year it tested; absent where NHTSA tested none.
+   */
+  standardTech?: Array<'fcw' | 'ldw'>;
+  /**
+   * What changed from the model year before it on file, from the EPA and NHTSA
+   * records: "New generation: XV70 · 8th generation", "Hybrid added", "Up to 301
+   * hp (was 268)", "Forward collision warning made standard".
    */
   changes?: string[];
 }
