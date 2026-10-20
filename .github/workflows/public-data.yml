@@ -1,0 +1,106 @@
+name: Public data
+
+# Downloads the government data the site's safety, recall, complaint, size and
+# fuel-price facts come from (server/scripts/fetch-public-data.ts): NHTSA's
+# star ratings and safety features, its recall and complaint files, Transport
+# Canada's recalls and vehicle dimensions, Statistics Canada's pump prices and
+# NRCan's fuel consumption ratings. GitHub's runners reach them all.
+#
+# The result goes to the public-data branch for review, never straight to
+# main: the site reads only what has been matched to its cars and checked.
+# Each part runs on its own, so one source being down leaves the others.
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/public-data.yml
+      - server/scripts/fetch-public-data.ts
+  schedule:
+    - cron: '41 8 * * 2' # Tuesdays: recalls and complaints arrive daily
+  workflow_dispatch:
+
+concurrency:
+  group: public-data
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash
+    working-directory: server
+
+env:
+  NODE_VERSION: '24'
+  FETCH: npx tsx scripts/fetch-public-data.ts
+
+jobs:
+  fetch:
+    name: Fetch public data
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+        working-directory: .
+
+      - name: NHTSA star ratings and safety features
+        continue-on-error: true
+        run: $FETCH nhtsa-ratings 2>&1 | tee -a ../public-data-report.txt
+
+      - name: NHTSA recalls
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/rcl && cd /tmp/rcl
+          curl -fsSL --retry 3 -o FLAT_RCL.zip https://static.nhtsa.gov/odi/ffdd/rcl/FLAT_RCL.zip
+          curl -fsSL --retry 3 -o RCL.txt https://static.nhtsa.gov/odi/ffdd/rcl/RCL.txt
+          unzip -l FLAT_RCL.zip | tee -a "$GITHUB_WORKSPACE/public-data-report.txt"
+          # One file or several (NHTSA has split them by year): read them all.
+          unzip -o -q -d flat FLAT_RCL.zip && cat flat/*.txt > all.txt
+          cd "$GITHUB_WORKSPACE/server"
+          mkdir -p data/public/probe && cp /tmp/rcl/RCL.txt data/public/probe/RCL.txt
+          $FETCH recalls /tmp/rcl/all.txt /tmp/rcl/RCL.txt 2>&1 | tee -a ../public-data-report.txt
+
+      - name: NHTSA complaints
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/cmpl && cd /tmp/cmpl
+          curl -fsSL --retry 3 -o FLAT_CMPL.zip https://static.nhtsa.gov/odi/ffdd/cmpl/FLAT_CMPL.zip
+          curl -fsSL --retry 3 -o CMPL.txt https://static.nhtsa.gov/odi/ffdd/cmpl/CMPL.txt
+          unzip -l FLAT_CMPL.zip | tee -a "$GITHUB_WORKSPACE/public-data-report.txt"
+          unzip -o -q -d flat FLAT_CMPL.zip && rm FLAT_CMPL.zip && cat flat/*.txt > all.txt && rm -r flat
+          cd "$GITHUB_WORKSPACE/server"
+          mkdir -p data/public/probe && cp /tmp/cmpl/CMPL.txt data/public/probe/CMPL.txt
+          $FETCH complaints /tmp/cmpl/all.txt /tmp/cmpl/CMPL.txt 2>&1 | tee -a ../public-data-report.txt
+
+      - name: Transport Canada recalls
+        continue-on-error: true
+        run: $FETCH canada-recalls 2>&1 | tee -a ../public-data-report.txt
+
+      - name: Statistics Canada pump prices
+        continue-on-error: true
+        run: $FETCH fuel-prices 2>&1 | tee -a ../public-data-report.txt
+
+      - name: NRCan fuel consumption ratings
+        continue-on-error: true
+        run: $FETCH nrcan 2>&1 | tee -a ../public-data-report.txt
+
+      - name: Transport Canada vehicle dimensions
+        continue-on-error: true
+        run: $FETCH canadian-specs 2>&1 | tee -a ../public-data-report.txt
+
+      - name: Push to the public-data branch
+        working-directory: .
+        run: |
+          { echo '```'; cat public-data-report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -B public-data
+          git add -f public-data-report.txt server/data/public
+          git commit -m "Public data ($(date -u +%F))" -m "$(grep '^Done' public-data-report.txt || true)"
+          git push -f origin public-data
