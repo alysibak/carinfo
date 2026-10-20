@@ -440,6 +440,11 @@ export interface ModelYearSummary {
   recalls?: number;
   /** Owner complaints to NHTSA, where its records for the model are matched. */
   complaints?: number;
+  /**
+   * What changed from the model year before it on file, from the EPA records:
+   * "New generation: XV70 · 8th generation", "Hybrid added", "Up to 301 hp (was 268)".
+   */
+  changes?: string[];
 }
 
 /** A model across every year on file: the model's page ("/models/toyota/camry"). */

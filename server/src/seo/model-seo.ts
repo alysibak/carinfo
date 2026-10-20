@@ -99,7 +99,8 @@ function modelSummaryHtml(overview: ModelOverview, name: string, years: string):
           .map(
             (row) =>
               `<li><a href="/car/${escapeHtml(encodeURIComponent(row.carId))}">${row.year} ${escapeHtml(name)}</a>` +
-              `${yearFacts(row) ? `: ${escapeHtml(yearFacts(row))}` : ''}</li>`,
+              `${yearFacts(row) ? `: ${escapeHtml(yearFacts(row))}` : ''}` +
+              `${row.changes ? `. ${escapeHtml(row.changes.join('; '))}` : ''}</li>`,
           )
           .join('') +
         `</ul>`,

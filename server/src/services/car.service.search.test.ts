@@ -1135,6 +1135,9 @@ describe('car.service model pages', () => {
     }
     expect(camry.generations.some((gen) => gen.label.startsWith('XV70'))).toBe(true);
     expect(camry.rivals.map((rival) => rival.name)).toContain('Accord');
+    // What changed: the XV70 generation began with the 2018 model year.
+    const y2018 = camry.years.find((row) => row.year === 2018)!;
+    expect(y2018.changes?.[0]).toMatch(/^New generation: XV70/);
     expect(camry.lead.year).toBe(camry.last);
   });
 

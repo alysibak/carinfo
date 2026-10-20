@@ -28,6 +28,7 @@ const overview: ModelOverview = {
       fuelTypes: ['hybrid'],
       bodyStyles: ['sedan'],
       generation: 'XV80 · 9th generation (2025 on)',
+      changes: ['New generation: XV80 · 9th generation', 'Gasoline dropped'],
     },
     {
       year: 2024,
@@ -86,6 +87,8 @@ describe('ModelPage', () => {
       'href',
       '/models/honda/accord',
     );
+    // What changed from the year before.
+    expect(screen.getByText('Gasoline dropped')).toBeVisible();
     expect(document.title).toBe('Toyota Camry: every year, 2023–2026 | CarInfo');
   });
 

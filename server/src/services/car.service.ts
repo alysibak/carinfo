@@ -1173,6 +1173,76 @@ function summarizeYear(year: number, cars: Car[]): ModelYearSummary {
   };
 }
 
+const FUEL_NAMES: Record<string, string> = {
+  gasoline: 'Gasoline',
+  diesel: 'Diesel',
+  hybrid: 'Hybrid',
+  'plug-in hybrid': 'Plug-in hybrid',
+  electric: 'Electric',
+  hydrogen: 'Hydrogen fuel cell',
+  'natural gas': 'Natural gas',
+};
+const BODY_NAMES: Record<string, string> = {
+  sedan: 'Sedan',
+  suv: 'SUV',
+  coupe: 'Coupe',
+  convertible: 'Convertible',
+  hatchback: 'Hatchback',
+  wagon: 'Wagon',
+  truck: 'Pickup',
+  van: 'Van',
+  minivan: 'Minivan',
+};
+const litresPer100 = (mpg: number) => Math.round((235.215 / mpg) * 10) / 10;
+
+/**
+ * What changed from one model year on file to the next, from the EPA rows
+ * alone: a new generation, a powertrain or body added or dropped, and fuel
+ * use, power or range moving by more than rounding ("from 5.7 to 4.6 L/100 km").
+ */
+function yearChanges(before: ModelYearSummary, after: ModelYearSummary): string[] {
+  const changes: string[] = [];
+  if (after.generation && after.generation !== before.generation) {
+    changes.push(`New generation: ${after.generation.replace(/\s*\([^)]*\)$/, '')}`);
+  }
+  const named = (names: Record<string, string>, key: string) => names[key] ?? key;
+  const added = (now: string[], then: string[]) => now.filter((x) => !then.includes(x));
+  for (const fuel of added(after.fuelTypes, before.fuelTypes)) {
+    changes.push(`${named(FUEL_NAMES, fuel)} added`);
+  }
+  for (const fuel of added(before.fuelTypes, after.fuelTypes)) {
+    changes.push(`${named(FUEL_NAMES, fuel)} dropped`);
+  }
+  for (const body of added(after.bodyStyles, before.bodyStyles)) {
+    changes.push(`${named(BODY_NAMES, body)} added`);
+  }
+  for (const body of added(before.bodyStyles, after.bodyStyles)) {
+    changes.push(`${named(BODY_NAMES, body)} dropped`);
+  }
+  if (after.combinedMpg && before.combinedMpg) {
+    const now = litresPer100(after.combinedMpg);
+    const then = litresPer100(before.combinedMpg);
+    if (Math.abs(now - then) >= 0.3) {
+      changes.push(`Best fuel use ${now.toFixed(1)} L/100 km (was ${then.toFixed(1)})`);
+    }
+  }
+  if (after.horsepower && before.horsepower && after.horsepower.max - before.horsepower.max >= 10) {
+    changes.push(`Up to ${after.horsepower.max} hp (was ${before.horsepower.max})`);
+  } else if (
+    after.horsepower &&
+    before.horsepower &&
+    before.horsepower.max - after.horsepower.max >= 10
+  ) {
+    changes.push(`Up to ${after.horsepower.max} hp (was ${before.horsepower.max})`);
+  }
+  if (after.rangeMiles && before.rangeMiles) {
+    const now = Math.round(after.rangeMiles * 1.609344);
+    const then = Math.round(before.rangeMiles * 1.609344);
+    if (Math.abs(now - then) >= 15) changes.push(`Range up to ${now} km (was ${then})`);
+  }
+  return changes;
+}
+
 /**
  * A model across every year on file, for its page: "/models/toyota/camry".
  * Search showed a model a configuration at a time; this is the whole line,
@@ -1191,6 +1261,10 @@ export function getModelOverview(makeSlug: string, modelSlug: string): ModelOver
   const years = [...byYear]
     .sort(([a], [b]) => b - a)
     .map(([year, list]) => summarizeYear(year, list));
+  years.forEach((row, i) => {
+    const changes = i + 1 < years.length ? yearChanges(years[i + 1], row) : [];
+    if (changes.length) row.changes = changes;
+  });
 
   const generations: ModelOverview['generations'] = [];
   for (const row of years) {

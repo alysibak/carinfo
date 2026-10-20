@@ -169,6 +169,12 @@ export default function ModelPage() {
                     </span>
                     <span className="min-w-0 flex-1 text-xs sm:text-sm text-zinc-400 leading-relaxed tabular-nums">
                       <Facts facts={modelYearFacts(row)} />
+                      {row.changes && (
+                        // What changed from the year before, from the EPA records.
+                        <span className="block mt-1 text-accent">
+                          <Facts facts={row.changes} />
+                        </span>
+                      )}
                     </span>
                     <span
                       className="shrink-0 text-zinc-600 group-hover:text-white text-sm"
