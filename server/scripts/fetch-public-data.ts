@@ -185,9 +185,12 @@ async function canadianSpecs(): Promise<void> {
         probe('canadian-specs.json', { url, ...res, Results: results.slice(0, 5) });
       }
       // Each result is a list of name and value pairs: one object per vehicle.
-      return results.map((result) =>
-        Object.fromEntries((result.Specs ?? []).map((spec) => [spec.Name, spec.Value])),
-      );
+      // MYR is the year the design was first measured ("94" answers for 1995),
+      // so the year asked for is kept: the rows for it are those valid that year.
+      return results.map((result) => ({
+        year,
+        ...Object.fromEntries((result.Specs ?? []).map((spec) => [spec.Name, spec.Value])),
+      }));
     })
   ).flat();
   write('canadian-specs.json', {
