@@ -62,4 +62,24 @@ describe('beforeYouBuy', () => {
       'No recalls in Canada listed for the 2018 Honda CR-V.',
     );
   });
+
+  it('says where thieves rank the model, and what to ask the insurer', () => {
+    const theft = {
+      rank: 3,
+      of: 10,
+      model: 'Honda CR-V',
+      year: 2024,
+      url: 'https://www.equiteassociation.com/top-10-most-stolen-vehicles',
+    };
+    const items = beforeYouBuy(
+      dashboard({ recalls: undefined, complaints: undefined, theft }, { safetyRating: undefined }),
+    );
+    expect(items).toEqual([
+      {
+        key: 'theft',
+        href: '#theft',
+        text: 'The Honda CR-V was the 3rd most stolen vehicle in Canada in 2024: ask your insurer what it would cost to insure and whether it requires an anti-theft device.',
+      },
+    ]);
+  });
 });

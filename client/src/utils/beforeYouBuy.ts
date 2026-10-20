@@ -1,11 +1,12 @@
 import type { CarDashboard } from '../types/car.types';
 import { complaintPart } from './recalls';
+import { theftPlace } from '@carinfo/shared/theft';
 
 export interface BeforeYouBuyItem {
-  key: 'recalls' | 'complaints' | 'safety';
+  key: 'recalls' | 'complaints' | 'safety' | 'theft';
   text: string;
   /** The section of the car page it comes from. */
-  href: '#recalls' | '#safety';
+  href: '#recalls' | '#safety' | '#theft';
 }
 
 const FCW_WORDS = {
@@ -23,10 +24,11 @@ function list(words: string[]): string {
 /**
  * What to check before buying the car, from the records on its page: the
  * model year's recalls in Canada (to verify by VIN), what owners complained
- * of most to NHTSA, and NHTSA's crash rating. Only what is on file is said.
+ * of most to NHTSA, NHTSA's crash rating, and whether thieves favour the
+ * model. Only what is on file is said.
  */
 export function beforeYouBuy(dashboard: CarDashboard): BeforeYouBuyItem[] {
-  const { car, recalls, complaints, complaintRank, modelPage } = dashboard;
+  const { car, recalls, complaints, complaintRank, modelPage, theft } = dashboard;
   const name = `${car.year} ${modelPage?.label ?? `${car.make} ${car.model}`}`;
   const items: BeforeYouBuyItem[] = [];
 
@@ -66,6 +68,14 @@ export function beforeYouBuy(dashboard: CarDashboard): BeforeYouBuyItem[] {
       key: 'safety',
       href: '#safety',
       text: 'NHTSA lists this version but has not given it star ratings.',
+    });
+  }
+
+  if (theft) {
+    items.push({
+      key: 'theft',
+      href: '#theft',
+      text: `The ${theft.model} was ${theftPlace(theft)}: ask your insurer what it would cost to insure and whether it requires an anti-theft device.`,
     });
   }
   return items;

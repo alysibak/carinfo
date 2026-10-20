@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { CarDashboard } from '../types/car.types';
+import { ordinal } from '@carinfo/shared/theft';
 import { complaintPart, recallDate, recallNotice } from '../utils/recalls';
 
 const CANADA_RECALLS = 'https://recalls-rappels.canada.ca/en';
@@ -8,15 +9,6 @@ const SHOWN = 4;
 
 const linkClass =
   'text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500';
-
-const ordinal = (n: number) => {
-  const tens = n % 100;
-  const suffix =
-    tens >= 11 && tens <= 13
-      ? 'th'
-      : (({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th');
-  return `${n}${suffix}`;
-};
 
 /** "The most of the Honda CR-V's 31 model years on file." */
 function rankSentence(rank: { position: number; of: number }, model = 'model'): string {

@@ -46,6 +46,13 @@ const SOURCES = [
     terms: 'Statistics Canada Open Licence.',
   },
   {
+    name: 'Équité Association, Top 10 Most Stolen Vehicles in Canada',
+    url: 'https://www.equiteassociation.com/top-10-most-stolen-vehicles',
+    gives:
+      'where a model stands among the ten stolen most in Canada in the latest year counted: a count, so models with many on the road rank higher.',
+    terms: 'Published by Équité, the insurance industry’s body for fraud and crime; ranks only.',
+  },
+  {
     name: 'Wikimedia Commons',
     url: 'https://commons.wikimedia.org',
     gives: 'photos of a car’s own model year, on request.',

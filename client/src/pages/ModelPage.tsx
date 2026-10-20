@@ -11,6 +11,7 @@ import VehiclePlaceholder from '../components/VehiclePlaceholder';
 import { modelYearFacts, yearSpan } from '../utils/modelYearFacts';
 import { usePageMeta } from '../utils/pageMeta';
 import { complaintPart } from '../utils/recalls';
+import { theftSentence } from '@carinfo/shared/theft';
 
 type Status = 'loading' | 'ready' | 'missing' | 'error';
 
@@ -176,6 +177,25 @@ export default function ModelPage() {
             </section>
           );
         })()}
+
+        {overview.theft && (
+          <section className="mb-8">
+            <h2 className="text-xs text-zinc-500 mb-2">Theft in Canada</h2>
+            <p className="text-sm text-zinc-300">{theftSentence(overview.theft)}</p>
+            <p className="text-xs text-zinc-500 mt-2 leading-relaxed max-w-xl">
+              A count of thefts, so a model with many on the road ranks higher. Ask your insurer
+              whether it requires an anti-theft device.{' '}
+              <a
+                href={overview.theft.url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
+              >
+                Équité’s top {overview.theft.of}
+              </a>
+            </p>
+          </section>
+        )}
 
         {overview.rivals.length > 0 && (
           <section className="mb-8">

@@ -224,6 +224,16 @@ describe('SEO routes', () => {
     expect(res.text).toMatch(/<a href="\/car\/toyota-camry[^"]*">2024 Toyota Camry<\/a>/);
     expect(res.text).toContain('<a href="/models/honda/accord">Honda Accord</a>');
     expect(res.text).toContain('/models/toyota/camry');
+    // The Camry is not on Équité's list of the most stolen.
+    expect(res.text).not.toContain('Theft in Canada');
+  });
+
+  it('says where Équité ranks a model among Canada’s most stolen', async () => {
+    const res = await request(app).get('/models/toyota/rav4');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain(
+      'The Toyota RAV4 was the most stolen vehicle in Canada in 2024, by Équité Association’s count.',
+    );
   });
 
   it('answers an unknown model with a real 404, marked noindex', async () => {

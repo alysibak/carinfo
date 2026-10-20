@@ -27,6 +27,7 @@ import { formatVolume } from '../utils/space';
 import { availabilityLabel, rolloverRiskText } from '../utils/safetyTech';
 import { formatKg, formatMetres } from '../utils/size';
 import { complaintPart } from '../utils/recalls';
+import { ordinal } from '@carinfo/shared/theft';
 
 function isUnavailable(value: string | number): boolean {
   return value === UNAVAILABLE_LABEL;
@@ -60,6 +61,18 @@ const ROW_ORDER = [
   'fuelHighway',
   'range',
   'safety',
+  'rolloverRisk',
+  'fcw',
+  'ldw',
+  'recalls',
+  'complaints',
+  'complaintPart',
+  'theft',
+  'length',
+  'width',
+  'weight',
+  'luggage',
+  'passenger',
   'horsepower',
   'torque',
   'engine',
@@ -75,6 +88,11 @@ const ROW_ORDER = [
   'fiveYear',
   'zeroToSixty',
 ];
+/** A row left out of ROW_ORDER goes last, not first. */
+const rowRank = (key: string) => {
+  const i = ROW_ORDER.indexOf(key);
+  return i === -1 ? ROW_ORDER.length : i;
+};
 
 const bodyLabel = (style: string) =>
   style === 'suv'
@@ -319,6 +337,13 @@ const ALL_SPECS: SpecRow[] = [
     },
   },
   {
+    key: 'theft',
+    label: 'Most stolen in Canada',
+    hint: 'Équité Association, top 10',
+    getValue: (_car, dash) =>
+      dash.theft ? `${ordinal(dash.theft.rank)} in ${dash.theft.year}` : 'Not in the top 10',
+  },
+  {
     key: 'co2',
     label: 'CO₂',
     provenanceKey: 'epa.co2',
@@ -481,7 +506,7 @@ export default function Compare() {
   }));
 
   const specs = [...ALL_SPECS]
-    .sort((a, b) => ROW_ORDER.indexOf(a.key) - ROW_ORDER.indexOf(b.key))
+    .sort((a, b) => rowRank(a.key) - rowRank(b.key))
     .filter((spec) =>
       pairs.some(
         ({ car, dashboard }) => dashboard && !isUnavailable(spec.getValue(car, dashboard)),
@@ -660,7 +685,7 @@ export default function Compare() {
                             >
                               <span className="flex flex-wrap items-center gap-x-4 gap-y-2">
                                 <span className="eyebrow">
-                                  {estimate ? 'Estimates' : 'From EPA and NHTSA'}
+                                  {estimate ? 'Estimates' : 'From the records'}
                                 </span>
                                 {estimate && (
                                   <>

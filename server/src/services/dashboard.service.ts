@@ -21,6 +21,7 @@ import {
   recordDates,
 } from './safety-records.service.js';
 import { nhtsaRatingsDate, nhtsaTestsFor } from '../utils/nhtsa-ratings.js';
+import { theftRankOf } from '../config/most-stolen.js';
 
 export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard | null {
   const car = carService.getCarById(id);
@@ -83,6 +84,7 @@ export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard |
     ? complaintRankFor(line, car.year, carService.lineYearsOf(car))
     : undefined;
   const nhtsaTests = nhtsaTestsFor(car);
+  const theft = theftRankOf(line);
   // Only worth the search where a rival could do better: below five stars,
   // or five without collision warning standard.
   const safer =
@@ -106,6 +108,7 @@ export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard |
     ...(complaintRank ? { complaintRank } : {}),
     ...(nhtsaTests.length ? { nhtsaTests } : {}),
     ...(safer.length ? { saferAlternatives: safer } : {}),
+    ...(theft ? { theft } : {}),
     ...(recalls || complaints || nhtsaTests.length
       ? {
           recordDates: {
@@ -196,5 +199,6 @@ export function getCarRecords(id: string): CarRecordsSummary | null {
     recalls: recalls ? recalls.length : null,
     complaints: complaints ? complaints.complaints : null,
     complaintPart: complaints?.parts[0]?.[0] ?? null,
+    theft: theftRankOf(line) ?? null,
   };
 }

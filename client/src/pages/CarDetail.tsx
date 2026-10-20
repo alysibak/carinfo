@@ -45,6 +45,7 @@ import SafetyRecords from '../components/SafetyRecords';
 import CrashTests from '../components/CrashTests';
 import BeforeYouBuy from '../components/BeforeYouBuy';
 import SizeAndFit from '../components/SizeAndFit';
+import TheftRecord from '../components/TheftRecord';
 
 function Subheading({ children }: { children: React.ReactNode }) {
   return <p className="text-sm font-semibold text-zinc-200 pt-3 pb-1">{children}</p>;
@@ -676,6 +677,8 @@ export default function CarDetail() {
         dashboard={dashboard}
         name={`${car.year} ${dashboard.modelPage?.label ?? `${car.make} ${car.model}`}`}
       />
+
+      {dashboard.theft && <TheftRecord theft={dashboard.theft} />}
 
       {showOwnership && (
         <section id="costs" className="border-b border-zinc-900 scroll-mt-32">

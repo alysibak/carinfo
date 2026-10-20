@@ -3,6 +3,7 @@ import { escapeHtml } from './html.js';
 import { absoluteUrl } from './site.js';
 import { COMMONS_FILE } from '../utils/car-photos.js';
 import type { PageSeo } from './vehicle-seo.js';
+import { theftSentence } from '../shared/theft.js';
 
 const KM_PER_MILE = 1.609344;
 
@@ -123,11 +124,17 @@ function modelSummaryHtml(overview: ModelOverview, name: string, years: string):
         )
         .join('')}</ul>`
     : '';
+  // As ModelPage says it: Équité's ranking, with its page for the counts.
+  const place = overview.theft;
+  const theft = place
+    ? `<h2>Theft in Canada</h2><p>${escapeHtml(theftSentence(place))} <a href="${escapeHtml(place.url)}">Équité's top ${place.of}</a></p>`
+    : '';
   return (
     `<main class="seo-prerender">` +
     `<h1>${escapeHtml(name)}</h1>` +
     `<p>${escapeHtml(`${years}, ${overview.years.length} model years on file${overview.onSale ? ', on sale' : ''}.`)} ` +
     `Each year's span or best across its configurations: EPA ratings, NHTSA stars and estimated value in CAD; Transport Canada's recalls and NHTSA's owner complaints for the model year, not adjusted for sales.</p>` +
+    theft +
     sections +
     rivals +
     `<p><a href="/">CarInfo</a> · <a href="/methodology">How this data is sourced</a></p>` +

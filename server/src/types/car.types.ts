@@ -446,6 +446,8 @@ export interface CarRecordsSummary {
   complaints: number | null;
   /** The part complained of most, by NHTSA's name. */
   complaintPart: string | null;
+  /** The model's place on Équité's list of Canada's most stolen vehicles. */
+  theft: TheftRank | null;
 }
 
 /** A rival NHTSA's records put ahead on safety, and why: "5/5 overall (this one 4/5)". */
@@ -454,6 +456,20 @@ export interface SaferAlternative {
   /** "2018 Mazda CX-5". */
   label: string;
   reason: string;
+}
+
+/**
+ * Where a model stands on Équité Association's list of Canada's most stolen
+ * vehicles (config/most-stolen.ts): "Toyota RAV4", 1st of 10 in 2024.
+ */
+export interface TheftRank {
+  rank: number;
+  of: number;
+  /** The model as Équité names it. */
+  model: string;
+  /** The year the thefts were counted. */
+  year: number;
+  url: string;
 }
 
 /** Standard, optional, or standard on some versions and optional on others. */
@@ -556,6 +572,8 @@ export interface ModelOverview {
   generations: Array<{ label: string; from: number; to: number }>;
   /** Models shoppers compare it with, each with its own page. */
   rivals: Array<{ make: string; name: string; path: string }>;
+  /** Its place on Équité's list of Canada's most stolen vehicles, where it is on it. */
+  theft?: TheftRank;
 }
 
 export interface OwnershipAssumptions {
@@ -731,6 +749,8 @@ export interface CarDashboard {
   complaintRank?: { position: number; of: number };
   /** Each vehicle NHTSA tested that describes this car, where its ratings are matched. */
   nhtsaTests?: NhtsaRating[];
+  /** Its model's place on Équité's list of Canada's most stolen vehicles, where it is on it. */
+  theft?: TheftRank;
   /** Cars shopped against it that NHTSA rated higher, or as high with collision warning standard. */
   saferAlternatives?: SaferAlternative[];
   /** The day each set of government records was fetched: "2026-10-20". */

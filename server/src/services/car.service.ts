@@ -42,6 +42,7 @@ import { findSimilarCars, sameModelLine } from '../utils/similar-vehicles.js';
 import { Speller } from '../utils/spelling.js';
 import { canadianRecallsFor, complaintsFor } from './safety-records.service.js';
 import { govModelIndex } from '../utils/gov-models.js';
+import { theftRankOf } from '../config/most-stolen.js';
 import { loadNhtsaTests, withNhtsaRatings } from '../utils/nhtsa-ratings.js';
 import { loadMeasuredVehicles, withSizes } from '../utils/canadian-specs.js';
 
@@ -1351,6 +1352,7 @@ export function getModelOverview(makeSlug: string, modelSlug: string): ModelOver
   const base = cars.find((car) => car.id === years[0].carId) ?? newest[0];
   const lead = base.photo ? base : (newest.find((car) => car.photo) ?? base);
 
+  const theft = theftRankOf(family.key);
   const rivals: ModelOverview['rivals'] = [];
   const seen = new Set([family.key]);
   for (const rival of findSimilarCars(base, cachedCars, 24)) {
@@ -1374,6 +1376,7 @@ export function getModelOverview(makeSlug: string, modelSlug: string): ModelOver
     years,
     generations,
     rivals,
+    ...(theft ? { theft } : {}),
   };
 }
 
