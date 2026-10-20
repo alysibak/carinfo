@@ -1,0 +1,33 @@
+import type { CarDashboard } from '../types/car.types';
+import { beforeYouBuy } from '../utils/beforeYouBuy';
+
+/**
+ * The car page's checklist for a buyer: the model year's recalls to verify,
+ * what owners complained of most and NHTSA's crash rating, each linking to
+ * its section further down.
+ */
+export default function BeforeYouBuy({ dashboard }: { dashboard: CarDashboard }) {
+  const items = beforeYouBuy(dashboard);
+  if (!items.length) return null;
+  return (
+    <section aria-labelledby="before-you-buy" className="border-b border-zinc-900">
+      <div className="page-wrap-wide py-4">
+        <h2 id="before-you-buy" className="eyebrow mb-2">
+          Before you buy
+        </h2>
+        <ul className="space-y-1.5">
+          {items.map((item) => (
+            <li key={item.key} className="text-sm text-zinc-300 leading-relaxed">
+              <a
+                href={item.href}
+                className="hover:text-white underline underline-offset-4 decoration-zinc-800 hover:decoration-zinc-500"
+              >
+                {item.text}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { getCarDashboard, searchCars, type VinDecodeResult } from '../services/api';
 import type { CarDashboard } from '../types/car.types';
 import { vinCatalogCar } from '../utils/vinMatch';
+import { beforeYouBuy } from '../utils/beforeYouBuy';
 
 const CANADA_RECALLS = 'https://recalls-rappels.canada.ca/en';
 
@@ -58,35 +59,29 @@ export default function VinCatalogMatch({ decoded }: { decoded: VinDecodeResult 
   }
   if (state === 'none' || !dashboard) return null;
 
-  const { car, recalls, complaints, modelPage } = dashboard;
+  const { car, recalls, modelPage } = dashboard;
   const name = `${car.year} ${modelPage?.label ?? `${car.make} ${car.model}`}`;
-  const overall = car.safetyRating?.overall;
+  const items = beforeYouBuy(dashboard);
+  const carPath = `/car/${encodeURIComponent(car.id)}`;
 
   return (
     <div className="mt-6 border border-zinc-800 bg-zinc-950 px-5 py-4">
-      <p className="text-sm font-semibold text-white">The {name} on CarInfo</p>
-      <dl className="mt-3 divide-y divide-zinc-900 border-y border-zinc-900 text-sm">
-        {recalls && (
-          <div className="flex items-baseline justify-between gap-4 py-2">
-            <dt className="text-zinc-400">Recalls in Canada for the model year</dt>
-            <dd className="text-white font-semibold tabular-nums">{recalls.length}</dd>
-          </div>
-        )}
-        {complaints && (
-          <div className="flex items-baseline justify-between gap-4 py-2">
-            <dt className="text-zinc-400">Owner complaints to NHTSA</dt>
-            <dd className="text-white font-semibold tabular-nums">
-              {complaints.complaints.toLocaleString('en-CA')}
-            </dd>
-          </div>
-        )}
-        <div className="flex items-baseline justify-between gap-4 py-2">
-          <dt className="text-zinc-400">NHTSA overall rating ({car.driveType})</dt>
-          <dd className={overall ? 'text-white font-semibold tabular-nums' : 'text-zinc-500'}>
-            {overall ? `${overall}/5` : 'Not on file'}
-          </dd>
-        </div>
-      </dl>
+      <p className="text-sm font-semibold text-white">Before you buy: the {name}</p>
+      {items.length > 0 ? (
+        <ul className="mt-2 space-y-1.5">
+          {items.map((item) => (
+            <li key={item.key} className="text-sm text-zinc-300 leading-relaxed">
+              <Link to={`${carPath}${item.href}`} className={linkClass}>
+                {item.text}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-2 text-sm text-zinc-400">
+          No recalls, complaints or crash ratings on file for this model year.
+        </p>
+      )}
       {recalls && recalls.length > 0 && (
         <p className="text-xs text-zinc-500 mt-3 leading-relaxed">
           A recall can cover only some cars of a model year. Enter this VIN on{' '}
@@ -97,8 +92,8 @@ export default function VinCatalogMatch({ decoded }: { decoded: VinDecodeResult 
         </p>
       )}
       <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-xs">
-        <Link to={`/car/${encodeURIComponent(car.id)}#recalls`} className={linkClass}>
-          {recalls?.length || complaints ? 'Read the recalls and complaints' : `Open the ${name}`}
+        <Link to={carPath} className={linkClass}>
+          Open the {name}
         </Link>
         {modelPage && (
           <Link to={modelPage.path} className={linkClass}>

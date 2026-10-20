@@ -43,6 +43,7 @@ import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 import { formatVolume, litres, luggageLabel } from '../utils/space';
 import SafetyRecords from '../components/SafetyRecords';
 import CrashTests from '../components/CrashTests';
+import BeforeYouBuy from '../components/BeforeYouBuy';
 
 function Subheading({ children }: { children: React.ReactNode }) {
   return <p className="text-sm font-semibold text-zinc-200 pt-3 pb-1">{children}</p>;
@@ -527,6 +528,8 @@ export default function CarDetail() {
           onGarage={handleAddToGarage}
         />
       )}
+
+      <BeforeYouBuy dashboard={dashboard} />
 
       {car.ownershipProfile && (
         <div className="border-b border-zinc-900">
