@@ -13,6 +13,7 @@ import { competitiveClassLabel } from '../utils/competitive-sets.js';
 import { enginePosition } from '../utils/engine-position.js';
 import { generationOf } from '../utils/generations.js';
 import { compareWithClass } from '../utils/class-comparison.js';
+import { canadianRecallsFor, complaintsFor } from './safety-records.service.js';
 
 export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard | null {
   const car = carService.getCarById(id);
@@ -68,6 +69,9 @@ export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard |
   const competitiveClass = competitiveClassLabel(car);
   const generation = generationOf(car);
   const modelPage = carService.modelPageOf(car);
+  const line = carService.modelLineKey(car);
+  const recalls = canadianRecallsFor(line, car.year);
+  const complaints = complaintsFor(line, car.year);
   const position = enginePosition(car);
   const classComparison = compareWithClass(car, carService.getAllCars(), carService.modelLineKey);
   const dashboard: CarDashboard = {
@@ -76,6 +80,8 @@ export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard |
     ...(classComparison ? { classComparison } : {}),
     ...(generation ? { generation } : {}),
     ...(modelPage ? { modelPage } : {}),
+    ...(recalls ? { recalls } : {}),
+    ...(complaints ? { complaints } : {}),
     // Front is the rule; only the exceptions are worth a row.
     ...(position === 'mid' || position === 'rear' ? { enginePosition: position } : {}),
     segmentCount: segment.length,

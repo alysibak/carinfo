@@ -33,6 +33,12 @@ export function modelYearFacts(row: ModelYearSummary): string[] {
     row.rangeMiles ? `up to ${rangeKm(row.rangeMiles)} km range` : null,
     powerText(row.horsepower),
     row.safetyStars ? `NHTSA ${row.safetyStars}/5` : null,
+    row.recalls != null
+      ? `${row.recalls} ${row.recalls === 1 ? 'recall' : 'recalls'} in Canada`
+      : null,
+    row.complaints != null
+      ? `${row.complaints.toLocaleString('en-CA')} NHTSA ${row.complaints === 1 ? 'complaint' : 'complaints'}`
+      : null,
     [fuels, bodies].filter(Boolean).join(' '),
     `${row.configurations} ${row.configurations === 1 ? 'configuration' : 'configurations'}`,
   ].filter((fact): fact is string => !!fact);

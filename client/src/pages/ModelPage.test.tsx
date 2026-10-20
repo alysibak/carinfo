@@ -65,7 +65,10 @@ describe('ModelPage', () => {
     vi.mocked(api.getModelOverview).mockResolvedValue(overview);
     renderAt('/models/toyota/camry');
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Toyota Camry' })).toBeVisible();
+    // The page loads lazily; under a full parallel run one second was not always enough.
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Toyota Camry' }, { timeout: 5000 }),
+    ).toBeVisible();
     expect(api.getModelOverview).toHaveBeenCalledWith('toyota', 'camry', expect.anything());
     expect(screen.getByRole('heading', { name: /^XV70/ })).toBeVisible();
     expect(screen.getByRole('link', { name: '2024 Toyota Camry' })).toHaveAttribute(
@@ -89,6 +92,6 @@ describe('ModelPage', () => {
   it('says so when the model is not on file', async () => {
     vi.mocked(api.getModelOverview).mockRejectedValue(new HttpError('Model not found', 404));
     renderAt('/models/toyota/hovercraft');
-    expect(await screen.findByText('Model not found')).toBeVisible();
+    expect(await screen.findByText('Model not found', {}, { timeout: 5000 })).toBeVisible();
   });
 });

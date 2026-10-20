@@ -392,6 +392,31 @@ export interface SearchResults {
   onePerModel?: boolean;
 }
 
+/** A recall Transport Canada lists for a model year, in its own words. */
+export interface CanadianRecall {
+  /** Transport Canada's recall number, which its database and the maker know it by: "2021702". */
+  number: string;
+  date: string;
+  /** "Brakes", "Airbag": the system, as Transport Canada files it. */
+  system: string;
+  kind: 'safety' | 'compliance';
+  /** Vehicles affected in Canada. */
+  units?: number;
+  /** "Issue: ... Safety risk: ... Corrective action: ..." */
+  summary: string;
+}
+
+/** Owner complaints to NHTSA (U.S.) about a model year. Not adjusted for how many were sold. */
+export interface ComplaintSummary {
+  complaints: number;
+  crashes: number;
+  fires: number;
+  injuries: number;
+  deaths: number;
+  /** The parts complained of most, by NHTSA's names, with their counts. */
+  parts: Array<[string, number]>;
+}
+
 /** One model year of a model, across its configurations: a row of the model's page. */
 export interface ModelYearSummary {
   year: number;
@@ -411,6 +436,10 @@ export interface ModelYearSummary {
   bodyStyles: BodyStyle[];
   /** "XV70 · 8th generation (2018–2024)", where the generation is known. */
   generation?: string;
+  /** Transport Canada recalls, where its records for the model are matched to the site's. */
+  recalls?: number;
+  /** Owner complaints to NHTSA, where its records for the model are matched. */
+  complaints?: number;
 }
 
 /** A model across every year on file: the model's page ("/models/toyota/camry"). */
@@ -593,4 +622,12 @@ export interface CarDashboard {
   enginePosition?: 'mid' | 'rear';
   /** The page of every year of its model: "Honda Civic", "/models/honda/civic". */
   modelPage?: { label: string; path: string };
+  /**
+   * Transport Canada's recalls for the model year, newest first. Absent where
+   * its records for the model are not matched to the site's: an empty list
+   * says none are listed, which only a matched model can say.
+   */
+  recalls?: CanadianRecall[];
+  /** Owner complaints to NHTSA (U.S.) about the model year, where matched. */
+  complaints?: ComplaintSummary;
 }

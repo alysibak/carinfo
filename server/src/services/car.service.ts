@@ -40,6 +40,7 @@ import { competitiveSets } from '../utils/competitive-sets.js';
 import { isLuxuryBrand } from '../utils/vehicle-taxonomy.js';
 import { findSimilarCars, sameModelLine } from '../utils/similar-vehicles.js';
 import { Speller } from '../utils/spelling.js';
+import { canadianRecallsFor, complaintsFor } from './safety-records.service.js';
 
 function resolveDbPath(): string | null {
   return resolveDataFile('cars.json');
@@ -1149,6 +1150,9 @@ const best = (values: number[]) => (values.length ? Math.max(...values) : undefi
 /** One year of a model, across its configurations. */
 function summarizeYear(year: number, cars: Car[]): ModelYearSummary {
   const base = baseOf(cars);
+  const line = modelLineKey(base);
+  const recalls = canadianRecallsFor(line, year)?.length;
+  const complaints = complaintsFor(line, year)?.complaints;
   const burnsFuel = cars.filter((car) => car.engine.fuelType !== 'electric');
   const electric = cars.filter((car) => car.engine.fuelType === 'electric');
   const generation = generationOf(base);
@@ -1164,6 +1168,8 @@ function summarizeYear(year: number, cars: Car[]): ModelYearSummary {
     fuelTypes: [...new Set(cars.map((car) => car.engine.fuelType))],
     bodyStyles: [...new Set(cars.map((car) => car.bodyStyle))],
     ...(generation ? { generation } : {}),
+    ...(recalls != null ? { recalls } : {}),
+    ...(complaints != null ? { complaints } : {}),
   };
 }
 

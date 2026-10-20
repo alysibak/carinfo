@@ -41,6 +41,7 @@ import { TIER_HELPER } from '../utils/visualTiers';
 import { usePageMeta } from '../utils/pageMeta';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 import { formatVolume, litres, luggageLabel } from '../utils/space';
+import SafetyRecords from '../components/SafetyRecords';
 
 function Subheading({ children }: { children: React.ReactNode }) {
   return <p className="text-sm font-semibold text-zinc-200 pt-3 pb-1">{children}</p>;
@@ -720,6 +721,12 @@ export default function CarDetail() {
           )}
         </div>
       </section>
+
+      {/* Recalls and complaints are the model year's, not this configuration's. */}
+      <SafetyRecords
+        dashboard={dashboard}
+        name={`${car.year} ${dashboard.modelPage?.label ?? `${car.make} ${car.model}`}`}
+      />
 
       {showOwnership && (
         <section id="costs" className="border-b border-zinc-900 scroll-mt-32">
