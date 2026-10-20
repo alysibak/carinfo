@@ -1166,6 +1166,13 @@ export function modelPageOf(
   return path && family ? { label: `${family.make} ${family.name}`, path } : undefined;
 }
 
+/** The model years on file of a car's model line, oldest first. */
+export function lineYearsOf(car: Pick<Car, 'make' | 'model'>): number[] {
+  ensureDatabase();
+  const cars = modelPages().carsByKey.get(modelLineKey(car)) ?? [];
+  return [...new Set(cars.map((c) => c.year))].sort((a, b) => a - b);
+}
+
 /** Every model page, for the sitemap, the models on sale first. */
 export function getModelPages(): Array<{ path: string; label: string; last: number }> {
   ensureDatabase();

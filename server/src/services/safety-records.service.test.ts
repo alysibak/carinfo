@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canadianRecallsFor, complaintsFor } from './safety-records.service.js';
+import { canadianRecallsFor, complaintRankFor, complaintsFor } from './safety-records.service.js';
 import { getCarDashboard } from './dashboard.service.js';
 import { searchCars } from './car.service.js';
 
@@ -16,6 +16,16 @@ describe('safety records', () => {
     expect(complaintsFor('honda|cr-v', 2017)!.complaints).toBeGreaterThan(500);
     expect(canadianRecallsFor('nobody|nothing', 2018)).toBeUndefined();
     expect(complaintsFor('nobody|nothing', 2018)).toBeUndefined();
+  });
+
+  it('ranks a year among its model’s years by complaints', () => {
+    const years = Array.from({ length: 10 }, (_, i) => 2014 + i);
+    // The 2017-2018 CR-V's engine oil complaints.
+    expect(complaintRankFor('honda|cr-v', 2018, years)).toEqual({ position: 1, of: 10 });
+    expect(complaintRankFor('honda|cr-v', 2020, years)!.position).toBeGreaterThan(2);
+    // Too few years to rank, and none for a model it cannot match.
+    expect(complaintRankFor('honda|cr-v', 2018, [2017, 2018])).toBeUndefined();
+    expect(complaintRankFor('nobody|nothing', 2018, years)).toBeUndefined();
   });
 
   it('reaches the car’s page', () => {

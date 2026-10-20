@@ -13,7 +13,7 @@ import { competitiveClassLabel } from '../utils/competitive-sets.js';
 import { enginePosition } from '../utils/engine-position.js';
 import { generationOf } from '../utils/generations.js';
 import { compareWithClass } from '../utils/class-comparison.js';
-import { canadianRecallsFor, complaintsFor } from './safety-records.service.js';
+import { canadianRecallsFor, complaintRankFor, complaintsFor } from './safety-records.service.js';
 import { nhtsaTestsFor } from '../utils/nhtsa-ratings.js';
 
 export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard | null {
@@ -73,6 +73,9 @@ export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard |
   const line = carService.modelLineKey(car);
   const recalls = canadianRecallsFor(line, car.year);
   const complaints = complaintsFor(line, car.year);
+  const complaintRank = complaints
+    ? complaintRankFor(line, car.year, carService.lineYearsOf(car))
+    : undefined;
   const nhtsaTests = nhtsaTestsFor(car);
   const position = enginePosition(car);
   const classComparison = compareWithClass(car, carService.getAllCars(), carService.modelLineKey);
@@ -84,6 +87,7 @@ export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard |
     ...(modelPage ? { modelPage } : {}),
     ...(recalls ? { recalls } : {}),
     ...(complaints ? { complaints } : {}),
+    ...(complaintRank ? { complaintRank } : {}),
     ...(nhtsaTests.length ? { nhtsaTests } : {}),
     // Front is the rule; only the exceptions are worth a row.
     ...(position === 'mid' || position === 'rear' ? { enginePosition: position } : {}),

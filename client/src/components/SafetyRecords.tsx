@@ -9,6 +9,22 @@ const SHOWN = 4;
 const linkClass =
   'text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500';
 
+const ordinal = (n: number) => {
+  const tens = n % 100;
+  const suffix =
+    tens >= 11 && tens <= 13
+      ? 'th'
+      : (({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th');
+  return `${n}${suffix}`;
+};
+
+/** "The most of the Honda CR-V's 31 model years on file." */
+function rankSentence(rank: { position: number; of: number }, model = 'model'): string {
+  return rank.position === 1
+    ? `The most of the ${model}’s ${rank.of} model years on file.`
+    : `${ordinal(rank.position)} most of the ${model}’s ${rank.of} model years on file.`;
+}
+
 /**
  * Transport Canada's recalls and NHTSA's owner complaints for the car's model
  * year, each with the identifiers the government knows it by. Shown only where
@@ -110,6 +126,9 @@ export default function SafetyRecords({
               {complaints.complaints === 0
                 ? `No owner complaints about the ${name} on file with NHTSA (U.S.).`
                 : `${complaints.complaints.toLocaleString('en-CA')} owner ${complaints.complaints === 1 ? 'complaint' : 'complaints'} about the ${name} to NHTSA (U.S.).`}{' '}
+              {dashboard.complaintRank && (
+                <>{rankSentence(dashboard.complaintRank, dashboard.modelPage?.label)} </>
+              )}
               Each is an owner’s report, not a confirmed defect, and counts are not adjusted for how
               many were sold: compare a model’s years on its page.
             </p>

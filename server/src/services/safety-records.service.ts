@@ -74,3 +74,20 @@ export function complaintsFor(line: string, year: number): ComplaintSummary | un
     }
   );
 }
+
+/**
+ * Where a year stands among its model's years on file by owner complaints:
+ * the 2018 CR-V has the most of its 30 years. Only for a year with complaints,
+ * of a model with three years or more; a model's years are compared with each
+ * other, not with other models, and the counts are not adjusted for sales.
+ */
+export function complaintRankFor(
+  line: string,
+  year: number,
+  years: number[],
+): { position: number; of: number } | undefined {
+  const own = complaintsFor(line, year)?.complaints ?? 0;
+  if (!own || years.length < 3) return undefined;
+  const more = years.filter((y) => (complaintsFor(line, y)?.complaints ?? 0) > own).length;
+  return { position: more + 1, of: years.length };
+}

@@ -693,6 +693,8 @@ export interface CarDashboard {
   recalls?: CanadianRecall[];
   /** Owner complaints to NHTSA (U.S.) about the model year, where matched. */
   complaints?: ComplaintSummary;
+  /** Where the year stands among its model's years on file by complaints: 1st of 30. */
+  complaintRank?: { position: number; of: number };
   /** Each vehicle NHTSA tested that describes this car, where its ratings are matched. */
   nhtsaTests?: NhtsaRating[];
 }
