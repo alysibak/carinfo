@@ -1,4 +1,4 @@
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import * as api from '../services/api';
 import { isHttpError } from '../services/http';
@@ -197,6 +197,7 @@ export default function CarDetail() {
   const addToGarage = useGarageStore((s) => s.add);
   const region = useRegionStore((s) => s.region);
   const navigate = useNavigate();
+  const { hash } = useLocation();
 
   useEffect(() => {
     if (!id) return;
@@ -216,6 +217,13 @@ export default function CarDetail() {
       })
       .finally(() => setLoading(false));
   }, [id, region]);
+
+  // A link to a section ("#recalls" from a search for a car's problems) once
+  // the page under it has loaded.
+  useEffect(() => {
+    if (!dashboard || hash.length < 2) return;
+    document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView();
+  }, [dashboard, hash]);
 
   useEffect(() => {
     if (!toast) return;

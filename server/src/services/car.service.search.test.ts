@@ -1155,4 +1155,30 @@ describe('car.service model pages', () => {
     expect(getModelOverview('Toyota', 'Camry')?.path).toBe('/models/toyota/camry');
     expect(getModelOverview('toyota', 'flying-car')).toBeNull();
   });
+
+  it('answers a car’s problems with its recalls and complaints, not a dropped word', () => {
+    const year = searchCars({
+      query: '2017 honda cr-v problems',
+      collapseByModel: 'auto',
+      limit: 5,
+    });
+    expect(year.results[0]).toMatchObject({ year: 2017, model: expect.stringMatching(/^CR-V/) });
+    expect(year.interpretation?.records).toEqual({
+      carId: year.results[0].id,
+      label: '2017 Honda CR-V',
+    });
+    expect(year.interpretation?.ignored).toBeUndefined();
+    // Every year: the model's page counts them year by year.
+    const model = searchCars({ query: 'civic recalls', collapseByModel: 'auto', limit: 5 });
+    expect(model.interpretation?.records).toEqual({});
+    expect(model.interpretation?.modelPage?.path).toBe('/models/honda/civic');
+  });
+
+  it('keeps a search for safety technology to cars NHTSA lists with it', () => {
+    const found = searchCars({ query: 'suv with collision warning', limit: 50 });
+    expect(found.total).toBeGreaterThan(100);
+    expect(found.results.every((car) => car.safetyTech?.fcw)).toBe(true);
+    const standard = searchCars({ query: 'suv with standard collision warning', limit: 50 });
+    expect(standard.results.every((car) => car.safetyTech?.fcw === 'standard')).toBe(true);
+  });
 });

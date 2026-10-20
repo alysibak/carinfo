@@ -380,4 +380,37 @@ describe('extractQueryModifiers', () => {
     });
     expect(extractQueryModifiers('car for long commute').text).toBe('');
   });
+
+  it('reads the safety technology NHTSA lists, and sets aside what it does not', () => {
+    expect(extractQueryModifiers('suv with collision warning')).toEqual({
+      text: 'suv',
+      safetyTech: { features: ['fcw'], standard: false },
+    });
+    expect(extractQueryModifiers('standard lane departure warning sedan').safetyTech).toEqual({
+      features: ['ldw'],
+      standard: true,
+    });
+    expect(extractQueryModifiers('civic with fcw and ldw').safetyTech?.features).toEqual([
+      'fcw',
+      'ldw',
+    ]);
+    // Lane keeping steers, and emergency braking is not in these ratings.
+    expect(extractQueryModifiers('car with lane keeping assist').unmeasured).toEqual([
+      'lane keeping assist',
+    ]);
+    expect(
+      extractQueryModifiers('suv with automatic emergency braking').safetyTech,
+    ).toBeUndefined();
+    // "esc" is a word of its own, not the start of the Escalade ESV.
+    expect(extractQueryModifiers('escalade esv').safetyTech).toBeUndefined();
+  });
+
+  it('reads a car’s problems as a request for its records', () => {
+    expect(extractQueryModifiers('2017 honda cr-v problems')).toEqual({
+      text: '2017 honda cr-v',
+      records: true,
+    });
+    expect(extractQueryModifiers('rav4 known issues')).toEqual({ text: 'rav4', records: true });
+    expect(extractQueryModifiers('mazda cx-5 reliability').records).toBe(true);
+  });
 });

@@ -4,6 +4,7 @@ import { apiErrorMessage, decodeVin, type VinDecodeResult } from '../services/ap
 import { InfoTip } from '../components/ui';
 import { searchQueryToParams } from '../utils/searchParams';
 import { usePageMeta } from '../utils/pageMeta';
+import VinCatalogMatch from '../components/VinCatalogMatch';
 
 const VinScanner = lazy(() => import('../components/VinScanner'));
 
@@ -294,6 +295,8 @@ export default function VinDecoder() {
                 and try again.
               </div>
             )}
+
+            {result.make && result.decodedClean && <VinCatalogMatch decoded={result} />}
 
             {result.make && (
               <div className="mt-6 border border-zinc-800 bg-zinc-950 px-5 py-4 space-y-3">

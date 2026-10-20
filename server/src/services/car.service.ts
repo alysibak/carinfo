@@ -362,7 +362,20 @@ function withModelPage(found: SearchResults): SearchResults {
   if (new Set(found.results.map(modelLineKey)).size !== 1) return found;
   const modelPage = modelPageOf(found.results[0]);
   if (!modelPage) return found;
-  return { ...found, interpretation: { ...found.interpretation, modelPage } };
+  const records = found.interpretation?.records;
+  // "2017 cr-v problems": the year's recalls and complaints are on its page.
+  const oneYear = new Set(found.results.map((car) => car.year)).size === 1;
+  const lead = found.results[0];
+  return {
+    ...found,
+    interpretation: {
+      ...found.interpretation,
+      modelPage,
+      ...(records && oneYear
+        ? { records: { carId: lead.id, label: `${lead.year} ${modelPage.label}` } }
+        : {}),
+    },
+  };
 }
 
 function searchSpelt(query: SearchQuery): SearchResults {
@@ -1834,6 +1847,11 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
     filters.driveType = ['AWD', '4WD'];
     interpretation.snow = true;
   }
+  if (modifiers.safetyTech) {
+    filters.safetyTech = modifiers.safetyTech;
+    interpretation.safetyTech = modifiers.safetyTech;
+  }
+  if (modifiers.records) interpretation.records = {};
   if (modifiers.threeRow) {
     filters.threeRow = true;
     interpretation.threeRow = true;
@@ -2766,6 +2784,7 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
   const luxuryOnly = filters?.luxury === true;
   const mildOnly = filters?.mildHybrid === true;
   const automatedManualOnly = filters?.automatedManual === true;
+  const techWanted = filters?.safetyTech?.features.length ? filters.safetyTech : null;
   const layoutSet = filters?.layout?.length ? new Set(filters.layout) : null;
   const engineFamily = isEngineFamilyId(filters?.engineFamily)
     ? ENGINE_FAMILIES[filters.engineFamily]
@@ -2777,6 +2796,7 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
     luxuryOnly ||
     mildOnly ||
     automatedManualOnly ||
+    !!techWanted ||
     !!layoutSet ||
     !!engineFamily ||
     !!cylinderSet ||
@@ -2873,6 +2893,15 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
     if (luxuryOnly && !isLuxuryBrand(car.make)) continue;
     if (mildOnly && !car.engine.mildHybrid) continue;
     if (automatedManualOnly && !isAutomatedManual(car)) continue;
+    if (
+      techWanted &&
+      !techWanted.features.every((feature) => {
+        const listed = car.safetyTech?.[feature];
+        return techWanted.standard ? listed === 'standard' : !!listed;
+      })
+    ) {
+      continue;
+    }
     if (rangeMin != null || rangeMax != null) {
       const range = car.epa?.rangeMiles;
       if (range == null) continue;

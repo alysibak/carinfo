@@ -271,6 +271,8 @@ export interface CarFilter {
   layout?: string[];
   /** An engine family by name ("hemi", "ecoboost": utils/engine-families.ts). */
   engineFamily?: string;
+  /** Safety technology NHTSA lists for the car, standard on every version tested if asked. */
+  safetyTech?: { features: Array<'esc' | 'fcw' | 'ldw'>; standard?: boolean };
 }
 
 export interface SearchQuery {
@@ -370,6 +372,13 @@ export interface SearchInterpretation {
   similarTo?: { id: string; label: string };
   /** "car for snow": kept to all- and four-wheel drive. */
   snow?: boolean;
+  /**
+   * "2017 cr-v problems": recalls and owner complaints were asked for. The
+   * car whose page lists them, where the results are one model year.
+   */
+  records?: { carId?: string; label?: string };
+  /** "suv with collision warning": kept to cars NHTSA lists with it (standard, if asked). */
+  safetyTech?: { features: Array<'esc' | 'fcw' | 'ldw'>; standard: boolean };
   /** "mild hybrid": kept to 12-48 V mild hybrids, which are listed by their fuel. */
   mildHybrid?: boolean;
   /** "dual clutch", "dct": kept to EPA's automated manuals. */

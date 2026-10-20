@@ -141,6 +141,25 @@ export function describeSearchInterpretation(
       'Mild hybrids only: a 12-48 volt motor helps the engine but never drives the car, so they are listed by their fuel.',
     );
   }
+  if (interpretation.records) {
+    lines.push(
+      'No source on file rates reliability. Each car’s page lists its model year’s recalls in Canada and owner complaints to NHTSA.',
+    );
+  }
+  if (interpretation.safetyTech) {
+    const names = {
+      esc: 'stability control',
+      fcw: 'forward collision warning',
+      ldw: 'lane departure warning',
+    };
+    const { features, standard } = interpretation.safetyTech;
+    const listed = features.map((f) => names[f]).join(' and ');
+    lines.push(
+      standard
+        ? `Cars NHTSA lists with ${listed} as standard on every version it tested (2011 on).`
+        : `Cars NHTSA lists with ${listed}, standard or optional (2011 on); cars it did not test are left out.`,
+    );
+  }
   if (interpretation.snow) {
     lines.push(
       'All- and four-wheel drive only, for snow: EPA records the drive, not the tires, which matter as much.',

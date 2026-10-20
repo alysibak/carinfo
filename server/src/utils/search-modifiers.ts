@@ -52,7 +52,39 @@ export interface QueryModifiers {
   engineFamily?: EngineFamilyId;
   /** "mid engine", "rear-engined": where the engine sits (utils/engine-position.ts). */
   enginePosition?: EnginePosition;
+  /** "with collision warning", "standard lane departure warning": as NHTSA lists them. */
+  safetyTech?: SafetyTechQuery;
+  /** "problems", "recalls", "complaints": the records on file, recalls and owner complaints. */
+  records?: boolean;
 }
+
+/**
+ * What shoppers ask about a car's troubles. No source rates reliability; the
+ * records on file are Transport Canada's recalls and NHTSA's owner complaints.
+ */
+const RECORDS_WORDS =
+  /\b(?:(?:known|common) )?(?:problems?|issues?|recalls?|complaints?|defects?|reliability)\b/g;
+
+/** Safety technology NHTSA lists for the versions it tests: stability control, collision and lane departure warning. */
+export interface SafetyTechQuery {
+  features: Array<'esc' | 'fcw' | 'ldw'>;
+  /** "standard collision warning": standard on every version tested, not an option. */
+  standard: boolean;
+}
+
+/**
+ * The safety technology NHTSA lists, by the names shoppers use. Not "lane
+ * keeping assist" (it steers; NHTSA lists the warning) nor "emergency
+ * braking", which these ratings do not list: those stay set aside.
+ */
+const SAFETY_TECH_PHRASES: Array<[RegExp, SafetyTechQuery['features'][number]]> = [
+  [
+    /\b(?:forward[- ])?collision (?:warnings?|alerts?)\b|\bpre[- ]?collision(?: warnings?| alerts?)?\b|\bfcw\b/,
+    'fcw',
+  ],
+  [/\blane[- ]departure(?: warnings?| alerts?)?(?! assist)\b|\bldw\b/, 'ldw'],
+  [/\b(?:electronic )?stability control\b|\besc\b/, 'esc'],
+];
 
 export type FuelEconomyUnit = 'MPG' | 'MPGe' | 'L/100 km';
 
@@ -784,9 +816,18 @@ export function extractQueryModifiers(
   if (!out.sortedBy && out.vehicleClass?.sortedBy) out.sortedBy = out.vehicleClass.sortedBy;
   // No acceleration is on file: the most powerful cars come nearest.
   if (!out.sortedBy && setAside.some((name) => name.startsWith('0-'))) out.sortedBy = 'horsepower';
+  if (text.match(RECORDS_WORDS)) {
+    out.records = true;
+    text = text.replace(RECORDS_WORDS, ' ');
+  }
   if (text.match(SNOW)) {
     out.snow = true;
     text = text.replace(SNOW, ' ');
+  }
+  // Before the equipment no source records: NHTSA lists these.
+  const features = SAFETY_TECH_PHRASES.filter(([re]) => take(re)).map(([, feature]) => feature);
+  if (features.length) {
+    out.safetyTech = { features, standard: !!take(/\bstandard\b/) };
   }
   // After the sort phrases, which use "best" ("best mpg"), and the class
   // phrases, which use "for" nowhere but keep "family".
