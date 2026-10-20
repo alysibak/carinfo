@@ -41,8 +41,12 @@ for (const { name, viewport } of VIEWPORTS) {
         // Results with the filter bar; on a phone, the filter sheet open.
         '/home?q=suv&sort=relevance&nhtsaMin=5',
         '/home?filters=open',
+        // A search the most-stolen list answers, with its line above the results.
+        '/home?q=most+stolen&sort=relevance',
         '/browse',
         `/car/${a}`,
+        // Every year of a model, with its theft and records sections.
+        '/models/toyota/rav4',
         `/compare?cars=${a},${b}`,
         '/collection/goldilocks',
         '/smart-search',
