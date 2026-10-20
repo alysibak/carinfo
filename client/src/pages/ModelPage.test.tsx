@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import ModelPage from './ModelPage';
@@ -98,7 +98,10 @@ describe('ModelPage', () => {
       screen.getByText('Most owner complaints to NHTSA: 2023 (632), 2024 (481)'),
     ).toBeVisible();
     expect(screen.getByText('Most recalls in Canada: 2023 (4), 2024 (3)')).toBeVisible();
-    expect(document.title).toBe('Toyota Camry: every year, 2023–2026 | CarInfo');
+    // The title is set in an effect, which can land after the heading under load.
+    await waitFor(() =>
+      expect(document.title).toBe('Toyota Camry: every year, 2023–2026 | CarInfo'),
+    );
   });
 
   it('says so when the model is not on file', async () => {
