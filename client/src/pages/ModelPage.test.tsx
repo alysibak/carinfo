@@ -34,6 +34,8 @@ const overview: ModelOverview = {
       year: 2024,
       carId: 'camry-2024',
       configurations: 9,
+      recalls: 3,
+      complaints: 481,
       fuelTypes: ['gasoline'],
       bodyStyles: ['sedan'],
       generation: 'XV70 · 8th generation (2018–2024)',
@@ -42,6 +44,8 @@ const overview: ModelOverview = {
       year: 2023,
       carId: 'camry-2023',
       configurations: 10,
+      recalls: 4,
+      complaints: 632,
       fuelTypes: ['gasoline'],
       bodyStyles: ['sedan'],
       generation: 'XV70 · 8th generation (2018–2024)',
@@ -89,6 +93,11 @@ describe('ModelPage', () => {
     );
     // What changed from the year before.
     expect(screen.getByText('Gasoline dropped')).toBeVisible();
+    // The years with the most complaints and recalls, most first.
+    expect(
+      screen.getByText('Most owner complaints to NHTSA: 2023 (632), 2024 (481)'),
+    ).toBeVisible();
+    expect(screen.getByText('Most recalls in Canada: 2023 (4), 2024 (3)')).toBeVisible();
     expect(document.title).toBe('Toyota Camry: every year, 2023–2026 | CarInfo');
   });
 

@@ -241,6 +241,21 @@ const ALL_SPECS: SpecRow[] = [
   { key: 'driveType', label: 'Drive', getValue: (car) => car.driveType },
   { key: 'fuelType', label: 'Fuel', getValue: (car) => formatCarFuelLabel(car) },
   { key: 'bodyStyle', label: 'Body', getValue: (car) => bodyLabel(car.bodyStyle) },
+  // Counts for the model year, not this configuration; not ranked, as a
+  // count unadjusted for sales says little about one car against another.
+  {
+    key: 'recalls',
+    label: 'Recalls in Canada',
+    hint: 'Transport Canada, model year',
+    getValue: (_car, dash) => (dash.recalls ? String(dash.recalls.length) : UNAVAILABLE_LABEL),
+  },
+  {
+    key: 'complaints',
+    label: 'Owner complaints',
+    hint: 'NHTSA, model year',
+    getValue: (_car, dash) =>
+      dash.complaints ? dash.complaints.complaints.toLocaleString('en-CA') : UNAVAILABLE_LABEL,
+  },
   {
     key: 'co2',
     label: 'CO₂',

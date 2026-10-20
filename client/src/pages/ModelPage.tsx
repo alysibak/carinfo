@@ -138,6 +138,35 @@ export default function ModelPage() {
           </div>
         </div>
 
+        {(() => {
+          // The years with the most of each, as the records count them: a
+          // model's years are compared with each other, not with other models.
+          const most = (count: (row: ModelYearSummary) => number | undefined) =>
+            overview.years
+              .filter((row) => (count(row) ?? 0) > 0)
+              .sort((a, b) => (count(b) ?? 0) - (count(a) ?? 0))
+              .slice(0, 3)
+              .map((row) => `${row.year} (${(count(row) ?? 0).toLocaleString('en-CA')})`);
+          const complaints = most((row) => row.complaints);
+          const recalls = most((row) => row.recalls);
+          if (!complaints.length && !recalls.length) return null;
+          return (
+            <section className="mb-8">
+              <h2 className="text-xs text-zinc-500 mb-2">Years to check</h2>
+              <ul className="text-sm text-zinc-300 space-y-1 tabular-nums">
+                {complaints.length > 0 && (
+                  <li>Most owner complaints to NHTSA: {complaints.join(', ')}</li>
+                )}
+                {recalls.length > 0 && <li>Most recalls in Canada: {recalls.join(', ')}</li>}
+              </ul>
+              <p className="text-xs text-zinc-500 mt-2 leading-relaxed max-w-xl">
+                Counts from NHTSA’s complaint records and Transport Canada’s recall database, not
+                adjusted for how many of each year were sold.
+              </p>
+            </section>
+          );
+        })()}
+
         {overview.rivals.length > 0 && (
           <section className="mb-8">
             <h2 className="text-xs text-zinc-500 mb-2">Shopped against</h2>
