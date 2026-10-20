@@ -24,6 +24,7 @@ import { regionName, useRegionStore } from '../stores/regionStore';
 import { POPULAR_SEARCHES } from '../config/browseTaxonomy';
 import RegionSelect from '../components/RegionSelect';
 import { formatVolume } from '../utils/space';
+import { availabilityLabel, rolloverRiskText } from '../utils/safetyTech';
 
 function isUnavailable(value: string | number): boolean {
   return value === UNAVAILABLE_LABEL;
@@ -179,6 +180,36 @@ const ALL_SPECS: SpecRow[] = [
         : UNAVAILABLE_LABEL,
     getNumeric: (car) => car.safetyRating?.overall ?? null,
     higherIsBetter: true,
+  },
+  {
+    key: 'rolloverRisk',
+    label: 'Rollover risk',
+    hint: 'NHTSA, single-vehicle crash',
+    getValue: (car) =>
+      car.safetyRating?.rolloverRisk != null
+        ? rolloverRiskText(car.safetyRating.rolloverRisk)
+        : UNAVAILABLE_LABEL,
+    getNumeric: (car) => car.safetyRating?.rolloverRisk ?? null,
+    higherIsBetter: false,
+  },
+  {
+    key: 'fcw',
+    label: 'Collision warning',
+    hint: 'As NHTSA lists it',
+    // "Not listed" only of a car NHTSA lists at all.
+    getValue: (car) =>
+      car.safetyRating?.nhtsaIds?.length
+        ? availabilityLabel(car.safetyTech?.fcw)
+        : UNAVAILABLE_LABEL,
+  },
+  {
+    key: 'ldw',
+    label: 'Lane departure warning',
+    hint: 'As NHTSA lists it',
+    getValue: (car) =>
+      car.safetyRating?.nhtsaIds?.length
+        ? availabilityLabel(car.safetyTech?.ldw)
+        : UNAVAILABLE_LABEL,
   },
   {
     key: 'luggage',

@@ -1,19 +1,17 @@
 /**
- * Build companion enrichment files from already-local sources (no network calls):
+ * Build a companion enrichment file from already-local sources (no network calls):
  *   - data/epa-enrichment.json   keyed by epaId  → high-value EPA fields not in cars.json
- *   - data/nhtsa-safety.json     keyed by make|model|year → real star ratings already
- *                                 present in the NHTSA enrichment cache
  *
- * These are merged into records at load time (see services/content-enrichment.ts),
- * consistent with the static-JSON architecture. Re-run after refreshing vehicles.csv
- * or the NHTSA cache:  npm run build-enrichment
+ * It is merged into records at load time (see services/content-enrichment.ts),
+ * consistent with the static-JSON architecture. Re-run after refreshing
+ * vehicles.csv:  npm run build-enrichment. NHTSA's ratings are built from the
+ * public data by scripts/build-nhtsa-ratings.ts.
  */
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { parse } from 'csv-parse/sync';
 import type { Car } from '../src/types/car.types.js';
-import { canonicalizeDisplayModel, resolveNhtsaSafety } from '../src/utils/vehicle-taxonomy.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = resolve(__dirname, '..', 'data');
@@ -21,11 +19,8 @@ const csvArg = process.argv.find((a) => a.startsWith('--csv='));
 const CSV_PATH = csvArg
   ? resolve(csvArg.slice('--csv='.length))
   : join(DATA_DIR, 'raw', 'vehicles.csv');
-const CACHE_PATH = join(DATA_DIR, 'raw', 'nhtsa-enrichment-cache.json');
 const CARS_PATH = join(DATA_DIR, 'cars.json');
 const EPA_OUT = join(DATA_DIR, 'epa-enrichment.json');
-const NHTSA_OUT = join(DATA_DIR, 'nhtsa-safety.json');
-const NHTSA_CAR_OUT = join(DATA_DIR, 'nhtsa-by-car-id.json');
 
 export interface PhevDualMode {
   gasMpg?: number;
@@ -183,80 +178,14 @@ function buildEpaEnrichment(usedEpaIds: Set<number>): Record<string, EpaEnrichme
   return out;
 }
 
-interface CacheEntry {
-  safetyRating?: { overall?: number; frontal?: number; side?: number; rollover?: number };
-}
-
-export interface SafetyEntry {
-  overall: number;
-  frontal?: number;
-  side?: number;
-  rollover?: number;
-}
-
-function buildNhtsaSafety(): Record<string, SafetyEntry> {
-  // The committed ratings are the base, and the raw cache adds to and updates
-  // them. A cache can hold only some years (the EPA refresh workflow fetches
-  // the last two), and written alone it would drop every other year's ratings.
-  const kept = existsSync(NHTSA_OUT)
-    ? (JSON.parse(readFileSync(NHTSA_OUT, 'utf8')) as Record<string, SafetyEntry>)
-    : {};
-  if (!existsSync(CACHE_PATH)) {
-    console.warn(
-      `No NHTSA cache found — reusing ${Object.keys(kept).length} committed make|model|year ratings.`,
-    );
-    return kept;
-  }
-  const cache = JSON.parse(readFileSync(CACHE_PATH, 'utf8')) as Record<string, CacheEntry>;
-  const out: Record<string, SafetyEntry> = { ...kept };
-  let fromCache = 0;
-  for (const [key, entry] of Object.entries(cache)) {
-    const s = entry.safetyRating;
-    if (!s || s.overall == null || s.overall <= 0) continue;
-    const safety: SafetyEntry = { overall: s.overall };
-    if (s.frontal && s.frontal > 0) safety.frontal = s.frontal;
-    if (s.side && s.side > 0) safety.side = s.side;
-    if (s.rollover && s.rollover > 0) safety.rollover = s.rollover;
-    out[key] = safety;
-    fromCache++;
-  }
-  console.log(
-    `NHTSA safety: ${Object.keys(out).length} make|model|year combos with real ratings (${fromCache} from the cache, ${Object.keys(out).length - Object.keys(kept).length} new)`,
-  );
-  return out;
-}
-
-/** Pre-resolve NHTSA ratings per vehicle id (fuzzy make/model/year matching). */
-function buildNhtsaCarIndex(
-  cars: Car[],
-  safetyIndex: Record<string, SafetyEntry>,
-): Record<string, SafetyEntry> {
-  const out: Record<string, SafetyEntry> = {};
-  for (const car of cars) {
-    const resolved = resolveNhtsaSafety(car, safetyIndex, canonicalizeDisplayModel(car));
-    if (resolved?.overall) out[car.id] = resolved;
-  }
-  console.log(
-    `NHTSA per-car index: ${Object.keys(out).length}/${cars.length} vehicles (${((Object.keys(out).length / cars.length) * 100).toFixed(1)}%)`,
-  );
-  return out;
-}
-
 function main(): void {
   const db = JSON.parse(readFileSync(CARS_PATH, 'utf8')) as { cars: Car[] };
   const usedEpaIds = new Set<number>();
   for (const car of db.cars) if (car.epaId != null) usedEpaIds.add(car.epaId);
 
   const epa = buildEpaEnrichment(usedEpaIds);
-  const safety = buildNhtsaSafety();
-  const nhtsaByCar = buildNhtsaCarIndex(db.cars, safety);
-
   writeFileSync(EPA_OUT, JSON.stringify(epa));
-  writeFileSync(NHTSA_OUT, JSON.stringify(safety));
-  writeFileSync(NHTSA_CAR_OUT, JSON.stringify(nhtsaByCar));
   console.log(`\nWrote ${EPA_OUT}`);
-  console.log(`Wrote ${NHTSA_OUT}`);
-  console.log(`Wrote ${NHTSA_CAR_OUT}`);
 }
 
 main();

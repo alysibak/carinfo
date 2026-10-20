@@ -35,4 +35,19 @@ describe('govModelIndex', () => {
     // One word of a longer name, when it names one line.
     expect(match('CHEVROLET', 'CAMARO ZL1', 2018)).toBe('chevrolet|camaro');
   });
+
+  it('reads past what NHTSA writes into a name besides the model', () => {
+    // Cabs, and the newest records' "ICE", "GAS" and "(All Variants)".
+    expect(match('FORD', 'F-150 REGULAR CAB', 2016)).toBe('ford|f150');
+    expect(match('FORD', 'F-150 (SUPER CREW) GAS', 2024)).toBe('ford|f150');
+    expect(match('FORD', 'F-150 (SUPER CREW) LIGHTNING BEV', 2023)).toBe('ford|f-150 lightning');
+    expect(match('RAM', '1500 QUAD', 2019)).toBe(match('RAM', '1500', 2019));
+    expect(match('HONDA', 'CR-V ICE', 2026)).toBe('honda|cr-v');
+    expect(match('MAZDA', 'MAZDA3 SEDAN', 2020)).toBe('mazda|3');
+    // The make twice, and Toyota's Scion brand.
+    expect(match('RAM', 'RAM 1500', 2019)).toBe(match('RAM', '1500', 2019));
+    expect(match('TOYOTA', 'SCION TC', 2012)).toBe(match('SCION', 'TC', 2012));
+    // A Super Duty's cab leaves a heavy-duty truck, which the site does not list.
+    expect(match('FORD', 'F-250 SUPER CREW', 2016)).toBeNull();
+  });
 });

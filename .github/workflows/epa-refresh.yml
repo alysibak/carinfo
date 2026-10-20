@@ -1,9 +1,10 @@
 name: EPA refresh
 
-# Adds the cars EPA has listed since cars.json was last refreshed, with their
-# NHTSA ratings, and refreshes the Canadian cars EPA never rated from Natural
-# Resources Canada. The data scripts download from fueleconomy.gov,
-# api.nhtsa.gov and open.canada.ca, which GitHub's runners reach. When the
+# Adds the cars EPA has listed since cars.json was last refreshed, and
+# refreshes the Canadian cars EPA never rated from Natural Resources Canada.
+# NHTSA's ratings come from the Public data workflow (nhtsa-ratings.json),
+# matched to every car when the database is built. The data scripts download
+# from fueleconomy.gov and open.canada.ca, which GitHub's runners reach. When the
 # data changes, the result goes to the epa-refresh branch and a pull request
 # for review, never straight to main; otherwise no branch is made.
 #
@@ -33,7 +34,7 @@ env:
 
 jobs:
   refresh:
-    name: Refresh from EPA and NHTSA
+    name: Refresh from EPA and NRCan
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
@@ -56,12 +57,6 @@ jobs:
       - name: Check fuel types against EPA
         run: npm run reconcile-fuel-types --workspace=server | tee -a epa-refresh-report.txt
 
-      # The last two model years only: NHTSA rates new models through the
-      # year, and a pass back to 2008 takes hours. build-enrichment keeps the
-      # committed ratings for every other year.
-      - name: NHTSA ratings for recent years
-        run: npm run build-nhtsa-backfill --workspace=server -- --from=$(( $(date +%Y) - 1 ))
-
       - name: Build enrichment
         run: npm run build-enrichment --workspace=server | tee -a epa-refresh-report.txt
 
@@ -79,7 +74,7 @@ jobs:
         run: |
           { echo '```'; cat epa-refresh-report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
           if git diff --quiet -- server/data/; then
-            echo 'Nothing new from EPA, NRCan or NHTSA: no branch to push.'
+            echo 'Nothing new from EPA or NRCan: no branch to push.'
             exit 0
           fi
           echo 'changed=true' >> "$GITHUB_OUTPUT"
@@ -87,11 +82,10 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git checkout -B epa-refresh
-          git add epa-refresh-report.txt server/data/cars.json server/data/epa-enrichment.json \
-            server/data/nhtsa-safety.json server/data/nhtsa-by-car-id.json
+          git add epa-refresh-report.txt server/data/cars.json server/data/epa-enrichment.json
           # EPA's file as read, so the refresh can be checked against it.
           git add -f server/data/raw/vehicles.csv.gz
-          git commit -m "Refresh from EPA and NHTSA ($(date -u +%F))" \
+          git commit -m "Refresh from EPA and NRCan ($(date -u +%F))" \
             -m "Tests: ${{ steps.tests.outcome }}. Report: epa-refresh-report.txt."
           git push -f origin epa-refresh
 
@@ -105,7 +99,7 @@ jobs:
             echo 'The epa-refresh pull request is already open, now with this run.'
           else
             gh pr create --base "$GITHUB_REF_NAME" --head epa-refresh \
-              --title 'Refresh from EPA and NHTSA' \
-              --body 'New EPA listings with their NHTSA ratings, and the Canadian cars from NRCan (or updated figures for either). epa-refresh-report.txt names what was added and left out. Bump the model-year and count tests if they fail, and drop epa-refresh-report.txt and the vehicles.csv.gz before merging.' \
+              --title 'Refresh from EPA and NRCan' \
+              --body 'New EPA listings, and the Canadian cars from NRCan (or updated figures for either). epa-refresh-report.txt names what was added and left out. Bump the model-year and count tests if they fail, and drop epa-refresh-report.txt and the vehicles.csv.gz before merging.' \
               || echo '::warning::Could not open a pull request (Settings > Actions > General lets workflows create them); the epa-refresh branch has the refresh.'
           fi

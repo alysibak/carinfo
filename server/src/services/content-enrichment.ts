@@ -2,24 +2,20 @@ import { readFileSync } from 'fs';
 import type { Car } from '../types/car.types.js';
 import { resolveDataFile } from '../utils/data-paths.js';
 import { estimateEvHorsepower } from '../utils/ev-power-estimates.js';
-import {
-  canonicalizeDisplayModel,
-  resolveNhtsaCountry,
-  resolveNhtsaSafety,
-} from '../utils/vehicle-taxonomy.js';
+import { canonicalizeDisplayModel, resolveNhtsaCountry } from '../utils/vehicle-taxonomy.js';
 import { isPlausibleRatedHorsepower } from '../utils/horsepower-plausibility.js';
 
 /**
  * Load-time enrichment from offline companion files (no network calls):
  *   - epa-enrichment.json         keyed by epaId  → GHG score, 5-yr fuel savings,
  *     barrels/yr, PHEV dual-mode economy (fields not stored in cars.json).
- *   - nhtsa-safety.json           keyed by make|model|year → real NHTSA star ratings
- *     previously fetched into the enrichment cache.
  *   - horsepower-enrichment.json  keyed by epaId  → real EPA "Rated Horsepower"
  *     matched per engine config (cars.json itself has no HP — EPA fuel-economy
  *     data does not carry it). See scripts/build-horsepower-enrichment.ts.
  *
  * Regenerate with `npm run build-enrichment` (+ `npm run build-horsepower`).
+ * NHTSA's star ratings are matched once the records are normalized
+ * (utils/nhtsa-ratings.ts), by model line, body and drivetrain.
  */
 
 interface EpaEnrichmentEntry {
@@ -73,13 +69,6 @@ export function volumesFor(
   };
 }
 
-interface SafetyEntry {
-  overall: number;
-  frontal?: number;
-  side?: number;
-  rollover?: number;
-}
-
 function loadJson<T>(fileName: string): T | null {
   const path = resolveDataFile(fileName);
   if (!path) return null;
@@ -93,12 +82,9 @@ function loadJson<T>(fileName: string): T | null {
 
 interface NhtsaCacheEntry {
   countryOfOrigin?: string;
-  safetyRating?: SafetyEntry;
 }
 
 let epaEnrichment: Record<string, EpaEnrichmentEntry> = {};
-let nhtsaSafety: Record<string, SafetyEntry> = {};
-let nhtsaByCarId: Record<string, SafetyEntry> = {};
 let nhtsaCountryIndex: Record<string, string> = {};
 let horsepower: Record<string, number> = {};
 let loaded = false;
@@ -114,15 +100,13 @@ function buildNhtsaCountryIndex(cache: Record<string, NhtsaCacheEntry>): Record<
 function ensureLoaded(): void {
   if (loaded) return;
   epaEnrichment = loadJson<Record<string, EpaEnrichmentEntry>>('epa-enrichment.json') ?? {};
-  nhtsaSafety = loadJson<Record<string, SafetyEntry>>('nhtsa-safety.json') ?? {};
-  nhtsaByCarId = loadJson<Record<string, SafetyEntry>>('nhtsa-by-car-id.json') ?? {};
   const nhtsaCache =
     loadJson<Record<string, NhtsaCacheEntry>>('raw/nhtsa-enrichment-cache.json') ?? {};
   nhtsaCountryIndex = buildNhtsaCountryIndex(nhtsaCache);
   horsepower = loadJson<Record<string, number>>('horsepower-enrichment.json') ?? {};
   loaded = true;
   console.log(
-    `[content-enrichment] Loaded ${Object.keys(epaEnrichment).length} EPA + ${Object.keys(nhtsaSafety).length} NHTSA combos + ${Object.keys(nhtsaByCarId).length} per-car NHTSA + ${Object.keys(nhtsaCountryIndex).length} NHTSA country entries + ${Object.keys(horsepower).length} horsepower entries.`,
+    `[content-enrichment] Loaded ${Object.keys(epaEnrichment).length} EPA + ${Object.keys(nhtsaCountryIndex).length} NHTSA country entries + ${Object.keys(horsepower).length} horsepower entries.`,
   );
 }
 
@@ -132,14 +116,13 @@ export function enrichCar(car: Car): Car {
 
   const epaEntry = car.epaId != null ? epaEnrichment[String(car.epaId)] : undefined;
   const displayModel = canonicalizeDisplayModel(car);
-  const safety = nhtsaByCarId[car.id] ?? resolveNhtsaSafety(car, nhtsaSafety, displayModel);
   const hp = car.epaId != null ? horsepower[String(car.epaId)] : undefined;
   const evHpCandidate = estimateEvHorsepower(car);
   const nhtsaCountry = car.countryOfOrigin
     ? resolveNhtsaCountry(car, nhtsaCountryIndex, displayModel)
     : undefined;
 
-  if (!epaEntry && !safety && hp == null && evHpCandidate == null && !nhtsaCountry) return car;
+  if (!epaEntry && hp == null && evHpCandidate == null && !nhtsaCountry) return car;
 
   const next: Car = { ...car };
 
@@ -178,17 +161,6 @@ export function enrichCar(car: Car): Car {
     if (epaEntry.charge240Hours != null) {
       next.epa = { ...next.epa, charge240Hours: epaEntry.charge240Hours };
     }
-  }
-
-  // Only set safety from NHTSA when the record doesn't already carry a curated/stored rating.
-  if (safety && !car.safetyRating?.overall) {
-    next.safetyRating = {
-      overall: safety.overall,
-      ...(safety.frontal != null ? { frontal: safety.frontal } : {}),
-      ...(safety.side != null ? { side: safety.side } : {}),
-      ...(safety.rollover != null ? { rollover: safety.rollover } : {}),
-    };
-    next.provenance = { ...car.provenance, safetyRating: 'nhtsa' };
   }
 
   // EPA Test Car List "Rated Horsepower" — a separate EPA dataset from FuelEconomy.gov.

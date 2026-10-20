@@ -150,7 +150,10 @@ export function buildKeyFigures(dashboard: CarDashboard): KeyFigure[] {
           label: 'Safety',
           value: String(overall),
           unit: '/5',
-          detail: 'Overall crash-test stars',
+          detail:
+            (car.safetyRating?.nhtsaIds?.length ?? 0) > 1
+              ? `Overall crash-test stars, the lowest of ${car.safetyRating!.nhtsaIds!.length} versions tested`
+              : 'Overall crash-test stars',
           source: 'nhtsa',
           glossaryKey: 'safetyOverall',
         }

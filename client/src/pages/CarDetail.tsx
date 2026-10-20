@@ -42,6 +42,7 @@ import { usePageMeta } from '../utils/pageMeta';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 import { formatVolume, litres, luggageLabel } from '../utils/space';
 import SafetyRecords from '../components/SafetyRecords';
+import CrashTests from '../components/CrashTests';
 
 function Subheading({ children }: { children: React.ReactNode }) {
   return <p className="text-sm font-semibold text-zinc-200 pt-3 pb-1">{children}</p>;
@@ -331,11 +332,6 @@ export default function CarDetail() {
     hasNumericValue(evCharge?.charge120Hours ?? car.epa?.charge120Hours);
   const showEnergySection =
     (hasFuelData && hasCityHwy && !isPhev) || Boolean(isPhev && phev) || hasEvExtras;
-  const hasOverallSafety = hasNumericValue(car.safetyRating?.overall, { allowZero: false });
-  const hasSafetyBreakdown =
-    hasNumericValue(car.safetyRating?.frontal, { allowZero: false }) ||
-    hasNumericValue(car.safetyRating?.side, { allowZero: false }) ||
-    hasNumericValue(car.safetyRating?.rollover, { allowZero: false });
   // A collector car's or never-sold car's figures are computed but not shown
   // (see the server's utils/unvalued.ts): its price follows auctions, or it
   // has no used market at all.
@@ -539,7 +535,7 @@ export default function CarDetail() {
 
       <section className="border-b border-zinc-900">
         <div className="page-wrap-wide section-y-tight space-y-6">
-          {(showEnergySection || hasSafetyBreakdown || hasEmissionsData || hasSpace) && (
+          {(showEnergySection || hasEmissionsData || hasSpace) && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 md:gap-x-10 gap-y-8 md:gap-y-10">
               {showEnergySection && (
                 <div className="min-w-0">
@@ -621,61 +617,6 @@ export default function CarDetail() {
                 </div>
               )}
 
-              {hasSafetyBreakdown &&
-                (() => {
-                  const scores = [
-                    hasNumericValue(car.safetyRating?.frontal, { allowZero: false }) && {
-                      key: 'frontal',
-                      label: 'Frontal',
-                      value: car.safetyRating!.frontal!,
-                    },
-                    hasNumericValue(car.safetyRating?.side, { allowZero: false }) && {
-                      key: 'side',
-                      label: 'Side',
-                      value: car.safetyRating!.side!,
-                    },
-                    hasNumericValue(car.safetyRating?.rollover, { allowZero: false }) && {
-                      key: 'rollover',
-                      label: 'Rollover',
-                      value: car.safetyRating!.rollover!,
-                    },
-                  ].filter(Boolean) as { key: string; label: string; value: number }[];
-
-                  return (
-                    <div className="min-w-0 self-start">
-                      <h2 className="text-base font-bold tracking-tight mb-1">Crash tests</h2>
-                      <p className="text-xs text-zinc-500 mb-3 leading-relaxed">
-                        Overall is above. NHTSA tests specific configurations — scores may apply to
-                        closely related trims of the same model year.
-                      </p>
-                      <div
-                        className={`grid gap-px bg-zinc-800 ${
-                          scores.length >= 3
-                            ? 'grid-cols-3'
-                            : scores.length === 2
-                              ? 'grid-cols-2'
-                              : 'grid-cols-1'
-                        }`}
-                      >
-                        {scores.map((score) => (
-                          <div
-                            key={score.key}
-                            className="bg-black px-2 sm:px-3 py-3.5 sm:py-4 text-center min-w-0"
-                          >
-                            <p className="text-xs text-zinc-500 mb-1 wrap-break-word">
-                              {score.label}
-                            </p>
-                            <p className="text-lg sm:text-xl font-bold tabular-nums">
-                              {score.value}
-                              <span className="text-xs text-zinc-500">/5</span>
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })()}
-
               {hasEmissionsData && (
                 <div className="min-w-0">
                   <h2 className="text-base font-bold tracking-tight mb-1">Emissions</h2>
@@ -711,16 +652,10 @@ export default function CarDetail() {
               )}
             </div>
           )}
-
-          {hasOverallSafety && !hasSafetyBreakdown && (
-            <p className="text-xs text-zinc-500 leading-snug">
-              <span className="font-medium text-zinc-400">Crash tests</span>
-              {' · '}
-              Overall stars are above; component scores are not on file for this configuration.
-            </p>
-          )}
         </div>
       </section>
+
+      <CrashTests dashboard={dashboard} car={car} />
 
       {/* Recalls and complaints are the model year's, not this configuration's. */}
       <SafetyRecords

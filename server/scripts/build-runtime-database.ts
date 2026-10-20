@@ -19,6 +19,7 @@ import { ensureUniqueIds } from '../src/utils/unique-ids.js';
 import { withRunningCosts } from '../src/utils/running-cost.js';
 import { loadCarPhotos, withCarPhotos } from '../src/utils/car-photos.js';
 import { packRuntimeDatabase } from '../src/services/runtime-db.js';
+import { withNhtsaRatingsFor } from '../src/services/car.service.js';
 import type { Car } from '../src/types/car.types.js';
 
 interface CarDatabase {
@@ -65,8 +66,13 @@ if (hp.filled) {
   );
 }
 
+// NHTSA's ratings by model line, body and drivetrain, from data/nhtsa-ratings.json.
+const nhtsa = withNhtsaRatingsFor(normalized);
+console.log(
+  `[build-runtime-db] NHTSA: ${nhtsa.described.toLocaleString()} cars described by a test, ${nhtsa.rated.toLocaleString()} with an overall rating.`,
+);
 // Slug collisions made some vehicles unreachable by ID — see utils/unique-ids.ts.
-const { cars: unique, report } = ensureUniqueIds(normalized);
+const { cars: unique, report } = ensureUniqueIds(nhtsa.cars);
 // Yearly running costs, for "cheapest to own" searches (see utils/running-cost.ts).
 const cars = withRunningCosts(unique);
 const photographed = cars.filter((car) => car.photo).length;

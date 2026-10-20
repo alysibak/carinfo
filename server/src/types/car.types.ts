@@ -138,11 +138,30 @@ export interface CarSpecs {
   driveType: DriveType;
   bodyStyle: BodyStyle;
 
+  /**
+   * NHTSA's 5-star ratings (2011 on) from the tests that describe this car's
+   * body and drivetrain that model year (utils/nhtsa-ratings.ts). Where
+   * several do (a pickup's cabs), each score is the lowest of them.
+   */
   safetyRating?: {
     overall?: number;
     frontal?: number;
     side?: number;
     rollover?: number;
+    /** NHTSA's chance of a rollover in a single-vehicle crash: 0.14. The highest where several. */
+    rolloverRisk?: number;
+    /** NHTSA's ids for the tested vehicles. */
+    nhtsaIds?: number[];
+  };
+
+  /** The recommended safety technology NHTSA lists for the tested configurations. */
+  safetyTech?: {
+    /** Electronic stability control. */
+    esc?: SafetyAvailability;
+    /** Forward collision warning. */
+    fcw?: SafetyAvailability;
+    /** Lane departure warning. */
+    ldw?: SafetyAvailability;
   };
 
   /**
@@ -392,6 +411,26 @@ export interface SearchResults {
   onePerModel?: boolean;
 }
 
+/** Standard, optional, or standard on some versions and optional on others. */
+export type SafetyAvailability = 'standard' | 'optional' | 'some';
+
+/** One vehicle NHTSA crash-tested, as its 5-Star Safety Ratings list it. */
+export interface NhtsaRating {
+  /** NHTSA's id for the tested vehicle. */
+  id: number;
+  /** The configuration NHTSA tested, as it names it: "2020 Toyota Camry 4 DR FWD". */
+  tested: string;
+  overall?: number;
+  frontal?: number;
+  side?: number;
+  rollover?: number;
+  /** NHTSA's chance of a rollover in a single-vehicle crash: 0.14. */
+  rolloverRisk?: number;
+  esc?: SafetyAvailability;
+  fcw?: SafetyAvailability;
+  ldw?: SafetyAvailability;
+}
+
 /** A recall Transport Canada lists for a model year, in its own words. */
 export interface CanadianRecall {
   /** Transport Canada's recall number, which its database and the maker know it by: "2021702". */
@@ -635,4 +674,6 @@ export interface CarDashboard {
   recalls?: CanadianRecall[];
   /** Owner complaints to NHTSA (U.S.) about the model year, where matched. */
   complaints?: ComplaintSummary;
+  /** Each vehicle NHTSA tested that describes this car, where its ratings are matched. */
+  nhtsaTests?: NhtsaRating[];
 }

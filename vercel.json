@@ -39,7 +39,7 @@
   ],
   "functions": {
     "api/index.ts": {
-      "includeFiles": "{server/data/cars-ready.json,server/data/recalls-canada.json,server/data/complaints.json,client/dist/index.html}",
+      "includeFiles": "{server/data/cars-ready.json,server/data/recalls-canada.json,server/data/complaints.json,server/data/nhtsa-ratings.json,client/dist/index.html}",
       "excludeFiles": "{data/**,server/data/cars.json,server/data/raw/**}",
       "maxDuration": 60,
       "memory": 1024

@@ -23,15 +23,32 @@ const MAKE_ALIASES: Record<string, string> = {
   chevy: 'Chevrolet',
   vw: 'Volkswagen',
   'mini cooper': 'MINI',
+  alfa: 'Alfa Romeo',
 };
 
+/** A pickup's cab, which NHTSA writes into the model's name: "F-150 SUPER CREW". */
+const CAB =
+  /\b(?:regular(?: ?cab)?|super ?crew|super ?cab|crew(?: ?cab)?|extended ?cab|double ?cab|access ?cab|king ?cab|quad(?: ?cab)?|mega ?cab|club ?cab)\b/gi;
+
+/** "F-150 SUPER CREW" → "F-150": the model a cab is a version of. */
+export function withoutCab(model: string): string {
+  return model.replace(CAB, ' ').replace(/\s+/g, ' ').trim() || model;
+}
+
+/**
+ * What NHTSA's newest records add to a name: "CR-V ICE" (the engine car),
+ * "F-150 (SUPER CAB) GAS", "MODEL Y (All Variants)", "MAZDA3 SEDAN".
+ */
+const NOISE = /\((?:\s*all variants\s*)\)|\(\s*\)|\b(?:ice|gas)\b|\s(?:sedan|hatchback)$/gi;
+
 /** Words after a line's name that leave it the same line: "SILVERADO 1500", "IONIQ HYBRID". */
-const SAME_LINE_AFTER = /^(?:\d|hybrid|plugin|phev|hev|ev|electric|awd|4wd|2wd|fwd|rwd|4x4|4x2)/;
+const SAME_LINE_AFTER =
+  /^(?:\d|hybrid|plugin|phev|hev|bev|ev|electric|fcev|awd|4wd|2wd|fwd|rwd|4x4|4x2)/;
 /** Words that name a body, not a model. */
 const BODY_WORDS =
   /^(?:pickup|truck|van|wagon|sedan|coupe|convertible|hatchback|suv|cab|chassis|cargo|passenger)$/;
 /** A performance trim the records name as a model: "MUSTANG GT", "CIVIC SI", "CAMARO SS". */
-const PERFORMANCE_TRIM = /^(?:gt|gts|si|ss|rs|st|svt|typer)$/;
+const PERFORMANCE_TRIM = /^(?:gt|gts|gli|si|ss|rs|st|svt|typer)$/;
 /** A heavy-duty version, which EPA does not rate: "SIERRA 3500", "SILVERADO 2500HD". */
 const HEAVY_DUTY = /^(?:[2-5]500|hd|sd)/;
 /** Words after a record's name in an EPA model name that leave it the same vehicle: "Yukon XL 2WD". */
@@ -74,8 +91,17 @@ export function govModelIndex(cars: readonly Car[], lineOf: (car: Car) => string
   }
   const cache = new Map<string, string | null>();
 
-  function find(make: string, model: string, year: number): string | null {
-    const lower = make.toLowerCase().trim();
+  function find(written: string, writtenModel: string, year: number): string | null {
+    let make = written.trim();
+    let model = withoutCab(writtenModel).replace(NOISE, ' ').replace(/\s+/g, ' ').trim();
+    // "RAM RAM 2500", "AUDI AUDI E-TRON": the make twice. "TOYOTA SCION TC": Toyota's Scion brand.
+    const [first, ...rest] = model.split(' ');
+    if (rest.length && first.toLowerCase() === make.toLowerCase()) model = rest.join(' ');
+    else if (rest.length && first.toLowerCase() === 'scion') {
+      make = first;
+      model = rest.join(' ');
+    }
+    const lower = make.toLowerCase();
     const ourMake = MAKE_ALIASES[lower] ?? makes.get(lower);
     if (!ourMake) return null;
     const candidates = [...(lines.get(`${ourMake.toLowerCase()}|${year}`)?.values() ?? [])];

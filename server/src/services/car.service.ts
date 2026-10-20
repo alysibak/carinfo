@@ -41,6 +41,8 @@ import { isLuxuryBrand } from '../utils/vehicle-taxonomy.js';
 import { findSimilarCars, sameModelLine } from '../utils/similar-vehicles.js';
 import { Speller } from '../utils/spelling.js';
 import { canadianRecallsFor, complaintsFor } from './safety-records.service.js';
+import { govModelIndex } from '../utils/gov-models.js';
+import { loadNhtsaTests, withNhtsaRatings } from '../utils/nhtsa-ratings.js';
 
 function resolveDbPath(): string | null {
   return resolveDataFile('cars.json');
@@ -175,8 +177,10 @@ function initDatabase(): void {
       // Dev / missing ready file: enrich + normalize at load (slow on large DBs).
       cachedCars = withRunningCosts(
         ensureUniqueIds(
-          cleanCorpusHorsepower(
-            withCarPhotos(db.cars, loadCarPhotos()).map(enrichCar).map(normalizeCarRecord),
+          withNhtsaRatingsFor(
+            cleanCorpusHorsepower(
+              withCarPhotos(db.cars, loadCarPhotos()).map(enrichCar).map(normalizeCarRecord),
+            ).cars,
           ).cars,
         ).cars,
       );
@@ -897,6 +901,20 @@ const SUBMODEL_KEYS: Record<string, Array<[RegExp, string]>> = {
 const lineKeys = new Map<string, string>();
 
 /** The model line a car belongs to, as "one per model" groups them: "honda|civic". */
+/**
+ * NHTSA's ratings for every car from the tests of its model line that year,
+ * by body and drivetrain (utils/nhtsa-ratings.ts). Run on normalized records,
+ * whose names the lines are keyed by.
+ */
+export function withNhtsaRatingsFor(cars: Car[]): ReturnType<typeof withNhtsaRatings> {
+  return withNhtsaRatings(
+    cars,
+    loadNhtsaTests(),
+    modelLineKey,
+    govModelIndex(cars, modelLineKey).match,
+  );
+}
+
 export function modelLineKey(car: Pick<Car, 'make' | 'model'>): string {
   // 37,000 cars share 5,000 names.
   const name = `${car.make}|${car.model}`;
@@ -2934,6 +2952,32 @@ function sortResultsInPlace(cars: Car[], field: string, order: 'asc' | 'desc'): 
   });
 }
 
+const TECH_RANK = { standard: 3, some: 2, optional: 1 } as const;
+
+/**
+ * NHTSA's overall stars, ties broken by its frontal, side and rollover stars,
+ * then the crash-avoidance technology it lists, a lower rollover risk, and
+ * the newer year: among five-star SUVs, the one with five-star crash tests,
+ * collision warning as standard and the least rollover risk comes first.
+ */
+function safetyRank(car: Car): number | null {
+  const rating = car.safetyRating;
+  if (!rating?.overall) return null;
+  const components = (rating.frontal ?? 0) + (rating.side ?? 0) + (rating.rollover ?? 0);
+  const tech = [car.safetyTech?.fcw, car.safetyTech?.ldw, car.safetyTech?.esc].reduce(
+    (sum, v) => sum + (v ? TECH_RANK[v] : 0),
+    0,
+  );
+  const risk = rating.rolloverRisk != null ? Math.round(rating.rolloverRisk * 100) : 100;
+  return (
+    rating.overall * 1e7 +
+    components * 1e5 +
+    tech * 1e3 +
+    (100 - Math.min(100, risk)) * 9 +
+    Math.max(0, car.year - 2010) / 20
+  );
+}
+
 function getSortValue(car: Car, field: string): number | string | null {
   switch (field) {
     case 'make':
@@ -2951,7 +2995,7 @@ function getSortValue(car: Car, field: string): number | string | null {
     case 'range':
       return car.epa?.rangeMiles ?? null;
     case 'safety':
-      return car.safetyRating?.overall || null;
+      return safetyRank(car);
     case 'runningCost':
       return car.runningCostCad ?? null;
     case 'luggage':

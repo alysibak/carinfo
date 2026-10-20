@@ -21,7 +21,8 @@ const SOURCES = [
   {
     name: 'NHTSA, 5-Star Safety Ratings',
     url: 'https://www.nhtsa.gov/ratings',
-    gives: 'crash-test stars, where NHTSA tested the car.',
+    gives:
+      'crash-test stars, rollover risk and the safety technology listed, from each model year since 2011 that NHTSA tested in the car’s body and drivetrain.',
     terms: 'U.S. government data, public domain.',
   },
   {
@@ -248,8 +249,8 @@ export default function Methodology() {
               <ProvenanceChip source="epa" /> EPA-verified fuel economy, engine, emissions
             </li>
             <li className="flex items-center gap-2">
-              <ProvenanceChip source="nhtsa" /> NHTSA crash-test stars when enriched (~13% per-car
-              coverage)
+              <ProvenanceChip source="nhtsa" /> NHTSA crash-test stars from the car&rsquo;s own
+              model year, body and drivetrain (about 9,800 cars from 2011 on)
             </li>
             <li className="flex items-center gap-2">
               <ProvenanceChip source="curated" /> EPA test-car rated horsepower (~55% of listings),
