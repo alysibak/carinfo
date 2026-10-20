@@ -6,8 +6,8 @@ name: Public data
 # Canada's recalls and vehicle dimensions, Statistics Canada's pump prices and
 # NRCan's fuel consumption ratings. GitHub's runners reach them all.
 #
-# The result goes to the public-data branch for review, never straight to
-# main: the site reads only what has been matched to its cars and checked.
+# The result goes to the public-data-files branch for review, never straight
+# to main: the site reads only what has been matched to its cars and checked.
 # Each part runs on its own, so one source being down leaves the others.
 on:
   push:
@@ -38,8 +38,10 @@ defaults:
 env:
   NODE_VERSION: '24'
   FETCH: npx tsx scripts/fetch-public-data.ts
-  # A push or the schedule fetches everything.
-  PARTS: ${{ inputs.parts || 'all' }}
+  # The schedule fetches everything. A push, to try a change to the fetching,
+  # skips NHTSA's star ratings, which take three hours; they keep the last
+  # run's file.
+  PARTS: ${{ inputs.parts || (github.event_name == 'push' && 'recalls complaints canada-recalls fuel-prices nrcan canadian-specs') || 'all' }}
 
 jobs:
   fetch:
@@ -55,10 +57,15 @@ jobs:
       - run: npm ci
         working-directory: .
 
-      # A run of some parts keeps the other parts' files from the last run.
+      # A run of some parts keeps the other parts' files from the last run:
+      # public-data-files, or before it the public-data branch.
       - name: Keep the last run's data
         run: |
-          git fetch --depth=1 origin public-data && git checkout origin/public-data -- data/public || true
+          for branch in public-data-files public-data; do
+            if git fetch --depth=1 origin "$branch"; then
+              git checkout FETCH_HEAD -- data/public && break
+            fi
+          done || true
 
       - name: NHTSA recalls
         if: env.PARTS == 'all' || contains(format(' {0} ', env.PARTS), ' recalls ')
@@ -131,16 +138,24 @@ jobs:
           npx tsx scripts/build-nhtsa-ratings.ts data/public 2>&1 | tee -a ../public-data-report.txt
           npx tsx scripts/build-pump-prices.ts data/public 2>&1 | tee -a ../public-data-report.txt
           npx prettier --write src/config/pump-prices.ts
+          npx tsx scripts/build-canadian-specs.ts data/public 2>&1 | tee -a ../public-data-report.txt
 
-      - name: Push to the public-data branch
+      # The data alone, in a commit of its own: a branch carrying main's
+      # history would change the workflow files it holds, which the job's
+      # token may not (run 4 was refused for it).
+      - name: Push to the public-data-files branch
         working-directory: .
         run: |
           { echo '```'; cat public-data-report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git checkout -B public-data
-          git add -f public-data-report.txt server/data/public \
-            server/data/recalls-canada.json server/data/complaints.json server/data/nhtsa-ratings.json \
-            server/src/config/pump-prices.ts
+          git checkout --orphan public-data-files
+          git rm -r -q --cached .
+          # A build that failed leaves its file out, not the push.
+          for path in public-data-report.txt server/data/public server/data/recalls-canada.json \
+            server/data/complaints.json server/data/nhtsa-ratings.json \
+            server/data/canadian-specs.json server/src/config/pump-prices.ts; do
+            if [ -e "$path" ]; then git add -f "$path"; fi
+          done
           git commit -m "Public data ($(date -u +%F))" -m "$(grep '^Done' public-data-report.txt || true)"
-          git push -f origin public-data
+          git push -f origin public-data-files
