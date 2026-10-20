@@ -4,6 +4,7 @@
  *
  *   data/recalls-canada.json   Transport Canada's safety and compliance recalls
  *   data/complaints.json       NHTSA's owner complaints, counted by part
+ *   data/investigations.json   NHTSA's defect investigations
  *
  * Each record keeps the government's own identifiers (Transport Canada's recall
  * number, NHTSA's make, model and year), so a visitor can look it up there.
@@ -187,11 +188,95 @@ function complaints(index: ReturnType<typeof govModelIndex>) {
   console.log(`  Most often unmatched: ${top(unmatched)}`);
 }
 
+/** NHTSA's kinds of investigation, by the first letters of its number. */
+const INVESTIGATION_KINDS = /^(PE|EA|RQ|DP|AQ|RP)/;
+
+/** "20190311" or "2019-03-11" → "2019-03-11"; anything else, nothing. */
+function isoDay(text: string | undefined): string | undefined {
+  const digits = text?.replace(/\D/g, '') ?? '';
+  if (digits.length !== 8) return undefined;
+  const day = `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`;
+  return Number.isNaN(Date.parse(day)) ? undefined : day;
+}
+
+export interface NhtsaInvestigationRecord {
+  /** "PE", "EA", "RQ", "DP", "AQ" or "RP". */
+  kind: string;
+  opened: string;
+  closed?: string;
+  component: string;
+  subject: string;
+  summary?: string;
+  /** The recall it led to, by NHTSA's campaign number. */
+  recall?: string;
+}
+
+function investigations(index: ReturnType<typeof govModelIndex>) {
+  const path = join(folder, 'nhtsa-investigations.json');
+  const file = JSON.parse(readFileSync(path, 'utf8')) as {
+    actions: Record<string, Record<string, string>>;
+    vehicles: Record<string, string[]>;
+  };
+  const kept: Record<string, NhtsaInvestigationRecord> = {};
+  const byLine: Record<string, string[]> = {};
+  let listings = 0;
+  let matched = 0;
+  const unmatched = new Map<string, number>();
+  for (const [key, ids] of Object.entries(file.vehicles)) {
+    const [make, model, yearText] = key.split('|');
+    const year = Number(yearText);
+    listings++;
+    const line = index.match(make, model, year);
+    if (!line) {
+      unmatched.set(`${make} ${model}`, (unmatched.get(`${make} ${model}`) ?? 0) + 1);
+      continue;
+    }
+    matched++;
+    for (const id of ids) {
+      const action = file.actions[id];
+      const kind = INVESTIGATION_KINDS.exec(id)?.[1];
+      const opened = isoDay(action?.opened);
+      if (!action || !kind || !opened || !action.subject) continue;
+      const closed = isoDay(action.closed);
+      const recall = action.campaign?.trim();
+      const summary = action.summary?.replace(/\s+/g, ' ').trim();
+      kept[id] ??= {
+        kind,
+        opened,
+        ...(closed ? { closed } : {}),
+        component: (action.component ?? '').split(':')[0].trim() || 'UNKNOWN',
+        subject: action.subject.replace(/\s+/g, ' ').trim(),
+        ...(summary ? { summary } : {}),
+        ...(recall ? { recall } : {}),
+      };
+      const list = (byLine[`${line}|${year}`] ??= []);
+      if (!list.includes(id)) list.push(id);
+    }
+  }
+  for (const list of Object.values(byLine)) {
+    list.sort((a, b) => kept[b].opened.localeCompare(kept[a].opened));
+  }
+  writeFileSync(
+    join(DATA, 'investigations.json'),
+    JSON.stringify({
+      source: 'https://static.nhtsa.gov/odi/ffdd/inv/FLAT_INV.zip',
+      builtAt: new Date().toISOString(),
+      investigations: kept,
+      byLine,
+    }),
+  );
+  console.log(
+    `NHTSA investigations: ${Object.keys(kept).length} over ${Object.keys(byLine).length} model years (${matched} of ${listings} make, model and year listings matched)`,
+  );
+  console.log(`  Most often unmatched: ${top(unmatched)}`);
+}
+
 async function main(): Promise<void> {
   if (!existsSync(folder)) throw new Error(`No public data at ${folder}`);
   const index = govModelIndex(getAllCars(), modelLineKey);
   if (existsSync(join(folder, 'canada-recalls'))) await canadianRecalls(index);
   if (existsSync(join(folder, 'nhtsa-complaints.json'))) complaints(index);
+  if (existsSync(join(folder, 'nhtsa-investigations.json'))) investigations(index);
 }
 
 main().catch((err) => {

@@ -1,11 +1,12 @@
 import { readFileSync } from 'fs';
-import type { CanadianRecall, ComplaintSummary } from '../types/car.types.js';
+import type { CanadianRecall, ComplaintSummary, NhtsaInvestigation } from '../types/car.types.js';
 import { resolveDataFile } from '../utils/data-paths.js';
 
 /**
- * Transport Canada's recalls and NHTSA's owner complaints, by model line and
- * model year (scripts/build-safety-records.ts). Loaded on first use: most
- * requests never ask.
+ * Transport Canada's recalls, NHTSA's owner complaints and its defect
+ * investigations, by model line and model year
+ * (scripts/build-safety-records.ts). Loaded on first use: most requests never
+ * ask.
  */
 
 interface RecallFile {
@@ -19,7 +20,14 @@ interface ComplaintFile {
   byLine: Record<string, ComplaintSummary>;
 }
 
+interface InvestigationFile {
+  builtAt?: string;
+  investigations: Record<string, Omit<NhtsaInvestigation, 'id'>>;
+  byLine: Record<string, string[]>;
+}
+
 let recallFile: RecallFile | null | undefined;
+let investigationFile: InvestigationFile | null | undefined;
 let complaintFile: ComplaintFile | null | undefined;
 /** Model lines with any matched record: only these can be said to have none in a year. */
 let recallLines = new Set<string>();
@@ -77,6 +85,22 @@ export function complaintsFor(line: string, year: number): ComplaintSummary | un
   );
 }
 
+function investigationRecords(): InvestigationFile | null {
+  if (investigationFile === undefined) {
+    investigationFile = load<InvestigationFile>('investigations.json');
+  }
+  return investigationFile;
+}
+
+/** NHTSA's investigations covering a model line and year, newest first; none where none are on file. */
+export function investigationsFor(line: string, year: number): NhtsaInvestigation[] {
+  const file = investigationRecords();
+  return (file?.byLine[`${line}|${year}`] ?? []).map((id) => ({
+    id,
+    ...file!.investigations[id],
+  }));
+}
+
 /**
  * Where a year stands among its model's years on file by owner complaints:
  * the 2018 CR-V has the most of its 30 years. Only for a year with complaints,
@@ -98,12 +122,14 @@ export function complaintRankFor(
  * The day each file was built from the government's records, which the
  * Public data workflow fetches the same day: "2026-10-20".
  */
-export function recordDates(): { recalls?: string; complaints?: string } {
+export function recordDates(): { recalls?: string; complaints?: string; investigations?: string } {
   const day = (iso?: string) => iso?.slice(0, 10);
   const recallDay = day(recalls()?.builtAt);
   const complaintDay = day(complaints()?.builtAt);
+  const investigationDay = day(investigationRecords()?.builtAt);
   return {
     ...(recallDay ? { recalls: recallDay } : {}),
     ...(complaintDay ? { complaints: complaintDay } : {}),
+    ...(investigationDay ? { investigations: investigationDay } : {}),
   };
 }

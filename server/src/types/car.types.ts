@@ -459,6 +459,27 @@ export interface SaferAlternative {
 }
 
 /**
+ * One of NHTSA's defect investigations covering a model year: a preliminary
+ * evaluation (PE), engineering analysis (EA), recall query (RQ), defect or
+ * recall petition (DP, RP) or audit query (AQ).
+ */
+export interface NhtsaInvestigation {
+  /** NHTSA's number: "PE19003". */
+  id: string;
+  kind: string;
+  /** "2019-03-11". */
+  opened: string;
+  /** Absent while it is open. */
+  closed?: string;
+  /** NHTSA's component name: "ENGINE". */
+  component: string;
+  subject: string;
+  summary?: string;
+  /** The recall it led to, by NHTSA's campaign number: "20V123000". */
+  recall?: string;
+}
+
+/**
  * Where a model stands on Équité Association's list of Canada's most stolen
  * vehicles (config/most-stolen.ts): "Toyota RAV4", 1st of 10 in 2024.
  */
@@ -745,6 +766,8 @@ export interface CarDashboard {
   recalls?: CanadianRecall[];
   /** Owner complaints to NHTSA (U.S.) about the model year, where matched. */
   complaints?: ComplaintSummary;
+  /** NHTSA's defect investigations that cover the model year, newest first; absent where none. */
+  investigations?: NhtsaInvestigation[];
   /** Where the year stands among its model's years on file by complaints: 1st of 30. */
   complaintRank?: { position: number; of: number };
   /** Each vehicle NHTSA tested that describes this car, where its ratings are matched. */
@@ -754,5 +777,10 @@ export interface CarDashboard {
   /** Cars shopped against it that NHTSA rated higher, or as high with collision warning standard. */
   saferAlternatives?: SaferAlternative[];
   /** The day each set of government records was fetched: "2026-10-20". */
-  recordDates?: { recalls?: string; complaints?: string; ratings?: string };
+  recordDates?: {
+    recalls?: string;
+    complaints?: string;
+    investigations?: string;
+    ratings?: string;
+  };
 }

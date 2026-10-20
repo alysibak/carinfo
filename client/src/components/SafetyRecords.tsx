@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { CarDashboard } from '../types/car.types';
 import { ordinal } from '@carinfo/shared/theft';
+import Investigations from './Investigations';
 import { complaintPart, recallDate, recallNotice } from '../utils/recalls';
 
 const CANADA_RECALLS = 'https://recalls-rappels.canada.ca/en';
@@ -18,8 +19,9 @@ function rankSentence(rank: { position: number; of: number }, model = 'model'): 
 }
 
 /**
- * Transport Canada's recalls and NHTSA's owner complaints for the car's model
- * year, each with the identifiers the government knows it by. Shown only where
+ * Transport Canada's recalls, NHTSA's owner complaints and its defect
+ * investigations for the car's model year, each with the identifiers the
+ * government knows it by. Shown only where
  * the government's records for the model are matched to the site's: "no
  * recalls listed" from a model whose name never matched would be false.
  */
@@ -31,9 +33,9 @@ export default function SafetyRecords({
   /** "2018 Toyota Camry". */
   name: string;
 }) {
-  const { recalls, complaints } = dashboard;
+  const { recalls, complaints, investigations } = dashboard;
   const [showAll, setShowAll] = useState(false);
-  if (!recalls && !complaints) return null;
+  if (!recalls && !complaints && !investigations) return null;
   const shown = showAll ? recalls : recalls?.slice(0, SHOWN);
   const mostParts = complaints?.parts[0]?.[1] ?? 0;
 
@@ -175,6 +177,14 @@ export default function SafetyRecords({
                 ` Records as of ${recallDate(dashboard.recordDates.complaints)}.`}
             </p>
           </div>
+        )}
+
+        {investigations && (
+          <Investigations
+            investigations={investigations}
+            name={name}
+            asOf={dashboard.recordDates?.investigations}
+          />
         )}
       </div>
     </section>

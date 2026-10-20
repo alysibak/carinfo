@@ -140,8 +140,8 @@ jobs:
         timeout-minutes: 220
         run: $FETCH nhtsa-ratings 2>&1 | tee -a ../public-data-report.txt
 
-      # The site's own files from them: recalls and complaints by model line
-      # and year (scripts/build-safety-records.ts), NHTSA's ratings
+      # The site's own files from them: recalls, complaints and investigations
+      # by model line and year (scripts/build-safety-records.ts), NHTSA's ratings
       # (scripts/build-nhtsa-ratings.ts) and the pump prices
       # (scripts/build-pump-prices.ts), for review against main's.
       - name: Build the site's recall, complaint, rating and price records
@@ -167,7 +167,7 @@ jobs:
           git rm -r -q --cached .
           # A build that failed leaves its file out, not the push.
           for path in public-data-report.txt server/data/public server/data/recalls-canada.json \
-            server/data/complaints.json server/data/nhtsa-ratings.json \
+            server/data/complaints.json server/data/investigations.json server/data/nhtsa-ratings.json \
             server/data/canadian-specs.json server/src/config/pump-prices.ts; do
             if [ -e "$path" ]; then git add -f "$path"; fi
           done

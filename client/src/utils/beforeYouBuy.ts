@@ -1,9 +1,10 @@
 import type { CarDashboard } from '../types/car.types';
-import { complaintPart } from './recalls';
+import { complaintPart, recallDate } from './recalls';
+import { investigationText } from './investigations';
 import { theftPlace } from '@carinfo/shared/theft';
 
 export interface BeforeYouBuyItem {
-  key: 'recalls' | 'complaints' | 'safety' | 'theft';
+  key: 'recalls' | 'complaints' | 'investigation' | 'safety' | 'theft';
   text: string;
   /** The section of the car page it comes from. */
   href: '#recalls' | '#safety' | '#theft';
@@ -24,11 +25,11 @@ function list(words: string[]): string {
 /**
  * What to check before buying the car, from the records on its page: the
  * model year's recalls in Canada (to verify by VIN), what owners complained
- * of most to NHTSA, NHTSA's crash rating, and whether thieves favour the
- * model. Only what is on file is said.
+ * of most to NHTSA, an investigation NHTSA still has open, NHTSA's crash
+ * rating, and whether thieves favour the model. Only what is on file is said.
  */
 export function beforeYouBuy(dashboard: CarDashboard): BeforeYouBuyItem[] {
-  const { car, recalls, complaints, complaintRank, modelPage, theft } = dashboard;
+  const { car, recalls, complaints, complaintRank, investigations, modelPage, theft } = dashboard;
   const name = `${car.year} ${modelPage?.label ?? `${car.make} ${car.model}`}`;
   const items: BeforeYouBuyItem[] = [];
 
@@ -52,6 +53,16 @@ export function beforeYouBuy(dashboard: CarDashboard): BeforeYouBuyItem[] {
       key: 'complaints',
       href: '#recalls',
       text: `Owners complained to NHTSA most about the ${list(parts)} (${complaints.complaints.toLocaleString('en-CA')} ${complaints.complaints === 1 ? 'complaint' : 'complaints'}${most}): worth a look on a test drive.`,
+    });
+  }
+
+  // The newest still open: a recall may follow it.
+  const open = investigations?.find((inv) => !inv.closed);
+  if (open) {
+    items.push({
+      key: 'investigation',
+      href: '#recalls',
+      text: `NHTSA (U.S.) has had an investigation open since ${recallDate(open.opened)} into the ${complaintPart(open.component).toLowerCase()}: ${investigationText(open.subject).replace(/\.$/, '')}. A recall may follow.`,
     });
   }
 

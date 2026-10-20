@@ -18,6 +18,7 @@ import {
   canadianRecallsFor,
   complaintRankFor,
   complaintsFor,
+  investigationsFor,
   recordDates,
 } from './safety-records.service.js';
 import { nhtsaRatingsDate, nhtsaTestsFor } from '../utils/nhtsa-ratings.js';
@@ -83,6 +84,7 @@ export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard |
   const complaintRank = complaints
     ? complaintRankFor(line, car.year, carService.lineYearsOf(car))
     : undefined;
+  const investigations = investigationsFor(line, car.year);
   const nhtsaTests = nhtsaTestsFor(car);
   const theft = theftRankOf(line);
   // Only worth the search where a rival could do better: below five stars,
@@ -106,10 +108,11 @@ export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard |
     ...(recalls ? { recalls } : {}),
     ...(complaints ? { complaints } : {}),
     ...(complaintRank ? { complaintRank } : {}),
+    ...(investigations.length ? { investigations } : {}),
     ...(nhtsaTests.length ? { nhtsaTests } : {}),
     ...(safer.length ? { saferAlternatives: safer } : {}),
     ...(theft ? { theft } : {}),
-    ...(recalls || complaints || nhtsaTests.length
+    ...(recalls || complaints || investigations.length || nhtsaTests.length
       ? {
           recordDates: {
             ...recordDates(),

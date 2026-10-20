@@ -67,4 +67,46 @@ describe('SafetyRecords', () => {
     expect(screen.getByText('Power train')).toBeVisible();
     expect(screen.getByText('12 reporting a crash · 3 injuries')).toBeVisible();
   });
+
+  it('lists NHTSA’s investigations, the open ones first, with their numbers', () => {
+    render(
+      <SafetyRecords
+        dashboard={{
+          ...sparseDashboard,
+          investigations: [
+            {
+              id: 'RQ21004',
+              kind: 'RQ',
+              opened: '2021-06-01',
+              closed: '2022-02-01',
+              component: 'SERVICE BRAKES',
+              subject: 'BRAKE BOOSTER FAILURE',
+              recall: '22V045000',
+            },
+            {
+              id: 'PE19003',
+              kind: 'PE',
+              opened: '2019-03-11',
+              component: 'ENGINE AND ENGINE COOLING',
+              subject: 'Oil dilution',
+              summary: 'The agency received reports of oil levels rising.',
+            },
+          ],
+        }}
+        name="2017 Honda CR-V"
+      />,
+    );
+    expect(
+      screen.getByText(
+        /has investigated 2 possible defects in the 2017 Honda CR-V, one still open/,
+      ),
+    ).toBeVisible();
+    const items = screen.getAllByRole('listitem');
+    expect(items[0]).toHaveTextContent('Engine and engine cooling · open');
+    expect(items[0]).toHaveTextContent('Preliminary evaluation PE19003 · opened Mar 11, 2019');
+    expect(items[1]).toHaveTextContent(
+      'Recall query RQ21004 · opened Jun 1, 2021 · closed Feb 1, 2022 · led to recall 22V045000',
+    );
+    expect(items[1]).toHaveTextContent('Brake booster failure');
+  });
 });

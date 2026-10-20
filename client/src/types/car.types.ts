@@ -26,6 +26,7 @@ export type {
   MarketValueEstimate,
   ModelOverview,
   ModelYearSummary,
+  NhtsaInvestigation,
   NhtsaRating,
   OwnershipAssumptions,
   OwnershipEconomics,

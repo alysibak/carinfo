@@ -82,4 +82,40 @@ describe('beforeYouBuy', () => {
       },
     ]);
   });
+
+  it('names an investigation NHTSA still has open', () => {
+    const items = beforeYouBuy(
+      dashboard(
+        {
+          recalls: undefined,
+          complaints: undefined,
+          investigations: [
+            {
+              id: 'PE19003',
+              kind: 'PE',
+              opened: '2019-03-11',
+              component: 'ENGINE AND ENGINE COOLING',
+              subject: 'OIL DILUTION',
+            },
+            {
+              id: 'PE15001',
+              kind: 'PE',
+              opened: '2015-01-02',
+              closed: '2015-09-01',
+              component: 'AIR BAGS',
+              subject: 'Inflator rupture',
+            },
+          ],
+        },
+        { safetyRating: undefined },
+      ),
+    );
+    expect(items).toEqual([
+      {
+        key: 'investigation',
+        href: '#recalls',
+        text: 'NHTSA (U.S.) has had an investigation open since Mar 11, 2019 into the engine and engine cooling: Oil dilution. A recall may follow.',
+      },
+    ]);
+  });
 });
