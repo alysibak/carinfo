@@ -405,7 +405,9 @@ async function fuelPrices(): Promise<void> {
     Record<string, string>
   >;
   probe('fuel-prices-head.json', rows.slice(0, 5));
-  const productKey = Object.keys(rows[0]).find((k) => /product/i.test(k)) ?? 'Type of product';
+  // "Type of fuel" in the table as published; "product" in older layouts.
+  const productKey =
+    Object.keys(rows[0]).find((k) => /type of (?:fuel|product)|product/i.test(k)) ?? 'Type of fuel';
   probe('fuel-prices-products.json', [...new Set(rows.map((r) => r[productKey]))]);
   const months = [...new Set(rows.map((r) => r.REF_DATE))].sort().slice(-25);
   const recent = rows.filter((r) => months.includes(r.REF_DATE) && r.VALUE !== '');

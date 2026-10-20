@@ -18,6 +18,10 @@ on:
   schedule:
     - cron: '41 8 * * 2' # Tuesdays: recalls and complaints arrive daily
   workflow_dispatch:
+    inputs:
+      parts:
+        description: 'Parts to fetch, space-separated (all, recalls, complaints, canada-recalls, fuel-prices, nrcan, canadian-specs, nhtsa-ratings); the rest keep their last files'
+        default: all
 
 concurrency:
   group: public-data
@@ -34,6 +38,8 @@ defaults:
 env:
   NODE_VERSION: '24'
   FETCH: npx tsx scripts/fetch-public-data.ts
+  # A push or the schedule fetches everything.
+  PARTS: ${{ inputs.parts || 'all' }}
 
 jobs:
   fetch:
@@ -49,7 +55,13 @@ jobs:
       - run: npm ci
         working-directory: .
 
+      # A run of some parts keeps the other parts' files from the last run.
+      - name: Keep the last run's data
+        run: |
+          git fetch --depth=1 origin public-data && git checkout origin/public-data -- data/public || true
+
       - name: NHTSA recalls
+        if: env.PARTS == 'all' || contains(format(' {0} ', env.PARTS), ' recalls ')
         continue-on-error: true
         run: |
           mkdir -p /tmp/rcl && cd /tmp/rcl
@@ -66,6 +78,7 @@ jobs:
           $FETCH recalls /tmp/rcl/all.txt /tmp/rcl/RCL.txt 2>&1 | tee -a ../public-data-report.txt
 
       - name: NHTSA complaints
+        if: env.PARTS == 'all' || contains(format(' {0} ', env.PARTS), ' complaints ')
         continue-on-error: true
         run: |
           mkdir -p /tmp/cmpl && cd /tmp/cmpl
@@ -78,28 +91,41 @@ jobs:
           $FETCH complaints /tmp/cmpl/all.txt /tmp/cmpl/CMPL.txt 2>&1 | tee -a ../public-data-report.txt
 
       - name: Transport Canada recalls
+        if: env.PARTS == 'all' || contains(format(' {0} ', env.PARTS), ' canada-recalls ')
         continue-on-error: true
         run: $FETCH canada-recalls 2>&1 | tee -a ../public-data-report.txt
 
       - name: Statistics Canada pump prices
+        if: env.PARTS == 'all' || contains(format(' {0} ', env.PARTS), ' fuel-prices ')
         continue-on-error: true
         run: $FETCH fuel-prices 2>&1 | tee -a ../public-data-report.txt
 
       - name: NRCan fuel consumption ratings
+        if: env.PARTS == 'all' || contains(format(' {0} ', env.PARTS), ' nrcan ')
         continue-on-error: true
         run: $FETCH nrcan 2>&1 | tee -a ../public-data-report.txt
 
       # The slow parts last, one request at a time, each with its own limit:
       # a timeout ends that part, and the parts before it are still pushed.
       - name: Transport Canada vehicle dimensions
+        if: env.PARTS == 'all' || contains(format(' {0} ', env.PARTS), ' canadian-specs ')
         continue-on-error: true
         timeout-minutes: 60
         run: $FETCH canadian-specs 2>&1 | tee -a ../public-data-report.txt
 
       - name: NHTSA star ratings and safety features
+        if: env.PARTS == 'all' || contains(format(' {0} ', env.PARTS), ' nhtsa-ratings ')
         continue-on-error: true
         timeout-minutes: 220
         run: $FETCH nhtsa-ratings 2>&1 | tee -a ../public-data-report.txt
+
+      # The site's own files from them: recalls and complaints by model line
+      # and year (scripts/build-safety-records.ts), for review against main's.
+      - name: Build the site's recall and complaint records
+        continue-on-error: true
+        run: |
+          npm run build-runtime-db
+          npx tsx scripts/build-safety-records.ts data/public 2>&1 | tee -a ../public-data-report.txt
 
       - name: Push to the public-data branch
         working-directory: .
@@ -108,6 +134,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git checkout -B public-data
-          git add -f public-data-report.txt server/data/public
+          git add -f public-data-report.txt server/data/public \
+            server/data/recalls-canada.json server/data/complaints.json
           git commit -m "Public data ($(date -u +%F))" -m "$(grep '^Done' public-data-report.txt || true)"
           git push -f origin public-data
