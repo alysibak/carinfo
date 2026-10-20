@@ -2,9 +2,10 @@ name: Public data
 
 # Downloads the government data the site's safety, recall, complaint, size and
 # fuel-price facts come from (server/scripts/fetch-public-data.ts): NHTSA's
-# star ratings and safety features, its recall and complaint files, Transport
-# Canada's recalls and vehicle dimensions, Statistics Canada's pump prices and
-# NRCan's fuel consumption ratings. GitHub's runners reach them all.
+# star ratings and safety features, its recall, complaint and investigation
+# files, Transport Canada's recalls and vehicle dimensions, Statistics Canada's
+# pump prices and NRCan's fuel consumption ratings. GitHub's runners reach
+# them all.
 #
 # The result goes to the public-data-files branch for review, never straight
 # to main: the site reads only what has been matched to its cars and checked.
@@ -20,7 +21,7 @@ on:
   workflow_dispatch:
     inputs:
       parts:
-        description: 'Parts to fetch, space-separated (all, recalls, complaints, canada-recalls, fuel-prices, nrcan, canadian-specs, nhtsa-ratings); the rest keep their last files'
+        description: 'Parts to fetch, space-separated (all, recalls, complaints, investigations, canada-recalls, fuel-prices, nrcan, canadian-specs, nhtsa-ratings); the rest keep their last files'
         default: all
 
 concurrency:
@@ -41,7 +42,7 @@ env:
   # The schedule fetches everything. A push, to try a change to the fetching,
   # skips NHTSA's star ratings, which take three hours; they keep the last
   # run's file.
-  PARTS: ${{ inputs.parts || (github.event_name == 'push' && 'recalls complaints canada-recalls fuel-prices nrcan canadian-specs') || 'all' }}
+  PARTS: ${{ inputs.parts || (github.event_name == 'push' && 'recalls complaints investigations canada-recalls fuel-prices nrcan canadian-specs') || 'all' }}
 
 jobs:
   fetch:
@@ -96,6 +97,19 @@ jobs:
           cd "$GITHUB_WORKSPACE/server"
           mkdir -p data/public/probe && cp /tmp/cmpl/CMPL.txt data/public/probe/CMPL.txt
           $FETCH complaints /tmp/cmpl/all.txt /tmp/cmpl/CMPL.txt 2>&1 | tee -a ../public-data-report.txt
+
+      - name: NHTSA investigations
+        if: env.PARTS == 'all' || contains(format(' {0} ', env.PARTS), ' investigations ')
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/inv && cd /tmp/inv
+          curl -fsSL --retry 3 -o FLAT_INV.zip https://static.nhtsa.gov/odi/ffdd/inv/FLAT_INV.zip
+          curl -fsSL --retry 3 -o INV.txt https://static.nhtsa.gov/odi/ffdd/inv/INV.txt
+          unzip -l FLAT_INV.zip | tee -a "$GITHUB_WORKSPACE/public-data-report.txt"
+          unzip -o -q -d flat FLAT_INV.zip && cat flat/*.txt > all.txt
+          cd "$GITHUB_WORKSPACE/server"
+          mkdir -p data/public/probe && cp /tmp/inv/INV.txt data/public/probe/INV.txt
+          $FETCH investigations /tmp/inv/all.txt /tmp/inv/INV.txt 2>&1 | tee -a ../public-data-report.txt
 
       - name: Transport Canada recalls
         if: env.PARTS == 'all' || contains(format(' {0} ', env.PARTS), ' canada-recalls ')

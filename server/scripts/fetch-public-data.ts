@@ -12,6 +12,7 @@
  *   canadian-specs                      Transport Canada's dimensions and weights, through NHTSA's vPIC
  *   recalls <FLAT_RCL.txt> <RCL.txt>    NHTSA recall campaigns, by make, model and year
  *   complaints <FLAT_CMPL.txt> <CMPL.txt>  NHTSA owner complaints, counted by make, model, year and part
+ *   investigations <FLAT_INV.txt> <INV.txt>  NHTSA defect investigations, by make, model and year
  *   canada-recalls                      Transport Canada's recall database, from open.canada.ca
  *   fuel-prices                         Statistics Canada's monthly pump prices, by city
  *   nrcan                               NRCan's fuel consumption ratings files: the cars sold in Canada
@@ -204,14 +205,16 @@ async function canadianSpecs(): Promise<void> {
 }
 
 /** Field names in order from one of NHTSA's flat-file layout notes ("1  CMPLID  CHAR(9) ..."). */
-function layoutFields(layoutPath: string): string[] {
+function layoutFields(layoutPath: string, least = 10): string[] {
   const text = readFileSync(layoutPath, 'latin1');
   const fields: string[] = [];
   for (const match of text.matchAll(/^\s*(\d{1,2})\s+([A-Z][A-Z0-9_]+)\s/gm)) {
     const n = Number(match[1]);
     if (n === fields.length + 1) fields.push(match[2]);
   }
-  if (fields.length < 10) throw new Error(`Read only ${fields.length} fields from ${layoutPath}`);
+  if (fields.length < least) {
+    throw new Error(`Read only ${fields.length} fields from ${layoutPath}`);
+  }
   return fields;
 }
 
@@ -338,6 +341,61 @@ async function complaints(flatPath: string, layoutPath: string): Promise<void> {
   console.log(`Done: complaints for ${Object.keys(counts).length} make, model and year listings`);
 }
 
+/**
+ * NHTSA's defect investigations (preliminary evaluations, engineering
+ * analyses, recall queries, defect petitions) since 1995: what each looked
+ * into, when it opened and closed, the recall it led to, and the makes,
+ * models and years it covers. Fields are picked by name from NHTSA's layout,
+ * which this has not seen before its first run: the probe shows what came.
+ */
+async function investigations(flatPath: string, layoutPath: string): Promise<void> {
+  const fields = layoutFields(layoutPath, 8);
+  probe('investigations-layout.json', fields);
+  const field = (re: RegExp, fallback?: string) => {
+    const found = fields.find((f) => re.test(f)) ?? fallback;
+    if (!found) throw new Error(`No field like ${re} in ${fields.join(', ')}`);
+    return found;
+  };
+  const f = {
+    action: field(/ACTION|INV.*(?:NO|NUM)/, fields[0]),
+    make: field(/^MAKE/),
+    model: field(/^MODEL/),
+    year: field(/^YEAR/),
+    opened: field(/^ODATE|OPEN/),
+    closed: field(/^CDATE|CLOSE/),
+    component: field(/COMP/),
+    campaign: field(/CAMP/),
+    subject: field(/SUBJECT/),
+    summary: field(/SUMMARY/),
+  };
+  probe('investigations-fields.json', f);
+  const actions: Record<string, Record<string, string>> = {};
+  const vehicles: Record<string, string[]> = {};
+  for await (const row of tabRows(flatPath, fields, 'investigations-head.json')) {
+    const id = row[f.action];
+    const y = year(row[f.year]);
+    if (!id || !y) continue;
+    actions[id] ??= Object.fromEntries(
+      (['opened', 'closed', 'component', 'campaign', 'subject', 'summary'] as const)
+        .filter((k) => row[f[k]])
+        .map((k) => [k, k === 'summary' ? row[f[k]].slice(0, 1200) : row[f[k]]]),
+    );
+    const key = `${row[f.make]}|${row[f.model]}|${y}`;
+    const list = (vehicles[key] ??= []);
+    if (!list.includes(id)) list.push(id);
+  }
+  write('nhtsa-investigations.json', {
+    source: 'https://static.nhtsa.gov/odi/ffdd/inv/FLAT_INV.zip',
+    fetchedAt: new Date().toISOString(),
+    fields,
+    actions,
+    vehicles,
+  });
+  console.log(
+    `Done: ${Object.keys(actions).length} NHTSA investigations over ${Object.keys(vehicles).length} make, model and year listings`,
+  );
+}
+
 interface CkanResource {
   name?: string;
   url: string;
@@ -452,6 +510,7 @@ const parts: Record<string, () => Promise<void>> = {
   'canadian-specs': canadianSpecs,
   recalls: () => recalls(files[0], files[1]),
   complaints: () => complaints(files[0], files[1]),
+  investigations: () => investigations(files[0], files[1]),
   'canada-recalls': canadaRecalls,
   'fuel-prices': fuelPrices,
   nrcan,
