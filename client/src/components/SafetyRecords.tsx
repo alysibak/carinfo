@@ -115,6 +115,8 @@ export default function SafetyRecords({
                 Government of Canada recalls
               </a>{' '}
               · Contains information licensed under the Open Government Licence – Canada.
+              {dashboard.recordDates?.recalls &&
+                ` Records as of ${recallDate(dashboard.recordDates.recalls)}.`}
             </p>
           </div>
         )}
@@ -177,6 +179,8 @@ export default function SafetyRecords({
                 Look it up on NHTSA
               </a>{' '}
               · Complaints NHTSA received from U.S. owners, by part.
+              {dashboard.recordDates?.complaints &&
+                ` Records as of ${recallDate(dashboard.recordDates.complaints)}.`}
             </p>
           </div>
         )}

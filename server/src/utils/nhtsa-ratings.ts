@@ -400,6 +400,7 @@ export function withNhtsaRatings(
 }
 
 let loaded: Map<number, NhtsaTest> | undefined;
+let fetchedAt: string | undefined;
 
 /** data/nhtsa-ratings.json's tests by NHTSA's id (scripts/build-nhtsa-ratings.ts builds it). */
 function testsById(): Map<number, NhtsaTest> {
@@ -408,7 +409,12 @@ function testsById(): Map<number, NhtsaTest> {
   let tests: NhtsaTest[] = [];
   if (path) {
     try {
-      tests = (JSON.parse(readFileSync(path, 'utf8')) as { tests: NhtsaTest[] }).tests;
+      const file = JSON.parse(readFileSync(path, 'utf8')) as {
+        tests: NhtsaTest[];
+        fetchedAt?: string;
+      };
+      tests = file.tests;
+      fetchedAt = file.fetchedAt;
     } catch (err) {
       console.warn(`[nhtsa-ratings] Failed to parse ${path}:`, (err as Error).message);
     }
@@ -430,4 +436,10 @@ export function nhtsaTestsFor(car: Pick<Car, 'safetyRating'>): NhtsaRating[] {
     const { make: _make, model: _model, year: _year, ...rating } = test;
     return [rating];
   });
+}
+
+/** The day NHTSA's ratings were fetched: "2026-10-20". */
+export function nhtsaRatingsDate(): string | undefined {
+  testsById();
+  return fetchedAt?.slice(0, 10);
 }

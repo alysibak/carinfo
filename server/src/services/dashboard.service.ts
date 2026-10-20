@@ -13,8 +13,13 @@ import { competitiveClassLabel } from '../utils/competitive-sets.js';
 import { enginePosition } from '../utils/engine-position.js';
 import { generationOf } from '../utils/generations.js';
 import { compareWithClass } from '../utils/class-comparison.js';
-import { canadianRecallsFor, complaintRankFor, complaintsFor } from './safety-records.service.js';
-import { nhtsaTestsFor } from '../utils/nhtsa-ratings.js';
+import {
+  canadianRecallsFor,
+  complaintRankFor,
+  complaintsFor,
+  recordDates,
+} from './safety-records.service.js';
+import { nhtsaRatingsDate, nhtsaTestsFor } from '../utils/nhtsa-ratings.js';
 
 export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard | null {
   const car = carService.getCarById(id);
@@ -89,6 +94,14 @@ export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard |
     ...(complaints ? { complaints } : {}),
     ...(complaintRank ? { complaintRank } : {}),
     ...(nhtsaTests.length ? { nhtsaTests } : {}),
+    ...(recalls || complaints || nhtsaTests.length
+      ? {
+          recordDates: {
+            ...recordDates(),
+            ...(nhtsaTests.length ? { ratings: nhtsaRatingsDate() } : {}),
+          },
+        }
+      : {}),
     // Front is the rule; only the exceptions are worth a row.
     ...(position === 'mid' || position === 'rear' ? { enginePosition: position } : {}),
     segmentCount: segment.length,

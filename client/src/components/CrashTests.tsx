@@ -1,5 +1,6 @@
 import type { CarDashboard, CarSpecs, NhtsaRating } from '../types/car.types';
 import { availabilityLabel, rolloverRiskText, testedLabel } from '../utils/safetyTech';
+import { recallDate } from '../utils/recalls';
 
 const NHTSA_RATINGS = 'https://www.nhtsa.gov/ratings';
 
@@ -130,6 +131,8 @@ export default function CrashTests({ dashboard, car }: { dashboard: CarDashboard
           </a>{' '}
           · Frontal crash ratings compare only vehicles of similar size and weight. NHTSA’s ratings
           before 2011 used other tests and are not shown.
+          {dashboard.recordDates?.ratings &&
+            ` Ratings as of ${recallDate(dashboard.recordDates.ratings)}.`}
         </p>
       </div>
     </section>

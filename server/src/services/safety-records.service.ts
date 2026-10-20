@@ -9,11 +9,13 @@ import { resolveDataFile } from '../utils/data-paths.js';
  */
 
 interface RecallFile {
+  builtAt?: string;
   recalls: Record<string, Omit<CanadianRecall, 'number'>>;
   byLine: Record<string, string[]>;
 }
 
 interface ComplaintFile {
+  builtAt?: string;
   byLine: Record<string, ComplaintSummary>;
 }
 
@@ -90,4 +92,18 @@ export function complaintRankFor(
   if (!own || years.length < 3) return undefined;
   const more = years.filter((y) => (complaintsFor(line, y)?.complaints ?? 0) > own).length;
   return { position: more + 1, of: years.length };
+}
+
+/**
+ * The day each file was built from the government's records, which the
+ * Public data workflow fetches the same day: "2026-10-20".
+ */
+export function recordDates(): { recalls?: string; complaints?: string } {
+  const day = (iso?: string) => iso?.slice(0, 10);
+  const recallDay = day(recalls()?.builtAt);
+  const complaintDay = day(complaints()?.builtAt);
+  return {
+    ...(recallDay ? { recalls: recallDay } : {}),
+    ...(complaintDay ? { complaints: complaintDay } : {}),
+  };
 }

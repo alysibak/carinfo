@@ -697,4 +697,6 @@ export interface CarDashboard {
   complaintRank?: { position: number; of: number };
   /** Each vehicle NHTSA tested that describes this car, where its ratings are matched. */
   nhtsaTests?: NhtsaRating[];
+  /** The day each set of government records was fetched: "2026-10-20". */
+  recordDates?: { recalls?: string; complaints?: string; ratings?: string };
 }
