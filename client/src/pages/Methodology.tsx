@@ -3,6 +3,48 @@ import { usePageMeta } from '../utils/pageMeta';
 import ProvenanceChip from '../components/ProvenanceChip';
 import { FIRST_MODEL_YEAR, LATEST_MODEL_YEAR } from '@carinfo/config/model-years';
 
+/** Where the facts come from, what each gives, and on what terms. */
+const SOURCES = [
+  {
+    name: 'U.S. EPA, FuelEconomy.gov',
+    url: 'https://www.fueleconomy.gov/feg/download.shtml',
+    gives:
+      'fuel use and EV range, engines and gearboxes, CO₂ and greenhouse rating, trunk and passenger space.',
+    terms: 'U.S. government data, public domain.',
+  },
+  {
+    name: 'Natural Resources Canada, Fuel Consumption Ratings',
+    url: 'https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64',
+    gives: 'the cars sold in Canada that EPA never rated.',
+    terms: 'Open Government Licence – Canada.',
+  },
+  {
+    name: 'NHTSA, 5-Star Safety Ratings',
+    url: 'https://www.nhtsa.gov/ratings',
+    gives: 'crash-test stars, where NHTSA tested the car.',
+    terms: 'U.S. government data, public domain.',
+  },
+  {
+    name: 'NHTSA, Office of Defects Investigation complaints',
+    url: 'https://www.nhtsa.gov/recalls',
+    gives:
+      'owner complaints by model year and part: owners’ reports, not confirmed defects, not adjusted for sales.',
+    terms: 'U.S. government data, public domain.',
+  },
+  {
+    name: 'Transport Canada, Motor Vehicle Safety Recalls Database',
+    url: 'https://open.canada.ca/data/en/dataset/1ec92326-47ef-4110-b7ca-959fab03f96d',
+    gives: 'recalls in Canada by model year, with Transport Canada’s recall number and its notice.',
+    terms: 'Open Government Licence – Canada.',
+  },
+  {
+    name: 'Wikimedia Commons',
+    url: 'https://commons.wikimedia.org',
+    gives: 'photos of a car’s own model year, on request.',
+    terms: 'Each under its own free licence, credited beside it.',
+  },
+];
+
 export default function Methodology() {
   usePageMeta(
     'Methodology',
@@ -24,6 +66,36 @@ export default function Methodology() {
       </div>
 
       <div className="page-wrap section-y max-w-3xl space-y-10 md:space-y-12">
+        <section>
+          <h2 className="text-xs font-bold text-white mb-4">Sources</h2>
+          <p className="text-sm text-zinc-400 leading-relaxed mb-4">
+            Each fact on the site comes from one of these, and keeps the identifier its source knows
+            it by (an EPA vehicle id, a Transport Canada recall number), so it can be looked up
+            there.
+          </p>
+          <ul className="space-y-4 text-sm text-zinc-400 leading-relaxed">
+            {SOURCES.map((source) => (
+              <li key={source.name}>
+                <a
+                  href={source.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-zinc-200 font-medium underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-400"
+                >
+                  {source.name}
+                </a>
+                : {source.gives} <span className="text-zinc-500">{source.terms}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs text-zinc-500 leading-relaxed mt-4">
+            The government files are downloaded weekly on GitHub (the public-data job), matched to
+            the site’s models and reviewed before they reach a page. A government record the site
+            cannot match to one of its models, such as a heavy-duty pickup EPA does not rate, is
+            left out rather than counted against a model it is not.
+          </p>
+        </section>
+
         <section>
           <h2 className="text-xs font-bold text-white mb-4">Data pipeline</h2>
           <ol className="space-y-4 text-sm text-zinc-400 leading-relaxed list-decimal list-inside marker:text-zinc-400">
@@ -194,23 +266,24 @@ export default function Methodology() {
 
         <section>
           <h2 className="text-xs font-bold text-white mb-4">
-            Visual identity: specs first, no glamour photos
+            Photos: on request, of the same year
           </h2>
           <p className="text-sm text-zinc-400 leading-relaxed">
-            CarInfo deliberately does not use listing photography. Vehicle cards and dossiers show
-            body-type illustrations only. That keeps the product honest about what it is: a spec and
-            economics reference, not a classifieds site. We would rather omit a field than invent
-            one.
+            Cards and pages show a body-type illustration. Where Wikimedia Commons has a photo of
+            the car’s own model year, make, model and body, a button opens it, with its photographer
+            and licence; none is shown otherwise. No listing or press photography: this is a
+            reference, not a classifieds site. We would rather omit a field than invent one.
           </p>
         </section>
 
         <section>
           <h2 className="text-xs font-bold text-white mb-4">What we omit</h2>
           <p className="text-sm text-zinc-400 leading-relaxed">
-            Dimensions, torque, real 0-60 times, and listing photos are not in the EPA bulk source.
-            Missing fields are left empty on the dossier (no row, no chip) and dropped from compare
-            when empty across all vehicles. Compare cells use &quot;Not on file&quot; only when some
-            cars have data and others do not.
+            Exterior dimensions, torque, measured 0-60 times and equipment (heated seats, CarPlay)
+            are in none of these sources. EPA gives interior volumes for cars and some SUVs, not
+            pickups. Missing fields are left empty on the dossier (no row, no chip) and dropped from
+            compare when empty across all vehicles. Compare cells use &quot;Not on file&quot; only
+            when some cars have data and others do not.
           </p>
         </section>
 

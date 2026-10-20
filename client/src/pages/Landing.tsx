@@ -15,6 +15,7 @@ import { usePageMeta } from '../utils/pageMeta';
 import CompareTray from '../components/CompareTray';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { useCarStore } from '../stores/carStore';
+import { POPULAR_MODEL_PAGES } from '@carinfo/config/popular-models';
 
 const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/i;
 
@@ -164,6 +165,21 @@ export default function Landing() {
                 <Link to="/home" className="chip border-transparent text-zinc-400">
                   Open search →
                 </Link>
+              </div>
+            </div>
+
+            <div className="border border-zinc-800 bg-zinc-950 p-4 sm:p-5">
+              <h3 className="text-base font-semibold text-white mb-1">I&apos;m checking a model</h3>
+              <p className="text-[13px] text-zinc-400 mb-3">
+                Every year at a glance: recalls in Canada, owner complaints, fuel use and what
+                changed.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {POPULAR_MODEL_PAGES.map((model) => (
+                  <Link key={model.path} to={model.path} className="chip">
+                    {model.label}
+                  </Link>
+                ))}
               </div>
             </div>
 
