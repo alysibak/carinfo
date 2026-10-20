@@ -25,6 +25,7 @@ const SAFETY_SEARCHES = [
   { label: 'SUVs with collision warning standard', query: 'suv with standard collision warning' },
   { label: 'Safest minivans', query: 'safest minivan' },
   { label: 'Safest first cars', query: 'safest first car' },
+  { label: 'Most stolen in Canada', query: 'most stolen' },
 ];
 
 function homeLinkFromPreset(preset: (typeof LIFESTYLE_PRESETS)[number]) {
@@ -211,7 +212,8 @@ export default function Landing() {
             <div className="border border-zinc-800 bg-zinc-950 p-4 sm:p-5">
               <h3 className="text-base font-semibold text-white mb-1">Safety first</h3>
               <p className="text-[13px] text-zinc-400 mb-3">
-                NHTSA&apos;s crash ratings and the safety technology it lists, year by year.
+                NHTSA&apos;s crash ratings and the safety technology it lists, year by year, and the
+                models thieves take most in Canada.
               </p>
               <div className="flex flex-wrap gap-2">
                 {SAFETY_SEARCHES.map((s) => (

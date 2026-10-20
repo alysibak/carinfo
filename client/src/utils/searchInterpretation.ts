@@ -158,7 +158,7 @@ export function describeSearchInterpretation(
           : `The ${model.label} is not among the 10 vehicles stolen most in Canada in ${year}, by Équité Association’s count, which does not make it safe from thieves.`
         : least
           ? `Left out: the 10 models Équité Association counts as stolen most in Canada in ${year}. No list ranks the least stolen, and a model off this one can still be a target.`
-          : `The 10 models stolen most in Canada in ${year}, in Équité Association’s order: a count, so models with many on the road rank higher.`,
+          : `The models on Équité Association’s list of the most stolen in Canada in ${year}, in its order: a count, so models with many on the road rank higher.`,
     );
   }
   if (interpretation.safetyTech) {

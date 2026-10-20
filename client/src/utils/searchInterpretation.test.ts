@@ -160,7 +160,7 @@ describe('describeSearchInterpretation', () => {
       url: 'https://www.equiteassociation.com/top-10-most-stolen-vehicles',
     };
     expect(describeSearchInterpretation({ theft: { least: false, ...list } })).toEqual([
-      'The 10 models stolen most in Canada in 2024, in Équité Association’s order: a count, so models with many on the road rank higher.',
+      'The models on Équité Association’s list of the most stolen in Canada in 2024, in its order: a count, so models with many on the road rank higher.',
     ]);
     expect(describeSearchInterpretation({ theft: { least: true, ...list } })[0]).toMatch(
       /^Left out: the 10 models .* No list ranks the least stolen/,
