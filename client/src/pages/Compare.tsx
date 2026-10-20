@@ -26,6 +26,7 @@ import RegionSelect from '../components/RegionSelect';
 import { formatVolume } from '../utils/space';
 import { availabilityLabel, rolloverRiskText } from '../utils/safetyTech';
 import { formatKg, formatMetres } from '../utils/size';
+import { complaintPart } from '../utils/recalls';
 
 function isUnavailable(value: string | number): boolean {
   return value === UNAVAILABLE_LABEL;
@@ -305,6 +306,17 @@ const ALL_SPECS: SpecRow[] = [
     hint: 'NHTSA, model year',
     getValue: (_car, dash) =>
       dash.complaints ? dash.complaints.complaints.toLocaleString('en-CA') : UNAVAILABLE_LABEL,
+  },
+  {
+    key: 'complaintPart',
+    label: 'Complained of most',
+    hint: 'NHTSA, by part',
+    getValue: (_car, dash) => {
+      const top = dash.complaints?.parts[0];
+      return top
+        ? `${complaintPart(top[0])} (${top[1].toLocaleString('en-CA')})`
+        : UNAVAILABLE_LABEL;
+    },
   },
   {
     key: 'co2',
