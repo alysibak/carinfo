@@ -1,11 +1,23 @@
 import { useId, useState } from 'react';
 import type { VehicleSize } from '../types/car.types';
 import { fitCheck, formatKg, formatMetres } from '../utils/size';
+import type { SpecGlossaryKey } from '../utils/specGlossary';
+import { SpecLabel } from './SpecExplain';
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({
+  label,
+  value,
+  glossaryKey,
+}: {
+  label: string;
+  value: string;
+  glossaryKey?: SpecGlossaryKey;
+}) {
   return (
     <div className="flex items-baseline justify-between gap-4 py-2 border-b border-zinc-900 text-sm">
-      <span className="text-zinc-400">{label}</span>
+      <span className="text-zinc-400">
+        <SpecLabel label={label} glossaryKey={glossaryKey} />
+      </span>
       <span className="text-white font-semibold tabular-nums text-right">{value}</span>
     </div>
   );
@@ -37,8 +49,8 @@ export default function SizeAndFit({ size }: { size: VehicleSize }) {
       <Row label="Length" value={formatMetres(size.lengthCm)} />
       <Row label="Width" value={formatMetres(size.widthCm)} />
       <Row label="Height" value={formatMetres(size.heightCm)} />
-      <Row label="Wheelbase" value={formatMetres(size.wheelbaseCm)} />
-      <Row label="Curb weight" value={formatKg(size.curbWeightKg)} />
+      <Row label="Wheelbase" value={formatMetres(size.wheelbaseCm)} glossaryKey="wheelbase" />
+      <Row label="Curb weight" value={formatKg(size.curbWeightKg)} glossaryKey="curbWeight" />
 
       <fieldset className="mt-4">
         <legend className="text-xs text-zinc-300 mb-2">Will it fit? Measure your space</legend>

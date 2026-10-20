@@ -38,6 +38,12 @@ export type SpecGlossaryKey =
   | 'safetyFrontal'
   | 'safetySide'
   | 'safetyRollover'
+  | 'rolloverRisk'
+  | 'stabilityControl'
+  | 'collisionWarning'
+  | 'laneDepartureWarning'
+  | 'wheelbase'
+  | 'curbWeight'
   | 'countryOfOrigin'
   | 'trim'
   | 'variant'
@@ -231,6 +237,34 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
     plain: 'Resistance to tipping over',
     what: 'NHTSA rollover rating.',
     why: 'Especially worth checking on tall SUVs and trucks.',
+  },
+  rolloverRisk: {
+    plain: 'Chance of rolling over in a single-vehicle crash',
+    what: 'NHTSA’s estimate, from how top-heavy the vehicle is (its static stability factor) and a driving test of whether it tips.',
+    why: 'Lower is better. Tall, narrow vehicles roll more readily; NHTSA compares this across all kinds of vehicle.',
+  },
+  stabilityControl: {
+    plain: 'Helps stop a skid',
+    what: 'Electronic stability control brakes individual wheels when the car starts to slide, to keep it going where it is steered.',
+    why: 'Most useful on wet, snowy or icy roads.',
+  },
+  collisionWarning: {
+    plain: 'Warns before a frontal crash',
+    what: 'Forward collision warning alerts the driver when the car is closing on the vehicle ahead too fast. It warns; braking on its own is automatic emergency braking, which these NHTSA listings do not cover.',
+    why: 'A warning in time can prevent a rear-end collision.',
+  },
+  laneDepartureWarning: {
+    plain: 'Warns when drifting out of the lane',
+    what: 'Lane departure warning alerts the driver when the car crosses a lane marking without the turn signal on. Lane keeping assist, which steers back, is a different feature.',
+    why: 'Helps on long drives, when attention drifts.',
+  },
+  wheelbase: {
+    plain: 'Distance between the front and rear wheels',
+    what: 'Measured from the centre of the front wheels to the centre of the rear wheels.',
+  },
+  curbWeight: {
+    plain: 'Weight empty, ready to drive',
+    what: 'The vehicle’s weight with fluids and a full tank, without passengers or cargo, as Transport Canada measured it.',
   },
   countryOfOrigin: {
     plain: 'Where the brand is rooted',

@@ -1,6 +1,7 @@
 import type { CarDashboard, CarSpecs, NhtsaRating } from '../types/car.types';
 import { availabilityLabel, rolloverRiskText, testedLabel } from '../utils/safetyTech';
 import { recallDate } from '../utils/recalls';
+import { SpecLabel } from './SpecExplain';
 
 const NHTSA_RATINGS = 'https://www.nhtsa.gov/ratings';
 
@@ -15,9 +16,9 @@ const SCORES = [
 ] as const;
 
 const TECH = [
-  ['esc', 'Stability control'],
-  ['fcw', 'Forward collision warning'],
-  ['ldw', 'Lane departure warning'],
+  ['esc', 'Stability control', 'stabilityControl'],
+  ['fcw', 'Forward collision warning', 'collisionWarning'],
+  ['ldw', 'Lane departure warning', 'laneDepartureWarning'],
 ] as const;
 
 /** "Overall 4 · Frontal 3 · Side 5 · Rollover 4", or what NHTSA left unrated. */
@@ -72,7 +73,10 @@ export default function CrashTests({ dashboard, car }: { dashboard: CarDashboard
           )}
           {rating?.rolloverRisk != null && (
             <p className="text-sm text-zinc-300 mt-3 leading-relaxed">
-              Chance of rolling over in a single-vehicle crash:{' '}
+              <SpecLabel
+                label="Chance of rolling over in a single-vehicle crash:"
+                glossaryKey="rolloverRisk"
+              />{' '}
               <span className="font-semibold text-white tabular-nums">
                 {rolloverRiskText(rating.rolloverRisk)}
               </span>
@@ -112,9 +116,11 @@ export default function CrashTests({ dashboard, car }: { dashboard: CarDashboard
               listed” means NHTSA does not list it, not that the car lacks it.
             </p>
             <dl className="divide-y divide-zinc-900 border-y border-zinc-900">
-              {TECH.map(([key, label]) => (
+              {TECH.map(([key, label, glossaryKey]) => (
                 <div key={key} className="flex items-baseline justify-between gap-4 py-2 text-sm">
-                  <dt className="text-zinc-400 min-w-0">{label}</dt>
+                  <dt className="text-zinc-400 min-w-0">
+                    <SpecLabel label={label} glossaryKey={glossaryKey} />
+                  </dt>
                   <dd
                     className={`text-right shrink-0 ${tech[key] ? 'text-white font-medium' : 'text-zinc-500'}`}
                   >
