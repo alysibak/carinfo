@@ -12,6 +12,7 @@ import { displayModelLabel } from '../utils/trimLabel';
 import { rankedFigure } from '../utils/rankedFigure';
 import VehiclePlaceholder from '../components/VehiclePlaceholder';
 import CarCard from '../components/CarCard';
+import CarRecordsNote from '../components/CarRecordsNote';
 
 /**
  * An empty garage offers cars to start with, the leading pick of each
@@ -272,6 +273,7 @@ export default function DreamGarage() {
               {garage.map((car) => (
                 <li key={car.id}>
                   <CarCard car={car} onRemove={() => removeFromGarage(car.id)} />
+                  <CarRecordsNote carId={car.id} />
                 </li>
               ))}
             </ul>

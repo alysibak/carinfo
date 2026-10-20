@@ -1,4 +1,4 @@
-import type { Car, CarDashboard } from '../types/car.types.js';
+import type { Car, CarDashboard, CarRecordsSummary } from '../types/car.types.js';
 import type { RegionId } from '../config/regional-assumptions.js';
 import * as carService from './car.service.js';
 import { getSegment, predictZeroToSixty } from '../utils/market-intelligence.js';
@@ -179,4 +179,22 @@ export function getSimilarCars(id: string, limit = 6): Car[] {
 
 export function getSiblingConfigs(id: string, limit = 24): Car[] {
   return carService.getSiblingConfigs(id, limit);
+}
+
+/**
+ * A car's model-year records in brief, for a list of saved cars: its recalls
+ * in Canada and owner complaints to NHTSA, null where the model's records
+ * are not matched (which is not "none").
+ */
+export function getCarRecords(id: string): CarRecordsSummary | null {
+  const car = carService.getCarById(id);
+  if (!car) return null;
+  const line = carService.modelLineKey(car);
+  const recalls = canadianRecallsFor(line, car.year);
+  const complaints = complaintsFor(line, car.year);
+  return {
+    recalls: recalls ? recalls.length : null,
+    complaints: complaints ? complaints.complaints : null,
+    complaintPart: complaints?.parts[0]?.[0] ?? null,
+  };
 }

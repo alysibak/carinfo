@@ -15,6 +15,7 @@ export type {
   BodyStyle,
   CanadianRecall,
   CarDashboard,
+  CarRecordsSummary,
   CarFilter,
   ClassComparison,
   ComplaintSummary,

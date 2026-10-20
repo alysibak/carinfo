@@ -45,6 +45,9 @@ router.get('/:id/similar', cacheData, carController.getSimilarCars);
 // Same make/model/year EPA configurations
 router.get('/:id/siblings', cacheData, carController.getSiblingConfigs);
 
+// The model year's recalls and complaints in brief
+router.get('/:id/records', cacheData, carController.getCarRecords);
+
 // Debug pipeline dump (before /:id). Development only — it exposes the raw
 // upstream record and every intermediate enrichment stage.
 if (process.env.NODE_ENV !== 'production') {

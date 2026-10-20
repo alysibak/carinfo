@@ -440,6 +440,14 @@ export interface VehicleSize {
   measured: string[];
 }
 
+/** A car's model-year records in brief: null where the model's records are not matched. */
+export interface CarRecordsSummary {
+  recalls: number | null;
+  complaints: number | null;
+  /** The part complained of most, by NHTSA's name. */
+  complaintPart: string | null;
+}
+
 /** A rival NHTSA's records put ahead on safety, and why: "5/5 overall (this one 4/5)". */
 export interface SaferAlternative {
   id: string;

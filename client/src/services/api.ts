@@ -1,4 +1,5 @@
 import type {
+  CarRecordsSummary,
   CarDashboard,
   CarSpecs,
   ModelOverview,
@@ -118,6 +119,11 @@ export async function getSimilarCars(id: string, limit = 6): Promise<CarSpecs[]>
 /** The first picks of every curated shortlist, keyed by shortlist id. */
 export async function getCollectionPreviews(): Promise<Record<string, CarSpecs[]>> {
   return api.get('/cars/collections/previews');
+}
+
+/** The model year's recalls and complaints in brief, for a saved car. */
+export async function getCarRecords(id: string): Promise<CarRecordsSummary> {
+  return api.get(`${carPath(id)}/records`);
 }
 
 /** Same year/make/model EPA configs (other trims/transmissions). */

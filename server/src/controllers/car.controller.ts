@@ -173,6 +173,19 @@ export function getSimilarCars(req: Request, res: Response, next: NextFunction) 
 }
 
 /**
+ * A car's model-year recalls and complaints in brief, for the garage.
+ */
+export function getCarRecords(req: Request, res: Response, next: NextFunction) {
+  try {
+    const records = dashboardService.getCarRecords(req.params.id);
+    if (!records) throw new HttpError(404, 'Car not found');
+    res.json({ success: true, data: records });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
  * Same make/model/year EPA configurations (trims, transmissions).
  */
 export function getSiblingConfigs(req: Request, res: Response, next: NextFunction) {
