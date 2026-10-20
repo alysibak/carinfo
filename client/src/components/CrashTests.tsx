@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import type { CarDashboard, CarSpecs, NhtsaRating } from '../types/car.types';
 import { availabilityLabel, rolloverRiskText, testedLabel } from '../utils/safetyTech';
 import { recallDate } from '../utils/recalls';
@@ -129,6 +130,23 @@ export default function CrashTests({ dashboard, car }: { dashboard: CarDashboard
                 </div>
               ))}
             </dl>
+          </div>
+        )}
+        {dashboard.saferAlternatives && dashboard.saferAlternatives.length > 0 && (
+          <div className="md:col-span-2 min-w-0">
+            <h3 className="text-sm font-semibold text-white mb-1">
+              Rated higher among cars shopped against it
+            </h3>
+            <ul className="space-y-1">
+              {dashboard.saferAlternatives.map((alt) => (
+                <li key={alt.id} className="text-sm">
+                  <Link to={`/car/${encodeURIComponent(alt.id)}`} className={linkClass}>
+                    {alt.label}
+                  </Link>
+                  <span className="text-zinc-500">: {alt.reason}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
         <p className="md:col-span-2 text-xs text-zinc-500 leading-relaxed">

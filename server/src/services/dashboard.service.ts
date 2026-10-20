@@ -9,6 +9,7 @@ import {
   roundEfficiency,
 } from '../utils/ownership-economics.js';
 import { findSimilarCars } from '../utils/similar-vehicles.js';
+import { saferAlternatives } from '../utils/safer-alternatives.js';
 import { competitiveClassLabel } from '../utils/competitive-sets.js';
 import { enginePosition } from '../utils/engine-position.js';
 import { generationOf } from '../utils/generations.js';
@@ -82,6 +83,16 @@ export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard |
     ? complaintRankFor(line, car.year, carService.lineYearsOf(car))
     : undefined;
   const nhtsaTests = nhtsaTestsFor(car);
+  // Only worth the search where a rival could do better: below five stars,
+  // or five without collision warning standard.
+  const safer =
+    car.safetyRating?.overall &&
+    (car.safetyRating.overall < 5 || car.safetyTech?.fcw !== 'standard')
+      ? saferAlternatives(car, getSimilarCars(car.id, 24), (c) => {
+          const page = carService.modelPageOf(c);
+          return `${c.year} ${page?.label ?? `${c.make} ${c.model}`}`;
+        })
+      : [];
   const position = enginePosition(car);
   const classComparison = compareWithClass(car, carService.getAllCars(), carService.modelLineKey);
   const dashboard: CarDashboard = {
@@ -94,6 +105,7 @@ export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard |
     ...(complaints ? { complaints } : {}),
     ...(complaintRank ? { complaintRank } : {}),
     ...(nhtsaTests.length ? { nhtsaTests } : {}),
+    ...(safer.length ? { saferAlternatives: safer } : {}),
     ...(recalls || complaints || nhtsaTests.length
       ? {
           recordDates: {

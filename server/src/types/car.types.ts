@@ -440,6 +440,14 @@ export interface VehicleSize {
   measured: string[];
 }
 
+/** A rival NHTSA's records put ahead on safety, and why: "5/5 overall (this one 4/5)". */
+export interface SaferAlternative {
+  id: string;
+  /** "2018 Mazda CX-5". */
+  label: string;
+  reason: string;
+}
+
 /** Standard, optional, or standard on some versions and optional on others. */
 export type SafetyAvailability = 'standard' | 'optional' | 'some';
 
@@ -715,6 +723,8 @@ export interface CarDashboard {
   complaintRank?: { position: number; of: number };
   /** Each vehicle NHTSA tested that describes this car, where its ratings are matched. */
   nhtsaTests?: NhtsaRating[];
+  /** Cars shopped against it that NHTSA rated higher, or as high with collision warning standard. */
+  saferAlternatives?: SaferAlternative[];
   /** The day each set of government records was fetched: "2026-10-20". */
   recordDates?: { recalls?: string; complaints?: string; ratings?: string };
 }

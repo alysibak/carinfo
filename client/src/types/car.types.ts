@@ -33,6 +33,7 @@ export type {
   ProvenanceSource,
   ResaleImpact,
   SafetyAvailability,
+  SaferAlternative,
   SearchInterpretation,
   SearchQuery,
   SearchResults,
