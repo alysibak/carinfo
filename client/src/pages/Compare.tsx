@@ -25,6 +25,7 @@ import { POPULAR_SEARCHES } from '../config/browseTaxonomy';
 import RegionSelect from '../components/RegionSelect';
 import { formatVolume } from '../utils/space';
 import { availabilityLabel, rolloverRiskText } from '../utils/safetyTech';
+import { formatKg, formatMetres } from '../utils/size';
 
 function isUnavailable(value: string | number): boolean {
   return value === UNAVAILABLE_LABEL;
@@ -210,6 +211,24 @@ const ALL_SPECS: SpecRow[] = [
       car.safetyRating?.nhtsaIds?.length
         ? availabilityLabel(car.safetyTech?.ldw)
         : UNAVAILABLE_LABEL,
+  },
+  {
+    key: 'length',
+    label: 'Length',
+    hint: 'Transport Canada',
+    getValue: (car) => (car.size ? formatMetres(car.size.lengthCm) : UNAVAILABLE_LABEL),
+  },
+  {
+    key: 'width',
+    label: 'Width',
+    hint: 'Transport Canada, without mirrors',
+    getValue: (car) => (car.size ? formatMetres(car.size.widthCm) : UNAVAILABLE_LABEL),
+  },
+  {
+    key: 'weight',
+    label: 'Curb weight',
+    hint: 'Transport Canada',
+    getValue: (car) => (car.size ? formatKg(car.size.curbWeightKg) : UNAVAILABLE_LABEL),
   },
   {
     key: 'luggage',

@@ -40,6 +40,7 @@ export type {
   TcoEstimate,
   TcoRange,
   VehicleCategory,
+  VehicleSize,
 } from '@carinfo/types/car.types';
 
 /**

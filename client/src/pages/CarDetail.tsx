@@ -44,6 +44,7 @@ import { formatVolume, litres, luggageLabel } from '../utils/space';
 import SafetyRecords from '../components/SafetyRecords';
 import CrashTests from '../components/CrashTests';
 import BeforeYouBuy from '../components/BeforeYouBuy';
+import SizeAndFit from '../components/SizeAndFit';
 
 function Subheading({ children }: { children: React.ReactNode }) {
   return <p className="text-sm font-semibold text-zinc-200 pt-3 pb-1">{children}</p>;
@@ -546,7 +547,7 @@ export default function CarDetail() {
 
       <section className="border-b border-zinc-900">
         <div className="page-wrap-wide section-y-tight space-y-6">
-          {(showEnergySection || hasEmissionsData || hasSpace) && (
+          {(showEnergySection || hasEmissionsData || hasSpace || car.size) && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 md:gap-x-10 gap-y-8 md:gap-y-10">
               {showEnergySection && (
                 <div className="min-w-0">
@@ -601,6 +602,8 @@ export default function CarDetail() {
                   )}
                 </div>
               )}
+
+              {car.size && <SizeAndFit size={car.size} />}
 
               {hasSpace && (
                 <div className="min-w-0">

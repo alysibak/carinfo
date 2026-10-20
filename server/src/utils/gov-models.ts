@@ -24,6 +24,7 @@ const MAKE_ALIASES: Record<string, string> = {
   vw: 'Volkswagen',
   'mini cooper': 'MINI',
   alfa: 'Alfa Romeo',
+  'ram trucks': 'Ram',
 };
 
 /** A pickup's cab, which NHTSA writes into the model's name: "F-150 SUPER CREW". */

@@ -43,6 +43,7 @@ import { Speller } from '../utils/spelling.js';
 import { canadianRecallsFor, complaintsFor } from './safety-records.service.js';
 import { govModelIndex } from '../utils/gov-models.js';
 import { loadNhtsaTests, withNhtsaRatings } from '../utils/nhtsa-ratings.js';
+import { loadMeasuredVehicles, withSizes } from '../utils/canadian-specs.js';
 
 function resolveDbPath(): string | null {
   return resolveDataFile('cars.json');
@@ -177,9 +178,11 @@ function initDatabase(): void {
       // Dev / missing ready file: enrich + normalize at load (slow on large DBs).
       cachedCars = withRunningCosts(
         ensureUniqueIds(
-          withNhtsaRatingsFor(
-            cleanCorpusHorsepower(
-              withCarPhotos(db.cars, loadCarPhotos()).map(enrichCar).map(normalizeCarRecord),
+          withSizesFor(
+            withNhtsaRatingsFor(
+              cleanCorpusHorsepower(
+                withCarPhotos(db.cars, loadCarPhotos()).map(enrichCar).map(normalizeCarRecord),
+              ).cars,
             ).cars,
           ).cars,
         ).cars,
@@ -923,6 +926,19 @@ export function withNhtsaRatingsFor(cars: Car[]): ReturnType<typeof withNhtsaRat
   return withNhtsaRatings(
     cars,
     loadNhtsaTests(),
+    modelLineKey,
+    govModelIndex(cars, modelLineKey).match,
+  );
+}
+
+/**
+ * Transport Canada's measurements for every car, from the vehicles of its
+ * model line that year by body and drivetrain (utils/canadian-specs.ts).
+ */
+export function withSizesFor(cars: Car[]): ReturnType<typeof withSizes> {
+  return withSizes(
+    cars,
+    loadMeasuredVehicles(),
     modelLineKey,
     govModelIndex(cars, modelLineKey).match,
   );

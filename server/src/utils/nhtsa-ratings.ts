@@ -202,6 +202,7 @@ function nearest<T, V>(items: T[], valueOf: (item: T) => V | undefined, own: V, 
 function byName<T extends { config: TestedConfiguration }>(
   car: Pick<Car, 'model' | 'engine'>,
   tests: T[],
+  loose: boolean,
 ): T[] {
   const names = new Set(tests.map((test) => test.config.name.join(' ')));
   if (names.size < 2) return tests;
@@ -228,9 +229,9 @@ function byName<T extends { config: TestedConfiguration }>(
   const plain = tests.filter((test) => test.config.name.length === fewest);
   const plainName = plain[0].config.name;
   const extended = tests.every((test) => plainName.every((w) => test.config.name.includes(w)));
-  return new Set(plain.map((test) => test.config.name.join(' '))).size === 1 && extended
-    ? plain
-    : [];
+  if (new Set(plain.map((test) => test.config.name.join(' '))).size === 1 && extended) return plain;
+  // Measurements, unlike ratings, may span the versions: all of them, then.
+  return loose ? tests : [];
 }
 
 const ELECTRIFIED_FUELS = new Set(['electric', 'hybrid', 'plug-in hybrid', 'hydrogen']);
@@ -248,6 +249,7 @@ function isElectrified(car: Pick<Car, 'model' | 'engine'>): boolean {
 export function testsDescribing<T extends { config: TestedConfiguration }>(
   car: Pick<Car, 'model' | 'engine' | 'bodyStyle' | 'driveType'>,
   tests: T[],
+  { loose = false }: { loose?: boolean } = {},
 ): T[] {
   const electrified = isElectrified(car);
   const pool = electrified ? tests : tests.filter((test) => !test.config.electrified);
@@ -255,7 +257,7 @@ export function testsDescribing<T extends { config: TestedConfiguration }>(
   const drive = DRIVE_OF[car.driveType];
   const byBody = nearest(pool, (test) => test.config.body, body.own, body.near);
   const byDrive = nearest(byBody, (test) => test.config.drive, drive.own, drive.near);
-  const named = byName(car, byDrive);
+  const named = byName(car, byDrive, loose);
   // One name for both: the hybrid's own test, where NHTSA ran one.
   const own = electrified ? named.filter((test) => test.config.electrified) : [];
   return own.length ? own : named;

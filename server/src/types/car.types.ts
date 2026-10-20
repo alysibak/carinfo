@@ -156,6 +156,9 @@ export interface CarSpecs {
     nhtsaIds?: number[];
   };
 
+  /** Transport Canada's measurements for the configurations that describe it (utils/canadian-specs.ts). */
+  size?: VehicleSize;
+
   /** The recommended safety technology NHTSA lists for the tested configurations. */
   safetyTech?: {
     /** Electronic stability control. */
@@ -420,6 +423,21 @@ export interface SearchResults {
   interpretation?: SearchInterpretation;
   /** Whether the rows are one per model (true) or per model year (false), when collapsed. */
   onePerModel?: boolean;
+}
+
+/**
+ * Transport Canada's measurements of a car, each as [least, most] across the
+ * configurations measured that describe it: one figure where they agree, a
+ * span where they differ (a pickup's cabs and boxes).
+ */
+export interface VehicleSize {
+  lengthCm: [number, number];
+  widthCm: [number, number];
+  heightCm: [number, number];
+  wheelbaseCm: [number, number];
+  curbWeightKg: [number, number];
+  /** Transport Canada's names of the vehicles measured: "CR-V 4DR AWD". */
+  measured: string[];
 }
 
 /** Standard, optional, or standard on some versions and optional on others. */
