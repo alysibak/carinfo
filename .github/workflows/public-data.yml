@@ -39,7 +39,7 @@ jobs:
   fetch:
     name: Fetch public data
     runs-on: ubuntu-latest
-    timeout-minutes: 240
+    timeout-minutes: 340
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -49,19 +49,18 @@ jobs:
       - run: npm ci
         working-directory: .
 
-      - name: NHTSA star ratings and safety features
-        continue-on-error: true
-        run: $FETCH nhtsa-ratings 2>&1 | tee -a ../public-data-report.txt
-
       - name: NHTSA recalls
         continue-on-error: true
         run: |
           mkdir -p /tmp/rcl && cd /tmp/rcl
-          curl -fsSL --retry 3 -o FLAT_RCL.zip https://static.nhtsa.gov/odi/ffdd/rcl/FLAT_RCL.zip
+          # NHTSA splits its recalls at the 2010 report date.
+          for part in PRE_2010 POST_2010; do
+            curl -fsSL --retry 3 -o "FLAT_RCL_$part.zip" "https://static.nhtsa.gov/odi/ffdd/rcl/FLAT_RCL_$part.zip"
+            unzip -l "FLAT_RCL_$part.zip" | tee -a "$GITHUB_WORKSPACE/public-data-report.txt"
+            unzip -o -q -d flat "FLAT_RCL_$part.zip"
+          done
           curl -fsSL --retry 3 -o RCL.txt https://static.nhtsa.gov/odi/ffdd/rcl/RCL.txt
-          unzip -l FLAT_RCL.zip | tee -a "$GITHUB_WORKSPACE/public-data-report.txt"
-          # One file or several (NHTSA has split them by year): read them all.
-          unzip -o -q -d flat FLAT_RCL.zip && cat flat/*.txt > all.txt
+          cat flat/*.txt > all.txt
           cd "$GITHUB_WORKSPACE/server"
           mkdir -p data/public/probe && cp /tmp/rcl/RCL.txt data/public/probe/RCL.txt
           $FETCH recalls /tmp/rcl/all.txt /tmp/rcl/RCL.txt 2>&1 | tee -a ../public-data-report.txt
@@ -90,9 +89,17 @@ jobs:
         continue-on-error: true
         run: $FETCH nrcan 2>&1 | tee -a ../public-data-report.txt
 
+      # The slow parts last, one request at a time, each with its own limit:
+      # a timeout ends that part, and the parts before it are still pushed.
       - name: Transport Canada vehicle dimensions
         continue-on-error: true
+        timeout-minutes: 60
         run: $FETCH canadian-specs 2>&1 | tee -a ../public-data-report.txt
+
+      - name: NHTSA star ratings and safety features
+        continue-on-error: true
+        timeout-minutes: 220
+        run: $FETCH nhtsa-ratings 2>&1 | tee -a ../public-data-report.txt
 
       - name: Push to the public-data branch
         working-directory: .

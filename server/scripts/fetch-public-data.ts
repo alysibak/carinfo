@@ -51,16 +51,27 @@ function probe(name: string, data: unknown): void {
   writeFileSync(join(PROBE, name), typeof data === 'string' ? data : JSON.stringify(data, null, 2));
 }
 
-/** A GET that tries again on a dropped connection, a 429 or a 5xx: thousands run per part. */
+/**
+ * A GET, one at a time with a pause between, that tries again on a dropped
+ * connection, a refusal (403, 429) or a 5xx: thousands run per part, and
+ * NHTSA's hosts refused a burst of four at once outright.
+ */
+const PAUSE_MS = 250;
+let failures = 0;
 async function getJson<T>(url: string): Promise<T> {
   for (let attempt = 1; ; attempt++) {
+    await sleep(PAUSE_MS);
     try {
       return await fetchJson<T>(url, 60_000);
     } catch (err) {
       const status = err instanceof HttpError ? err.status : 0;
-      const retry = status === 0 || status === 429 || status >= 500;
-      if (!retry || attempt === 4) throw err;
-      await sleep(1000 * 3 ** attempt);
+      const retry = status === 0 || status === 403 || status === 429 || status >= 500;
+      if (!retry || attempt === 4) {
+        // Said, not swallowed: an empty answer and a refused one are not the same.
+        if (++failures <= 10) console.log(`  Failed: ${String(err)}`);
+        throw err;
+      }
+      await sleep(2000 * 3 ** attempt);
     }
   }
 }
@@ -105,7 +116,7 @@ async function nhtsaRatings(): Promise<void> {
     for (const { Make } of makes ?? []) pairs.push({ year, make: Make });
   }
   const models = (
-    await mapLimit(pairs, 4, async ({ year, make }) => {
+    await mapLimit(pairs, 1, async ({ year, make }) => {
       const url = `${NHTSA}/modelyear/${year}/make/${encodeURIComponent(make)}`;
       const list = (await getJson<Results<{ Model: string }>>(url).catch(() => null))?.Results;
       return (list ?? []).map(({ Model }) => ({ year, make, model: Model }));
@@ -114,7 +125,7 @@ async function nhtsaRatings(): Promise<void> {
   console.log(`${models.length} rated models`);
 
   const vehicles = (
-    await mapLimit(models, 4, async ({ year, make, model }) => {
+    await mapLimit(models, 1, async ({ year, make, model }) => {
       const url = `${NHTSA}/modelyear/${year}/make/${encodeURIComponent(make)}/model/${encodeURIComponent(model)}`;
       const list = (await getJson<Results<{ VehicleId: number }>>(url).catch(() => null))?.Results;
       return (list ?? []).map(({ VehicleId }) => VehicleId);
@@ -123,7 +134,7 @@ async function nhtsaRatings(): Promise<void> {
   console.log(`${vehicles.length} rated vehicles`);
 
   let sampled = false;
-  const details = await mapLimit(vehicles, 4, async (id) => {
+  const details = await mapLimit(vehicles, 1, async (id) => {
     const res = await getJson<Results<Record<string, unknown>>>(`${NHTSA}/VehicleId/${id}`).catch(
       () => null,
     );
@@ -146,7 +157,9 @@ async function nhtsaRatings(): Promise<void> {
     fetchedAt: new Date().toISOString(),
     vehicles: rated,
   });
-  console.log(`Done: ${rated.length} NHTSA-rated vehicles, ${years[0]}–${years.at(-1)}`);
+  console.log(
+    `Done: ${rated.length} NHTSA-rated vehicles, ${years[0]}–${years.at(-1)} (${failures} requests failed)`,
+  );
 }
 
 /** Transport Canada's dimensions and weights for each make and year, as vPIC serves them. */
@@ -161,7 +174,7 @@ async function canadianSpecs(): Promise<void> {
   );
   let sampled = false;
   const rows = (
-    await mapLimit(pairs, 4, async ({ make, year }) => {
+    await mapLimit(pairs, 1, async ({ make, year }) => {
       const url = `${VPIC}/GetCanadianVehicleSpecifications/?year=${year}&make=${encodeURIComponent(make)}&units=Metric&format=json`;
       const res = await getJson<Results<{ Specs?: Array<{ Name: string; Value: string }> }>>(
         url,
@@ -182,7 +195,9 @@ async function canadianSpecs(): Promise<void> {
     fetchedAt: new Date().toISOString(),
     rows,
   });
-  console.log(`Done: ${rows.length} Canadian vehicle specifications for ${makes.length} makes`);
+  console.log(
+    `Done: ${rows.length} Canadian vehicle specifications for ${makes.length} makes (${failures} requests failed)`,
+  );
 }
 
 /** Field names in order from one of NHTSA's flat-file layout notes ("1  CMPLID  CHAR(9) ..."). */
