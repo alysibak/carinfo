@@ -46,8 +46,9 @@ describe('describeSearchInterpretation', () => {
     expect(
       describeSearchInterpretation({ unmeasured: ['best', 'reliable'], sortedBy: 'safety' }),
     ).toEqual([
-      'Best NHTSA crash rating first; most cars have none on file.',
+      'Best NHTSA crash rating first, ties by its crash scores and the safety technology it lists; its ratings start with 2011 models.',
       'No data on file measures “best” and “reliable”, so they were not used.',
+      'For reliability, each car’s page lists its model year’s recalls in Canada and owner complaints to NHTSA, and each model’s page compares its years.',
     ]);
     expect(
       describeSearchInterpretation({

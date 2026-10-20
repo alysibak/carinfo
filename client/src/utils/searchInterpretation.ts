@@ -112,7 +112,8 @@ export function describeSearchInterpretation(
     fuelEconomy: 'Most fuel-efficient first',
     horsepower: 'Most powerful first',
     range: 'Longest EPA range first',
-    safety: 'Best NHTSA crash rating first; most cars have none on file',
+    safety:
+      'Best NHTSA crash rating first, ties by its crash scores and the safety technology it lists; its ratings start with 2011 models',
     runningCost:
       'Lowest estimated yearly running cost first: fuel, insurance, upkeep and tires, at the Ontario baseline',
     luggage:
@@ -218,6 +219,15 @@ export function describeSearchInterpretation(
         interpretation.unmeasured.length > 1 ? 'they were' : 'it was'
       } not used.`,
     );
+    // The nearest records to reliability, unless the records line says so already.
+    if (
+      !interpretation.records &&
+      interpretation.unmeasured.some((w) => /^(?:reliable|dependable|quality)$/.test(w))
+    ) {
+      lines.push(
+        'For reliability, each car’s page lists its model year’s recalls in Canada and owner complaints to NHTSA, and each model’s page compares its years.',
+      );
+    }
   }
   if (interpretation.vehicleClass) {
     lines.push(`Showing ${interpretation.vehicleClass}, classed by model.`);
