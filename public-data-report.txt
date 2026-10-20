@@ -1,0 +1,98 @@
+Archive:  FLAT_RCL_PRE_2010.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+ 83786437  2026-10-20 07:01   FLAT_RCL_PRE_2010.txt
+---------                     -------
+ 83786437                     1 file
+Archive:  FLAT_RCL_POST_2010.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+311858828  2026-10-20 07:02   FLAT_RCL_POST_2010.txt
+---------                     -------
+311858828                     1 file
+Wrote nhtsa-recalls.json
+Done: 20382 recall campaigns over 56956 make, model and year listings
+Archive:  FLAT_CMPL.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+1612549816  2026-10-19 10:07   FLAT_CMPL.txt
+---------                     -------
+1612549816                     1 file
+Wrote nhtsa-complaints.json
+Done: complaints for 26469 make, model and year listings
+Transport Canada recalls: Vehicle Recalls Database (1ec92326-47ef-4110-b7ca-959fab03f96d)
+  vrdb_full_monthly.csv: 203.5 MB
+Done: Transport Canada recall files
+Wrote fuel-prices.json
+Done: 1750 prices, 2024-09–2026-09
+Done: 7 NRCan files
+  500 of 3036
+  1000 of 3036
+  1500 of 3036
+  2000 of 3036
+  2500 of 3036
+  3000 of 3036
+Wrote canadian-specs.json
+Done: 27558 Canadian vehicle specifications for 92 makes (0 requests failed)
+NHTSA rates model years 2011–2027
+  500 of 644
+8419 rated models
+  500 of 8419
+  Failed: Error: GET https://api.nhtsa.gov/SafetyRatings/modelyear/2012/make/SUBARU/model/IMPREZA%20WRX%2FSTI answered 400
+  1000 of 8419
+  Failed: Error: GET https://api.nhtsa.gov/SafetyRatings/modelyear/2013/make/SUBARU/model/IMPREZA%20WRX%2FSTI answered 400
+  1500 of 8419
+  Failed: Error: GET https://api.nhtsa.gov/SafetyRatings/modelyear/2014/make/SUBARU/model/IMPREZA%20WRX%2FSTI answered 400
+  2000 of 8419
+  2500 of 8419
+  3000 of 8419
+  3500 of 8419
+  4000 of 8419
+  4500 of 8419
+  5000 of 8419
+  5500 of 8419
+  6000 of 8419
+  6500 of 8419
+  Failed: Error: GET https://api.nhtsa.gov/SafetyRatings/modelyear/2024/make/DODGE/model/HORNET%20R%2FT%20EAWD answered 400
+  7000 of 8419
+  Failed: Error: GET https://api.nhtsa.gov/SafetyRatings/modelyear/2024/make/PORSCHE/model/911%20S%2FT answered 400
+  Failed: Error: GET https://api.nhtsa.gov/SafetyRatings/modelyear/2025/make/DODGE/model/HORNET%20R%2FT%20EAWD answered 400
+  7500 of 8419
+  Failed: Error: GET https://api.nhtsa.gov/SafetyRatings/modelyear/2026/make/LAND%20ROVER/model/RANGE%20ROVER%20LWB%20PHEV%2FMHEV answered 400
+  Failed: Error: GET https://api.nhtsa.gov/SafetyRatings/modelyear/2026/make/LAND%20ROVER/model/RANGE%20ROVER%20SPORT%20PHEV%2FMHEV answered 400
+  Failed: Error: GET https://api.nhtsa.gov/SafetyRatings/modelyear/2026/make/LAND%20ROVER/model/RANGE%20ROVER%20SWB%20PHEV%2FMHEV answered 400
+  8000 of 8419
+  Failed: Error: GET https://api.nhtsa.gov/SafetyRatings/modelyear/2026/make/TOYOTA/model/TUNDRA%20HYBRID%20W%2F%20ISODYNAMIC%20PERFORMANCE%20SEAT%20HEV answered 400
+12783 rated vehicles
+  500 of 12783
+  1000 of 12783
+  1500 of 12783
+  2000 of 12783
+  2500 of 12783
+  3000 of 12783
+  3500 of 12783
+  4000 of 12783
+  4500 of 12783
+  5000 of 12783
+  5500 of 12783
+  6000 of 12783
+  6500 of 12783
+  7000 of 12783
+  7500 of 12783
+  8000 of 12783
+  8500 of 12783
+  9000 of 12783
+  9500 of 12783
+  10000 of 12783
+  10500 of 12783
+  11000 of 12783
+  11500 of 12783
+  12000 of 12783
+  12500 of 12783
+Wrote nhtsa-ratings.json
+Done: 12783 NHTSA-rated vehicles, 2011–2027 (10 requests failed)
+[car.service] Loaded ready DB: 36,936 cars in 0.3s
+Canadian recalls: 5762 recalls over 6627 model years (37519 of 43425 passenger rows matched to the site's models)
+  Most often unmatched: RAM 3500 (256), RAM 2500 (247), FORD F-250 SUPER DUTY (215), FORD F-350 SUPER DUTY (208), FORD F-450 SUPER DUTY (168), RAM 4500 (159), RAM 5500 (157), FORD F-550 SUPER DUTY (129), FORD E350 (112), MERCEDES-BENZ SPRINTER (107), CHEVROLET SILVERADO HD (101), GMC SIERRA HD (100), SUBARU IMPREZA WRX (90), CADILLAC ESCALADE ESV (80), RAM 1500 (74), FORD POLICE INTERCEPTOR UTILITY (EXPLORER) (68), FORD F-450 CHASSIS CAB (56), FORD E450 (55), FORD F-350 CHASSIS CAB (55), FORD F-350 (49), MAZDA B SERIES (49), VOLVO V90 CROSS COUNTRY (48), FORD F-550 CHASSIS CAB (43), VOLKSWAGEN GOLF WAGON (41), FORD F-600 (41)
+NHTSA complaints: 1365429 of 1483837 matched to the site's models (92.0%), 7939 model years
+  Most often unmatched: FORD F-250 SD (6523), DODGE RAM 2500 (5630), RAM 2500 (5145), FORD F-350 SD (3645), DODGE RAM 3500 (2980), FORD F-350 (2579), FORD F-250 (2471), RAM 3500 (2356), CHEVROLET SILVERADO 2500 (2349), GMC SIERRA 2500 (1596), FORD EXCURSION (1146), DODGE DART (1081), CHEVROLET SILVERADO 3500 (1077), SATURN LS (1076), CHEVROLET SILVERADO (1000), CHEVROLET SILVERADO 1500 (926), SUBARU OUTBACK (926), FORD E-350 (855), GMC YUKON XL (829), CHRYSLER 300 (825), SUBARU WRX (688), HONDA GL1800 (626), GMC SIERRA 3500 (580), OLDSMOBILE 88 (551), MAZDA B-SERIES TRUCK (541)
