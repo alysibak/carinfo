@@ -36,28 +36,6 @@ function transmissionLabel(car: CarSpecs): string | null {
   return formatTransmissionLabel(car.transmission);
 }
 
-const SEGMENT_LABELS: Record<string, string> = {
-  'hot-hatch': 'Hot hatch',
-  'sport-compact': 'Sport compact',
-  'sport-sedan': 'Sport sedan',
-  muscle: 'Muscle car',
-  'sports-car': 'Sports car',
-  supercar: 'Supercar',
-  luxury: 'Luxury',
-  mainstream: 'Mainstream',
-  utility: 'Utility',
-  // Title-casing the slug printed "Ev".
-  ev: 'EV',
-  truck: 'Truck',
-};
-
-function segmentLabel(segment: string): string {
-  const known = SEGMENT_LABELS[segment];
-  if (known) return known;
-  const words = segment.replace(/-/g, ' ');
-  return words.charAt(0).toUpperCase() + words.slice(1);
-}
-
 function pushIf(rows: SpecRow[], row: SpecRow | null) {
   if (row && row.value != null && row.value !== '' && row.value !== 'Not on file') rows.push(row);
 }
@@ -214,14 +192,6 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
       glossary: 'generation',
     });
   }
-  if (car.shoppingSegment) {
-    pushIf(vehicle, {
-      key: 'segment',
-      label: 'Segment',
-      value: segmentLabel(car.shoppingSegment),
-      glossary: 'shoppingSegment',
-    });
-  }
 
   const market: SpecRow[] = [];
   if (hasNumericValue(car.price?.msrp)) {
@@ -365,7 +335,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (hasNumericValue(car.epa?.ghgScore)) {
     pushIf(environment, {
       key: 'ghg',
-      label: 'Emissions score',
+      label: 'EPA greenhouse rating',
       value: `${car.epa!.ghgScore}/10`,
       glossary: 'ghgScore',
     });

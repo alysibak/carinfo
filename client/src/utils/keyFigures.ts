@@ -157,8 +157,10 @@ export function buildKeyFigures(dashboard: CarDashboard): KeyFigure[] {
       : {
           id: 'safety',
           label: 'Safety',
-          value: 'Not rated',
-          detail: 'No NHTSA crash test on file',
+          // "Not rated" said NHTSA never tested it; often it did, and the
+          // rating is not matched to this version here.
+          value: 'Not on file',
+          detail: 'No NHTSA crash rating on file for this version',
           glossaryKey: 'safetyOverall',
           missing: true,
         },

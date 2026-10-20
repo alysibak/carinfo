@@ -151,9 +151,9 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
     why: 'Lower = less climate impact from driving this car.',
   },
   ghgScore: {
-    plain: '1 = dirty, 10 = clean',
-    what: 'EPA emissions score from 1 to 10.',
-    why: 'Quick gut-check on how clean the tailpipe is vs. other new cars.',
+    plain: '1 = most CO₂, 10 = least',
+    what: 'EPA’s greenhouse gas rating, 1 to 10, from the car’s tailpipe CO₂.',
+    why: 'A quick check on how much CO₂ it puts out against other new cars.',
   },
   annualFuelCost: {
     plain: 'EPA’s yearly fuel bill estimate',
@@ -167,7 +167,7 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
   },
   fuelSavings5yr: {
     plain: 'Fuel cost vs. an average new car',
-    what: 'EPA estimate over 5 years compared to a typical new vehicle.',
+    what: 'EPA’s estimate over 5 years against the average new vehicle, in US dollars at US fuel prices, as published on fueleconomy.gov.',
     why: 'Shows if this car saves or costs more at the pump over time.',
   },
   kwhPer100mi: {

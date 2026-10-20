@@ -636,7 +636,7 @@ export default function CarDetail() {
 
               {hasEmissionsData && (
                 <div className="min-w-0">
-                  <h2 className="text-base font-bold tracking-tight mb-1">Tailpipe</h2>
+                  <h2 className="text-base font-bold tracking-tight mb-1">Emissions</h2>
                   <p className="text-xs text-zinc-500 mb-3 leading-relaxed">
                     EPA figures for this configuration.
                   </p>
@@ -650,16 +650,9 @@ export default function CarDetail() {
                   )}
                   {ghg && (
                     <DataRow
-                      label="Emissions score"
+                      label="EPA greenhouse rating"
                       value={`${ghg.score}/10`}
                       glossaryKey="ghgScore"
-                    />
-                  )}
-                  {hasNumericValue(car.epa?.barrelsPerYear) && (
-                    <DataRow
-                      label="Oil use"
-                      value={`${car.epa!.barrelsPerYear} barrels/yr`}
-                      glossaryKey="barrelsPerYear"
                     />
                   )}
                   {(() => {

@@ -61,7 +61,7 @@ describe('buildKeyFigures', () => {
   });
 
   it('says plainly when NHTSA has not rated the car', () => {
-    expect(byId(sparseDashboard, 'safety')).toMatchObject({ value: 'Not rated', missing: true });
+    expect(byId(sparseDashboard, 'safety')).toMatchObject({ value: 'Not on file', missing: true });
   });
 
   it("says a plug-in hybrid's fuel use is its gas-mode figure", () => {

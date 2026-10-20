@@ -1,8 +1,4 @@
 import type { CarSpecs } from '../types/car.types';
-import { getRegionalAssumptions } from '@carinfo/config/regional-assumptions';
-import { DISPLAY_CURRENCY } from './currency';
-
-const REGION = getRegionalAssumptions();
 
 /**
  * Helpers that turn raw EPA enrichment fields into dual-framed content:
@@ -11,15 +7,17 @@ const REGION = getRegionalAssumptions();
  */
 
 export interface FuelSavings {
-  /** Absolute CAD magnitude, rounded to avoid false precision. */
-  cad: number;
+  /** EPA's figure as published: US dollars at US fuel prices, without its sign. */
+  usd: number;
   /** True when the vehicle costs LESS to fuel than the average new vehicle. */
   saves: boolean;
 }
 
 /**
- * EPA's 5-year "you save / spend" vs. the average new vehicle (USD), converted to
- * CAD for display. It's a national EPA estimate, so we round it coarsely.
+ * EPA's 5-year "you save / spend" vs. the average new vehicle, as EPA publishes
+ * it on fueleconomy.gov: in US dollars, at US fuel prices. It was converted at
+ * an exchange rate and shown as CAD, a figure no one could check and no
+ * Canadian pump price behind it.
  */
 export function fiveYearFuelSavings(car: CarSpecs): FuelSavings | null {
   // EPA's figure assumes US hydrogen pricing; the page already states H₂ fuel
@@ -27,21 +25,17 @@ export function fiveYearFuelSavings(car: CarSpecs): FuelSavings | null {
   if (car.engine?.fuelType === 'hydrogen') return null;
   const usd = car.epa?.fuelSavings5yrUsd;
   if (usd == null || usd === 0) return null;
-  const cad = Math.round((Math.abs(usd) * REGION.cadUsdExchangeRate) / 50) * 50;
-  if (cad === 0) return null;
-  return { cad, saves: usd > 0 };
+  return { usd: Math.abs(usd), saves: usd > 0 };
 }
 
-/** Compact glance value, e.g. "$5,500 less". */
+/** Compact glance value, e.g. "US$5,500 less". */
 export function fuelSavingsShort(s: FuelSavings): string {
-  return `$${s.cad.toLocaleString()} ${s.saves ? 'less' : 'more'}`;
+  return `US$${s.usd.toLocaleString('en-US')} ${s.saves ? 'less' : 'more'}`;
 }
 
-/** Full plain-language sentence for the expanded view. */
+/** Full plain-language sentence for the expanded view, with whose figure it is. */
 export function fuelSavingsSentence(s: FuelSavings): string {
-  return s.saves
-    ? `About $${s.cad.toLocaleString()} ${DISPLAY_CURRENCY} less in fuel over 5 years than a typical new vehicle.`
-    : `About $${s.cad.toLocaleString()} ${DISPLAY_CURRENCY} more in fuel over 5 years than a typical new vehicle.`;
+  return `US$${s.usd.toLocaleString('en-US')} ${s.saves ? 'less' : 'more'} in fuel over 5 years than the average new vehicle, by EPA’s estimate at US fuel prices.`;
 }
 
 export interface GhgFraming {

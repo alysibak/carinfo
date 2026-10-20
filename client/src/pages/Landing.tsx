@@ -24,8 +24,8 @@ function homeLinkFromPreset(preset: (typeof LIFESTYLE_PRESETS)[number]) {
 
 export default function Landing() {
   usePageMeta(
-    'Car specs from the EPA and NHTSA',
-    'Browse 35,000+ vehicles with EPA fuel economy and range in Canadian units, NHTSA crash ratings when on file, and rated power, each marked with its source.',
+    'Compare cars with facts you can check',
+    'Look up 35,000+ versions of cars since 1995: fuel use and range from official EPA tests, NHTSA crash ratings when on file, and rated power, in Canadian units, each marked with its source.',
   );
   const [showQuiz, setShowQuiz] = useState(false);
 
@@ -101,12 +101,12 @@ export default function Landing() {
             <div className="max-w-xl min-w-0">
               {/* The promise, not the brand: the header already says CarInfo. */}
               <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-bold tracking-tight leading-[1.05] mb-4 animate-hero-rise">
-                Car specs from the EPA and NHTSA
+                Compare cars with facts you can check
               </h1>
               <p className="text-base md:text-lg text-zinc-300 leading-relaxed mb-6 md:mb-8 animate-hero-rise [animation-delay:40ms]">
-                Fuel use and range from EPA tests, crash ratings from NHTSA, and rated power, in
-                Canadian units and marked with their source. Anything we estimate is labeled as an
-                estimate.
+                Fuel use and range from official EPA tests and crash-test stars from NHTSA, in
+                litres and kilometres. Every figure says where it came from, and anything we
+                estimate, like a car’s value, is marked as an estimate.
               </p>
 
               <div className="animate-hero-rise [animation-delay:80ms]">

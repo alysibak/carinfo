@@ -62,7 +62,7 @@ function figuresFor(car: CarSpecs): Figure[] {
   figures.push({
     label: 'NHTSA',
     value: stars && stars > 0 ? String(stars) : '—',
-    unit: stars && stars > 0 ? '/5 stars' : 'not rated',
+    unit: stars && stars > 0 ? '/5 stars' : 'none on file',
   });
   return figures;
 }
@@ -161,8 +161,21 @@ export default function CarCard({
   }, [toast]);
 
   const title = displayVehicleTitle(car);
-  const config = displayConfigSubtitle(car);
-  const transmission = car.transmission?.type ? formatTransmissionLabel(car.transmission) : null;
+  // A manual or a CVT is worth a word; "8-Speed Automatic" on every card was
+  // not. The configuration line falls back to the gearbox where EPA names no trim.
+  const shiftsItself =
+    !!car.transmission?.type && !['manual', 'cvt'].includes(car.transmission.type);
+  const automatic = shiftsItself ? formatTransmissionLabel(car.transmission) : null;
+  const config =
+    displayConfigSubtitle(car)
+      ?.split(' · ')
+      .filter((part) => part !== automatic)
+      .join(' · ') || null;
+  const transmission = shiftsItself
+    ? null
+    : car.transmission?.type
+      ? formatTransmissionLabel(car.transmission)
+      : null;
   const subtitle = [
     car.bodyStyle ? bodyStyleLabel(car.bodyStyle) : null,
     config ?? transmission,
@@ -226,7 +239,9 @@ export default function CarCard({
           <p className="text-[13px] text-zinc-300 tabular-nums mt-1">
             {[
               figures[1].value !== '—' ? `${figures[1].value} hp` : null,
-              figures[2].value !== '—' ? `NHTSA ${figures[2].value}/5` : 'No NHTSA rating',
+              // Only a rating on file is stated: "No NHTSA rating" on most cards
+              // read as NHTSA never testing cars it may well have.
+              figures[2].value !== '—' ? `NHTSA ${figures[2].value}/5 stars` : null,
             ]
               .filter(Boolean)
               .join(' · ')}

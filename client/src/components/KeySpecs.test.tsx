@@ -12,7 +12,7 @@ describe('KeySpecs omit-when-empty', () => {
     expect(screen.queryByText('Crash safety')).not.toBeInTheDocument();
     expect(screen.queryByText('Torque')).not.toBeInTheDocument();
     expect(screen.queryByText('0-60 mph')).not.toBeInTheDocument();
-    expect(screen.queryByText('Emissions score')).not.toBeInTheDocument();
+    expect(screen.queryByText('EPA greenhouse rating')).not.toBeInTheDocument();
     expect(screen.queryByText('Est. MSRP')).not.toBeInTheDocument();
   });
 
@@ -87,20 +87,13 @@ describe('KeySpecs long values', () => {
   });
 });
 
-describe('KeySpecs segment label', () => {
-  it('writes EV as an initialism and other segments in sentence case', () => {
-    const ev = {
-      ...sparseDashboard,
-      car: { ...sparseDashboard.car, shoppingSegment: 'ev' as const },
-    };
-    const { unmount } = render(<KeySpecs dashboard={ev} />);
-    expect(screen.getByText('EV')).toBeInTheDocument();
-    unmount();
-    const hatch = {
-      ...sparseDashboard,
-      car: { ...sparseDashboard.car, shoppingSegment: 'hot-hatch' as const },
-    };
-    render(<KeySpecs dashboard={hatch} />);
-    expect(screen.getByText('Hot hatch')).toBeInTheDocument();
+describe('KeySpecs without the site’s own labels', () => {
+  it('leaves out the shopping segment, which duplicated "Competes as" in our own words', () => {
+    render(
+      <KeySpecs
+        dashboard={{ ...sparseDashboard, car: { ...sparseDashboard.car, shoppingSegment: 'ev' } }}
+      />,
+    );
+    expect(screen.queryByText('Segment')).not.toBeInTheDocument();
   });
 });
