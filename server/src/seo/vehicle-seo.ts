@@ -4,6 +4,12 @@ import { escapeHtml } from './html.js';
 import { absoluteUrl } from './site.js';
 import { COMMONS_FILE } from '../utils/car-photos.js';
 
+const TECH_WORDS = {
+  standard: 'Standard',
+  optional: 'Optional',
+  some: 'Standard on some versions',
+} as const;
+
 export interface PageSeo {
   title: string;
   description: string;
@@ -209,6 +215,12 @@ function vehicleSummaryHtml(car: Car, efficiency: string | null, fuel: string): 
     rows.push(['Transmission', formatTransmissionLabel(car.transmission)]);
   }
   if (car.safetyRating?.overall) rows.push(['NHTSA overall', `${car.safetyRating.overall} / 5`]);
+  if (car.safetyRating?.rolloverRisk != null) {
+    rows.push(['Rollover risk (NHTSA)', `${Math.round(car.safetyRating.rolloverRisk * 100)}%`]);
+  }
+  const tech = car.safetyTech;
+  if (tech?.fcw) rows.push(['Forward collision warning (NHTSA)', TECH_WORDS[tech.fcw]]);
+  if (tech?.ldw) rows.push(['Lane departure warning (NHTSA)', TECH_WORDS[tech.ldw]]);
 
   const list = rows.map(([k, v]) => `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(v)}</dd>`).join('');
   const configuration = displayListingSubtitle(car);

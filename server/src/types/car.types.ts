@@ -490,6 +490,8 @@ export interface ModelYearSummary {
   recalls?: number;
   /** Owner complaints to NHTSA, where its records for the model are matched. */
   complaints?: number;
+  /** The part complained of most, by NHTSA's name: "ENGINE", "AIR BAGS". */
+  complaintPart?: string;
   /**
    * Safety technology NHTSA lists as standard on every configuration of the
    * year it tested; absent where NHTSA tested none.

@@ -1183,7 +1183,9 @@ function summarizeYear(year: number, cars: Car[]): ModelYearSummary {
   const base = baseOf(cars);
   const line = modelLineKey(base);
   const recalls = canadianRecallsFor(line, year)?.length;
-  const complaints = complaintsFor(line, year)?.complaints;
+  const complaintRecord = complaintsFor(line, year);
+  const complaints = complaintRecord?.complaints;
+  const complaintPart = complaintRecord?.parts[0]?.[0];
   const burnsFuel = cars.filter((car) => car.engine.fuelType !== 'electric');
   const electric = cars.filter((car) => car.engine.fuelType === 'electric');
   const generation = generationOf(base);
@@ -1206,6 +1208,7 @@ function summarizeYear(year: number, cars: Car[]): ModelYearSummary {
     ...(generation ? { generation } : {}),
     ...(recalls != null ? { recalls } : {}),
     ...(complaints != null ? { complaints } : {}),
+    ...(complaintPart ? { complaintPart } : {}),
     ...(tested.length ? { standardTech } : {}),
   };
 }

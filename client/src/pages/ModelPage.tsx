@@ -10,6 +10,7 @@ import CarPhotoButton from '../components/CarPhotoButton';
 import VehiclePlaceholder from '../components/VehiclePlaceholder';
 import { modelYearFacts, yearSpan } from '../utils/modelYearFacts';
 import { usePageMeta } from '../utils/pageMeta';
+import { complaintPart } from '../utils/recalls';
 
 type Status = 'loading' | 'ready' | 'missing' | 'error';
 
@@ -141,13 +142,22 @@ export default function ModelPage() {
         {(() => {
           // The years with the most of each, as the records count them: a
           // model's years are compared with each other, not with other models.
-          const most = (count: (row: ModelYearSummary) => number | undefined) =>
+          const most = (
+            count: (row: ModelYearSummary) => number | undefined,
+            about?: (row: ModelYearSummary) => string | undefined,
+          ) =>
             overview.years
               .filter((row) => (count(row) ?? 0) > 0)
               .sort((a, b) => (count(b) ?? 0) - (count(a) ?? 0))
               .slice(0, 3)
-              .map((row) => `${row.year} (${(count(row) ?? 0).toLocaleString('en-CA')})`);
-          const complaints = most((row) => row.complaints);
+              .map((row) => {
+                const part = about?.(row);
+                return `${row.year} (${(count(row) ?? 0).toLocaleString('en-CA')}${part ? `, most about ${complaintPart(part).toLowerCase()}` : ''})`;
+              });
+          const complaints = most(
+            (row) => row.complaints,
+            (row) => row.complaintPart,
+          );
           const recalls = most((row) => row.recalls);
           if (!complaints.length && !recalls.length) return null;
           return (
