@@ -39,6 +39,13 @@ const SOURCES = [
     terms: 'Open Government Licence – Canada.',
   },
   {
+    name: 'Statistics Canada, monthly average retail prices for gasoline (table 18-10-0001-01)',
+    url: 'https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1810000101',
+    gives:
+      'the pump prices fuel costs are figured at: the region’s city’s self-serve regular, premium and diesel, averaged over the last twelve months.',
+    terms: 'Statistics Canada Open Licence.',
+  },
+  {
     name: 'Wikimedia Commons',
     url: 'https://commons.wikimedia.org',
     gives: 'photos of a car’s own model year, on request.',

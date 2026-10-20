@@ -3,6 +3,8 @@
  * Default region: Ontario. Review price/rate constants periodically (last reviewed: 2025-Q2).
  */
 
+import { PUMP_PRICES } from './pump-prices.js';
+
 export type RegionId = 'ontario' | 'british-columbia';
 
 export interface InsuranceAssumptions {
@@ -74,13 +76,26 @@ export interface RegionalAssumptions {
    * every value by roughly a quarter before depreciation even started.
    */
   vehiclePriceCadPerUsd: number;
-  /** Regular gasoline, recent multi-month retail average (review periodically). */
+  /** Regular gasoline, self-serve: the region's city's twelve-month average (Statistics Canada). */
   gasPriceCadPerL: number;
   /**
    * Diesel, same basis. Diesel cars used to be priced at the gasoline price;
-   * diesel ran about 10–15% higher through 2026.
+   * diesel ran about 10–20% higher through 2026.
    */
   dieselPriceCadPerL: number;
+  /**
+   * What premium costs over regular, same city and months: the cars EPA
+   * rates on premium gasoline are costed at the gas price plus this.
+   */
+  premiumOverRegularCadPerL: number;
+  /** Where and when the pump prices are from, for the page to say. */
+  pumpPrices: {
+    place: string;
+    from: string;
+    through: string;
+    /** The last month's prices alone. */
+    latest: { regular?: number; diesel?: number };
+  };
   /** Blended Ontario residential rate for home charging (~TOU mid-tier average). */
   electricityRateCadPerKwh: number;
   /**
@@ -97,6 +112,27 @@ export interface RegionalAssumptions {
   phev: PhevAssumptions;
 }
 
+/** A region's pump prices from its city's row of Statistics Canada's table. */
+function pumpPricesOf(
+  place: 'Toronto, Ontario' | 'Vancouver, British Columbia',
+): Pick<
+  RegionalAssumptions,
+  'gasPriceCadPerL' | 'dieselPriceCadPerL' | 'premiumOverRegularCadPerL' | 'pumpPrices'
+> {
+  const city = PUMP_PRICES.cities[place];
+  return {
+    gasPriceCadPerL: city.regular,
+    dieselPriceCadPerL: city.diesel,
+    premiumOverRegularCadPerL: Math.round((city.premium - city.regular) * 1000) / 1000,
+    pumpPrices: {
+      place,
+      from: PUMP_PRICES.from,
+      through: PUMP_PRICES.through,
+      latest: { regular: city.latest.regular, diesel: city.latest.diesel },
+    },
+  };
+}
+
 export const REGIONAL_ASSUMPTIONS: Record<RegionId, RegionalAssumptions> = {
   ontario: {
     id: 'ontario',
@@ -104,10 +140,8 @@ export const REGIONAL_ASSUMPTIONS: Record<RegionId, RegionalAssumptions> = {
     displayCurrency: 'CAD',
     cadUsdExchangeRate: 1.38,
     vehiclePriceCadPerUsd: 1.2,
-    // Statistics Canada, Toronto self-serve regular: 176.6¢ (Apr 2026), 165.8¢
-    // (Jun); national 174¢ (Aug). Diesel, Toronto: 186.9¢ (Jun), 205.0¢ (Jul).
-    gasPriceCadPerL: 1.7,
-    dieselPriceCadPerL: 1.95,
+    // Statistics Canada, Toronto, the last twelve months on file (pump-prices.ts).
+    ...pumpPricesOf('Toronto, Ontario'),
     electricityRateCadPerKwh: 0.155,
     // One public station (Toronto Pearson) and no posted retail price.
     hydrogenCadPerKg: null,
@@ -172,10 +206,9 @@ export const REGIONAL_ASSUMPTIONS: Record<RegionId, RegionalAssumptions> = {
     displayCurrency: 'CAD',
     cadUsdExchangeRate: 1.38,
     vehiclePriceCadPerUsd: 1.22,
-    // Statistics Canada, Vancouver: regular 207¢ (Aug 2026); diesel 222.9¢
-    // (Jun), 235.4¢ (Jul). Province-wide prices run a little under Vancouver's.
-    gasPriceCadPerL: 1.98,
-    dieselPriceCadPerL: 2.25,
+    // Statistics Canada, Vancouver, the last twelve months on file. Province-wide
+    // prices run a little under Vancouver's.
+    ...pumpPricesOf('Vancouver, British Columbia'),
     electricityRateCadPerKwh: 0.12,
     // HTEC's six light-duty stations (Metro Vancouver, Victoria, Kelowna):
     // $16.50/kg at the pump (HTEC FAQ, 2026).
@@ -270,10 +303,34 @@ export function usdAnchorToCadValue(
   return usdAmount * region.vehiclePriceCadPerUsd;
 }
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** "Oct 2025", from Statistics Canada's "2025-10". */
+export function monthLabel(month: string): string {
+  const [year, m] = month.split('-').map(Number);
+  return MONTHS[m - 1] ? `${MONTHS[m - 1]} ${year}` : month;
+}
+
+/**
+ * "$1.56/L regular, $1.84/L diesel: Toronto's self-serve average, Oct 2025–Sep 2026
+ * (Statistics Canada; Sep 2026 alone, $1.84/L regular). Premium adds $0.31/L
+ * for cars EPA rates on it. ~$0.155/kWh home electricity, ~15,000 km/yr."
+ */
 export function formatOntarioEnergyAssumptionNote(
   region: RegionalAssumptions = getRegionalAssumptions(),
 ): string {
-  return `${region.label} ~$${region.gasPriceCadPerL.toFixed(2)}/L gas, ~$${region.dieselPriceCadPerL.toFixed(2)}/L diesel, ~$${region.electricityRateCadPerKwh.toFixed(3)}/kWh home electricity @ ~${region.annualKm.toLocaleString()} km/yr`;
+  const { place, from, through, latest } = region.pumpPrices;
+  const city = place.split(',')[0];
+  const now =
+    latest.regular != null
+      ? `; ${monthLabel(through)} alone, $${latest.regular.toFixed(2)}/L regular`
+      : '';
+  return (
+    `$${region.gasPriceCadPerL.toFixed(2)}/L regular, $${region.dieselPriceCadPerL.toFixed(2)}/L diesel: ` +
+    `${city}'s self-serve average, ${monthLabel(from)}–${monthLabel(through)} (Statistics Canada${now}). ` +
+    `Premium adds $${region.premiumOverRegularCadPerL.toFixed(2)}/L for cars EPA rates on it. ` +
+    `~$${region.electricityRateCadPerKwh.toFixed(3)}/kWh home electricity, ~${region.annualKm.toLocaleString()} km/yr`
+  );
 }
 
 export function formatOntarioRegionNote(

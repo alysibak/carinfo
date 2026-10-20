@@ -26,7 +26,11 @@ import { inferEffectiveFuelType } from '../utils/fuel-type-inference.js';
 
 const KM_PER_MILE = 1.609344;
 
-/** The inputs a user can reasonably override in a what-if calculator. */
+/**
+ * The inputs a user can reasonably override in a what-if calculator. A car
+ * EPA rates on premium pays the gas price plus the region's premium markup,
+ * so a gas price entered by hand moves it too.
+ */
 export interface EnergyPriceInputs {
   annualKm: number;
   gasPriceCadPerL: number;
@@ -67,8 +71,9 @@ function round(n: number): number {
   return Math.round(n);
 }
 
-function gasolineAnnualCad(mpg: number, region: RegionalAssumptions): number {
-  return (region.annualKm / 100) * mpgToLPer100Km(mpg) * region.gasPriceCadPerL;
+function gasolineAnnualCad(mpg: number, region: RegionalAssumptions, premium = false): number {
+  const price = region.gasPriceCadPerL + (premium ? region.premiumOverRegularCadPerL : 0);
+  return (region.annualKm / 100) * mpgToLPer100Km(mpg) * price;
 }
 
 /** EPA rates diesel economy per gallon of diesel, so this is the same arithmetic at the pump price for diesel. */
@@ -107,6 +112,7 @@ export function estimateAnnualEnergyCost(
   const mpgRaw = car.fuelEconomy?.combined;
   const mpg = mpgRaw != null && Number.isFinite(mpgRaw) ? Math.round(mpgRaw) : 0;
   const fuelType = inferEffectiveFuelType(car);
+  const premium = car.epa?.premiumFuel === true;
 
   const result = (annual: number | null, basis: EnergyCostBasis): EnergyCostEstimate | null => {
     if (annual == null || !Number.isFinite(annual)) return null;
@@ -132,7 +138,7 @@ export function estimateAnnualEnergyCost(
   if (fuelType === 'plug-in hybrid' && mpg > 0) {
     const gasMpg = car.epa?.phev?.gasMpg ?? mpg;
     const electricMpge = car.epa?.phev?.electricMpge ?? mpg;
-    const gas = round(gasolineAnnualCad(gasMpg, region)) * region.phev.gasMileFraction;
+    const gas = round(gasolineAnnualCad(gasMpg, region, premium)) * region.phev.gasMileFraction;
     const electric =
       round(electricAnnualCad(electricMpge, region)) * region.phev.electricMileFraction;
     return result(gas + electric, 'plug-in hybrid');
@@ -143,7 +149,7 @@ export function estimateAnnualEnergyCost(
   }
 
   if (mpg > 0) {
-    return result(gasolineAnnualCad(mpg, region), 'gasoline');
+    return result(gasolineAnnualCad(mpg, region, premium), 'gasoline');
   }
 
   return result(epaAnnualCostCad(car, region), 'epa-annual-cost');

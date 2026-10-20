@@ -59,6 +59,8 @@ export interface EpaEnrichmentEntry {
    * EPA gives none for SUVs, pickups and vans.
    */
   volumes?: Partial<Record<'twoDoor' | 'fourDoor' | 'hatch', [number, number]>>;
+  /** EPA rates it on premium gasoline. */
+  premium?: true;
 }
 
 /** Parse a non-negative numeric EPA cell. Empty / -1 / 0 → undefined. */
@@ -113,6 +115,8 @@ function buildEpaEnrichment(usedEpaIds: Set<number>): Record<string, EpaEnrichme
       if (p || l) volumes[body] = [p ?? 0, l ?? 0];
     }
     if (Object.keys(volumes).length) entry.volumes = volumes;
+    // "Premium", "Premium or E85", "Premium Gas or Electricity": rated on premium.
+    if (/^premium/i.test(row.fuelType || '')) entry.premium = true;
 
     const atv = (row.atvType || '').toLowerCase();
     const ft1 = (row.fuelType1 || '').toLowerCase();

@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import type { CarSpecs, OwnershipEconomics } from '../types/car.types';
-import type { RegionId } from '@carinfo/config/regional-assumptions';
+import { getRegionalAssumptions, type RegionId } from '@carinfo/config/regional-assumptions';
 import { DISPLAY_CURRENCY } from '../utils/currency';
 import { usesMpge } from '../utils/fuelDisplay';
 import { useModalFocus } from '../hooks/useModalFocus';
@@ -215,6 +215,11 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
                   value={inputs.gasPriceCadPerL}
                   onChange={set('gasPriceCadPerL')}
                   step={0.01}
+                  hint={
+                    car.epa?.premiumFuel
+                      ? `Regular. EPA rates this car on premium, costed at this plus $${getRegionalAssumptions(region).premiumOverRegularCadPerL.toFixed(2)}/L.`
+                      : undefined
+                  }
                 />
               )}
               {showDiesel && (

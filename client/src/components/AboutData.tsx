@@ -122,9 +122,10 @@ function AboutDataModal({ onClose }: { onClose: () => void }) {
             FuelEconomy.gov bulk data.
           </p>
           <p>
-            <span className="text-white font-bold">Sourced (NHTSA)</span>: Crash-test star ratings
-            when NHTSA has tested that make/model/year. NHTSA tests far fewer configurations than
-            EPA lists, so most vehicles show no rating. That is expected, not a lookup failure.
+            <span className="text-white font-bold">Sourced (NHTSA)</span>: Crash-test stars,
+            rollover risk and listed safety technology, from 2011 on, where NHTSA tested the
+            car&rsquo;s body and drivetrain that model year. NHTSA tests fewer configurations than
+            EPA lists, so some cars have no rating; none is borrowed from another year.
           </p>
           <p>
             <span className="text-white font-bold">Curated (EPA test car)</span>: Rated horsepower
@@ -133,14 +134,15 @@ function AboutDataModal({ onClose }: { onClose: () => void }) {
           </p>
           <p>
             <span className="text-white font-bold">Estimated ({region.label}, CAD)</span>: Market
-            value uses a depreciation model with USD MSRP anchors converted to CAD. Running costs
-            use {region.label} gas, electricity, insurance, and registration baselines at ~
+            value uses a depreciation model with USD MSRP anchors converted to CAD. Fuel costs use
+            Statistics Canada&rsquo;s pump prices for {region.pumpPrices.place.split(',')[0]}{' '}
+            (twelve-month average); insurance and registration are {region.label} baselines, at ~
             {region.annualKm.toLocaleString()} km/yr. Every estimate shows a confidence label.
           </p>
           <p>
             <span className="text-white font-semibold">Not included</span>: Live dealer listing
-            prices, dimensions, torque, real 0-60 times, or listing photos. Body-type illustrations
-            only. We omit uncertain fields rather than invent them.
+            prices, torque or real 0-60 times. Photos are shown only where one of the same model
+            year is on file. We omit uncertain fields rather than invent them.
           </p>
         </div>
         <Link

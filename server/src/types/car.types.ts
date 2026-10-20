@@ -119,6 +119,8 @@ export interface CarSpecs {
     passengerVolumeCuFt?: number;
     /** EPA luggage volume, cubic feet: the trunk, or a hatchback's or wagon's cargo space. */
     luggageVolumeCuFt?: number;
+    /** EPA rates it on premium gasoline: its fuel is costed at premium's price. */
+    premiumFuel?: boolean;
     /** Plug-in hybrid dual-mode economy (EPA: gas vs. electric operating modes). */
     phev?: {
       gasMpg?: number;

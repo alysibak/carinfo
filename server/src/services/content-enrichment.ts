@@ -35,6 +35,8 @@ interface EpaEnrichmentEntry {
   charge240Hours?: number;
   /** Cubic feet, [passenger, luggage], by the body EPA measured. */
   volumes?: Partial<Record<VolumeBody, [number, number]>>;
+  /** EPA rates it on premium gasoline. */
+  premium?: true;
 }
 
 type VolumeBody = 'twoDoor' | 'fourDoor' | 'hatch';
@@ -136,6 +138,7 @@ export function enrichCar(car: Car): Car {
       ...(epaEntry.barrelsPerYear != null ? { barrelsPerYear: epaEntry.barrelsPerYear } : {}),
       ...(epaEntry.phev ? { phev: epaEntry.phev } : {}),
       ...volumesFor(car.bodyStyle, epaEntry.volumes),
+      ...(epaEntry.premium ? { premiumFuel: true } : {}),
     };
 
     // EV/PHEV economy correction: cars.json stored EPA's electricity-consumption
