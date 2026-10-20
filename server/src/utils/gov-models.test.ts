@@ -29,5 +29,10 @@ describe('govModelIndex', () => {
     // A year the site has no such car, and a make it has none of.
     expect(match('HONDA', 'CIVIC', 1980)).toBeNull();
     expect(match('WORKHORSE', 'W22', 2010)).toBeNull();
+    // Not a longer model's name, nor a body word alone.
+    expect(match('FORD', 'TRANSIT', 2018)).not.toBe('ford|transit connect');
+    expect(match('CHEVROLET', 'PICKUP', 2000)).toBeNull();
+    // One word of a longer name, when it names one line.
+    expect(match('CHEVROLET', 'CAMARO ZL1', 2018)).toBe('chevrolet|camaro');
   });
 });

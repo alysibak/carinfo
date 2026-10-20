@@ -27,6 +27,9 @@ const MAKE_ALIASES: Record<string, string> = {
 
 /** Words after a line's name that leave it the same line: "SILVERADO 1500", "IONIQ HYBRID". */
 const SAME_LINE_AFTER = /^(?:\d|hybrid|plugin|phev|hev|ev|electric|awd|4wd|2wd|fwd|rwd|4x4|4x2)/;
+/** Words that name a body, not a model. */
+const BODY_WORDS =
+  /^(?:pickup|truck|van|wagon|sedan|coupe|convertible|hatchback|suv|cab|chassis|cargo|passenger)$/;
 /** A performance trim the records name as a model: "MUSTANG GT", "CIVIC SI", "CAMARO SS". */
 const PERFORMANCE_TRIM = /^(?:gt|gts|si|ss|rs|st|svt|typer)$/;
 /** A heavy-duty version, which EPA does not rate: "SIERRA 3500", "SILVERADO 2500HD". */
@@ -124,16 +127,35 @@ export function govModelIndex(cars: readonly Car[], lineOf: (car: Car) => string
       }
     }
     if (best) return best.key;
-    // A name inside a double EPA name: "GRAND CARAVAN" in "Caravan/Grand Caravan 2WD".
-    if (name.length >= 6) {
-      const within = candidates.filter((line) => [...line.models].some((m) => m.includes(name)));
+    // A name inside a double EPA name: "GRAND CARAVAN" in "Caravan/Grand
+    // Caravan 2WD". Not one that begins a longer name ("TRANSIT" is not the
+    // Transit Connect), nor a body word ("PICKUP" is not the S10 Pickup).
+    if (name.length >= 6 && !BODY_WORDS.test(name)) {
+      const within = candidates.filter((line) =>
+        [...line.models].some((m) => m.includes(name) && !m.startsWith(name)),
+      );
       if (within.length === 1) return within[0].key;
     }
-    // A whole word of one line's EPA names: "GTI" in "Golf GTI".
+    // A whole word of one line's EPA names: "GTI" in "Golf GTI". Not a body
+    // word ("PICKUP" is not the S10 Pickup), and not the start of a longer
+    // model's name ("TRANSIT" the van is not the Transit Connect).
     const word = model.toLowerCase().trim();
-    if (/^[a-z0-9-]{2,}$/.test(word)) {
-      const worded = candidates.filter((line) => line.words.has(word));
+    if (/^[a-z0-9-]{2,}$/.test(word) && !BODY_WORDS.test(word)) {
+      const worded = candidates.filter(
+        (line) => line.words.has(word) && !(line.name.startsWith(name) && line.name !== name),
+      );
       if (worded.length === 1) return worded[0].key;
+    }
+    // One word of a longer name that is a line's own name: "C1500 SILVERADO",
+    // "CAMARO ZL1", "JETTA TDI DIESEL". Only when one line answers ("COROLLA
+    // MATRIX" names two), and never for a heavy-duty version.
+    const words = model
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter(Boolean);
+    if (words.length > 1 && !words.some((w) => HEAVY_DUTY.test(w))) {
+      const named = candidates.filter((line) => words.includes(line.name));
+      if (named.length === 1) return named[0].key;
     }
     return null;
   }
