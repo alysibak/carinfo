@@ -9,7 +9,11 @@ const KM_PER_MILE = 1.609344;
 const span = (from: number, to: number) => (from === to ? `${from}` : `${from}–${to}`);
 const thousands = (value: number) => `$${Math.round(value / 1000)}k`;
 
-/** "est. value $30k–$31k, from 4.6 L/100 km, 202–301 hp, NHTSA 5/5", as the page's row reads. */
+/**
+ * "est. value $30k–$31k, from 4.6 L/100 km, 202–301 hp, NHTSA 5/5, 4 recalls
+ * in Canada, 1,775 owner complaints to NHTSA, most about engine", as the
+ * page's row reads.
+ */
 function yearFacts(row: ModelYearSummary): string {
   const { price, horsepower } = row;
   return [
@@ -24,6 +28,11 @@ function yearFacts(row: ModelYearSummary): string {
         ? `${horsepower.min} hp`
         : `${horsepower.min}–${horsepower.max} hp`),
     row.safetyStars && `NHTSA ${row.safetyStars}/5`,
+    row.recalls != null && `${row.recalls} ${row.recalls === 1 ? 'recall' : 'recalls'} in Canada`,
+    row.complaints != null &&
+      `${row.complaints.toLocaleString('en-CA')} owner ${row.complaints === 1 ? 'complaint' : 'complaints'} to NHTSA${
+        row.complaintPart ? `, most about ${row.complaintPart.toLowerCase()}` : ''
+      }`,
   ]
     .filter(Boolean)
     .join(', ');
@@ -37,7 +46,7 @@ export function modelSeo(overview: ModelOverview): PageSeo {
   const name = `${overview.make} ${overview.name}`;
   const years = span(overview.first, overview.last);
   const title = `${name}: every year, ${years}`;
-  const description = `Every ${name} from ${overview.first} to ${overview.last}, year by year: estimated value, fuel use, power and NHTSA ratings, by generation.`;
+  const description = `Every ${name} from ${overview.first} to ${overview.last}, year by year: recalls in Canada, owner complaints, NHTSA crash ratings, fuel use, power and estimated value, by generation.`;
   const lead = overview.lead;
   const photo =
     lead.photo && COMMONS_FILE.test(lead.photo.src)
@@ -118,7 +127,7 @@ function modelSummaryHtml(overview: ModelOverview, name: string, years: string):
     `<main class="seo-prerender">` +
     `<h1>${escapeHtml(name)}</h1>` +
     `<p>${escapeHtml(`${years}, ${overview.years.length} model years on file${overview.onSale ? ', on sale' : ''}.`)} ` +
-    `Each year's span or best across its configurations: EPA ratings, NHTSA stars and estimated value in CAD.</p>` +
+    `Each year's span or best across its configurations: EPA ratings, NHTSA stars and estimated value in CAD; Transport Canada's recalls and NHTSA's owner complaints for the model year, not adjusted for sales.</p>` +
     sections +
     rivals +
     `<p><a href="/">CarInfo</a> · <a href="/methodology">How this data is sourced</a></p>` +

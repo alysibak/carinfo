@@ -70,7 +70,7 @@ export default function ModelPage() {
   usePageMeta(
     name ? `${name}: every year, ${yearSpan(overview!.first, overview!.last)}` : 'Model',
     name
-      ? `Every ${name} from ${overview!.first} to ${overview!.last}, year by year: estimated value, fuel use, power and NHTSA ratings, by generation.`
+      ? `Every ${name} from ${overview!.first} to ${overview!.last}, year by year: recalls in Canada, owner complaints, NHTSA crash ratings, fuel use, power and estimated value, by generation.`
       : undefined,
   );
 
