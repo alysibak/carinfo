@@ -6,8 +6,9 @@ import { usePageMeta } from '../utils/pageMeta';
 import { LoadingScreen } from './ui';
 
 /**
- * The tools (Compare, Dream Garage, Battle Mode, the Value Matrix, the VIN
- * decoder) are for members; car pages, search and browsing are open to all.
+ * Dream Garage, Battle Mode and the Value Matrix are for members; car and
+ * model pages, search, Compare and the VIN decoder are open to all: the home
+ * page told visitors to paste a VIN and then asked them to sign in.
  * Where accounts are not set up, nothing is gated.
  */
 export default function RequireAccount({ tool, children }: { tool: string; children: ReactNode }) {

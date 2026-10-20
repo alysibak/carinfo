@@ -219,13 +219,11 @@ describe.skipIf(!hasTestDatabase)('sign-in', () => {
     }
   });
 
-  it('opens the VIN decoder to members only', async () => {
-    // A malformed VIN never reaches NHTSA: 400 means the sign-in check passed.
-    expect((await request(app).get('/api/vin/short')).status).toBe(401);
+  it('keeps the VIN decoder open to visitors when accounts are set up', async () => {
+    // A malformed VIN never reaches NHTSA: 400, not 401, means no sign-in was asked.
+    expect((await request(app).get('/api/vin/short')).status).toBe(400);
     const user = await signUp(app, 'vin@example.com');
-    const res = await request(app).get('/api/vin/short').set(as(user));
-    expect(res.status).toBe(400);
-    expect(res.headers['cache-control']).toBe('private, max-age=3600');
+    expect((await request(app).get('/api/vin/short').set(as(user))).status).toBe(400);
   });
 });
 

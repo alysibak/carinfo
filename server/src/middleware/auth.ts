@@ -90,17 +90,3 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   };
   next();
 }
-
-/**
- * The tools (VIN decoder and the like) are for members once accounts are set
- * up; before that, a deployment without them keeps the tools open rather
- * than locking everyone out.
- */
-export function requireAuthWhenConfigured(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): void | Promise<void> {
-  if (!isAuthConfigured()) return next();
-  return requireAuth(req, res, next);
-}

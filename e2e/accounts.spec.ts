@@ -3,8 +3,9 @@ import { audit, describeViolations } from './axe';
 import { MEMBER } from './global-setup';
 
 /**
- * Visitors browse freely; the tools ask them to sign in. These run as a
- * visitor (no stored sign-in), and only where the server has accounts.
+ * Visitors browse, compare and decode VINs freely; Dream Garage, Battle Mode
+ * and the Value Matrix ask them to sign in. These run as a visitor (no stored
+ * sign-in), and only where the server has accounts.
  */
 test.use({ storageState: { cookies: [], origins: [] } });
 
@@ -13,16 +14,21 @@ test.beforeEach(async ({ request }) => {
   test.skip(!status.data?.authConfigured, 'accounts are not configured on this server');
 });
 
-test('a visitor browses freely but signs in for the tools', async ({ page }) => {
+test('a visitor browses, compares and decodes freely but signs in for the rest', async ({
+  page,
+}) => {
   await page.goto('/home');
   await expect(page.getByRole('combobox', { name: 'Search vehicles' })).toBeVisible();
 
+  await page.goto('/vin');
+  await expect(page.getByLabel('Vehicle identification number (VIN)')).toBeVisible();
+  await page.goto('/compare');
+  await expect(page.getByRole('heading', { name: 'Compare', exact: true })).toBeVisible();
+
   for (const [path, tool] of [
-    ['/compare', 'Compare'],
     ['/garage', 'Dream Garage'],
     ['/battle', 'Battle Mode'],
     ['/value-matrix', 'the Value Matrix'],
-    ['/vin', 'the VIN decoder'],
   ]) {
     await page.goto(path);
     await expect(page.getByRole('heading', { name: `Sign in to use ${tool}` })).toBeVisible();
@@ -31,19 +37,19 @@ test('a visitor browses freely but signs in for the tools', async ({ page }) => 
 
 test('signing up opens the tool that asked, and signing out closes it', async ({ page }) => {
   const email = `e2e-${Date.now()}@example.com`;
-  await page.goto('/vin');
+  await page.goto('/garage');
   await page.getByRole('link', { name: 'Create free account' }).click();
-  await expect(page).toHaveURL(/\/sign-up\?next=%2Fvin/);
+  await expect(page).toHaveURL(/\/sign-up\?next=%2Fgarage/);
 
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill('a long enough password');
   await page.getByRole('button', { name: 'Create account' }).click();
 
-  await expect(page).toHaveURL(/\/vin$/);
-  await expect(page.getByLabel('Vehicle identification number (VIN)')).toBeVisible();
+  await expect(page).toHaveURL(/\/garage$/);
+  await expect(page.getByRole('heading', { name: 'Dream Garage' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Sign out' }).first().click();
-  await expect(page.getByRole('heading', { name: 'Sign in to use the VIN decoder' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sign in to use Dream Garage' })).toBeVisible();
 });
 
 test('signing in with a wrong password says so, the right one gets in', async ({ page }) => {

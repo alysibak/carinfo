@@ -62,14 +62,8 @@ function App() {
                   <Route path="/car/:id" element={<CarDetail />} />
                   <Route path="/models/:make/:model" element={<ModelPage />} />
                   <Route path="/home" element={<Home />} />
-                  <Route
-                    path="/compare"
-                    element={
-                      <RequireAccount tool="Compare">
-                        <Compare />
-                      </RequireAccount>
-                    }
-                  />
+                  {/* Open to visitors: the tools shoppers reach for first. */}
+                  <Route path="/compare" element={<Compare />} />
                   <Route path="/collection/:collectionId" element={<Collection />} />
                   <Route path="/smart-search" element={<SmartSearch />} />
                   <Route
@@ -97,14 +91,7 @@ function App() {
                       </RequireAccount>
                     }
                   />
-                  <Route
-                    path="/vin"
-                    element={
-                      <RequireAccount tool="the VIN decoder">
-                        <VinDecoder />
-                      </RequireAccount>
-                    }
-                  />
+                  <Route path="/vin" element={<VinDecoder />} />
                   <Route path="/methodology" element={<Methodology />} />
                   <Route path="/account" element={<Account />} />
                   <Route path="/sign-in" element={<SignIn />} />
