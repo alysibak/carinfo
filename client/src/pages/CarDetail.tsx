@@ -40,6 +40,7 @@ import type { AnnualCostBreakdown } from '../types/car.types';
 import { TIER_HELPER } from '../utils/visualTiers';
 import { usePageMeta } from '../utils/pageMeta';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
+import { formatVolume, litres, luggageLabel } from '../utils/space';
 
 function Subheading({ children }: { children: React.ReactNode }) {
   return <p className="text-sm font-semibold text-zinc-200 pt-3 pb-1">{children}</p>;
@@ -308,6 +309,18 @@ export default function CarDetail() {
     hasNumericValue(car.epa?.barrelsPerYear) ||
     fiveYearFuelSavings(car) != null;
 
+  // EPA's interior volumes: cars and some SUVs; pickups and most vans have none.
+  const hasSpace = !!(car.epa?.luggageVolumeCuFt || car.epa?.passengerVolumeCuFt);
+  const luggageVsClass = (() => {
+    const stat = dashboard.classComparison?.luggage;
+    const className = dashboard.classComparison?.className.toLowerCase();
+    if (!stat || !className) return null;
+    const difference = litres(stat.car) - litres(stat.median);
+    // EPA's whole cubic feet: within one (28 L) is the same.
+    if (Math.abs(stat.car - stat.median) < 1) return `About the same as a typical ${className}`;
+    return `${Math.abs(difference)} L ${difference > 0 ? 'more' : 'less'} than a typical ${className}`;
+  })();
+
   const keyFigures = buildKeyFigures(dashboard);
   const hasCityHwy =
     hasNumericValue(car.fuelEconomy.city) || hasNumericValue(car.fuelEconomy.highway);
@@ -357,6 +370,8 @@ export default function CarDetail() {
     'ghg',
     'barrels',
     'fuelSav5',
+    'luggage',
+    'passenger',
     'body',
     'trim',
     'fuel',
@@ -523,7 +538,7 @@ export default function CarDetail() {
 
       <section className="border-b border-zinc-900">
         <div className="page-wrap-wide section-y-tight space-y-6">
-          {(showEnergySection || hasSafetyBreakdown || hasEmissionsData) && (
+          {(showEnergySection || hasSafetyBreakdown || hasEmissionsData || hasSpace) && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 md:gap-x-10 gap-y-8 md:gap-y-10">
               {showEnergySection && (
                 <div className="min-w-0">
@@ -575,6 +590,32 @@ export default function CarDetail() {
                         />
                       )}
                     </>
+                  )}
+                </div>
+              )}
+
+              {hasSpace && (
+                <div className="min-w-0">
+                  <h2 className="text-base font-bold tracking-tight mb-1">Space</h2>
+                  <p className="text-xs text-zinc-500 mb-3 leading-relaxed">
+                    EPA’s interior volumes for this car.
+                  </p>
+                  {car.epa?.luggageVolumeCuFt != null && (
+                    <DataRow
+                      label={luggageLabel(car.bodyStyle)}
+                      value={formatVolume(car.epa.luggageVolumeCuFt)}
+                      glossaryKey="luggageVolume"
+                    />
+                  )}
+                  {luggageVsClass && (
+                    <p className="text-xs text-zinc-400 mt-1 mb-2">{luggageVsClass}</p>
+                  )}
+                  {car.epa?.passengerVolumeCuFt != null && (
+                    <DataRow
+                      label="Passenger space"
+                      value={formatVolume(car.epa.passengerVolumeCuFt)}
+                      glossaryKey="passengerVolume"
+                    />
                   )}
                 </div>
               )}

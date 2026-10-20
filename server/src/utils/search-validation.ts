@@ -31,6 +31,7 @@ const SORT_FIELDS = new Set([
   'safety',
   'evScore',
   'runningCost',
+  'luggage',
   'relevance',
 ]);
 

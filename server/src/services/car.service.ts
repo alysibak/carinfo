@@ -2874,6 +2874,8 @@ function getSortValue(car: Car, field: string): number | string | null {
       return car.safetyRating?.overall || null;
     case 'runningCost':
       return car.runningCostCad ?? null;
+    case 'luggage':
+      return car.epa?.luggageVolumeCuFt ?? null;
     case 'evScore':
       return computeEvScore(car, car.price?.msrp ?? undefined);
     default:

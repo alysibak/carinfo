@@ -115,6 +115,8 @@ export function describeSearchInterpretation(
     safety: 'Best NHTSA crash rating first; most cars have none on file',
     runningCost:
       'Lowest estimated yearly running cost first: fuel, insurance, upkeep and tires, at the Ontario baseline',
+    luggage:
+      'Most trunk or cargo space first, by EPA’s luggage volume; cars EPA gives none (pickups, most SUVs and vans) come last',
   } as const;
   if (interpretation.sortedBy) {
     lines.push(

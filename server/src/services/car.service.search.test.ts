@@ -892,10 +892,14 @@ describe('car.service natural language search', () => {
     const fuelCell = searchCars({ query: 'fuel cell', limit: 50 });
     expect(fuelCell.total).toBeGreaterThan(3);
     expect(fuelCell.results.every((c) => c.engine.fuelType === 'hydrogen')).toBe(true);
-    // Trunk space is not on file; the sedans are.
+    // EPA's luggage volume: the biggest trunks first, cars without one last.
     const trunk = searchCars({ query: 'sedan with big trunk', limit: 20 });
     expect(trunk.total).toBeGreaterThan(100);
-    expect(trunk.interpretation?.unmeasured).toEqual(['big trunk']);
+    expect(trunk.interpretation?.unmeasured).toBeUndefined();
+    expect(trunk.interpretation?.sortedBy).toBe('luggage');
+    const volumes = trunk.results.map((c) => c.epa?.luggageVolumeCuFt ?? 0);
+    expect(volumes.every((v) => v > 0)).toBe(true);
+    expect(volumes).toEqual([...volumes].sort((a, b) => b - a));
   });
 
   it('reads drive and body phrases, seats and doors', () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Car } from '../types/car.types.js';
-import { enrichCar } from '../services/content-enrichment.js';
+import { enrichCar, volumesFor } from '../services/content-enrichment.js';
 import { findCar } from '../__tests__/helpers/loadCars.js';
 
 describe('content-enrichment', () => {
@@ -68,5 +68,37 @@ describe('content-enrichment', () => {
     };
     const enriched = enrichCar(bare);
     expect(enriched.safetyRating?.overall).toBeUndefined();
+  });
+});
+
+describe('EPA interior volumes', () => {
+  const volumes = {
+    twoDoor: [91, 12],
+    fourDoor: [98, 15],
+    hatch: [97, 26],
+  } as const satisfies Record<string, [number, number]>;
+
+  it('takes the figures EPA measured for the car’s own body', () => {
+    expect(volumesFor('coupe', volumes)).toEqual({
+      passengerVolumeCuFt: 91,
+      luggageVolumeCuFt: 12,
+    });
+    expect(volumesFor('sedan', volumes)).toEqual({
+      passengerVolumeCuFt: 98,
+      luggageVolumeCuFt: 15,
+    });
+    expect(volumesFor('hatchback', volumes)).toEqual({
+      passengerVolumeCuFt: 97,
+      luggageVolumeCuFt: 26,
+    });
+  });
+
+  it('takes the only figures there are for a body EPA did not name, and none of two', () => {
+    expect(volumesFor('suv', { fourDoor: [104, 30] })).toEqual({
+      passengerVolumeCuFt: 104,
+      luggageVolumeCuFt: 30,
+    });
+    expect(volumesFor('suv', { twoDoor: [91, 12], fourDoor: [98, 15] })).toEqual({});
+    expect(volumesFor('sedan', undefined)).toEqual({});
   });
 });

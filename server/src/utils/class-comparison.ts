@@ -14,7 +14,7 @@ const MIN_MODELS = 3;
 /** Rivals are drawn from this many model years either side of the car. */
 const YEAR_WINDOW = 1;
 
-type Metric = 'fuel' | 'annualCost' | 'value' | 'horsepower';
+type Metric = 'fuel' | 'annualCost' | 'value' | 'horsepower' | 'luggage';
 
 function median(values: number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
@@ -54,6 +54,8 @@ function metricOf(car: Car, metric: Metric): number | undefined {
     }
     case 'horsepower':
       return car.engine.horsepower && car.engine.horsepower > 0 ? car.engine.horsepower : undefined;
+    case 'luggage':
+      return car.epa?.luggageVolumeCuFt;
   }
 }
 
@@ -141,7 +143,7 @@ export function compareWithClass(
     }
   }
 
-  for (const metric of ['annualCost', 'value', 'horsepower'] as const) {
+  for (const metric of ['annualCost', 'value', 'horsepower', 'luggage'] as const) {
     const mine = metricOf(car, metric);
     if (mine == null) continue;
     const stat = classMedian(metric);

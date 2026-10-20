@@ -115,6 +115,10 @@ export interface CarSpecs {
     fuelSavings5yrUsd?: number;
     /** Petroleum consumption, barrels of oil per year. */
     barrelsPerYear?: number;
+    /** EPA interior passenger volume, cubic feet (cars only; none for SUVs, pickups, vans). */
+    passengerVolumeCuFt?: number;
+    /** EPA luggage volume, cubic feet: the trunk, or a hatchback's or wagon's cargo space. */
+    luggageVolumeCuFt?: number;
     /** Plug-in hybrid dual-mode economy (EPA: gas vs. electric operating modes). */
     phev?: {
       gasMpg?: number;
@@ -296,7 +300,8 @@ export interface SearchInterpretation {
   /** A price limit read from the query ("under 30k"), estimated CAD value. */
   price?: { min?: number; max?: number };
   /** An order read from the query: "cheapest", "most fuel efficient", "fastest", "safest". */
-  sortedBy?: 'price' | 'fuelEconomy' | 'horsepower' | 'range' | 'safety' | 'runningCost';
+  sortedBy?:
+    'price' | 'fuelEconomy' | 'horsepower' | 'range' | 'safety' | 'runningCost' | 'luggage';
   /** "300 mile range", "400 km range": the least EPA range kept, in miles. */
   minRangeMiles?: number;
   /** With no year given, "cheapest" keeps to model years from this one. */
@@ -555,6 +560,8 @@ export interface ClassComparison {
   /** Estimated value, CAD. */
   value?: { car: number; median: number; models: number };
   horsepower?: { car: number; median: number; models: number };
+  /** EPA luggage volume, cubic feet: the trunk, or cargo space with every seat up. */
+  luggage?: { car: number; median: number; models: number };
 }
 
 export interface CarDashboard {

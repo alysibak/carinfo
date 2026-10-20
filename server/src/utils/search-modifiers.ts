@@ -5,7 +5,7 @@ import type { EngineFamilyId } from './engine-families.js';
 import type { EnginePosition } from './engine-position.js';
 
 export type SortIntent =
-  'price' | 'fuelEconomy' | 'horsepower' | 'range' | 'safety' | 'runningCost';
+  'price' | 'fuelEconomy' | 'horsepower' | 'range' | 'safety' | 'runningCost' | 'luggage';
 
 /** What a free-text query asks for beyond names: years, order, gearbox, engine, seats. */
 export interface QueryModifiers {
@@ -384,6 +384,11 @@ const SORT_PHRASES: Array<[RegExp, SortIntent]> = [
   ],
   [/\b(?:longest|most|best|max(?:imum)?) (?:driving )?range\b/, 'range'],
   [/\b(?:safest|safe|(?:best|highest|top) safety(?: rating)?)\b/, 'safety'],
+  // EPA's luggage volume: "sedan with a big trunk", "most cargo space".
+  [
+    /\b(?:(?:big|bigger|biggest|large|larger|largest|huge|roomy|spacious|most|lots of|plenty of|max(?:imum)?) (?:trunks?|boots?|cargo|luggage)(?: space| room| capacity| area)?|(?:trunk|boot|cargo|luggage) (?:space|room|capacity))\b/,
+    'luggage',
+  ],
   // A unit alone asks for the figure: "civic mpg", "mustang horsepower".
   [/\b(?:mpg|l\/100 ?km)(?=\s)/, 'fuelEconomy'],
   [/\b(?:horsepower|hp)\b/, 'horsepower'],

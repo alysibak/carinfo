@@ -37,6 +37,40 @@ interface EpaEnrichmentEntry {
   ev?: { kwhPer100Mi?: number; rangeMi?: number };
   charge120Hours?: number;
   charge240Hours?: number;
+  /** Cubic feet, [passenger, luggage], by the body EPA measured. */
+  volumes?: Partial<Record<VolumeBody, [number, number]>>;
+}
+
+type VolumeBody = 'twoDoor' | 'fourDoor' | 'hatch';
+
+/**
+ * EPA's interior volumes for the car's own body: one listing can cover a
+ * Civic coupe (12 cu ft trunk) and sedan (15). A body EPA did not measure
+ * takes the only figures there are, or none.
+ */
+export function volumesFor(
+  bodyStyle: Car['bodyStyle'],
+  volumes: EpaEnrichmentEntry['volumes'],
+): { passengerVolumeCuFt?: number; luggageVolumeCuFt?: number } {
+  if (!volumes) return {};
+  const order: Record<string, VolumeBody[]> = {
+    coupe: ['twoDoor'],
+    convertible: ['twoDoor'],
+    sedan: ['fourDoor'],
+    hatchback: ['hatch', 'fourDoor'],
+    wagon: ['fourDoor', 'hatch'],
+  };
+  const measured = Object.keys(volumes) as VolumeBody[];
+  const body =
+    (order[bodyStyle] ?? []).find((b) => volumes[b]) ??
+    (measured.length === 1 ? measured[0] : undefined);
+  const pair = body ? volumes[body] : undefined;
+  if (!pair) return {};
+  const [passenger, luggage] = pair;
+  return {
+    ...(passenger > 0 ? { passengerVolumeCuFt: passenger } : {}),
+    ...(luggage > 0 ? { luggageVolumeCuFt: luggage } : {}),
+  };
 }
 
 interface SafetyEntry {
@@ -118,6 +152,7 @@ export function enrichCar(car: Car): Car {
         : {}),
       ...(epaEntry.barrelsPerYear != null ? { barrelsPerYear: epaEntry.barrelsPerYear } : {}),
       ...(epaEntry.phev ? { phev: epaEntry.phev } : {}),
+      ...volumesFor(car.bodyStyle, epaEntry.volumes),
     };
 
     // EV/PHEV economy correction: cars.json stored EPA's electricity-consumption

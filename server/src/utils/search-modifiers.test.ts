@@ -322,8 +322,10 @@ describe('extractQueryModifiers', () => {
     expect(extractQueryModifiers('fuel cell car').text).toBe('fcev');
     expect(extractQueryModifiers('sedan with big trunk')).toEqual({
       text: 'sedan',
-      unmeasured: ['big trunk'],
+      sortedBy: 'luggage',
     });
+    expect(extractQueryModifiers('most cargo space').sortedBy).toBe('luggage');
+    expect(extractQueryModifiers('trunk space').sortedBy).toBe('luggage');
   });
 
   it('reads seats, doors and words about who rides', () => {

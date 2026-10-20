@@ -23,6 +23,8 @@ export type SpecGlossaryKey =
   | 'epaRange'
   | 'co2'
   | 'ghgScore'
+  | 'luggageVolume'
+  | 'passengerVolume'
   | 'annualFuelCost'
   | 'barrelsPerYear'
   | 'fuelSavings5yr'
@@ -149,6 +151,16 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
     plain: 'Tailpipe emissions per kilometre',
     what: 'Grams of CO₂ out the tailpipe each kilometre (EPA publishes grams per mile, shown beside it). EVs show 0 at the pipe.',
     why: 'Lower = less climate impact from driving this car.',
+  },
+  luggageVolume: {
+    plain: 'How much fits in the trunk or cargo area',
+    what: 'EPA’s luggage volume: a sedan’s or coupe’s trunk, or for a hatchback, wagon, SUV or van the space behind the rearmost seats with every seat up. EPA measures it for cars and some SUVs, not pickups.',
+    why: 'Strollers, hockey bags and groceries: litres you can compare across cars.',
+  },
+  passengerVolume: {
+    plain: 'Room for the people inside',
+    what: 'EPA’s passenger volume: the space for the occupants, front and rear, as EPA lists it.',
+    why: 'A bigger number is more room; compare cars of the same size class.',
   },
   ghgScore: {
     plain: '1 = most CO₂, 10 = least',

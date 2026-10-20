@@ -58,6 +58,12 @@ export interface EpaEnrichmentEntry {
   ev?: { kwhPer100Mi?: number; rangeMi?: number };
   charge120Hours?: number;
   charge240Hours?: number;
+  /**
+   * EPA's interior volumes for cars, cubic feet, [passenger, luggage], by the
+   * body they were measured in: one listing can cover a coupe and a sedan.
+   * EPA gives none for SUVs, pickups and vans.
+   */
+  volumes?: Partial<Record<'twoDoor' | 'fourDoor' | 'hatch', [number, number]>>;
 }
 
 /** Parse a non-negative numeric EPA cell. Empty / -1 / 0 → undefined. */
@@ -101,6 +107,17 @@ function buildEpaEnrichment(usedEpaIds: Set<number>): Record<string, EpaEnrichme
     if (save != null) entry.fuelSavings5yrUsd = Math.round(save);
     const barrels = pos(row.barrels08);
     if (barrels) entry.barrelsPerYear = round1(barrels);
+    const volumes: EpaEnrichmentEntry['volumes'] = {};
+    for (const [body, passenger, luggage] of [
+      ['twoDoor', row.pv2, row.lv2],
+      ['fourDoor', row.pv4, row.lv4],
+      ['hatch', row.hpv, row.hlv],
+    ] as const) {
+      const p = pos(passenger);
+      const l = pos(luggage);
+      if (p || l) volumes[body] = [p ?? 0, l ?? 0];
+    }
+    if (Object.keys(volumes).length) entry.volumes = volumes;
 
     const atv = (row.atvType || '').toLowerCase();
     const ft1 = (row.fuelType1 || '').toLowerCase();

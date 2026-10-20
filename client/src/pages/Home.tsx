@@ -558,6 +558,7 @@ export default function Home() {
                           ? [{ value: 'range', label: 'EPA range' }]
                           : []),
                         { value: 'safety', label: 'NHTSA rating' },
+                        { value: 'luggage', label: 'Trunk space (EPA)' },
                         { value: 'horsepower', label: 'Horsepower' },
                         { value: 'year', label: 'Year' },
                         { value: 'make', label: 'Make' },

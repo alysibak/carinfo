@@ -23,6 +23,7 @@ import { differentiateCars } from '../utils/differentiateCars';
 import { regionName, useRegionStore } from '../stores/regionStore';
 import { POPULAR_SEARCHES } from '../config/browseTaxonomy';
 import RegionSelect from '../components/RegionSelect';
+import { formatVolume } from '../utils/space';
 
 function isUnavailable(value: string | number): boolean {
   return value === UNAVAILABLE_LABEL;
@@ -177,6 +178,24 @@ const ALL_SPECS: SpecRow[] = [
         ? `${car.safetyRating.overall}/5`
         : UNAVAILABLE_LABEL,
     getNumeric: (car) => car.safetyRating?.overall ?? null,
+    higherIsBetter: true,
+  },
+  {
+    key: 'luggage',
+    label: 'Trunk or cargo',
+    hint: 'EPA, every seat up',
+    getValue: (car) =>
+      car.epa?.luggageVolumeCuFt ? formatVolume(car.epa.luggageVolumeCuFt) : UNAVAILABLE_LABEL,
+    getNumeric: (car) => car.epa?.luggageVolumeCuFt ?? null,
+    higherIsBetter: true,
+  },
+  {
+    key: 'passenger',
+    label: 'Passenger space',
+    hint: 'EPA',
+    getValue: (car) =>
+      car.epa?.passengerVolumeCuFt ? formatVolume(car.epa.passengerVolumeCuFt) : UNAVAILABLE_LABEL,
+    getNumeric: (car) => car.epa?.passengerVolumeCuFt ?? null,
     higherIsBetter: true,
   },
   {
