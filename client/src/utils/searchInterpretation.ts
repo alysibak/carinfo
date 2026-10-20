@@ -1,3 +1,4 @@
+import { theftSentence } from '@carinfo/shared/theft';
 import type { SearchInterpretation } from '../types/car.types';
 
 const cad = (value: number) =>
@@ -118,6 +119,7 @@ export function describeSearchInterpretation(
       'Lowest estimated yearly running cost first: fuel, insurance, upkeep and tires, at the Ontario baseline',
     luggage:
       'Most trunk or cargo space first, by EPA’s luggage volume; cars EPA gives none (pickups, most SUVs and vans) come last',
+    theft: 'Most stolen first, in Équité Association’s order',
   } as const;
   if (interpretation.sortedBy) {
     lines.push(
@@ -145,6 +147,18 @@ export function describeSearchInterpretation(
   if (interpretation.records) {
     lines.push(
       'No source on file rates reliability. Each car’s page lists its model year’s recalls in Canada and owner complaints to NHTSA.',
+    );
+  }
+  if (interpretation.theft) {
+    const { least, year, model } = interpretation.theft;
+    lines.push(
+      model
+        ? model.rank
+          ? theftSentence(model.rank)
+          : `The ${model.label} is not among the 10 vehicles stolen most in Canada in ${year}, by Équité Association’s count, which does not make it safe from thieves.`
+        : least
+          ? `Left out: the 10 models Équité Association counts as stolen most in Canada in ${year}. No list ranks the least stolen, and a model off this one can still be a target.`
+          : `The 10 models stolen most in Canada in ${year}, in Équité Association’s order: a count, so models with many on the road rank higher.`,
     );
   }
   if (interpretation.safetyTech) {

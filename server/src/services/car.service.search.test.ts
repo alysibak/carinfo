@@ -1174,6 +1174,27 @@ describe('car.service model pages', () => {
     expect(model.interpretation?.modelPage?.path).toBe('/models/honda/civic');
   });
 
+  it('answers theft with Équité’s list, and says where a named model stands', () => {
+    const suvs = searchCars({ query: 'most stolen suv', collapseByModel: 'auto', limit: 10 });
+    expect(suvs.results.map((car) => `${car.make} ${car.model.split(' ')[0]}`)).toEqual([
+      'Toyota RAV4',
+      'Honda CR-V',
+      'Jeep Wrangler',
+      'Toyota Highlander',
+      'Lexus RX',
+    ]);
+    expect(suvs.interpretation?.theft).toMatchObject({ least: false, year: 2024 });
+    const off = searchCars({ query: 'least stolen suv', collapseByModel: 'auto', limit: 50 });
+    expect(off.total).toBeGreaterThan(50);
+    expect(off.results.some((car) => /^RAV4/.test(car.model))).toBe(false);
+    // On the list: its place. Off it: the model is still shown, and says so.
+    const ram = searchCars({ query: 'ram 1500 theft', collapseByModel: 'auto', limit: 5 });
+    expect(ram.interpretation?.theft?.model?.rank?.rank).toBe(2);
+    const camry = searchCars({ query: 'camry theft', collapseByModel: 'auto', limit: 5 });
+    expect(camry.results[0].model).toMatch(/^Camry/);
+    expect(camry.interpretation?.theft?.model).toEqual({ label: 'Toyota Camry', rank: null });
+  });
+
   it('says the year NHTSA lists a warning as standard on every version it tested', () => {
     const rav4 = getModelOverview('toyota', 'rav4')!;
     const y2018 = rav4.years.find((row) => row.year === 2018)!;

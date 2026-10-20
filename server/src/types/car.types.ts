@@ -276,6 +276,8 @@ export interface CarFilter {
   engineFamily?: string;
   /** Safety technology NHTSA lists for the car, standard on every version tested if asked. */
   safetyTech?: { features: Array<'esc' | 'fcw' | 'ldw'>; standard?: boolean };
+  /** On Équité's list of Canada's most stolen vehicles (true), or off it (false). */
+  theftListed?: boolean;
 }
 
 export interface SearchQuery {
@@ -314,6 +316,11 @@ export interface SearchQuery {
   keepClassWords?: boolean;
   /** Set by the search itself on a retry: leave the years in the words out. */
   ignoreYearWords?: boolean;
+  /**
+   * Set by the search itself on a retry: "camry theft" found nothing on the
+   * most-stolen list, so the Camry is shown and the results say it is off it.
+   */
+  ignoreTheftWords?: boolean;
 }
 
 /** How the server read a free-text query, for the results page to state. */
@@ -382,6 +389,17 @@ export interface SearchInterpretation {
   records?: { carId?: string; label?: string };
   /** "suv with collision warning": kept to cars NHTSA lists with it (standard, if asked). */
   safetyTech?: { features: Array<'esc' | 'fcw' | 'ldw'>; standard: boolean };
+  /**
+   * "most stolen suv": kept to the models on Équité's list of Canada's most
+   * stolen, in its order; "least stolen": those left out. Where the results
+   * are one model, its place, or null where it is off the list.
+   */
+  theft?: {
+    least: boolean;
+    year: number;
+    url: string;
+    model?: { label: string; rank: TheftRank | null };
+  };
   /** "mild hybrid": kept to 12-48 V mild hybrids, which are listed by their fuel. */
   mildHybrid?: boolean;
   /** "dual clutch", "dct": kept to EPA's automated manuals. */

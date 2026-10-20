@@ -413,4 +413,17 @@ describe('extractQueryModifiers', () => {
     expect(extractQueryModifiers('rav4 known issues')).toEqual({ text: 'rav4', records: true });
     expect(extractQueryModifiers('mazda cx-5 reliability').records).toBe(true);
   });
+
+  it('reads theft as Équité’s list: on it, or off it', () => {
+    expect(extractQueryModifiers('most stolen suv')).toMatchObject({ text: 'suv', theft: 'most' });
+    expect(extractQueryModifiers('ram 1500 theft')).toEqual({ text: 'ram 1500', theft: 'most' });
+    expect(extractQueryModifiers('cars thieves like').theft).toBe('most');
+    expect(extractQueryModifiers('least stolen suv')).toMatchObject({
+      text: 'suv',
+      theft: 'least',
+    });
+    expect(extractQueryModifiers('suv less likely to be stolen').theft).toBe('least');
+    expect(extractQueryModifiers('low theft pickup').theft).toBe('least');
+    expect(extractQueryModifiers('honda civic').theft).toBeUndefined();
+  });
 });

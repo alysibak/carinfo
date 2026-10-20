@@ -153,4 +153,36 @@ describe('describeSearchInterpretation', () => {
       '150 hp or less; cars with no rating on file are left out.',
     ]);
   });
+
+  it('says what the most-stolen list answers, and what it cannot', () => {
+    const list = {
+      year: 2024,
+      url: 'https://www.equiteassociation.com/top-10-most-stolen-vehicles',
+    };
+    expect(describeSearchInterpretation({ theft: { least: false, ...list } })).toEqual([
+      'The 10 models stolen most in Canada in 2024, in Équité Association’s order: a count, so models with many on the road rank higher.',
+    ]);
+    expect(describeSearchInterpretation({ theft: { least: true, ...list } })[0]).toMatch(
+      /^Left out: the 10 models .* No list ranks the least stolen/,
+    );
+    expect(
+      describeSearchInterpretation({
+        theft: {
+          least: false,
+          ...list,
+          model: {
+            label: 'Honda CR-V',
+            rank: { rank: 3, of: 10, model: 'Honda CR-V', year: 2024, url: list.url },
+          },
+        },
+      }),
+    ).toEqual([
+      'The Honda CR-V was the 3rd most stolen vehicle in Canada in 2024, by Équité Association’s count.',
+    ]);
+    expect(
+      describeSearchInterpretation({
+        theft: { least: false, ...list, model: { label: 'Toyota Camry', rank: null } },
+      })[0],
+    ).toMatch(/^The Toyota Camry is not among the 10 vehicles stolen most in Canada in 2024/);
+  });
 });

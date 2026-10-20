@@ -42,7 +42,7 @@ import { findSimilarCars, sameModelLine } from '../utils/similar-vehicles.js';
 import { Speller } from '../utils/spelling.js';
 import { canadianRecallsFor, complaintsFor } from './safety-records.service.js';
 import { govModelIndex } from '../utils/gov-models.js';
-import { theftRankOf } from '../config/most-stolen.js';
+import { MOST_STOLEN, theftRankOf } from '../config/most-stolen.js';
 import { loadNhtsaTests, withNhtsaRatings } from '../utils/nhtsa-ratings.js';
 import { loadMeasuredVehicles, withSizes } from '../utils/canadian-specs.js';
 
@@ -367,6 +367,7 @@ function withModelPage(found: SearchResults): SearchResults {
   const modelPage = modelPageOf(found.results[0]);
   if (!modelPage) return found;
   const records = found.interpretation?.records;
+  const theft = found.interpretation?.theft;
   // "2017 cr-v problems": the year's recalls and complaints are on its page.
   const oneYear = new Set(found.results.map((car) => car.year)).size === 1;
   const lead = found.results[0];
@@ -377,6 +378,15 @@ function withModelPage(found: SearchResults): SearchResults {
       modelPage,
       ...(records && oneYear
         ? { records: { carId: lead.id, label: `${lead.year} ${modelPage.label}` } }
+        : {}),
+      // "ram 1500 theft": where the list puts it, or that it is off it.
+      ...(theft
+        ? {
+            theft: {
+              ...theft,
+              model: { label: modelPage.label, rank: theftRankOf(modelLineKey(lead)) ?? null },
+            },
+          }
         : {}),
     },
   };
@@ -609,6 +619,12 @@ function searchRivals(query: SearchQuery, lead: string, named: string): SearchRe
 function searchOne(query: SearchQuery): SearchResults {
   const results = runSearch(query);
   if (results.total > 0) return results;
+  // "camry theft": the Camry is off the most-stolen list. Show it, and the
+  // theft line says where it stands (withModelPage).
+  if (results.interpretation?.theft && !query.ignoreTheftWords) {
+    const named = searchOne({ ...query, ignoreTheftWords: true });
+    if (named.total > 0) return named;
+  }
   // "saab 9-3 sport sedan" and "cadillac xt5 luxury" name a model and a trim:
   // read the words as words before setting any aside.
   if (results.interpretation?.vehicleClass && !query.keepClassWords) {
@@ -1896,6 +1912,16 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
     interpretation.safetyTech = modifiers.safetyTech;
   }
   if (modifiers.records) interpretation.records = {};
+  if (modifiers.theft) {
+    // The list's models, or those off it; "camry theft", with the Camry off
+    // it, is searched again without (searchOne) and says so.
+    if (!query.ignoreTheftWords) filters.theftListed = modifiers.theft === 'most';
+    interpretation.theft = {
+      least: modifiers.theft === 'least',
+      year: MOST_STOLEN.year,
+      url: MOST_STOLEN.url,
+    };
+  }
   if (modifiers.threeRow) {
     filters.threeRow = true;
     interpretation.threeRow = true;
@@ -1951,13 +1977,18 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
   }
   let sort = query.sort;
   const sortedBy =
-    price.cheapest || (modifiers.firstCar && !modifiers.sortedBy) ? 'price' : modifiers.sortedBy;
+    price.cheapest || (modifiers.firstCar && !modifiers.sortedBy)
+      ? 'price'
+      : (modifiers.sortedBy ??
+        // "most stolen": in Équité's order, which the theft line states.
+        (modifiers.theft === 'most' && !query.ignoreTheftWords ? 'theft' : undefined));
   if (sortedBy && (!sort || sort.field === 'relevance')) {
     sort = {
       field: sortedBy,
-      order: sortedBy === 'price' || sortedBy === 'runningCost' ? 'asc' : 'desc',
+      order:
+        sortedBy === 'price' || sortedBy === 'runningCost' || sortedBy === 'theft' ? 'asc' : 'desc',
     };
-    interpretation.sortedBy = sortedBy;
+    if (sortedBy !== 'theft') interpretation.sortedBy = sortedBy;
   }
   const withInterpretation = (q: SearchQuery): SearchQuery =>
     Object.keys(interpretation).length ? { ...q, sort, interpretation } : { ...q, sort };
@@ -2829,6 +2860,7 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
   const mildOnly = filters?.mildHybrid === true;
   const automatedManualOnly = filters?.automatedManual === true;
   const techWanted = filters?.safetyTech?.features.length ? filters.safetyTech : null;
+  const theftListed = filters?.theftListed;
   const layoutSet = filters?.layout?.length ? new Set(filters.layout) : null;
   const engineFamily = isEngineFamilyId(filters?.engineFamily)
     ? ENGINE_FAMILIES[filters.engineFamily]
@@ -2841,6 +2873,7 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
     mildOnly ||
     automatedManualOnly ||
     !!techWanted ||
+    theftListed != null ||
     !!layoutSet ||
     !!engineFamily ||
     !!cylinderSet ||
@@ -2944,6 +2977,9 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
         return techWanted.standard ? listed === 'standard' : !!listed;
       })
     ) {
+      continue;
+    }
+    if (theftListed != null && (theftRankOf(modelLineKey(car)) != null) !== theftListed) {
       continue;
     }
     if (rangeMin != null || rangeMax != null) {
@@ -3069,6 +3105,11 @@ function getSortValue(car: Car, field: string): number | string | null {
       return car.epa?.rangeMiles ?? null;
     case 'safety':
       return safetyRank(car);
+    case 'theft': {
+      // Équité's order, the newest of each model first.
+      const rank = theftRankOf(modelLineKey(car))?.rank;
+      return rank == null ? null : rank - car.year / 10000;
+    }
     case 'runningCost':
       return car.runningCostCad ?? null;
     case 'luggage':

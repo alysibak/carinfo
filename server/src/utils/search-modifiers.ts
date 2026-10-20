@@ -5,7 +5,7 @@ import type { EngineFamilyId } from './engine-families.js';
 import type { EnginePosition } from './engine-position.js';
 
 export type SortIntent =
-  'price' | 'fuelEconomy' | 'horsepower' | 'range' | 'safety' | 'runningCost' | 'luggage';
+  'price' | 'fuelEconomy' | 'horsepower' | 'range' | 'safety' | 'runningCost' | 'luggage' | 'theft';
 
 /** What a free-text query asks for beyond names: years, order, gearbox, engine, seats. */
 export interface QueryModifiers {
@@ -56,6 +56,11 @@ export interface QueryModifiers {
   safetyTech?: SafetyTechQuery;
   /** "problems", "recalls", "complaints": the records on file, recalls and owner complaints. */
   records?: boolean;
+  /**
+   * "most stolen suv", "theft": the models on Équité's list of Canada's most
+   * stolen; "least stolen", "low theft": those off it.
+   */
+  theft?: 'most' | 'least';
 }
 
 /**
@@ -64,6 +69,13 @@ export interface QueryModifiers {
  */
 const RECORDS_WORDS =
   /\b(?:(?:known|common) )?(?:problems?|issues?|recalls?|complaints?|defects?|reliability)\b/g;
+
+/** "least stolen", "less likely to be stolen", "low theft", "theft-proof": the models off Équité's list. */
+const LEAST_STOLEN =
+  /\b(?:(?:least|less|rarely|seldom|not)(?: likely to (?:be|get))?[- ]stolen|(?:low|lower)[- ]theft(?: risk)?|theft[- ]proof|hard to steal|thieves (?:avoid|ignore|don'?t want))\b/g;
+/** "most stolen", "stolen", "theft", "thieves": the models on it. */
+const MOST_STOLEN =
+  /\b(?:(?:most|often|commonly|frequently)[- ](?:stolen|targeted)|stolen(?: most)?|(?:high[- ])?theft(?: risk| rates?)?|thefts|thieves|car thieves)\b/g;
 
 /** Safety technology NHTSA lists for the versions it tests: stability control, collision and lane departure warning. */
 export interface SafetyTechQuery {
@@ -819,6 +831,13 @@ export function extractQueryModifiers(
   if (text.match(RECORDS_WORDS)) {
     out.records = true;
     text = text.replace(RECORDS_WORDS, ' ');
+  }
+  if (text.match(LEAST_STOLEN)) {
+    out.theft = 'least';
+    text = text.replace(LEAST_STOLEN, ' ');
+  } else if (text.match(MOST_STOLEN)) {
+    out.theft = 'most';
+    text = text.replace(MOST_STOLEN, ' ');
   }
   if (text.match(SNOW)) {
     out.snow = true;
