@@ -27,7 +27,7 @@ describe('engineLayoutLabel', () => {
         displacement: 3,
         cylinders: 6,
       }),
-    ).toBe('3L 6-cyl');
+    ).toBe('3.0L 6-cyl');
     expect(
       formatEngineDetailForCard({
         fuelType: 'gasoline',
@@ -36,7 +36,7 @@ describe('engineLayoutLabel', () => {
         cylinders: 4,
       }),
     ).toBe('1.8L I4');
-    expect(formatEngineSystem('gasoline', 3, 'I6', 6)).toBe('3L I6');
+    expect(formatEngineSystem('gasoline', 3, 'I6', 6)).toBe('3.0L I6');
     expect(formatEngineSystem('gasoline', 3.5, undefined, 6)).toBe('3.5L 6-cyl');
     expect(formatEngineSystem('electric', undefined, undefined, undefined)).toBe('Electric Motor');
   });
@@ -49,11 +49,11 @@ describe('engineLayoutLabel', () => {
       cylinders: 4,
       aspiration: 'turbocharged' as const,
     };
-    expect(formatEngineDetailForCard(typeR)).toBe('2L I4 Turbo');
+    expect(formatEngineDetailForCard(typeR)).toBe('2.0L I4 Turbo');
     expect(formatEngineSystem('gasoline', 6.2, 'V8', 8, 'supercharged')).toBe(
       '6.2L V8 Supercharged',
     );
-    expect(formatEngineSystem('gasoline', 5, 'V8', 8)).toBe('5L V8');
+    expect(formatEngineSystem('gasoline', 5, 'V8', 8)).toBe('5.0L V8');
     // No engine size on file: say nothing rather than a lone "Turbo".
     expect(formatEngineSystem('gasoline', undefined, undefined, undefined, 'turbocharged')).toBe(
       'Not on file',

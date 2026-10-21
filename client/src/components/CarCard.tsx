@@ -31,6 +31,8 @@ interface CarCardProps {
    * class rather than its own price, so a card does not lead with one.
    */
   showValue?: boolean;
+  /** How many versions the card's model year has, when it stands for them. */
+  versions?: number;
 }
 
 interface Figure {
@@ -157,6 +159,7 @@ export default function CarCard({
   reasons = [],
   onRemove,
   showValue = false,
+  versions,
 }: CarCardProps) {
   const [toast, setToast] = useState<string | null>(null);
 
@@ -199,6 +202,16 @@ export default function CarCard({
       className="after:absolute after:inset-0 focus:outline-hidden focus-visible:underline hover:underline underline-offset-2 decoration-zinc-600"
     >
       {title}
+    </Link>
+  );
+
+  // The year's other versions, on the car page: "15 versions in 2018".
+  const versionsLink = versions && versions > 1 && (
+    <Link
+      to={`/car/${car.id}#versions`}
+      className="relative z-10 inline-flex items-center min-h-[40px] text-[13px] text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
+    >
+      {versions} versions in {car.year}
     </Link>
   );
 
@@ -254,6 +267,7 @@ export default function CarCard({
             {estValue && <span className="text-zinc-500"> · {estValue.toLowerCase()}</span>}
           </p>
           {reasonLine && <div className="mt-1">{reasonLine}</div>}
+          {versionsLink && <div className="-mb-2">{versionsLink}</div>}
         </div>
         {showCompare && (
           <div className="self-center">
@@ -306,9 +320,11 @@ export default function CarCard({
         {reasonLine}
         {(showCompare || onRemove) && (
           <div className="mt-auto pt-1 flex items-center justify-between gap-2">
-            <span className="text-[13px] text-zinc-400 group-hover:text-white transition-colors">
-              Details →
-            </span>
+            {versionsLink || (
+              <span className="text-[13px] text-zinc-400 group-hover:text-white transition-colors">
+                Details →
+              </span>
+            )}
             <div className="flex items-center gap-1">
               {onRemove && (
                 <button

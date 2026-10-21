@@ -110,6 +110,11 @@ export function aspirationLabel(aspiration?: CarSpecs['engine']['aspiration']): 
   return aspiration ? ASPIRATION_LABELS[aspiration] : null;
 }
 
+/** "2.0L", not "2L": engines are named to a tenth of a litre. */
+export function engineLitres(displacement: number): string {
+  return `${Number.isInteger(displacement * 10) ? displacement.toFixed(1) : displacement}L`;
+}
+
 export function formatEngineSystem(
   fuelType: string,
   displacement?: number | null,
@@ -121,7 +126,7 @@ export function formatEngineSystem(
   if (fuelType === 'electric') return 'Electric Motor';
 
   const parts: string[] = [];
-  if (displacement != null && displacement > 0) parts.push(`${displacement}L`);
+  if (displacement != null && displacement > 0) parts.push(engineLitres(displacement));
   const layout = engineLayoutLabel(configuration, cylinders);
   if (layout) parts.push(layout);
   // "2.0L I4 Turbo": without it a Civic Type R read like the base 2.0L.

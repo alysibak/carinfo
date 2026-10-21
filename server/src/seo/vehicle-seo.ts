@@ -85,7 +85,10 @@ function engineSummary(car: Car): string | null {
         : aspiration
           ? 'turbo + supercharged'
           : null;
-  return [`${displacement}L`, layout, induction].filter(Boolean).join(' ');
+  const litres = Number.isInteger(displacement * 10)
+    ? displacement.toFixed(1)
+    : String(displacement);
+  return [`${litres}L`, layout, induction].filter(Boolean).join(' ');
 }
 
 /**
@@ -206,7 +209,8 @@ function vehicleSummaryHtml(car: Car, efficiency: string | null, fuel: string): 
       `${Math.round(car.fuelEconomy.city)} / ${Math.round(car.fuelEconomy.highway)}`,
     ]);
   }
-  if (car.engine.displacement) rows.push(['Displacement', `${car.engine.displacement} L`]);
+  if (car.engine.displacement)
+    rows.push(['Displacement', `${car.engine.displacement.toFixed(1)} L`]);
   if (car.engine.cylinders) rows.push(['Cylinders', String(car.engine.cylinders)]);
   if (car.engine.aspiration) rows.push(['Induction', capitalize(car.engine.aspiration)]);
   if (car.engine.horsepower) rows.push(['Horsepower', `${car.engine.horsepower} hp`]);

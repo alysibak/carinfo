@@ -78,6 +78,9 @@ let fuelTypeIndex: Map<string, Car[]> = new Map();
 let transmissionIndex: Map<string, Car[]> = new Map();
 let driveTypeIndex: Map<string, Car[]> = new Map();
 let countryIndex: Map<string, Car[]> = new Map();
+// A model year's versions, by model line: "honda|civic|2018" holds its sedans,
+// coupes, hatchbacks, Si and Type R. Built on first use.
+let lineYearIndex: Map<string, Car[]> | null = null;
 
 // Pre-computed derived data
 let cachedMakes: string[] = [];
@@ -232,6 +235,7 @@ function buildIndexes(): void {
   transmissionIndex = new Map();
   driveTypeIndex = new Map();
   countryIndex = new Map();
+  lineYearIndex = null;
 
   for (const car of cachedCars) {
     idIndex.set(car.id, car);
@@ -307,26 +311,36 @@ export function getCarsByBodyStyle(bodyStyle: string): Car[] {
 }
 
 /** Same make + model + year, different EPA configurations (trims/transmissions). */
+/** The versions of a car's model year: every configuration of its model line that year. */
+function versionsOfYear(car: Car): Car[] {
+  if (!lineYearIndex) {
+    lineYearIndex = new Map();
+    for (const c of cachedCars) addToMapIndex(lineYearIndex, `${modelLineKey(c)}|${c.year}`, c);
+  }
+  return lineYearIndex.get(`${modelLineKey(car)}|${car.year}`) ?? [car];
+}
+
+/**
+ * The other versions of a car's model year, across its model line: a 2018
+ * Civic sedan's coupes, hatchbacks, Si and Type R as well as its other
+ * gearboxes. By body, then fuel, drive and power, so like sits with like.
+ */
 export function getSiblingConfigs(id: string, limit = 24): Car[] {
   ensureDatabase();
   const anchor = idIndex.get(id);
   if (!anchor) return [];
-  const makeCars = makeIndex.get(anchor.make.toLowerCase()) ?? [];
-  const siblings = makeCars.filter(
-    (c) =>
-      c.id !== anchor.id &&
-      c.year === anchor.year &&
-      c.model.toLowerCase() === anchor.model.toLowerCase(),
+  const siblings = versionsOfYear(anchor).filter((c) => c.id !== anchor.id);
+  const fuel = (c: Car) => FUEL_RANK[c.engine.fuelType] ?? 5;
+  siblings.sort(
+    (a, b) =>
+      Number(a.bodyStyle !== anchor.bodyStyle) - Number(b.bodyStyle !== anchor.bodyStyle) ||
+      a.bodyStyle.localeCompare(b.bodyStyle) ||
+      fuel(a) - fuel(b) ||
+      Number(isFourByFour(a)) - Number(isFourByFour(b)) ||
+      (a.engine.horsepower ?? 0) - (b.engine.horsepower ?? 0) ||
+      a.model.localeCompare(b.model) ||
+      (a.trim ?? '').localeCompare(b.trim ?? ''),
   );
-  siblings.sort((a, b) => {
-    const drive = (a.driveType ?? '').localeCompare(b.driveType ?? '');
-    if (drive !== 0) return drive;
-    const mpg = (b.fuelEconomy?.combined ?? 0) - (a.fuelEconomy?.combined ?? 0);
-    if (mpg !== 0) return mpg;
-    const hp = (b.engine?.horsepower ?? 0) - (a.engine?.horsepower ?? 0);
-    if (hp !== 0) return hp;
-    return (a.trim ?? '').localeCompare(b.trim ?? '');
-  });
   return siblings.slice(0, limit);
 }
 
@@ -564,15 +578,44 @@ function baseConfiguration(named: string): Car | undefined {
   );
 }
 
-/** The base car of configurations: the cheapest, then two-wheel drive, then the plainest name. */
+const listedPrice = (car: Car) =>
+  car.price?.isEstimated === false && car.price.msrp ? car.price.msrp : undefined;
+// A coupe or convertible is the variant of a model sold as a sedan or hatchback.
+const isVariantBody = (car: Car) => car.bodyStyle === 'coupe' || car.bodyStyle === 'convertible';
+// Gasoline before the hybrid and electric versions of the same model.
+const FUEL_RANK: Partial<Record<Car['engine']['fuelType'], number>> = {
+  gasoline: 0,
+  diesel: 1,
+  hybrid: 2,
+  'plug-in hybrid': 3,
+  electric: 4,
+};
+
+/**
+ * The base car of configurations: the cheapest by listed price, then two-wheel
+ * drive, then the usual body, fuel and engine, then an automatic, then the
+ * plainest name. Estimated prices are not compared: they put a 2018 Civic Si
+ * sedan below the LX.
+ */
 function baseOf(cars: Car[]): Car {
   return cars.reduce((base, car) => {
-    const price = car.price?.msrp ?? Infinity;
-    const basePrice = base.price?.msrp ?? Infinity;
-    // At one price, two-wheel drive is the base car (a Camry LE, not an AWD),
-    // then the plainest name (a Corolla, not a Corolla Hybrid SE).
-    if (price !== basePrice) return price < basePrice ? car : base;
+    const price = listedPrice(car);
+    const basePrice = listedPrice(base);
+    if (price && basePrice && price !== basePrice) return price < basePrice ? car : base;
+    // Two-wheel drive is the base car (a Camry LE, not an AWD).
     if (isFourByFour(base) !== isFourByFour(car)) return isFourByFour(car) ? base : car;
+    // A Civic sedan, not its coupe.
+    if (isVariantBody(base) !== isVariantBody(car)) return isVariantBody(car) ? base : car;
+    const fuel = (c: Car) => FUEL_RANK[c.engine.fuelType] ?? 5;
+    if (fuel(base) !== fuel(car)) return fuel(car) < fuel(base) ? car : base;
+    // The base engine: a Civic LX's 158 hp, not the Si's 205.
+    const hp = car.engine.horsepower;
+    const baseHp = base.engine.horsepower;
+    if (hp && baseHp && hp !== baseHp) return hp < baseHp ? car : base;
+    // Then the gearbox most are sold with: a Civic LX's CVT, not its manual.
+    const manual = (c: Car) => c.transmission?.type === 'manual';
+    if (manual(base) !== manual(car)) return manual(car) ? base : car;
+    // Then the plainest name (a Corolla, not a Corolla Hybrid SE).
     return plainName(car.model).length < plainName(base.model).length ? car : base;
   });
 }
@@ -824,24 +867,38 @@ function runSearch(query: SearchQuery): SearchResults {
     sortResultsInPlace(candidates, 'year', 'desc');
   }
 
+  // Sorted by a figure, a model's row is the version that leads on it.
+  const preferBase = !sortField || sortField === 'relevance';
   if (collapse === true) {
     // One row per make|family (e.g. a single Mazda 3). Year filters narrow the
     // pool first — "2024 mazda 3" still yields one best trim for that year.
-    candidates = collapseCandidatesByModel(candidates, false);
+    candidates = collapseCandidatesByModel(candidates, false, preferBase);
   } else if (collapse === false) {
     // Explicit opt-out: keep one row per make|family|year so years show without
     // every EPA trim. Omitting the flag leaves results uncollapsed.
-    candidates = collapseCandidatesByModel(candidates, true);
+    candidates = collapseCandidatesByModel(candidates, true, preferBase);
   }
 
   const total = candidates.length;
   const limit = Math.min(Math.max(enriched.limit || 50, 1), 500);
   const offset = Math.max(enriched.offset || 0, 0);
 
+  const page = candidates.slice(offset, offset + limit);
+  // How many versions a collapsed row's model year has, as its page lists them.
+  const counts =
+    collapse != null
+      ? Object.fromEntries(
+          page.flatMap((car) => {
+            const n = versionsOfYear(car).length;
+            return n > 1 ? [[car.id, n]] : [];
+          }),
+        )
+      : {};
   const results: SearchResults = {
-    results: candidates.slice(offset, offset + limit),
+    results: page,
     total,
     hasMore: offset + limit < total,
+    ...(Object.keys(counts).length ? { versions: counts } : {}),
     ...(enriched.interpretation ? { interpretation: enriched.interpretation } : {}),
     ...(collapse != null ? { onePerModel: collapse } : {}),
   };
@@ -863,14 +920,21 @@ function runSearch(query: SearchQuery): SearchResults {
  * while preserving year rows). Search uses includeYear=false so collapseByModel
  * means a true one-per-model collapse.
  */
-function collapseCandidatesByModel(cars: Car[], includeYear = false): Car[] {
-  const best = new Map<string, Car>();
+function collapseCandidatesByModel(cars: Car[], includeYear = false, preferBase = false): Car[] {
+  const groups = new Map<string, Car[]>();
   for (const car of cars) {
     const base = modelLineKey(car);
     const key = includeYear ? `${base}|${car.year}` : base;
-    if (!best.has(key)) best.set(key, car);
+    const group = groups.get(key);
+    if (group) group.push(car);
+    else groups.set(key, [car]);
   }
-  return Array.from(best.values());
+  // In the plain order, the base car of the year the sort put first stands
+  // for it: "2018 honda civic" showed a six-speed manual hatchback of fifteen
+  // versions. Sorted by a figure, the version that leads on it.
+  return [...groups.values()].map((group) =>
+    preferBase ? baseOf(group.filter((car) => car.year === group[0].year)) : group[0],
+  );
 }
 
 /**

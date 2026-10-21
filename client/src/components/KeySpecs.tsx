@@ -1,7 +1,7 @@
 import type { CarDashboard, CarSpecs, ProvenanceSource } from '../types/car.types';
 import { formatEngineForDetail, formatCurrency, hasNumericValue } from '../utils/dataValue';
 import { displayProvenanceSource } from '../utils/dataTrust';
-import { engineLayoutLabel, formatCarFuelLabel } from '../utils/fuelDisplay';
+import { engineLayoutLabel, engineLitres, formatCarFuelLabel } from '../utils/fuelDisplay';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 import { displayTrimLabel, formatTransmissionLabel } from '../utils/trimLabel';
 import { efficiencyUnit } from '../utils/fuelLabels';
@@ -60,7 +60,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
     pushIf(powertrain, {
       key: 'displacement',
       label: 'Displacement',
-      value: `${car.engine.displacement}L`,
+      value: engineLitres(car.engine.displacement!),
       glossary: 'displacement',
     });
   }

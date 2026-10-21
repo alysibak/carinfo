@@ -441,6 +441,8 @@ export interface SearchResults {
   interpretation?: SearchInterpretation;
   /** Whether the rows are one per model (true) or per model year (false), when collapsed. */
   onePerModel?: boolean;
+  /** How many versions of its model year each collapsed row stands for, by car id, where more than one. */
+  versions?: Record<string, number>;
 }
 
 /**

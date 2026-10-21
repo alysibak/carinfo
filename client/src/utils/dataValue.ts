@@ -1,5 +1,11 @@
 import { DISPLAY_CURRENCY } from './currency';
-import { aspirationLabel, engineLayoutLabel, formatEngineSystem, usesMpge } from './fuelDisplay';
+import {
+  aspirationLabel,
+  engineLayoutLabel,
+  engineLitres,
+  formatEngineSystem,
+  usesMpge,
+} from './fuelDisplay';
 import type { CarSpecs } from '../types/car.types';
 
 /** Single label for missing / invalid field values across the app. */
@@ -153,7 +159,7 @@ export function formatEngineDetailForCard(engine: {
     return engine.fuelType === 'hydrogen' ? 'FCEV' : 'Electric';
   }
   const parts: string[] = [];
-  if (hasNumericValue(engine.displacement)) parts.push(`${engine.displacement}L`);
+  if (hasNumericValue(engine.displacement)) parts.push(engineLitres(engine.displacement!));
   const layout = engineLayoutLabel(engine.configuration, engine.cylinders);
   if (layout) parts.push(layout);
   const induction = aspirationLabel(engine.aspiration);

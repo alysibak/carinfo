@@ -21,7 +21,7 @@ import RegionSelect from '../components/RegionSelect';
 import PinnedCarBar from '../components/PinnedCarBar';
 import KeySpecs from '../components/KeySpecs';
 import SimilarCars from '../components/SimilarCars';
-import SiblingConfigs from '../components/SiblingConfigs';
+import VersionPicker from '../components/VersionPicker';
 import DataTrustPanel from '../components/DataTrustPanel';
 import { DataRow } from '../components/DataValue';
 import { buildKeyFigures, buildSpecLine } from '../utils/keyFigures';
@@ -499,6 +499,8 @@ export default function CarDetail() {
             </div>
           </div>
 
+          <VersionPicker car={car} />
+
           <div ref={statsRef} className="mt-5 sm:mt-6">
             <KeyFigures dashboard={dashboard} hasEstimates={showOwnership} />
           </div>
@@ -856,8 +858,6 @@ export default function CarDetail() {
       <KeySpecs dashboard={dashboard} omitKeys={specOmitKeys} heading="More specs" />
 
       <DataTrustPanel dashboard={dashboard} />
-
-      <SiblingConfigs car={car} />
 
       <SimilarCars car={car} />
 

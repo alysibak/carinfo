@@ -16,6 +16,7 @@ import type { ChartDensityCell, ChartDensityResult, ChartPoint } from '../servic
 import AboutData from '../components/AboutData';
 import ValueMatrixHeatmap from '../components/ValueMatrixHeatmap';
 import { formatMpgForCard } from '../utils/dataValue';
+import { engineLitres } from '../utils/fuelDisplay';
 import { DISPLAY_CURRENCY } from '../utils/currency';
 import { usePageMeta } from '../utils/pageMeta';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
@@ -319,7 +320,7 @@ export default function ValueMatrix() {
                 ? formatMpgForCard(data.mpg)
                 : axisMode === 'co2'
                   ? data.co2
-                  : `${data.displacement}L`}
+                  : engineLitres(data.displacement)}
               {data.ySource !== 'epa' && (
                 <span className="ml-1.5 text-xs font-normal text-zinc-500">est.</span>
               )}

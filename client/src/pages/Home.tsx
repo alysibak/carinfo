@@ -32,6 +32,12 @@ import { useResultsView } from '../hooks/useResultsView';
 
 const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/i;
 
+/** What a result row is: a model, a model year, or one version of a year. */
+function resultNoun(total: number, onePerModel?: boolean): string {
+  const noun = onePerModel ? 'model' : onePerModel === false ? 'model year' : 'version';
+  return total === 1 ? noun : `${noun}s`;
+}
+
 export default function Home() {
   usePageMeta(
     'Search',
@@ -247,15 +253,7 @@ export default function Home() {
   // What the sheet's button offers to show: "309 models".
   const resultLabel =
     hasSearched && searchResults && !searchError
-      ? `${searchResults.total.toLocaleString()} ${
-          onePerModel
-            ? searchResults.total === 1
-              ? 'model'
-              : 'models'
-            : searchResults.total === 1
-              ? 'vehicle'
-              : 'vehicles'
-        }`
+      ? `${searchResults.total.toLocaleString()} ${resultNoun(searchResults.total, searchResults.onePerModel)}`
       : null;
 
   const toggleOnePerModel = () => {
@@ -378,14 +376,25 @@ export default function Home() {
               </button>
             ))}
             {hasSearched && (
-              <button
-                type="button"
-                onClick={toggleOnePerModel}
-                aria-pressed={onePerModel}
-                className={`chip shrink-0 whitespace-nowrap ${onePerModel ? 'chip-on' : ''}`}
-              >
-                One per model
-              </button>
+              // One row per model, or one per model year.
+              <div role="group" aria-label="Show results" className="flex shrink-0">
+                <button
+                  type="button"
+                  onClick={onePerModel ? undefined : toggleOnePerModel}
+                  aria-pressed={onePerModel}
+                  className={`chip whitespace-nowrap ${onePerModel ? 'chip-on' : ''}`}
+                >
+                  By model
+                </button>
+                <button
+                  type="button"
+                  onClick={onePerModel ? toggleOnePerModel : undefined}
+                  aria-pressed={!onePerModel}
+                  className={`chip -ml-px whitespace-nowrap ${!onePerModel ? 'chip-on' : ''}`}
+                >
+                  By year
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -468,13 +477,7 @@ export default function Home() {
                         <span className="text-white font-semibold tabular-nums">
                           {searchResults.total.toLocaleString()}
                         </span>{' '}
-                        {onePerModel
-                          ? searchResults.total === 1
-                            ? 'model'
-                            : 'models'
-                          : searchResults.total === 1
-                            ? 'vehicle'
-                            : 'vehicles'}
+                        {resultNoun(searchResults.total, searchResults.onePerModel)}
                         {searchResults.total > pageSize && (
                           <span>
                             {' '}
@@ -645,6 +648,7 @@ export default function Home() {
                             key={car.id}
                             car={car}
                             showValue={priceAsked}
+                            versions={searchResults.versions?.[car.id]}
                             layout="list"
                             reasons={matchReasons(
                               car,
@@ -661,6 +665,7 @@ export default function Home() {
                             key={car.id}
                             car={car}
                             showValue={priceAsked}
+                            versions={searchResults.versions?.[car.id]}
                             reasons={matchReasons(
                               car,
                               searchQuery.filters,
