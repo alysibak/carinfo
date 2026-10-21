@@ -164,7 +164,9 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git checkout --orphan public-data-files
-          git rm -r -q --cached .
+          # An empty index, whatever "Keep the last run's data" staged: run 10
+          # stopped here when git rm --cached refused those files.
+          git read-tree --empty
           # A build that failed leaves its file out, not the push.
           for path in public-data-report.txt server/data/public server/data/recalls-canada.json \
             server/data/complaints.json server/data/investigations.json server/data/nhtsa-ratings.json \
