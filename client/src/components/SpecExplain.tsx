@@ -52,7 +52,7 @@ export function SpecExplain({ glossaryKey }: { glossaryKey: SpecGlossaryKey }) {
         onClick={toggle}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
-        className={`relative w-4 h-4 border text-xs shrink-0 transition-colors before:absolute before:-inset-2 before:content-[''] ${
+        className={`relative w-4 h-4 border text-xs shrink-0 transition-colors before:absolute before:-inset-2 pointer-coarse:before:-inset-3 before:content-[''] ${
           open
             ? 'border-zinc-400 text-white bg-zinc-800'
             : 'border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500'

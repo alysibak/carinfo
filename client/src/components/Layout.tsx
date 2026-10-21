@@ -79,7 +79,10 @@ export default function Layout() {
               Value chart
             </Link>
             <span aria-hidden="true"> · </span>
-            <span className="text-zinc-400">Body-type illustrations only, no listing photos</span>
+            <span className="text-zinc-400">Photos from Wikimedia Commons</span>
+          </p>
+          <p className="text-zinc-500">
+            CarInfo describes cars from public records. It sells none and lists none for sale.
           </p>
         </div>
       </footer>

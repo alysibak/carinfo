@@ -81,7 +81,8 @@ function powerSource(dashboard: CarDashboard): { detail: string; source?: Proven
       source: 'curated',
     };
   }
-  if (prov === 'curated') return { detail: 'EPA test-car rating', source: 'curated' };
+  // EPA's Test Car List, another EPA dataset than FuelEconomy.gov's ratings.
+  if (prov === 'curated') return { detail: 'EPA test-car rating', source: 'epa' };
   if (prov === 'epa') return { detail: 'Rated output', source: 'epa' };
   return { detail: 'Rated output' };
 }

@@ -157,14 +157,13 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
       glossary: 'epaClass',
     });
   }
+  // Where the make is from, by its name: a lookup, not an estimate to mark.
   if (car.countryOfOrigin) {
-    const raw = car.provenance?.countryOfOrigin;
     pushIf(vehicle, {
       key: 'origin',
       label: 'Brand origin',
       value: car.countryOfOrigin,
       glossary: 'countryOfOrigin',
-      provenanceSource: raw ? displayProvenanceSource('countryOfOrigin', raw) : null,
     });
   }
   if (car.variant) {

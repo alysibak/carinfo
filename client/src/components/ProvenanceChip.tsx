@@ -5,7 +5,7 @@ const LABELS: Record<ProvenanceSource, string> = {
   nrcan: 'NRCan',
   nhtsa: 'NHTSA',
   estimated: 'Est.',
-  curated: 'Curated',
+  curated: 'Maker',
 };
 
 const STYLES: Record<ProvenanceSource, string> = {
@@ -36,7 +36,7 @@ export default function ProvenanceChip({ source, className = '' }: ProvenanceChi
               : source === 'estimated'
                 ? 'Estimated value'
                 : source === 'curated'
-                  ? "EPA test-car rated horsepower, or the manufacturer's rating (not FuelEconomy.gov)"
+                  ? "The manufacturer's published figure"
                   : 'Curated data'
       }
     >

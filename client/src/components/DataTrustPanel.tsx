@@ -12,7 +12,7 @@ const SOURCE_LABEL = {
   epa: 'EPA',
   nrcan: 'NRCan',
   nhtsa: 'NHTSA',
-  curated: 'Curated',
+  curated: 'Maker',
   estimated: 'Estimated',
 } as const;
 
@@ -31,8 +31,12 @@ export default function DataTrustPanel({ dashboard }: DataTrustPanelProps) {
     <section className="border-t border-zinc-900">
       <div className="page-wrap-wide py-4">
         <ExpandableSection
-          title="Data sources"
-          summary={`${verified} sourced · ${estimated} modeled`}
+          title="Where each figure comes from"
+          summary={
+            estimated
+              ? `${verified} from public records, ${estimated} estimated`
+              : `${verified} from public records`
+          }
         >
           <p className="text-xs text-zinc-500 leading-relaxed mb-3">
             Fuel economy and crash ratings come from EPA and NHTSA tests. Value and some performance

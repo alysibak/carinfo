@@ -32,8 +32,8 @@ test.describe('Trust UI smoke path', () => {
     // Stay on the dossier: a debounced search-param write used to replace this
     // URL and bounce the user back to the results.
     await expect(page).toHaveURL(/\/car\//);
-    await expect(page.getByRole('button', { name: /data sources/i })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Estimated costs' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /where each figure comes from/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Running costs' })).toBeVisible();
 
     await page
       .getByRole('button', { name: /^add to compare$/i })

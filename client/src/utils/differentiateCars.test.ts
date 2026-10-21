@@ -200,7 +200,7 @@ describe('differentiateVsAnchor', () => {
     );
   });
 
-  it('leans on a measured difference before the estimated price', () => {
+  it('compares measured figures, never the estimated price', () => {
     const camry = car({
       id: 'camry',
       make: 'Toyota',
@@ -220,7 +220,7 @@ describe('differentiateVsAnchor', () => {
       price: { msrp: 23000, isEstimated: true },
     });
     expect(differentiateVsAnchor(camry, [optima]).optima).toBe('Less power (245 vs 301 hp)');
-    // With nothing measured apart, the estimate may speak, marked as one.
+    // With nothing measured apart, an estimated price does not speak for it.
     const cheaper = car({
       id: 'cheaper',
       make: 'Toyota',
@@ -230,6 +230,30 @@ describe('differentiateVsAnchor', () => {
       fuelEconomy: { city: 22, highway: 33, combined: 26 },
       price: { msrp: 23000, isEstimated: true },
     });
-    expect(differentiateVsAnchor(camry, [cheaper]).cheaper).toBe('Costs less (est. $23k vs $29k)');
+    expect(differentiateVsAnchor(camry, [cheaper]).cheaper).toBe(
+      'Much the same on paper (9.0 vs 9.0 L/100 km, 301 vs 301 hp)',
+    );
+  });
+
+  it('names a bigger trunk, and a newer year only when nothing measured differs more', () => {
+    const civic = car({
+      id: 'civic',
+      make: 'Honda',
+      model: 'Civic',
+      year: 2018,
+      engine: { fuelType: 'gasoline', horsepower: 158 },
+      fuelEconomy: { city: 30, highway: 40, combined: 34 },
+      epa: { luggageVolumeCuFt: 15 },
+    });
+    const bigger = car({
+      id: 'bigger',
+      make: 'Kia',
+      model: 'Forte',
+      year: 2020,
+      engine: { fuelType: 'gasoline', horsepower: 147 },
+      fuelEconomy: { city: 31, highway: 41, combined: 35 },
+      epa: { luggageVolumeCuFt: 18 },
+    });
+    expect(differentiateVsAnchor(civic, [bigger]).bigger).toBe('Bigger trunk (510 vs 425 L)');
   });
 });

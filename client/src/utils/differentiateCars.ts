@@ -1,6 +1,7 @@
 import type { CarSpecs } from '../types/car.types';
 import { efficiencyOf, rangeKm } from './efficiency';
 import { formatFuelBadge, usesMpge } from './fuelDisplay';
+import { litres } from './space';
 import { displayModelLabel } from './trimLabel';
 
 export interface CarEdge {
@@ -397,16 +398,9 @@ interface PairMetric {
   minRel: number;
   higherIsBetter: boolean;
   text: (better: boolean, alt: number, anchor: number, car: CarSpecs) => string;
+  /** Below 1, the difference speaks only when nothing measured differs as much. */
+  weight?: number;
 }
-
-const PRICE_METRIC: PairMetric = {
-  get: (car) => car.price?.msrp ?? null,
-  minAbs: 1500,
-  minRel: 0.08,
-  higherIsBetter: false,
-  text: (better, a, b) =>
-    `${better ? 'Costs less' : 'Costs more'} (est. ${formatMoneyShort(a)} vs ${formatMoneyShort(b)})`,
-};
 
 const PAIR_METRICS: PairMetric[] = [
   {
@@ -417,7 +411,6 @@ const PAIR_METRICS: PairMetric[] = [
     text: (better, a, b, car) =>
       `${better ? 'Uses less fuel' : 'Uses more fuel'} (${fuelUse(car, a)} vs ${fuelUse(car, b)} ${fuelUnit(car)})`,
   },
-  PRICE_METRIC,
   {
     get: (car) => car.engine.horsepower ?? null,
     minAbs: 25,
@@ -448,22 +441,31 @@ const PAIR_METRICS: PairMetric[] = [
       `${better ? 'Longer' : 'Shorter'} electric range (${rangeKm(a)} vs ${rangeKm(b)} km)`,
   },
   {
+    get: (car) => car.epa?.luggageVolumeCuFt ?? null,
+    minAbs: 2,
+    minRel: 0.12,
+    higherIsBetter: true,
+    text: (better, a, b) =>
+      `${better ? 'Bigger' : 'Smaller'} trunk (${litres(a)} vs ${litres(b)} L)`,
+  },
+  {
+    // A year apart says less than any measured difference.
     get: (car) => car.year,
     minAbs: 2,
     minRel: 0,
     higherIsBetter: true,
+    weight: 0.5,
     text: (better, a, b) => `${better ? 'Newer' : 'Older'} (${a} vs ${b})`,
   },
 ];
 
 /**
  * The biggest measured difference worth a sentence, favouring the
- * alternative's strengths. The estimated price speaks only when no measured
- * figure differs enough.
+ * alternative's strengths. Estimated prices are not compared: most are drawn
+ * from the car's class, not its own price.
  */
 function metricDifference(anchor: CarSpecs, alt: CarSpecs, skipMpg: boolean): string | null {
   let best: { score: number; text: string } | null = null;
-  let priceText: string | null = null;
   for (const metric of PAIR_METRICS) {
     if (skipMpg && metric === PAIR_METRICS[0]) continue;
     const a = metric.get(alt);
@@ -476,14 +478,10 @@ function metricDifference(anchor: CarSpecs, alt: CarSpecs, skipMpg: boolean): st
     const better = metric.higherIsBetter ? a > b : a < b;
     // Relative to each threshold, so 121 hp of 301 does not outshout 6 MPG of 26.
     const size = metric.minRel > 0 && b > 0 ? delta / b / metric.minRel : delta / metric.minAbs;
-    if (metric === PRICE_METRIC) {
-      priceText = metric.text(better, a, b, alt);
-      continue;
-    }
-    const score = size * (better ? 1.25 : 1);
+    const score = size * (better ? 1.25 : 1) * (metric.weight ?? 1);
     if (!best || score > best.score) best = { score, text: metric.text(better, a, b, alt) };
   }
-  return best?.text ?? priceText;
+  return best?.text ?? null;
 }
 
 /** No difference worth a sentence: the near-equal figures, so the note still says something. */
