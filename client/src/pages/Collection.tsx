@@ -176,7 +176,7 @@ export default function Collection() {
                             {shortlistDiff.byCarId[car.id].edge}
                           </p>
                         )}
-                        <p className="text-xs text-zinc-500 mt-1.5 truncate">
+                        <p className="text-xs text-zinc-400 mt-1.5 leading-relaxed">
                           {[
                             power === 'Not on file' ? null : power,
                             efficiency?.text,
@@ -211,7 +211,10 @@ export default function Collection() {
                   ? `Browse all ${totalMatching.toLocaleString()} in Search`
                   : 'Open in Search'}
               </Link>
-              <Link to="/?quiz=1" className="text-xs text-zinc-500 hover:text-white">
+              <Link
+                to="/?quiz=1"
+                className="inline-block py-1.5 text-xs text-zinc-400 hover:text-white"
+              >
                 Prefer the 3-question finder?
               </Link>
             </div>

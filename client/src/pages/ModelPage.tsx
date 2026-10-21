@@ -296,7 +296,7 @@ export default function ModelPage() {
                         <th scope="row" className="py-3 pr-4 text-left font-semibold">
                           <Link
                             to={`/car/${row.carId}`}
-                            className="text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-400"
+                            className="inline-block py-2 -my-2 pr-4 text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-400"
                           >
                             {row.year}
                           </Link>

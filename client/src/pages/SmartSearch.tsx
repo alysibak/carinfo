@@ -424,7 +424,7 @@ export default function SmartSearch() {
               {moreCount > 0 && (
                 <Link
                   to={catalogHref}
-                  className="text-xs text-zinc-500 hover:text-white sm:ml-auto"
+                  className="inline-block py-1.5 text-xs text-zinc-400 hover:text-white sm:ml-auto"
                 >
                   {moreCount}+ more in Search →
                 </Link>

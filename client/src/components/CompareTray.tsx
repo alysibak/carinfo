@@ -34,7 +34,7 @@ export default function CompareTray() {
             >
               <Link
                 to={`/car/${car.id}`}
-                className="text-xs text-zinc-200 hover:text-white truncate max-w-38"
+                className="block py-1.5 text-xs text-zinc-200 hover:text-white truncate max-w-38"
               >
                 {car.year} {car.make}{' '}
                 <span className="text-zinc-500">{displayModelLabel(car)}</span>
@@ -54,7 +54,7 @@ export default function CompareTray() {
         <button
           type="button"
           onClick={clearComparison}
-          className="text-xs text-zinc-500 hover:text-zinc-300 shrink-0 hidden sm:inline"
+          className="min-h-9 px-1 text-xs text-zinc-400 hover:text-white shrink-0 hidden sm:inline-flex items-center"
         >
           Clear
         </button>

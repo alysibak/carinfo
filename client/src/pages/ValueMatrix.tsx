@@ -346,8 +346,8 @@ export default function ValueMatrix() {
             <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Value Chart</h1>
             <p className="text-sm text-zinc-400 mt-1">
               {phase === 'chart' && totalMatched > 0
-                ? `${totalMatched.toLocaleString()} vehicles match · Market map shows the full fleet · Sample dots for drill-down`
-                : 'Density map of the full fleet, or sample dots for individual vehicles'}
+                ? `${totalMatched.toLocaleString()} cars match. Each square counts the cars at that value and fuel use; pick one to see them.`
+                : 'Estimated value against fuel use, for every car on file. Fuel use is EPA’s; values are our estimates.'}
             </p>
           </div>
           <AboutData compact />
@@ -363,9 +363,8 @@ export default function ValueMatrix() {
                   What do you want to compare?
                 </h2>
                 <p className="text-base text-zinc-300 leading-relaxed">
-                  The <strong className="text-white font-semibold">market map</strong> plots every
-                  matching vehicle as density. Brighter cells mean more cars at that price and
-                  efficiency. Click a cell to zoom into individual vehicles.
+                  Pick a group of cars. The chart puts each by its estimated value and its fuel use;
+                  a brighter square holds more cars. Pick a square to see the cars in it.
                 </p>
               </div>
 
@@ -559,7 +558,7 @@ export default function ValueMatrix() {
                         : 'text-zinc-400 hover:text-white'
                     }`}
                   >
-                    Market map
+                    Every car
                   </button>
                   <button
                     type="button"
@@ -570,7 +569,7 @@ export default function ValueMatrix() {
                         : 'text-zinc-400 hover:text-white'
                     }`}
                   >
-                    Sample dots
+                    A sample, one dot each
                   </button>
                   <button
                     type="button"
@@ -771,7 +770,7 @@ export default function ValueMatrix() {
               {totalMatched > 0 && (
                 <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-px bg-zinc-800 border border-zinc-800">
                   <div className="bg-zinc-950 p-5">
-                    <p className="text-xs font-bold text-zinc-400 mb-1">Matching fleet</p>
+                    <p className="text-xs font-bold text-zinc-400 mb-1">Cars that match</p>
                     <p className="text-2xl font-bold text-white">{totalMatched.toLocaleString()}</p>
                   </div>
                   <div className="bg-zinc-950 p-5">

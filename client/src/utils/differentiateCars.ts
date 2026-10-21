@@ -193,10 +193,12 @@ function categoricalEdge(car: CarSpecs, set: CarSpecs[]): string | null {
 }
 
 function pickMetricEdge(car: CarSpecs, set: CarSpecs[]): string | null {
-  const candidates: { score: number; text: string; estimate: boolean }[] = [];
+  const candidates: { score: number; text: string }[] = [];
 
   for (const metric of METRICS) {
     if (metric.key === 'mpg' && !sharedFuelUnit(set)) continue;
+    // Estimated prices set no car apart: most are drawn from the size class.
+    if (metric.key === 'price') continue;
     const scored = set
       .map((c) => ({ car: c, value: metric.get(c) }))
       .filter((x): x is { car: CarSpecs; value: number } => x.value != null);
@@ -214,15 +216,12 @@ function pickMetricEdge(car: CarSpecs, set: CarSpecs[]): string | null {
     const uniqueWorst = values.filter((v) => v === worst).length === 1;
 
     const fmt =
-      metric.key === 'price'
-        ? formatMoneyShort
-        : metric.key === 'hp'
-          ? (n: number) => `${Math.round(n)}`
-          : metric.key === 'range'
-            ? (n: number) => `${rangeKm(n)}`
-            : (n: number) => String(n);
+      metric.key === 'hp'
+        ? (n: number) => `${Math.round(n)}`
+        : metric.key === 'range'
+          ? (n: number) => `${rangeKm(n)}`
+          : (n: number) => String(n);
 
-    const estimate = metric.key === 'price';
     if (mine.value === best && uniqueBest) {
       const peers =
         metric.key === 'mpg'
@@ -234,19 +233,16 @@ function pickMetricEdge(car: CarSpecs, set: CarSpecs[]): string | null {
       candidates.push({
         score: Math.abs(best - worst) / (metric.minAbsDelta || 1),
         text: metric.labelBest(car, mine.value, peers),
-        estimate,
       });
     } else if (mine.value === worst && uniqueWorst && metric.labelWorst && set.length <= 4) {
       candidates.push({
         score: (Math.abs(best - worst) / (metric.minAbsDelta || 1)) * 0.55,
         text: metric.labelWorst(car, mine.value, ''),
-        estimate,
       });
     }
   }
 
-  // An estimated price speaks only when no measured figure sets the car apart.
-  candidates.sort((a, b) => Number(a.estimate) - Number(b.estimate) || b.score - a.score);
+  candidates.sort((a, b) => b.score - a.score);
   return candidates[0]?.text ?? null;
 }
 
@@ -266,7 +262,9 @@ function buildAxes(set: CarSpecs[]): string[] {
     if (metric.key === 'price') continue;
 
     if (metric.key === 'mpg') {
-      axes.push(metric.axisLabel(`${fuelSpread(set[0], values)} ${fuelUnit(set[0])}`));
+      // MPGe apart can be one figure in kWh/100 km: "runs 17.5" said nothing.
+      const spread = fuelSpread(set[0], values);
+      if (spread.includes('–')) axes.push(metric.axisLabel(`${spread} ${fuelUnit(set[0])}`));
       continue;
     }
 

@@ -32,7 +32,7 @@ export function BackLink({ to, label = 'Back' }: { to: string; label?: string })
   return (
     <Link
       to={to}
-      className="inline-flex items-center gap-2 sm:gap-3 text-xs text-zinc-400 hover:text-white transition-colors group min-h-[44px] shrink-0"
+      className="inline-flex items-center gap-2 sm:gap-3 text-xs text-zinc-400 hover:text-white transition-colors group min-h-[44px] min-w-[44px] shrink-0"
     >
       <svg
         className="w-5 h-5 group-hover:-translate-x-1 transition-transform shrink-0"
@@ -85,7 +85,7 @@ export function ErrorState({
   return (
     <div className="min-h-[40vh] bg-black flex items-center justify-center text-white py-16">
       <div className="text-center px-6 max-w-md">
-        <h2 className="text-2xl sm:text-3xl font-bold tracking-tighter mb-3">{title}</h2>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tighter mb-3">{title}</h1>
         <p className="text-sm tracking-wide text-zinc-400 mb-6">{message}</p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           {onRetry && (

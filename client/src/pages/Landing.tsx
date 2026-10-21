@@ -273,18 +273,19 @@ export default function Landing() {
         <div className="page-wrap py-8 sm:py-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
           <div>
             <p className="text-sm font-semibold text-white">CarInfo</p>
-            <p className="text-sm text-zinc-400 mt-2 max-w-xs leading-relaxed">
-              EPA specs, NHTSA safety, and labeled estimates on every vehicle page.
+            <p className="text-sm text-zinc-400 mt-2 max-w-sm leading-relaxed">
+              Each car&rsquo;s recalls in Canada, owners&rsquo; complaints, crash ratings and fuel
+              use, from public records. CarInfo sells no cars and lists none for sale.
             </p>
           </div>
-          <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-zinc-500">
-            <Link to="/vin" className="hover:text-white">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-zinc-400">
+            <Link to="/vin" className="inline-block py-1.5 hover:text-white">
               VIN lookup
             </Link>
-            <Link to="/methodology" className="hover:text-white">
+            <Link to="/methodology" className="inline-block py-1.5 hover:text-white">
               Methodology
             </Link>
-            <span>© {new Date().getFullYear()}</span>
+            <span className="text-zinc-500">© {new Date().getFullYear()}</span>
           </div>
         </div>
       </footer>

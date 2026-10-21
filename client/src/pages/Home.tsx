@@ -539,7 +539,7 @@ export default function Home() {
                       <p className="text-xs mt-1">
                         <Link
                           to={searchResults.interpretation.modelPage.path}
-                          className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
+                          className="inline-block py-1 text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
                         >
                           {searchResults.interpretation.records
                             ? `Recalls and complaints for every year of the ${searchResults.interpretation.modelPage.label}`

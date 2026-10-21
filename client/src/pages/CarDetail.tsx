@@ -267,16 +267,16 @@ export default function CarDetail() {
     return (
       <div className="min-h-[40vh] bg-black flex items-center justify-center text-center px-4 py-16">
         <div className="max-w-md">
-          <p className="text-2xl font-bold tracking-tight text-white mb-3">
-            {missing ? 'Vehicle not on file' : 'Could not load this vehicle'}
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight text-white mb-3">
+            {missing ? 'Car not found' : 'Could not load this car'}
+          </h1>
           <p className="text-sm text-zinc-400 mb-8 leading-relaxed">
             {missing
-              ? 'That id is not in the EPA catalog. Search by make and model instead.'
-              : 'The dossier request failed. Check your connection and try again.'}
+              ? 'No car with that address is on file. It may have been renamed: search for it by make, model and year.'
+              : 'The page did not load. Check your connection and try again.'}
           </p>
           <Link to="/home" className="btn-primary text-xs">
-            Search vehicles
+            Search cars
           </Link>
         </div>
       </div>
@@ -507,7 +507,7 @@ export default function CarDetail() {
                   <p className="mt-2 text-sm">
                     <Link
                       to={dashboard.modelPage.path}
-                      className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
+                      className="inline-block py-1.5 text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
                     >
                       Every year of the {dashboard.modelPage.label}
                     </Link>

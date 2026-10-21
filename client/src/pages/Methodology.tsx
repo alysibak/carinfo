@@ -84,12 +84,13 @@ export default function Methodology() {
     <div className="bg-black text-white">
       <div className="border-b border-zinc-900">
         <div className="page-wrap section-y max-w-3xl">
-          <p className="text-xs text-zinc-400 mb-3">Architecture</p>
+          <p className="text-xs text-zinc-400 mb-3">Where the figures come from</p>
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">Methodology</h1>
-          <p className="text-sm text-zinc-400 leading-relaxed">
-            CarInfo is a rules-driven reference over public automotive data. Every number is either
-            a verified fact with a named source, or a clearly labeled estimate with a stated method
-            and confidence. This page describes the system, not individual vehicles.
+          <p className="text-sm text-zinc-300 leading-relaxed">
+            CarInfo puts public records about cars in one place: EPA’s fuel ratings, NHTSA’s crash
+            tests, complaints and investigations, Transport Canada’s recalls and measurements, and
+            Équité’s theft counts. Each figure says where it came from. The few we estimate, such as
+            a car’s value, are marked as estimates, with how we made them.
           </p>
         </div>
       </div>

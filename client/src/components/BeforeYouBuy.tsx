@@ -19,17 +19,17 @@ export default function BeforeYouBuy({ dashboard }: { dashboard: CarDashboard })
           </h2>
           <Link
             to={`/car/${encodeURIComponent(dashboard.car.id)}/checklist`}
-            className="text-xs text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
+            className="inline-block py-1.5 text-xs text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
           >
             Checklist to take to the car
           </Link>
         </div>
-        <ul className="space-y-1.5">
+        <ul className="space-y-0.5">
           {items.map((item) => (
             <li key={item.key} className="text-sm text-zinc-300 leading-relaxed">
               <a
                 href={item.href}
-                className="hover:text-white underline underline-offset-4 decoration-zinc-800 hover:decoration-zinc-500"
+                className="inline-block py-1 hover:text-white underline underline-offset-4 decoration-zinc-800 hover:decoration-zinc-500"
               >
                 {item.text}
               </a>

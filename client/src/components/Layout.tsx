@@ -40,7 +40,7 @@ export default function Layout() {
                 href="https://www.fueleconomy.gov"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-zinc-400 hover:text-white underline"
+                className="inline-block py-1 text-zinc-400 hover:text-white underline"
               >
                 EPA / FuelEconomy.gov
               </a>
@@ -52,7 +52,7 @@ export default function Layout() {
                 href="https://www.nhtsa.gov"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-zinc-400 hover:text-white underline"
+                className="inline-block py-1 text-zinc-400 hover:text-white underline"
               >
                 NHTSA
               </a>
@@ -61,20 +61,23 @@ export default function Layout() {
             <span>{regionLabel}-baseline estimates in CAD</span>
           </p>
           <p>
-            <Link to="/vin" className="text-zinc-400 hover:text-white underline underline-offset-2">
+            <Link
+              to="/vin"
+              className="inline-block py-1 text-zinc-400 hover:text-white underline underline-offset-2"
+            >
               VIN lookup
             </Link>
             <span aria-hidden="true"> · </span>
             <Link
               to="/methodology"
-              className="text-zinc-400 hover:text-white underline underline-offset-2"
+              className="inline-block py-1 text-zinc-400 hover:text-white underline underline-offset-2"
             >
               Methodology &amp; data policy
             </Link>
             <span aria-hidden="true"> · </span>
             <Link
               to="/value-matrix"
-              className="text-zinc-400 hover:text-white underline underline-offset-2"
+              className="inline-block py-1 text-zinc-400 hover:text-white underline underline-offset-2"
             >
               Value chart
             </Link>
