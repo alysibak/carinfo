@@ -56,12 +56,12 @@ describe('ValueMatrixHeatmap', () => {
       <ValueMatrixHeatmap
         density={density}
         height={300}
-        yLabel="Combined MPG"
+        yLabel="Fuel use (L/100 km)"
         onCellSelect={vi.fn()}
       />,
     );
     expect(screen.getByRole('img')).toHaveAccessibleName(
-      'Heat map of 1,700 vehicles by estimated value and Combined MPG. Busiest area: $20k–$30k · 25–30 MPG, 900 vehicles.',
+      'Heat map of 1,700 cars by estimated value and fuel use. Busiest area: $20k–$30k · 7.8–9.4 L/100 km, 900 cars.',
     );
   });
 
@@ -71,13 +71,13 @@ describe('ValueMatrixHeatmap', () => {
       <ValueMatrixHeatmap
         density={density}
         height={300}
-        yLabel="Combined MPG"
+        yLabel="Fuel use (L/100 km)"
         onCellSelect={onCellSelect}
       />,
     );
     const buttons = within(screen.getByRole('list')).getAllByRole('button');
     expect(buttons).toHaveLength(6);
-    expect(buttons[0]).toHaveTextContent('$20k–$30k · 25–30 MPG');
+    expect(buttons[0]).toHaveTextContent('$20k–$30k · 7.8–9.4 L/100 km');
     expect(buttons[0]).toHaveTextContent('900 · mostly sedan');
     expect(buttons[1]).toHaveTextContent('300 · mostly suv');
 

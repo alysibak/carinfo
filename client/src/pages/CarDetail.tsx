@@ -35,11 +35,9 @@ import type { AnnualCostBreakdown } from '../types/car.types';
 import { TIER_HELPER } from '../utils/visualTiers';
 import { usePageMeta } from '../utils/pageMeta';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
-import { formatVolume, litres, luggageLabel } from '../utils/space';
 import SafetyRecords from '../components/SafetyRecords';
 import CrashTests from '../components/CrashTests';
 import BeforeYouBuy from '../components/BeforeYouBuy';
-import SizeAndFit from '../components/SizeAndFit';
 import TheftRecord from '../components/TheftRecord';
 
 function Subheading({ children }: { children: React.ReactNode }) {
@@ -341,18 +339,6 @@ export default function CarDetail() {
   const hasEconomics = annualCost.total != null;
   const hasMarketValue = hasNumericValue(marketValue.low) && hasNumericValue(marketValue.high);
 
-  // EPA's interior volumes: cars and some SUVs; pickups and most vans have none.
-  const hasSpace = !!(car.epa?.luggageVolumeCuFt || car.epa?.passengerVolumeCuFt);
-  const luggageVsClass = (() => {
-    const stat = dashboard.classComparison?.luggage;
-    const className = dashboard.classComparison?.className.toLowerCase();
-    if (!stat || !className) return null;
-    const difference = litres(stat.car) - litres(stat.median);
-    // EPA's whole cubic feet: within one (28 L) is the same.
-    if (Math.abs(stat.car - stat.median) < 1) return `About the same as a typical ${className}`;
-    return `${Math.abs(difference)} L ${difference > 0 ? 'more' : 'less'} than a typical ${className}`;
-  })();
-
   const keyFigures = buildKeyFigures(dashboard);
   const hasCityHwy =
     hasNumericValue(car.fuelEconomy.city) || hasNumericValue(car.fuelEconomy.highway);
@@ -395,7 +381,6 @@ export default function CarDetail() {
     'valueConfidence',
     'barrels',
     'fuelSav5',
-    'luggage',
     'passenger',
     'body',
     'trim',
@@ -465,72 +450,74 @@ export default function CarDetail() {
             <span aria-hidden>←</span> Back
           </button>
 
-          <div className="mt-1 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 lg:gap-8">
-            <div
-              className={`grid gap-4 sm:gap-6 min-w-0 ${
-                hasPhoto
-                  ? 'grid-cols-1 sm:grid-cols-[15rem_1fr] lg:grid-cols-[20rem_1fr] items-start'
-                  : 'grid-cols-[5.5rem_1fr] sm:grid-cols-[9rem_1fr] items-center'
-              }`}
-            >
-              {hasPhoto ? (
+          {/* The photo (or the illustration) beside the title; the actions and
+              the version picker under the title, not across the page from it. */}
+          <div
+            className={`mt-1 grid gap-x-4 sm:gap-x-6 gap-y-4 min-w-0 sm:grid-rows-[auto_1fr] ${
+              hasPhoto
+                ? 'grid-cols-1 sm:grid-cols-[15rem_1fr] lg:grid-cols-[20rem_1fr] items-start'
+                : 'grid-cols-[5.5rem_1fr] sm:grid-cols-[9rem_1fr] items-center sm:items-start'
+            }`}
+          >
+            {hasPhoto ? (
+              <div className="sm:row-span-2 min-w-0">
                 <CarPhotoFigure car={car} />
-              ) : (
-                <div className="h-14 sm:h-20 overflow-hidden">
-                  <VehiclePlaceholder car={car} compact hideCaption />
-                </div>
-              )}
-              <div className="min-w-0">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight wrap-break-word">
-                  {title}
-                </h1>
-                <p className="text-sm sm:text-[15px] text-zinc-300 mt-1">
-                  {(() => {
-                    // "Electric SUV" already says SUV and electric: no "SUV · Electric SUV · Electric".
-                    const cls = dashboard.competitiveClass?.toLowerCase() ?? '';
-                    const body = car.bodyStyle ? bodyStyleLabel(car.bodyStyle) : null;
-                    const fuel = car.engine.fuelType ? formatCarFuelLabel(car) : null;
-                    return [
-                      configLabel,
-                      body && !cls.includes(body.toLowerCase()) ? body : null,
-                      dashboard.competitiveClass,
-                      fuel && !cls.includes(fuel.toLowerCase()) ? fuel : null,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ');
-                  })()}
-                </p>
-                {specLine.length > 0 && (
-                  <p className="text-sm text-zinc-500 mt-1 tabular-nums">{specLine.join(' · ')}</p>
-                )}
-                {dashboard.modelPage && (
-                  <p className="mt-2 text-sm">
-                    <Link
-                      to={dashboard.modelPage.path}
-                      className="inline-block py-1.5 text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
-                    >
-                      Every year of the {dashboard.modelPage.label}
-                    </Link>
-                  </p>
-                )}
               </div>
+            ) : (
+              <div className="h-14 sm:h-20 overflow-hidden sm:row-span-2">
+                <VehiclePlaceholder car={car} compact hideCaption />
+              </div>
+            )}
+            <div className="min-w-0">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight wrap-break-word">
+                {title}
+              </h1>
+              <p className="text-sm sm:text-[15px] text-zinc-300 mt-1">
+                {(() => {
+                  // "Electric SUV" already says SUV and electric: no "SUV · Electric SUV · Electric".
+                  const cls = dashboard.competitiveClass?.toLowerCase() ?? '';
+                  const body = car.bodyStyle ? bodyStyleLabel(car.bodyStyle) : null;
+                  const fuel = car.engine.fuelType ? formatCarFuelLabel(car) : null;
+                  return [
+                    configLabel,
+                    body && !cls.includes(body.toLowerCase()) ? body : null,
+                    dashboard.competitiveClass,
+                    fuel && !cls.includes(fuel.toLowerCase()) ? fuel : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ');
+                })()}
+              </p>
+              {specLine.length > 0 && (
+                <p className="text-sm text-zinc-500 mt-1 tabular-nums">{specLine.join(' · ')}</p>
+              )}
+              {dashboard.modelPage && (
+                <p className="mt-2 text-sm">
+                  <Link
+                    to={dashboard.modelPage.path}
+                    className="inline-block py-1.5 text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
+                  >
+                    Every year of the {dashboard.modelPage.label}
+                  </Link>
+                </p>
+              )}
             </div>
-
-            <div className="flex gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={handleAddToComparison}
-                className={isInCompare ? 'btn-secondary' : 'btn-primary'}
-              >
-                {isInCompare ? 'In compare' : 'Add to compare'}
-              </button>
-              <button type="button" onClick={handleAddToGarage} className="btn-secondary">
-                Save to garage
-              </button>
+            <div className={`min-w-0 ${hasPhoto ? '' : 'col-span-2 sm:col-span-1'}`}>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handleAddToComparison}
+                  className={isInCompare ? 'btn-secondary' : 'btn-primary'}
+                >
+                  {isInCompare ? 'In compare' : 'Add to compare'}
+                </button>
+                <button type="button" onClick={handleAddToGarage} className="btn-secondary">
+                  Save to garage
+                </button>
+              </div>
+              <VersionPicker car={car} />
             </div>
           </div>
-
-          <VersionPicker car={car} />
 
           <div ref={statsRef} className="mt-5 sm:mt-6">
             <KeyFigures dashboard={dashboard} hasEstimates={showOwnership} />
@@ -569,95 +556,65 @@ export default function CarDetail() {
 
       {dashboard.theft && <TheftRecord theft={dashboard.theft} />}
 
-      <section className="border-b border-zinc-900">
-        <div className="page-wrap-wide section-y-tight space-y-6">
-          {(showEnergySection || hasSpace || car.size) && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 md:gap-x-10 gap-y-8 md:gap-y-10">
-              {showEnergySection && (
-                <div className="min-w-0">
-                  <h2 className="text-base font-bold tracking-tight mb-1">
-                    {isPhev
-                      ? 'Electric and gas modes'
-                      : hasEvExtras && hasCityHwy
-                        ? 'Energy use'
-                        : hasEvExtras
-                          ? 'Charging'
-                          : 'City and highway'}
-                  </h2>
-                  <p className="text-[13px] text-zinc-400 mb-3 leading-relaxed">
-                    {isPhev
-                      ? 'The figure above is gas mode, not a blend.'
-                      : hasEvExtras && !hasCityHwy
-                        ? 'Range is above; charge times below.'
-                        : 'The combined figure is above; this is EPA’s city and highway split.'}
-                  </p>
-                  {isPhev && phev ? (
-                    <PhevDualModeBlock modes={phev} />
-                  ) : (
-                    <>
-                      <FuelBar label="City" efficiency={efficiencyOf(car, 'city')} />
-                      <FuelBar label="Highway" efficiency={efficiencyOf(car, 'highway')} />
-                    </>
-                  )}
-                  {hasEvExtras && (
-                    <>
-                      {hasNumericValue(evCharge?.kWhPer100Mi) && (
-                        <DataRow
-                          label="Consumption"
-                          value={`${evCharge!.kWhPer100Mi} kWh/100mi · ${formatKwhPer100KmFromMi(evCharge!.kWhPer100Mi!)}`}
-                          glossaryKey="kwhPer100mi"
-                        />
-                      )}
-                      {hasNumericValue(evCharge?.charge240Hours) && (
-                        <DataRow
-                          label="Home charge (240V)"
-                          value={`~${evCharge!.charge240Hours} h`}
-                          glossaryKey="charge240"
-                        />
-                      )}
-                      {hasNumericValue(evCharge?.charge120Hours ?? car.epa?.charge120Hours) && (
-                        <DataRow
-                          label="Home charge (120V)"
-                          value={`~${evCharge?.charge120Hours ?? car.epa!.charge120Hours} h`}
-                          glossaryKey="charge120"
-                        />
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
-
-              {car.size && <SizeAndFit size={car.size} />}
-
-              {hasSpace && (
-                <div className="min-w-0">
-                  <h2 className="text-base font-bold tracking-tight mb-1">Space</h2>
-                  <p className="text-[13px] text-zinc-400 mb-3 leading-relaxed">
-                    EPA’s interior volumes for this car.
-                  </p>
-                  {car.epa?.luggageVolumeCuFt != null && (
-                    <DataRow
-                      label={luggageLabel(car.bodyStyle)}
-                      value={formatVolume(car.epa.luggageVolumeCuFt)}
-                      glossaryKey="luggageVolume"
-                    />
-                  )}
-                  {luggageVsClass && (
-                    <p className="text-xs text-zinc-400 mt-1 mb-2">{luggageVsClass}</p>
-                  )}
-                  {car.epa?.passengerVolumeCuFt != null && (
-                    <DataRow
-                      label="Passenger space"
-                      value={formatVolume(car.epa.passengerVolumeCuFt)}
-                      glossaryKey="passengerVolume"
-                    />
-                  )}
-                </div>
-              )}
+      {showEnergySection && (
+        <section className="border-b border-zinc-900">
+          <div className="page-wrap-wide section-y-tight">
+            <div className="max-w-xl">
+              <div className="min-w-0">
+                <h2 className="text-base font-bold tracking-tight mb-1">
+                  {isPhev
+                    ? 'Electric and gas modes'
+                    : hasEvExtras && hasCityHwy
+                      ? 'Energy use'
+                      : hasEvExtras
+                        ? 'Charging'
+                        : 'City and highway'}
+                </h2>
+                <p className="text-[13px] text-zinc-400 mb-3 leading-relaxed">
+                  {isPhev
+                    ? 'The figure above is gas mode, not a blend.'
+                    : hasEvExtras && !hasCityHwy
+                      ? 'Range is above; charge times below.'
+                      : 'The combined figure is above; this is EPA’s city and highway split.'}
+                </p>
+                {isPhev && phev ? (
+                  <PhevDualModeBlock modes={phev} />
+                ) : (
+                  <>
+                    <FuelBar label="City" efficiency={efficiencyOf(car, 'city')} />
+                    <FuelBar label="Highway" efficiency={efficiencyOf(car, 'highway')} />
+                  </>
+                )}
+                {hasEvExtras && (
+                  <>
+                    {hasNumericValue(evCharge?.kWhPer100Mi) && (
+                      <DataRow
+                        label="Consumption"
+                        value={formatKwhPer100KmFromMi(evCharge!.kWhPer100Mi!)}
+                        glossaryKey="kwhPer100mi"
+                      />
+                    )}
+                    {hasNumericValue(evCharge?.charge240Hours) && (
+                      <DataRow
+                        label="Home charge (240V)"
+                        value={`~${evCharge!.charge240Hours} h`}
+                        glossaryKey="charge240"
+                      />
+                    )}
+                    {hasNumericValue(evCharge?.charge120Hours ?? car.epa?.charge120Hours) && (
+                      <DataRow
+                        label="Home charge (120V)"
+                        value={`~${evCharge?.charge120Hours ?? car.epa!.charge120Hours} h`}
+                        glossaryKey="charge120"
+                      />
+                    )}
+                  </>
+                )}
+              </div>
             </div>
-          )}
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
 
       {showOwnership && (
         <section id="costs" className="border-b border-zinc-900 scroll-mt-32">

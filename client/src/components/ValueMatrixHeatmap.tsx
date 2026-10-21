@@ -23,21 +23,33 @@ function formatPrice(v: number): string {
   return `$${(v / 1000).toFixed(0)}k`;
 }
 
+/**
+ * The chart's figures as the rest of the site gives them: fuel use in
+ * L/100 km (the bins are EPA's US mpg) and CO₂ per kilometre (EPA's is per mile).
+ */
 function formatY(v: number, metric: ChartDensityResult['metric']): string {
-  if (metric === 'mpg') return `${Math.round(v)}`;
+  if (metric === 'mpg') return v > 0 ? (235.215 / v).toFixed(1) : '—';
   if (metric === 'displacement') return `${v.toFixed(1)}L`;
+  if (metric === 'co2') return `${Math.round(v / 1.609344)}`;
   return `${Math.round(v)}`;
 }
 
 function metricUnit(metric: ChartDensityResult['metric']): string {
-  if (metric === 'mpg') return ' MPG';
-  if (metric === 'co2') return ' g/mi';
+  if (metric === 'mpg') return ' L/100 km';
+  if (metric === 'co2') return ' g/km';
   return '';
 }
 
-/** "$20k–$30k · 25–30 MPG" */
+function metricName(metric: ChartDensityResult['metric']): string {
+  if (metric === 'mpg') return 'fuel use';
+  if (metric === 'displacement') return 'engine size';
+  return 'CO₂';
+}
+
+/** "$20k–$30k · 7.8–9.4 L/100 km": more mpg is fewer litres, so the ends swap. */
 function describeCell(cell: ChartDensityCell, metric: ChartDensityResult['metric']): string {
-  return `${formatPrice(cell.priceMin)}–${formatPrice(cell.priceMax)} · ${formatY(cell.yMin, metric)}–${formatY(cell.yMax, metric)}${metricUnit(metric)}`;
+  const [from, to] = metric === 'mpg' ? [cell.yMax, cell.yMin] : [cell.yMin, cell.yMax];
+  return `${formatPrice(cell.priceMin)}–${formatPrice(cell.priceMax)} · ${formatY(from, metric)}–${formatY(to, metric)}${metricUnit(metric)}`;
 }
 
 /** How many of the densest cells to offer as buttons under the chart. */
@@ -62,9 +74,9 @@ export default function ValueMatrixHeatmap({
     [density.cells],
   );
   const summary =
-    `Heat map of ${density.total.toLocaleString()} vehicles by estimated value and ${yLabel}.` +
+    `Heat map of ${density.total.toLocaleString()} cars by estimated value and ${metricName(density.metric)}.` +
     (busiest[0]
-      ? ` Busiest area: ${describeCell(busiest[0], density.metric)}, ${busiest[0].count.toLocaleString()} vehicles.`
+      ? ` Busiest area: ${describeCell(busiest[0], density.metric)}, ${busiest[0].count.toLocaleString()} cars.`
       : '');
 
   useEffect(() => {
@@ -232,7 +244,7 @@ export default function ValueMatrixHeatmap({
       />
       {hovered && (
         <div className="absolute top-3 right-3 bg-zinc-950 border border-zinc-600 px-3 py-2 text-xs pointer-events-none">
-          <p className="text-white font-semibold">{hovered.count.toLocaleString()} vehicles</p>
+          <p className="text-white font-semibold">{hovered.count.toLocaleString()} cars</p>
           <p className="text-zinc-400 mt-1">{describeCell(hovered, density.metric)}</p>
           <p className="text-zinc-500 mt-1 capitalize">Mostly {hovered.dominantBodyStyle}</p>
           <p className="text-zinc-500 mt-1">Click to zoom in</p>

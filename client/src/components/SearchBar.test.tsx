@@ -44,7 +44,7 @@ async function requestFor(query: string): Promise<Pending> {
 describe('SearchBar suggestions', () => {
   it('asks once per focus', async () => {
     render(<Harness />);
-    fireEvent.focus(screen.getByRole('combobox', { name: 'Search vehicles' }));
+    fireEvent.focus(screen.getByRole('combobox', { name: 'Search cars' }));
     await requestFor('');
     // Let any duplicate request surface before counting.
     await act(() => new Promise((r) => setTimeout(r, 50)));
@@ -53,7 +53,7 @@ describe('SearchBar suggestions', () => {
 
   it('never lets a slow answer for an earlier keystroke replace the current one', async () => {
     render(<Harness />);
-    const input = screen.getByRole('combobox', { name: 'Search vehicles' });
+    const input = screen.getByRole('combobox', { name: 'Search cars' });
     fireEvent.focus(input);
     fireEvent.change(input, { target: { value: 'ca' } });
     const ca = await requestFor('ca');
@@ -71,7 +71,7 @@ describe('SearchBar suggestions', () => {
   it('picks a suggestion from the keyboard', async () => {
     const onSubmit = vi.fn();
     render(<Harness onSubmit={onSubmit} />);
-    const input = screen.getByRole('combobox', { name: 'Search vehicles' });
+    const input = screen.getByRole('combobox', { name: 'Search cars' });
     fireEvent.focus(input);
     const initial = await requestFor('');
     act(() => initial.resolve([suggestion('Honda Civic'), suggestion('Honda Accord')]));

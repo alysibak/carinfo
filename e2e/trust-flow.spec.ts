@@ -17,7 +17,7 @@ test.describe('Trust UI smoke path', () => {
     await expect(page.getByText('EPA', { exact: true }).first()).toBeVisible();
 
     await page.goto('/home');
-    const search = page.getByRole('combobox', { name: 'Search vehicles' });
+    const search = page.getByRole('combobox', { name: 'Search cars' });
     await search.fill('toyota');
     await search.press('Enter');
 

@@ -34,7 +34,7 @@ export default function SharedGarage() {
       try {
         const results = await api.compareCars(ids);
         if (!results || results.length === 0) {
-          setError('No matching vehicles were found for this shared garage.');
+          setError('None of the cars in this shared garage are on file.');
           setCars([]);
         } else {
           setCars(results);
@@ -55,7 +55,7 @@ export default function SharedGarage() {
 
   const saveAllToLocalGarage = () => {
     if (cars.length === 0) {
-      setSaveMessage('There are no vehicles to save from this shared garage.');
+      setSaveMessage('There are no cars to save from this shared garage.');
       return;
     }
     try {
@@ -105,10 +105,8 @@ export default function SharedGarage() {
       <div className="pt-8 pb-16 page-wrap-wide">
         {cars.length === 0 ? (
           <div className="max-w-xl py-16">
-            <h2 className="text-2xl font-bold tracking-tight mb-2">No vehicles in this garage</h2>
-            <p className="text-[15px] text-zinc-400 mb-6">
-              This shared garage link does not contain any vehicles.
-            </p>
+            <h2 className="text-2xl font-bold tracking-tight mb-2">No cars in this garage</h2>
+            <p className="text-[15px] text-zinc-400 mb-6">This shared garage link holds no cars.</p>
             <Link to="/home" className="btn-primary">
               Search cars
             </Link>

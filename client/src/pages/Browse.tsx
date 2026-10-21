@@ -31,7 +31,7 @@ export default function Browse() {
       <div className="page-wrap pt-8 sm:pt-10 pb-4">
         <PageHeader
           title="Browse"
-          subtitle="Start from a situation, a shape, a budget or a badge. People rarely shop the whole archive."
+          subtitle="Start from what you need the car for, its shape, a budget, a year or a make."
         />
       </div>
 
@@ -59,8 +59,8 @@ export default function Browse() {
       <section className="border-t border-zinc-900">
         <div className="page-wrap section-y">
           <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2">A body style</h2>
-          <p className="text-sm text-zinc-500 mb-6 md:mb-8">
-            What the vehicle is, before the badge.
+          <p className="text-sm text-zinc-400 mb-6 md:mb-8">
+            Sedan, SUV, truck and the rest, from every make.
           </p>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-zinc-800">
             {BODY_TYPES.map((type) => (
@@ -84,8 +84,8 @@ export default function Browse() {
       <section className="border-t border-zinc-900">
         <div className="page-wrap section-y">
           <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2">A class</h2>
-          <p className="text-sm text-zinc-500 mb-6">
-            The rivals shoppers compare: a Camry against an Accord, not a Civic.
+          <p className="text-sm text-zinc-400 mb-6">
+            Cars of one size and purpose, the ones shoppers compare: a Camry with an Accord.
           </p>
           <div className="flex flex-wrap gap-2">
             {CLASS_LINKS.map((item) => (
@@ -105,7 +105,9 @@ export default function Browse() {
         <div className="page-wrap section-y grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
           <div>
             <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2">A budget</h2>
-            <p className="text-sm text-zinc-500 mb-6">Estimated CAD value, not asking price.</p>
+            <p className="text-sm text-zinc-400 mb-6">
+              By our estimate of each car’s value in Canadian dollars, not an asking price.
+            </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {PRICE_BUCKETS.map((bucket) => (
                 <Link key={bucket.id} to={filterLink(bucket.filters)} className="choice-tile">
@@ -116,7 +118,7 @@ export default function Browse() {
           </div>
           <div>
             <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2">A model year</h2>
-            <p className="text-sm text-zinc-500 mb-6">Current gen, last decade, or older.</p>
+            <p className="text-sm text-zinc-400 mb-6">The newest, the last ten years, or older.</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {YEAR_BUCKETS.map((bucket) => (
                 <Link key={bucket.id} to={filterLink(bucket.filters)} className="choice-tile">
@@ -131,7 +133,7 @@ export default function Browse() {
       <section className="border-t border-zinc-900">
         <div className="page-wrap section-y">
           <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2">A manufacturer</h2>
-          <p className="text-sm text-zinc-500 mb-6">If you already know the badge.</p>
+          <p className="text-sm text-zinc-400 mb-6">If you already know the make you want.</p>
           <div className="flex flex-wrap gap-2">
             {TOP_MAKES.map((make) => (
               <Link key={make} to={filterLink(makeFilter(make))} className="chip">
@@ -155,9 +157,9 @@ export default function Browse() {
 
       <section className="border-t border-zinc-900">
         <div className="page-wrap section-y">
-          <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2">Curated shortlists</h2>
-          <p className="text-sm text-zinc-500 mb-6">
-            Ranked picks for common situations, one per model.
+          <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2">Shortlists</h2>
+          <p className="text-sm text-zinc-400 mb-6">
+            Ranked picks for common needs, one per model, with the rule each is ranked by.
           </p>
           <ShortlistCards />
         </div>

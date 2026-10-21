@@ -23,37 +23,6 @@ export const BODY_TYPE_IMAGES: Partial<Record<BodyStyle, string>> = {
 export function getBodyTypeImage(bodyStyle: BodyStyle | string): string | undefined {
   return BODY_TYPE_IMAGES[bodyStyle as BodyStyle];
 }
-
-/** Brand accent colors for local placeholders (hex, no #). */
-const MAKE_ACCENT: Record<string, string> = {
-  Toyota: '2c5aa0',
-  Honda: 'cc0000',
-  Ford: '003478',
-  Chevrolet: 'f2a900',
-  BMW: '1c69d4',
-  'Mercedes-Benz': '00adef',
-  Porsche: 'd5001c',
-  Audi: 'bb0a30',
-  Tesla: 'e82127',
-  Nissan: 'c3002f',
-  Mazda: 'c8102e',
-  Volkswagen: '001e50',
-  Subaru: '0057a3',
-  Ferrari: 'dc0000',
-  Lamborghini: 'ffc900',
-  Lexus: '525252',
-  Acura: '3e444c',
-  Genesis: '525252',
-  Hyundai: '002c5f',
-  Kia: '05141f',
-  GMC: '6b7280',
-  Rivian: '4ade80',
-};
-
-export function getMakeAccentColor(make: string): string {
-  return MAKE_ACCENT[make] ?? '52525b';
-}
-
 /** SVG silhouette path per body style (viewBox 0 0 400 120, centered). */
 export function getBodySilhouettePath(bodyStyle: BodyStyle | string): string {
   switch (bodyStyle) {

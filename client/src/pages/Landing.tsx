@@ -259,7 +259,7 @@ export default function Landing() {
         </section>
 
         <section className="page-wrap section-y border-t border-zinc-900">
-          <h2 className="section-title mb-2">Curated shortlists</h2>
+          <h2 className="section-title mb-2">Shortlists</h2>
           <p className="text-[15px] text-zinc-400 mb-6 max-w-xl leading-relaxed">
             Ranked picks for common situations, one per model, not every trim on file.
           </p>

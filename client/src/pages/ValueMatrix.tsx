@@ -15,13 +15,15 @@ import * as api from '../services/api';
 import type { ChartDensityCell, ChartDensityResult, ChartPoint } from '../services/api';
 import AboutData from '../components/AboutData';
 import ValueMatrixHeatmap from '../components/ValueMatrixHeatmap';
-import { formatMpgForCard } from '../utils/dataValue';
 import { engineLitres } from '../utils/fuelDisplay';
 import { DISPLAY_CURRENCY } from '../utils/currency';
 import { usePageMeta } from '../utils/pageMeta';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 
 type AxisMode = 'mpg' | 'displacement' | 'co2';
+
+/** EPA's US mpg as the site gives fuel use: "7.8 L/100 km". */
+const litresText = (mpg: number) => (mpg > 0 ? `${(235.215 / mpg).toFixed(1)} L/100 km` : '—');
 type ViewPhase = 'choose' | 'chart';
 
 interface ChartDataPoint extends ChartPoint {
@@ -267,11 +269,11 @@ export default function ValueMatrix() {
   const getYAxisLabel = () => {
     switch (axisMode) {
       case 'mpg':
-        return 'Combined MPG';
+        return 'Fuel use (L/100 km)';
       case 'displacement':
         return 'Engine (L)';
       case 'co2':
-        return 'CO₂ (g/mi)';
+        return 'CO₂ (g/km)';
     }
   };
 
@@ -313,13 +315,13 @@ export default function ValueMatrix() {
           </div>
           <div className="flex justify-between gap-4 items-baseline">
             <span className="text-zinc-400">
-              {axisMode === 'mpg' ? 'MPG' : axisMode === 'co2' ? 'CO₂' : 'Engine'}
+              {axisMode === 'mpg' ? 'Fuel use' : axisMode === 'co2' ? 'CO₂' : 'Engine'}
             </span>
             <span className="font-bold text-white">
               {axisMode === 'mpg'
-                ? formatMpgForCard(data.mpg)
+                ? litresText(data.mpg)
                 : axisMode === 'co2'
-                  ? data.co2
+                  ? `${Math.round(data.co2 / 1.609344)} g/km`
                   : engineLitres(data.displacement)}
               {data.ySource !== 'epa' && (
                 <span className="ml-1.5 text-xs font-normal text-zinc-500">est.</span>
@@ -381,7 +383,7 @@ export default function ValueMatrix() {
                     </p>
                     <p className="text-sm text-zinc-400 leading-relaxed">{preset.description}</p>
                     <p className="text-xs text-zinc-400 mt-3">
-                      {`~${preset.pointLimit} vehicles · $${(preset.priceRange[0] / 1000).toFixed(0)}k-$${(preset.priceRange[1] / 1000).toFixed(0)}k`}
+                      {`~${preset.pointLimit} cars · $${(preset.priceRange[0] / 1000).toFixed(0)}k-$${(preset.priceRange[1] / 1000).toFixed(0)}k`}
                     </p>
                   </button>
                 ))}
@@ -536,7 +538,7 @@ export default function ValueMatrix() {
                     onClick={() => setPointLimit(nextLimit)}
                     className="text-xs font-bold text-zinc-300 hover:text-white border border-dashed border-zinc-600 w-full py-3 hover:border-zinc-400 transition-colors"
                   >
-                    Show more vehicles (up to {nextLimit.toLocaleString()} dots)
+                    Show more cars (up to {nextLimit.toLocaleString()} dots)
                   </button>
                 )}
               </div>
@@ -592,7 +594,7 @@ export default function ValueMatrix() {
                   </p>
                   <p className="text-sm text-zinc-400 mt-1 capitalize">
                     {hovered.bodyStyle} · ${hovered.price.toLocaleString()} ·{' '}
-                    {formatMpgForCard(hovered.mpg)} MPG
+                    {litresText(hovered.mpg)}
                   </p>
                   <button
                     type="button"
@@ -627,7 +629,7 @@ export default function ValueMatrix() {
                   </div>
                 ) : totalMatched === 0 && !loading ? (
                   <div className="py-24 text-center px-4">
-                    <p className="text-lg text-zinc-300 mb-2">No vehicles match these filters</p>
+                    <p className="text-lg text-zinc-300 mb-2">No cars match these filters</p>
                     <p className="text-sm text-zinc-400 mb-6">
                       Try widening the price range or adding body types.
                     </p>
@@ -671,7 +673,7 @@ export default function ValueMatrix() {
                             <p className="text-sm font-medium text-white">
                               ${(car.price / 1000).toFixed(0)}k
                             </p>
-                            <p className="text-xs text-zinc-400">{formatMpgForCard(car.mpg)} MPG</p>
+                            <p className="text-xs text-zinc-400">{litresText(car.mpg)}</p>
                           </div>
                         </button>
                       ))}
@@ -698,6 +700,13 @@ export default function ValueMatrix() {
                         type="number"
                         dataKey={axisMode}
                         stroke="#71717a"
+                        tickFormatter={(v: number) =>
+                          axisMode === 'mpg'
+                            ? (235.215 / v).toFixed(1)
+                            : axisMode === 'co2'
+                              ? String(Math.round(v / 1.609344))
+                              : String(v)
+                        }
                         tick={{ fill: '#a1a1aa', fontSize: 11 }}
                         tickLine={{ stroke: '#52525b' }}
                         label={{
@@ -740,7 +749,7 @@ export default function ValueMatrix() {
 
               <p className="mt-3 text-xs text-zinc-400 text-center sm:text-left">
                 {viewMode === 'market'
-                  ? 'Brightness = vehicle count in that price/efficiency band · click a cell to drill down'
+                  ? 'A brighter square holds more cars. Pick one to see them.'
                   : 'Color = body style · size = model year · tap or click a dot for details'}
               </p>
 
@@ -753,7 +762,7 @@ export default function ValueMatrix() {
                       </p>
                       <p className="text-sm text-zinc-400 mt-0.5 capitalize">
                         {hovered.bodyStyle} · ${hovered.price.toLocaleString()} ·{' '}
-                        {formatMpgForCard(hovered.mpg)} MPG
+                        {litresText(hovered.mpg)}
                       </p>
                     </div>
                     <button

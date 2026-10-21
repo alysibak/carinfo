@@ -31,7 +31,7 @@ export default function Collection() {
 
   usePageMeta(
     collection?.title ?? 'Collection',
-    collection?.description ?? 'Curated vehicle shortlist.',
+    collection?.description ?? 'A shortlist of cars, from the public records.',
   );
 
   const rankBy = collection?.display?.rankBy ?? 'best-value';

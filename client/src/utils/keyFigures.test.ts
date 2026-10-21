@@ -29,7 +29,7 @@ describe('buildKeyFigures', () => {
     expect(byId(trustDashboard, 'fuel')).toMatchObject({
       value: '7.1',
       unit: 'L/100 km',
-      detail: '33 mpg combined',
+      detail: '33 US mpg combined',
       source: 'epa',
     });
   });
@@ -76,7 +76,7 @@ describe('buildKeyFigures', () => {
     expect(byId(phev, 'fuel')).toMatchObject({
       label: 'Fuel use',
       value: '9.0',
-      detail: 'In gas mode, 26 mpg combined',
+      detail: 'In gas mode, 26 US mpg combined',
     });
   });
 

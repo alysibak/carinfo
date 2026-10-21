@@ -174,7 +174,7 @@ export default function ModelPage() {
           if (!complaints.length && !recalls.length) return null;
           return (
             <section className="mb-8">
-              <h2 className="text-xs text-zinc-500 mb-2">Years to check</h2>
+              <h2 className="text-base font-bold tracking-tight mb-2">Years to check</h2>
               <ul className="text-sm text-zinc-300 space-y-1 tabular-nums">
                 {complaints.length > 0 && (
                   <li>Most owner complaints to NHTSA: {complaints.join(', ')}</li>
@@ -191,7 +191,7 @@ export default function ModelPage() {
 
         {overview.theft && (
           <section className="mb-8">
-            <h2 className="text-xs text-zinc-500 mb-2">Theft in Canada</h2>
+            <h2 className="text-base font-bold tracking-tight mb-2">Theft in Canada</h2>
             <p className="text-sm text-zinc-300">{theftSentence(overview.theft)}</p>
             <p className="text-xs text-zinc-500 mt-2 leading-relaxed max-w-xl">
               A count of thefts, so a model with many on the road ranks higher. Ask your insurer
@@ -210,7 +210,7 @@ export default function ModelPage() {
 
         {overview.rivals.length > 0 && (
           <section className="mb-8">
-            <h2 className="text-xs text-zinc-500 mb-2">Shopped against</h2>
+            <h2 className="text-base font-bold tracking-tight mb-2">Shopped against</h2>
             <ul className="flex flex-wrap gap-2">
               {overview.rivals.map((rival) => (
                 <li key={rival.path}>
@@ -225,7 +225,9 @@ export default function ModelPage() {
 
         {byGeneration(overview.years).map((group) => (
           <section key={`${group.label ?? 'years'}-${group.rows[0].year}`} className="mb-8">
-            <h2 className="text-xs text-zinc-500 mb-2">{group.label ?? 'Model years'}</h2>
+            <h2 className="text-base font-bold tracking-tight mb-2">
+              {group.label ?? 'Model years'}
+            </h2>
             {/* Phones: a row of figures per year. */}
             <ol className="md:hidden border-t border-zinc-800">
               {group.rows.map((row) => (

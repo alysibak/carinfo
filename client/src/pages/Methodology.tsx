@@ -322,7 +322,7 @@ export default function Methodology() {
             to="/home"
             className="inline-block px-6 py-3 bg-accent text-accent-ink text-xs font-semibold hover:bg-accent-hover transition-colors"
           >
-            Search vehicles
+            Search cars
           </Link>
         </div>
       </div>

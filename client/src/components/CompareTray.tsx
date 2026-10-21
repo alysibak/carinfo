@@ -17,7 +17,7 @@ export default function CompareTray() {
 
   return (
     <div
-      className="fixed bottom-0 inset-x-0 z-40 border-t border-zinc-700 bg-black/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]"
+      className="fixed bottom-0 inset-x-0 z-40 border-t border-zinc-700 bg-black pb-[env(safe-area-inset-bottom)]"
       role="region"
       aria-label="Compare shortlist"
     >

@@ -47,7 +47,7 @@ export default function CatalogueStats({ className = '' }: { className?: string 
   }, []);
 
   const figures = [
-    { value: countOr(stats?.totalCars, '35,000+'), label: 'versions tested' },
+    { value: countOr(stats?.totalCars, '35,000+'), label: 'versions on file' },
     { value: countOr(stats?.totalModels, '1,000+'), label: 'models' },
     { value: countOr(stats?.totalMakes, '90+'), label: 'makes' },
     {

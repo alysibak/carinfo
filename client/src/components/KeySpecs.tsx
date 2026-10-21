@@ -64,11 +64,9 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
       glossary: 'displacement',
     });
   }
-  const knownLayout =
-    car.engine.configuration &&
-    engineLayoutLabel(car.engine.configuration, car.engine.cylinders) === car.engine.configuration
-      ? car.engine.configuration
-      : null;
+  const knownLayout = car.engine.configuration
+    ? engineLayoutLabel(car.engine.configuration, car.engine.cylinders)
+    : null;
   if (!isEv && !isFcev && knownLayout) {
     pushIf(powertrain, {
       key: 'configuration',

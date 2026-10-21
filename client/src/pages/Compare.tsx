@@ -25,7 +25,6 @@ import { POPULAR_SEARCHES } from '../config/browseTaxonomy';
 import RegionSelect from '../components/RegionSelect';
 import { formatVolume } from '../utils/space';
 import { availabilityLabel, rolloverRiskText } from '../utils/safetyTech';
-import { formatKg, formatMetres } from '../utils/size';
 import { complaintPart } from '../utils/recalls';
 import { ordinal } from '@carinfo/shared/theft';
 import { splitRecalls } from '@carinfo/shared/recall-scope';
@@ -69,11 +68,7 @@ const ROW_ORDER = [
   'complaints',
   'complaintPart',
   'theft',
-  'length',
-  'width',
-  'weight',
   'luggage',
-  'passenger',
   'horsepower',
   'torque',
   'engine',
@@ -233,39 +228,12 @@ const ALL_SPECS: SpecRow[] = [
         : UNAVAILABLE_LABEL,
   },
   {
-    key: 'length',
-    label: 'Length',
-    hint: 'Transport Canada',
-    getValue: (car) => (car.size ? formatMetres(car.size.lengthCm) : UNAVAILABLE_LABEL),
-  },
-  {
-    key: 'width',
-    label: 'Width',
-    hint: 'Transport Canada, without mirrors',
-    getValue: (car) => (car.size ? formatMetres(car.size.widthCm) : UNAVAILABLE_LABEL),
-  },
-  {
-    key: 'weight',
-    label: 'Curb weight',
-    hint: 'Transport Canada',
-    getValue: (car) => (car.size ? formatKg(car.size.curbWeightKg) : UNAVAILABLE_LABEL),
-  },
-  {
     key: 'luggage',
     label: 'Trunk or cargo',
     hint: 'EPA, every seat up',
     getValue: (car) =>
       car.epa?.luggageVolumeCuFt ? formatVolume(car.epa.luggageVolumeCuFt) : UNAVAILABLE_LABEL,
     getNumeric: (car) => car.epa?.luggageVolumeCuFt ?? null,
-    higherIsBetter: true,
-  },
-  {
-    key: 'passenger',
-    label: 'Passenger space',
-    hint: 'EPA',
-    getValue: (car) =>
-      car.epa?.passengerVolumeCuFt ? formatVolume(car.epa.passengerVolumeCuFt) : UNAVAILABLE_LABEL,
-    getNumeric: (car) => car.epa?.passengerVolumeCuFt ?? null,
     higherIsBetter: true,
   },
   {
@@ -373,7 +341,10 @@ const ALL_SPECS: SpecRow[] = [
 ];
 
 export default function Compare() {
-  usePageMeta('Compare', 'Side-by-side EPA specs and labeled estimates for up to five vehicles.');
+  usePageMeta(
+    'Compare',
+    'Up to five cars side by side: fuel use, crash ratings, recalls in Canada, complaints and theft, from the public records.',
+  );
   const [searchParams, setSearchParams] = useSearchParams();
   const { comparedCars, removeCarFromComparison, clearComparison, replaceComparison } =
     useCarStore();
@@ -399,7 +370,7 @@ export default function Compare() {
         if (!cancelled) replaceComparison(cars);
       })
       .catch(() => {
-        if (!cancelled) setLoadError('Could not load vehicles from this compare link.');
+        if (!cancelled) setLoadError('Could not load the cars in this compare link.');
       })
       .finally(() => {
         if (!cancelled) setUrlHydrated(true);

@@ -76,7 +76,16 @@ const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 function engineSummary(car: Car): string | null {
   const { displacement, configuration, cylinders, aspiration } = car.engine;
   if (!displacement) return null;
-  const layout = configuration ?? (cylinders ? `${cylinders}-cylinder` : null);
+  // "4-cylinder", not EPA's "I4"; "flat-4" for a boxer, "V6" as it is.
+  const inline = configuration ? /^I(\d+)$/.exec(configuration) : null;
+  const flat = configuration ? /^Flat-(\d+)$/.exec(configuration) : null;
+  const layout = inline
+    ? `${inline[1]}-cylinder`
+    : flat
+      ? `flat-${flat[1]}`
+      : configuration === 'VR6'
+        ? 'V6'
+        : (configuration ?? (cylinders ? `${cylinders}-cylinder` : null));
   const induction =
     aspiration === 'turbocharged'
       ? 'turbo'

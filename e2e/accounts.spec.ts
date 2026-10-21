@@ -18,7 +18,7 @@ test('a visitor browses, compares and decodes freely but signs in for the rest',
   page,
 }) => {
   await page.goto('/home');
-  await expect(page.getByRole('combobox', { name: 'Search vehicles' })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Search cars' })).toBeVisible();
 
   await page.goto('/vin');
   await expect(page.getByLabel('Vehicle identification number (VIN)')).toBeVisible();

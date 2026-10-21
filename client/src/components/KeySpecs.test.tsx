@@ -21,14 +21,14 @@ describe('KeySpecs omit-when-empty', () => {
 
     expect(screen.getByText('Specifications')).toBeInTheDocument();
     expect(screen.getByText('Powertrain')).toBeInTheDocument();
-    expect(screen.getByText('1.8L I4')).toBeInTheDocument();
+    expect(screen.getByText('1.8L 4-cylinder')).toBeInTheDocument();
     expect(screen.getByText('33')).toBeInTheDocument();
   });
 
   it('omits rows the dossier already showed', () => {
     render(<KeySpecs dashboard={sparseDashboard} omitKeys={['engine', 'mpgCombined']} />);
 
-    expect(screen.queryByText('1.8L I4')).not.toBeInTheDocument();
+    expect(screen.queryByText('1.8L 4-cylinder')).not.toBeInTheDocument();
     expect(screen.queryByText('33')).not.toBeInTheDocument();
     expect(screen.getByText('Powertrain')).toBeInTheDocument();
   });
@@ -81,7 +81,7 @@ describe('KeySpecs long values', () => {
 
   it('keeps a short value on the same line as its label', () => {
     render(<KeySpecs dashboard={dashboard} />);
-    const row = rowFor('1.8L I4')?.parentElement;
+    const row = rowFor('1.8L 4-cylinder')?.parentElement;
     expect(row?.className).toContain('items-baseline');
     expect(row?.className).not.toContain('flex-col');
   });

@@ -10,7 +10,7 @@ import type { CarSpecs } from '../types/car.types';
 import { COLLECTIONS } from '../config/collections';
 import { displayModelLabel } from '../utils/trimLabel';
 import { rankedFigure } from '../utils/rankedFigure';
-import CarImage from '../components/CarImage';
+import VehiclePlaceholder from '../components/VehiclePlaceholder';
 import CarCard from '../components/CarCard';
 import CarRecordsNote from '../components/CarRecordsNote';
 
@@ -74,8 +74,8 @@ function GarageSuggestions({ onSaved }: { onSaved: (message: string) => void }) 
             key={car.id}
             className="flex items-center gap-3 border border-zinc-800 bg-zinc-950 p-3"
           >
-            <span className="w-16 h-11 shrink-0 overflow-hidden" aria-hidden>
-              <CarImage car={car} compact markYear={false} sizes="64px" />
+            <span className="w-14 h-9 shrink-0 overflow-hidden" aria-hidden>
+              <VehiclePlaceholder car={car} compact hideCaption />
             </span>
             <Link to={`/car/${car.id}`} className="min-w-0 flex-1 group">
               <span className="block text-sm font-semibold text-white truncate group-hover:underline underline-offset-2">
@@ -204,7 +204,7 @@ export default function DreamGarage() {
             <div className="border border-zinc-800 bg-zinc-950 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <p className="text-sm text-zinc-400">
                 {billingConfigured ? 'Free plan · ' : ''}
-                {garage.length}/{garageLimit ?? FREE_GARAGE_LIMIT} vehicles
+                {garage.length}/{garageLimit ?? FREE_GARAGE_LIMIT} cars
                 {syncMode === 'cloud' ? ' · saved to your account' : ' · this device'}
               </p>
               {billingConfigured && (
@@ -287,7 +287,7 @@ export default function DreamGarage() {
         title="Share your garage"
       >
         <p className="text-sm tracking-wide text-zinc-400 mb-6">
-          Anyone with this link can view your saved vehicles and add them to their own garage.
+          Anyone with this link can see the cars you saved and add them to their own garage.
         </p>
 
         <div className="bg-zinc-950 border border-zinc-900 p-4 mb-6 font-mono text-sm break-all">

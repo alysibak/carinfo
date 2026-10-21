@@ -1,5 +1,5 @@
 import type { CarSpecs } from '../types/car.types';
-import { getBodySilhouettePath, getBodyTypeImage, getMakeAccentColor } from '../utils/carImages';
+import { getBodySilhouettePath, getBodyTypeImage } from '../utils/carImages';
 import { displayModelLabel } from '../utils/trimLabel';
 
 interface VehiclePlaceholderProps {
@@ -10,42 +10,31 @@ interface VehiclePlaceholderProps {
   hideCaption?: boolean;
 }
 
-/** Body-type silhouette placeholder — no visible "no photo" text. */
+/**
+ * The body's outline in quiet grey, alike for every car of a body: no brand
+ * colour behind it, so a page of them reads as one design.
+ */
 export default function VehiclePlaceholder({
   car,
   compact = false,
   className = '',
   hideCaption = false,
 }: VehiclePlaceholderProps) {
-  const accent = getMakeAccentColor(car.make);
   const silhouette = getBodySilhouettePath(car.bodyStyle);
   const bodyTypeImg = getBodyTypeImage(car.bodyStyle);
 
   return (
     <div
-      className={`relative w-full h-full flex items-center justify-center overflow-hidden bg-linear-to-b from-zinc-900 to-black ${className}`}
+      className={`relative w-full h-full flex items-center justify-center overflow-hidden bg-zinc-950 ${className}`}
       role="img"
       aria-label={`${car.year} ${car.make} ${displayModelLabel(car)}, illustration placeholder`}
     >
-      <div
-        className="absolute inset-0 transition-opacity duration-300 group-hover:opacity-70"
-        style={{
-          background: `radial-gradient(ellipse at 50% 68%, #${accent}88 0%, transparent 62%)`,
-          opacity: 0.55,
-        }}
-      />
-      <div
-        className="absolute inset-0"
-        style={{
-          background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.7) 100%)',
-        }}
-      />
       {bodyTypeImg ? (
         <img
           src={bodyTypeImg}
           alt=""
           aria-hidden
-          className={`absolute inset-x-[2%] object-contain pointer-events-none transition-transform duration-500 ease-out group-hover:scale-105 ${
+          className={`absolute inset-x-[2%] object-contain pointer-events-none opacity-60 ${
             compact ? 'top-[8%] h-[84%]' : 'top-[6%] h-[72%]'
           }`}
         />

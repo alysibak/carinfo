@@ -14,7 +14,7 @@ describe('efficiencyOf', () => {
   it('leads with litres per 100 km and keeps the EPA figure beside it', () => {
     expect(efficiencyOf(car('gasoline', 31))).toMatchObject({
       text: '7.6 L/100 km',
-      epa: '31 mpg',
+      epa: '31 US mpg',
       label: 'Fuel use',
     });
   });

@@ -70,7 +70,8 @@ export function efficiencyOf(
     value,
     unit: 'L/100 km',
     text: `${value.toFixed(1)} L/100 km`,
-    epa: `${Math.round(rating)} mpg`,
+    // EPA rates per US gallon: an imperial-gallon mpg is a fifth higher.
+    epa: `${Math.round(rating)} US mpg`,
     // A plug-in hybrid's combined rating is its gas-mode figure.
     label: fuel === 'plug-in hybrid' ? 'Gas-mode fuel use' : 'Fuel use',
   };

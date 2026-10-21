@@ -33,7 +33,7 @@ export default function SearchBar({
   onChange,
   onSubmit,
   placeholder = `Search make, model, or year, e.g. ${LATEST_FULL_MODEL_YEAR} Camry`,
-  ariaLabel = 'Search vehicles',
+  ariaLabel = 'Search cars',
   autoFocus = false,
   size = 'default',
   showButton = true,

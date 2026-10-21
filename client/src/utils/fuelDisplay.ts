@@ -93,9 +93,20 @@ export function formatPowertrainLabel(fuelType: string): string | null {
  * The layout where the server knows it ("V6", "Flat-4", "W12": it follows the
  * engine family, as EPA records only a count), otherwise the cylinder count.
  */
+/**
+ * An engine's layout as people say it: "4-cylinder" for EPA's "I4", "V6"
+ * as it is, "flat-4" for a boxer. A VR6 is a V6 to a shopper.
+ */
 export function engineLayoutLabel(configuration?: string, cylinders?: number): string | null {
-  if (configuration) return configuration;
-  if (cylinders != null && cylinders > 0) return `${cylinders}-cyl`;
+  if (configuration) {
+    const inline = /^I(\d+)$/.exec(configuration);
+    if (inline) return `${inline[1]}-cylinder`;
+    if (configuration === 'VR6') return 'V6';
+    const flat = /^Flat-(\d+)$/.exec(configuration);
+    if (flat) return `flat-${flat[1]}`;
+    return configuration;
+  }
+  if (cylinders != null && cylinders > 0) return `${cylinders}-cylinder`;
   return null;
 }
 

@@ -184,7 +184,7 @@ export default function VinDecoder() {
             {result.make ? (
               <>
                 <div className="border-b border-zinc-900 pb-5 mb-1">
-                  <p className="text-xs text-zinc-400 mb-1">Decoded vehicle</p>
+                  <p className="text-xs text-zinc-400 mb-1">From the VIN</p>
                   <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
                     {result.year} {result.make} {result.model}
                   </h2>

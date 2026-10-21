@@ -4,7 +4,7 @@ import { useNoIndex, usePageMeta } from '../utils/pageMeta';
 const QUICK_LINKS = [
   { to: '/browse', label: 'Start from a situation', desc: 'Shop by need, budget, or body type' },
   { to: '/value-matrix', label: 'Value chart', desc: 'Plot price vs efficiency across the fleet' },
-  { to: '/home?fuel=electric', label: 'Electric vehicles', desc: 'EVs filtered in Search' },
+  { to: '/home?fuel=electric', label: 'Electric cars', desc: 'Every electric car on file' },
   { to: '/vin', label: 'VIN lookup', desc: 'Decode any 17-character VIN' },
 ] as const;
 

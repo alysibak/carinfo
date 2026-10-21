@@ -11,7 +11,7 @@ import {
 import { formatPriceShort } from '../utils/dataValue';
 import { efficiencyOf, rangeKm } from '../utils/efficiency';
 import { formatCarFuelLabel } from '../utils/fuelDisplay';
-import CarImage from './CarImage';
+import VehiclePlaceholder from './VehiclePlaceholder';
 import { StatusToast } from './ui';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 
@@ -243,8 +243,8 @@ export default function CarCard({
     return (
       <article className="group relative flex gap-3 px-3 py-3 border-b border-zinc-900 hover:bg-zinc-950 focus-within:bg-zinc-950">
         <StatusToast message={toast} />
-        <div className="w-20 h-14 sm:w-28 sm:h-[4.5rem] shrink-0 overflow-hidden mt-0.5">
-          <CarImage car={car} compact sizes="112px" />
+        <div className="w-16 h-10 sm:w-20 sm:h-12 shrink-0 overflow-hidden mt-0.5" aria-hidden>
+          <VehiclePlaceholder car={car} compact hideCaption />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-3">
@@ -289,14 +289,19 @@ export default function CarCard({
     <article className="surface-card-hover group relative flex flex-col h-full overflow-hidden focus-within:border-zinc-400">
       <StatusToast message={toast} />
 
-      <div className="aspect-video shrink-0 border-b border-zinc-900">
-        <CarImage car={car} />
-      </div>
-      <div className="p-3 pb-2.5">
-        <h3 className="text-[15px] font-semibold text-white leading-snug line-clamp-2">
-          {titleLink}
-        </h3>
-        {subtitle && <p className="text-xs text-zinc-400 mt-0.5 line-clamp-1">{subtitle}</p>}
+      {/* Results show the body's outline, alike for every car: community
+          photos of every angle and backdrop, and none for a third of cars,
+          made the grid look like classified ads. The car's page has its photo. */}
+      <div className="flex items-center gap-3 p-3 pb-2.5">
+        <div className="w-16 h-10 shrink-0 overflow-hidden" aria-hidden>
+          <VehiclePlaceholder car={car} compact hideCaption />
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-[15px] font-semibold text-white leading-snug line-clamp-2">
+            {titleLink}
+          </h3>
+          {subtitle && <p className="text-xs text-zinc-400 mt-0.5 line-clamp-1">{subtitle}</p>}
+        </div>
       </div>
 
       <dl className="grid grid-cols-3 border-y border-zinc-900 divide-x divide-zinc-900">
