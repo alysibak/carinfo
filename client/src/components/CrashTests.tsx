@@ -50,7 +50,7 @@ export default function CrashTests({ dashboard, car }: { dashboard: CarDashboard
       <div className="page-wrap-wide section-y-tight grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
         <div className="min-w-0">
           <h2 className="text-base font-bold tracking-tight mb-1">Crash tests</h2>
-          <p className="text-xs text-zinc-500 mb-3 leading-relaxed">
+          <p className="text-[13px] text-zinc-400 mb-3 leading-relaxed">
             {scores.length
               ? several
                 ? `NHTSA’s 5-Star Safety Ratings (U.S.). NHTSA tested ${tests.length} versions that match this car; each score shown is the lowest any of them got.`
@@ -112,7 +112,7 @@ export default function CrashTests({ dashboard, car }: { dashboard: CarDashboard
         {tech && (
           <div className="min-w-0">
             <h2 className="text-base font-bold tracking-tight mb-1">Safety technology</h2>
-            <p className="text-xs text-zinc-500 mb-3 leading-relaxed">
+            <p className="text-[13px] text-zinc-400 mb-3 leading-relaxed">
               What NHTSA lists for {several ? 'the versions' : 'the version'} it tested. “Not
               listed” means NHTSA does not list it, not that the car lacks it.
             </p>

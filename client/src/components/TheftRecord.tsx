@@ -23,7 +23,7 @@ export default function TheftRecord({ theft }: { theft: TheftRank }) {
             Theft in Canada
           </h2>
           <p className="text-sm text-zinc-300 leading-relaxed">{theftSentence(theft)}</p>
-          <p className="text-xs text-zinc-500 mt-2 leading-relaxed">
+          <p className="text-[13px] text-zinc-400 mt-2 leading-relaxed">
             Équité, the insurance industry’s body for fraud and crime, ranks models by how many were
             stolen, so a model with many on the road ranks higher. Before you buy, ask your insurer
             what it would cost to insure and whether it requires an anti-theft device, such as a

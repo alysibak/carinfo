@@ -95,7 +95,8 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
   const header = (
     <header
       ref={headerRef}
-      className={`sticky top-0 z-50 transition-colors duration-150 ${
+      // On a short screen (a phone on its side) it scrolls away with the page.
+      className={`sticky top-0 [@media(max-height:500px)]:static z-50 transition-colors duration-150 ${
         showBorder
           ? 'border-b border-zinc-800/80 bg-black/92 backdrop-blur-md'
           : 'border-b border-transparent bg-transparent'

@@ -41,7 +41,7 @@ export default function SizeAndFit({ size }: { size: VehicleSize }) {
   return (
     <div className="min-w-0">
       <h2 className="text-base font-bold tracking-tight mb-1">Size</h2>
-      <p className="text-xs text-zinc-500 mb-3 leading-relaxed">
+      <p className="text-[13px] text-zinc-400 mb-3 leading-relaxed">
         Transport Canada’s measurements
         {several ? `, from the ${size.measured.length} versions it measured that match` : ''}. Width
         is the body’s, without mirrors.

@@ -299,7 +299,7 @@ export default function Home() {
         resultLabel={resultLabel}
         updating={isSearching}
       />
-      <div className="sticky top-(--header-height) z-20 bg-black/90 border-b border-zinc-900 backdrop-blur-md">
+      <div className="sticky top-(--header-height) [@media(max-height:500px)]:static z-20 bg-black/90 border-b border-zinc-900 backdrop-blur-md">
         {/* A gap, not space-y: the chip row is hidden on desktop when it has
             nothing to show, and space-y's margin would stay under the box. */}
         <div className="page-wrap py-3 sm:py-4 flex flex-col gap-2.5 relative">

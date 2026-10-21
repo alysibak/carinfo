@@ -21,7 +21,7 @@ function InvestigationItem({ inv, forOther }: { inv: NhtsaInvestigation; forOthe
         {!inv.closed && !forOther && <span className="text-amber-400 font-normal"> · open</span>}
         {!inv.closed && forOther && <span className="text-zinc-400 font-normal"> · open</span>}
       </p>
-      <p className="text-xs text-zinc-500 mt-0.5 tabular-nums">
+      <p className="text-xs text-zinc-400 mt-0.5 tabular-nums">
         {investigationKind(inv.kind)} {inv.id} · opened {recallDate(inv.opened)}
         {inv.closed ? ` · closed ${recallDate(inv.closed)}` : ''}
         {inv.recall ? ` · led to recall ${inv.recall}` : ''}
@@ -66,7 +66,7 @@ export default function Investigations({
   return (
     <div className="min-w-0 md:col-span-2">
       <h2 className="text-base font-bold tracking-tight mb-1">NHTSA investigations</h2>
-      <p className="text-xs text-zinc-500 mb-4 leading-relaxed max-w-3xl">
+      <p className="text-[13px] text-zinc-400 mb-4 leading-relaxed max-w-3xl">
         {applies.length === 0
           ? `NHTSA (U.S.) has no investigation on file for this version of the ${name}`
           : applies.length === 1

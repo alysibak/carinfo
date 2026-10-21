@@ -48,7 +48,7 @@ function RecallItem({ recall, forOther }: { recall: CanadianRecall; forOther?: s
         )}
         {forOther && <span className="text-zinc-400 font-normal"> · for {forOther}</span>}
       </p>
-      <p className="text-xs text-zinc-500 mt-0.5 tabular-nums">
+      <p className="text-xs text-zinc-400 mt-0.5 tabular-nums">
         {recallDate(recall.date)} · Transport Canada recall {recall.number}
         {recall.units ? ` · ${recall.units.toLocaleString('en-CA')} vehicles in Canada` : ''}
       </p>
@@ -108,7 +108,7 @@ export default function SafetyRecords({
         {recalls && (
           <div className="min-w-0">
             <h2 className="text-base font-bold tracking-tight mb-1">Recalls in Canada</h2>
-            <p className="text-xs text-zinc-500 mb-4 leading-relaxed">
+            <p className="text-[13px] text-zinc-400 mb-4 leading-relaxed">
               {recallSummary(recalls.length, applies.length, others, name)} A recall can cover only
               some cars of a model year: check yours by its VIN with the maker or Transport Canada.
             </p>
@@ -158,7 +158,7 @@ export default function SafetyRecords({
         {complaints && (
           <div className="min-w-0">
             <h2 className="text-base font-bold tracking-tight mb-1">Owner complaints</h2>
-            <p className="text-xs text-zinc-500 mb-4 leading-relaxed">
+            <p className="text-[13px] text-zinc-400 mb-4 leading-relaxed">
               {complaints.complaints === 0
                 ? `No owner complaints about the ${name} on file with NHTSA (U.S.).`
                 : `${complaints.complaints.toLocaleString('en-CA')} owner ${complaints.complaints === 1 ? 'complaint' : 'complaints'} about the ${name} to NHTSA (U.S.).`}{' '}

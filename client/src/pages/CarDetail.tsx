@@ -584,7 +584,7 @@ export default function CarDetail() {
                           ? 'Charging'
                           : 'City and highway'}
                   </h2>
-                  <p className="text-xs text-zinc-500 mb-3 leading-relaxed">
+                  <p className="text-[13px] text-zinc-400 mb-3 leading-relaxed">
                     {isPhev
                       ? 'The figure above is gas mode, not a blend.'
                       : hasEvExtras && !hasCityHwy
@@ -632,7 +632,7 @@ export default function CarDetail() {
               {hasSpace && (
                 <div className="min-w-0">
                   <h2 className="text-base font-bold tracking-tight mb-1">Space</h2>
-                  <p className="text-xs text-zinc-500 mb-3 leading-relaxed">
+                  <p className="text-[13px] text-zinc-400 mb-3 leading-relaxed">
                     EPA’s interior volumes for this car.
                   </p>
                   {car.epa?.luggageVolumeCuFt != null && (
