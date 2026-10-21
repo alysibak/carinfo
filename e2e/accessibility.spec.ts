@@ -45,6 +45,7 @@ for (const { name, viewport } of VIEWPORTS) {
         '/home?q=most+stolen&sort=relevance',
         '/browse',
         `/car/${a}`,
+        `/car/${a}/checklist`,
         // Every year of a model, with its theft and records sections.
         '/models/toyota/rav4',
         `/compare?cars=${a},${b}`,

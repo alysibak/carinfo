@@ -95,6 +95,9 @@ export default function VinCatalogMatch({ decoded }: { decoded: VinDecodeResult 
         <Link to={carPath} className={linkClass}>
           Open the {name}
         </Link>
+        <Link to={`${carPath}/checklist`} className={linkClass}>
+          Checklist to take to the car
+        </Link>
         {modelPage && (
           <Link to={modelPage.path} className={linkClass}>
             Every year of the {modelPage.label}

@@ -559,4 +559,21 @@ input[type='range'] {
   li {
     break-inside: avoid;
   }
+
+  /* A long list (the checklist) runs on across pages; its items stay whole. */
+  .print-flow {
+    break-inside: auto;
+  }
+
+  /* Boxes to tick in ink: empty, or filled where ticked on screen. */
+  input[type='checkbox'] {
+    appearance: none;
+    width: 0.9rem;
+    height: 0.9rem;
+    border: 1.5px solid #000 !important;
+  }
+
+  input[type='checkbox']:checked {
+    border-width: 0.45rem !important;
+  }
 }

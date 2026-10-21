@@ -10,6 +10,7 @@ import { useRecordVisit } from './hooks/useRecordVisit';
 const Explore = lazy(() => import('./pages/Explore'));
 const VehicleGrid = lazy(() => import('./pages/VehicleGrid'));
 const CarDetail = lazy(() => import('./pages/CarDetail'));
+const CarChecklist = lazy(() => import('./pages/CarChecklist'));
 const ModelPage = lazy(() => import('./pages/ModelPage'));
 const Home = lazy(() => import('./pages/Home'));
 const Compare = lazy(() => import('./pages/Compare'));
@@ -60,6 +61,7 @@ function App() {
                   <Route path="/explore/:category" element={<Explore />} />
                   <Route path="/vehicles/:category/:subcategory" element={<VehicleGrid />} />
                   <Route path="/car/:id" element={<CarDetail />} />
+                  <Route path="/car/:id/checklist" element={<CarChecklist />} />
                   <Route path="/models/:make/:model" element={<ModelPage />} />
                   <Route path="/home" element={<Home />} />
                   {/* Open to visitors: the tools shoppers reach for first. */}
