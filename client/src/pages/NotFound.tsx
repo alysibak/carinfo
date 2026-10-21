@@ -23,7 +23,7 @@ export default function NotFound() {
           Wrong URL, or an old bookmark. Pick a path below — the archive is still here.
         </p>
 
-        <div className="grid sm:grid-cols-2 gap-3 text-left mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left mb-10">
           {QUICK_LINKS.map((item) => (
             <Link key={item.to} to={item.to} className="explore-card p-4 hover:border-zinc-500">
               <p className="text-sm font-semibold text-white">{item.label}</p>

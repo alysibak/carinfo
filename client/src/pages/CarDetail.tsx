@@ -29,13 +29,7 @@ import { efficiencyOf, formatCo2, type Efficiency } from '../utils/efficiency';
 import { formatCarFuelLabel } from '../utils/fuelDisplay';
 import { formatKwhPer100KmFromMi } from '../utils/fuelEconomyUnits';
 import { formatTransmissionLabel } from '../utils/trimLabel';
-import {
-  ghgFraming,
-  phevModes,
-  fiveYearFuelSavings,
-  fuelSavingsSentence,
-  type PhevModes,
-} from '../utils/epaContent';
+import { ghgFraming, phevModes, type PhevModes } from '../utils/epaContent';
 import type { AnnualCostBreakdown } from '../types/car.types';
 import { TIER_HELPER } from '../utils/visualTiers';
 import { usePageMeta } from '../utils/pageMeta';
@@ -319,8 +313,7 @@ export default function CarDetail() {
   const hasEmissionsData =
     car.epa?.co2 != null ||
     hasNumericValue(car.epa?.ghgScore) ||
-    hasNumericValue(car.epa?.barrelsPerYear) ||
-    fiveYearFuelSavings(car) != null;
+    hasNumericValue(car.epa?.barrelsPerYear);
 
   // EPA's interior volumes: cars and some SUVs; pickups and most vans have none.
   const hasSpace = !!(car.epa?.luggageVolumeCuFt || car.epa?.passengerVolumeCuFt);
@@ -653,16 +646,6 @@ export default function CarDetail() {
                       glossaryKey="ghgScore"
                     />
                   )}
-                  {(() => {
-                    const fuelSav = fiveYearFuelSavings(car);
-                    return fuelSav ? (
-                      <DataRow
-                        label="5-yr fuel vs. average"
-                        value={fuelSavingsSentence(fuelSav)}
-                        glossaryKey="fuelSavings5yr"
-                      />
-                    ) : null;
-                  })()}
                 </div>
               )}
             </div>

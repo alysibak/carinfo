@@ -82,11 +82,9 @@ describe('ModelPage', () => {
     );
     // The row reads the year's figures; the newest year is also the header's link.
     const newest = screen.getAllByRole('link', { name: '2026 Toyota Camry' });
-    expect(
-      newest.some((link) =>
-        /Est\. value ~\$32k · from 4\.6 L\/100 km/.test(link.textContent ?? ''),
-      ),
-    ).toBe(true);
+    expect(newest.some((link) => /from 4\.6 L\/100 km/.test(link.textContent ?? ''))).toBe(true);
+    // No estimated value: a row of them read as prices.
+    expect(newest.some((link) => /Est\. value/.test(link.textContent ?? ''))).toBe(false);
     expect(screen.getByRole('link', { name: 'Honda Accord' })).toHaveAttribute(
       'href',
       '/models/honda/accord',

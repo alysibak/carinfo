@@ -32,11 +32,11 @@ export default function ShortlistCards() {
   }, []);
 
   return (
-    <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+    <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
       {Object.values(COLLECTIONS).map((collection) => {
         const picks = previews?.[collection.id];
         return (
-          <li key={collection.id}>
+          <li key={collection.id} className="min-w-0">
             <Link
               to={`/collection/${collection.id}`}
               className="group h-full surface-card-hover p-4 flex flex-col gap-3 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60"

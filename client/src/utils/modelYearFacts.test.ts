@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { modelYearFacts, yearSpan } from './modelYearFacts';
 
 describe('modelYearFacts', () => {
-  it('reads a year as value, fuel use, power, safety, then what it was offered as', () => {
+  it('reads a year as fuel use, power, safety, then what it was offered as, with no estimate', () => {
     expect(
       modelYearFacts({
         year: 2024,
@@ -16,7 +16,6 @@ describe('modelYearFacts', () => {
         bodyStyles: ['sedan'],
       }),
     ).toEqual([
-      'Est. value $30k–$31k',
       'from 4.5 L/100 km',
       '202–301 hp',
       'NHTSA 5/5',
@@ -37,13 +36,7 @@ describe('modelYearFacts', () => {
         fuelTypes: ['electric'],
         bodyStyles: ['suv'],
       }),
-    ).toEqual([
-      'Est. value ~$58k',
-      'up to 575 km range',
-      '384 hp',
-      'Electric SUV',
-      '1 configuration',
-    ]);
+    ).toEqual(['up to 575 km range', '384 hp', 'Electric SUV', '1 configuration']);
   });
 });
 

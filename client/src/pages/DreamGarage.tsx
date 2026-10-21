@@ -56,7 +56,7 @@ function GarageSuggestions({ onSaved }: { onSaved: (message: string) => void }) 
 
   if (cars == null) {
     return (
-      <div className="grid sm:grid-cols-2 gap-2" aria-hidden>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" aria-hidden>
         {[0, 1, 2, 3].map((i) => (
           <div key={i} className="h-[68px] border border-zinc-900 bg-zinc-950" />
         ))}
@@ -66,7 +66,7 @@ function GarageSuggestions({ onSaved }: { onSaved: (message: string) => void }) 
   if (cars.length === 0) return null;
 
   return (
-    <ul className="grid sm:grid-cols-2 gap-2">
+    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
       {cars.map(({ car, list, figure }) => {
         const isSaved = saved.some((c) => c.id === car.id);
         return (

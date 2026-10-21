@@ -2,6 +2,8 @@ import type { CarDashboard, CarSpecs } from '../types/car.types';
 import { efficiencyOf, rangeKm } from './efficiency';
 import { displayModelLabel } from './trimLabel';
 import { rolloverRiskText } from './safetyTech';
+import { splitRecalls } from '@carinfo/shared/recall-scope';
+import { ordinal } from '@carinfo/shared/theft';
 
 export interface ComparePair {
   car: CarSpecs;
@@ -14,6 +16,8 @@ export interface CompareLine {
   name: string;
   /** "The SUV, with a 5-star NHTSA rating and the lowest running costs." */
   sentence: string;
+  /** What to look into before buying it: "1st on Canada's most-stolen list (2024)". */
+  watch?: string;
 }
 
 const isAwd = (drive?: string) => drive === 'AWD' || drive === '4WD';
@@ -65,8 +69,10 @@ function joinWords(parts: string[]): string {
 /**
  * What each car on a compare page has that the others do not, in a sentence,
  * from the records: the only SUV, the only AWD, the least fuel, the best NHTSA
- * rating, the most power, the longest range. The section used to print "Body styles:
- * sedan, suv" and "Different shape — the sedan in this set".
+ * rating, the fewest recalls, the most power, the longest range; and what to
+ * watch for. The section used to print "Body styles: sedan, suv" and
+ * "Different shape — the sedan in this set", and called a CX-5 with no recalls
+ * "much the same" as a RAV4 with five.
  */
 export function summarizeComparison(pairs: ComparePair[]): CompareLine[] {
   if (pairs.length < 2) return [];
@@ -181,6 +187,33 @@ export function summarizeComparison(pairs: ComparePair[]): CompareLine[] {
   if (range)
     add(range.id, `the longest range (${rangeKm(range.best)} against ${rangeKm(range.next)} km)`);
 
+  // Recalls that can cover each version, where every car's are on file: a
+  // count of campaigns, which, unlike complaints, does not grow with sales.
+  if (pairs.length > 1 && pairs.every((p) => p.dashboard?.recalls)) {
+    const recalls = leader(
+      pairs.map(({ car, dashboard }) => ({
+        id: car.id,
+        value: splitRecalls(dashboard!.recalls!, {
+          fuelType: car.engine.fuelType,
+          mildHybrid: car.engine.mildHybrid,
+        }).applies.length,
+      })),
+      true,
+      (best, next) => next - best >= 2,
+    );
+    if (recalls) {
+      add(recalls.id, `the fewest recalls in Canada (${recalls.best} against ${recalls.next})`);
+    }
+  }
+
+  // Off Canada's most-stolen list where another here is on it.
+  const listed = pairs.filter((p) => p.dashboard?.theft);
+  if (listed.length && listed.length < pairs.length && pairs.every((p) => p.dashboard)) {
+    for (const { car, dashboard } of pairs) {
+      if (!dashboard?.theft) add(car.id, 'not on Canada’s most-stolen list');
+    }
+  }
+
   const year = leader(
     cars.map((c) => ({ id: c.id, value: c.year })),
     false,
@@ -188,8 +221,16 @@ export function summarizeComparison(pairs: ComparePair[]): CompareLine[] {
   );
   if (year) add(year.id, `the newest (${year.best})`);
 
-  return pairs.map(({ car }) => {
+  return pairs.map(({ car, dashboard }) => {
     const found = (strengths.get(car.id) ?? []).slice(0, 3);
+    const watch = [
+      dashboard?.theft
+        ? `${ordinal(dashboard.theft.rank)} on Canada’s most-stolen list (${dashboard.theft.year})`
+        : null,
+      dashboard?.investigations?.some((inv) => !inv.closed)
+        ? 'an NHTSA investigation still open'
+        : null,
+    ].filter((w): w is string => !!w);
     const kind = kinds.get(car.id);
     let sentence: string;
     if (kind && found.length) sentence = `${kind}: ${joinWords(found)}`;
@@ -200,6 +241,7 @@ export function summarizeComparison(pairs: ComparePair[]): CompareLine[] {
       carId: car.id,
       name: `${car.year} ${car.make} ${displayModelLabel(car)}`,
       sentence: sentence.charAt(0).toUpperCase() + sentence.slice(1) + '.',
+      ...(watch.length ? { watch: `${joinWords(watch)}.` } : {}),
     };
   });
 }

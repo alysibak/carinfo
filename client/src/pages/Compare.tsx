@@ -28,6 +28,7 @@ import { availabilityLabel, rolloverRiskText } from '../utils/safetyTech';
 import { formatKg, formatMetres } from '../utils/size';
 import { complaintPart } from '../utils/recalls';
 import { ordinal } from '@carinfo/shared/theft';
+import { splitRecalls } from '@carinfo/shared/recall-scope';
 
 function isUnavailable(value: string | number): boolean {
   return value === UNAVAILABLE_LABEL;
@@ -316,7 +317,23 @@ const ALL_SPECS: SpecRow[] = [
     key: 'recalls',
     label: 'Recalls in Canada',
     hint: 'Transport Canada, model year',
-    getValue: (_car, dash) => (dash.recalls ? String(dash.recalls.length) : UNAVAILABLE_LABEL),
+    getValue: (car, dash) =>
+      dash.recalls
+        ? String(
+            splitRecalls(dash.recalls, {
+              fuelType: car.engine.fuelType,
+              mildHybrid: car.engine.mildHybrid,
+            }).applies.length,
+          )
+        : UNAVAILABLE_LABEL,
+    getSub: (car, dash) => {
+      if (!dash.recalls) return null;
+      const { other } = splitRecalls(dash.recalls, {
+        fuelType: car.engine.fuelType,
+        mildHybrid: car.engine.mildHybrid,
+      });
+      return other.length ? `+${other.length} for other versions` : null;
+    },
   },
   {
     key: 'complaints',
@@ -471,7 +488,7 @@ export default function Compare() {
             ))}
           </div>
           <h2 className="eyebrow mb-3">Or start from</h2>
-          <div className="grid sm:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <Link to="/browse" className="choice-tile">
               <span>
                 <span className="block text-[15px] text-white">A situation</span>
@@ -604,6 +621,11 @@ export default function Compare() {
                       <span className="font-semibold text-white">{line.name}</span>
                       <span className="text-zinc-500"> — </span>
                       <span className="text-zinc-200">{line.sentence}</span>
+                      {line.watch && (
+                        <span className="block text-[13px] text-amber-300/90 mt-0.5">
+                          Watch for: {line.watch}
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ul>

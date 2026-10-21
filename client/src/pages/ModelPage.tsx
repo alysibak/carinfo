@@ -15,7 +15,7 @@ import { theftSentence } from '@carinfo/shared/theft';
 
 type Status = 'loading' | 'ready' | 'missing' | 'error';
 
-/** "Est. value $30k–$31k · 202–301 hp", each figure kept whole when the line wraps. */
+/** "5.9 L/100 km · 202–301 hp", each figure kept whole when the line wraps. */
 function Facts({ facts }: { facts: string[] }) {
   return (
     <>

@@ -3,6 +3,7 @@ import type { CarDashboard } from '../types/car.types';
 import { efficiencyOf } from './efficiency';
 import { investigationKind, investigationText, openFirst } from './investigations';
 import { complaintPart, recallDate, recallNotice } from './recalls';
+import { powertrainNames, splitRecalls } from '@carinfo/shared/recall-scope';
 import { availabilityLabel } from './safetyTech';
 import { formatKg, formatMetres } from './size';
 import { formatTransmissionLabel } from './trimLabel';
@@ -54,13 +55,22 @@ export function checklistSections(dashboard: CarDashboard): ChecklistSection[] {
   });
 
   if (recalls) {
+    const { applies, other } = splitRecalls(recalls, {
+      fuelType: car.engine.fuelType,
+      mildHybrid: car.engine.mildHybrid,
+    });
+    const others = other.length
+      ? ` ${other.length} more ${other.length === 1 ? 'is' : 'are'} for ${[...new Set(other.map((o) => powertrainNames(o.powertrains)))].join(' or ')} alone, and left out.`
+      : '';
     sections.push({
       id: 'recalls',
       title: 'Recalls in Canada',
-      intro: recalls.length
-        ? `Transport Canada lists ${recalls.length} ${recalls.length === 1 ? 'recall' : 'recalls'} for the ${name}. Ask for proof each was done; a recall can cover only some cars of a model year.`
-        : `Transport Canada lists no recalls for the ${name}.`,
-      items: recalls.map((recall) => ({
+      intro: applies.length
+        ? `Transport Canada lists ${applies.length} ${applies.length === 1 ? 'recall' : 'recalls'} ${other.length ? 'that can cover this version of' : 'for'} the ${name}. Ask for proof each was done; a recall can cover only some cars of a model year.${others}`
+        : other.length
+          ? `Transport Canada lists no recalls for this version of the ${name}.${others}`
+          : `Transport Canada lists no recalls for the ${name}.`,
+      items: applies.map((recall) => ({
         text: `${complaintPart(recall.system)}: ${recallNotice(recall.summary).issue}`,
         detail: `Recall ${recall.number} · ${recallDate(recall.date)}`,
         tick: true,

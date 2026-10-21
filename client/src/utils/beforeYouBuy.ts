@@ -1,5 +1,6 @@
 import type { CarDashboard } from '../types/car.types';
 import { complaintPart, recallDate } from './recalls';
+import { powertrainNames, splitRecalls } from '@carinfo/shared/recall-scope';
 import { investigationText } from './investigations';
 import { theftPlace } from '@carinfo/shared/theft';
 
@@ -34,12 +35,22 @@ export function beforeYouBuy(dashboard: CarDashboard): BeforeYouBuyItem[] {
   const items: BeforeYouBuyItem[] = [];
 
   if (recalls) {
+    const { applies, other } = splitRecalls(recalls, {
+      fuelType: car.engine.fuelType,
+      mildHybrid: car.engine.mildHybrid,
+    });
+    // The RAV4 Prime's recalls, filed under every 2021 RAV4, are not this version's.
+    const others = other.length
+      ? ` (${other.length} more ${other.length === 1 ? 'is' : 'are'} for ${[...new Set(other.map((o) => powertrainNames(o.powertrains)))].join(' or ')} alone)`
+      : '';
     items.push({
       key: 'recalls',
       href: '#recalls',
-      text: recalls.length
-        ? `${recalls.length} ${recalls.length === 1 ? 'recall' : 'recalls'} in Canada for the ${name}: ask for proof the work was done, or check the VIN with the maker or Transport Canada.`
-        : `No recalls in Canada listed for the ${name}.`,
+      text: applies.length
+        ? `${applies.length} ${applies.length === 1 ? 'recall' : 'recalls'} in Canada for the ${name}${others}: ask for proof the work was done, or check the VIN with the maker or Transport Canada.`
+        : other.length
+          ? `No recalls in Canada listed for this version of the ${name}${others}.`
+          : `No recalls in Canada listed for the ${name}.`,
     });
   }
 

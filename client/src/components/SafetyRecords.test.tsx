@@ -109,4 +109,26 @@ describe('SafetyRecords', () => {
     );
     expect(items[1]).toHaveTextContent('Brake booster failure');
   });
+
+  it('lists another powertrain’s recalls apart, under their own heading', () => {
+    render(
+      <SafetyRecords
+        dashboard={{
+          ...sparseDashboard,
+          recalls: [
+            { ...recall(1), summary: 'Issue: On certain RAV4 Prime models, the caps were loose.' },
+            recall(2),
+          ],
+        }}
+        name="2021 Toyota RAV4"
+      />,
+    );
+    expect(
+      screen.getByText(
+        /Transport Canada lists 2 recalls for the 2021 Toyota RAV4: 1 can cover this version, and 1 is for the plug-in hybrid alone\./,
+      ),
+    ).toBeVisible();
+    expect(screen.getByText('1 recall for other versions')).toBeVisible();
+    expect(screen.getByText(/for the plug-in hybrid/, { selector: 'span' })).toBeInTheDocument();
+  });
 });

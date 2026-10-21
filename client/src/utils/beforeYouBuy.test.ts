@@ -118,4 +118,33 @@ describe('beforeYouBuy', () => {
       },
     ]);
   });
+
+  it('counts the recalls that can cover this version, and names the rest', () => {
+    const recall = (number: string, summary: string) => ({
+      number,
+      date: '2023-01-01',
+      system: 'Electrical',
+      kind: 'safety' as const,
+      summary,
+    });
+    const [item] = beforeYouBuy(
+      dashboard(
+        {
+          complaints: undefined,
+          recalls: [
+            recall('2023001', 'Issue: On certain vehicles, the airbag sensor may fail.'),
+            recall('2023002', 'Issue: On certain RAV4 Prime models, the caps were not installed.'),
+            recall('2023003', 'On certain plug-in hybrid vehicles, the converter could fail.'),
+          ],
+        },
+        {
+          safetyRating: undefined,
+          engine: { ...sparseDashboard.car.engine, fuelType: 'gasoline' },
+        },
+      ),
+    );
+    expect(item.text).toBe(
+      '1 recall in Canada for the 2018 Honda CR-V (2 more are for the plug-in hybrid alone): ask for proof the work was done, or check the VIN with the maker or Transport Canada.',
+    );
+  });
 });

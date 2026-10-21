@@ -25,6 +25,12 @@ interface CarCardProps {
   reasons?: string[];
   /** Offers a "Remove" button beside Compare, as the garage does. */
   onRemove?: () => void;
+  /**
+   * The estimated value, shown only where the search is about price (a price
+   * limit or the cheapest-first order). Most are drawn from the car's size
+   * class rather than its own price, so a card does not lead with one.
+   */
+  showValue?: boolean;
 }
 
 interface Figure {
@@ -35,8 +41,7 @@ interface Figure {
 
 /**
  * The figures a result is chosen on, from the records: what it burns (or, for
- * an EV, how far it goes), its power, and its NHTSA crash rating. The
- * estimated value rides below them, labelled, rather than leading the card.
+ * an EV, how far it goes), its power, and its NHTSA crash rating.
  */
 function figuresFor(car: CarSpecs): Figure[] {
   const figures: Figure[] = [];
@@ -151,6 +156,7 @@ export default function CarCard({
   layout = 'grid',
   reasons = [],
   onRemove,
+  showValue = false,
 }: CarCardProps) {
   const [toast, setToast] = useState<string | null>(null);
 
@@ -185,7 +191,7 @@ export default function CarCard({
     .filter(Boolean)
     .join(' · ');
   const figures = figuresFor(car);
-  const estValue = estimatedValue(car);
+  const estValue = showValue ? estimatedValue(car) : null;
 
   const titleLink = (
     <Link

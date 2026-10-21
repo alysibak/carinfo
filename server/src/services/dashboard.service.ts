@@ -23,6 +23,7 @@ import {
 } from './safety-records.service.js';
 import { nhtsaRatingsDate, nhtsaTestsFor } from '../utils/nhtsa-ratings.js';
 import { theftRankOf } from '../config/most-stolen.js';
+import { splitRecalls } from '../shared/recall-scope.js';
 
 export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard | null {
   const car = carService.getCarById(id);
@@ -199,7 +200,13 @@ export function getCarRecords(id: string): CarRecordsSummary | null {
   const recalls = canadianRecallsFor(line, car.year);
   const complaints = complaintsFor(line, car.year);
   return {
-    recalls: recalls ? recalls.length : null,
+    // Those that can cover this version: the RAV4 Prime's are not a gasoline RAV4's.
+    recalls: recalls
+      ? splitRecalls(recalls, {
+          fuelType: car.engine.fuelType,
+          mildHybrid: car.engine.mildHybrid,
+        }).applies.length
+      : null,
     complaints: complaints ? complaints.complaints : null,
     complaintPart: complaints?.parts[0]?.[0] ?? null,
     theft: theftRankOf(line) ?? null,

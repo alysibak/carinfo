@@ -273,6 +273,13 @@ export default function Home() {
   // carries what is switched on.
   const rowHasDesktopContent = activeFilterChips.length > 0 || hasSearched;
   const sortField = searchQuery.sort?.field ?? 'year';
+  // Cards name a car's estimated value only where the search is about price.
+  const priceAsked =
+    sortField === 'price' ||
+    searchQuery.filters?.price?.min != null ||
+    searchQuery.filters?.price?.max != null ||
+    searchResults?.interpretation?.price != null ||
+    searchResults?.interpretation?.sortedBy === 'price';
   const sortOrder = searchQuery.sort?.order ?? 'desc';
   const isEvBrowse = isElectricOnlyBrowse(searchQuery.filters);
 
@@ -637,6 +644,7 @@ export default function Home() {
                           <CarCard
                             key={car.id}
                             car={car}
+                            showValue={priceAsked}
                             layout="list"
                             reasons={matchReasons(
                               car,
@@ -652,6 +660,7 @@ export default function Home() {
                           <CarCard
                             key={car.id}
                             car={car}
+                            showValue={priceAsked}
                             reasons={matchReasons(
                               car,
                               searchQuery.filters,

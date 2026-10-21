@@ -8,20 +8,14 @@ import { theftSentence } from '../shared/theft.js';
 const KM_PER_MILE = 1.609344;
 
 const span = (from: number, to: number) => (from === to ? `${from}` : `${from}–${to}`);
-const thousands = (value: number) => `$${Math.round(value / 1000)}k`;
 
 /**
- * "est. value $30k–$31k, from 4.6 L/100 km, 202–301 hp, NHTSA 5/5, 4 recalls
- * in Canada, 1,775 owner complaints to NHTSA, most about engine", as the
- * page's row reads.
+ * "from 4.6 L/100 km, 202–301 hp, NHTSA 5/5, 4 recalls in Canada, 1,775
+ * owner complaints to NHTSA, most about engine", as the page's row reads.
  */
 function yearFacts(row: ModelYearSummary): string {
-  const { price, horsepower } = row;
+  const { horsepower } = row;
   return [
-    price &&
-      (thousands(price.min) === thousands(price.max)
-        ? `est. value ~${thousands(price.min)}`
-        : `est. value ${thousands(price.min)}–${thousands(price.max)}`),
     row.combinedMpg && `from ${(235.215 / row.combinedMpg).toFixed(1)} L/100 km`,
     row.rangeMiles && `up to ${Math.round(row.rangeMiles * KM_PER_MILE)} km range`,
     horsepower &&
@@ -133,7 +127,7 @@ function modelSummaryHtml(overview: ModelOverview, name: string, years: string):
     `<main class="seo-prerender">` +
     `<h1>${escapeHtml(name)}</h1>` +
     `<p>${escapeHtml(`${years}, ${overview.years.length} model years on file${overview.onSale ? ', on sale' : ''}.`)} ` +
-    `Each year's span or best across its configurations: EPA ratings, NHTSA stars and estimated value in CAD; Transport Canada's recalls and NHTSA's owner complaints for the model year, not adjusted for sales.</p>` +
+    `Each year's span or best across its versions: EPA ratings and NHTSA stars; Transport Canada's recalls and NHTSA's owner complaints for the model year, not adjusted for sales.</p>` +
     theft +
     sections +
     rivals +

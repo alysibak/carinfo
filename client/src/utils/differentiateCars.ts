@@ -252,7 +252,6 @@ function pickMetricEdge(car: CarSpecs, set: CarSpecs[]): string | null {
 function buildAxes(set: CarSpecs[]): string[] {
   const axes: string[] = [];
 
-  let priceAxis: string | null = null;
   for (const metric of METRICS) {
     if (metric.key === 'mpg' && !sharedFuelUnit(set)) continue;
     const scored = set
@@ -262,12 +261,8 @@ function buildAxes(set: CarSpecs[]): string[] {
     const values = scored.map((x) => x.value);
     if (!meaningfulSpread(values, metric.minAbsDelta, metric.minRelDelta)) continue;
 
-    if (metric.key === 'price') {
-      priceAxis = metric.axisLabel(
-        `${formatMoneyShort(Math.min(...values))}–${formatMoneyShort(Math.max(...values))}`,
-      );
-      continue;
-    }
+    // Estimated values stay out of the summary: most come from the size class.
+    if (metric.key === 'price') continue;
 
     if (metric.key === 'mpg') {
       axes.push(metric.axisLabel(`${fuelSpread(set[0], values)} ${fuelUnit(set[0])}`));
@@ -301,8 +296,6 @@ function buildAxes(set: CarSpecs[]): string[] {
     ),
   ];
   if (bodies.length > 1) axes.push(`Different shapes: ${bodies.join(', ')}`);
-  // The records first; the estimated values only if there is room.
-  if (priceAxis) axes.push(priceAxis);
 
   return axes.slice(0, 3);
 }

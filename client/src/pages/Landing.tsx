@@ -158,7 +158,7 @@ export default function Landing() {
             Most people arrive with one of these in mind.
           </p>
 
-          <div className="grid sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="border border-zinc-800 bg-zinc-950 p-4 sm:p-5">
               <h3 className="text-base font-semibold text-white mb-3">I know the car</h3>
               <div className="flex flex-wrap gap-2">
