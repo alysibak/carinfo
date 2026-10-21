@@ -16,14 +16,16 @@ import { theftSentence } from '@carinfo/shared/theft';
 
 type Status = 'loading' | 'ready' | 'missing' | 'error';
 
-/** "5.9 L/100 km · 202–301 hp", each figure kept whole when the line wraps. */
+/** "5.9 L/100 km · 202–301 hp", each short figure kept whole when the line wraps. */
 function Facts({ facts }: { facts: string[] }) {
   return (
     <>
       {facts.map((fact, i) => (
         <span key={fact}>
           {i > 0 && ' · '}
-          <span className="whitespace-nowrap">{fact}</span>
+          {/* A short figure stays whole; a long list ("Gasoline, Hybrid · Sedan,
+              Hatchback") may wrap, or it ran past a small phone's edge. */}
+          <span className={fact.length <= 24 ? 'whitespace-nowrap' : undefined}>{fact}</span>
         </span>
       ))}
     </>

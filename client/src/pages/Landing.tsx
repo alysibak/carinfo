@@ -107,7 +107,7 @@ export default function Landing() {
 
       <main id="main-content" tabIndex={-1} className="focus:outline-hidden">
         <section className="mesh-hero">
-          <div className="hero-content page-wrap pt-10 pb-10 md:pt-16 md:pb-16 lg:pt-20 lg:pb-20 grid lg:grid-cols-[minmax(0,1fr)_23rem] gap-10 lg:gap-14 items-center">
+          <div className="hero-content page-wrap pt-10 pb-10 md:pt-16 md:pb-16 lg:pt-20 lg:pb-20 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_23rem] gap-10 lg:gap-14 items-center">
             <div className="max-w-xl min-w-0">
               {/* The promise, not the brand: the header already says CarInfo. */}
               <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-bold tracking-tight leading-[1.05] mb-4 animate-hero-rise">
