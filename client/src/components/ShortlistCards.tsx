@@ -5,7 +5,7 @@ import type { CarSpecs } from '../types/car.types';
 import { COLLECTIONS } from '../config/collections';
 import { displayModelLabel } from '../utils/trimLabel';
 import { rankedFigure } from '../utils/rankedFigure';
-import VehiclePlaceholder from './VehiclePlaceholder';
+import CarImage from './CarImage';
 
 /**
  * The curated shortlists as cards that show what is in them: each list's
@@ -60,7 +60,7 @@ export default function ShortlistCards() {
                     return (
                       <li key={car.id} className="flex items-center gap-2.5 min-w-0">
                         <span className="w-11 h-7 shrink-0 overflow-hidden" aria-hidden>
-                          <VehiclePlaceholder car={car} compact hideCaption />
+                          <CarImage car={car} compact markYear={false} sizes="44px" />
                         </span>
                         <span className="text-sm text-zinc-200 truncate min-w-0">
                           {car.year} {car.make} {displayModelLabel(car)}

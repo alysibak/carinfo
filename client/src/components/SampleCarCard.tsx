@@ -6,7 +6,7 @@ import { useRegionStore } from '../stores/regionStore';
 import { buildKeyFigures } from '../utils/keyFigures';
 import ProvenanceChip from './ProvenanceChip';
 import { displayVehicleTitle } from '../utils/trimLabel';
-import VehiclePlaceholder from './VehiclePlaceholder';
+import CarImage from './CarImage';
 
 /**
  * A real car's page in miniature, for the home page: the figures every car
@@ -39,8 +39,8 @@ export default function SampleCarCard({ car }: { car: CarSpecs }) {
       className="group block border border-zinc-800 bg-zinc-950/90 backdrop-blur-xs hover:border-zinc-600 transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60"
     >
       <div className="flex items-center gap-3 px-4 pt-4">
-        <span className="w-16 h-10 shrink-0 overflow-hidden" aria-hidden>
-          <VehiclePlaceholder car={car} compact hideCaption />
+        <span className="w-20 h-[3.25rem] shrink-0 overflow-hidden" aria-hidden>
+          <CarImage car={car} compact markYear={false} sizes="80px" />
         </span>
         <div className="min-w-0">
           <p className="text-xs text-zinc-500">A car page, at a glance</p>

@@ -64,7 +64,7 @@ describe('CarPhotoButton', () => {
         <span>illustration</span>
       </CarPhotoButton>,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Open the photo' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Open the photo of the .*, larger$/ }));
     expect(screen.getByRole('dialog', { name: /2020 Toyota Corolla/ })).toBeInTheDocument();
     fireEvent.keyDown(document, { key: 'Escape' });
     rerender(
@@ -74,6 +74,22 @@ describe('CarPhotoButton', () => {
     );
     expect(screen.getByText('illustration')).toBeInTheDocument();
     expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('says when the photo is of another year of the generation, and which', () => {
+    render(
+      <CarPhotoButton
+        car={{
+          ...photographed,
+          photo: { ...photographed.photo, otherYear: { year: 2020, generation: [2019, 2025] } },
+        }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'See photo' }));
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveTextContent('A photo of a 2020 model, not this model year');
+    expect(dialog).toHaveTextContent('same generation (2019–2025)');
+    expect(dialog).not.toHaveTextContent('A photo of this model year');
   });
 
   it('closes on Escape', () => {

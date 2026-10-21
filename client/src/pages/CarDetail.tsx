@@ -15,7 +15,8 @@ import TCOCalculator from '../components/TCOCalculator';
 import { StatusToast } from '../components/ui';
 import ValuationLinks from '../components/ValuationLinks';
 import VehiclePlaceholder from '../components/VehiclePlaceholder';
-import CarPhotoButton from '../components/CarPhotoButton';
+import CarPhotoFigure from '../components/CarPhotoFigure';
+import { carPhotoSources } from '../utils/carImages';
 import KeyFigures from '../components/KeyFigures';
 import RegionSelect from '../components/RegionSelect';
 import PinnedCarBar from '../components/PinnedCarBar';
@@ -296,6 +297,8 @@ export default function CarDetail() {
   const hydrogenPrice = getRegionalAssumptions(region).hydrogenCadPerKg;
   const isInCompare = comparedCars.some((c) => c.id === car.id);
   const title = displayVehicleTitle(car);
+  // A photo on Commons leads the page; without one, the small body illustration.
+  const hasPhoto = carPhotoSources(car.photo).length > 0;
   const transmissionLabel = car.transmission?.type
     ? formatTransmissionLabel(car.transmission)
     : null;
@@ -442,12 +445,20 @@ export default function CarDetail() {
           </button>
 
           <div className="mt-1 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 lg:gap-8">
-            <div className="grid grid-cols-[5.5rem_1fr] sm:grid-cols-[9rem_1fr] gap-4 sm:gap-6 items-center min-w-0">
-              <div className="h-14 sm:h-20 overflow-hidden">
-                <CarPhotoButton car={car} variant="tile">
+            <div
+              className={`grid gap-4 sm:gap-6 min-w-0 ${
+                hasPhoto
+                  ? 'grid-cols-1 sm:grid-cols-[15rem_1fr] lg:grid-cols-[20rem_1fr] items-start'
+                  : 'grid-cols-[5.5rem_1fr] sm:grid-cols-[9rem_1fr] items-center'
+              }`}
+            >
+              {hasPhoto ? (
+                <CarPhotoFigure car={car} />
+              ) : (
+                <div className="h-14 sm:h-20 overflow-hidden">
                   <VehiclePlaceholder car={car} compact hideCaption />
-                </CarPhotoButton>
-              </div>
+                </div>
+              )}
               <div className="min-w-0">
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight wrap-break-word">
                   {title}
@@ -471,7 +482,6 @@ export default function CarDetail() {
                 {specLine.length > 0 && (
                   <p className="text-sm text-zinc-500 mt-1 tabular-nums">{specLine.join(' · ')}</p>
                 )}
-                <CarPhotoButton car={car} className="mt-2 min-h-[40px] text-sm" />
                 {dashboard.modelPage && (
                   <p className="mt-2 text-sm">
                     <Link

@@ -210,6 +210,11 @@ export interface CarPhoto {
   caption: string;
   /** The car's generation, from Wikipedia: "BMW M3 (G80)". */
   generation?: string;
+  /**
+   * Set when the photo is of another model year of the car's generation, as
+   * none of its own is on file: that year, and the generation's first and last.
+   */
+  otherYear?: { year: number; generation: [number, number] };
 }
 
 export interface CarFilter {

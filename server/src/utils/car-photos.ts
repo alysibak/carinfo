@@ -7,8 +7,9 @@ import { resolveDataFile } from './data-paths.js';
  * make, model and body: Commons' car photos are mostly named year first
  * ("2021 BMW M3 Competition Automatic 3.0 Front.jpg"), and
  * scripts/lib/year-photos.ts picks the best for each car among those named
- * for its year. A car with none has no photo: one of another year in the same
- * generation can show lights, bumpers or a body it does not have.
+ * for its year. A car with none borrows the nearest year's of its generation,
+ * model and body, and says so with that year: a refresh can change lights and
+ * bumpers within a generation, so it is never passed off as the car's own.
  *
  * Wikipedia's articles, read for their infoboxes, give each model's
  * generations: the name the viewer shows beside the photo, and which
@@ -278,45 +279,220 @@ export function changesGeneration(
   return false;
 }
 
+type PhotoCar = Pick<Car, 'id' | 'make' | 'model' | 'trim' | 'year' | 'bodyStyle'>;
+
+export type PhotoBody = 'open' | 'coupe' | 'wagon' | 'hatch' | 'sedan';
+
+/** The body a name says: "Convertible", "Sportback", "Gran Turismo", and with doors, "2Dr". */
+function namedBody(text: string, doors = true): PhotoBody | undefined {
+  const t = text.toLowerCase();
+  // A "Gran Coupe" or "4-door coupe" has four doors.
+  if (/\bgran coup[eé]|\b4-door coup[eé]/.test(t)) return undefined;
+  if (/\b(?:convertible|cabrio(?:let)?|roadster|spyder|spider|volante|drophead)\b/.test(t)) {
+    return 'open';
+  }
+  if (/\bcoup[eé]\b/.test(t)) return 'coupe';
+  // BMW's chassis codes, which its photographers name: a G26 is the Gran Coupe.
+  if (/\b(?:e92|f32|f82|g22|g82)\b/.test(t)) return 'coupe';
+  if (/\b(?:e93|f33|f83|g23|g83)\b/.test(t)) return 'open';
+  if (/\b(?:e91|f31|g21|g81)\b/.test(t)) return 'wagon';
+  if (/\b(?:f34|f36|g26)\b/.test(t)) return 'hatch';
+  if (/\b(?:wagon|estate|avant|sportwagen|sports ?tourer|shooting brake)\b/.test(t)) return 'wagon';
+  if (/\b(?:hatchback|hatch|sportback|liftback|gran ?turismo)\b/.test(t)) return 'hatch';
+  if (/\b(?:sedan|saloon)\b/.test(t)) return 'sedan';
+  if (!doors) return undefined;
+  const count = /(?:^|[^a-z0-9])([2-5]) ?-?(?:dr|doors?)\b/.exec(t)?.[1];
+  if (count === '2') return 'coupe';
+  if (count === '3' || count === '5') return 'hatch';
+  if (count === '4') return 'sedan';
+  return undefined;
+}
+
 /**
- * The car's photo from the file: one of its own model year, make, model and
- * body, or none. A photo of its generation is not offered in its place: a
- * 2021 M3 is not a 2027 M3, whose lights and bumpers changed in between.
+ * The car's body, from its name where it says ("Civic 2Dr" is the coupe),
+ * else its class where that is one body. A class of "sedan" is not taken at
+ * its word: before enrichment it holds every Civic, coupes and hatchbacks too.
  */
-export function photoFor(
-  car: Pick<Car, 'id' | 'make' | 'model' | 'trim' | 'year' | 'bodyStyle'>,
+function carBody(car: Pick<Car, 'model' | 'bodyStyle'>): PhotoBody | undefined {
+  const named = namedBody(car.model);
+  if (named) return named;
+  const byStyle: Partial<Record<string, PhotoBody>> = {
+    convertible: 'open',
+    coupe: 'coupe',
+    wagon: 'wagon',
+    hatchback: 'hatch',
+  };
+  return byStyle[car.bodyStyle];
+}
+
+/**
+ * The model's name less drive, door and fuel words: "Civic 5Dr - Type R" is
+ * "civic type r", "Tahoe 1500 4WD" is "tahoe 1500". A car borrows only from a
+ * car of this name, so a Civic hatchback's photo is not a Type R's.
+ */
+function versionName(model: string): string {
+  return model
+    .replace(/\([^)]*\)/g, ' ')
+    .split(/[\s-]+/)
+    .filter((w) => /[a-z0-9]/i.test(w) && !NOISE.test(w) && !/^\d ?-?(?:dr|doors?)$/i.test(w))
+    .join(' ')
+    .toLowerCase();
+}
+
+/** Cars of one make, year and model name: "bmw|2014|328i" holds the 328i, its wagon and Gran Turismo. */
+const lineYearKey = (car: Pick<Car, 'make' | 'model' | 'year'>) =>
+  `${compact(car.make)}|${car.year}|${nameWords(car.model).join(' ').toLowerCase()}`;
+
+/**
+ * Whether a photo's file names another body than the car's: a Civic coupe's
+ * named "Civic Hatchback". A car whose name says no body (a "328i") is held to
+ * the bodies its namesakes are named for: "328i xDrive GranTurismo" is the
+ * Gran Turismo's photo, not the sedan's. Doors in a file's name are not a
+ * body ("Bronco 2-Door").
+ */
+function showsOtherBody(
+  car: Pick<Car, 'model' | 'bodyStyle'>,
+  file: string,
+  namesakes?: Set<PhotoBody>,
+): boolean {
+  const shown = namedBody(fileCaption(file), false);
+  if (!shown) return false;
+  // A Maserati GranTurismo is a coupe of that name.
+  if (/gran ?turismo/i.test(car.model) && /gran ?turismo/i.test(file)) return false;
+  const own = carBody(car);
+  if (own) return shown !== own;
+  return namesakes?.has(shown) ?? false;
+}
+
+function photoOf(
   file: CarPhotoFile,
+  name: string,
+  generation?: PhotoGeneration,
 ): CarPhoto | undefined {
-  const yearFile = file.yearPhotos?.[car.id];
-  const image = yearFile ? file.images[yearFile] : undefined;
-  if (!yearFile || !isCommonsImage(image)) return undefined;
-  const generation = generationOf(car, file);
+  const image = file.images[name];
+  if (!isCommonsImage(image)) return undefined;
   return {
     src: image.src,
     page: image.page,
     credit: credit(image),
     ...(image.licenseUrl ? { licenseUrl: image.licenseUrl } : {}),
-    caption: fileCaption(yearFile),
+    caption: fileCaption(name),
     ...(generation ? { generation: generation.title } : {}),
   };
 }
 
-/** The cars, each with a photo of its own model year where Commons has one. */
+/** The car's photo of its own model year, make, model and body, or none. */
+export function photoFor(
+  car: PhotoCar,
+  file: CarPhotoFile,
+  namesakes?: Set<PhotoBody>,
+): CarPhoto | undefined {
+  const yearFile = file.yearPhotos?.[car.id];
+  if (!yearFile || showsOtherBody(car, yearFile, namesakes)) return undefined;
+  return photoOf(file, yearFile, generationOf(car, file));
+}
+
+/** Longer than this, an article's years are a nameplate's, not one generation's. */
+const MAX_GENERATION_YEARS = 12;
+/** A photo more years from the car's than this is left out, refresh or not. */
+const MAX_YEARS_APART = 4;
+
+/**
+ * Where a car may borrow a photo from: its make, generation, body and model
+ * name, so a Civic sedan borrows a Civic sedan's and not a Type R's. Null for
+ * a car of a year the generation changed in, or a generation too long to be one.
+ */
+function borrowKey(
+  car: PhotoCar,
+  file: CarPhotoFile,
+): { key: string; generation: PhotoGeneration } | null {
+  const generation = generationOf(car, file);
+  if (!generation) return null;
+  const [from, to] = generation.years;
+  if (to - from + 1 > MAX_GENERATION_YEARS || changesGeneration(car, file)) return null;
+  const name = versionName(car.model);
+  const body = carBody(car) ?? car.bodyStyle;
+  return { key: `${compact(car.make)}|${generation.title}|${body}|${name}`, generation };
+}
+
+/**
+ * The cars, each with a photo of its own model year where Commons has one,
+ * else one of the nearest year of its generation, model and body (a year
+ * inside the generation before its first or last, whose photos can show the
+ * one before or after), labelled with that year.
+ */
 export function withCarPhotos<T extends Car>(cars: T[], file: CarPhotoFile | null): T[] {
   if (!file) return cars;
   // Cars of one generation share one photo object.
   const shared = new Map<string, CarPhoto>();
+  const share = (photo: CarPhoto) => {
+    const key = `${photo.src}|${photo.otherYear?.year ?? ''}`;
+    const found = shared.get(key) ?? photo;
+    shared.set(key, found);
+    return found;
+  };
+  const namesakes = new Map<string, Set<PhotoBody>>();
+  for (const car of cars) {
+    const body = namedBody(car.model);
+    if (!body) continue;
+    const key = lineYearKey(car);
+    namesakes.set(key, (namesakes.get(key) ?? new Set()).add(body));
+  }
+  const own = new Map<string, CarPhoto>();
+  const lenders = new Map<
+    string,
+    Array<{ year: number; name: string; refresh?: 'before' | 'after' }>
+  >();
+  for (const car of cars) {
+    const photo = photoFor(car, file, namesakes.get(lineYearKey(car)));
+    if (!photo) continue;
+    own.set(car.id, photo);
+    const borrow = borrowKey(car, file);
+    if (!borrow) continue;
+    const list = lenders.get(borrow.key) ?? [];
+    const name = file.yearPhotos![car.id];
+    // "(facelift)": lent only to its year and after; "pre-facelift", to its year and before.
+    const refresh = /pre-?facelift/i.test(name)
+      ? 'before'
+      : /facelift|\bLCI\b/i.test(name)
+        ? 'after'
+        : undefined;
+    list.push({ year: car.year, name, refresh });
+    lenders.set(borrow.key, list);
+  }
   return cars.map((car) => {
-    const found = photoFor(car, file);
-    if (!found) {
+    let photo = own.get(car.id);
+    if (!photo) {
+      const borrow = borrowKey(car, file);
+      const [from, to] = borrow?.generation.years ?? [0, 0];
+      const edge = (year: number) => (year === from || year === to ? 1 : 0);
+      const lender = borrow
+        ? (lenders.get(borrow.key) ?? [])
+            .filter(
+              (l) =>
+                Math.abs(l.year - car.year) <= MAX_YEARS_APART &&
+                !(l.refresh === 'after' && car.year < l.year) &&
+                !(l.refresh === 'before' && car.year > l.year),
+            )
+            .sort(
+              (a, b) =>
+                edge(a.year) - edge(b.year) ||
+                Math.abs(a.year - car.year) - Math.abs(b.year - car.year) ||
+                b.year - a.year,
+            )[0]
+        : undefined;
+      const found = lender && borrow ? photoOf(file, lender.name, borrow.generation) : undefined;
+      // Another version of the same year, name and body is the car's own year.
+      if (found && lender!.year === car.year) photo = found;
+      else if (found)
+        photo = { ...found, otherYear: { year: lender!.year, generation: [from, to] } };
+    }
+    if (!photo) {
       if (!car.photo) return car;
       const { photo: _stale, ...rest } = car;
       return rest as T;
     }
-    const key = found.src;
-    const photo = shared.get(key) ?? found;
-    shared.set(key, photo);
-    return { ...car, photo };
+    return { ...car, photo: share(photo) };
   });
 }
 

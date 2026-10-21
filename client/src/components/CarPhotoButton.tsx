@@ -16,6 +16,10 @@ interface CarPhotoButtonProps {
    * small "Photo" mark on them; without a photo they show as they are.
    */
   variant?: 'button' | 'tile';
+  /** The tile's mark: "Photo" on an illustration, "Larger" on the photo itself. */
+  mark?: string;
+  /** The tile is the only way to the photo, so the keyboard reaches it too. */
+  focusable?: boolean;
   children?: ReactNode;
 }
 
@@ -38,16 +42,18 @@ const CAMERA = (
 );
 
 /**
- * A photo of a car of this model year, on request. The site shows the same
- * body-type illustration for every car, so its pages look alike whether or
- * not Commons has a photo of the year; where it does, this button opens it.
- * Nothing is downloaded until the button is pointed at or focused.
+ * The car's photo, larger, with what it shows and whose it is: a photo of its
+ * model year, or of another year of its generation where Commons has none of
+ * its own. As a button ("See photo") or on the picture itself (a tile). The
+ * larger copy is fetched when the button is pointed at or focused.
  */
 export default function CarPhotoButton({
   car,
   label = 'See photo',
   className = '',
   variant = 'button',
+  mark = 'Photo',
+  focusable = false,
   children,
 }: CarPhotoButtonProps) {
   const [open, setOpen] = useState(false);
@@ -66,19 +72,20 @@ export default function CarPhotoButton({
 
   const trigger =
     variant === 'tile' ? (
-      // The keyboard reaches the photo by its button; this is the picture one clicks.
+      // Unless it is the only way there, the keyboard reaches the photo by its button.
       <button
         type="button"
-        tabIndex={-1}
-        aria-label="Open the photo"
+        tabIndex={focusable ? 0 : -1}
+        aria-label={`Open the photo of the ${displayVehicleTitle(car)}, larger`}
         onClick={() => setOpen(true)}
         onPointerEnter={preload}
-        className={`group relative block w-full h-full cursor-zoom-in ${className}`}
+        onFocus={preload}
+        className={`group relative block w-full h-full cursor-zoom-in focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60 ${className}`}
       >
         {children}
         <span className="absolute bottom-1 right-1 inline-flex items-center gap-1 bg-zinc-950/85 border border-zinc-700 px-1.5 py-0.5 text-[11px] text-zinc-200 group-hover:border-zinc-400 group-hover:text-white transition-colors">
           {CAMERA}
-          Photo
+          {mark}
         </span>
       </button>
     ) : (
@@ -164,9 +171,17 @@ function PhotoViewer({
       <figcaption className="mt-4 space-y-2 text-sm">
         <p className="text-white">{photo.caption}</p>
         {photo.generation && <p className="text-zinc-400">{photo.generation}</p>}
-        <p className="text-xs text-zinc-500 leading-relaxed">
-          A photo of this model year. Trim, colour and options may differ from this car.
-        </p>
+        {photo.otherYear ? (
+          <p className="text-xs text-amber-200/90 leading-relaxed">
+            A photo of a {photo.otherYear.year} model, not this model year: none of this year is on
+            file. It is the same generation ({photo.otherYear.generation[0]}–
+            {photo.otherYear.generation[1]}), but lights, bumpers and trim can change within one.
+          </p>
+        ) : (
+          <p className="text-xs text-zinc-500 leading-relaxed">
+            A photo of this model year. Trim, colour and options may differ from this car.
+          </p>
+        )}
         <p className="text-xs text-zinc-500">
           Photo:{' '}
           <a

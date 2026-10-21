@@ -5,6 +5,7 @@ import {
   changesGeneration,
   epaBaseModel,
   generationFor,
+  type PhotoBody,
   type PhotoGeneration,
   photoFor,
   photoQueries,
@@ -66,11 +67,14 @@ const file: CarPhotoFile = {
     'W205.jpg': image('W205.jpg'),
     'W206.jpg': image('W206.jpg'),
     'Hotlinked.jpg': { ...image('x.jpg'), src: 'https://example.com/x.jpg' },
+    '2014 BMW 328i xDrive GranTurismo Sport Line.jpg': image('328i_GT.jpg'),
     '2019 Honda Civic EX sedan, front 4.2.19.jpg': image('2019_Honda_Civic.jpg'),
   },
   yearPhotos: {
     'honda-civic-4dr-2019': '2019 Honda Civic EX sedan, front 4.2.19.jpg',
-    'honda-civic-2dr-2020': '2019 Honda Civic EX sedan, front 4.2.19.jpg',
+    'honda-civic-4dr-2020': '2019 Honda Civic EX sedan, front 4.2.19.jpg',
+    'honda-civic-2dr-2019': '2019 Honda Civic EX sedan, front 4.2.19.jpg',
+    'bmw-328i-2014': '2014 BMW 328i xDrive GranTurismo Sport Line.jpg',
     'bmw-m3-2021': 'Hotlinked.jpg',
   },
 };
@@ -203,6 +207,14 @@ describe('photoFor', () => {
     ).toBeUndefined();
   });
 
+  it('gives none named for another body: a coupe’s named sedan, a 328i’s named Gran Turismo', () => {
+    expect(photoFor(car(2019, 'Honda', 'Civic 2Dr', 'civic-manual-6-spd'), file)).toBeUndefined();
+    const hatch = new Set<PhotoBody>(['hatch']);
+    expect(
+      photoFor(car(2014, 'BMW', '328i', '3-series-manual-6-spd'), file, hatch),
+    ).toBeUndefined();
+  });
+
   it('takes only photos on Commons', () => {
     expect(photoFor(car(2021, 'BMW', 'M3', 'm3-manual-6-spd'), file)).toBeUndefined();
   });
@@ -211,11 +223,37 @@ describe('photoFor', () => {
 describe('withCarPhotos', () => {
   it('shares one photo among the cars it pictures and clears stale ones', () => {
     const a = car(2019, 'Honda', 'Civic 4Dr', 'civic-automatic-av-s7');
-    const b = car(2020, 'Honda', 'Civic 2Dr', 'civic-manual-6-spd');
+    const b = car(2020, 'Honda', 'Civic 4Dr', 'civic-manual-6-spd');
     const stale = { ...car(2019, 'Kia', 'Rio', 'rio-manual-6-spd'), photo: photoFor(a, file) };
     const [pa, pb, ps] = withCarPhotos([a, b, stale], file);
     expect(pa.photo).toBe(pb.photo);
     expect(ps).not.toHaveProperty('photo');
     expect(withCarPhotos([a], null)[0]).toBe(a);
+  });
+});
+
+describe('withCarPhotos, for a car with no photo of its own year', () => {
+  it('borrows the nearest year’s of its generation, model and body, and says which year', () => {
+    const own = car(2019, 'Honda', 'Civic 4Dr', 'civic-automatic-av-s7');
+    const [, borrowed] = withCarPhotos(
+      [own, car(2017, 'Honda', 'Civic 4Dr', 'civic-manual-6-spd')],
+      file,
+    );
+    expect(borrowed.photo).toMatchObject({
+      caption: '2019 Honda Civic EX sedan, front 4.2.19',
+      generation: 'Honda Civic (tenth generation)',
+      otherYear: { year: 2019, generation: [2016, 2021] },
+    });
+  });
+
+  it('borrows none in a year the generation changed, or for another body or model', () => {
+    const own = car(2019, 'Honda', 'Civic 4Dr', 'civic-automatic-av-s7');
+    const lastYear = car(2021, 'Honda', 'Civic 4Dr', 'civic-manual-6-spd');
+    const coupe = { ...car(2018, 'Honda', 'Civic 2Dr', 'civic-manual-6-spd'), bodyStyle: 'coupe' };
+    const typeR = car(2018, 'Honda', 'Civic Type R', 'civic-manual-6-spd');
+    const [, a, b, c] = withCarPhotos([own, lastYear, coupe as Car, typeR], file);
+    expect(a.photo).toBeUndefined();
+    expect(b.photo).toBeUndefined();
+    expect(c.photo).toBeUndefined();
   });
 });

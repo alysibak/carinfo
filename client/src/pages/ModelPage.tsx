@@ -6,7 +6,8 @@ import type { ModelOverview, ModelYearSummary } from '../types/car.types';
 import { ErrorState, LoadingScreen } from '../components/ui';
 import ToolPageHeader from '../components/ToolPageHeader';
 import PageShell, { PageBody } from '../components/PageShell';
-import CarPhotoButton from '../components/CarPhotoButton';
+import CarPhotoFigure from '../components/CarPhotoFigure';
+import { carPhotoSources } from '../utils/carImages';
 import VehiclePlaceholder from '../components/VehiclePlaceholder';
 import { modelYearFacts, yearSpan } from '../utils/modelYearFacts';
 import { usePageMeta } from '../utils/pageMeta';
@@ -99,6 +100,7 @@ export default function ModelPage() {
   }
 
   const [newest] = overview.years;
+  const hasPhoto = carPhotoSources(overview.lead.photo).length > 0;
   const searchHref = `/home?q=${encodeURIComponent(name!)}`;
 
   return (
@@ -117,12 +119,20 @@ export default function ModelPage() {
       />
 
       <PageBody>
-        <div className="grid grid-cols-[5.5rem_1fr] sm:grid-cols-[9rem_1fr] gap-4 sm:gap-6 items-center min-w-0 mb-8">
-          <div className="h-14 sm:h-20 overflow-hidden">
-            <CarPhotoButton car={overview.lead} variant="tile">
+        <div
+          className={`grid gap-4 sm:gap-6 min-w-0 mb-8 ${
+            hasPhoto
+              ? 'grid-cols-1 sm:grid-cols-[15rem_1fr] lg:grid-cols-[20rem_1fr] items-start'
+              : 'grid-cols-[5.5rem_1fr] sm:grid-cols-[9rem_1fr] items-center'
+          }`}
+        >
+          {hasPhoto ? (
+            <CarPhotoFigure car={overview.lead} />
+          ) : (
+            <div className="h-14 sm:h-20 overflow-hidden">
               <VehiclePlaceholder car={overview.lead} compact hideCaption />
-            </CarPhotoButton>
-          </div>
+            </div>
+          )}
           <div className="min-w-0">
             <p className="text-sm text-zinc-300">
               Newest on file:{' '}
@@ -136,7 +146,6 @@ export default function ModelPage() {
             <p className="text-sm text-zinc-500 mt-1 tabular-nums">
               <Facts facts={modelYearFacts(newest).slice(0, 4)} />
             </p>
-            <CarPhotoButton car={overview.lead} className="mt-2 min-h-[40px] text-sm" />
           </div>
         </div>
 

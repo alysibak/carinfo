@@ -11,7 +11,7 @@ import {
 import { formatPriceShort } from '../utils/dataValue';
 import { efficiencyOf, rangeKm } from '../utils/efficiency';
 import { formatCarFuelLabel } from '../utils/fuelDisplay';
-import VehiclePlaceholder from './VehiclePlaceholder';
+import CarImage from './CarImage';
 import { StatusToast } from './ui';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 
@@ -234,11 +234,17 @@ export default function CarCard({
   );
 
   if (layout === 'list') {
+    const listStats = [
+      figures[1].value !== '—' ? `${figures[1].value} hp` : null,
+      // Only a rating on file is stated: "No NHTSA rating" on most cards
+      // read as NHTSA never testing cars it may well have.
+      figures[2].value !== '—' ? `NHTSA ${figures[2].value}/5 stars` : null,
+    ].filter(Boolean);
     return (
       <article className="group relative flex gap-3 px-3 py-3 border-b border-zinc-900 hover:bg-zinc-950 focus-within:bg-zinc-950">
         <StatusToast message={toast} />
-        <div className="w-16 h-10 sm:w-20 sm:h-12 shrink-0 overflow-hidden mt-0.5">
-          <VehiclePlaceholder car={car} compact hideCaption />
+        <div className="w-20 h-14 sm:w-28 sm:h-[4.5rem] shrink-0 overflow-hidden mt-0.5">
+          <CarImage car={car} compact sizes="112px" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-3">
@@ -246,7 +252,7 @@ export default function CarCard({
               {titleLink}
             </h3>
             {figures[0].value !== '—' && (
-              <p className="text-[15px] font-bold tabular-nums text-white shrink-0">
+              <p className="hidden sm:block text-[15px] font-bold tabular-nums text-white shrink-0">
                 {figures[0].value}
                 {figures[0].unit && (
                   <span className="text-xs font-normal text-zinc-400"> {figures[0].unit}</span>
@@ -256,14 +262,15 @@ export default function CarCard({
           </div>
           {subtitle && <p className="text-xs text-zinc-400 mt-0.5 line-clamp-1">{subtitle}</p>}
           <p className="text-[13px] text-zinc-300 tabular-nums mt-1">
-            {[
-              figures[1].value !== '—' ? `${figures[1].value} hp` : null,
-              // Only a rating on file is stated: "No NHTSA rating" on most cards
-              // read as NHTSA never testing cars it may well have.
-              figures[2].value !== '—' ? `NHTSA ${figures[2].value}/5 stars` : null,
-            ]
-              .filter(Boolean)
-              .join(' · ')}
+            {/* On a phone the efficiency moves here, so the title keeps its width. */}
+            {figures[0].value !== '—' && (
+              <span className="sm:hidden text-white font-semibold">
+                {figures[0].value}
+                {figures[0].unit ? ` ${figures[0].unit}` : ''}
+                {listStats.length ? ' · ' : ''}
+              </span>
+            )}
+            {listStats.join(' · ')}
             {estValue && <span className="text-zinc-500"> · {estValue.toLowerCase()}</span>}
           </p>
           {reasonLine && <div className="mt-1">{reasonLine}</div>}
@@ -282,16 +289,14 @@ export default function CarCard({
     <article className="surface-card-hover group relative flex flex-col h-full overflow-hidden focus-within:border-zinc-400">
       <StatusToast message={toast} />
 
-      <div className="flex items-center gap-3 p-3 pb-2.5">
-        <div className="w-20 h-12 shrink-0 overflow-hidden">
-          <VehiclePlaceholder car={car} compact hideCaption />
-        </div>
-        <div className="min-w-0">
-          <h3 className="text-[15px] font-semibold text-white leading-snug line-clamp-2">
-            {titleLink}
-          </h3>
-          {subtitle && <p className="text-xs text-zinc-400 mt-0.5 line-clamp-1">{subtitle}</p>}
-        </div>
+      <div className="aspect-video shrink-0 border-b border-zinc-900">
+        <CarImage car={car} />
+      </div>
+      <div className="p-3 pb-2.5">
+        <h3 className="text-[15px] font-semibold text-white leading-snug line-clamp-2">
+          {titleLink}
+        </h3>
+        {subtitle && <p className="text-xs text-zinc-400 mt-0.5 line-clamp-1">{subtitle}</p>}
       </div>
 
       <dl className="grid grid-cols-3 border-y border-zinc-900 divide-x divide-zinc-900">

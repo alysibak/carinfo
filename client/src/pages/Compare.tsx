@@ -14,7 +14,7 @@ import { efficiencyOf, rangeKm } from '../utils/efficiency';
 import { formatMoney, formatMoneyRange, formatMoneyShort } from '../utils/money';
 import { summarizeComparison } from '../utils/compareSummary';
 import { fieldProvenanceSource } from '../utils/dataTrust';
-import VehiclePlaceholder from '../components/VehiclePlaceholder';
+import CarImage from '../components/CarImage';
 import CarPhotoButton from '../components/CarPhotoButton';
 import { StatusToast, LoadingScreen } from '../components/ui';
 import { usePageMeta } from '../utils/pageMeta';
@@ -655,13 +655,8 @@ export default function Compare() {
                         className="px-2 sm:px-4 py-3 border-l border-zinc-800 align-top text-left sm:text-center font-normal"
                       >
                         <Link to={`/car/${car.id}`} className="block group/col">
-                          <div className="relative h-9 sm:h-12 mb-2 overflow-hidden max-w-[96px] sm:max-w-[120px] sm:mx-auto">
-                            <VehiclePlaceholder
-                              car={car}
-                              compact
-                              hideCaption
-                              className="absolute! inset-0"
-                            />
+                          <div className="aspect-video mb-2 overflow-hidden max-w-[140px] sm:max-w-[180px] sm:mx-auto">
+                            <CarImage car={car} compact sizes="180px" />
                           </div>
                           <h2 className="text-sm sm:text-base font-semibold text-white leading-snug group-hover/col:underline underline-offset-4 decoration-zinc-600 wrap-break-word">
                             {car.year} {car.make} {displayModelLabel(car)}
