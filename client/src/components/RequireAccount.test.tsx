@@ -57,7 +57,7 @@ describe('RequireAccount', () => {
   it("tells a visitor their device's garage comes with them", () => {
     fakeAuth.signedOut();
     useGarageStore.setState({ cars: [{ id: 'a' }, { id: 'b' }] as CarSpecs[] });
-    renderTool('/garage', 'Dream Garage');
+    renderTool('/garage', 'your garage');
     expect(screen.getByText(/2 cars saved on this device/)).toBeInTheDocument();
   });
 });

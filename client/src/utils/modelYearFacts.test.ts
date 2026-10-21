@@ -19,12 +19,12 @@ describe('modelYearFacts', () => {
       'from 4.5 L/100 km',
       '202–301 hp',
       'NHTSA 5/5',
-      'Gasoline, Hybrid Sedan',
-      '9 configurations',
+      'Gasoline, Hybrid · Sedan',
+      '9 versions',
     ]);
   });
 
-  it('gives one figure where every configuration shares it, and an EV its range', () => {
+  it('gives one figure where every version shares it, and an EV its range', () => {
     expect(
       modelYearFacts({
         year: 2026,
@@ -36,7 +36,7 @@ describe('modelYearFacts', () => {
         fuelTypes: ['electric'],
         bodyStyles: ['suv'],
       }),
-    ).toEqual(['up to 575 km range', '384 hp', 'Electric SUV', '1 configuration']);
+    ).toEqual(['up to 575 km range', '384 hp', 'Electric SUV', '1 version']);
   });
 });
 

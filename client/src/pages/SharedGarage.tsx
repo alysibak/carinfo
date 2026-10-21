@@ -63,7 +63,7 @@ export default function SharedGarage() {
       navigate('/garage');
     } catch (e) {
       console.error('Failed to save shared garage to local store:', e);
-      setSaveMessage('Could not save these cars to your Dream Garage.');
+      setSaveMessage('Could not save these cars to your garage.');
     }
   };
 

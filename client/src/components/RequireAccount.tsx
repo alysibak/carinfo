@@ -6,7 +6,7 @@ import { usePageMeta } from '../utils/pageMeta';
 import { LoadingScreen } from './ui';
 
 /**
- * Dream Garage, Battle Mode and the Value Matrix are for members; car and
+ * The garage, Battle Mode and the Value Matrix are for members; car and
  * model pages, search, Compare and the VIN decoder are open to all: the home
  * page told visitors to paste a VIN and then asked them to sign in.
  * Where accounts are not set up, nothing is gated.

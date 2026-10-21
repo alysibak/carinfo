@@ -1,23 +1,13 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { apiErrorMessage, decodeVin, type VinDecodeResult } from '../services/api';
-import { InfoTip } from '../components/ui';
 import { searchQueryToParams } from '../utils/searchParams';
 import { usePageMeta } from '../utils/pageMeta';
 import VinCatalogMatch from '../components/VinCatalogMatch';
 
 const VinScanner = lazy(() => import('../components/VinScanner'));
 
-const SAMPLE_VIN = '1HGCM82633A004352'; // 2003 Honda Accord EX-V6 — decodes with 240 hp
-
-/** Plain-language read on a real HP figure (interpretation only — no invented numbers). */
-function hpPlain(hp: number): string {
-  if (hp < 120) return 'Modest power, tuned for efficiency and easy city driving.';
-  if (hp < 180) return 'Everyday power, fine for commuting and highway merging.';
-  if (hp < 260) return 'Healthy power, confident passing, quick enough for most drivers.';
-  if (hp < 400) return 'Strong power, noticeably quick acceleration.';
-  return 'High performance, seriously fast.';
-}
+const SAMPLE_VIN = '1HGCM82633A004352'; // 2003 Honda Accord EX-V6
 
 function Subheading({ children }: { children: React.ReactNode }) {
   return <p className="text-xs text-zinc-400 pt-5 pb-2 border-b border-zinc-900">{children}</p>;
@@ -35,8 +25,8 @@ function Row({ label, value }: { label: string; value: string | number | undefin
 
 export default function VinDecoder() {
   usePageMeta(
-    'VIN Lookup',
-    'Decode a 17-character VIN with NHTSA data, including horsepower when on file.',
+    'VIN lookup',
+    'See what a car was built as from its 17-character VIN: year, model, engine, drive and plant, from NHTSA’s decoder, then its recalls, complaints and crash rating.',
   );
   const [searchParams] = useSearchParams();
   const [vin, setVin] = useState('');
@@ -91,17 +81,15 @@ export default function VinDecoder() {
     <div className="bg-black text-white">
       <div className="page-wrap section-y">
         <p className="text-xs text-zinc-400 mb-3">Tools</p>
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tighter mb-3">VIN Lookup</h1>
-        <p className="text-sm text-zinc-400 leading-relaxed max-w-2xl mb-2">
-          Paste a vehicle’s 17-character VIN to pull its official specs straight from{' '}
-          <span className="text-zinc-200">NHTSA’s free U.S. government database</span>, including{' '}
-          <span className="text-zinc-200">horsepower</span> when NHTSA has it on record. Unlike the
-          catalog (which uses EPA fuel-economy data, with no engine power), a VIN can unlock real
-          per-vehicle power figures.
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tighter mb-3">VIN lookup</h1>
+        <p className="text-sm text-zinc-300 leading-relaxed max-w-2xl mb-2">
+          Enter the car’s 17-character VIN to see what it was built as: its year, model, engine,
+          drive and the plant it came from, from NHTSA’s decoder. Then open its page here for the
+          model year’s recalls, owners’ complaints and crash rating, and check the ad against it.
         </p>
         <p className="text-xs text-zinc-400 leading-relaxed max-w-2xl mb-6">
-          Heads up: NHTSA doesn’t list horsepower for every vehicle. Many EVs and some models simply
-          don’t carry it in the VIN record. We show it honestly when it’s there.
+          NHTSA’s decoder covers cars sold in the U.S., and most sold in Canada. A field it leaves
+          out is not on file, not missing from the car.
         </p>
 
         {/* The input drops its own outline, so the frame shows where focus is. */}
@@ -167,8 +155,8 @@ export default function VinDecoder() {
             Sample VIN
           </button>
           <span>
-            Find your VIN on the dashboard by the windshield, the driver’s door jamb, or your
-            registration — or tap the camera to scan its barcode.
+            The VIN is on the dashboard, read through the windshield, on the label in the driver’s
+            door frame, and on the ownership papers. Or tap the camera to scan its barcode.
           </span>
         </div>
 
@@ -215,43 +203,18 @@ export default function VinDecoder() {
                   </p>
                 )}
 
-                {/* Horsepower — the headline figure, with dual framing */}
-                <Subheading>
-                  <InfoTip label="Horsepower">
-                    A measure of engine power. More horsepower generally means quicker acceleration.
-                    NHTSA publishes this for many vehicles based on the VIN.
-                  </InfoTip>
-                </Subheading>
-                {eng?.hp != null ? (
-                  <div className="py-4">
-                    <div className="flex items-baseline gap-3">
-                      <span className="text-3xl sm:text-5xl font-bold tracking-tighter text-white">
-                        {eng.hp}
-                      </span>
-                      <span className="text-lg font-bold text-zinc-400">hp</span>
-                      {eng.kw != null && (
-                        <span className="text-xs text-zinc-400">({eng.kw} kW)</span>
-                      )}
-                    </div>
-                    <p className="text-[12px] text-zinc-400 leading-relaxed mt-2">
-                      {hpPlain(eng.hp)}
-                    </p>
-                    {eng.hpFromKw && (
-                      <p className="text-xs text-zinc-400 mt-1">
-                        Converted from NHTSA’s kilowatt figure.
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-sm text-zinc-400 leading-relaxed py-4">
-                    NHTSA doesn’t list horsepower for this VIN. That’s common. Many vehicles
-                    (especially EVs) don’t carry an engine-power value in the VIN record. It usually
-                    means “not on file,” not zero power.
-                  </p>
-                )}
+                {result.decodedClean && <VinCatalogMatch decoded={result} />}
 
-                <Subheading>Engine &amp; drivetrain</Subheading>
+                <Subheading>As built, by NHTSA’s decoder</Subheading>
                 <Row label="Engine" value={engineSummary || undefined} />
+                <Row
+                  label="Power"
+                  value={
+                    eng?.hp != null
+                      ? `${eng.hp} hp${eng.kw != null ? ` (${eng.kw} kW)` : ''}${eng.hpFromKw ? ', from NHTSA’s kW figure' : ''}`
+                      : undefined
+                  }
+                />
                 <Row
                   label="Turbo"
                   value={eng?.turbo == null ? undefined : eng.turbo ? 'Yes' : 'No'}
@@ -271,7 +234,6 @@ export default function VinDecoder() {
                   }
                 />
 
-                <Subheading>Body &amp; build</Subheading>
                 <Row label="Body class" value={result.bodyClass} />
                 <Row label="Vehicle type" value={result.vehicleType} />
                 <Row label="Doors" value={result.doors} />
@@ -284,8 +246,8 @@ export default function VinDecoder() {
                 />
 
                 <p className="text-xs text-zinc-400 leading-relaxed pt-5 mt-2 border-t border-zinc-900">
-                  Source: NHTSA vPIC (vpic.nhtsa.dot.gov), decoded live from the VIN. Horsepower and
-                  other fields are shown only where NHTSA has them on record.
+                  Source: NHTSA’s VIN decoder (vPIC), read live. A field is shown only where NHTSA
+                  has it on record.
                 </p>
               </>
             ) : (
@@ -296,13 +258,9 @@ export default function VinDecoder() {
               </div>
             )}
 
-            {result.make && result.decodedClean && <VinCatalogMatch decoded={result} />}
-
             {result.make && (
               <div className="mt-6 border border-zinc-800 bg-zinc-950 px-5 py-4 space-y-3">
-                <p className="text-sm text-zinc-300">
-                  Open matching EPA configs in the CarInfo catalog.
-                </p>
+                <p className="text-sm text-zinc-300">Not the version you expected? See them all.</p>
                 <div className="flex flex-wrap gap-3">
                   <Link
                     to={`/home?${searchQueryToParams(
@@ -314,7 +272,7 @@ export default function VinDecoder() {
                     ).toString()}`}
                     className="px-4 py-2 bg-accent text-accent-ink text-xs font-semibold hover:bg-accent-hover"
                   >
-                    Search catalog
+                    Search the {result.year} {result.model}
                   </Link>
                   {result.make && result.model && (
                     <Link
@@ -334,7 +292,7 @@ export default function VinDecoder() {
                       ).toString()}`}
                       className="px-4 py-2 border border-zinc-600 text-xs font-semibold text-zinc-200 hover:border-zinc-400"
                     >
-                      Filter by make / model
+                      Every year of the {result.make} {result.model}
                     </Link>
                   )}
                 </div>

@@ -3,7 +3,7 @@ import { audit, describeViolations } from './axe';
 import { MEMBER } from './global-setup';
 
 /**
- * Visitors browse, compare and decode VINs freely; Dream Garage, Battle Mode
+ * Visitors browse, compare and decode VINs freely; the garage, Battle Mode
  * and the Value Matrix ask them to sign in. These run as a visitor (no stored
  * sign-in), and only where the server has accounts.
  */
@@ -26,7 +26,7 @@ test('a visitor browses, compares and decodes freely but signs in for the rest',
   await expect(page.getByRole('heading', { name: 'Compare', exact: true })).toBeVisible();
 
   for (const [path, tool] of [
-    ['/garage', 'Dream Garage'],
+    ['/garage', 'your garage'],
     ['/battle', 'Battle Mode'],
     ['/value-matrix', 'the Value Matrix'],
   ]) {
@@ -46,10 +46,10 @@ test('signing up opens the tool that asked, and signing out closes it', async ({
   await page.getByRole('button', { name: 'Create account' }).click();
 
   await expect(page).toHaveURL(/\/garage$/);
-  await expect(page.getByRole('heading', { name: 'Dream Garage' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your garage' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Sign out' }).first().click();
-  await expect(page.getByRole('heading', { name: 'Sign in to use Dream Garage' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sign in to use your garage' })).toBeVisible();
 });
 
 test('signing in with a wrong password says so, the right one gets in', async ({ page }) => {

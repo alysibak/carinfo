@@ -125,7 +125,7 @@ function GarageSection() {
   const limitLabel = plan === 'pro' ? 'no limit' : `up to ${garageLimit ?? FREE_GARAGE_LIMIT}`;
 
   return (
-    <Section title="Dream Garage">
+    <Section title="Your garage">
       <p className="text-lg font-semibold">
         {garageCount} saved · {limitLabel}
       </p>

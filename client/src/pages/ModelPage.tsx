@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import * as api from '../services/api';
 import { isHttpError } from '../services/http';
 import type { ModelOverview, ModelYearSummary } from '../types/car.types';
@@ -9,7 +9,7 @@ import PageShell, { PageBody } from '../components/PageShell';
 import CarPhotoFigure from '../components/CarPhotoFigure';
 import { carPhotoSources } from '../utils/carImages';
 import VehiclePlaceholder from '../components/VehiclePlaceholder';
-import { modelYearFacts, yearSpan } from '../utils/modelYearFacts';
+import { modelYearCells, modelYearFacts, yearSpan } from '../utils/modelYearFacts';
 import { usePageMeta } from '../utils/pageMeta';
 import { complaintPart } from '../utils/recalls';
 import { theftSentence } from '@carinfo/shared/theft';
@@ -224,18 +224,19 @@ export default function ModelPage() {
         {byGeneration(overview.years).map((group) => (
           <section key={`${group.label ?? 'years'}-${group.rows[0].year}`} className="mb-8">
             <h2 className="text-xs text-zinc-500 mb-2">{group.label ?? 'Model years'}</h2>
-            <ol className="border-t border-zinc-800">
+            {/* Phones: a row of figures per year. */}
+            <ol className="md:hidden border-t border-zinc-800">
               {group.rows.map((row) => (
                 <li key={row.year} className="border-b border-zinc-900">
                   <Link
                     to={`/car/${row.carId}`}
                     aria-label={`${row.year} ${name}`}
-                    className="flex items-start sm:items-center gap-3 sm:gap-4 py-3.5 group"
+                    className="flex items-start gap-3 py-3.5 group"
                   >
                     <span className="w-12 shrink-0 text-base font-semibold tabular-nums text-white group-hover:text-zinc-300">
                       {row.year}
                     </span>
-                    <span className="min-w-0 flex-1 text-xs sm:text-sm text-zinc-400 leading-relaxed tabular-nums">
+                    <span className="min-w-0 flex-1 text-sm text-zinc-400 leading-relaxed tabular-nums">
                       <Facts facts={modelYearFacts(row)} />
                       {row.changes && (
                         // What changed from the year before, from the EPA records.
@@ -254,17 +255,84 @@ export default function ModelPage() {
                 </li>
               ))}
             </ol>
+            {/* Wider screens: a table, so a column reads down the years. */}
+            <table className="hidden md:table w-full text-sm tabular-nums border-t border-zinc-800">
+              <thead>
+                <tr className="text-left text-xs text-zinc-500">
+                  <th scope="col" className="py-2 pr-4 font-normal">
+                    Year
+                  </th>
+                  <th scope="col" className="py-2 pr-4 font-normal">
+                    Best fuel use
+                  </th>
+                  <th scope="col" className="py-2 pr-4 font-normal">
+                    Power
+                  </th>
+                  <th scope="col" className="py-2 pr-4 font-normal">
+                    NHTSA
+                  </th>
+                  <th scope="col" className="py-2 pr-4 font-normal text-right">
+                    Recalls in Canada
+                  </th>
+                  <th scope="col" className="py-2 pr-4 font-normal text-right">
+                    NHTSA complaints
+                  </th>
+                  <th scope="col" className="py-2 pr-4 font-normal">
+                    Offered as
+                  </th>
+                  <th scope="col" className="py-2 font-normal text-right">
+                    Versions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {group.rows.map((row) => {
+                  const cells = modelYearCells(row);
+                  return (
+                    <Fragment key={row.year}>
+                      <tr
+                        className={`text-zinc-300 hover:bg-zinc-950 ${row.changes ? '' : 'border-b border-zinc-900'}`}
+                      >
+                        <th scope="row" className="py-3 pr-4 text-left font-semibold">
+                          <Link
+                            to={`/car/${row.carId}`}
+                            className="text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-400"
+                          >
+                            {row.year}
+                          </Link>
+                        </th>
+                        <td className="py-3 pr-4">{cells.efficiency}</td>
+                        <td className="py-3 pr-4">{cells.power}</td>
+                        <td className="py-3 pr-4">{cells.safety}</td>
+                        <td className="py-3 pr-4 text-right">{cells.recalls}</td>
+                        <td className="py-3 pr-4 text-right">{cells.complaints}</td>
+                        <td className="py-3 pr-4 text-zinc-400">{cells.offered}</td>
+                        <td className="py-3 text-right">{cells.versions}</td>
+                      </tr>
+                      {row.changes && (
+                        <tr className="border-b border-zinc-900">
+                          <td />
+                          <td colSpan={7} className="pb-3 -mt-1 text-xs text-accent">
+                            <Facts facts={row.changes} />
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
           </section>
         ))}
 
         <p className="text-xs text-zinc-500 leading-relaxed max-w-xl">
-          Each figure is the year’s span or best across its configurations: EPA ratings, NHTSA stars
-          and estimated value in CAD. A row opens the year’s base configuration.{' '}
+          Each figure is the year’s best or its span across its versions: EPA ratings, NHTSA stars,
+          Transport Canada’s recalls and owners’ complaints to NHTSA. A year opens its base version.{' '}
           <Link
             to={searchHref}
             className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700"
           >
-            Search every {name} configuration
+            Search every {name} version
           </Link>
         </p>
       </PageBody>

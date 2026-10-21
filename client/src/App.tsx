@@ -71,7 +71,7 @@ function App() {
                   <Route
                     path="/garage"
                     element={
-                      <RequireAccount tool="Dream Garage">
+                      <RequireAccount tool="your garage">
                         <DreamGarage />
                       </RequireAccount>
                     }

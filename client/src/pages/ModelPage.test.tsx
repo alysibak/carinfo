@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import ModelPage from './ModelPage';
@@ -89,8 +89,18 @@ describe('ModelPage', () => {
       'href',
       '/models/honda/accord',
     );
-    // What changed from the year before.
-    expect(screen.getByText('Gasoline dropped')).toBeVisible();
+    // What changed from the year before, in the phone list and the table.
+    expect(screen.getAllByText('Gasoline dropped')).toHaveLength(2);
+    // The table reads a column down the years; each year opens its base version.
+    // One table per generation.
+    const table = screen
+      .getAllByRole('table')
+      .find((t) => within(t).queryByRole('link', { name: '2024' }))!;
+    expect(within(table).getByRole('columnheader', { name: 'Recalls in Canada' })).toBeVisible();
+    expect(within(table).getByRole('link', { name: '2024' })).toHaveAttribute(
+      'href',
+      '/car/camry-2024',
+    );
     // The years with the most complaints and recalls, most first.
     expect(
       screen.getByText('Most owner complaints to NHTSA: 2023 (632), 2024 (481)'),

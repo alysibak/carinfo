@@ -169,7 +169,7 @@ export default function DreamGarage() {
         open={showClearConfirm}
         onClose={() => setShowClearConfirm(false)}
         onConfirm={clearGarage}
-        title="Clear dream garage?"
+        title="Clear your garage?"
         message="This removes every saved vehicle from your garage. You can't undo this."
         confirmLabel="Clear all"
         danger
@@ -178,8 +178,8 @@ export default function DreamGarage() {
       <ToolPageHeader
         backTo="/"
         backLabel="Home"
-        title="Dream Garage"
-        subtitle={`${garage.length} vehicle${garage.length !== 1 ? 's' : ''}`}
+        title="Your garage"
+        subtitle={`${garage.length} ${garage.length === 1 ? 'car' : 'cars'} saved`}
         action={
           garage.length > 0 ? (
             <button

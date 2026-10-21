@@ -88,7 +88,7 @@ export default function SignIn() {
   return (
     <AuthCard
       title="Sign in"
-      intro="Dream Garage, Battle Mode and the Value Matrix are free with an account."
+      intro="Your garage, Battle Mode and the Value Matrix are free with an account."
       footer={
         <>
           <p>
