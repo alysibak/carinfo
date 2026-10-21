@@ -111,3 +111,39 @@ export function splitRecalls<T extends { summary: string }>(
   }
   return { applies, other };
 }
+
+/**
+ * Which powertrains an NHTSA investigation is for, from its component and
+ * subject: "FUEL SYSTEM, DIESEL" (the 2014 Grand Cherokee's EcoDiesel fuel
+ * pump, filed under every Grand Cherokee), "HYBRID PROPULSION SYSTEM",
+ * "Electric Vehicle Battery Fires", and pedestrian alert sounds, which only
+ * hybrids and electric cars make. None for the rest: they can be any.
+ */
+export function investigationPowertrains(inv: {
+  component: string;
+  subject: string;
+}): RecallPowertrain[] {
+  const component = inv.component.toUpperCase();
+  if (/\bDIESEL\b/.test(component) || /\b(?:eco)?diesel\b/i.test(inv.subject)) return ['diesel'];
+  if (/\bHYBRID PROPULSION\b/.test(component)) return ['hybrid', 'plug-in hybrid'];
+  if (/\bpedestrian alert\b|\bquiet vehicle/i.test(inv.subject)) {
+    return ['hybrid', 'plug-in hybrid', 'electric'];
+  }
+  if (/\belectric vehicle\b|\bEV battery\b|\bBEV\b/i.test(inv.subject)) {
+    return ['electric', 'plug-in hybrid'];
+  }
+  return [];
+}
+
+/** A model year's investigations split by whether they can cover this car. */
+export function splitInvestigations<T extends { component: string; subject: string }>(
+  investigations: T[],
+  car: { fuelType: FuelType; mildHybrid?: boolean },
+): { applies: T[]; other: T[] } {
+  const applies: T[] = [];
+  const other: T[] = [];
+  for (const inv of investigations) {
+    (recallCanApply(investigationPowertrains(inv), car) ? applies : other).push(inv);
+  }
+  return { applies, other };
+}

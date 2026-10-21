@@ -33,6 +33,20 @@ const SOURCES = [
     terms: 'U.S. government data, public domain.',
   },
   {
+    name: 'NHTSA, Office of Defects Investigation investigations',
+    url: 'https://www.nhtsa.gov/recalls',
+    gives:
+      'the defect investigations covering each model year, with NHTSA’s number, dates and the recall each led to: an investigation is not a finding that the defect exists.',
+    terms: 'U.S. government data, public domain.',
+  },
+  {
+    name: 'Transport Canada, Canadian Vehicle Specifications (through NHTSA’s vPIC)',
+    url: 'https://vpic.nhtsa.dot.gov/api/',
+    gives:
+      'length, width without mirrors, height, wheelbase and curb weight, as Transport Canada measured each version of a model year.',
+    terms: 'Government data, published openly through vPIC.',
+  },
+  {
     name: 'Transport Canada, Motor Vehicle Safety Recalls Database',
     url: 'https://open.canada.ca/data/en/dataset/1ec92326-47ef-4110-b7ca-959fab03f96d',
     gives: 'recalls in Canada by model year, with Transport Canada’s recall number and its notice.',

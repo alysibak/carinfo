@@ -958,6 +958,7 @@ export function withSizesFor(cars: Car[]): ReturnType<typeof withSizes> {
     loadMeasuredVehicles(),
     modelLineKey,
     govModelIndex(cars, modelLineKey).match,
+    doorCount,
   );
 }
 
@@ -2212,7 +2213,7 @@ const TWO_DOOR_SUV =
  * else from its body; an SUV has four unless it is one of the two-doors above.
  * Undefined for a hatchback, truck or van not named.
  */
-function doorCount(car: Car): number | undefined {
+export function doorCount(car: Car): number | undefined {
   const named = DOOR_NAME.exec(car.model);
   if (named) return named[1] ? Number(named[1]) : DOOR_COUNT_WORDS[named[2].toLowerCase()];
   if (car.bodyStyle === 'suv') {

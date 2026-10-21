@@ -1,9 +1,14 @@
 import { theftSentence } from '@carinfo/shared/theft';
 import type { CarDashboard } from '../types/car.types';
 import { efficiencyOf } from './efficiency';
-import { investigationKind, investigationText, openFirst } from './investigations';
+import {
+  investigationKind,
+  investigationPart,
+  investigationText,
+  openFirst,
+} from './investigations';
 import { complaintPart, recallDate, recallNotice } from './recalls';
-import { powertrainNames, splitRecalls } from '@carinfo/shared/recall-scope';
+import { powertrainNames, splitInvestigations, splitRecalls } from '@carinfo/shared/recall-scope';
 import { availabilityLabel } from './safetyTech';
 import { formatKg, formatMetres } from './size';
 import { formatTransmissionLabel } from './trimLabel';
@@ -93,7 +98,12 @@ export function checklistSections(dashboard: CarDashboard): ChecklistSection[] {
     });
   }
 
-  const open = openFirst(investigations ?? []).filter((inv) => !inv.closed);
+  const open = openFirst(
+    splitInvestigations(investigations ?? [], {
+      fuelType: car.engine.fuelType,
+      mildHybrid: car.engine.mildHybrid,
+    }).applies,
+  ).filter((inv) => !inv.closed);
   if (open.length) {
     sections.push({
       id: 'investigations',
@@ -101,7 +111,7 @@ export function checklistSections(dashboard: CarDashboard): ChecklistSection[] {
       intro:
         'NHTSA (U.S.) is still looking into these; a recall may follow. Ask the dealer or the maker whether one has.',
       items: open.map((inv) => ({
-        text: `${complaintPart(inv.component)}: ${investigationText(inv.subject)}`,
+        text: `${investigationPart(inv.component)}: ${investigationText(inv.subject)}`,
         detail: `${investigationKind(inv.kind)} ${inv.id} · opened ${recallDate(inv.opened)}`,
         tick: true,
       })),

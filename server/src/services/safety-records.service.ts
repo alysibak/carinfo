@@ -92,13 +92,26 @@ function investigationRecords(): InvestigationFile | null {
   return investigationFile;
 }
 
+/**
+ * Audit queries into a dealer, a rental fleet or a maker's paperwork rather
+ * than the car: "Hertz/Vehicles Rented with Open Recalls" covers every 2018–22
+ * Altima, "Healey Brothers Ford / Open Recall Sale" an Escape, and neither
+ * says anything about the car. Those on a defect ("Hyundai and Kia ABS Module
+ * Fires") are kept.
+ */
+const NOT_ABOUT_THE_CAR =
+  /\/|\brent(?:al|ed)?\b|zipcar|\bsale\b|dealer|recall completion|reporting|standing general order|safety act|execution of|school bus/i;
+
+export function isAboutTheCar(record: Pick<NhtsaInvestigation, 'kind' | 'subject'>): boolean {
+  return record.kind !== 'AQ' || !NOT_ABOUT_THE_CAR.test(record.subject);
+}
+
 /** NHTSA's investigations covering a model line and year, newest first; none where none are on file. */
 export function investigationsFor(line: string, year: number): NhtsaInvestigation[] {
   const file = investigationRecords();
-  return (file?.byLine[`${line}|${year}`] ?? []).map((id) => ({
-    id,
-    ...file!.investigations[id],
-  }));
+  return (file?.byLine[`${line}|${year}`] ?? [])
+    .map((id) => ({ id, ...file!.investigations[id] }))
+    .filter(isAboutTheCar);
 }
 
 /**

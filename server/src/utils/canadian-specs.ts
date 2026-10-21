@@ -140,16 +140,24 @@ export function sizeOf(rows: MeasuredVehicle[]): VehicleSize {
   };
 }
 
+/** "WRANGLER JL 2.0L RUBICON 2DR SUV" → 2; undefined where the name gives none. */
+export function specDoors(model: string): number | undefined {
+  const m = /\b([2-5])DR\b/i.exec(model);
+  return m ? Number(m[1]) : undefined;
+}
+
 /**
  * Every car's size from Transport Canada's rows for its model line that
- * year, by body, drivetrain and the version named (`lineOf` the site's line
- * key, `match` government names to it).
+ * year, by body, drivetrain, doors and the version named (`lineOf` the
+ * site's line key, `match` government names to it, `doorsOf` the car's
+ * doors where known). The two-door Wrangler took the four-door's length.
  */
 export function withSizes(
   cars: Car[],
   rows: MeasuredVehicle[],
   lineOf: (car: Car) => string,
   match: (make: string, model: string, year: number) => string | null,
+  doorsOf: (car: Car) => number | undefined = () => undefined,
 ): { cars: Car[]; sized: number } {
   const byLine = new Map<string, Array<{ config: TestedConfiguration; row: MeasuredVehicle }>>();
   for (const row of rows) {
@@ -164,7 +172,13 @@ export function withSizes(
   const out = cars.map((car) => {
     const candidates = byLine.get(`${lineOf(car)}|${car.year}`);
     if (!candidates) return car;
-    const chosen = testsDescribing(car, candidates, { loose: true }).map((c) => c.row);
+    let chosen = testsDescribing(car, candidates, { loose: true }).map((c) => c.row);
+    // Where the car's doors are known and some rows name theirs, those that agree.
+    const doors = doorsOf(car);
+    if (doors != null) {
+      const same = chosen.filter((row) => specDoors(row.model) === doors);
+      if (same.length) chosen = same;
+    }
     if (!chosen.length) return car;
     sized++;
     return { ...car, size: sizeOf(chosen) };

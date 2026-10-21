@@ -1,7 +1,7 @@
 import type { CarDashboard } from '../types/car.types';
 import { complaintPart, recallDate } from './recalls';
-import { powertrainNames, splitRecalls } from '@carinfo/shared/recall-scope';
-import { investigationText } from './investigations';
+import { powertrainNames, splitInvestigations, splitRecalls } from '@carinfo/shared/recall-scope';
+import { investigationPart, investigationText } from './investigations';
 import { theftPlace } from '@carinfo/shared/theft';
 
 export interface BeforeYouBuyItem {
@@ -17,6 +17,12 @@ const FCW_WORDS = {
   optional: ', with forward collision warning optional',
   none: '',
 } as const;
+
+/** NHTSA's component in words, or nothing where it names none ("UNKNOWN OR OTHER"). */
+function namedPart(component: string): string | null {
+  const part = investigationPart(component);
+  return part === 'Other' || /^equipment$/i.test(part) ? null : part.toLowerCase();
+}
 
 function list(words: string[]): string {
   if (words.length <= 1) return words[0] ?? '';
@@ -68,12 +74,15 @@ export function beforeYouBuy(dashboard: CarDashboard): BeforeYouBuyItem[] {
   }
 
   // The newest still open: a recall may follow it.
-  const open = investigations?.find((inv) => !inv.closed);
+  const open = splitInvestigations(investigations ?? [], {
+    fuelType: car.engine.fuelType,
+    mildHybrid: car.engine.mildHybrid,
+  }).applies.find((inv) => !inv.closed);
   if (open) {
     items.push({
       key: 'investigation',
       href: '#recalls',
-      text: `NHTSA (U.S.) has had an investigation open since ${recallDate(open.opened)} into the ${complaintPart(open.component).toLowerCase()}: ${investigationText(open.subject).replace(/\.$/, '')}. A recall may follow.`,
+      text: `NHTSA (U.S.) has had an investigation open since ${recallDate(open.opened)}${namedPart(open.component) ? ` into its ${namedPart(open.component)}` : ''}: ${investigationText(open.subject).replace(/\.$/, '')}. A recall may follow.`,
     });
   }
 

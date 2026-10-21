@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  investigationPowertrains,
   powertrainNames,
   recallCanApply,
   recallPowertrains,
+  splitInvestigations,
   splitRecalls,
 } from './recall-scope.js';
 
@@ -60,5 +62,17 @@ describe('recall scope', () => {
       'the plug-in hybrid',
     ]);
     expect(powertrainNames(['hybrid', 'plug-in hybrid'])).toBe('the hybrid and the plug-in hybrid');
+  });
+
+  it('reads an investigation’s powertrain from its component and subject', () => {
+    const gas = { fuelType: 'gasoline' as const };
+    const diesel = { component: 'FUEL SYSTEM, DIESEL', subject: 'High pressure fuel pump failure' };
+    const alert = { component: 'ELECTRICAL SYSTEM', subject: 'Pedestrian alert sounds' };
+    const brakes = { component: 'FORWARD COLLISION AVOIDANCE', subject: 'Inadvertent braking' };
+    expect(investigationPowertrains(diesel)).toEqual(['diesel']);
+    const { applies, other } = splitInvestigations([diesel, alert, brakes], gas);
+    expect(applies).toEqual([brakes]);
+    expect(other).toEqual([diesel, alert]);
+    expect(splitInvestigations([alert], { fuelType: 'hybrid' }).applies).toEqual([alert]);
   });
 });

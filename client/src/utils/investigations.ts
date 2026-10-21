@@ -20,6 +20,11 @@ export function investigationText(text: string): string {
   return /[a-z]/.test(text) ? text : complaintPart(text);
 }
 
+/** NHTSA's component in words: "Engine and engine cooling"; "Other" where it names none. */
+export function investigationPart(component: string): string {
+  return /^(?:UNKNOWN|NONE)/i.test(component) ? 'Other' : complaintPart(component);
+}
+
 /** The open ones first, then newest. */
 export function openFirst(list: NhtsaInvestigation[]): NhtsaInvestigation[] {
   return [...list].sort(

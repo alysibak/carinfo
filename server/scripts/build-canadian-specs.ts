@@ -11,7 +11,7 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { getAllCars, modelLineKey } from '../src/services/car.service.js';
+import { doorCount, getAllCars, modelLineKey } from '../src/services/car.service.js';
 import { govModelIndex } from '../src/utils/gov-models.js';
 import {
   measured,
@@ -61,7 +61,13 @@ writeFileSync(
 );
 
 const cars = getAllCars();
-const { sized } = withSizes(cars, list, modelLineKey, govModelIndex(cars, modelLineKey).match);
+const { sized } = withSizes(
+  cars,
+  list,
+  modelLineKey,
+  govModelIndex(cars, modelLineKey).match,
+  doorCount,
+);
 console.log(
   `Canadian specifications: ${list.length} measured vehicles by model year (${implausible} rows with a missing or implausible measure left out); ${sized} of ${cars.length} cars sized`,
 );

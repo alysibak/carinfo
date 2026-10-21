@@ -4,6 +4,7 @@ import {
   measured,
   sizeOf,
   specConfiguration,
+  specDoors,
   specModelName,
   withSizes,
   type CanadianSpecRow,
@@ -88,5 +89,35 @@ describe('measurements', () => {
     );
     expect(sized).toBe(1);
     expect(cars[0].size).toMatchObject({ lengthCm: [459, 459], curbWeightKg: [1580, 1580] });
+  });
+
+  it('keeps to the rows with the car’s doors where both say', () => {
+    const rows = [
+      measured(row('WRANGLER JL SPORT 2DR SUV', { Make: 'JEEP', OL: '407', WB: '246' }))!,
+      measured(row('WRANGLER JL SPORT 4DR SUV', { Make: 'JEEP', OL: '462', WB: '301' }))!,
+    ];
+    const car = (model: string) =>
+      ({
+        id: model,
+        make: 'Jeep',
+        model,
+        year: 2017,
+        bodyStyle: 'suv',
+        driveType: '4WD',
+        engine: { fuelType: 'gasoline' },
+      }) as Car;
+    const { cars } = withSizes(
+      [car('Wrangler 4WD'), car('Wrangler Unlimited 4WD')],
+      rows,
+      () => 'jeep|wrangler',
+      () => 'jeep|wrangler',
+      (c) => (/unlimited/i.test(c.model) ? 4 : 2),
+    );
+    expect(cars.map((c) => c.size?.lengthCm)).toEqual([
+      [407, 407],
+      [462, 462],
+    ]);
+    expect(specDoors('WRANGLER JL SPORT 2DR SUV')).toBe(2);
+    expect(specDoors('CR-V AWD')).toBeUndefined();
   });
 });

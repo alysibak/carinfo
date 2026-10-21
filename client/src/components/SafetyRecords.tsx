@@ -55,7 +55,7 @@ function RecallItem({ recall, forOther }: { recall: CanadianRecall; forOther?: s
       <p className="text-sm text-zinc-300 mt-1.5 leading-relaxed">{notice.issue}</p>
       {(notice.risk || notice.remedy) && (
         <details className="mt-1.5 group">
-          <summary className="min-h-[32px] flex items-center text-xs text-zinc-400 hover:text-white cursor-pointer select-none">
+          <summary className="py-1.5 text-xs text-zinc-400 hover:text-white cursor-pointer select-none">
             Risk and remedy
           </summary>
           {notice.risk && (
@@ -130,7 +130,7 @@ export default function SafetyRecords({
             )}
             {others.length > 0 && (
               <details className="mt-4 border-t border-zinc-900 pt-3">
-                <summary className="min-h-[44px] flex items-center text-sm text-zinc-300 hover:text-white cursor-pointer select-none">
+                <summary className="py-2.5 text-sm text-zinc-300 hover:text-white cursor-pointer select-none">
                   {others.length} {others.length === 1 ? 'recall' : 'recalls'} for other versions
                 </summary>
                 <ol className="space-y-4 mt-2">
@@ -224,6 +224,7 @@ export default function SafetyRecords({
             investigations={investigations}
             name={name}
             asOf={dashboard.recordDates?.investigations}
+            car={{ fuelType: car.engine.fuelType, mildHybrid: car.engine.mildHybrid }}
           />
         )}
       </div>

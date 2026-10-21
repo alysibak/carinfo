@@ -2,7 +2,7 @@ import type { CarDashboard, CarSpecs } from '../types/car.types';
 import { efficiencyOf, rangeKm } from './efficiency';
 import { displayModelLabel } from './trimLabel';
 import { rolloverRiskText } from './safetyTech';
-import { splitRecalls } from '@carinfo/shared/recall-scope';
+import { splitInvestigations, splitRecalls } from '@carinfo/shared/recall-scope';
 import { ordinal } from '@carinfo/shared/theft';
 
 export interface ComparePair {
@@ -227,7 +227,11 @@ export function summarizeComparison(pairs: ComparePair[]): CompareLine[] {
       dashboard?.theft
         ? `${ordinal(dashboard.theft.rank)} on Canada’s most-stolen list (${dashboard.theft.year})`
         : null,
-      dashboard?.investigations?.some((inv) => !inv.closed)
+      dashboard?.investigations &&
+      splitInvestigations(dashboard.investigations, {
+        fuelType: car.engine.fuelType,
+        mildHybrid: car.engine.mildHybrid,
+      }).applies.some((inv) => !inv.closed)
         ? 'an NHTSA investigation still open'
         : null,
     ].filter((w): w is string => !!w);

@@ -114,7 +114,7 @@ describe('beforeYouBuy', () => {
       {
         key: 'investigation',
         href: '#recalls',
-        text: 'NHTSA (U.S.) has had an investigation open since Mar 11, 2019 into the engine and engine cooling: Oil dilution. A recall may follow.',
+        text: 'NHTSA (U.S.) has had an investigation open since Mar 11, 2019 into its engine and engine cooling: Oil dilution. A recall may follow.',
       },
     ]);
   });

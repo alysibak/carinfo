@@ -55,6 +55,9 @@ export function recallDate(iso: string): string {
  * system" and "Seats and restraints".
  */
 export function complaintPart(name: string): string {
-  const lower = name.toLowerCase();
+  // NHTSA's "FUEL SYSTEM, DIESEL" and "SERVICE BRAKES, HYDRAULIC" read
+  // "Diesel fuel system" and "Hydraulic service brakes".
+  const kind = /^([^,]+),\s*([^,]+)$/.exec(name.trim());
+  const lower = (kind ? `${kind[2]} ${kind[1]}` : name).toLowerCase();
   return lower.charAt(0).toUpperCase() + lower.slice(1);
 }
