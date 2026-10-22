@@ -62,7 +62,7 @@ export default function Browse() {
           <p className="text-sm text-zinc-400 mb-6 md:mb-8">
             Sedan, SUV, truck and the rest, from every make.
           </p>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-zinc-800">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-px bg-zinc-800">
             {BODY_TYPES.map((type) => (
               <Link
                 key={type.id}

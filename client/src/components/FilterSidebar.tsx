@@ -5,7 +5,6 @@ import FilterPills from './FilterPills';
 import { ExpandableSection } from './ui';
 import type { CarFilter, SearchQuery } from '../types/car.types';
 import {
-  LIFESTYLE_PRESETS,
   PRICE_BUCKETS,
   YEAR_BUCKETS,
   MPG_BUCKETS,
@@ -15,16 +14,16 @@ import {
   BODY_TYPES,
   FUEL_TYPES,
   DRIVE_TYPES,
+  DRIVE_LABELS,
   TOP_MAKES,
-  matchingLifestylePreset,
   type BucketOption,
 } from '../config/browseTaxonomy';
+import { isFcwStandard } from '../utils/searchParams';
 import {
   bucketMatches,
   countActiveFilterFields,
-  mergeFilterFields,
+  filterFieldHasValue,
   sortForFilters,
-  stripFilterFields,
   toggleRangeBucket,
 } from '../utils/filterState';
 
@@ -38,6 +37,34 @@ const GEARBOXES = [
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return <h3 className="text-xs text-zinc-300 mb-3 font-bold">{children}</h3>;
+}
+
+/** A yes-or-no filter with a line saying what it rests on. */
+function CheckRow({
+  checked,
+  onChange,
+  label,
+  note,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  label: string;
+  note: string;
+}) {
+  return (
+    <label className="flex items-start gap-3 py-2 cursor-pointer group">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={onChange}
+        className="mt-0.5 h-4 w-4 shrink-0 accent-accent cursor-pointer"
+      />
+      <span className="min-w-0">
+        <span className="block text-[13px] text-zinc-200 group-hover:text-white">{label}</span>
+        <span className="block text-xs text-zinc-500 leading-snug mt-0.5">{note}</span>
+      </span>
+    </label>
+  );
 }
 
 function RangeInputs({
@@ -111,14 +138,17 @@ function RangeInputs({
 }
 
 /**
- * Every filter the search offers, the records first: body, make, year,
- * powertrain, EPA fuel use and range, NHTSA stars, power, drive, seats and
- * gearbox, then the estimated value, then the rest. Shown beside the results
- * on a wide screen and in a full-screen sheet on a phone (FilterSheet).
+ * Every filter a shopper reaches for, in plain words: the type, make, year
+ * and fuel, EPA's fuel use, the drive, then the records (NHTSA's crash tests
+ * and safety features, Transport Canada's recalls, Équité's most-stolen
+ * list), seats and gearbox. Power and the estimated value are under More.
+ * Shown beside the results on a wide screen and in a full-screen sheet on a
+ * phone (FilterSheet).
  *
- * It used to open with presets and the estimated budget and keep Make under
- * "More filters", with no way to ask for crash ratings, power, a third row or
- * a manual gearbox, all of which the search API reads.
+ * Country of origin, engine size and the lifestyle shortcuts are gone from
+ * the panel: a brand's country is not where the car was built, litres say
+ * little to most buyers, and the shortcuts were price bands on an estimate.
+ * Links that carry them still work, and their chips can be removed.
  */
 export default function FilterSidebar({
   onFiltersApplied,
@@ -131,7 +161,6 @@ export default function FilterSidebar({
 }) {
   const { searchQuery, setSearchQuery, performSearch, availableMakes, loadMakes } = useCarStore();
   const [filters, setFilters] = useState<CarFilter>(searchQuery.filters || {});
-  const [countries, setCountries] = useState<string[]>([]);
   const [makeSearch, setMakeSearch] = useState('');
   const [ratedShare, setRatedShare] = useState<number | null>(null);
 
@@ -144,9 +173,6 @@ export default function FilterSidebar({
     api
       .getStatistics()
       .then((stats) => {
-        if (Array.isArray(stats.countries) && stats.countries.length > 0) {
-          setCountries(stats.countries);
-        }
         const rated = stats.coverage?.nhtsaSafety;
         if (
           typeof rated === 'number' &&
@@ -156,9 +182,7 @@ export default function FilterSidebar({
           setRatedShare(rated / stats.totalCars);
         }
       })
-      .catch(() => {
-        setCountries(['USA', 'Japan', 'Germany', 'Italy', 'South Korea', 'UK', 'Sweden']);
-      });
+      .catch(() => setRatedShare(null));
   }, [loadMakes]);
 
   const commitFilters = useCallback(
@@ -172,8 +196,6 @@ export default function FilterSidebar({
     },
     [onFiltersApplied, performSearch, searchQuery, setSearchQuery],
   );
-
-  const activeLifestyle = matchingLifestylePreset(filters, searchQuery.query);
 
   const activeBucket = useCallback(
     (buckets: BucketOption[], key: RangeKey) =>
@@ -189,21 +211,6 @@ export default function FilterSidebar({
     );
   };
 
-  const toggleLifestyle = (id: string) => {
-    const preset = LIFESTYLE_PRESETS.find((p) => p.id === id);
-    if (!preset) return;
-    // A preset's words ("third row", "sports car") replace the search words.
-    if (activeLifestyle === id) {
-      commitFilters(
-        stripFilterFields(filters, preset.filters),
-        { field: 'year', order: 'desc' },
-        preset.query ? '' : undefined,
-      );
-    } else {
-      commitFilters(mergeFilterFields(filters, preset.filters), preset.sort, preset.query);
-    }
-  };
-
   const toggleArrayFilter = (key: keyof CarFilter, value: string) => {
     const current = (filters[key] as string[] | undefined) || [];
     const nextArr = current.includes(value)
@@ -217,6 +224,28 @@ export default function FilterSidebar({
     const next = { ...filters };
     if (filters.threeRow === true) delete next.threeRow;
     else next.threeRow = true;
+    commitFilters(next);
+  };
+
+  const toggleNoRecalls = () => {
+    const next = { ...filters };
+    if (filters.noRecalls) delete next.noRecalls;
+    else next.noRecalls = true;
+    commitFilters(next);
+  };
+
+  // Off the list only: "on the most-stolen list" is a search ("most stolen suv").
+  const toggleNotStolen = () => {
+    const next = { ...filters };
+    if (filters.theftListed === false) delete next.theftListed;
+    else next.theftListed = false;
+    commitFilters(next);
+  };
+
+  const toggleCollisionWarning = () => {
+    const next = { ...filters };
+    if (isFcwStandard(filters)) delete next.safetyTech;
+    else next.safetyTech = { features: ['fcw'], standard: true };
     commitFilters(next);
   };
 
@@ -288,7 +317,7 @@ export default function FilterSidebar({
       )}
 
       <div>
-        <SectionLabel>Vehicle type</SectionLabel>
+        <SectionLabel>Type</SectionLabel>
         <FilterPills
           // No counts: the whole catalogue's ("SUV (10,508)") misled beside a
           // search of 49, and the sheet's button counts the results as they change.
@@ -330,7 +359,7 @@ export default function FilterSidebar({
       </div>
 
       <div>
-        <SectionLabel>Powertrain</SectionLabel>
+        <SectionLabel>Fuel</SectionLabel>
         <FilterPills
           options={FUEL_TYPES.map((t) => ({
             id: t.id,
@@ -344,41 +373,64 @@ export default function FilterSidebar({
       </div>
 
       <div>
-        <SectionLabel>Fuel use (EPA)</SectionLabel>
-        {bucketPills(MPG_BUCKETS, 'fuelEconomy')}
+        <SectionLabel>Fuel use</SectionLabel>
+        {/* Electric is under Fuel: "100+ MPGe" said the same in jargon. */}
+        {bucketPills(
+          MPG_BUCKETS.filter((b) => b.id !== 'mpg-100'),
+          'fuelEconomy',
+        )}
+        <p className="text-xs text-zinc-500 mt-2">EPA&apos;s combined rating.</p>
       </div>
 
       {electricOnly && (
         <div>
-          <SectionLabel>EPA range</SectionLabel>
+          <SectionLabel>Range on a charge</SectionLabel>
           {bucketPills(RANGE_BUCKETS, 'rangeMiles')}
+          <p className="text-xs text-zinc-500 mt-2">EPA&apos;s rating, new.</p>
         </div>
       )}
 
       <div>
-        <SectionLabel>Safety (NHTSA)</SectionLabel>
-        {bucketPills(SAFETY_BUCKETS, 'safety')}
-        <p className="text-xs text-zinc-500 mt-2 leading-relaxed">
-          {ratedShare != null
-            ? `NHTSA has crash-tested ${Math.round(ratedShare * 100)}% of the versions on file, mostly from 2011 on. `
-            : ''}
-          A car it hasn&apos;t rated is left out here, not judged unsafe.
-        </p>
-      </div>
-
-      <div>
-        <SectionLabel>Power</SectionLabel>
-        {bucketPills(POWER_BUCKETS, 'horsepower')}
-      </div>
-
-      <div>
         <SectionLabel>Drive</SectionLabel>
         <FilterPills
-          options={DRIVE_TYPES.map((d) => ({ id: d, label: d }))}
+          options={DRIVE_TYPES.map((d) => ({ id: d, label: DRIVE_LABELS[d] }))}
           activeIds={filters.driveType ?? []}
           onToggle={(id) => toggleArrayFilter('driveType', id)}
           compact
         />
+      </div>
+
+      <div>
+        <SectionLabel>Safety and records</SectionLabel>
+        <p className="text-xs text-zinc-400 mb-2">Crash-test stars</p>
+        {bucketPills(SAFETY_BUCKETS, 'safety')}
+        <p className="text-xs text-zinc-500 mt-2 leading-relaxed">
+          NHTSA&apos;s overall rating.{' '}
+          {ratedShare != null
+            ? `It has crash-tested ${Math.round(ratedShare * 100)}% of the versions on file, mostly from 2011 on. `
+            : ''}
+          A car it hasn&apos;t rated is left out here, not judged unsafe.
+        </p>
+        <div className="mt-3 border-t border-zinc-900 pt-1">
+          <CheckRow
+            checked={isFcwStandard(filters)}
+            onChange={toggleCollisionWarning}
+            label="Collision warning standard"
+            note="Standard on the car, not an option, as NHTSA lists it."
+          />
+          <CheckRow
+            checked={filters.noRecalls === true}
+            onChange={toggleNoRecalls}
+            label="No recalls in Canada"
+            note="None for its model year, as Transport Canada lists them. Newer cars have had less time to be recalled."
+          />
+          <CheckRow
+            checked={filters.theftListed === false}
+            onChange={toggleNotStolen}
+            label="Not on the most-stolen list"
+            note="Leaves out the 10 models Équité Association counted as most stolen in Canada in 2024."
+          />
+        </div>
       </div>
 
       <div>
@@ -399,55 +451,31 @@ export default function FilterSidebar({
         />
       </div>
 
-      <div>
-        <SectionLabel>Estimated value (CAD)</SectionLabel>
-        {bucketPills(PRICE_BUCKETS, 'price')}
-        <p className="text-xs text-zinc-500 mt-2 mb-3">
-          Our model&apos;s estimate, not an asking price.
-        </p>
-        <RangeInputs
-          label="estimated value"
-          value={filters.price}
-          step={1000}
-          onCommit={(range) => commitFilters({ ...filters, price: range })}
-        />
-      </div>
-
       <div className="pt-5 border-t border-zinc-800">
-        <ExpandableSection title="More filters" summary="Origin, engine size, shortcuts">
+        <ExpandableSection
+          title="More filters"
+          summary="Power, estimated value"
+          defaultOpen={
+            filterFieldHasValue(filters.horsepower) || filterFieldHasValue(filters.price)
+          }
+        >
           <div className="space-y-6">
             <div>
-              <SectionLabel>Country of origin</SectionLabel>
-              <FilterPills
-                options={countries.map((c) => ({ id: c, label: c }))}
-                activeIds={filters.countryOfOrigin ?? []}
-                onToggle={(id) => toggleArrayFilter('countryOfOrigin', id)}
-                compact
-              />
+              <SectionLabel>Power</SectionLabel>
+              {bucketPills(POWER_BUCKETS, 'horsepower')}
             </div>
 
             <div>
-              <SectionLabel>Engine size (L)</SectionLabel>
+              <SectionLabel>Estimated value (CAD)</SectionLabel>
+              {bucketPills(PRICE_BUCKETS, 'price')}
+              <p className="text-xs text-zinc-500 mt-2 mb-3">
+                Our model&apos;s estimate, not an asking price: a car can sell for more or less.
+              </p>
               <RangeInputs
-                label="engine size in litres"
-                value={filters.displacement}
-                step={0.5}
-                onCommit={(range) => commitFilters({ ...filters, displacement: range })}
-              />
-              <p className="text-xs text-zinc-400 mt-2">Excludes EVs</p>
-            </div>
-
-            <div>
-              <SectionLabel>Shortcuts</SectionLabel>
-              <FilterPills
-                options={LIFESTYLE_PRESETS.map((p) => ({
-                  id: p.id,
-                  label: p.label,
-                  description: p.description,
-                }))}
-                activeIds={activeLifestyle ? [activeLifestyle] : []}
-                onToggle={toggleLifestyle}
-                compact
+                label="estimated value"
+                value={filters.price}
+                step={1000}
+                onCommit={(range) => commitFilters({ ...filters, price: range })}
               />
             </div>
           </div>

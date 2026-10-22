@@ -1,7 +1,7 @@
 import type { CarFilter, SearchQuery } from '../types/car.types';
 import { bodyStyleLabel } from './bodyStyleLabel';
 import { formatFuelTypeLabel } from './fuelDisplay';
-import { isElectricOnlyBrowse } from './filterState';
+import { filterFieldHasValue, isElectricOnlyBrowse } from './filterState';
 import { rangeKm } from './efficiency';
 
 const PAGE_SIZE = 36;
@@ -80,6 +80,9 @@ export function hasActiveSearch(params: URLSearchParams): boolean {
     'nhtsaMin',
     'rows',
     'rangeMin',
+    'recalls',
+    'stolen',
+    'fcw',
   ];
   return filterKeys.some((k) => params.get(k));
 }
@@ -128,15 +131,14 @@ export function paramsToSearchQuery(params: URLSearchParams): { query: SearchQue
   const rangeMin = numParam(params.get('rangeMin'));
   if (rangeMin != null) filters.rangeMiles = { min: rangeMin };
 
-  const hasFilters = Object.values(filters).some((v) => {
-    if (v == null) return false;
-    if (typeof v === 'boolean') return true;
-    if (Array.isArray(v)) return v.length > 0;
-    return (
-      (v as { min?: number; max?: number }).min != null ||
-      (v as { min?: number; max?: number }).max != null
-    );
-  });
+  // The records: no recall in Canada, the most-stolen list, collision warning.
+  if (params.get('recalls') === 'none') filters.noRecalls = true;
+  const stolen = params.get('stolen');
+  if (stolen === 'no') filters.theftListed = false;
+  else if (stolen === 'yes') filters.theftListed = true;
+  if (params.get('fcw') === 'standard') filters.safetyTech = { features: ['fcw'], standard: true };
+
+  const hasFilters = Object.values(filters).some(filterFieldHasValue);
 
   const sortField =
     params.get('sort') ??
@@ -205,6 +207,9 @@ export function searchQueryToParams(query: SearchQuery, page: number): URLSearch
   if (f.safety?.min != null) params.set('nhtsaMin', String(f.safety.min));
   if (f.threeRow != null) params.set('rows', f.threeRow ? '3' : '2');
   if (f.rangeMiles?.min != null) params.set('rangeMin', String(f.rangeMiles.min));
+  if (f.noRecalls) params.set('recalls', 'none');
+  if (f.theftListed != null) params.set('stolen', f.theftListed ? 'yes' : 'no');
+  if (isFcwStandard(f)) params.set('fcw', 'standard');
   // Only persist when it differs from the dynamic default so heuristic can
   // adapt as q changes (e.g. "mazda" → dense, "mazda 3" → years).
   const collapseDefault = defaultCollapseByModel(query.query, query.filters);
@@ -215,6 +220,12 @@ export function searchQueryToParams(query: SearchQuery, page: number): URLSearch
   }
 
   return params;
+}
+
+/** The one safety-feature filter the panel offers: collision warning standard. */
+export function isFcwStandard(filters: CarFilter = {}): boolean {
+  const tech = filters.safetyTech;
+  return !!tech?.standard && tech.features.length === 1 && tech.features[0] === 'fcw';
 }
 
 export function describeActiveFilters(filters: CarFilter = {}): { key: string; label: string }[] {
@@ -271,7 +282,8 @@ export function describeActiveFilters(filters: CarFilter = {}): { key: string; l
   if (filters.safety?.min != null) {
     chips.push({
       key: 'nhtsa',
-      label: filters.safety.min >= 5 ? 'NHTSA 5 stars' : `NHTSA ${filters.safety.min}+ stars`,
+      label:
+        filters.safety.min >= 5 ? '5 crash-test stars' : `${filters.safety.min}+ crash-test stars`,
     });
   }
   if (filters.threeRow != null) {
@@ -279,6 +291,19 @@ export function describeActiveFilters(filters: CarFilter = {}): { key: string; l
   }
   if (filters.rangeMiles?.min != null) {
     chips.push({ key: 'range', label: `${rangeKm(filters.rangeMiles.min)}+ km range` });
+  }
+  if (filters.safetyTech?.features.length) {
+    chips.push({
+      key: 'tech',
+      label: isFcwStandard(filters) ? 'Collision warning standard' : 'Safety features',
+    });
+  }
+  if (filters.noRecalls) chips.push({ key: 'recalls', label: 'No recalls in Canada' });
+  if (filters.theftListed != null) {
+    chips.push({
+      key: 'stolen',
+      label: filters.theftListed ? 'On the most-stolen list' : 'Not on the most-stolen list',
+    });
   }
 
   return chips;
@@ -311,6 +336,9 @@ export function removeActiveFilterChip(filters: CarFilter, chipKey: string): Car
   else if (chipKey === 'nhtsa') delete next.safety;
   else if (chipKey === 'rows') delete next.threeRow;
   else if (chipKey === 'range') delete next.rangeMiles;
+  else if (chipKey === 'tech') delete next.safetyTech;
+  else if (chipKey === 'recalls') delete next.noRecalls;
+  else if (chipKey === 'stolen') delete next.theftListed;
 
   return next;
 }

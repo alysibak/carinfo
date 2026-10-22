@@ -58,7 +58,17 @@ export const QUICK_FILTERS: QuickFilter[] = [
   listToggle('truck', 'Pickup', 'bodyStyle', 'truck'),
   listToggle('hybrid', 'Hybrid', 'fuelType', 'hybrid'),
   listToggle('electric', 'Electric', 'fuelType', 'electric'),
-  rangeToggle('nhtsa-5', 'NHTSA 5 stars', 'safety', { min: 5 }),
+  rangeToggle('nhtsa-5', '5 crash-test stars', 'safety', { min: 5 }),
+  {
+    id: 'no-recalls',
+    label: 'No recalls in Canada',
+    isOn: (filters) => filters.noRecalls === true,
+    toggle: (filters) => {
+      const out: CarFilter = { ...filters, noRecalls: true };
+      if (filters.noRecalls === true) delete out.noRecalls;
+      return out;
+    },
+  },
   listToggle('awd', 'AWD', 'driveType', 'AWD'),
   rangeToggle('recent', '2020+', 'year', { min: 2020 }),
   {

@@ -4,6 +4,8 @@ export function filterFieldHasValue(value: unknown): boolean {
   if (value == null) return false;
   if (Array.isArray(value)) return value.length > 0;
   if (typeof value === 'object') {
+    // { features: ['fcw'], standard: true }: on while it names a feature.
+    if ('features' in value) return (value as { features: unknown[] }).features.length > 0;
     const range = value as { min?: number; max?: number };
     return range.min != null || range.max != null;
   }

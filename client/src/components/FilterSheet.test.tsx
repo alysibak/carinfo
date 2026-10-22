@@ -48,10 +48,13 @@ describe('FilterSheet', () => {
     );
     expect(screen.getByRole('dialog', { name: 'Filters' })).toBeTruthy();
     for (const heading of [
-      'Vehicle type',
+      'Type',
       'Make',
-      'Safety (NHTSA)',
-      'Power',
+      'Model year',
+      'Fuel',
+      'Fuel use',
+      'Drive',
+      'Safety and records',
       'Seats and gearbox',
     ]) {
       expect(screen.getByRole('heading', { name: heading })).toBeTruthy();
@@ -77,6 +80,43 @@ describe('FilterSheet', () => {
     fireEvent.click(screen.getByRole('button', { name: '5 stars' }));
     expect(useCarStore.getState().searchQuery.filters).toEqual({ safety: { min: 5 } });
     expect(onApplied).toHaveBeenCalled();
+  });
+
+  it('filters on the records with a tick, and says what each rests on', () => {
+    render(
+      <FilterSheet
+        open
+        onClose={vi.fn()}
+        onFiltersApplied={vi.fn()}
+        resultLabel={null}
+        updating={false}
+      />,
+    );
+    fireEvent.click(screen.getByRole('checkbox', { name: /No recalls in Canada/ }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /Not on the most-stolen list/ }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /Collision warning standard/ }));
+    expect(useCarStore.getState().searchQuery.filters).toEqual({
+      noRecalls: true,
+      theftListed: false,
+      safetyTech: { features: ['fcw'], standard: true },
+    });
+    expect(screen.getByText(/Newer cars have had less time to be recalled/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('checkbox', { name: /No recalls in Canada/ }));
+    expect(useCarStore.getState().searchQuery.filters).not.toHaveProperty('noRecalls');
+  });
+
+  it('says drives in words', () => {
+    render(
+      <FilterSheet
+        open
+        onClose={vi.fn()}
+        onFiltersApplied={vi.fn()}
+        resultLabel={null}
+        updating={false}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'All-wheel' }));
+    expect(useCarStore.getState().searchQuery.filters).toEqual({ driveType: ['AWD'] });
   });
 
   it('closes on Escape', () => {

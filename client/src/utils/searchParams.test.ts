@@ -99,7 +99,7 @@ describe('removeActiveFilterChip', () => {
       'SUV',
       'Manual',
       'Under 6.7 L/100 km',
-      'NHTSA 5 stars',
+      '5 crash-test stars',
       'Three rows',
       '400+ km range',
     ]);
@@ -125,6 +125,34 @@ describe('new filters in the URL', () => {
       threeRow: true,
       rangeMiles: { min: 248.5 },
     });
+  });
+
+  it('round-trips the records: no recalls, the most-stolen list, collision warning', () => {
+    const filters: CarFilter = {
+      noRecalls: true,
+      theftListed: false,
+      safetyTech: { features: ['fcw'], standard: true },
+    };
+    const params = searchQueryToParams({ filters }, 1);
+    expect(params.get('recalls')).toBe('none');
+    expect(params.get('stolen')).toBe('no');
+    expect(params.get('fcw')).toBe('standard');
+    expect(hasActiveSearch(params)).toBe(true);
+    expect(paramsToSearchQuery(params).query.filters).toEqual(filters);
+    expect(describeActiveFilters(filters).map((c) => c.label)).toEqual([
+      'Collision warning standard',
+      'No recalls in Canada',
+      'Not on the most-stolen list',
+    ]);
+    expect(removeActiveFilterChip(filters, 'recalls')).toEqual({
+      theftListed: false,
+      safetyTech: { features: ['fcw'], standard: true },
+    });
+    expect(removeActiveFilterChip(filters, 'tech')).toEqual({
+      noRecalls: true,
+      theftListed: false,
+    });
+    expect(removeActiveFilterChip(filters, 'stolen')).not.toHaveProperty('theftListed');
   });
 
   it('keeps a two-row filter, which is false rather than absent', () => {

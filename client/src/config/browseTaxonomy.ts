@@ -197,26 +197,39 @@ export const RANGE_BUCKETS: BucketOption[] = [
 ];
 
 export const BODY_TYPES: { id: string; label: string; description: string }[] = [
-  { id: 'sedan', label: 'Sedan', description: 'Daily comfort' },
-  { id: 'hatchback', label: 'Hatchback', description: 'Compact & practical' },
-  { id: 'suv', label: 'SUV', description: 'Space & height' },
-  { id: 'truck', label: 'Truck', description: 'Haul & tow' },
-  { id: 'coupe', label: 'Coupe', description: 'Style & sport' },
-  { id: 'wagon', label: 'Wagon', description: 'Cargo & drive' },
-  { id: 'minivan', label: 'Minivan', description: 'Max seats' },
-  { id: 'van', label: 'Van', description: 'Work & cargo' },
+  { id: 'sedan', label: 'Sedan', description: 'Four doors and a separate trunk' },
+  { id: 'hatchback', label: 'Hatchback', description: 'A rear door that lifts with the glass' },
+  { id: 'suv', label: 'SUV', description: 'Higher seats and a rear door that lifts' },
+  { id: 'truck', label: 'Pickup', description: 'An open box behind the cab' },
+  { id: 'coupe', label: 'Coupe', description: 'Two doors' },
+  { id: 'convertible', label: 'Convertible', description: 'A roof that folds away' },
+  { id: 'wagon', label: 'Wagon', description: 'A car with a long roof over the cargo area' },
+  { id: 'minivan', label: 'Minivan', description: 'Sliding side doors and three rows' },
+  { id: 'van', label: 'Van', description: 'Cargo and passenger vans' },
 ];
 
 export const FUEL_TYPES: { id: string; label: string; description: string }[] = [
-  { id: 'gasoline', label: 'Gasoline', description: 'Most common' },
-  { id: 'hybrid', label: 'Hybrid', description: 'Gas + electric' },
-  { id: 'plug-in hybrid', label: 'Plug-in hybrid', description: 'Charge at home' },
-  { id: 'electric', label: 'Electric', description: 'Zero tailpipe' },
-  { id: 'hydrogen', label: 'Hydrogen Fuel Cell', description: 'FCEV · H₂ powertrain' },
-  { id: 'diesel', label: 'Diesel', description: 'Torque & range' },
+  { id: 'gasoline', label: 'Gasoline', description: 'A gas engine' },
+  { id: 'hybrid', label: 'Hybrid', description: 'Gas and electric; never plugs in' },
+  {
+    id: 'plug-in hybrid',
+    label: 'Plug-in hybrid',
+    description: 'Plugs in to drive some way on electricity, then runs on gas',
+  },
+  { id: 'electric', label: 'Electric', description: 'Battery only; plugs in' },
+  { id: 'diesel', label: 'Diesel', description: 'A diesel engine' },
+  { id: 'hydrogen', label: 'Hydrogen', description: 'A fuel cell, filled with hydrogen' },
 ];
 
 export const DRIVE_TYPES = ['FWD', 'RWD', 'AWD', '4WD'] as const;
+
+/** What each drive means, said out: "AWD" alone means little to many buyers. */
+export const DRIVE_LABELS: Record<(typeof DRIVE_TYPES)[number], string> = {
+  FWD: 'Front-wheel',
+  RWD: 'Rear-wheel',
+  AWD: 'All-wheel',
+  '4WD': 'Four-wheel (4x4)',
+};
 
 export const TOP_MAKES = [
   'Toyota',

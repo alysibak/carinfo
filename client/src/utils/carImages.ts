@@ -3,6 +3,7 @@ import sedanImg from '../assets/body-types/sedan.webp';
 import suvImg from '../assets/body-types/suv.webp';
 import truckImg from '../assets/body-types/truck.webp';
 import coupeImg from '../assets/body-types/coupe.webp';
+import convertibleImg from '../assets/body-types/convertible.webp';
 import hatchbackImg from '../assets/body-types/hatchback.webp';
 import wagonImg from '../assets/body-types/wagon.webp';
 import minivanImg from '../assets/body-types/minivan.webp';
@@ -14,6 +15,7 @@ export const BODY_TYPE_IMAGES: Partial<Record<BodyStyle, string>> = {
   suv: suvImg,
   truck: truckImg,
   coupe: coupeImg,
+  convertible: convertibleImg,
   hatchback: hatchbackImg,
   wagon: wagonImg,
   minivan: minivanImg,
