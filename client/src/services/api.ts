@@ -1,4 +1,5 @@
 import type {
+  BestSellers,
   CarRecordsSummary,
   CarDashboard,
   CarSpecs,
@@ -42,6 +43,13 @@ export async function getModelOverview(
   options?: RequestOptions,
 ): Promise<ModelOverview> {
   return api.get(`/cars/models/${encodeURIComponent(make)}/${encodeURIComponent(model)}`, options);
+}
+
+/**
+ * Canada's best sellers, each with its model's newest year on file.
+ */
+export async function getBestSellers(options?: RequestOptions): Promise<BestSellers> {
+  return api.get('/cars/popular', options);
 }
 
 /**

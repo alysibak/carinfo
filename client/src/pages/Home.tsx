@@ -23,6 +23,7 @@ import {
   sortForFilters,
 } from '../utils/filterState';
 import { QUICK_FILTERS } from '../utils/quickFilters';
+import BestSellers from '../components/BestSellers';
 import { LIFESTYLE_PRESETS, POPULAR_SEARCHES } from '../config/browseTaxonomy';
 import type { CarFilter } from '../types/car.types';
 import { usePageMeta } from '../utils/pageMeta';
@@ -410,56 +411,63 @@ export default function Home() {
 
           <div className="min-w-0">
             {!hasSearched && !isSearching ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 pt-1">
-                <div>
-                  <h1 className="text-xl font-bold tracking-tight mb-1">I know the name</h1>
-                  <p className="text-sm text-zinc-500 mb-5">
-                    Type above, or jump to a common search.
-                  </p>
-                  <div className="flex flex-col">
-                    {POPULAR_SEARCHES.map((item) => (
-                      <button
-                        key={item.label}
-                        type="button"
-                        onClick={() => handleTextSearch(item.query)}
-                        className="list-row text-left text-sm text-zinc-300 hover:text-white"
-                      >
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
+              <>
+                <div className="mb-10">
+                  <BestSellers headingLevel="h1" />
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold tracking-tight mb-1">I know the situation</h2>
-                  <p className="text-sm text-zinc-500 mb-5">Opens a filtered set you can refine.</p>
-                  <div className="flex flex-col">
-                    {LIFESTYLE_PRESETS.slice(0, 6).map((item) => (
-                      <button
-                        key={item.label}
-                        type="button"
-                        onClick={() => {
-                          pushSearch({
-                            query: item.query,
-                            filters: item.filters as CarFilter,
-                            sort: item.sort ?? { field: 'year', order: 'desc' },
-                            limit: pageSize,
-                            offset: 0,
-                          });
-                          setSearchText(item.query ?? '');
-                        }}
-                        className="list-row text-left"
-                      >
-                        <span>
-                          <span className="block text-sm text-zinc-200">{item.label}</span>
-                          <span className="block text-xs text-zinc-500 mt-0.5">
-                            {item.description}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 pt-1">
+                  <div>
+                    <h2 className="text-xl font-bold tracking-tight mb-1">I know the name</h2>
+                    <p className="text-sm text-zinc-500 mb-5">
+                      Type above, or jump to a common search.
+                    </p>
+                    <div className="flex flex-col">
+                      {POPULAR_SEARCHES.map((item) => (
+                        <button
+                          key={item.label}
+                          type="button"
+                          onClick={() => handleTextSearch(item.query)}
+                          className="list-row text-left text-sm text-zinc-300 hover:text-white"
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold tracking-tight mb-1">I know the situation</h2>
+                    <p className="text-sm text-zinc-500 mb-5">
+                      Opens a filtered set you can refine.
+                    </p>
+                    <div className="flex flex-col">
+                      {LIFESTYLE_PRESETS.slice(0, 6).map((item) => (
+                        <button
+                          key={item.label}
+                          type="button"
+                          onClick={() => {
+                            pushSearch({
+                              query: item.query,
+                              filters: item.filters as CarFilter,
+                              sort: item.sort ?? { field: 'year', order: 'desc' },
+                              limit: pageSize,
+                              offset: 0,
+                            });
+                            setSearchText(item.query ?? '');
+                          }}
+                          className="list-row text-left"
+                        >
+                          <span>
+                            <span className="block text-sm text-zinc-200">{item.label}</span>
+                            <span className="block text-xs text-zinc-500 mt-0.5">
+                              {item.description}
+                            </span>
                           </span>
-                        </span>
-                      </button>
-                    ))}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+              </>
             ) : (
               <>
                 {/* The start page's heading goes with it; results need their own. */}

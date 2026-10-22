@@ -1,4 +1,6 @@
 import type {
+  BestSeller,
+  BestSellers,
   Car,
   ModelOverview,
   ModelYearSummary,
@@ -29,6 +31,7 @@ import { withRunningCosts } from '../utils/running-cost.js';
 import { type RuntimeDatabaseFile, unpackRuntimeDatabase } from './runtime-db.js';
 import { LATEST_FULL_MODEL_YEAR } from '../config/model-years.js';
 import { FIRST_CAR } from '../config/first-car.js';
+import { BEST_SELLERS as CANADA_BEST_SELLERS } from '../config/popular-models.js';
 import { mpgToLPer100Km } from '../config/regional-assumptions.js';
 import { TRIM_QUERY_FORMS } from '../utils/performance-trims.js';
 import { extractQueryModifiers, withoutFigures } from '../utils/search-modifiers.js';
@@ -1397,6 +1400,30 @@ function yearChanges(before: ModelYearSummary, after: ModelYearSummary): string[
   }
   return changes;
 }
+
+/**
+ * Canada's best sellers (config/popular-models.ts), each with its model's
+ * newest year on file: fuel use, power, crash stars, recalls in Canada.
+ */
+export function getBestSellers(): BestSellers {
+  ensureDatabase();
+  if (bestSellerCache?.source === cachedCars) return bestSellerCache.value;
+  const models = CANADA_BEST_SELLERS.models.flatMap((entry): BestSeller[] => {
+    const [, , make, model] = entry.path.split('/');
+    const overview = getModelOverview(make, model);
+    if (!overview) return [];
+    const { rank, sales, sold, label, path } = entry;
+    return [{ rank, sales, sold, label, path, newest: overview.years[0] }];
+  });
+  const value: BestSellers = {
+    year: CANADA_BEST_SELLERS.year,
+    source: { ...CANADA_BEST_SELLERS.source },
+    models,
+  };
+  bestSellerCache = { source: cachedCars, value };
+  return value;
+}
+let bestSellerCache: { source: Car[]; value: BestSellers } | null = null;
 
 /**
  * A model across every year on file, for its page: "/models/toyota/camry".

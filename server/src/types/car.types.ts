@@ -640,6 +640,24 @@ export interface ModelOverview {
   theft?: TheftRank;
 }
 
+/** One of Canada's best sellers, with its model's newest year on file (config/popular-models.ts). */
+export interface BestSeller {
+  rank: number;
+  /** As the sales are counted: "Ford F-Series". */
+  sales: string;
+  sold: number;
+  /** The model page it links: "Ford F-150", "/models/ford/f-150". */
+  label: string;
+  path: string;
+  newest: ModelYearSummary;
+}
+
+export interface BestSellers {
+  year: number;
+  source: { name: string; url: string };
+  models: BestSeller[];
+}
+
 export interface OwnershipAssumptions {
   annualKm: string;
   annualMiles: number;

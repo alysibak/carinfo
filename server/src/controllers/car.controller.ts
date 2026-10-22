@@ -107,6 +107,17 @@ export function getCarById(req: Request, res: Response, next: NextFunction) {
 }
 
 /**
+ * Canada's best sellers with their newest year on file: /api/cars/popular
+ */
+export function getBestSellers(_req: Request, res: Response, next: NextFunction) {
+  try {
+    res.json({ success: true, data: carService.getBestSellers() });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
  * A model across every year on file: /api/cars/models/toyota/camry
  */
 export function getModelOverview(req: Request, res: Response, next: NextFunction) {

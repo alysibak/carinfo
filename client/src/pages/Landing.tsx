@@ -5,6 +5,7 @@ import SiteHeader from '../components/SiteHeader';
 import SampleCarCard from '../components/SampleCarCard';
 import CatalogueStats from '../components/CatalogueStats';
 import ShortlistCards from '../components/ShortlistCards';
+import BestSellers from '../components/BestSellers';
 import * as api from '../services/api';
 import type { CarSpecs } from '../types/car.types';
 import { LIFESTYLE_PRESETS, POPULAR_SEARCHES, presetToSearchQuery } from '../config/browseTaxonomy';
@@ -14,7 +15,7 @@ import { usePageMeta } from '../utils/pageMeta';
 import CompareTray from '../components/CompareTray';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { useCarStore } from '../stores/carStore';
-import { POPULAR_MODEL_PAGES } from '@carinfo/config/popular-models';
+import { EXAMPLE_MODEL_PAGES } from '@carinfo/config/popular-models';
 
 const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/i;
 
@@ -132,6 +133,10 @@ export default function Landing() {
           </div>
         </section>
 
+        <div className="page-wrap section-y border-t border-zinc-900">
+          <BestSellers />
+        </div>
+
         <section className="page-wrap section-y border-t border-zinc-900">
           <h2 className="section-title mb-2">How do you want to start?</h2>
           <p className="text-[15px] text-zinc-400 mb-6 md:mb-8 max-w-xl leading-relaxed">
@@ -164,7 +169,7 @@ export default function Landing() {
                 changed.
               </p>
               <div className="flex flex-wrap gap-2">
-                {POPULAR_MODEL_PAGES.map((model) => (
+                {EXAMPLE_MODEL_PAGES.map((model) => (
                   <Link key={model.path} to={model.path} className="chip">
                     {model.label}
                   </Link>
