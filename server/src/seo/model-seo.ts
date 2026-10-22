@@ -4,6 +4,7 @@ import { absoluteUrl } from './site.js';
 import { COMMONS_FILE } from '../utils/car-photos.js';
 import type { PageSeo } from './vehicle-seo.js';
 import { theftSentence } from '../shared/theft.js';
+import { plainPartName } from '../shared/part-names.js';
 
 const KM_PER_MILE = 1.609344;
 
@@ -26,7 +27,7 @@ function yearFacts(row: ModelYearSummary): string {
     row.recalls != null && `${row.recalls} ${row.recalls === 1 ? 'recall' : 'recalls'} in Canada`,
     row.complaints != null &&
       `${row.complaints.toLocaleString('en-CA')} owner ${row.complaints === 1 ? 'complaint' : 'complaints'} to NHTSA${
-        row.complaintPart ? `, most about ${row.complaintPart.toLowerCase()}` : ''
+        row.complaintPart ? `, most about ${plainPartName(row.complaintPart).toLowerCase()}` : ''
       }`,
   ]
     .filter(Boolean)

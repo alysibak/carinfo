@@ -12,7 +12,7 @@ import { useCarStore } from '../stores/carStore';
 import { useGarageStore } from '../stores/garageStore';
 import { regionName, useRegionStore } from '../stores/regionStore';
 import TCOCalculator from '../components/TCOCalculator';
-import { StatusToast } from '../components/ui';
+import { Chevron, StatusToast, foldSummaryClass } from '../components/ui';
 import ValuationLinks from '../components/ValuationLinks';
 import VehiclePlaceholder from '../components/VehiclePlaceholder';
 import CarPhotoFigure from '../components/CarPhotoFigure';
@@ -524,7 +524,7 @@ export default function CarDetail() {
           </div>
 
           <div ref={statsRef} className="mt-5 sm:mt-6">
-            <KeyFigures dashboard={dashboard} hasEstimates={showOwnership} />
+            <KeyFigures dashboard={dashboard} />
             <OnThisPage pageKey={car.id} />
           </div>
         </div>
@@ -575,13 +575,11 @@ export default function CarDetail() {
                         ? 'Charging'
                         : 'City and highway'}
                 </h2>
-                <p className="text-[13px] text-zinc-400 mb-3 leading-relaxed">
-                  {isPhev
-                    ? 'The figure above is gas mode, not a blend.'
-                    : hasEvExtras && !hasCityHwy
-                      ? 'Range is above; charge times below.'
-                      : 'The combined figure is above; this is EPA’s city and highway split.'}
-                </p>
+                {isPhev && (
+                  <p className="text-[13px] text-zinc-400 mb-3">
+                    The figure above is gas mode, not a blend.
+                  </p>
+                )}
                 {isPhev && phev ? (
                   <PhevDualModeBlock modes={phev} />
                 ) : (
@@ -654,9 +652,12 @@ export default function CarDetail() {
               )
             )}
 
-            <details className="mt-5 border-t border-zinc-900 pt-1">
-              <summary className="py-2.5 text-sm text-zinc-300 hover:text-white cursor-pointer select-none">
+            <details className="mt-5 border-t border-zinc-900 pt-1 group/est">
+              <summary
+                className={`${foldSummaryClass} py-3 text-sm text-zinc-200 hover:text-white`}
+              >
                 Value, insurance, upkeep and resale: rougher estimates
+                <Chevron className="w-3.5 h-3.5 text-zinc-500 group-open/est:rotate-180" />
               </summary>
               <div className="pt-2">
                 <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2 mb-4">

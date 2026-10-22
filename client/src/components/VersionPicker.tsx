@@ -8,6 +8,7 @@ import { formatEngineForDetail } from '../utils/dataValue';
 import { efficiencyOf } from '../utils/efficiency';
 import { formatCarFuelLabel } from '../utils/fuelDisplay';
 import { displayConfigNotes, displayModelLabel, formatTransmissionLabel } from '../utils/trimLabel';
+import { Chevron } from './ui';
 
 /** "2.0L 4-cyl · CVT · FWD": what tells one version from another. */
 function configOf(car: CarSpecs): string {
@@ -122,22 +123,14 @@ export default function VersionPicker({ car }: { car: CarSpecs }) {
       id="versions"
       open={open}
       onToggle={(e) => setOpen(e.currentTarget.open)}
-      className="mt-4 scroll-mt-24 group"
+      className="mt-4 scroll-mt-24 group/versions"
     >
       <summary className="inline-flex items-center gap-2 min-h-[44px] px-3 border border-zinc-700 hover:border-zinc-400 text-sm text-zinc-200 hover:text-white cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
         <span>
           <span className="tabular-nums">{count}</span> versions in {car.year}
           <span className="text-zinc-400"> · change version</span>
         </span>
-        <svg
-          viewBox="0 0 16 16"
-          className="w-3.5 h-3.5 shrink-0 transition-transform group-open:rotate-180"
-          fill="none"
-          stroke="currentColor"
-          aria-hidden
-        >
-          <path d="M4 6l4 4 4-4" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <Chevron className="w-3.5 h-3.5 group-open/versions:rotate-180" />
       </summary>
       <div className="mt-2 border border-zinc-800 bg-black max-w-2xl">
         <p className="px-3 pt-2.5 pb-2 text-xs text-zinc-400 leading-relaxed border-b border-zinc-900">

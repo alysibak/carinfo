@@ -20,7 +20,7 @@ export function investigationText(text: string): string {
   return /[a-z]/.test(text) ? text : complaintPart(text);
 }
 
-/** NHTSA's component in words: "Engine and engine cooling"; "Other" where it names none. */
+/** NHTSA’s component in words: "Engine and cooling"; "Other" where it names none. */
 export function investigationPart(component: string): string {
   return /^(?:UNKNOWN|NONE)/i.test(component) ? 'Other' : complaintPart(component);
 }

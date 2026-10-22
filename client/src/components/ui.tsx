@@ -315,19 +315,28 @@ export function InfoTip({
   );
 }
 
-function SectionChevron({ open }: { open: boolean }) {
+/**
+ * The arrow on anything that folds open. `className` sizes and colours it and
+ * says when it turns: `group-open/x:rotate-180` under a <details className="group/x">, or
+ * `rotate-180` from state.
+ */
+export function Chevron({ className = 'w-3.5 h-3.5 text-zinc-500' }: { className?: string }) {
   return (
     <svg
-      className={`w-4 h-4 shrink-0 text-zinc-500 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
       viewBox="0 0 16 16"
+      className={`shrink-0 transition-transform duration-200 motion-reduce:transition-none ${className}`}
       fill="none"
       stroke="currentColor"
       aria-hidden
     >
-      <path d="M4 6l4 4 4-4" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 6l4 4 4-4" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
+
+/** A <summary> without the browser's triangle, the text left and the arrow right. */
+export const foldSummaryClass =
+  'flex items-center justify-between gap-3 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden';
 
 export function ExpandableSection({
   title,
@@ -364,7 +373,7 @@ export function ExpandableSection({
             </p>
           )}
         </div>
-        <SectionChevron open={open} />
+        <Chevron className={`w-4 h-4 text-zinc-500 ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
         <div id={panelId} className="px-4 pb-4 pt-2 border-t border-zinc-800 space-y-1">

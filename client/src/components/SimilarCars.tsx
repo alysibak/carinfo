@@ -39,11 +39,8 @@ export default function SimilarCars({ car }: { car: CarSpecs }) {
   return (
     <section id="similar" className="border-t border-zinc-900 scroll-mt-32">
       <div className="page-wrap-wide section-y-tight">
-        <h2 className="text-base font-bold tracking-tight mb-1">If you&apos;re still looking</h2>
-        <p className="text-xs text-zinc-500 mb-4">
-          Nearby alternatives — each note is how it differs from this {car.year}{' '}
-          {displayModelLabel(car)}.
-        </p>
+        <h2 className="text-base font-bold tracking-tight mb-1">Alternatives</h2>
+        <p className="text-xs text-zinc-500 mb-3">How each differs from this one.</p>
 
         {cars == null ? (
           <div className="space-y-0 border-t border-zinc-900">
@@ -58,17 +55,18 @@ export default function SimilarCars({ car }: { car: CarSpecs }) {
               const inCompare = comparedCars.some((c) => c.id === alt.id);
               return (
                 <li key={alt.id} className="border-b border-zinc-900">
-                  <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4 py-3.5">
+                  {/* A row each: the name, how it differs, and a small compare toggle. */}
+                  <div className="flex items-center gap-3 py-3">
                     <Link to={`/car/${alt.id}`} className="min-w-0 flex-1 group">
                       <p className="text-sm font-semibold text-white group-hover:text-zinc-300 tracking-tight">
                         {alt.year} {alt.make} {displayModelLabel(alt)}
                       </p>
                       {edges[alt.id] && (
-                        <p className="text-base text-white font-medium mt-1.5 leading-snug">
+                        <p className="text-[13px] text-zinc-300 mt-0.5 leading-snug">
                           {edges[alt.id]}
                         </p>
                       )}
-                      <p className="text-xs text-zinc-500 mt-1.5">
+                      <p className="text-xs text-zinc-500 mt-0.5">
                         {[
                           efficiency?.text,
                           alt.engine.horsepower ? `${alt.engine.horsepower} hp` : null,
@@ -83,9 +81,10 @@ export default function SimilarCars({ car }: { car: CarSpecs }) {
                       type="button"
                       onClick={() => addOrReplaceOldestInComparison(alt)}
                       aria-pressed={inCompare}
-                      className={`chip shrink-0 self-start ${inCompare ? 'chip-on' : ''}`}
+                      aria-label={`${inCompare ? 'In compare' : 'Add to compare'}: ${alt.year} ${alt.make} ${displayModelLabel(alt)}`}
+                      className={`chip shrink-0 min-h-[40px] ${inCompare ? 'chip-on' : ''}`}
                     >
-                      {inCompare ? 'In compare' : 'Add to compare'}
+                      {inCompare ? '✓ Compare' : '+ Compare'}
                     </button>
                   </div>
                 </li>

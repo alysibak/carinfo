@@ -1,3 +1,5 @@
+import { plainPartName } from '@carinfo/shared/part-names';
+
 /**
  * A Transport Canada recall notice in its parts. Notices since about 2017 are
  * written "Issue: … Safety Risk: … Corrective Actions: …"; older ones are one
@@ -50,14 +52,8 @@ export function recallDate(iso: string): string {
 }
 
 /**
- * Government part and system names in sentence case: NHTSA's "ELECTRICAL
- * SYSTEM" and Transport Canada's "Seats And Restraints" read "Electrical
- * system" and "Seats and restraints".
+ * Government part and system names in plain words: NHTSA's "POWER TRAIN" and
+ * Transport Canada's "Seats And Restraints" read "Transmission and
+ * drivetrain" and "Seats and restraints".
  */
-export function complaintPart(name: string): string {
-  // NHTSA's "FUEL SYSTEM, DIESEL" and "SERVICE BRAKES, HYDRAULIC" read
-  // "Diesel fuel system" and "Hydraulic service brakes".
-  const kind = /^([^,]+),\s*([^,]+)$/.exec(name.trim());
-  const lower = (kind ? `${kind[2]} ${kind[1]}` : name).toLowerCase();
-  return lower.charAt(0).toUpperCase() + lower.slice(1);
-}
+export const complaintPart = plainPartName;

@@ -14,6 +14,7 @@ import type { SpecGlossaryKey } from '../utils/specGlossary';
 import { TIER1_SPEC_EMPHASIS, TIER2_VALUE, TIER3_LABEL } from '../utils/visualTiers';
 import { SpecLabel } from './SpecExplain';
 import DataValue from './DataValue';
+import { Chevron, foldSummaryClass } from './ui';
 
 interface SpecRow {
   key: string;
@@ -508,23 +509,28 @@ export default function KeySpecs({
     .filter((group) => group.rows.length > 0);
 
   if (groups.length === 0) return null;
+  const rowCount = groups.reduce((sum, group) => sum + group.rows.length, 0);
 
   return (
     <section id="specs" className="border-t border-zinc-900 scroll-mt-32">
       <div className="page-wrap-wide section-y-tight">
-        <h2 className="text-base font-bold tracking-tight mb-1">{heading}</h2>
-        {omit.size > 0 && (
-          <p className="text-xs text-zinc-500 mb-4">
-            Everything else on file for this configuration.
-          </p>
-        )}
-        <div
-          className={`grid grid-cols-1 md:grid-cols-2 gap-x-8 md:gap-x-10 gap-y-5 md:gap-y-6 ${omit.size > 0 ? '' : 'mt-4'}`}
-        >
-          {groups.map((group) => (
-            <SpecGroupBlock key={group.title} group={group} />
-          ))}
-        </div>
+        {/* Folded: the figures above are the ones most people need. */}
+        <details className="group/specs">
+          <summary className={`${foldSummaryClass} gap-4`}>
+            <span className="min-w-0">
+              <h2 className="text-base font-bold tracking-tight">{heading}</h2>
+              <span className="block text-xs text-zinc-500 mt-0.5">
+                {rowCount} more {rowCount === 1 ? 'figure' : 'figures'} on file for this version
+              </span>
+            </span>
+            <Chevron className="w-4 h-4 text-zinc-500 group-hover/specs:text-white group-open/specs:rotate-180" />
+          </summary>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 md:gap-x-10 gap-y-5 md:gap-y-6">
+            {groups.map((group) => (
+              <SpecGroupBlock key={group.title} group={group} />
+            ))}
+          </div>
+        </details>
       </div>
     </section>
   );

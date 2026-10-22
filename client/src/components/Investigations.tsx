@@ -7,6 +7,8 @@ import {
   openFirst,
 } from '../utils/investigations';
 import { recallDate } from '../utils/recalls';
+import RecordRow from './RecordRow';
+import { Chevron, foldSummaryClass } from './ui';
 
 const NHTSA_LOOKUP = 'https://www.nhtsa.gov/recalls';
 
@@ -15,31 +17,30 @@ const linkClass =
 
 function InvestigationItem({ inv, forOther }: { inv: NhtsaInvestigation; forOther?: boolean }) {
   return (
-    <li className="border-t border-zinc-900 pt-3 min-w-0">
-      <p className="text-sm font-semibold text-white">
-        {investigationPart(inv.component)}
-        {!inv.closed && !forOther && <span className="text-amber-400 font-normal"> · open</span>}
-        {!inv.closed && forOther && <span className="text-zinc-400 font-normal"> · open</span>}
+    <RecordRow
+      title={investigationPart(inv.component)}
+      flag={
+        !inv.closed ? (
+          <span className={forOther ? 'text-zinc-400 font-normal' : 'text-amber-300 font-normal'}>
+            {' '}
+            · open
+          </span>
+        ) : null
+      }
+      meta={
+        <>
+          {recallDate(inv.opened)}
+          {inv.closed ? ` to ${recallDate(inv.closed)}` : ''}
+          {inv.recall ? ` · led to recall ${inv.recall}` : ''}
+        </>
+      }
+    >
+      <p>{investigationText(inv.subject)}</p>
+      {inv.summary && <p>{investigationText(inv.summary)}</p>}
+      <p className="text-xs text-zinc-500">
+        {investigationKind(inv.kind)} {inv.id}
       </p>
-      <p className="text-xs text-zinc-400 mt-0.5 tabular-nums">
-        {investigationKind(inv.kind)} {inv.id} · opened {recallDate(inv.opened)}
-        {inv.closed ? ` · closed ${recallDate(inv.closed)}` : ''}
-        {inv.recall ? ` · led to recall ${inv.recall}` : ''}
-      </p>
-      <p className="text-sm text-zinc-300 mt-1.5 leading-relaxed">
-        {investigationText(inv.subject)}
-      </p>
-      {inv.summary && (
-        <details className="mt-1.5">
-          <summary className="py-1.5 text-xs text-zinc-400 hover:text-white cursor-pointer select-none">
-            What NHTSA looked into
-          </summary>
-          <p className="text-sm text-zinc-300 mt-1.5 leading-relaxed">
-            {investigationText(inv.summary)}
-          </p>
-        </details>
-      )}
-    </li>
+    </RecordRow>
   );
 }
 
@@ -63,47 +64,57 @@ export default function Investigations({
 }) {
   const { applies, other } = splitInvestigations(investigations, car);
   const open = applies.filter((inv) => !inv.closed).length;
+  if (applies.length === 0 && other.length === 0) return null;
   return (
     <div className="min-w-0 md:col-span-2">
-      <h2 className="text-base font-bold tracking-tight mb-1">NHTSA investigations</h2>
-      <p className="text-[13px] text-zinc-400 mb-4 leading-relaxed max-w-3xl">
-        {applies.length === 0
-          ? `NHTSA (U.S.) has no investigation on file for this version of the ${name}`
-          : applies.length === 1
-            ? `NHTSA (U.S.) has investigated a possible defect in the ${name}`
-            : `NHTSA (U.S.) has investigated ${applies.length} possible defects in the ${name}`}
-        {open ? `, ${open === 1 ? 'one' : open} still open` : ''}
-        {other.length
-          ? `; ${other.length === 1 ? 'one' : other.length} ${applies.length ? 'more ' : ''}${other.length === 1 ? 'was' : 'were'} for another version`
-          : ''}
-        . An investigation looks into owners’ reports and can lead to a recall; it is not a finding
-        that the defect exists.
-      </p>
-      {applies.length > 0 && (
-        <ol className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
-          {openFirst(applies).map((inv) => (
-            <InvestigationItem key={inv.id} inv={inv} />
-          ))}
-        </ol>
-      )}
-      {other.length > 0 && (
-        <details className="mt-4 border-t border-zinc-900 pt-3">
-          <summary className="py-2.5 text-sm text-zinc-300 hover:text-white cursor-pointer select-none">
-            {other.length} for other versions (diesel, hybrid or electric)
-          </summary>
-          <ol className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4 mt-2">
-            {openFirst(other).map((inv) => (
-              <InvestigationItem key={inv.id} inv={inv} forOther />
+      {/* Folded to a line: an investigation is not a finding, and most closed long ago. */}
+      <details className="group/inv border-t border-zinc-800">
+        <summary className={`${foldSummaryClass} gap-4 py-3`}>
+          <span className="min-w-0">
+            <span className="block text-base font-bold tracking-tight">NHTSA investigations</span>
+            <span className="block text-[13px] text-zinc-400 mt-0.5">
+              {applies.length === 0
+                ? `None for this version of the ${name}`
+                : `${applies.length} possible ${applies.length === 1 ? 'defect' : 'defects'} looked into`}
+              {open ? `, ${open} still open` : ''}
+              {other.length ? ` · ${other.length} for other versions` : ''}
+            </span>
+          </span>
+          <Chevron className="w-4 h-4 text-zinc-500 group-hover/inv:text-white group-open/inv:rotate-180" />
+        </summary>
+        <p className="text-[13px] text-zinc-400 mb-2 max-w-3xl">
+          NHTSA (U.S.) looks into owners’ reports; an investigation can lead to a recall, and is not
+          a finding that the defect exists.
+        </p>
+        {applies.length > 0 && (
+          <ol className="grid grid-cols-1 md:grid-cols-2 gap-x-10">
+            {openFirst(applies).map((inv) => (
+              <InvestigationItem key={inv.id} inv={inv} />
             ))}
           </ol>
-        </details>
-      )}
-      <p className="text-xs text-zinc-500 mt-4 leading-relaxed">
-        <a href={NHTSA_LOOKUP} target="_blank" rel="noreferrer" className={linkClass}>
-          Look one up on NHTSA by its number
-        </a>
-        {asOf ? ` · Records as of ${recallDate(asOf)}.` : ''}
-      </p>
+        )}
+        {other.length > 0 && (
+          <details className="mt-2 border-t border-zinc-900 pt-1 group/other">
+            <summary
+              className={`${foldSummaryClass} py-2.5 text-[13px] text-zinc-400 hover:text-white`}
+            >
+              {other.length} for other versions (diesel, hybrid or electric)
+              <Chevron className="w-3.5 h-3.5 text-zinc-500 group-open/other:rotate-180" />
+            </summary>
+            <ol className="grid grid-cols-1 md:grid-cols-2 gap-x-10">
+              {openFirst(other).map((inv) => (
+                <InvestigationItem key={inv.id} inv={inv} forOther />
+              ))}
+            </ol>
+          </details>
+        )}
+        <p className="text-xs text-zinc-500 mt-3 mb-1">
+          <a href={NHTSA_LOOKUP} target="_blank" rel="noreferrer" className={linkClass}>
+            Look one up on NHTSA by its number
+          </a>
+          {asOf ? `; as of ${recallDate(asOf)}.` : ''}
+        </p>
+      </details>
     </div>
   );
 }

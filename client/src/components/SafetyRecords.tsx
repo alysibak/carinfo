@@ -2,77 +2,57 @@ import { useState } from 'react';
 import type { CarDashboard } from '../types/car.types';
 import { ordinal } from '@carinfo/shared/theft';
 import Investigations from './Investigations';
+import RecordRow, { CountHeading } from './RecordRow';
+import { Chevron, foldSummaryClass } from './ui';
 import { complaintPart, recallDate, recallNotice } from '../utils/recalls';
-import { powertrainNames, splitRecalls, type RecallPowertrain } from '@carinfo/shared/recall-scope';
+import { powertrainNames, splitRecalls } from '@carinfo/shared/recall-scope';
 import type { CanadianRecall } from '../types/car.types';
 
 const CANADA_RECALLS = 'https://recalls-rappels.canada.ca/en';
 const NHTSA_LOOKUP = 'https://www.nhtsa.gov/recalls';
-const SHOWN = 4;
+const SHOWN = 3;
 
 const linkClass =
   'text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500';
 
-/** "The most of the Honda CR-V's 31 model years on file." */
+/** "The most of the Honda CR-V's 31 years on file." */
 function rankSentence(rank: { position: number; of: number }, model = 'model'): string {
   return rank.position === 1
-    ? `The most of the ${model}’s ${rank.of} model years on file.`
-    : `${ordinal(rank.position)} most of the ${model}’s ${rank.of} model years on file.`;
-}
-
-/**
- * "Transport Canada lists 5 recalls for the 2021 Toyota RAV4: 2 can cover this
- * version, and 3 are for the plug-in hybrid alone."
- */
-function recallSummary(
-  total: number,
-  applies: number,
-  others: Array<{ powertrains: RecallPowertrain[] }>,
-  name: string,
-): string {
-  if (total === 0) return `Transport Canada lists no recalls for the ${name}.`;
-  const listed = `Transport Canada lists ${total} ${total === 1 ? 'recall' : 'recalls'} for the ${name}`;
-  if (!others.length) return `${listed}.`;
-  const names = [...new Set(others.map((o) => powertrainNames(o.powertrains)))].join(' or ');
-  return `${listed}: ${applies === 0 ? 'none' : applies} can cover this version, and ${others.length} ${others.length === 1 ? 'is' : 'are'} for ${names} alone.`;
+    ? `The most of the ${model}’s ${rank.of} years on file.`
+    : `${ordinal(rank.position)} most of the ${model}’s ${rank.of} years on file.`;
 }
 
 function RecallItem({ recall, forOther }: { recall: CanadianRecall; forOther?: string }) {
   const notice = recallNotice(recall.summary);
   return (
-    <li className="border-t border-zinc-900 pt-3">
-      <p className="text-sm font-semibold text-white">
-        {complaintPart(recall.system)}
-        {recall.kind === 'compliance' && (
-          <span className="text-zinc-500 font-normal"> · compliance</span>
-        )}
-        {forOther && <span className="text-zinc-400 font-normal"> · for {forOther}</span>}
-      </p>
-      <p className="text-xs text-zinc-400 mt-0.5 tabular-nums">
-        {recallDate(recall.date)} · Transport Canada recall {recall.number}
-        {recall.units ? ` · ${recall.units.toLocaleString('en-CA')} vehicles in Canada` : ''}
-      </p>
-      <p className="text-sm text-zinc-300 mt-1.5 leading-relaxed">{notice.issue}</p>
-      {(notice.risk || notice.remedy) && (
-        <details className="mt-1.5 group">
-          <summary className="py-1.5 text-xs text-zinc-400 hover:text-white cursor-pointer select-none">
-            Risk and remedy
-          </summary>
-          {notice.risk && (
-            <p className="text-sm text-zinc-300 mt-1.5 leading-relaxed">
-              <span className="text-zinc-500">Safety risk: </span>
-              {notice.risk}
-            </p>
-          )}
-          {notice.remedy && (
-            <p className="text-sm text-zinc-300 mt-1.5 leading-relaxed">
-              <span className="text-zinc-500">Remedy: </span>
-              {notice.remedy}
-            </p>
-          )}
-        </details>
+    <RecordRow
+      title={complaintPart(recall.system)}
+      flag={forOther ? <span className="text-zinc-400 font-normal"> · {forOther} only</span> : null}
+      meta={
+        <>
+          {recallDate(recall.date)}
+          {recall.units ? ` · ${recall.units.toLocaleString('en-CA')} in Canada` : ''}
+        </>
+      }
+    >
+      <p>{notice.issue}</p>
+      {notice.risk && (
+        <p>
+          <span className="text-zinc-500">Risk: </span>
+          {notice.risk}
+        </p>
       )}
-    </li>
+      {notice.remedy && (
+        <p>
+          <span className="text-zinc-500">Remedy: </span>
+          {notice.remedy}
+        </p>
+      )}
+      <p className="text-xs text-zinc-500">
+        Transport Canada recall {recall.number}
+        {recall.kind === 'compliance' ? ' · compliance' : ''}
+      </p>
+    </RecordRow>
   );
 }
 
@@ -107,13 +87,14 @@ export default function SafetyRecords({
       <div className="page-wrap-wide section-y-tight grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-10">
         {recalls && (
           <div className="min-w-0">
-            <h2 className="text-base font-bold tracking-tight mb-1">Recalls in Canada</h2>
-            <p className="text-[13px] text-zinc-400 mb-4 leading-relaxed">
-              {recallSummary(recalls.length, applies.length, others, name)} A recall can cover only
-              some cars of a model year: check yours by its VIN with the maker or Transport Canada.
+            <CountHeading title="Recalls in Canada" count={applies.length} tone="warn" />
+            <p className="text-[13px] text-zinc-400 mt-1 mb-3">
+              {applies.length > 0
+                ? 'Check the VIN with the maker to see if the work was done.'
+                : `None listed for this version of the ${name}.`}
             </p>
             {shown.length > 0 && (
-              <ol className="space-y-4">
+              <ol>
                 {shown.map((recall) => (
                   <RecallItem key={recall.number} recall={recall} />
                 ))}
@@ -123,17 +104,24 @@ export default function SafetyRecords({
               <button
                 type="button"
                 onClick={() => setShowAll((all) => !all)}
-                className={`mt-4 min-h-[44px] text-sm ${linkClass}`}
+                className={`mt-1 min-h-[44px] text-sm ${linkClass}`}
               >
-                {showAll ? 'Show fewer' : `Show all ${applies.length} recalls`}
+                {showAll ? 'Show fewer' : `Show all ${applies.length}`}
               </button>
             )}
             {others.length > 0 && (
-              <details className="mt-4 border-t border-zinc-900 pt-3">
-                <summary className="py-2.5 text-sm text-zinc-300 hover:text-white cursor-pointer select-none">
-                  {others.length} {others.length === 1 ? 'recall' : 'recalls'} for other versions
+              <details className="mt-2 border-t border-zinc-900 pt-1 group/other">
+                <summary
+                  className={`${foldSummaryClass} py-2.5 text-[13px] text-zinc-400 hover:text-white`}
+                >
+                  <span>
+                    {others.length} more for{' '}
+                    {[...new Set(others.map((o) => powertrainNames(o.powertrains)))].join(' or ')}{' '}
+                    only
+                  </span>
+                  <Chevron className="w-3.5 h-3.5 text-zinc-500 group-open/other:rotate-180" />
                 </summary>
-                <ol className="space-y-4 mt-2">
+                <ol>
                   {others.map(({ recall, powertrains }) => (
                     <RecallItem
                       key={recall.number}
@@ -144,29 +132,26 @@ export default function SafetyRecords({
                 </ol>
               </details>
             )}
-            <p className="text-xs text-zinc-500 mt-4 leading-relaxed">
+            <p className="text-xs text-zinc-500 mt-3 leading-relaxed">
               <a href={CANADA_RECALLS} target="_blank" rel="noreferrer" className={linkClass}>
-                Government of Canada recalls
-              </a>{' '}
-              · Contains information licensed under the Open Government Licence – Canada.
+                Transport Canada
+              </a>
               {dashboard.recordDates?.recalls &&
-                ` Records as of ${recallDate(dashboard.recordDates.recalls)}.`}
+                `, as of ${recallDate(dashboard.recordDates.recalls)}`}
+              . Contains information licensed under the Open Government Licence – Canada.
             </p>
           </div>
         )}
 
         {complaints && (
           <div className="min-w-0">
-            <h2 className="text-base font-bold tracking-tight mb-1">Owner complaints</h2>
-            <p className="text-[13px] text-zinc-400 mb-4 leading-relaxed">
+            <CountHeading title="Owner complaints" count={complaints.complaints} />
+            <p className="text-[13px] text-zinc-400 mt-1 mb-3">
               {complaints.complaints === 0
-                ? `No owner complaints about the ${name} on file with NHTSA (U.S.).`
-                : `${complaints.complaints.toLocaleString('en-CA')} owner ${complaints.complaints === 1 ? 'complaint' : 'complaints'} about the ${name} to NHTSA (U.S.).`}{' '}
-              {dashboard.complaintRank && (
-                <>{rankSentence(dashboard.complaintRank, dashboard.modelPage?.label)} </>
-              )}
-              Each is an owner’s report, not a confirmed defect, and counts are not adjusted for how
-              many were sold: compare a model’s years on its page.
+                ? `None on file with NHTSA for the ${name}.`
+                : dashboard.complaintRank
+                  ? rankSentence(dashboard.complaintRank, dashboard.modelPage?.label)
+                  : 'Most complained-about parts:'}
             </p>
             {complaints.complaints > 0 && (
               <>
@@ -209,12 +194,14 @@ export default function SafetyRecords({
               </>
             )}
             <p className="text-xs text-zinc-500 mt-4 leading-relaxed">
+              Owners’ reports to{' '}
               <a href={NHTSA_LOOKUP} target="_blank" rel="noreferrer" className={linkClass}>
-                Look it up on NHTSA
+                NHTSA
               </a>{' '}
-              · Complaints NHTSA received from U.S. owners, by part.
+              (U.S.), not confirmed defects, and not adjusted for how many were sold
               {dashboard.recordDates?.complaints &&
-                ` Records as of ${recallDate(dashboard.recordDates.complaints)}.`}
+                `; as of ${recallDate(dashboard.recordDates.complaints)}`}
+              .
             </p>
           </div>
         )}

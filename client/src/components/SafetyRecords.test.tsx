@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import SafetyRecords from './SafetyRecords';
 import { sparseDashboard } from '../test/fixtures';
@@ -14,22 +14,31 @@ const recall = (n: number): CanadianRecall => ({
 });
 
 describe('SafetyRecords', () => {
-  it('lists Transport Canada’s recalls with their numbers, a few at first', () => {
+  it('counts the recalls, a line each, the details a tap away, a few at first', () => {
     render(
       <SafetyRecords
         dashboard={{ ...sparseDashboard, recalls: [1, 2, 3, 4, 5].map(recall) }}
         name="2018 Toyota Camry"
       />,
     );
-    expect(
-      screen.getByText(/Transport Canada lists 5 recalls for the 2018 Toyota Camry/),
-    ).toBeVisible();
-    expect(
-      screen.getByText(/Transport Canada recall 202101 · 7,302 vehicles in Canada/),
-    ).toBeVisible();
-    expect(screen.getAllByText(/^The pump \d may fail\.$/)).toHaveLength(4);
-    fireEvent.click(screen.getByRole('button', { name: 'Show all 5 recalls' }));
-    expect(screen.getAllByText(/^The pump \d may fail\.$/)).toHaveLength(5);
+    const heading = screen.getByRole('heading', { name: 'Recalls in Canada' });
+    expect(heading.parentElement).toHaveTextContent('5');
+    expect(screen.getByText(/Check the VIN with the maker/)).toBeVisible();
+    // A line each: the part, the date, how many in Canada.
+    const rows = screen.getAllByRole('listitem');
+    expect(rows).toHaveLength(3);
+    expect(rows[0]).toHaveTextContent('Brakes');
+    expect(rows[0]).toHaveTextContent('Jan 1, 2021 · 7,302 in Canada');
+    // The notice opens on a tap, with its number, risk and remedy.
+    const details = rows[0].querySelector('details')!;
+    expect(details.open).toBe(false);
+    fireEvent.click(within(rows[0]).getByText('Brakes'));
+    expect(details.open).toBe(true);
+    expect(within(rows[0]).getByText('The pump 1 may fail.')).toBeVisible();
+    expect(within(rows[0]).getByText('Transport Canada recall 202101')).toBeVisible();
+    expect(within(rows[0]).getByText('Longer stops.')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Show all 5' }));
+    expect(screen.getAllByRole('listitem')).toHaveLength(5);
     expect(screen.getByText(/Open Government Licence – Canada/)).toBeVisible();
   });
 
@@ -58,17 +67,15 @@ describe('SafetyRecords', () => {
         name="2018 Toyota Camry"
       />,
     );
-    expect(
-      screen.getByText(/Transport Canada lists no recalls for the 2018 Toyota Camry/),
-    ).toBeVisible();
-    expect(
-      screen.getByText(/776 owner complaints about the 2018 Toyota Camry to NHTSA/),
-    ).toBeVisible();
-    expect(screen.getByText('Power train')).toBeVisible();
+    expect(screen.getByText(/None listed for this version of the 2018 Toyota Camry/)).toBeVisible();
+    const complaints = screen.getByRole('heading', { name: 'Owner complaints' });
+    expect(complaints.parentElement).toHaveTextContent('776');
+    expect(screen.getByText('Transmission and drivetrain')).toBeVisible();
     expect(screen.getByText('12 reporting a crash · 3 injuries')).toBeVisible();
+    expect(screen.getByText(/not confirmed defects/)).toBeVisible();
   });
 
-  it('lists NHTSA’s investigations, the open ones first, with their numbers', () => {
+  it('folds NHTSA’s investigations to a line, the open ones first inside', () => {
     render(
       <SafetyRecords
         dashboard={{
@@ -96,21 +103,16 @@ describe('SafetyRecords', () => {
         name="2017 Honda CR-V"
       />,
     );
-    expect(
-      screen.getByText(
-        /has investigated 2 possible defects in the 2017 Honda CR-V, one still open/,
-      ),
-    ).toBeVisible();
+    expect(screen.getByText('2 possible defects looked into, 1 still open')).toBeVisible();
     const items = screen.getAllByRole('listitem');
-    expect(items[0]).toHaveTextContent('Engine and engine cooling · open');
-    expect(items[0]).toHaveTextContent('Preliminary evaluation PE19003 · opened Mar 11, 2019');
-    expect(items[1]).toHaveTextContent(
-      'Recall query RQ21004 · opened Jun 1, 2021 · closed Feb 1, 2022 · led to recall 22V045000',
-    );
+    expect(items[0]).toHaveTextContent('Engine and cooling · open');
+    expect(items[0]).toHaveTextContent('Mar 11, 2019');
+    expect(items[0]).toHaveTextContent('Preliminary evaluation PE19003');
+    expect(items[1]).toHaveTextContent('Jun 1, 2021 to Feb 1, 2022 · led to recall 22V045000');
     expect(items[1]).toHaveTextContent('Brake booster failure');
   });
 
-  it('lists another powertrain’s recalls apart, under their own heading', () => {
+  it('lists another powertrain’s recalls apart, folded', () => {
     render(
       <SafetyRecords
         dashboard={{
@@ -123,12 +125,8 @@ describe('SafetyRecords', () => {
         name="2021 Toyota RAV4"
       />,
     );
-    expect(
-      screen.getByText(
-        /Transport Canada lists 2 recalls for the 2021 Toyota RAV4: 1 can cover this version, and 1 is for the plug-in hybrid alone\./,
-      ),
-    ).toBeVisible();
-    expect(screen.getByText('1 recall for other versions')).toBeVisible();
-    expect(screen.getByText(/for the plug-in hybrid/, { selector: 'span' })).toBeInTheDocument();
+    const heading = screen.getByRole('heading', { name: 'Recalls in Canada' });
+    expect(heading.parentElement).toHaveTextContent('1');
+    expect(screen.getByText('1 more for the plug-in hybrid only')).toBeVisible();
   });
 });

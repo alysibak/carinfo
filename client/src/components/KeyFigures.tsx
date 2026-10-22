@@ -56,17 +56,10 @@ function classCount(count: number, className: string): string {
 
 /**
  * The figures a car page leads with (see utils/keyFigures.ts): what EPA and
- * NHTSA recorded, each marked with its source, and one line saying where the
- * class comparison comes from and where the estimates are.
+ * NHTSA recorded, each marked with its source, and one line saying what the
+ * class comparison is drawn from.
  */
-export default function KeyFigures({
-  dashboard,
-  hasEstimates,
-}: {
-  dashboard: CarDashboard;
-  /** Whether the page has an estimated-costs section to point to. */
-  hasEstimates: boolean;
-}) {
+export default function KeyFigures({ dashboard }: { dashboard: CarDashboard }) {
   const figures = buildKeyFigures(dashboard);
   if (figures.length === 0) return null;
   const cls = dashboard.classComparison;
@@ -88,23 +81,11 @@ export default function KeyFigures({
           />
         ))}
       </div>
-      <p className="text-xs text-zinc-500 mt-2.5 leading-relaxed">
-        Each figure is marked with its source
-        {cls &&
-          (cls.fuel || cls.horsepower) &&
-          `, and compared with ${classCount(cls.models, cls.className)} from ${cls.years.min}–${cls.years.max} on the same records`}
-        .
-        {hasEstimates && (
-          <>
-            {' '}
-            Estimated value and running costs are{' '}
-            <a href="#costs" className="underline underline-offset-2 hover:text-zinc-300">
-              further down
-            </a>
-            .
-          </>
-        )}
-      </p>
+      {cls && (cls.fuel || cls.horsepower) && (
+        <p className="text-xs text-zinc-500 mt-2.5">
+          Compared with {classCount(cls.models, cls.className)}, {cls.years.min}–{cls.years.max}.
+        </p>
+      )}
     </div>
   );
 }

@@ -44,7 +44,7 @@ describe('beforeYouBuy', () => {
     );
     expect(items.map((i) => i.text)).toEqual([
       '1 recall in Canada for the 2018 Honda CR-V: ask for proof the work was done, or check the VIN with the maker or Transport Canada.',
-      'Owners complained to NHTSA most about the engine, electrical system and air bags (2,158 complaints, the most of any Honda CR-V year on file): worth a look on a test drive.',
+      'Owners complained to NHTSA most about the engine, electrical system and airbags (2,158 complaints, the most of any Honda CR-V year on file): worth a look on a test drive.',
       'NHTSA crash rating 5/5 overall, with forward collision warning optional.',
     ]);
     expect(items.map((i) => i.href)).toEqual(['#recalls', '#recalls', '#safety']);
@@ -114,7 +114,7 @@ describe('beforeYouBuy', () => {
       {
         key: 'investigation',
         href: '#recalls',
-        text: 'NHTSA (U.S.) has had an investigation open since Mar 11, 2019 into its engine and engine cooling: Oil dilution. A recall may follow.',
+        text: 'NHTSA (U.S.) has had an investigation open since Mar 11, 2019 into its engine and cooling: Oil dilution. A recall may follow.',
       },
     ]);
   });

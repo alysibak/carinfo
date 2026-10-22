@@ -13,6 +13,7 @@ import {
 } from '../utils/size';
 import type { SpecGlossaryKey } from '../utils/specGlossary';
 import { SpecLabel } from './SpecExplain';
+import { Chevron, foldSummaryClass } from './ui';
 
 const CM_PER_FOOT = 30.48;
 
@@ -87,88 +88,99 @@ function WillItFit({ size }: { size: NonNullable<CarDashboard['car']['size']> })
     'mt-1 w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-sm tabular-nums text-white focus:outline-hidden focus:border-zinc-500';
 
   return (
-    <fieldset className="mt-5">
-      <legend className="text-sm font-semibold text-white">Will it fit your garage or spot?</legend>
-      <p className="text-xs text-zinc-400 mt-1 mb-3">Measure the space and enter it here.</p>
-      <div role="radiogroup" aria-label="Unit" className="inline-flex border border-zinc-800 mb-3">
-        {(
-          [
-            ['m', 'Metres'],
-            ['ft', 'Feet'],
-          ] as const
-        ).map(([value, text]) => (
-          <label
-            key={value}
-            className={`inline-flex items-center min-h-9 px-3 text-xs cursor-pointer has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-zinc-300 ${
-              unit === value ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white'
-            }`}
-          >
+    <details className="mt-4 border-t border-zinc-900 group/fit">
+      <summary className={`${foldSummaryClass} py-3 text-sm text-zinc-200 hover:text-white`}>
+        Will it fit your garage or spot?
+        <Chevron className="w-3.5 h-3.5 text-zinc-500 group-open/fit:rotate-180" />
+      </summary>
+      <fieldset>
+        <legend className="sr-only">Will it fit your garage or spot?</legend>
+        <p className="text-xs text-zinc-400 mt-1 mb-3">Measure the space and enter it here.</p>
+        <div
+          role="radiogroup"
+          aria-label="Unit"
+          className="inline-flex border border-zinc-800 mb-3"
+        >
+          {(
+            [
+              ['m', 'Metres'],
+              ['ft', 'Feet'],
+            ] as const
+          ).map(([value, text]) => (
+            <label
+              key={value}
+              className={`inline-flex items-center min-h-9 px-3 text-xs cursor-pointer has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-zinc-300 ${
+                unit === value ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              <input
+                type="radio"
+                name={`${id}-unit`}
+                value={value}
+                checked={unit === value}
+                onChange={() => switchUnit(value)}
+                className="sr-only"
+              />
+              {text}
+            </label>
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <label htmlFor={`${id}-length`} className="text-xs text-zinc-400">
+            Length ({unit})
             <input
-              type="radio"
-              name={`${id}-unit`}
-              value={value}
-              checked={unit === value}
-              onChange={() => switchUnit(value)}
-              className="sr-only"
+              id={`${id}-length`}
+              type="number"
+              inputMode="decimal"
+              min={0}
+              step={unit === 'm' ? 0.05 : 0.5}
+              placeholder={unit === 'm' ? 'e.g. 6' : 'e.g. 20'}
+              value={length}
+              onChange={(e) => setLength(e.target.value)}
+              className={inputClass}
             />
-            {text}
           </label>
-        ))}
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <label htmlFor={`${id}-length`} className="text-xs text-zinc-400">
-          Length ({unit})
-          <input
-            id={`${id}-length`}
-            type="number"
-            inputMode="decimal"
-            min={0}
-            step={unit === 'm' ? 0.05 : 0.5}
-            placeholder={unit === 'm' ? 'e.g. 6' : 'e.g. 20'}
-            value={length}
-            onChange={(e) => setLength(e.target.value)}
-            className={inputClass}
-          />
-        </label>
-        <label htmlFor={`${id}-width`} className="text-xs text-zinc-400">
-          Width ({unit})
-          <input
-            id={`${id}-width`}
-            type="number"
-            inputMode="decimal"
-            min={0}
-            step={unit === 'm' ? 0.05 : 0.5}
-            placeholder={unit === 'm' ? 'e.g. 3' : 'e.g. 10'}
-            value={width}
-            onChange={(e) => setWidth(e.target.value)}
-            className={inputClass}
-          />
-        </label>
-      </div>
-      {check && (
-        <p className="text-sm mt-3 leading-relaxed" role="status">
-          <span
-            className={check.fits ? 'text-accent font-semibold' : 'text-amber-400 font-semibold'}
-          >
-            {check.fits ? 'It fits' : 'It does not fit'}
-          </span>
-          <span className="text-zinc-300">
-            {': '}
-            {check.spareLengthCm >= 0
-              ? `${formatGap(check.spareLengthCm, unit)} to spare in length`
-              : `${formatGap(check.spareLengthCm, unit)} too long`}
-            {', '}
-            {check.spareWidthCm >= 0
-              ? `${formatGap(check.spareWidthCm, unit)} in width`
-              : `${formatGap(check.spareWidthCm, unit)} too wide`}
-            {several ? ', for its longest and widest version' : ''}.
-          </span>
-          <span className="block text-xs text-zinc-400 mt-1">
-            The width is the body without mirrors. Leave room to open the doors and walk around it.
-          </span>
-        </p>
-      )}
-    </fieldset>
+          <label htmlFor={`${id}-width`} className="text-xs text-zinc-400">
+            Width ({unit})
+            <input
+              id={`${id}-width`}
+              type="number"
+              inputMode="decimal"
+              min={0}
+              step={unit === 'm' ? 0.05 : 0.5}
+              placeholder={unit === 'm' ? 'e.g. 3' : 'e.g. 10'}
+              value={width}
+              onChange={(e) => setWidth(e.target.value)}
+              className={inputClass}
+            />
+          </label>
+        </div>
+        {check && (
+          <p className="text-sm mt-3 leading-relaxed" role="status">
+            <span
+              className={check.fits ? 'text-accent font-semibold' : 'text-amber-400 font-semibold'}
+            >
+              {check.fits ? 'It fits' : 'It does not fit'}
+            </span>
+            <span className="text-zinc-300">
+              {': '}
+              {check.spareLengthCm >= 0
+                ? `${formatGap(check.spareLengthCm, unit)} to spare in length`
+                : `${formatGap(check.spareLengthCm, unit)} too long`}
+              {', '}
+              {check.spareWidthCm >= 0
+                ? `${formatGap(check.spareWidthCm, unit)} in width`
+                : `${formatGap(check.spareWidthCm, unit)} too wide`}
+              {several ? ', for its longest and widest version' : ''}.
+            </span>
+            <span className="block text-xs text-zinc-400 mt-1">
+              The width is the body without mirrors. Leave room to open the doors and walk around
+              it.
+            </span>
+          </p>
+        )}
+      </fieldset>
+    </details>
   );
 }
 
@@ -199,17 +211,12 @@ export default function SizeAndSpace({ dashboard }: { dashboard: CarDashboard })
     <section id="size" className="border-b border-zinc-900 scroll-mt-32">
       <div className="page-wrap-wide section-y-tight">
         <h2 className="text-base font-bold tracking-tight mb-1">Size and space</h2>
-        <p className="text-[13px] text-zinc-400 mb-4 leading-relaxed max-w-2xl">
-          {size && (luggage || passenger)
-            ? 'How big it is outside, as Transport Canada measured it, and how much fits inside, as EPA measured it.'
-            : size
-              ? 'How big it is, as Transport Canada measured it.'
-              : 'How much fits inside, as EPA measured it.'}
-          {several &&
-            ` Transport Canada measured ${size!.measured.length} versions; where they differ, both ends are shown.`}
-          {compared &&
-            ` “Typical” is the middle of the other ${classPlural(className!)} from ${cls!.years.min}–${cls!.years.max} on file.`}
-        </p>
+        {compared && (
+          <p className="text-[13px] text-zinc-400 mb-3">
+            Against the middle of other {classPlural(className!)}, {cls!.years.min}–{cls!.years.max}
+            .
+          </p>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 md:gap-x-10 gap-y-6">
           {size && (
             <div className="min-w-0">
@@ -274,6 +281,12 @@ export default function SizeAndSpace({ dashboard }: { dashboard: CarDashboard })
             {size && <WillItFit size={size} />}
           </div>
         </div>
+        <p className="text-xs text-zinc-500 mt-4">
+          {size && 'Outside: Transport Canada. '}
+          {(luggage || passenger) && 'Inside: EPA. '}
+          {several &&
+            `${size!.measured.length} versions measured; where they differ, both ends are shown.`}
+        </p>
       </div>
     </section>
   );
