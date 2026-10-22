@@ -1,3 +1,4 @@
+import { generateKeyPairSync } from 'node:crypto';
 import request from 'supertest';
 import { getMigrations } from 'better-auth/db/migration';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -18,7 +19,7 @@ import app from '../app.js';
 import { getPool } from '../db/pool.js';
 import { getGarageIds, getUser, setUserPlan } from '../db/user-store.js';
 import { getAllCars } from '../services/car.service.js';
-import { __resetAuthForTests, authOptions } from './auth.js';
+import { __resetAuthForTests, authOptions, authPlugins } from './auth.js';
 import { __setEmailSenderForTests, type EmailMessage } from './email.js';
 
 const as = (user: TestUser) => ({ cookie: user.cookie, origin: SITE });
@@ -63,7 +64,7 @@ describe.skipIf(!hasTestDatabase)('sign-in', () => {
 
   it('makes exactly the tables Better Auth would', async () => {
     // pool.ts writes them out; an upgrade that wants more fails here.
-    const migrations = await getMigrations(authOptions(getPool()));
+    const migrations = await getMigrations(authOptions(getPool(), await authPlugins()));
     expect(migrations.toBeCreated.map((t) => t.table)).toEqual([]);
     expect(migrations.toBeAdded.map((t) => t.table)).toEqual([]);
   });
@@ -73,8 +74,70 @@ describe.skipIf(!hasTestDatabase)('sign-in', () => {
     expect(res.body.data).toMatchObject({
       authConfigured: true,
       emailConfigured: true,
-      googleSignIn: false,
+      providers: [],
     });
+  });
+
+  it('signs in with a code sent by email, making the account on first use', async () => {
+    const send = await request(app)
+      .post('/api/auth/email-otp/send-verification-otp')
+      .set('origin', SITE)
+      .send({ email: 'coder@example.com', type: 'sign-in' });
+    expect(send.status).toBe(200);
+    const message = sent.find((m) => m.to === 'coder@example.com')!;
+    const code = /\b(\d{6})\b/.exec(message.subject)![1];
+    expect(message.text).toContain(code);
+
+    const wrong = await request(app)
+      .post('/api/auth/sign-in/email-otp')
+      .set('origin', SITE)
+      .send({ email: 'coder@example.com', otp: code === '000000' ? '111111' : '000000' });
+    expect(wrong.status).toBe(400);
+    const right = await request(app)
+      .post('/api/auth/sign-in/email-otp')
+      .set('origin', SITE)
+      .send({ email: 'coder@example.com', otp: code });
+    expect(right.status).toBe(200);
+    const me = await request(app).get('/api/me').set('cookie', cookiesOf(right));
+    expect(me.status).toBe(200);
+    expect(me.body.data.user.email).toBe('coder@example.com');
+    // The page can point to how they signed in last time.
+    expect((right.headers['set-cookie'] as unknown as string[]).join(';')).toMatch(
+      /better-auth\.last_used_login_method=email-otp/,
+    );
+    // A code works once.
+    const again = await request(app)
+      .post('/api/auth/sign-in/email-otp')
+      .set('origin', SITE)
+      .send({ email: 'coder@example.com', otp: code });
+    expect(again.status).toBe(400);
+  });
+
+  it('takes Apple’s sign-in back from its site, and from no other', async () => {
+    const { privateKey } = generateKeyPairSync('ec', { namedCurve: 'P-256' });
+    process.env.APPLE_CLIENT_ID = 'ca.carinfo.web';
+    process.env.APPLE_TEAM_ID = 'TEAM123456';
+    process.env.APPLE_KEY_ID = 'KEY1234567';
+    process.env.APPLE_PRIVATE_KEY = privateKey.export({ type: 'pkcs8', format: 'pem' }).toString();
+    __resetAuthForTests();
+    try {
+      expect((await request(app).get('/api/me/status')).body.data.providers).toEqual(['apple']);
+      // Apple posts the result as a form from appleid.apple.com.
+      const post = (origin: string) =>
+        request(app)
+          .post('/api/auth/callback/apple')
+          .set('origin', origin)
+          .set('cookie', 'other=1')
+          .type('form')
+          .send({ state: 'abc', code: 'xyz' });
+      expect((await post('https://appleid.apple.com')).status).toBe(302);
+      expect((await post('https://evil.example')).status).toBe(403);
+    } finally {
+      for (const key of ['APPLE_CLIENT_ID', 'APPLE_TEAM_ID', 'APPLE_KEY_ID', 'APPLE_PRIVATE_KEY']) {
+        delete process.env[key];
+      }
+      __resetAuthForTests();
+    }
   });
 
   it('signs in with the password, and not without it', async () => {

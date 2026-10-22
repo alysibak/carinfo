@@ -6,14 +6,16 @@ import {
   AuthFormBody,
   Field,
   FormMessage,
-  GoogleButton,
   OrDivider,
+  ProviderButtons,
   SubmitButton,
 } from '../components/AuthForm';
+import EmailCodeForm from '../components/EmailCodeForm';
 import { LoadingScreen } from '../components/ui';
 import { useAccount } from '../hooks/useAccount';
 import { useAccountStatus } from '../hooks/useAccountStatus';
 import { authClient, authErrorMessage, safeNext } from '../services/authClient';
+import { signInWith, type SignInProvider } from '../services/signInMethods';
 import { useNoIndex, usePageMeta } from '../utils/pageMeta';
 
 const COOKIE_WAIT_MS = 6_000;
@@ -29,7 +31,8 @@ export default function SignUp() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [pending, setPending] = useState<'password' | 'google' | null>(null);
+  const [mode, setMode] = useState<'password' | 'code'>('password');
+  const [pending, setPending] = useState<'password' | SignInProvider | null>(null);
   const [error, setError] = useState<string | null>(null);
   const busy = pending !== null;
 
@@ -64,14 +67,14 @@ export default function SignUp() {
     }
   };
 
-  const google = async () => {
+  const providers = status?.providers ?? [];
+  const codes = Boolean(status?.emailConfigured);
+
+  const pick = async (provider: SignInProvider) => {
     setError(null);
-    setPending('google');
-    const { error: failed } = await authClient.signIn.social({
-      provider: 'google',
-      callbackURL: next,
-      errorCallbackURL: `/sign-in${withNext}`,
-    });
+    setPending(provider);
+    // A provider's account is made on first sign-in; a failure lands on sign-in.
+    const { error: failed } = await signInWith(provider, next, `/sign-in${withNext}`);
     if (failed) {
       setPending(null);
       setError(authErrorMessage(failed));
@@ -93,50 +96,77 @@ export default function SignUp() {
     >
       <div className="flex flex-col gap-4">
         {error && <FormMessage>{error}</FormMessage>}
-        {status?.googleSignIn && (
+        {providers.length > 0 && (
           <>
-            <GoogleButton busy={busy} onClick={() => void google()}>
-              Sign up with Google
-            </GoogleButton>
+            <ProviderButtons
+              providers={providers}
+              busy={busy}
+              pending={pending === 'password' ? null : pending}
+              onPick={(provider) => void pick(provider)}
+            />
             <OrDivider />
           </>
         )}
-        <AuthFormBody onSubmit={submit}>
-          <Field
-            label="Name (optional)"
-            name="name"
-            autoComplete="name"
-            maxLength={80}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+        {mode === 'code' && codes ? (
+          <EmailCodeForm
+            initialEmail={email}
+            onBack={() => setMode('password')}
+            backLabel="Make a password instead"
           />
-          <Field
-            label="Email"
-            type="email"
-            name="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <Field
-            label="Password"
-            type="password"
-            name="new-password"
-            autoComplete="new-password"
-            required
-            minLength={8}
-            maxLength={128}
-            hint="At least 8 characters."
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <SubmitButton busy={busy}>{busy ? 'Creating account…' : 'Create account'}</SubmitButton>
-        </AuthFormBody>
-        {status?.emailConfigured && (
-          <p className="text-xs text-zinc-500">
-            We&apos;ll email you a link to confirm the address.
-          </p>
+        ) : (
+          <>
+            <AuthFormBody onSubmit={submit}>
+              <Field
+                label="Name (optional)"
+                name="name"
+                autoComplete="name"
+                maxLength={80}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+              <Field
+                label="Email"
+                type="email"
+                name="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <Field
+                label="Password"
+                type="password"
+                name="new-password"
+                autoComplete="new-password"
+                required
+                minLength={8}
+                maxLength={128}
+                hint="At least 8 characters."
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <SubmitButton busy={busy}>
+                {pending === 'password' ? 'Creating account…' : 'Create account'}
+              </SubmitButton>
+            </AuthFormBody>
+            {codes && (
+              <>
+                <p className="text-xs text-zinc-500">
+                  We&apos;ll email you a link to confirm the address.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError(null);
+                    setMode('code');
+                  }}
+                  className="btn-ghost self-center"
+                >
+                  Rather not make a password? Email me a code
+                </button>
+              </>
+            )}
+          </>
         )}
       </div>
     </AuthCard>

@@ -540,7 +540,7 @@ Loaded once at startup into memory:
 | `/methodology`                     | `Methodology.tsx`  | Yes    | Data pipeline, PHEV correction, valuation model          |
 | `/vin`                             | `VinDecoder.tsx`   | Yes    | VIN lookup (members)                                     |
 | `/account`                         | `Account.tsx`      | Yes    | Garage sync, plan, password, sign-out, delete            |
-| `/sign-in` · `/sign-up`            | `SignIn.tsx` …     | Yes    | Email and password, or Google; `?next=` returns there    |
+| `/sign-in` · `/sign-up`            | `SignIn.tsx` …     | Yes    | Google, Apple, Microsoft, a code by email, or a password |
 | `/forgot-password`                 | `ForgotPassword…`  | Yes    | Emails a reset link (when email is configured)           |
 | `/reset-password`                  | `ResetPassword…`   | Yes    | Where the reset link lands                               |
 
@@ -1089,7 +1089,9 @@ allow alongside `headers`):
 | `ADDITIONAL_ORIGINS`                                              | —                                                                     | Extra browser origins allowed to call the API (comma-separated)                                                                |
 | `BETTER_AUTH_SECRET`                                              | —                                                                     | With `DATABASE_URL`, turns on accounts (32+ random characters: `openssl rand -base64 32`)                                      |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`                       | —                                                                     | Adds "Continue with Google"                                                                                                    |
-| `RESEND_API_KEY` / `EMAIL_FROM`                                   | —                                                                     | Password reset and email confirmation, sent through Resend                                                                     |
+| `APPLE_CLIENT_ID` / `APPLE_TEAM_ID` / `APPLE_KEY_ID` / `APPLE_PRIVATE_KEY` | —                                                            | Adds "Continue with Apple"; the server signs Apple's client secret from the key                                                |
+| `MICROSOFT_CLIENT_ID` / `MICROSOFT_CLIENT_SECRET`                 | —                                                                     | Adds "Continue with Microsoft" (Outlook, Hotmail, work and school accounts)                                                    |
+| `RESEND_API_KEY` / `EMAIL_FROM`                                   | —                                                                     | Sign-in codes, password reset and email confirmation, sent through Resend                                                      |
 | `BETTER_AUTH_URL`                                                 | the request's host, if one of the site's                              | Fixes the sign-in origin (only needed behind an unusual proxy)                                                                 |
 | `DATABASE_URL`                                                    | —                                                                     | Postgres for accounts, sessions and garages; tables are created on first use                                                   |
 | `DATABASE_SSL`                                                    | unset: TLS **without** certificate verification (warns in production) | Set `verify` in production (plus `DATABASE_CA_CERT` for a private CA); `false` for local Postgres                              |
@@ -1115,15 +1117,18 @@ user, and the sign-in pages are the site's own. It turns on once two values exis
 
    Then redeploy. For local dev, put the same two in a root `.env`.
 
-3. **Google sign-in (optional)** — in Google Cloud Console → APIs & Services → Credentials, create an OAuth client ID (Web application) with the redirect URI `https://<your domain>/api/auth/callback/google`, then add `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
-4. **Email (optional)** — for "Forgot your password?" and address confirmation, add a [Resend](https://resend.com) `RESEND_API_KEY` and an `EMAIL_FROM` on a domain verified there (`CarInfo <accounts@your-domain>`).
+3. **Google, Apple and Microsoft sign-in (optional, each on its own)** — each button appears once its keys are set:
+   - **Google:** in Google Cloud Console → APIs & Services → Credentials, create an OAuth client ID (Web application) with the redirect URI `https://<your domain>/api/auth/callback/google`, then add `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
+   - **Apple** (needs an Apple Developer membership): under Certificates, Identifiers & Profiles, make a Services ID with Sign in with Apple, its domain and the return URL `https://<your domain>/api/auth/callback/apple` (Apple accepts no localhost), and a key with Sign in with Apple. Add the Services ID as `APPLE_CLIENT_ID`, the key's ID as `APPLE_KEY_ID`, your team ID as `APPLE_TEAM_ID`, and the downloaded `.p8` file's text as `APPLE_PRIVATE_KEY`. The server signs Apple's six-month client secret itself and renews it.
+   - **Microsoft:** in the Azure portal → Microsoft Entra ID → App registrations, register an app for "Accounts in any organizational directory and personal Microsoft accounts" with the Web redirect URI `https://<your domain>/api/auth/callback/microsoft`, then add a client secret. Add the Application (client) ID as `MICROSOFT_CLIENT_ID` and the secret's value as `MICROSOFT_CLIENT_SECRET`; renew the secret before the expiry Entra shows.
+4. **Email (optional)** — for sign-in codes (no password needed), "Forgot your password?" and address confirmation, add a [Resend](https://resend.com) `RESEND_API_KEY` and an `EMAIL_FROM` on a domain verified there (`CarInfo <accounts@your-domain>`).
 5. **Stripe (optional, for Pro)** — add `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, and `STRIPE_WEBHOOK_SECRET` with a webhook pointed at `/api/billing/webhook`.
 
 Accounts made under Clerk, which this replaced, are kept: signing up again with
 the same address moves their garage, plan and Stripe customer across once the
-address is confirmed (by Google, or the emailed link).
+address is confirmed (by Google, Apple or Microsoft, a sign-in code, or the emailed link).
 
-**Accounts API:** `/api/auth/*` (Better Auth: sign-in, sign-up, sign-out, password reset, Google's callback), `GET /api/me/status`, `GET/PUT /api/me/garage`, `POST /api/billing/checkout`, `POST /api/billing/portal`, `POST /api/billing/webhook`.
+**Accounts API:** `/api/auth/*` (Better Auth: sign-in, sign-up, sign-out, password reset, sign-in codes, Google's, Apple's and Microsoft's callbacks), `GET /api/me/status`, `GET/PUT /api/me/garage`, `POST /api/billing/checkout`, `POST /api/billing/portal`, `POST /api/billing/webhook`.
 
 No `.env` required for local development of the public catalog.
 

@@ -66,7 +66,7 @@ test('signing in with a wrong password says so, the right one gets in', async ({
 
   await page.goto('/account');
   await expect(page.getByRole('heading', { name: 'Account', exact: true })).toBeVisible();
-  await expect(page.getByText(MEMBER.email)).toBeVisible();
+  await expect(page.getByText(MEMBER.email, { exact: true })).toBeVisible();
 });
 
 for (const viewport of [
@@ -88,6 +88,22 @@ for (const viewport of [
       await page.waitForLoadState('networkidle');
       const violations = await audit(page);
       if (violations.length) failures.push(`${path}\n${describeViolations(violations)}`);
+    }
+    // The sign-in code's two steps, where the server can email one.
+    const status = await (await page.request.get('/api/me/status')).json();
+    if (status.data.emailConfigured) {
+      await page.goto('/sign-in');
+      await page.getByRole('button', { name: 'No password? Email me a code' }).click();
+      let violations = await audit(page);
+      if (violations.length) failures.push(`code: email\n${describeViolations(violations)}`);
+      await page.route('**/api/auth/email-otp/send-verification-otp', (route) =>
+        route.fulfill({ json: { success: true } }),
+      );
+      await page.getByLabel(/^Email/).fill('sam@example.com');
+      await page.getByRole('button', { name: 'Email me a code' }).click();
+      await page.getByLabel('Code').waitFor();
+      violations = await audit(page);
+      if (violations.length) failures.push(`code: enter\n${describeViolations(violations)}`);
     }
     expect(failures, failures.join('\n\n')).toEqual([]);
   });

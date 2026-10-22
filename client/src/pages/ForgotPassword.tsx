@@ -4,6 +4,7 @@ import { AuthCard, AuthFormBody, Field, FormMessage, SubmitButton } from '../com
 import { LoadingScreen } from '../components/ui';
 import { useAccountStatus } from '../hooks/useAccountStatus';
 import { authClient, authErrorMessage } from '../services/authClient';
+import { PROVIDER_NAMES } from '../services/signInMethods';
 import { useNoIndex, usePageMeta } from '../utils/pageMeta';
 
 export default function ForgotPassword() {
@@ -30,8 +31,8 @@ export default function ForgotPassword() {
       <AuthCard title="Reset your password" footer={back}>
         <p className="text-sm text-zinc-300 leading-relaxed">
           Password reset by email isn&apos;t available on this site yet.
-          {status?.googleSignIn
-            ? ' If you signed up with Google, sign in with Google instead.'
+          {status?.providers.length
+            ? ` If you signed up with ${status.providers.map((p) => PROVIDER_NAMES[p]).join(' or ')}, sign in with it instead.`
             : ''}
         </p>
       </AuthCard>
@@ -54,7 +55,17 @@ export default function ForgotPassword() {
     <AuthCard
       title="Reset your password"
       intro="Enter the email you signed up with. We'll send a link to choose a new password."
-      footer={back}
+      footer={
+        <>
+          <p>
+            Or skip the password:{' '}
+            <Link to="/sign-in?code=1" className="text-white underline">
+              sign in with a code by email
+            </Link>
+          </p>
+          {back}
+        </>
+      }
     >
       {sent ? (
         <FormMessage tone="ok">

@@ -1,4 +1,5 @@
 import type { CarSpecs } from '../types/car.types';
+import type { SignInProvider } from './signInMethods';
 import { API_BASE_URL, API_TIMEOUT_MS, createApiClient, isHttpError, type HttpError } from './http';
 
 /**
@@ -13,8 +14,9 @@ export interface AccountCapabilities {
   storageConfigured: boolean;
   /** Pro can be bought. */
   billingConfigured: boolean;
-  googleSignIn: boolean;
-  /** Password reset and address confirmation, both of which need email. */
+  /** Google, Apple, Microsoft: each once the server has its keys. */
+  providers: SignInProvider[];
+  /** A sign-in code, password reset and address confirmation, all by email. */
   emailConfigured: boolean;
   freeGarageLimit: number;
 }

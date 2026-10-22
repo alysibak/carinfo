@@ -16,7 +16,7 @@ const capabilities = {
   authConfigured: true,
   storageConfigured: true,
   billingConfigured: false,
-  googleSignIn: false,
+  providers: [],
   emailConfigured: false,
   freeGarageLimit: 10,
 };
@@ -71,26 +71,77 @@ describe('SignIn', () => {
     expect(screen.getByText('VIN decoder')).toBeInTheDocument();
   });
 
-  it('offers Google and password reset only where the site has them', async () => {
+  it('offers other accounts and password reset only where the site has them', async () => {
     renderSignIn();
     await waitFor(() => expect(accountApi.getAccountStatus).toHaveBeenCalled());
-    expect(screen.queryByRole('button', { name: /Google/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Continue with/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Email me a code/ })).toBeNull();
     expect(screen.queryByRole('link', { name: /Forgot/ })).toBeNull();
   });
 
-  it('starts Google sign-in, coming back to the same page', async () => {
+  it('signs in with Google, Apple or Microsoft, marking the one used last', async () => {
+    fakeAuthClient.getLastUsedLoginMethod.mockReturnValue('apple');
     vi.mocked(accountApi.getAccountStatus).mockResolvedValue({
       ...capabilities,
-      googleSignIn: true,
+      providers: ['google', 'apple', 'microsoft'],
       emailConfigured: true,
     });
     renderSignIn();
-    fireEvent.click(await screen.findByRole('button', { name: 'Continue with Google' }));
+    expect(await screen.findByRole('button', { name: 'Continue with Google' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Continue with Microsoft' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: /^Continue with Apple,\s?Last used$/ }));
     expect(fakeAuthClient.signIn.social).toHaveBeenCalledWith({
-      provider: 'google',
+      provider: 'apple',
       callbackURL: '/vin',
-      errorCallbackURL: '/sign-in?next=%2Fvin',
+      errorCallbackURL: '/sign-in?next=%2Fvin&via=apple',
     });
     expect(screen.getByRole('link', { name: 'Forgot your password?' })).toBeInTheDocument();
+  });
+
+  it('says what went wrong when a provider sends someone back', () => {
+    renderSignIn('/sign-in?next=%2Fvin&via=microsoft&error=access_denied');
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Microsoft sign-in did not finish. Try again, or use your email.',
+    );
+  });
+
+  it('signs in with a code by email, no password needed', async () => {
+    vi.mocked(accountApi.getAccountStatus).mockResolvedValue({
+      ...capabilities,
+      emailConfigured: true,
+    });
+    renderSignIn();
+    fireEvent.click(await screen.findByRole('button', { name: 'No password? Email me a code' }));
+    fireEvent.change(screen.getByLabelText(/^Email/), { target: { value: 'sam@example.com' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Email me a code' }));
+    await waitFor(() =>
+      expect(fakeAuthClient.emailOtp.sendVerificationOtp).toHaveBeenCalledWith({
+        email: 'sam@example.com',
+        type: 'sign-in',
+      }),
+    );
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'We emailed a 6-digit code to sam@example.com.',
+    );
+    // Pasted with a space, the code still goes in, and is sent once complete.
+    fireEvent.change(screen.getByLabelText('Code'), { target: { value: '123 456' } });
+    await waitFor(() =>
+      expect(fakeAuthClient.signIn.emailOtp).toHaveBeenCalledWith({
+        email: 'sam@example.com',
+        otp: '123456',
+        name: 'sam',
+      }),
+    );
+  });
+
+  it('opens on the code form for someone who used one last time', async () => {
+    fakeAuthClient.getLastUsedLoginMethod.mockReturnValue('email-otp');
+    vi.mocked(accountApi.getAccountStatus).mockResolvedValue({
+      ...capabilities,
+      emailConfigured: true,
+    });
+    renderSignIn();
+    expect(await screen.findByRole('button', { name: 'Email me a code' })).toBeVisible();
+    expect(screen.queryByLabelText('Password')).toBeNull();
   });
 });

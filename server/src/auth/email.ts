@@ -77,3 +77,17 @@ export function sendVerificationEmail(to: string, url: string): Promise<void> {
     url,
   );
 }
+
+/** A six-digit code to sign in with, for those who would rather not keep a password. */
+export function sendSignInCode(to: string, code: string): Promise<void> {
+  return sender({
+    to,
+    subject: `${code} is your CarInfo sign-in code`,
+    text: `Your CarInfo sign-in code is ${code}. It works once, for 10 minutes.\n\nIf you did not ask for this, ignore this email.`,
+    html:
+      `<p>Your CarInfo sign-in code:</p>` +
+      `<p style="font-size:28px;font-weight:700;letter-spacing:4px">${code}</p>` +
+      `<p>It works once, for 10 minutes.</p>` +
+      `<p style="color:#666">If you did not ask for this, ignore this email.</p>`,
+  });
+}

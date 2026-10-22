@@ -1,8 +1,16 @@
-import type { BetterAuthOptions } from 'better-auth' with { 'resolution-mode': 'import' };
+import type { BetterAuthOptions, BetterAuthPlugin } from 'better-auth' with {
+  'resolution-mode': 'import',
+};
 import type { Pool } from 'pg';
 import { getPool, isDatabaseConfigured } from '../db/pool.js';
 import { claimLegacyAccount, deleteAccountData, getUser } from '../db/user-store.js';
-import { isEmailConfigured, sendPasswordResetEmail, sendVerificationEmail } from './email.js';
+import {
+  isEmailConfigured,
+  sendPasswordResetEmail,
+  sendSignInCode,
+  sendVerificationEmail,
+} from './email.js';
+import { APPLE_ORIGIN, configuredProviders, socialProviderOptions } from './providers.js';
 
 /**
  * Sign-in, run by Better Auth (https://better-auth.com) in this server, with
@@ -10,9 +18,9 @@ import { isEmailConfigured, sendPasswordResetEmail, sendVerificationEmail } from
  * per-user fees, no third-party script on the page, and the sign-in screens
  * are the site's own.
  *
- * Email and password always; Google when GOOGLE_CLIENT_ID and
- * GOOGLE_CLIENT_SECRET are set; password reset and address confirmation when
- * email is (see email.ts). Sessions live in an httpOnly cookie on the site's
+ * Email and password always; Google, Apple and Microsoft once their keys are
+ * set (see providers.ts); a code by email, password reset and address
+ * confirmation once email is (see email.ts). Sessions live in an httpOnly cookie on the site's
  * own domain, so the API must be served from the same origin as the site, as
  * it is on Vercel and under the Vite dev proxy.
  */
@@ -24,10 +32,6 @@ export function isAuthConfigured(): boolean {
     isDatabaseConfigured() &&
     (process.env.BETTER_AUTH_SECRET?.trim().length ?? 0) >= MIN_SECRET_LENGTH
   );
-}
-
-export function isGoogleConfigured(): boolean {
-  return Boolean(process.env.GOOGLE_CLIENT_ID?.trim() && process.env.GOOGLE_CLIENT_SECRET?.trim());
 }
 
 /** Every origin the site is served from: the configured ones, Vercel's, and dev servers. */
@@ -65,9 +69,33 @@ function columns(...fields: string[]): Record<string, string> {
   );
 }
 
+/**
+ * Better Auth's plugins: a sign-in code by email, where email is set up, and a
+ * cookie naming the way someone last signed in, so the page can point to it.
+ * Neither adds a table.
+ */
+export async function authPlugins(): Promise<BetterAuthPlugin[]> {
+  const { emailOTP, lastLoginMethod } = await import('better-auth/plugins');
+  return [
+    lastLoginMethod(),
+    ...(isEmailConfigured()
+      ? [
+          emailOTP({
+            otpLength: 6,
+            expiresIn: 10 * 60,
+            // Stored hashed, like a password: the table never holds a usable code.
+            storeOTP: 'hashed',
+            sendVerificationOTP: ({ email, otp }) => sendSignInCode(email, otp),
+          }),
+        ]
+      : []),
+  ];
+}
+
 /** The configuration; auth.test.ts checks pool.ts makes the tables it needs. */
-export function authOptions(pool: Pool) {
+export function authOptions(pool: Pool, plugins: BetterAuthPlugin[] = []) {
   const origins = siteOrigins();
+  const providers = configuredProviders();
   const email = isEmailConfigured();
   // A static URL when one is given; otherwise the request's own host, if it
   // is one of the site's (so Vercel previews work), else the main site.
@@ -81,7 +109,7 @@ export function authOptions(pool: Pool) {
     secret: process.env.BETTER_AUTH_SECRET?.trim(),
     baseURL,
     basePath: '/api/auth',
-    trustedOrigins: origins,
+    trustedOrigins: providers.includes('apple') ? [...origins, APPLE_ORIGIN] : origins,
     database: pool,
     telemetry: { enabled: false },
     advanced: {
@@ -138,7 +166,8 @@ export function authOptions(pool: Pool) {
         'createdAt',
         'updatedAt',
       ),
-      // Google signs in to an account made with the same, confirmed, address.
+      // Google, Apple or Microsoft signs in to an account made with the same
+      // address when it has confirmed that address. Google confirms every one.
       accountLinking: { enabled: true, trustedProviders: ['google'] },
     },
     verification: {
@@ -176,15 +205,8 @@ export function authOptions(pool: Pool) {
           },
         }
       : {}),
-    socialProviders: isGoogleConfigured()
-      ? {
-          google: {
-            clientId: process.env.GOOGLE_CLIENT_ID!.trim(),
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET!.trim(),
-            prompt: 'select_account',
-          },
-        }
-      : {},
+    socialProviders: socialProviderOptions(),
+    plugins,
 
     // Accounts made under Clerk move to the new sign-in with the same
     // address, once it is confirmed: at sign-up through Google, or when the
@@ -215,20 +237,25 @@ export function authOptions(pool: Pool) {
  */
 async function createAuth(pool: Pool) {
   const { betterAuth } = await import('better-auth');
-  return betterAuth(authOptions(pool));
+  return betterAuth(authOptions(pool, await authPlugins()));
 }
 
 export type Auth = Awaited<ReturnType<typeof createAuth>>;
 
 let auth: Promise<Auth> | null = null;
 let authPool: Pool | null = null;
+let authBuiltAt = 0;
+
+/** Remade monthly on a long-running server, well inside the Apple secret's life. */
+const REBUILD_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
 
 /** The Better Auth instance, made on first use. Callers check isAuthConfigured() first. */
 export function getAuth(): Promise<Auth> {
   const pool = getPool();
   // Rebuilt when the pool is (tests swap databases between files).
-  if (!auth || authPool !== pool) {
+  if (!auth || authPool !== pool || Date.now() - authBuiltAt > REBUILD_AFTER_MS) {
     authPool = pool;
+    authBuiltAt = Date.now();
     const made = createAuth(pool);
     // A failed load is not kept: the next request tries again.
     made.catch(() => {

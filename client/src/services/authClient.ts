@@ -1,12 +1,17 @@
 import { createAuthClient } from 'better-auth/react';
+import { emailOTPClient, lastLoginMethodClient } from 'better-auth/client/plugins';
 
 /**
  * Better Auth's browser client. The session is an httpOnly cookie on the
  * site's own origin; this client only calls /api/auth (the server's basePath)
  * and keeps the session in a shared store, so every useSession() sees one
- * request's answer.
+ * request's answer. Its plugins sign in with a code by email and read the
+ * cookie that says how someone last signed in.
  */
-export const authClient = createAuthClient({ basePath: '/api/auth' });
+export const authClient = createAuthClient({
+  basePath: '/api/auth',
+  plugins: [emailOTPClient(), lastLoginMethodClient()],
+});
 
 export type AuthSession = typeof authClient.$Infer.Session;
 
@@ -29,7 +34,11 @@ const MESSAGES: Record<string, string> = {
   TOKEN_EXPIRED: 'This link has expired. Ask for a new one.',
   SESSION_EXPIRED: 'For your security, sign in again first.',
   SESSION_NOT_FRESH: 'For your security, sign in again first.',
-  CREDENTIAL_ACCOUNT_NOT_FOUND: 'This account signs in with Google and has no password.',
+  CREDENTIAL_ACCOUNT_NOT_FOUND:
+    'This account has no password. It signs in with Google, Apple, Microsoft or a code by email.',
+  INVALID_OTP: 'That code is not right. Check the email, or ask for a new code.',
+  OTP_EXPIRED: 'That code has expired. Ask for a new one.',
+  TOO_MANY_ATTEMPTS: 'Too many tries with that code. Ask for a new one.',
 };
 
 /** Better Auth's error, as a sentence for the person at the form. */

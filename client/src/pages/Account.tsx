@@ -12,6 +12,7 @@ import { signOut, useAccount } from '../hooks/useAccount';
 import { useAccountStatus } from '../hooks/useAccountStatus';
 import * as accountApi from '../services/accountApi';
 import { authClient, authErrorMessage, type AuthSession } from '../services/authClient';
+import { PROVIDER_NAMES, type SignInProvider } from '../services/signInMethods';
 import { FREE_GARAGE_LIMIT, useGarageStore } from '../stores/garageStore';
 import { useNoIndex, usePageMeta } from '../utils/pageMeta';
 
@@ -41,7 +42,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 function AccountPanel({ session }: { session: AuthSession }) {
   const { user } = session;
   const status = useAccountStatus();
-  const hasPassword = useHasPassword();
+  const { hasPassword, linked } = useSignInMethods();
   const [params] = useSearchParams();
   const checkoutFlash = params.get('checkout');
   const syncFromCloud = useGarageStore((s) => s.syncFromCloud);
@@ -74,7 +75,7 @@ function AccountPanel({ session }: { session: AuthSession }) {
         {status?.emailConfigured && !user.emailVerified && <ConfirmEmail email={user.email} />}
         <GarageSection />
         <PlanSection billingConfigured={Boolean(status?.billingConfigured)} />
-        <SignInSection email={user.email} hasPassword={hasPassword} />
+        <SignInSection email={user.email} hasPassword={hasPassword} linked={linked} />
         <DeleteSection email={user.email} hasPassword={hasPassword} />
       </div>
     </div>
@@ -212,19 +213,39 @@ function PlanSection({ billingConfigured }: { billingConfigured: boolean }) {
   );
 }
 
-/** Whether this account has a password (else it signs in with Google). */
-function useHasPassword(): boolean | undefined {
-  const [hasPassword, setHasPassword] = useState<boolean>();
+/**
+ * How this account signs in: whether it has a password, and the accounts
+ * (Google, Apple, Microsoft) joined to it. Undefined until known.
+ */
+function useSignInMethods(): { hasPassword: boolean | undefined; linked: string[] } {
+  const [methods, setMethods] = useState<{ hasPassword: boolean | undefined; linked: string[] }>({
+    hasPassword: undefined,
+    linked: [],
+  });
   useEffect(() => {
     let live = true;
     void authClient.listAccounts().then(({ data }) => {
-      if (live) setHasPassword(Boolean(data?.some((a) => a.providerId === 'credential')));
+      if (!live) return;
+      const ids = (data ?? []).map((a) => a.providerId);
+      setMethods({
+        hasPassword: ids.includes('credential'),
+        linked: ids.flatMap((id) =>
+          id in PROVIDER_NAMES ? [PROVIDER_NAMES[id as SignInProvider]] : [],
+        ),
+      });
     });
     return () => {
       live = false;
     };
   }, []);
-  return hasPassword;
+  return methods;
+}
+
+/** "Google", "Google or Apple", "Google, Apple or Microsoft". */
+function orList(names: string[]): string {
+  return names.length < 2
+    ? (names[0] ?? '')
+    : `${names.slice(0, -1).join(', ')} or ${names.at(-1)}`;
 }
 
 /** Tells password managers which account a password form is for. */
@@ -237,9 +258,11 @@ function UsernameHint({ email }: { email: string }) {
 function SignInSection({
   email,
   hasPassword,
+  linked,
 }: {
   email: string;
   hasPassword: boolean | undefined;
+  linked: string[];
 }) {
   const navigate = useNavigate();
   const [current, setCurrent] = useState('');
@@ -280,7 +303,12 @@ function SignInSection({
   return (
     <Section title="Sign-in">
       {message && <FormMessage tone={message.tone}>{message.text}</FormMessage>}
-      {hasPassword === false && <p className="text-sm text-zinc-300">You sign in with Google.</p>}
+      {hasPassword === false && (
+        <p className="text-sm text-zinc-300">
+          This account has no password: you sign in with{' '}
+          {linked.length ? orList(linked) : 'a code by email'}.
+        </p>
+      )}
       {hasPassword && (
         <AuthFormBody onSubmit={changePassword}>
           <UsernameHint email={email} />

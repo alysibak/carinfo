@@ -1,5 +1,6 @@
 import type { FormEvent, InputHTMLAttributes, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { PROVIDER_NAMES, type SignInProvider } from '../services/signInMethods';
 
 /** The frame every sign-in page shares: a heading, a line, the form, links below. */
 export function AuthCard({
@@ -48,6 +49,7 @@ export function AuthFormBody({
 export function Field({
   label,
   hint,
+  className = '',
   ...input
 }: {
   label: string;
@@ -58,7 +60,7 @@ export function Field({
       <span className="field-label">{label}</span>
       <input
         {...input}
-        className="mt-1.5 block w-full h-12 bg-black border border-zinc-700 focus:border-zinc-300 px-3 text-base text-white placeholder:text-zinc-500 focus:outline-hidden rounded-none transition-colors"
+        className={`mt-1.5 block w-full h-12 bg-black border border-zinc-700 focus:border-zinc-300 px-3 text-base text-white placeholder:text-zinc-500 focus:outline-hidden rounded-none transition-colors ${className}`}
       />
       {hint && <span className="block mt-1.5 text-xs text-zinc-500">{hint}</span>}
     </label>
@@ -118,25 +120,78 @@ function GoogleMark() {
   );
 }
 
-export function GoogleButton({
-  busy,
-  onClick,
-  children = 'Continue with Google',
-}: {
-  busy: boolean;
-  onClick: () => void;
-  children?: ReactNode;
-}) {
+/** Apple's mark, in the button's own colour, as its guidelines allow. */
+function AppleMark() {
   return (
-    <button
-      type="button"
-      disabled={busy}
-      onClick={onClick}
-      className="btn-secondary w-full disabled:opacity-60"
-    >
-      <GoogleMark />
-      {children}
-    </button>
+    <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701" />
+    </svg>
+  );
+}
+
+/** Microsoft's four squares. */
+function MicrosoftMark() {
+  return (
+    <svg className="w-[18px] h-[18px]" viewBox="0 0 21 21" aria-hidden>
+      <rect x="1" y="1" width="9" height="9" fill="#F25022" />
+      <rect x="11" y="1" width="9" height="9" fill="#7FBA00" />
+      <rect x="1" y="11" width="9" height="9" fill="#00A4EF" />
+      <rect x="11" y="11" width="9" height="9" fill="#FFB900" />
+    </svg>
+  );
+}
+
+const MARKS: Record<SignInProvider, () => ReactNode> = {
+  google: GoogleMark,
+  apple: AppleMark,
+  microsoft: MicrosoftMark,
+};
+
+/**
+ * One button per account the site can sign in with, the one this browser
+ * used last marked, so a returning visitor taps the same one again.
+ */
+export function ProviderButtons({
+  providers,
+  busy,
+  pending,
+  last,
+  onPick,
+}: {
+  providers: SignInProvider[];
+  busy: boolean;
+  /** The provider on its way, which says so. */
+  pending?: SignInProvider | null;
+  last?: string | null;
+  onPick: (provider: SignInProvider) => void;
+}) {
+  if (providers.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-2">
+      {providers.map((provider) => {
+        const Mark = MARKS[provider];
+        const name = PROVIDER_NAMES[provider];
+        return (
+          <button
+            key={provider}
+            type="button"
+            disabled={busy}
+            onClick={() => onPick(provider)}
+            className="btn-secondary w-full disabled:opacity-60"
+          >
+            <Mark />
+            {pending === provider ? `Opening ${name}…` : `Continue with ${name}`}
+            {last === provider && (
+              <span className="ml-1 text-[11px] font-semibold uppercase tracking-wide text-accent">
+                {/* Read as "Continue with Apple, last used". */}
+                <span className="sr-only">, </span>
+                Last used
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 

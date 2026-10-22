@@ -11,7 +11,8 @@ import {
   setGarageIds,
 } from '../db/user-store.js';
 import { FREE_GARAGE_LIMIT, PRO_GARAGE_LIMIT } from '../types/account.types.js';
-import { isAuthConfigured, isGoogleConfigured } from '../auth/auth.js';
+import { isAuthConfigured } from '../auth/auth.js';
+import { configuredProviders } from '../auth/providers.js';
 import { isEmailConfigured } from '../auth/email.js';
 import { isBillingConfigured } from './billing.controller.js';
 
@@ -47,8 +48,9 @@ export function getAccountStatus(_req: Request, res: Response) {
       authConfigured,
       storageConfigured: isAccountsStorageReady(),
       billingConfigured: authConfigured && isBillingConfigured(),
-      googleSignIn: authConfigured && isGoogleConfigured(),
-      // Password reset and address confirmation both need email.
+      // Google, Apple, Microsoft: each once its keys are set.
+      providers: authConfigured ? configuredProviders() : [],
+      // A sign-in code, password reset and address confirmation all need email.
       emailConfigured: authConfigured && isEmailConfigured(),
       freeGarageLimit: FREE_GARAGE_LIMIT,
     },

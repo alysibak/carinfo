@@ -63,7 +63,9 @@ export const fakeAuthClient = {
     );
     return { ...current, isRefetching: false, refetch: async () => {} };
   },
-  signIn: { email: ok(), social: ok() },
+  signIn: { email: ok(), social: ok(), emailOtp: ok() },
+  emailOtp: { sendVerificationOtp: ok() },
+  getLastUsedLoginMethod: vi.fn((): string | null => null),
   signUp: { email: ok() },
   signOut: ok(),
   requestPasswordReset: ok(),
@@ -80,6 +82,8 @@ export function resetFakeAuth(): void {
   for (const fn of [
     fakeAuthClient.signIn.email,
     fakeAuthClient.signIn.social,
+    fakeAuthClient.signIn.emailOtp,
+    fakeAuthClient.emailOtp.sendVerificationOtp,
     fakeAuthClient.signUp.email,
     fakeAuthClient.signOut,
     fakeAuthClient.requestPasswordReset,
@@ -92,4 +96,6 @@ export function resetFakeAuth(): void {
     fn.mockReset();
     fn.mockImplementation(async () => ({ data: {}, error: null }) as never);
   }
+  fakeAuthClient.getLastUsedLoginMethod.mockReset();
+  fakeAuthClient.getLastUsedLoginMethod.mockReturnValue(null);
 }
