@@ -46,7 +46,7 @@ const PRESETS: MatrixPreset[] = [
   {
     id: 'commuter',
     title: 'Daily drivers',
-    description: 'Sedans & SUVs between $10k-$35k. Fuel economy vs estimated value.',
+    description: 'Sedans and SUVs, by fuel use against estimated value.',
     priceRange: [10000, 35000],
     bodyStyles: ['sedan', 'suv'],
     axisMode: 'mpg',
@@ -55,7 +55,7 @@ const PRESETS: MatrixPreset[] = [
   {
     id: 'budget',
     title: 'Under $20k',
-    description: 'Affordable options with real EPA mileage data.',
+    description: 'Sedans, SUVs, coupes and wagons, by fuel use against estimated value.',
     priceRange: [2000, 20000],
     bodyStyles: ['sedan', 'suv', 'coupe', 'wagon'],
     axisMode: 'mpg',
@@ -63,8 +63,8 @@ const PRESETS: MatrixPreset[] = [
   },
   {
     id: 'trucks',
-    title: 'Trucks & work',
-    description: 'Pickups and work vehicles. Engine size vs value.',
+    title: 'Pickups',
+    description: 'Pickups, by engine size against estimated value.',
     priceRange: [15000, 65000],
     bodyStyles: ['truck'],
     axisMode: 'displacement',
@@ -73,7 +73,7 @@ const PRESETS: MatrixPreset[] = [
   {
     id: 'recent',
     title: '2018 and newer',
-    description: 'Newer model years across all types. Efficiency focus.',
+    description: 'Every type from 2018 on, by fuel use against estimated value.',
     priceRange: [18000, 80000],
     bodyStyles: [],
     axisMode: 'mpg',
@@ -382,8 +382,9 @@ export default function ValueMatrix() {
                       {preset.title}
                     </p>
                     <p className="text-sm text-zinc-400 leading-relaxed">{preset.description}</p>
+                    {/* "~350 cars" was the most dots drawn, not a count of cars. */}
                     <p className="text-xs text-zinc-400 mt-3">
-                      {`~${preset.pointLimit} cars · $${(preset.priceRange[0] / 1000).toFixed(0)}k-$${(preset.priceRange[1] / 1000).toFixed(0)}k`}
+                      {`Estimated $${(preset.priceRange[0] / 1000).toFixed(0)}k–$${(preset.priceRange[1] / 1000).toFixed(0)}k`}
                     </p>
                   </button>
                 ))}

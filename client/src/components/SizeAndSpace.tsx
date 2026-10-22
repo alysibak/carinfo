@@ -196,7 +196,7 @@ export default function SizeAndSpace({ dashboard }: { dashboard: CarDashboard })
   const several = (size?.measured.length ?? 0) > 1;
 
   return (
-    <section className="border-b border-zinc-900">
+    <section id="size" className="border-b border-zinc-900 scroll-mt-32">
       <div className="page-wrap-wide section-y-tight">
         <h2 className="text-base font-bold tracking-tight mb-1">Size and space</h2>
         <p className="text-[13px] text-zinc-400 mb-4 leading-relaxed max-w-2xl">

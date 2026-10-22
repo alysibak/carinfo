@@ -37,7 +37,7 @@ export default function SimilarCars({ car }: { car: CarSpecs }) {
   if (cars && cars.length === 0) return null;
 
   return (
-    <section id="similar" className="border-t border-zinc-900 scroll-mt-24">
+    <section id="similar" className="border-t border-zinc-900 scroll-mt-32">
       <div className="page-wrap-wide section-y-tight">
         <h2 className="text-base font-bold tracking-tight mb-1">If you&apos;re still looking</h2>
         <p className="text-xs text-zinc-500 mb-4">

@@ -40,6 +40,7 @@ import CrashTests from '../components/CrashTests';
 import BeforeYouBuy from '../components/BeforeYouBuy';
 import TheftRecord from '../components/TheftRecord';
 import SizeAndSpace from '../components/SizeAndSpace';
+import OnThisPage from '../components/OnThisPage';
 
 function Subheading({ children }: { children: React.ReactNode }) {
   return <p className="text-sm font-semibold text-zinc-200 pt-3 pb-1">{children}</p>;
@@ -524,6 +525,7 @@ export default function CarDetail() {
 
           <div ref={statsRef} className="mt-5 sm:mt-6">
             <KeyFigures dashboard={dashboard} hasEstimates={showOwnership} />
+            <OnThisPage pageKey={car.id} />
           </div>
         </div>
       </section>

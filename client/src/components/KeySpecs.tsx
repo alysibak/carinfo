@@ -510,7 +510,7 @@ export default function KeySpecs({
   if (groups.length === 0) return null;
 
   return (
-    <section className="border-t border-zinc-900">
+    <section id="specs" className="border-t border-zinc-900 scroll-mt-32">
       <div className="page-wrap-wide section-y-tight">
         <h2 className="text-base font-bold tracking-tight mb-1">{heading}</h2>
         {omit.size > 0 && (
