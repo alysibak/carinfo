@@ -61,11 +61,11 @@ describe('describeSearchInterpretation', () => {
     ]);
     expect(
       describeSearchInterpretation({
-        firstCar: { maxPrice: 18000, minMpg: 28, minYear: 2010 },
+        firstCar: { minYear: 2015, minStars: 4, maxHp: 250, minMpg: 28, minWeightKg: 1248 },
         snow: true,
       }),
     ).toEqual([
-      'Read as a first car, as the First car preset: under $18,000 where no price was given, 28 MPG or better, 2010 or newer.',
+      'Read as a first car, as the First car preset: 2015 or newer, 4 or more NHTSA crash-test stars, 1,248 kg or heavier (IIHS and Consumer Reports list no car under 2,750 lb for teens), 250 hp or less, 8.4 L/100 km or less.',
       'All- and four-wheel drive only, for snow: EPA records the drive, not the tires, which matter as much.',
     ]);
     expect(

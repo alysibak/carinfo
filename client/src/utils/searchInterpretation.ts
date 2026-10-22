@@ -129,9 +129,9 @@ export function describeSearchInterpretation(
     );
   }
   if (interpretation.firstCar) {
-    const { maxPrice, minMpg, minYear } = interpretation.firstCar;
+    const { minYear, minStars, maxHp, minMpg, minWeightKg } = interpretation.firstCar;
     lines.push(
-      `Read as a first car, as the First car preset: under ${cad(maxPrice)} where no price was given, ${minMpg} MPG or better, ${minYear} or newer.`,
+      `Read as a first car, as the First car preset: ${minYear} or newer, ${minStars} or more NHTSA crash-test stars, ${minWeightKg.toLocaleString('en-CA')} kg or heavier (IIHS and Consumer Reports list no car under 2,750 lb for teens), ${maxHp} hp or less, ${(235.215 / minMpg).toFixed(1)} L/100 km or less.`,
     );
   }
   if (interpretation.automatedManual) {

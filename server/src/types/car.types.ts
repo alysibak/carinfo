@@ -289,6 +289,12 @@ export interface CarFilter {
    * a model with none on file is not counted as recall-free.
    */
   noRecalls?: boolean;
+  /**
+   * Transport Canada's curb weight, kilograms: every version measured within
+   * it (the lightest at least the minimum, the heaviest at most the maximum).
+   * A car it never measured is left out.
+   */
+  curbWeightKg?: { min?: number; max?: number };
 }
 
 export interface SearchQuery {
@@ -416,7 +422,13 @@ export interface SearchInterpretation {
   /** "dual clutch", "dct": kept to EPA's automated manuals. */
   automatedManual?: boolean;
   /** "first car", "teenager": the First car preset's price, MPG and year limits. */
-  firstCar?: { maxPrice: number; minMpg: number; minYear: number };
+  firstCar?: {
+    minYear: number;
+    minStars: number;
+    maxHp: number;
+    minMpg: number;
+    minWeightKg: number;
+  };
   /**
    * "over 30 mpg", "under 7 l/100km", "40 mpg highway": the EPA rating asked
    * for, in the unit asked. Electric cars are left out of an MPG or L/100 km

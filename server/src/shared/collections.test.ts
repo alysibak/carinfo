@@ -20,7 +20,14 @@ describe('calculateCollectionScore', () => {
       id: string;
     });
     const dear = car({ id: 'dear', price: { msrp: 60000 } } as Partial<Car> & { id: string });
-    for (const rankBy of ['best-value', 'daily-driver', 'efficiency', 'fun', 'luxury'] as const) {
+    for (const rankBy of [
+      'best-value',
+      'daily-driver',
+      'efficiency',
+      'fun',
+      'luxury',
+      'lightest',
+    ] as const) {
       expect(calculateCollectionScore(cheap, rankBy)).toBe(calculateCollectionScore(dear, rankBy));
     }
   });
@@ -47,6 +54,34 @@ describe('calculateCollectionScore', () => {
     expect(calculateCollectionScore(noRange, 'range')).toBeLessThan(
       calculateCollectionScore(ranged, 'range'),
     );
+  });
+});
+
+describe('the shortlists', () => {
+  it('are never bounded by the estimated value, a guess at a price', () => {
+    for (const collection of Object.values(COLLECTIONS)) {
+      expect(collection.query.filters?.price).toBeUndefined();
+    }
+  });
+
+  it('rank sports cars lightest first, by Transport Canada’s curb weight', () => {
+    const sized = (id: string, kg: number) =>
+      car({
+        id,
+        size: {
+          lengthCm: [400, 400],
+          widthCm: [175, 175],
+          heightCm: [125, 125],
+          wheelbaseCm: [231, 231],
+          curbWeightKg: [kg, kg + 50],
+          measured: [],
+        },
+      });
+    const picks = rankCollectionPicks(
+      [sized('heavy', 1700), car({ id: 'unmeasured' }), sized('light', 1065)],
+      COLLECTIONS['weekend-warriors'],
+    );
+    expect(picks.map((p) => p.id)).toEqual(['light', 'heavy', 'unmeasured']);
   });
 });
 

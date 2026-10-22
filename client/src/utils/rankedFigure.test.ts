@@ -18,6 +18,12 @@ describe('rankedFigure', () => {
     expect(rankedFigure(car, 'efficiency')).toBe('4.4 L/100 km');
     expect(rankedFigure(car, 'daily-driver')).toBe('NHTSA 5/5');
     expect(rankedFigure(car, 'fun')).toBe('139 hp');
+    expect(rankedFigure(car, 'luxury')).toBe('NHTSA 5/5');
+    const weighed = {
+      ...car,
+      size: { curbWeightKg: [1065, 1100] },
+    } as unknown as CarSpecs;
+    expect(rankedFigure(weighed, 'lightest')).toBe('1,065 kg');
   });
 
   it('gives an EV its EPA range in km', () => {

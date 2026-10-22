@@ -35,12 +35,18 @@ describe('matchingLifestylePreset', () => {
     // "Family hauler" has no filters, so it lit up for every unfiltered search.
     expect(matchingLifestylePreset({}, 'best suv for family')).toBeNull();
     expect(matchingLifestylePreset({}, 'third row')).toBe('family');
-    expect(matchingLifestylePreset({ price: { max: 50000 }, year: { min: 2015 } }, 'luxury')).toBe(
+    expect(matchingLifestylePreset({ year: { min: 2018, max: 2023 } }, 'luxury')).toBe(
       'luxury-value',
     );
     // A preset without words still matches on filters alone.
     const firstCar = LIFESTYLE_PRESETS.find((p) => p.id === 'first-car')!;
     expect(matchingLifestylePreset(firstCar.filters, 'honda')).toBe('first-car');
+  });
+});
+
+describe('the situations', () => {
+  it('rest on the records, never on the estimated value', () => {
+    for (const preset of LIFESTYLE_PRESETS) expect(preset.filters.price).toBeUndefined();
   });
 });
 

@@ -83,6 +83,8 @@ export function hasActiveSearch(params: URLSearchParams): boolean {
     'recalls',
     'stolen',
     'fcw',
+    'weightMin',
+    'weightMax',
   ];
   return filterKeys.some((k) => params.get(k));
 }
@@ -137,6 +139,12 @@ export function paramsToSearchQuery(params: URLSearchParams): { query: SearchQue
   if (stolen === 'no') filters.theftListed = false;
   else if (stolen === 'yes') filters.theftListed = true;
   if (params.get('fcw') === 'standard') filters.safetyTech = { features: ['fcw'], standard: true };
+
+  const weightMin = numParam(params.get('weightMin'));
+  const weightMax = numParam(params.get('weightMax'));
+  if (weightMin != null || weightMax != null) {
+    filters.curbWeightKg = { min: weightMin, max: weightMax };
+  }
 
   const hasFilters = Object.values(filters).some(filterFieldHasValue);
 
@@ -210,6 +218,8 @@ export function searchQueryToParams(query: SearchQuery, page: number): URLSearch
   if (f.noRecalls) params.set('recalls', 'none');
   if (f.theftListed != null) params.set('stolen', f.theftListed ? 'yes' : 'no');
   if (isFcwStandard(f)) params.set('fcw', 'standard');
+  if (f.curbWeightKg?.min != null) params.set('weightMin', String(f.curbWeightKg.min));
+  if (f.curbWeightKg?.max != null) params.set('weightMax', String(f.curbWeightKg.max));
   // Only persist when it differs from the dynamic default so heuristic can
   // adapt as q changes (e.g. "mazda" → dense, "mazda 3" → years).
   const collapseDefault = defaultCollapseByModel(query.query, query.filters);
@@ -234,7 +244,13 @@ export function describeActiveFilters(filters: CarFilter = {}): { key: string; l
   filters.make?.forEach((m) => chips.push({ key: `make-${m}`, label: m }));
   filters.model?.forEach((m) => chips.push({ key: `model-${m}`, label: m }));
   filters.bodyStyle?.forEach((b) => chips.push({ key: `body-${b}`, label: bodyStyleLabel(b) }));
-  filters.fuelType?.forEach((f) => chips.push({ key: `fuel-${f}`, label: formatFuelTypeLabel(f) }));
+  // Every fuel but hydrogen (the First car situation's) is one chip, not five.
+  const fuels = filters.fuelType ?? [];
+  if (fuels.length >= 4 && !fuels.includes('hydrogen')) {
+    chips.push({ key: 'fuel-all', label: 'Any fuel but hydrogen' });
+  } else {
+    fuels.forEach((f) => chips.push({ key: `fuel-${f}`, label: formatFuelTypeLabel(f) }));
+  }
   filters.driveType?.forEach((d) => chips.push({ key: `drive-${d}`, label: d }));
   filters.transmission?.forEach((t) =>
     chips.push({ key: `trans-${t}`, label: t === 'cvt' ? 'CVT' : bodyStyleLabel(t) }),
@@ -245,7 +261,14 @@ export function describeActiveFilters(filters: CarFilter = {}): { key: string; l
     const { min, max } = filters.year;
     chips.push({
       key: 'year',
-      label: min != null && max != null && min === max ? `${min}` : `${min ?? '…'}-${max ?? '…'}`,
+      label:
+        min != null && max != null
+          ? min === max
+            ? `${min}`
+            : `${min}–${max}`
+          : min != null
+            ? `${min} or newer`
+            : `${max} or older`,
     });
   }
   if (filters.price?.min != null || filters.price?.max != null) {
@@ -265,7 +288,8 @@ export function describeActiveFilters(filters: CarFilter = {}): { key: string; l
     const min = filters.fuelEconomy.min;
     chips.push({
       key: 'mpg',
-      label: min >= 100 ? `${min}+ MPGe` : `Under ${(235.215 / min).toFixed(1)} L/100 km`,
+      // As the car pages round it: a 25 mpg car shows 9.4, and is in.
+      label: min >= 100 ? `${min}+ MPGe` : `${(235.215 / min).toFixed(1)} L/100 km or less`,
     });
   }
   if (filters.displacement?.min != null || filters.displacement?.max != null) {
@@ -276,7 +300,11 @@ export function describeActiveFilters(filters: CarFilter = {}): { key: string; l
     chips.push({
       key: 'hp',
       label:
-        min != null && max != null ? `${min}-${max} hp` : min != null ? `${min}+ hp` : `≤${max} hp`,
+        min != null && max != null
+          ? `${min}–${max} hp`
+          : min != null
+            ? `${min}+ hp`
+            : `${max} hp or less`,
     });
   }
   if (filters.safety?.min != null) {
@@ -299,6 +327,19 @@ export function describeActiveFilters(filters: CarFilter = {}): { key: string; l
     });
   }
   if (filters.noRecalls) chips.push({ key: 'recalls', label: 'No recalls in Canada' });
+  if (filters.curbWeightKg?.min != null || filters.curbWeightKg?.max != null) {
+    const { min, max } = filters.curbWeightKg;
+    const kg = (n: number) => `${n.toLocaleString('en-CA')} kg`;
+    chips.push({
+      key: 'weight',
+      label:
+        min != null && max != null
+          ? `${kg(min)} to ${kg(max)}`
+          : min != null
+            ? `${kg(min)} or heavier`
+            : `${kg(max!)} or lighter`,
+    });
+  }
   if (filters.theftListed != null) {
     chips.push({
       key: 'stolen',
@@ -324,6 +365,7 @@ export function removeActiveFilterChip(filters: CarFilter, chipKey: string): Car
   if (chipKey.startsWith('make-')) dropFromList('make', chipKey.slice(5));
   else if (chipKey.startsWith('model-')) dropFromList('model', chipKey.slice(6));
   else if (chipKey.startsWith('body-')) dropFromList('bodyStyle', chipKey.slice(5));
+  else if (chipKey === 'fuel-all') delete next.fuelType;
   else if (chipKey.startsWith('fuel-')) dropFromList('fuelType', chipKey.slice(5));
   else if (chipKey.startsWith('drive-')) dropFromList('driveType', chipKey.slice(6));
   else if (chipKey.startsWith('trans-')) dropFromList('transmission', chipKey.slice(6));
@@ -339,6 +381,7 @@ export function removeActiveFilterChip(filters: CarFilter, chipKey: string): Car
   else if (chipKey === 'tech') delete next.safetyTech;
   else if (chipKey === 'recalls') delete next.noRecalls;
   else if (chipKey === 'stolen') delete next.theftListed;
+  else if (chipKey === 'weight') delete next.curbWeightKg;
 
   return next;
 }

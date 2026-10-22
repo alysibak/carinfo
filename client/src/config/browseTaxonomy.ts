@@ -24,36 +24,41 @@ export interface BucketOption {
   sort?: SearchQuery['sort'];
 }
 
-/** How people actually shop — maps to EPA-backed filter fields. */
+/**
+ * How people shop, on the records: each says its rule in its description.
+ * None is bounded by the site's estimated value, which is a guess at a price.
+ */
 export const LIFESTYLE_PRESETS: BrowsePreset[] = [
   {
     id: 'daily-driver',
     label: 'Daily driver',
-    description: 'Efficient sedans & SUVs under $35k',
+    description: 'Sedans, hatchbacks and SUVs from 2020 on, 7.8 L/100 km or less',
     filters: {
-      bodyStyle: ['sedan', 'suv'],
-      price: { max: 35000 },
-      fuelEconomy: { min: 26 },
+      bodyStyle: ['sedan', 'hatchback', 'suv'],
+      fuelEconomy: { min: 30 },
+      year: { min: 2020 },
     },
     sort: { field: 'fuelEconomy', order: 'desc' },
   },
   {
     id: 'first-car',
     label: 'First car',
-    description: 'Affordable, easy on gas',
+    description: `${FIRST_CAR.minYear} on, ${FIRST_CAR.minStars}+ crash-test stars, not small or too powerful`,
     // Shared with the search, which reads "first car" and "teenager" the same way.
     filters: {
-      price: { max: FIRST_CAR.maxPrice },
+      safety: { min: FIRST_CAR.minStars },
+      curbWeightKg: { min: FIRST_CAR.minWeightKg },
+      horsepower: { max: FIRST_CAR.maxHp },
       fuelEconomy: { min: FIRST_CAR.minMpg },
       year: { min: FIRST_CAR.minYear },
       fuelType: [...FIRST_CAR.fuelTypes],
     },
-    sort: { field: 'price', order: 'asc' },
+    sort: { field: 'safety', order: 'desc' },
   },
   {
     id: 'family',
     label: 'Family hauler',
-    description: 'Minivans & three-row SUVs',
+    description: 'Minivans and three-row SUVs',
     // Every SUV and wagon used to qualify, down to a two-door Wrangler.
     query: 'third row',
     filters: {},
@@ -62,14 +67,14 @@ export const LIFESTYLE_PRESETS: BrowsePreset[] = [
   {
     id: 'commuter',
     label: 'Long commute',
-    description: 'Under 5.9 L/100 km combined',
-    filters: { fuelEconomy: { min: 40 }, price: { max: 45000 } },
+    description: '5.9 L/100 km or less',
+    filters: { fuelEconomy: { min: 40 } },
     sort: { field: 'fuelEconomy', order: 'desc' },
   },
   {
     id: 'work-truck',
-    label: 'Work & tow',
-    description: 'Full-size 4WD pickups',
+    label: 'Work and tow',
+    description: 'Full-size four-wheel-drive pickups',
     query: 'full size truck',
     filters: { bodyStyle: ['truck'], driveType: ['AWD', '4WD'] },
     sort: { field: 'year', order: 'desc' },
@@ -77,7 +82,7 @@ export const LIFESTYLE_PRESETS: BrowsePreset[] = [
   {
     id: 'weekend',
     label: 'Weekend fun',
-    description: 'Sports cars, roadsters & muscle cars',
+    description: 'Sports cars, roadsters and muscle cars',
     // Any coupe over 3 litres took in a CL600 and left out every Miata.
     query: 'sports car',
     filters: {},
@@ -86,20 +91,17 @@ export const LIFESTYLE_PRESETS: BrowsePreset[] = [
   {
     id: 'eco',
     label: 'Go electric',
-    description: 'EV, hybrid & plug-in',
+    description: 'Electric, hybrid and plug-in, 2018 on',
     filters: { fuelType: ['electric', 'hybrid', 'plug-in hybrid'], year: { min: 2018 } },
     sort: { field: 'year', order: 'desc' },
   },
   {
     id: 'luxury-value',
-    label: 'Luxury for less',
-    description: 'Premium brands under $50k',
+    label: 'Luxury, a few years old',
+    description: 'Premium brands, 2018 to 2023',
     // Eight makes by name missed Genesis, Volvo, Porsche, Jaguar and Land Rover.
     query: 'luxury',
-    filters: {
-      price: { max: 50000 },
-      year: { min: 2015 },
-    },
+    filters: { year: { min: 2018, max: 2023 } },
     sort: { field: 'year', order: 'desc' },
   },
 ];
@@ -149,11 +151,11 @@ export const YEAR_BUCKETS: BucketOption[] = [
   },
   { id: '2020s', label: '2020+', description: 'Current gen', filters: { year: { min: 2020 } } },
   { id: '2015s', label: '2015+', filters: { year: { min: 2015 } } },
-  { id: '2010s', label: '2010-2019', filters: { year: { min: 2010, max: 2019 } } },
-  { id: '2000s', label: '2000-2009', filters: { year: { min: 2000, max: 2009 } } },
+  { id: '2010s', label: '2010–2019', filters: { year: { min: 2010, max: 2019 } } },
+  { id: '2000s', label: '2000–2009', filters: { year: { min: 2000, max: 2009 } } },
   {
     id: 'classic',
-    label: '1995-1999',
+    label: '1995–1999',
     description: 'Classic era',
     filters: { year: { min: 1995, max: 1999 } },
   },
@@ -161,9 +163,9 @@ export const YEAR_BUCKETS: BucketOption[] = [
 
 export const MPG_BUCKETS: BucketOption[] = [
   // Labelled in L/100 km, Canada's unit; the filter keeps EPA's MPG (25 MPG = 9.4 L/100 km).
-  { id: 'mpg-25', label: 'Under 9.4 L/100 km', filters: { fuelEconomy: { min: 25 } } },
-  { id: 'mpg-35', label: 'Under 6.7 L/100 km', filters: { fuelEconomy: { min: 35 } } },
-  { id: 'mpg-45', label: 'Under 5.2 L/100 km', filters: { fuelEconomy: { min: 45 } } },
+  { id: 'mpg-25', label: '9.4 L/100 km or less', filters: { fuelEconomy: { min: 25 } } },
+  { id: 'mpg-35', label: '6.7 L/100 km or less', filters: { fuelEconomy: { min: 35 } } },
+  { id: 'mpg-45', label: '5.2 L/100 km or less', filters: { fuelEconomy: { min: 45 } } },
   {
     id: 'mpg-100',
     label: 'Electric (100+ MPGe)',

@@ -98,7 +98,7 @@ describe('removeActiveFilterChip', () => {
     expect(chips.map((c) => c.label)).toEqual([
       'SUV',
       'Manual',
-      'Under 6.7 L/100 km',
+      '6.7 L/100 km or less',
       '5 crash-test stars',
       'Three rows',
       '400+ km range',
@@ -153,6 +153,30 @@ describe('new filters in the URL', () => {
       theftListed: false,
     });
     expect(removeActiveFilterChip(filters, 'stolen')).not.toHaveProperty('theftListed');
+  });
+
+  it('says years, power and fuels the way a person would', () => {
+    const labels = (filters: CarFilter) => describeActiveFilters(filters).map((c) => c.label);
+    expect(labels({ year: { min: 2015 } })).toEqual(['2015 or newer']);
+    expect(labels({ year: { min: 2019, max: 2023 } })).toEqual(['2019–2023']);
+    expect(labels({ horsepower: { max: 250 } })).toEqual(['250 hp or less']);
+    const fuels = ['gasoline', 'diesel', 'hybrid', 'plug-in hybrid', 'electric'];
+    expect(labels({ fuelType: fuels })).toEqual(['Any fuel but hydrogen']);
+    expect(removeActiveFilterChip({ fuelType: fuels }, 'fuel-all')).toEqual({});
+    expect(labels({ fuelType: ['hybrid', 'electric'] })).toEqual(['Hybrid', 'Electric']);
+  });
+
+  it('round-trips a curb-weight floor, the one the First car situation sets', () => {
+    const params = searchQueryToParams({ filters: { curbWeightKg: { min: 1248 } } }, 1);
+    expect(params.get('weightMin')).toBe('1248');
+    expect(paramsToSearchQuery(params).query.filters?.curbWeightKg).toEqual({
+      min: 1248,
+      max: undefined,
+    });
+    expect(describeActiveFilters({ curbWeightKg: { min: 1248 } })[0].label).toBe(
+      '1,248 kg or heavier',
+    );
+    expect(removeActiveFilterChip({ curbWeightKg: { min: 1248 } }, 'weight')).toEqual({});
   });
 
   it('keeps a two-row filter, which is false rather than absent', () => {

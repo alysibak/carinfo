@@ -50,7 +50,6 @@ for (const { name, viewport } of VIEWPORTS) {
         '/models/toyota/rav4',
         `/compare?cars=${a},${b}`,
         '/collection/goldilocks',
-        '/smart-search',
         '/vin',
         '/garage',
         '/account',

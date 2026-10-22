@@ -190,8 +190,8 @@ export default function Home() {
 
   const handleSortChange = (field: string) => {
     // A new field starts where people start: cheapest first for money,
-    // highest first for the rest.
-    const cheapestFirst = field === 'price' || field === 'runningCost';
+    // lightest first for weight, highest first for the rest.
+    const cheapestFirst = field === 'price' || field === 'runningCost' || field === 'weight';
     const newOrder =
       field === searchQuery.sort?.field
         ? searchQuery.sort?.order === 'desc'
@@ -581,6 +581,7 @@ export default function Home() {
                           : []),
                         { value: 'safety', label: 'NHTSA rating' },
                         { value: 'luggage', label: 'Trunk space (EPA)' },
+                        { value: 'weight', label: 'Weight' },
                         { value: 'horsepower', label: 'Horsepower' },
                         { value: 'year', label: 'Year' },
                         { value: 'make', label: 'Make' },

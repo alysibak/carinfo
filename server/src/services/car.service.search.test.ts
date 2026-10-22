@@ -726,8 +726,11 @@ describe('car.service natural language search', () => {
     const first = searchCars({ query: 'good first car for a teenager', limit: 200 });
     expect(first.total).toBeGreaterThan(20);
     for (const car of first.results) {
-      expect(car.price?.msrp ?? 0).toBeLessThanOrEqual(18000);
-      expect(car.year).toBeGreaterThanOrEqual(2010);
+      expect(car.year).toBeGreaterThanOrEqual(2015);
+      expect(car.safetyRating?.overall ?? 0).toBeGreaterThanOrEqual(4);
+      expect(car.engine.horsepower ?? 0).toBeLessThanOrEqual(250);
+      // IIHS and Consumer Reports' floor: no car under 2,750 lb.
+      expect(car.size?.curbWeightKg[0] ?? 0).toBeGreaterThanOrEqual(1248);
       expect(car.fuelEconomy.combined).toBeGreaterThanOrEqual(28);
       expect(['hydrogen', 'natural gas']).not.toContain(car.engine.fuelType);
     }

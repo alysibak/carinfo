@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import Landing from './pages/Landing';
 import Layout from './components/Layout';
@@ -15,7 +15,6 @@ const ModelPage = lazy(() => import('./pages/ModelPage'));
 const Home = lazy(() => import('./pages/Home'));
 const Compare = lazy(() => import('./pages/Compare'));
 const Collection = lazy(() => import('./pages/Collection'));
-const SmartSearch = lazy(() => import('./pages/SmartSearch'));
 const DreamGarage = lazy(() => import('./pages/DreamGarage'));
 const BattleMode = lazy(() => import('./pages/BattleMode'));
 const ValueMatrix = lazy(() => import('./pages/ValueMatrix'));
@@ -67,7 +66,8 @@ function App() {
                   {/* Open to visitors: the tools shoppers reach for first. */}
                   <Route path="/compare" element={<Compare />} />
                   <Route path="/collection/:collectionId" element={<Collection />} />
-                  <Route path="/smart-search" element={<SmartSearch />} />
+                  {/* The 3-question quiz is gone: its answers were price bands on an estimate. */}
+                  <Route path="/smart-search" element={<Navigate to="/browse" replace />} />
                   <Route
                     path="/garage"
                     element={

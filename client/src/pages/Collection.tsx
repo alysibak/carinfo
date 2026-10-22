@@ -212,10 +212,10 @@ export default function Collection() {
                   : 'Open in Search'}
               </Link>
               <Link
-                to="/?quiz=1"
+                to="/browse"
                 className="inline-block py-1.5 text-xs text-zinc-400 hover:text-white"
               >
-                Prefer the 3-question finder?
+                Other shortlists and ways to start
               </Link>
             </div>
           </>

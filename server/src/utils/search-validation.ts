@@ -32,6 +32,7 @@ const SORT_FIELDS = new Set([
   'evScore',
   'runningCost',
   'luggage',
+  'weight',
   'relevance',
 ]);
 
@@ -99,6 +100,7 @@ export function normalizeSearchQuery(body: unknown): SearchQuery {
       noRecalls: filtersRaw.noRecalls === true ? true : undefined,
       theftListed: typeof filtersRaw.theftListed === 'boolean' ? filtersRaw.theftListed : undefined,
       safetyTech: asSafetyTech(filtersRaw.safetyTech),
+      curbWeightKg: asRange(filtersRaw.curbWeightKg),
     };
   }
 
@@ -171,6 +173,7 @@ export function parseSearchQueryString(q: Record<string, unknown>): SearchQuery 
     noRecalls: q.recalls === 'none' ? true : undefined,
     theftListed: q.stolen === 'no' ? false : q.stolen === 'yes' ? true : undefined,
     safetyTech: q.fcw === 'standard' ? { features: ['fcw' as const], standard: true } : undefined,
+    curbWeightKg: range(q.weightMin, q.weightMax),
   };
   if (Object.values(filters).some((v) => v !== undefined)) {
     query.filters = filters;

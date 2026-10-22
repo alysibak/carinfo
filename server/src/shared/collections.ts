@@ -7,13 +7,20 @@
 import type { CarSpecs, SearchQuery } from '../types/car.types.js';
 
 export type CollectionRankBy =
-  'best-value' | 'daily-driver' | 'efficiency' | 'fun' | 'capability' | 'range' | 'luxury';
+  | 'best-value'
+  | 'daily-driver'
+  | 'efficiency'
+  | 'fun'
+  | 'capability'
+  | 'range'
+  | 'luxury'
+  | 'lightest';
 
 /**
- * Rank shortlist picks on what EPA and NHTSA recorded, each list by what it
- * promises: fuel economy, crash-test stars, rated power, EPA range, newer
- * model years among equals. An estimated price only bounds a list (its search
- * filters); it never ranks one.
+ * Rank shortlist picks on what EPA, NHTSA and Transport Canada recorded, each
+ * list by what it promises: fuel economy, crash-test stars, rated power, EPA
+ * range, curb weight, newer model years among equals. The site's estimated
+ * price neither ranks a list nor bounds one: it is a guess at a price.
  *
  * The first score multiplied MPG by safety and divided by price, so an EV's
  * MPGe (100+) led "Gas savers" and the cheapest old pickup led "Work horses";
@@ -45,8 +52,14 @@ export function calculateCollectionScore(car: CarSpecs, rankBy: CollectionRankBy
       return range > 0 ? range * 1.609344 + (car.year - 2020) * 10 : missing;
     }
     case 'luxury':
-      // The newest and best rated; the price filter keeps it "for less".
-      return recency * 3 + stars * 2 + hp / 100;
+      // Crash-test stars first, then the newest; among equals the version
+      // using less fuel, not the most powerful (a 668 hp CT5-V led).
+      return stars * 100 + recency * 3 + mpg / 100;
+    case 'lightest': {
+      // Transport Canada's curb weight, the lightest version measured.
+      const kg = car.size?.curbWeightKg[0];
+      return kg ? -kg + recency * 0.5 : missing;
+    }
   }
 }
 
@@ -93,69 +106,24 @@ const CURATED: CollectionDisplayConfig = {
  * Curated shortlists — not catalogs. Each opens as ranked picks + Search exit.
  */
 export const COLLECTIONS: Record<string, CollectionConfig> = {
+  // The id stays: links to /collection/goldilocks keep working.
   goldilocks: {
     id: 'goldilocks',
-    title: 'The Goldilocks zone',
-    subtitle: 'Well rated and efficient, $20k–$35k',
+    title: 'Safe and thrifty',
+    subtitle: 'Five crash-test stars, the least fuel',
     description:
-      'Gas and hybrid cars and SUVs from 2021 on with an estimated value of $20k–$35k, ranked by NHTSA crash rating, then EPA fuel economy.',
+      'Gas and hybrid cars and SUVs from 2021 on with five NHTSA stars overall, ranked by EPA fuel economy.',
     query: {
       filters: {
-        price: { min: 20000, max: 35000 },
+        safety: { min: 5 },
         fuelType: ['gasoline', 'hybrid'],
         bodyStyle: ['sedan', 'hatchback', 'suv', 'wagon'],
         year: { min: 2021 },
       },
-      sort: { field: 'safety', order: 'desc' },
-    },
-    display: { ...CURATED, rankBy: 'daily-driver' },
-  },
-  'gas-savers': {
-    id: 'gas-savers',
-    title: 'Gas savers',
-    subtitle: 'The least fuel, under $40k',
-    description:
-      'Gas and hybrid cars from 2019 on with an estimated value under $40k, ranked by EPA fuel economy. EVs have their own list.',
-    query: {
-      filters: {
-        fuelType: ['gasoline', 'hybrid'],
-        fuelEconomy: { min: 40 },
-        price: { max: 40000 },
-        year: { min: 2019 },
-      },
       sort: { field: 'fuelEconomy', order: 'desc' },
     },
+    // All five stars: ranked, and shown, by fuel use.
     display: { ...CURATED, rankBy: 'efficiency' },
-  },
-  'luxury-less': {
-    id: 'luxury-less',
-    title: 'Luxury for less',
-    subtitle: 'Premium badges, used-market prices',
-    description:
-      'German, Japanese and American luxury brands from 2018 to 2023 with an estimated value under $50k, the newest first, then by NHTSA crash rating.',
-    query: {
-      filters: {
-        make: [
-          'Mercedes-Benz',
-          'BMW',
-          'Audi',
-          'Lexus',
-          'Acura',
-          'Infiniti',
-          'Cadillac',
-          'Lincoln',
-          'Genesis',
-          'Volvo',
-        ],
-        fuelType: ['gasoline', 'hybrid', 'diesel'],
-        price: { max: 50000 },
-        // Used-market years: with price left out of the ranking, a 2026 model
-        // under the cap would lead a list of luxury cars "for less".
-        year: { min: 2018, max: 2023 },
-      },
-      sort: { field: 'year', order: 'desc' },
-    },
-    display: { ...CURATED, rankBy: 'luxury' },
   },
   'family-fortress': {
     id: 'family-fortress',
@@ -173,65 +141,44 @@ export const COLLECTIONS: Record<string, CollectionConfig> = {
     },
     display: { ...CURATED, rankBy: 'daily-driver' },
   },
-  'weekend-warriors': {
-    id: 'weekend-warriors',
-    title: 'Weekend warriors',
-    subtitle: 'Sports cars under $70k',
+  'clean-record': {
+    id: 'clean-record',
+    title: 'Clean recall record',
+    subtitle: 'No recalls in Canada, 2019–2023',
     description:
-      'Sports cars from 2018 on with an estimated value under $70k, ranked by rated power.',
+      'Model years 2019 to 2023 with no recall in Canada for their powertrain, as Transport Canada lists them, ranked by NHTSA crash rating, then EPA fuel economy. Newer years are left out: they have had less time to be recalled.',
     query: {
-      query: 'sports car',
       filters: {
-        // Carmakers, not tuners: EPA also lists Roush's reworked Mustangs.
-        make: [
-          'Mazda',
-          'Toyota',
-          'Subaru',
-          'Nissan',
-          'Ford',
-          'Chevrolet',
-          'Dodge',
-          'BMW',
-          'Porsche',
-          'Hyundai',
-          'Honda',
-          'Volkswagen',
-          'Audi',
-          'Lexus',
-        ],
-        fuelType: ['gasoline'],
-        price: { max: 70000 },
-        year: { min: 2018 },
+        noRecalls: true,
+        fuelType: ['gasoline', 'hybrid', 'plug-in hybrid', 'electric', 'diesel'],
+        year: { min: 2019, max: 2023 },
       },
-      sort: { field: 'horsepower', order: 'desc' },
+      sort: { field: 'safety', order: 'desc' },
     },
-    display: { ...CURATED, rankBy: 'fun' },
+    display: { ...CURATED, rankBy: 'daily-driver' },
   },
-  'work-horses': {
-    id: 'work-horses',
-    title: 'Work horses',
-    subtitle: 'Full-size 4x4 pickups',
+  'gas-savers': {
+    id: 'gas-savers',
+    title: 'Gas savers',
+    subtitle: 'The least fuel, gas and hybrid',
     description:
-      'Full-size four-wheel-drive gas and diesel pickups from 2019 on with an estimated value under $70k, ranked by rated power.',
+      'Gas and hybrid cars from 2019 on using 5.9 L/100 km or less, ranked by EPA fuel economy. EVs have their own list.',
     query: {
-      query: 'full size pickup',
       filters: {
-        make: ['Ford', 'Chevrolet', 'GMC', 'Ram', 'Toyota', 'Nissan'],
-        fuelType: ['gasoline', 'diesel', 'hybrid'],
-        driveType: ['4WD', 'AWD'],
-        price: { max: 70000 },
+        fuelType: ['gasoline', 'hybrid'],
+        fuelEconomy: { min: 40 },
         year: { min: 2019 },
       },
-      sort: { field: 'horsepower', order: 'desc' },
+      sort: { field: 'fuelEconomy', order: 'desc' },
     },
-    display: { ...CURATED, rankBy: 'capability' },
+    display: { ...CURATED, rankBy: 'efficiency' },
   },
   'future-proof': {
     id: 'future-proof',
     title: 'Future-proof',
     subtitle: 'EVs with 400+ km of range',
     description:
-      'Electric cars from 2022 on with at least 400 km of EPA range and an estimated value under $60k, ranked by EPA range.',
+      'Electric cars from 2022 on with at least 400 km of EPA range, from carmakers still in business, ranked by EPA range.',
     query: {
       filters: {
         // Carmakers with a dealer network behind the car: Fisker went under in 2024.
@@ -258,12 +205,91 @@ export const COLLECTIONS: Record<string, CollectionConfig> = {
         ],
         fuelType: ['electric'],
         rangeMiles: { min: 250 },
-        price: { max: 60000 },
         year: { min: 2022 },
       },
       sort: { field: 'range', order: 'desc' },
     },
     display: { ...CURATED, rankBy: 'range', shortlistSize: 12 },
+  },
+  'work-horses': {
+    id: 'work-horses',
+    title: 'Work horses',
+    subtitle: 'Full-size 4x4 pickups, the least fuel',
+    description:
+      'Full-size four-wheel-drive gas, diesel and hybrid pickups from 2019 on, ranked by EPA fuel economy.',
+    query: {
+      query: 'full size pickup',
+      filters: {
+        make: ['Ford', 'Chevrolet', 'GMC', 'Ram', 'Toyota', 'Nissan'],
+        fuelType: ['gasoline', 'diesel', 'hybrid'],
+        driveType: ['4WD', 'AWD'],
+        year: { min: 2019 },
+      },
+      sort: { field: 'fuelEconomy', order: 'desc' },
+    },
+    display: { ...CURATED, rankBy: 'efficiency' },
+  },
+  'weekend-warriors': {
+    id: 'weekend-warriors',
+    title: 'Weekend warriors',
+    subtitle: 'Sports cars, lightest first',
+    description:
+      'Sports cars from 2018 on, ranked by Transport Canada’s curb weight, the lightest first: less weight to carry around a corner.',
+    query: {
+      query: 'sports car',
+      filters: {
+        // Carmakers, not tuners: EPA also lists Roush's reworked Mustangs.
+        make: [
+          'Mazda',
+          'Toyota',
+          'Subaru',
+          'Nissan',
+          'Ford',
+          'Chevrolet',
+          'Dodge',
+          'BMW',
+          'Porsche',
+          'Hyundai',
+          'Honda',
+          'Volkswagen',
+          'Audi',
+          'Lexus',
+        ],
+        fuelType: ['gasoline'],
+        year: { min: 2018 },
+      },
+      // Each model by its lightest version measured.
+      sort: { field: 'weight', order: 'asc' },
+    },
+    display: { ...CURATED, rankBy: 'lightest' },
+  },
+  'luxury-less': {
+    id: 'luxury-less',
+    title: 'Luxury, a few years old',
+    subtitle: 'Premium brands, 2018–2023',
+    description:
+      'German, Japanese, Korean, Swedish and American luxury brands from 2018 to 2023, ranked by NHTSA crash rating, then the newest.',
+    query: {
+      filters: {
+        make: [
+          'Mercedes-Benz',
+          'BMW',
+          'Audi',
+          'Lexus',
+          'Acura',
+          'Infiniti',
+          'Cadillac',
+          'Lincoln',
+          'Genesis',
+          'Volvo',
+        ],
+        fuelType: ['gasoline', 'hybrid', 'diesel'],
+        // A few years old: the years a used luxury car is shopped in.
+        year: { min: 2018, max: 2023 },
+      },
+      sort: { field: 'safety', order: 'desc' },
+    },
+    display: { ...CURATED, rankBy: 'luxury' },
   },
 };
 

@@ -1,6 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import PersonaQuiz, { type PersonaResult } from '../components/PersonaQuiz';
 import SearchBar from '../components/SearchBar';
 import SiteHeader from '../components/SiteHeader';
 import SampleCarCard from '../components/SampleCarCard';
@@ -37,20 +36,16 @@ export default function Landing() {
     'Compare cars with facts you can check',
     'Look up 35,000+ versions of cars since 1995: fuel use and range from official EPA tests, NHTSA crash ratings when on file, and rated power, in Canadian units, each marked with its source.',
   );
-  const [showQuiz, setShowQuiz] = useState(false);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('quiz') === '1') {
-      setShowQuiz(true);
-      params.delete('quiz');
-      const next = params.toString();
-      window.history.replaceState({}, '', next ? `/?${next}` : '/');
-    }
-  }, []);
   const [heroQuery, setHeroQuery] = useState('');
   const [heroCar, setHeroCar] = useState<CarSpecs | null>(null);
   const navigate = useNavigate();
+
+  // Links to the old 3-question quiz land on Browse, where its choices now live.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('quiz') === '1') {
+      navigate('/browse', { replace: true });
+    }
+  }, [navigate]);
   const compareCount = useCarStore((s) => s.comparedCars.length);
   const trayPad = compareCount > 0 ? 'pb-[calc(4.25rem+env(safe-area-inset-bottom))]' : '';
 
@@ -68,18 +63,6 @@ export default function Landing() {
     navigate(`/home?${params.toString()}`);
   };
 
-  const handleQuizComplete = (persona: PersonaResult) => {
-    setShowQuiz(false);
-    const params = new URLSearchParams({
-      persona: persona.type,
-      minPrice: persona.budget.min.toString(),
-      maxPrice: persona.budget.max.toString(),
-      priority: persona.priority,
-      usage: persona.usage,
-    });
-    navigate(`/smart-search?${params.toString()}`);
-  };
-
   useEffect(() => {
     api
       .searchCars(HERO_PREVIEW_QUERY)
@@ -94,8 +77,6 @@ export default function Landing() {
 
   return (
     <div className={`min-h-screen bg-black text-white selection:bg-white/20 ${trayPad}`}>
-      {showQuiz && <PersonaQuiz onComplete={handleQuizComplete} />}
-
       {/* The landing page renders outside Layout, so it carries its own skip
           link and main landmark — without them keyboard users had to tab
           through the whole header, and screen readers found no main region. */}
@@ -129,13 +110,12 @@ export default function Landing() {
                 />
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
                   <span className="text-zinc-400">A 17-character VIN works too.</span>
-                  <button
-                    type="button"
-                    onClick={() => setShowQuiz(true)}
+                  <Link
+                    to="/browse"
                     className="text-accent hover:text-accent-hover font-medium min-h-[44px] inline-flex items-center"
                   >
-                    Not sure yet? Answer 3 questions →
-                  </button>
+                    Not sure yet? Start from what you need →
+                  </Link>
                 </div>
               </div>
               <ErrorBoundary fallback={null}>
@@ -195,9 +175,6 @@ export default function Landing() {
             <div className="border border-zinc-800 bg-zinc-950 p-4 sm:p-5">
               <h3 className="text-base font-semibold text-white mb-3">I&apos;m still deciding</h3>
               <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => setShowQuiz(true)} className="chip chip-on">
-                  Take the 3-question quiz
-                </button>
                 {situationPresets.map((preset) => (
                   <Link key={preset.id} to={homeLinkFromPreset(preset)} className="chip">
                     {preset.label}

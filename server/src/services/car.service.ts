@@ -1951,14 +1951,18 @@ function enrichSearchQuery(query: SearchQuery): SearchQuery {
   }
   if (modifiers.firstCar) {
     // The First car preset's limits, where the query and filters set none.
-    if (!filters.price) filters.price = { max: FIRST_CAR.maxPrice };
+    if (!filters.safety) filters.safety = { min: FIRST_CAR.minStars };
+    if (!filters.curbWeightKg) filters.curbWeightKg = { min: FIRST_CAR.minWeightKg };
+    if (!filters.horsepower) filters.horsepower = { max: FIRST_CAR.maxHp };
     if (!filters.fuelEconomy) filters.fuelEconomy = { min: FIRST_CAR.minMpg };
     if (!filters.year) filters.year = { min: FIRST_CAR.minYear };
     if (!filters.fuelType?.length) filters.fuelType = [...FIRST_CAR.fuelTypes];
     interpretation.firstCar = {
-      maxPrice: FIRST_CAR.maxPrice,
-      minMpg: FIRST_CAR.minMpg,
       minYear: FIRST_CAR.minYear,
+      minStars: FIRST_CAR.minStars,
+      maxHp: FIRST_CAR.maxHp,
+      minMpg: FIRST_CAR.minMpg,
+      minWeightKg: FIRST_CAR.minWeightKg,
     };
   }
   if (modifiers.automatedManual) {
@@ -2952,6 +2956,8 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
   const techWanted = filters?.safetyTech?.features.length ? filters.safetyTech : null;
   const theftListed = filters?.theftListed;
   const noRecalls = filters?.noRecalls === true;
+  const weightMin = filters?.curbWeightKg?.min;
+  const weightMax = filters?.curbWeightKg?.max;
   const layoutSet = filters?.layout?.length ? new Set(filters.layout) : null;
   const engineFamily = isEngineFamilyId(filters?.engineFamily)
     ? ENGINE_FAMILIES[filters.engineFamily]
@@ -2977,6 +2983,8 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
     doors != null ||
     rangeMin != null ||
     rangeMax != null ||
+    weightMin != null ||
+    weightMax != null ||
     safetyMin != null ||
     safetyMax != null ||
     hasTextSearch ||
@@ -3075,6 +3083,12 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
       continue;
     }
     if (noRecalls && !recallFree(car)) continue;
+    if (weightMin != null || weightMax != null) {
+      const kg = car.size?.curbWeightKg;
+      if (!kg) continue;
+      if (weightMin != null && kg[0] < weightMin) continue;
+      if (weightMax != null && kg[1] > weightMax) continue;
+    }
     if (rangeMin != null || rangeMax != null) {
       const range = car.epa?.rangeMiles;
       if (range == null) continue;
@@ -3207,6 +3221,9 @@ function getSortValue(car: Car, field: string): number | string | null {
       return car.runningCostCad ?? null;
     case 'luggage':
       return car.epa?.luggageVolumeCuFt ?? null;
+    case 'weight':
+      // Transport Canada's curb weight, the lightest version measured.
+      return car.size?.curbWeightKg[0] ?? null;
     case 'evScore':
       return computeEvScore(car, car.price?.msrp ?? undefined);
     default:
