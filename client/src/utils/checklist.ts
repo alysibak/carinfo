@@ -10,6 +10,7 @@ import {
 import { complaintPart, recallDate, recallNotice } from './recalls';
 import { powertrainNames, splitInvestigations, splitRecalls } from '@carinfo/shared/recall-scope';
 import { availabilityLabel } from './safetyTech';
+import { formatFeet, formatKg, formatMetres } from './size';
 import { formatTransmissionLabel } from './trimLabel';
 
 export interface ChecklistItem {
@@ -182,13 +183,20 @@ export function checklistSections(dashboard: CarDashboard): ChecklistSection[] {
       ? [{ text: `Gearbox: ${formatTransmissionLabel(car.transmission)}` }]
       : []),
     ...(car.engine.horsepower ? [{ text: `Power: ${car.engine.horsepower} hp` }] : []),
+    ...(car.size
+      ? [
+          {
+            text: `Size: ${formatMetres(car.size.lengthCm)} long and ${formatMetres(car.size.widthCm)} wide without mirrors (${formatFeet(car.size.lengthCm)} by ${formatFeet(car.size.widthCm)}); weighs ${formatKg(car.size.curbWeightKg)} empty`,
+          },
+        ]
+      : []),
   ];
   sections.push({
     id: 'facts',
     title: 'Facts to hold the ad to',
     intro: 'As rated and measured for this version: an ad that differs is worth a question.',
     items: facts,
-    source: 'EPA ratings',
+    source: car.size ? 'EPA ratings; Transport Canada measurements' : 'EPA ratings',
   });
 
   return sections;

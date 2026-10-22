@@ -41,6 +41,7 @@ import { isLuxuryBrand } from '../utils/vehicle-taxonomy.js';
 import { findSimilarCars, sameModelLine } from '../utils/similar-vehicles.js';
 import { Speller } from '../utils/spelling.js';
 import { canadianRecallsFor, complaintsFor } from './safety-records.service.js';
+import { splitRecalls } from '../shared/recall-scope.js';
 import { govModelIndex } from '../utils/gov-models.js';
 import { MOST_STOLEN, theftRankOf } from '../config/most-stolen.js';
 import { loadNhtsaTests, withNhtsaRatings } from '../utils/nhtsa-ratings.js';
@@ -2886,6 +2887,30 @@ const isAutomatedManual = (car: Car) =>
 
 const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+const recallFreeMemo = new Map<string, boolean>();
+
+/**
+ * Whether no Transport Canada recall on file can cover the car: none for its
+ * model year, or only ones for another powertrain (the RAV4 Prime's, for a
+ * gasoline RAV4). False where the model's recalls are not matched at all.
+ */
+function recallFree(car: Car): boolean {
+  const line = modelLineKey(car);
+  const key = `${line}|${car.year}|${car.engine.fuelType}|${car.engine.mildHybrid ? 1 : 0}`;
+  let free = recallFreeMemo.get(key);
+  if (free === undefined) {
+    const recalls = canadianRecallsFor(line, car.year);
+    free =
+      recalls !== undefined &&
+      splitRecalls(recalls, {
+        fuelType: car.engine.fuelType,
+        mildHybrid: car.engine.mildHybrid,
+      }).applies.length === 0;
+    recallFreeMemo.set(key, free);
+  }
+  return free;
+}
+
 function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): Car[] {
   const filters = query.filters;
   const searchTerm = query.query ? normalizeSearchQuery(query.query) : '';
@@ -2926,6 +2951,7 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
   const automatedManualOnly = filters?.automatedManual === true;
   const techWanted = filters?.safetyTech?.features.length ? filters.safetyTech : null;
   const theftListed = filters?.theftListed;
+  const noRecalls = filters?.noRecalls === true;
   const layoutSet = filters?.layout?.length ? new Set(filters.layout) : null;
   const engineFamily = isEngineFamilyId(filters?.engineFamily)
     ? ENGINE_FAMILIES[filters.engineFamily]
@@ -2939,6 +2965,7 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
     automatedManualOnly ||
     !!techWanted ||
     theftListed != null ||
+    noRecalls ||
     !!layoutSet ||
     !!engineFamily ||
     !!cylinderSet ||
@@ -3047,6 +3074,7 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
     if (theftListed != null && (theftRankOf(modelLineKey(car)) != null) !== theftListed) {
       continue;
     }
+    if (noRecalls && !recallFree(car)) continue;
     if (rangeMin != null || rangeMax != null) {
       const range = car.epa?.rangeMiles;
       if (range == null) continue;

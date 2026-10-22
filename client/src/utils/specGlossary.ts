@@ -260,11 +260,12 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
   },
   wheelbase: {
     plain: 'Distance between the front and rear wheels',
-    what: 'Measured from the centre of the front wheels to the centre of the rear wheels.',
+    what: 'From the centre of the front wheels to the centre of the rear wheels, as Transport Canada measured it.',
+    why: 'Longer usually means more room inside and a wider turning circle.',
   },
   curbWeight: {
     plain: 'Weight empty, ready to drive',
-    what: 'The vehicle’s weight with fluids and a full tank, without passengers or cargo, as Transport Canada measured it.',
+    what: 'The car’s weight with fluids and a full tank, without passengers or cargo, as Transport Canada measured it.',
   },
   countryOfOrigin: {
     plain: 'Where the brand is rooted',

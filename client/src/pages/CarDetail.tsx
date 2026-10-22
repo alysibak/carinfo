@@ -39,6 +39,7 @@ import SafetyRecords from '../components/SafetyRecords';
 import CrashTests from '../components/CrashTests';
 import BeforeYouBuy from '../components/BeforeYouBuy';
 import TheftRecord from '../components/TheftRecord';
+import SizeAndSpace from '../components/SizeAndSpace';
 
 function Subheading({ children }: { children: React.ReactNode }) {
   return <p className="text-sm font-semibold text-zinc-200 pt-3 pb-1">{children}</p>;
@@ -381,6 +382,8 @@ export default function CarDetail() {
     'valueConfidence',
     'barrels',
     'fuelSav5',
+    // In Size and space.
+    'luggage',
     'passenger',
     'body',
     'trim',
@@ -615,6 +618,8 @@ export default function CarDetail() {
           </div>
         </section>
       )}
+
+      <SizeAndSpace dashboard={dashboard} />
 
       {showOwnership && (
         <section id="costs" className="border-b border-zinc-900 scroll-mt-32">

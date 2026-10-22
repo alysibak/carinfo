@@ -84,6 +84,57 @@ describe('compareWithClass', () => {
     expect(result?.years).toEqual({ min: 2023, max: 2025 });
   });
 
+  it('sets Transport Canada’s measurements against the class, a span by its middle', () => {
+    const size = (lengthCm: [number, number], curbWeightKg: [number, number]) => ({
+      size: {
+        lengthCm,
+        widthCm: [185, 185] as [number, number],
+        heightCm: [168, 168] as [number, number],
+        wheelbaseCm: [269, 269] as [number, number],
+        curbWeightKg,
+        measured: [],
+      },
+    });
+    const car = suv('Toyota', 'RAV4', size([458, 462], [1600, 1700]));
+    const corpus = [
+      car,
+      suv('Honda', 'CR-V', size([470, 470], [1550, 1550])),
+      suv('Mazda', 'CX-5', size([455, 455], [1600, 1600])),
+      suv('Subaru', 'Forester', size([464, 464], [1580, 1580])),
+      // Not measured: left out of the median, not counted as zero.
+      suv('Hyundai', 'Tucson'),
+    ];
+    const result = compareWithClass(car, corpus, lineOf);
+    expect(result?.length).toEqual({ car: 460, median: 464, models: 3 });
+    expect(result?.weight).toEqual({ car: 1650, median: 1580, models: 3 });
+    expect(result?.width).toEqual({ car: 185, median: 185, models: 3 });
+    // EPA gives SUVs no passenger volume: nothing to compare.
+    expect(result?.passenger).toBeUndefined();
+  });
+
+  it('sets a trunk against trunks, and a hatchback’s cargo space against cargo spaces', () => {
+    const car = (make: string, model: string, bodyStyle: Car['bodyStyle'], luggage: number) =>
+      suv(make, model, { bodyStyle, epa: { luggageVolumeCuFt: luggage } });
+    const hatch = car('Honda', 'Civic', 'hatchback', 26);
+    const corpus = [
+      hatch,
+      car('Toyota', 'Corolla', 'sedan', 14),
+      car('Nissan', 'Sentra', 'sedan', 15),
+      car('Hyundai', 'Elantra', 'sedan', 13),
+      car('Kia', 'Forte', 'sedan', 16),
+      car('Volkswagen', 'Golf', 'hatchback', 20),
+      car('Mazda', '3', 'hatchback', 23),
+      car('Subaru', 'Impreza', 'wagon', 25),
+    ];
+    expect(compareWithClass(hatch, corpus, lineOf)?.luggage).toEqual({
+      car: 26,
+      median: 23,
+      models: 3,
+    });
+    // The Corolla's trunk against the Sentra's, Elantra's and Forte's, not the hatchbacks'.
+    expect(compareWithClass(corpus[1], corpus, lineOf)?.luggage).toMatchObject({ median: 15 });
+  });
+
   it('says nothing for a car with no class', () => {
     const oddity = suv('Nobody', 'Special', { bodyStyle: 'van' });
     expect(compareWithClass(oddity, [oddity, rav4], lineOf)).toBeUndefined();

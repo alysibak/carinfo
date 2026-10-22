@@ -81,3 +81,43 @@ describe('Compare provenance', () => {
     });
   });
 });
+
+describe('Compare trunks', () => {
+  function withLuggage(id: string, bodyStyle: 'sedan' | 'hatchback', cuFt: number) {
+    const car = {
+      ...trustDashboard.car,
+      id,
+      bodyStyle,
+      epa: { ...trustDashboard.car.epa, luggageVolumeCuFt: cuFt },
+    };
+    return { ...trustDashboard, car };
+  }
+
+  async function trunkRow(dashboards: ReturnType<typeof withLuggage>[]) {
+    mockCompareStore(dashboards.map((d) => d.car));
+    vi.mocked(api.getCarDashboard).mockImplementation(async (id: string) =>
+      dashboards.find((d) => d.car.id === id)!,
+    );
+    render(
+      <MemoryRouter>
+        <Compare />
+      </MemoryRouter>,
+    );
+    const label = await screen.findByText('Trunk or cargo');
+    return label.closest('tr')!;
+  }
+
+  it('does not rank a hatchback’s cargo space against a sedan’s trunk', async () => {
+    const row = await trunkRow([
+      withLuggage('sedan', 'sedan', 14),
+      withLuggage('hatch', 'hatchback', 26),
+    ]);
+    await waitFor(() => expect(row.textContent).toContain('736 L'));
+    expect(row.textContent).not.toContain('Best');
+  });
+
+  it('ranks one trunk against another', async () => {
+    const row = await trunkRow([withLuggage('a', 'sedan', 14), withLuggage('b', 'sedan', 17)]);
+    await waitFor(() => expect(row.textContent).toContain('Best'));
+  });
+});

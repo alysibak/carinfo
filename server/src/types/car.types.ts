@@ -283,6 +283,12 @@ export interface CarFilter {
   safetyTech?: { features: Array<'esc' | 'fcw' | 'ldw'>; standard?: boolean };
   /** On Équité's list of Canada's most stolen vehicles (true), or off it (false). */
   theftListed?: boolean;
+  /**
+   * No Transport Canada recall that can cover the car (by its powertrain) for
+   * its model year. Only cars whose model's recall records are matched pass:
+   * a model with none on file is not counted as recall-free.
+   */
+  noRecalls?: boolean;
 }
 
 export interface SearchQuery {
@@ -750,8 +756,19 @@ export interface ClassComparison {
   /** Estimated value, CAD. */
   value?: { car: number; median: number; models: number };
   horsepower?: { car: number; median: number; models: number };
-  /** EPA luggage volume, cubic feet: the trunk, or cargo space with every seat up. */
+  /**
+   * EPA luggage volume, cubic feet: the trunk, or cargo space with every seat
+   * up. A trunk is set against rivals' trunks, cargo space against theirs.
+   */
   luggage?: { car: number; median: number; models: number };
+  /** EPA passenger volume, cubic feet (cars; EPA gives none for SUVs, pickups and vans). */
+  passenger?: { car: number; median: number; models: number };
+  /** Transport Canada's measurements, centimetres; a span's midpoint for car and rivals alike. */
+  length?: { car: number; median: number; models: number };
+  width?: { car: number; median: number; models: number };
+  height?: { car: number; median: number; models: number };
+  /** Curb weight, kilograms. */
+  weight?: { car: number; median: number; models: number };
 }
 
 export interface CarDashboard {

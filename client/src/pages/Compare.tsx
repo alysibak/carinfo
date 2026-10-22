@@ -23,7 +23,8 @@ import { differentiateCars } from '../utils/differentiateCars';
 import { regionName, useRegionStore } from '../stores/regionStore';
 import { POPULAR_SEARCHES } from '../config/browseTaxonomy';
 import RegionSelect from '../components/RegionSelect';
-import { formatVolume } from '../utils/space';
+import { formatVolume, luggageLabel } from '../utils/space';
+import { formatFeet, formatKg, formatLb, formatMetres } from '../utils/size';
 import { availabilityLabel, rolloverRiskText } from '../utils/safetyTech';
 import { complaintPart } from '../utils/recalls';
 import { ordinal } from '@carinfo/shared/theft';
@@ -68,7 +69,12 @@ const ROW_ORDER = [
   'complaints',
   'complaintPart',
   'theft',
+  'length',
+  'width',
+  'height',
+  'weight',
   'luggage',
+  'passenger',
   'horsepower',
   'torque',
   'engine',
@@ -228,12 +234,52 @@ const ALL_SPECS: SpecRow[] = [
         : UNAVAILABLE_LABEL,
   },
   {
+    key: 'length',
+    label: 'Length',
+    hint: 'Transport Canada',
+    getValue: (car) => (car.size ? formatMetres(car.size.lengthCm) : UNAVAILABLE_LABEL),
+    getSub: (car) => (car.size ? formatFeet(car.size.lengthCm) : null),
+  },
+  {
+    key: 'width',
+    label: 'Width',
+    hint: 'Transport Canada, without mirrors',
+    getValue: (car) => (car.size ? formatMetres(car.size.widthCm) : UNAVAILABLE_LABEL),
+    getSub: (car) => (car.size ? formatFeet(car.size.widthCm) : null),
+  },
+  {
+    key: 'height',
+    label: 'Height',
+    hint: 'Transport Canada',
+    getValue: (car) => (car.size ? formatMetres(car.size.heightCm) : UNAVAILABLE_LABEL),
+    getSub: (car) => (car.size ? formatFeet(car.size.heightCm) : null),
+  },
+  {
+    key: 'weight',
+    label: 'Weight',
+    hint: 'Transport Canada, empty',
+    getValue: (car) => (car.size ? formatKg(car.size.curbWeightKg) : UNAVAILABLE_LABEL),
+    getSub: (car) => (car.size ? formatLb(car.size.curbWeightKg) : null),
+  },
+  {
     key: 'luggage',
     label: 'Trunk or cargo',
     hint: 'EPA, every seat up',
     getValue: (car) =>
       car.epa?.luggageVolumeCuFt ? formatVolume(car.epa.luggageVolumeCuFt) : UNAVAILABLE_LABEL,
     getNumeric: (car) => car.epa?.luggageVolumeCuFt ?? null,
+    higherIsBetter: true,
+    // EPA measures a trunk to its lid and a hatchback's cargo space to the
+    // roof: a hatchback's bigger number is not a bigger trunk.
+    unitOf: (car) => luggageLabel(car.bodyStyle),
+  },
+  {
+    key: 'passenger',
+    label: 'Room for passengers',
+    hint: 'EPA',
+    getValue: (car) =>
+      car.epa?.passengerVolumeCuFt ? formatVolume(car.epa.passengerVolumeCuFt) : UNAVAILABLE_LABEL,
+    getNumeric: (car) => car.epa?.passengerVolumeCuFt ?? null,
     higherIsBetter: true,
   },
   {
@@ -507,7 +553,12 @@ export default function Compare() {
       // "Best" is for what was measured, not for the cheapest estimate.
       if (!spec.getNumeric || ESTIMATE_ROWS.has(spec.key)) continue;
       const loaded = pairs.filter((p) => p.dashboard);
-      if (spec.unitOf && new Set(loaded.map((p) => spec.unitOf!(p.car))).size > 1) continue;
+      // Units of the cars with a figure: a pickup with no trunk on file does
+      // not stop two sedans' trunks from being compared.
+      const units = loaded
+        .filter((p) => spec.getNumeric!(p.car, p.dashboard!) != null)
+        .map((p) => spec.unitOf?.(p.car));
+      if (spec.unitOf && new Set(units).size > 1) continue;
       const values = loaded
         .map((p) => spec.getNumeric!(p.car, p.dashboard!))
         .filter((v): v is number => v != null);
@@ -544,7 +595,7 @@ export default function Compare() {
             <div className="min-w-0">
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Compare</h1>
               <p className="text-sm text-zinc-400 mt-0.5">
-                {comparedCars.length} vehicle{comparedCars.length !== 1 ? 's' : ''}
+                {comparedCars.length} car{comparedCars.length !== 1 ? 's' : ''}
               </p>
             </div>
             <div className="flex items-center gap-2">

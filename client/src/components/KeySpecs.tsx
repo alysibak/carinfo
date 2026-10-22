@@ -7,6 +7,7 @@ import { displayTrimLabel, formatTransmissionLabel } from '../utils/trimLabel';
 import { efficiencyUnit } from '../utils/fuelLabels';
 import { formatCo2 } from '../utils/efficiency';
 import { formatVolume, luggageLabel } from '../utils/space';
+import { formatFeet, formatMetres } from '../utils/size';
 import { fiveYearFuelSavings, fuelSavingsShort, phevModes } from '../utils/epaContent';
 import { formatAnnualEnergyCost } from '../utils/fuelLabels';
 import type { SpecGlossaryKey } from '../utils/specGlossary';
@@ -192,6 +193,14 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   }
 
   const space: SpecRow[] = [];
+  if (car.size) {
+    pushIf(space, {
+      key: 'wheelbase',
+      label: 'Wheelbase',
+      value: `${formatMetres(car.size.wheelbaseCm)} (${formatFeet(car.size.wheelbaseCm)})`,
+      glossary: 'wheelbase',
+    });
+  }
   if (car.epa?.luggageVolumeCuFt) {
     pushIf(space, {
       key: 'luggage',
@@ -422,7 +431,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   return [
     { title: 'Powertrain', rows: powertrain },
     { title: 'Vehicle', rows: vehicle },
-    { title: 'Space', rows: space },
+    { title: 'Size and space', rows: space },
     { title: 'Market', rows: market },
     { title: 'Fuel economy', rows: fuel },
     { title: 'Crash safety', rows: safety },

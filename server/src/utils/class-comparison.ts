@@ -14,7 +14,22 @@ const MIN_MODELS = 3;
 /** Rivals are drawn from this many model years either side of the car. */
 const YEAR_WINDOW = 1;
 
-type Metric = 'fuel' | 'annualCost' | 'value' | 'horsepower' | 'luggage';
+type Metric =
+  | 'fuel'
+  | 'annualCost'
+  | 'value'
+  | 'horsepower'
+  | 'luggage'
+  | 'passenger'
+  | 'length'
+  | 'width'
+  | 'height'
+  | 'weight';
+
+/** The middle of a measured span: one figure for a car whose versions differ. */
+function midpoint(span: [number, number] | undefined): number | undefined {
+  return span ? (span[0] + span[1]) / 2 : undefined;
+}
 
 function median(values: number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
@@ -24,6 +39,14 @@ function median(values: number[]): number {
 
 function isElectric(car: Car): boolean {
   return car.engine.fuelType === 'electric';
+}
+
+/**
+ * EPA measures a trunk to its lid and a hatchback's, wagon's or SUV's cargo
+ * space to the roof: litres of one say nothing about the other.
+ */
+function hasTrunk(car: Car): boolean {
+  return car.bodyStyle === 'sedan' || car.bodyStyle === 'coupe' || car.bodyStyle === 'convertible';
 }
 
 /** Combined fuel use: L/100 km for anything burning fuel, kWh/100 km for EVs. */
@@ -56,6 +79,16 @@ function metricOf(car: Car, metric: Metric): number | undefined {
       return car.engine.horsepower && car.engine.horsepower > 0 ? car.engine.horsepower : undefined;
     case 'luggage':
       return car.epa?.luggageVolumeCuFt;
+    case 'passenger':
+      return car.epa?.passengerVolumeCuFt;
+    case 'length':
+      return midpoint(car.size?.lengthCm);
+    case 'width':
+      return midpoint(car.size?.widthCm);
+    case 'height':
+      return midpoint(car.size?.heightCm);
+    case 'weight':
+      return midpoint(car.size?.curbWeightKg);
   }
 }
 
@@ -143,10 +176,23 @@ export function compareWithClass(
     }
   }
 
-  for (const metric of ['annualCost', 'value', 'horsepower', 'luggage'] as const) {
+  for (const metric of [
+    'annualCost',
+    'value',
+    'horsepower',
+    'luggage',
+    'passenger',
+    'length',
+    'width',
+    'height',
+    'weight',
+  ] as const) {
     const mine = metricOf(car, metric);
     if (mine == null) continue;
-    const stat = classMedian(metric);
+    const stat =
+      metric === 'luggage'
+        ? classMedian(metric, (rival) => hasTrunk(rival) === hasTrunk(car))
+        : classMedian(metric);
     if (stat) {
       comparison[metric] = {
         car: Math.round(mine),

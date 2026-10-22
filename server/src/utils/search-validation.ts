@@ -1,4 +1,4 @@
-import type { SearchQuery } from '../types/car.types.js';
+import type { CarFilter, SearchQuery } from '../types/car.types.js';
 
 function asStringArray(value: unknown): string[] | undefined {
   if (value == null) return undefined;
@@ -39,6 +39,20 @@ const SORT_FIELDS = new Set([
  * Coerce and validate a search request body. Invalid filter shapes are dropped
  * rather than crashing .map() on non-arrays.
  */
+const TECH_FEATURES = new Set(['esc', 'fcw', 'ldw']);
+
+/** { features: ['fcw'], standard: true }, or nothing for anything else. */
+function asSafetyTech(value: unknown): CarFilter['safetyTech'] {
+  if (!value || typeof value !== 'object') return undefined;
+  const raw = value as Record<string, unknown>;
+  const features = asStringArray(raw.features)?.filter((f) => TECH_FEATURES.has(f));
+  if (!features?.length) return undefined;
+  return {
+    features: features as Array<'esc' | 'fcw' | 'ldw'>,
+    ...(raw.standard === true ? { standard: true } : {}),
+  };
+}
+
 export function normalizeSearchQuery(body: unknown): SearchQuery {
   const raw = body && typeof body === 'object' ? (body as Record<string, unknown>) : {};
   const filtersRaw =
@@ -80,6 +94,11 @@ export function normalizeSearchQuery(body: unknown): SearchQuery {
       threeRow: typeof filtersRaw.threeRow === 'boolean' ? filtersRaw.threeRow : undefined,
       rangeMiles: asRange(filtersRaw.rangeMiles),
       safety: asRange(filtersRaw.safety),
+      // The filter panel's records: no recall in Canada, off the most-stolen
+      // list, collision warning standard.
+      noRecalls: filtersRaw.noRecalls === true ? true : undefined,
+      theftListed: typeof filtersRaw.theftListed === 'boolean' ? filtersRaw.theftListed : undefined,
+      safetyTech: asSafetyTech(filtersRaw.safetyTech),
     };
   }
 
@@ -149,6 +168,9 @@ export function parseSearchQueryString(q: Record<string, unknown>): SearchQuery 
     fuelEconomy: range(q.mpgMin, q.mpgMax),
     price: range(q.priceMin, q.priceMax),
     safety: range(q.safetyMin, q.safetyMax),
+    noRecalls: q.recalls === 'none' ? true : undefined,
+    theftListed: q.stolen === 'no' ? false : q.stolen === 'yes' ? true : undefined,
+    safetyTech: q.fcw === 'standard' ? { features: ['fcw' as const], standard: true } : undefined,
   };
   if (Object.values(filters).some((v) => v !== undefined)) {
     query.filters = filters;
