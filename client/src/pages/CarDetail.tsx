@@ -41,6 +41,8 @@ import BeforeYouBuy from '../components/BeforeYouBuy';
 import TheftRecord from '../components/TheftRecord';
 import SizeAndSpace from '../components/SizeAndSpace';
 import OnThisPage from '../components/OnThisPage';
+import RecentlyViewed from '../components/RecentlyViewed';
+import { recentEntry, useRecentStore } from '../stores/recentStore';
 
 function Subheading({ children }: { children: React.ReactNode }) {
   return <p className="text-sm font-semibold text-zinc-200 pt-3 pb-1">{children}</p>;
@@ -196,6 +198,7 @@ export default function CarDetail() {
   const region = useRegionStore((s) => s.region);
   const navigate = useNavigate();
   const { hash } = useLocation();
+  const recordView = useRecentStore((s) => s.record);
 
   useEffect(() => {
     if (!id) return;
@@ -215,6 +218,11 @@ export default function CarDetail() {
       })
       .finally(() => setLoading(false));
   }, [id, region]);
+
+  // On this device's recent list, for picking up where they left off.
+  useEffect(() => {
+    if (dashboard) recordView(recentEntry(dashboard.car));
+  }, [dashboard, recordView]);
 
   // A link to a section ("#recalls" from a search for a car's problems) once
   // the page under it has loaded.
@@ -840,6 +848,10 @@ export default function CarDetail() {
       <DataTrustPanel dashboard={dashboard} />
 
       <SimilarCars car={car} />
+
+      <div className="page-wrap-wide">
+        <RecentlyViewed exclude={car.id} className="section-y-tight border-t border-zinc-900" />
+      </div>
 
       {showTCO && (
         <TCOCalculator

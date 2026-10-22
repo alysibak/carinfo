@@ -24,6 +24,7 @@ import {
 } from '../utils/filterState';
 import { QUICK_FILTERS } from '../utils/quickFilters';
 import BestSellers from '../components/BestSellers';
+import RecentlyViewed from '../components/RecentlyViewed';
 import { LIFESTYLE_PRESETS, POPULAR_SEARCHES } from '../config/browseTaxonomy';
 import type { CarFilter } from '../types/car.types';
 import { usePageMeta } from '../utils/pageMeta';
@@ -415,6 +416,7 @@ export default function Home() {
                 <div className="mb-10">
                   <BestSellers headingLevel="h1" />
                 </div>
+                <RecentlyViewed className="mb-10" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 pt-1">
                   <div>
                     <h2 className="text-xl font-bold tracking-tight mb-1">I know the name</h2>

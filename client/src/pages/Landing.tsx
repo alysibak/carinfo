@@ -6,6 +6,7 @@ import SampleCarCard from '../components/SampleCarCard';
 import CatalogueStats from '../components/CatalogueStats';
 import ShortlistCards from '../components/ShortlistCards';
 import BestSellers from '../components/BestSellers';
+import RecentlyViewed from '../components/RecentlyViewed';
 import * as api from '../services/api';
 import type { CarSpecs } from '../types/car.types';
 import { LIFESTYLE_PRESETS, POPULAR_SEARCHES, presetToSearchQuery } from '../config/browseTaxonomy';
@@ -132,6 +133,10 @@ export default function Landing() {
             )}
           </div>
         </section>
+
+        <div className="page-wrap">
+          <RecentlyViewed className="pt-8 sm:pt-10" />
+        </div>
 
         <div className="page-wrap section-y border-t border-zinc-900">
           <BestSellers />

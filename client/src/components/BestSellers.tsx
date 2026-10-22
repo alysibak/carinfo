@@ -70,7 +70,7 @@ export default function BestSellers({
         )}
       </div>
       {/* A row to swipe on a phone, a grid of five on a wide screen. */}
-      <ol className="-mx-4 px-4 sm:mx-0 sm:px-0 flex sm:grid sm:grid-cols-2 @2xl:grid-cols-5 gap-2 overflow-x-auto sm:overflow-visible snap-x snap-mandatory sm:snap-none overscroll-x-contain pb-1 sm:pb-0">
+      <ol className="-mx-4 px-4 scroll-px-4 sm:mx-0 sm:px-0 flex sm:grid sm:grid-cols-2 @2xl:grid-cols-5 gap-2 overflow-x-auto sm:overflow-visible snap-x snap-mandatory sm:snap-none overscroll-x-contain pb-1 sm:pb-0">
         {data
           ? data.models.map((model) => (
               <li key={model.path} className="snap-start shrink-0 w-[72%] sm:w-auto">
