@@ -124,9 +124,9 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
     why: 'Helps compare vehicles that shoppers actually cross-shop.',
   },
   epaClass: {
-    plain: 'EPA’s size bucket for this vehicle',
-    what: 'EPA label like “Midsize Cars” or “Small SUVs.”',
-    why: 'Use it to compare fuel economy within the same size class.',
+    plain: 'EPA’s size class, by the room inside',
+    what: 'EPA sorts cars by passenger and cargo room, not by their size outside, so a roomy compact like the 2022 Civic is “Midsize Cars”. SUVs, pickups and vans go by type and weight.',
+    why: '“Competes as” is the class shoppers compare it within.',
   },
   mpgCity: {
     plain: 'Stop-and-go efficiency',

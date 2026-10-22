@@ -5,7 +5,6 @@ import type { CarSpecs } from '../types/car.types';
 import { COLLECTIONS } from '../config/collections';
 import { displayModelLabel } from '../utils/trimLabel';
 import { rankedFigure } from '../utils/rankedFigure';
-import VehiclePlaceholder from './VehiclePlaceholder';
 
 /**
  * The curated shortlists as cards that show what is in them: each list's
@@ -58,15 +57,14 @@ export default function ShortlistCards() {
                   {picks.map((car) => {
                     const figure = rankedFigure(car, collection.display?.rankBy);
                     return (
-                      <li key={car.id} className="flex items-center gap-2.5 min-w-0">
-                        <span className="w-11 h-7 shrink-0 overflow-hidden" aria-hidden>
-                          <VehiclePlaceholder car={car} compact hideCaption />
-                        </span>
-                        <span className="text-sm text-zinc-200 truncate min-w-0">
+                      // The name in full, over two lines if it needs them: a
+                      // grey outline beside each cut "Lucid Air Dream R AW…".
+                      <li key={car.id} className="flex items-baseline gap-3 min-w-0">
+                        <span className="text-sm text-zinc-200 line-clamp-2 min-w-0">
                           {car.year} {car.make} {displayModelLabel(car)}
                         </span>
                         {figure && (
-                          <span className="ml-auto text-xs text-zinc-400 tabular-nums shrink-0">
+                          <span className="ml-auto text-xs text-zinc-400 tabular-nums shrink-0 whitespace-nowrap">
                             {figure}
                           </span>
                         )}

@@ -3,7 +3,9 @@ import { BackLink } from './ui';
 
 /**
  * Shared page header — use this instead of hand-rolled sticky bars.
- * `centered` matches browse/collection title-in-the-middle layouts.
+ * `centered` matches browse/collection title-in-the-middle layouts. Its
+ * width matches the page body's (PageBody's page-wrap, or `wide`), so the
+ * title starts where the content does.
  */
 export default function ToolPageHeader({
   backTo,
@@ -12,6 +14,7 @@ export default function ToolPageHeader({
   subtitle,
   action,
   centered = false,
+  wide = false,
 }: {
   backTo: string;
   backLabel?: string;
@@ -19,11 +22,14 @@ export default function ToolPageHeader({
   subtitle?: string;
   action?: ReactNode;
   centered?: boolean;
+  /** For a page whose body is page-wrap-wide. */
+  wide?: boolean;
 }) {
+  const wrap = wide ? 'page-wrap-wide' : 'page-wrap';
   if (centered) {
     return (
       <div className="bg-black border-b border-zinc-900">
-        <div className="page-wrap-wide py-4 sm:py-6">
+        <div className={`${wrap} py-4 sm:py-6`}>
           <div className="flex items-center justify-between gap-3 min-w-0">
             <BackLink to={backTo} label={backLabel} />
             <div className="text-center flex-1 min-w-0 px-1">
@@ -43,7 +49,7 @@ export default function ToolPageHeader({
 
   return (
     <div className="bg-black border-b border-zinc-900">
-      <div className="page-wrap-wide py-4 sm:py-6">
+      <div className={`${wrap} py-4 sm:py-6`}>
         <div className="flex items-center justify-between gap-3">
           <BackLink to={backTo} label={backLabel} />
           {action ? (

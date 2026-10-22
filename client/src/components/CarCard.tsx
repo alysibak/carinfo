@@ -238,7 +238,8 @@ export default function CarCard({
       figures[1].value !== '—' ? `${figures[1].value} hp` : null,
       // Only a rating on file is stated: "No NHTSA rating" on most cards
       // read as NHTSA never testing cars it may well have.
-      figures[2].value !== '—' ? `NHTSA ${figures[2].value}/5 stars` : null,
+      // "stars" wrapped to a line of its own on a phone.
+      figures[2].value !== '—' ? `NHTSA ${figures[2].value}/5` : null,
     ].filter(Boolean);
     return (
       <article className="group relative flex gap-3 px-3 py-3 border-b border-zinc-900 hover:bg-zinc-950 focus-within:bg-zinc-950">

@@ -25,11 +25,16 @@ const CONFIG_NOTES: Array<{ pattern: RegExp; note: (hit: RegExpExecArray) => str
     pattern: /\s*\([^)]*?\b(\d{2})\s*(?:-?\s?inch\b|in\b\.?|")\s*(alloy|steel)?[^)]*\)/i,
     note: (hit) => `${hit[1]}-inch ${hit[2] ? `${hit[2].toLowerCase()} ` : ''}wheels`,
   },
-  // "19in. Wheels", "with19 inch wheels"
+  // "19in. Wheels", "with19 inch wheels", "w/19 inch wheels" (a Lucid read "Air Dream R AWD w/")
   {
     pattern:
-      /\s*\b(?:with\s?)?(\d{2})\s*(?:-?\s?inch\b|in\b\.?)\s*(?:alloy\s+)?(?:wheels?|tires?)\b/i,
+      /\s*\b(?:with\s?|w\/\s?)?(\d{2})\s*(?:-?\s?inch\b|in\b\.?)\s*(?:alloy\s+)?(?:wheels?|tires?)\b/i,
     note: (hit) => `${hit[1]}-inch wheels`,
+  },
+  // Staggered wheels: "Gravity GT w/20F21R wheels (2R)"
+  {
+    pattern: /\s*\bw\/\s?(\d{2})F(\d{2})R wheels\b/i,
+    note: (hit) => `${hit[1]}-inch front, ${hit[2]}-inch rear wheels`,
   },
   { pattern: /\s*\bmud terrain tires\b/i, note: () => 'Mud-terrain tires' },
   { pattern: /\s*\(?\bwith sport mode\b\)?/i, note: () => 'Sport mode' },

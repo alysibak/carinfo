@@ -176,6 +176,7 @@ export default function DreamGarage() {
       />
 
       <ToolPageHeader
+        wide
         backTo="/"
         backLabel="Home"
         title="Your garage"

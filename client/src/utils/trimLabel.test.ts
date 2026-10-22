@@ -66,6 +66,13 @@ describe('displayVehicleTitle / model family', () => {
     expect(displayModelLabel(car('Air G Touring XR AWD with19 inch wheels'))).toBe(
       'Air G Touring XR',
     );
+    // It left a dangling "w/".
+    expect(displayModelLabel(car('Air Dream R AWD w/19 inch wheels'))).toBe('Air Dream R');
+    expect(displayConfigNotes(car('Air Dream R AWD w/19 inch wheels'))).toEqual(['19-inch wheels']);
+    expect(displayModelLabel(car('Gravity GT w/20F21R wheels (2R)'))).toBe('Gravity GT (2R)');
+    expect(displayConfigNotes(car('Gravity GT w/20F21R wheels (2R)'))).toEqual([
+      '20-inch front, 21-inch rear wheels',
+    ]);
     // EPA test modes and stop-start say nothing about the car.
     expect(displayModelLabel(car('Sentra (3-mode)'))).toBe('Sentra');
     expect(displayModelLabel(car('Elantra w/Stop-Start'))).toBe('Elantra');

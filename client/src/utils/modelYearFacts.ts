@@ -35,28 +35,44 @@ function offeredAs(row: ModelYearSummary): string {
 }
 
 /**
- * A model year's figures for its row on the model's page, in the order a
- * shopper reads them: fuel use or range, power, safety, the records, then
- * what the year was offered as. Each is the year's best or its span across
- * versions. No estimated value: most are drawn from the size class, and a
- * row of them read as prices.
+ * A model year's figures in three groups, in the order a shopper reads them:
+ * the car (fuel use or range, power), its records (NHTSA stars, recalls in
+ * Canada, owners' complaints), then what the year was offered as. Each is the
+ * year's best or its span across versions. No estimated value: most are drawn
+ * from the size class, and a row of them read as prices.
  */
+export function modelYearLines(row: ModelYearSummary): {
+  car: string[];
+  records: string[];
+  offered: string[];
+} {
+  const present = (facts: Array<string | null>) => facts.filter((fact): fact is string => !!fact);
+  return {
+    car: present([
+      row.combinedMpg ? `from ${(235.215 / row.combinedMpg).toFixed(1)} L/100 km` : null,
+      row.rangeMiles ? `up to ${rangeKm(row.rangeMiles)} km range` : null,
+      powerText(row.horsepower),
+    ]),
+    records: present([
+      row.safetyStars ? `NHTSA ${row.safetyStars}/5` : null,
+      row.recalls != null
+        ? `${row.recalls} ${row.recalls === 1 ? 'recall' : 'recalls'} in Canada`
+        : null,
+      row.complaints != null
+        ? `${row.complaints.toLocaleString('en-CA')} ${row.complaints === 1 ? 'complaint' : 'complaints'} to NHTSA`
+        : null,
+    ]),
+    offered: present([
+      offeredAs(row) || null,
+      `${row.configurations} ${row.configurations === 1 ? 'version' : 'versions'}`,
+    ]),
+  };
+}
+
+/** The same figures as one list, for a line of text. */
 export function modelYearFacts(row: ModelYearSummary): string[] {
-  const offered = offeredAs(row);
-  return [
-    row.combinedMpg ? `from ${(235.215 / row.combinedMpg).toFixed(1)} L/100 km` : null,
-    row.rangeMiles ? `up to ${rangeKm(row.rangeMiles)} km range` : null,
-    powerText(row.horsepower),
-    row.safetyStars ? `NHTSA ${row.safetyStars}/5` : null,
-    row.recalls != null
-      ? `${row.recalls} ${row.recalls === 1 ? 'recall' : 'recalls'} in Canada`
-      : null,
-    row.complaints != null
-      ? `${row.complaints.toLocaleString('en-CA')} NHTSA ${row.complaints === 1 ? 'complaint' : 'complaints'}`
-      : null,
-    offered || null,
-    `${row.configurations} ${row.configurations === 1 ? 'version' : 'versions'}`,
-  ].filter((fact): fact is string => !!fact);
+  const { car, records, offered } = modelYearLines(row);
+  return [...car, ...records, ...offered];
 }
 
 /** "1995–2026", "2026" for one year. */
@@ -77,12 +93,8 @@ export function modelYearCells(row: ModelYearSummary) {
     safety: row.safetyStars ? `${row.safetyStars}/5` : none,
     recalls: row.recalls != null ? row.recalls.toLocaleString('en-CA') : none,
     complaints: row.complaints != null ? row.complaints.toLocaleString('en-CA') : none,
-    offered: [
-      row.fuelTypes.map(formatFuelTypeLabel).join(', '),
-      row.bodyStyles.map(bodyStyleLabel).join(', '),
-    ]
-      .filter(Boolean)
-      .join(' '),
+    // "Gasoline, Hybrid · Sedan, Hatchback": it read "Gasoline, Hybrid Sedan, Hatchback".
+    offered: offeredAs(row) || none,
     versions: String(row.configurations),
   };
 }

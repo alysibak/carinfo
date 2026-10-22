@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { modelYearFacts, yearSpan } from './modelYearFacts';
+import type { ModelYearSummary } from '../types/car.types';
+import { modelYearCells, modelYearFacts, modelYearLines, yearSpan } from './modelYearFacts';
 
 describe('modelYearFacts', () => {
   it('reads a year as fuel use, power, safety, then what it was offered as, with no estimate', () => {
@@ -37,6 +38,35 @@ describe('modelYearFacts', () => {
         bodyStyles: ['suv'],
       }),
     ).toEqual(['up to 575 km range', '384 hp', 'Electric SUV', '1 version']);
+  });
+});
+
+describe('modelYearLines', () => {
+  const civic: ModelYearSummary = {
+    year: 2025,
+    carId: 'civic-2025',
+    configurations: 7,
+    price: { min: 30000, max: 31000 },
+    combinedMpg: 49,
+    horsepower: { min: 150, max: 315 },
+    safetyStars: 5,
+    recalls: 3,
+    complaints: 105,
+    fuelTypes: ['gasoline', 'hybrid'],
+    bodyStyles: ['hatchback', 'sedan'],
+  };
+
+  it('splits a year into the car, its records and what it was offered as', () => {
+    expect(modelYearLines(civic)).toEqual({
+      car: ['from 4.8 L/100 km', '150–315 hp'],
+      records: ['NHTSA 5/5', '3 recalls in Canada', '105 complaints to NHTSA'],
+      offered: ['Gasoline, Hybrid · Sedan, Hatchback', '7 versions'],
+    });
+  });
+
+  it('keeps fuels and bodies apart in the table, as in the rows', () => {
+    // It read "Gasoline, Hybrid Sedan, Hatchback".
+    expect(modelYearCells(civic).offered).toBe('Gasoline, Hybrid · Sedan, Hatchback');
   });
 });
 

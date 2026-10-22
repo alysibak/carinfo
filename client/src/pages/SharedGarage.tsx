@@ -87,6 +87,7 @@ export default function SharedGarage() {
     <div className="min-h-screen bg-black text-white">
       <StatusToast message={saveMessage} />
       <ToolPageHeader
+        wide
         backTo="/"
         backLabel="Home"
         title="Shared Garage"

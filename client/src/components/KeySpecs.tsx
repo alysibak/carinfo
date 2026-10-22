@@ -151,7 +151,9 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (car.epa?.vClass) {
     pushIf(vehicle, {
       key: 'epaClass',
-      label: 'EPA class',
+      // By room inside, not outside size: a 2022 Civic is "Midsize Cars"
+      // beside "Competes as: Compact car".
+      label: 'EPA size, by room inside',
       value: car.epa.vClass,
       glossary: 'epaClass',
     });

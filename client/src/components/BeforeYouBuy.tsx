@@ -1,6 +1,14 @@
 import { Link } from 'react-router-dom';
 import type { CarDashboard } from '../types/car.types';
-import { beforeYouBuy } from '../utils/beforeYouBuy';
+import { beforeYouBuy, type BeforeYouBuyItem } from '../utils/beforeYouBuy';
+
+const LABELS: Record<BeforeYouBuyItem['key'], string> = {
+  recalls: 'Recalls',
+  complaints: 'Complaints',
+  investigation: 'Investigation',
+  safety: 'Crash rating',
+  theft: 'Theft',
+};
 
 /**
  * The car page's checklist for a buyer: the model year's recalls to verify,
@@ -24,14 +32,25 @@ export default function BeforeYouBuy({ dashboard }: { dashboard: CarDashboard })
             Checklist to take to the car
           </Link>
         </div>
-        <ul className="space-y-0.5">
+        <ul className="border-t border-zinc-900">
           {items.map((item) => (
-            <li key={item.key} className="text-sm text-zinc-300 leading-relaxed">
+            <li key={item.key} className="border-b border-zinc-900 last:border-b-0">
+              {/* A row per check, labelled, linking to its section: four
+                  underlined paragraphs read as a wall of links. */}
               <a
                 href={item.href}
-                className="inline-block py-1 hover:text-white underline underline-offset-4 decoration-zinc-800 hover:decoration-zinc-500"
+                className="group grid grid-cols-1 sm:grid-cols-[8.5rem_1fr_auto] gap-x-4 gap-y-0.5 py-2.5 sm:items-baseline hover:bg-zinc-950 -mx-2 px-2"
               >
-                {item.text}
+                <span className="text-xs text-zinc-500">{LABELS[item.key]}</span>
+                <span className="text-sm text-zinc-200 group-hover:text-white leading-relaxed">
+                  {item.text}
+                </span>
+                <span
+                  className="hidden sm:inline text-zinc-600 group-hover:text-white text-sm"
+                  aria-hidden
+                >
+                  ↓
+                </span>
               </a>
             </li>
           ))}

@@ -9,7 +9,7 @@ import PageShell, { PageBody } from '../components/PageShell';
 import CarPhotoFigure from '../components/CarPhotoFigure';
 import { carPhotoSources } from '../utils/carImages';
 import VehiclePlaceholder from '../components/VehiclePlaceholder';
-import { modelYearCells, modelYearFacts, yearSpan } from '../utils/modelYearFacts';
+import { modelYearCells, modelYearFacts, modelYearLines, yearSpan } from '../utils/modelYearFacts';
 import { usePageMeta } from '../utils/pageMeta';
 import { complaintPart } from '../utils/recalls';
 import { theftSentence } from '@carinfo/shared/theft';
@@ -105,6 +105,68 @@ export default function ModelPage() {
   const hasPhoto = carPhotoSources(overview.lead.photo).length > 0;
   const searchHref = `/home?q=${encodeURIComponent(name!)}`;
 
+  // The years to check and the theft record, from the records.
+  const records = (
+    <>
+      {(() => {
+        // The years with the most of each, as the records count them: a
+        // model's years are compared with each other, not with other models.
+        const most = (
+          count: (row: ModelYearSummary) => number | undefined,
+          about?: (row: ModelYearSummary) => string | undefined,
+        ) =>
+          overview.years
+            .filter((row) => (count(row) ?? 0) > 0)
+            .sort((a, b) => (count(b) ?? 0) - (count(a) ?? 0))
+            .slice(0, 3)
+            .map((row) => {
+              const part = about?.(row);
+              return `${row.year} (${(count(row) ?? 0).toLocaleString('en-CA')}${part ? `, most about ${complaintPart(part).toLowerCase()}` : ''})`;
+            });
+        const complaints = most(
+          (row) => row.complaints,
+          (row) => row.complaintPart,
+        );
+        const recalls = most((row) => row.recalls);
+        if (!complaints.length && !recalls.length) return null;
+        return (
+          <section className="mt-6">
+            <h2 className="text-base font-bold tracking-tight mb-2">Years to check</h2>
+            <ul className="text-sm text-zinc-300 space-y-1 tabular-nums">
+              {complaints.length > 0 && (
+                <li>Most owner complaints to NHTSA: {complaints.join(', ')}</li>
+              )}
+              {recalls.length > 0 && <li>Most recalls in Canada: {recalls.join(', ')}</li>}
+            </ul>
+            <p className="text-xs text-zinc-500 mt-2 leading-relaxed max-w-xl">
+              Counts from NHTSA’s complaint records and Transport Canada’s recall database, not
+              adjusted for how many of each year were sold.
+            </p>
+          </section>
+        );
+      })()}
+
+      {overview.theft && (
+        <section className="mt-6">
+          <h2 className="text-base font-bold tracking-tight mb-2">Theft in Canada</h2>
+          <p className="text-sm text-zinc-300">{theftSentence(overview.theft)}</p>
+          <p className="text-xs text-zinc-500 mt-2 leading-relaxed max-w-xl">
+            A count of thefts, so a model with many on the road ranks higher. Ask your insurer
+            whether it requires an anti-theft device.{' '}
+            <a
+              href={overview.theft.url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
+            >
+              Équité’s top {overview.theft.of}
+            </a>
+          </p>
+        </section>
+      )}
+    </>
+  );
+
   return (
     <PageShell>
       <ToolPageHeader
@@ -148,65 +210,12 @@ export default function ModelPage() {
             <p className="text-sm text-zinc-500 mt-1 tabular-nums">
               <Facts facts={modelYearFacts(newest).slice(0, 4)} />
             </p>
+            {/* The years to check and the theft record beside the photo, where
+                a wide screen left half the width empty. */}
+            {hasPhoto && records}
           </div>
         </div>
-
-        {(() => {
-          // The years with the most of each, as the records count them: a
-          // model's years are compared with each other, not with other models.
-          const most = (
-            count: (row: ModelYearSummary) => number | undefined,
-            about?: (row: ModelYearSummary) => string | undefined,
-          ) =>
-            overview.years
-              .filter((row) => (count(row) ?? 0) > 0)
-              .sort((a, b) => (count(b) ?? 0) - (count(a) ?? 0))
-              .slice(0, 3)
-              .map((row) => {
-                const part = about?.(row);
-                return `${row.year} (${(count(row) ?? 0).toLocaleString('en-CA')}${part ? `, most about ${complaintPart(part).toLowerCase()}` : ''})`;
-              });
-          const complaints = most(
-            (row) => row.complaints,
-            (row) => row.complaintPart,
-          );
-          const recalls = most((row) => row.recalls);
-          if (!complaints.length && !recalls.length) return null;
-          return (
-            <section className="mb-8">
-              <h2 className="text-base font-bold tracking-tight mb-2">Years to check</h2>
-              <ul className="text-sm text-zinc-300 space-y-1 tabular-nums">
-                {complaints.length > 0 && (
-                  <li>Most owner complaints to NHTSA: {complaints.join(', ')}</li>
-                )}
-                {recalls.length > 0 && <li>Most recalls in Canada: {recalls.join(', ')}</li>}
-              </ul>
-              <p className="text-xs text-zinc-500 mt-2 leading-relaxed max-w-xl">
-                Counts from NHTSA’s complaint records and Transport Canada’s recall database, not
-                adjusted for how many of each year were sold.
-              </p>
-            </section>
-          );
-        })()}
-
-        {overview.theft && (
-          <section className="mb-8">
-            <h2 className="text-base font-bold tracking-tight mb-2">Theft in Canada</h2>
-            <p className="text-sm text-zinc-300">{theftSentence(overview.theft)}</p>
-            <p className="text-xs text-zinc-500 mt-2 leading-relaxed max-w-xl">
-              A count of thefts, so a model with many on the road ranks higher. Ask your insurer
-              whether it requires an anti-theft device.{' '}
-              <a
-                href={overview.theft.url}
-                target="_blank"
-                rel="noreferrer"
-                className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
-              >
-                Équité’s top {overview.theft.of}
-              </a>
-            </p>
-          </section>
-        )}
+        {!hasPhoto && <div className="-mt-2 mb-8">{records}</div>}
 
         {overview.rivals.length > 0 && (
           <section className="mb-8">
@@ -240,8 +249,29 @@ export default function ModelPage() {
                     <span className="w-12 shrink-0 text-base font-semibold tabular-nums text-white group-hover:text-zinc-300">
                       {row.year}
                     </span>
-                    <span className="min-w-0 flex-1 text-sm text-zinc-400 leading-relaxed tabular-nums">
-                      <Facts facts={modelYearFacts(row)} />
+                    <span className="min-w-0 flex-1 text-sm leading-relaxed tabular-nums">
+                      {(() => {
+                        // The car, its records, what it was offered as: a line
+                        // each, not eight facts in one run.
+                        const lines = modelYearLines(row);
+                        return (
+                          <>
+                            {lines.car.length > 0 && (
+                              <span className="block text-zinc-100">
+                                <Facts facts={lines.car} />
+                              </span>
+                            )}
+                            {lines.records.length > 0 && (
+                              <span className="block text-zinc-300">
+                                <Facts facts={lines.records} />
+                              </span>
+                            )}
+                            <span className="block text-[13px] text-zinc-500">
+                              <Facts facts={lines.offered} />
+                            </span>
+                          </>
+                        );
+                      })()}
                       {row.changes && (
                         // What changed from the year before, from the EPA records.
                         <span className="block mt-1 text-accent">
