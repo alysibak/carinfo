@@ -101,6 +101,7 @@ export function normalizeSearchQuery(body: unknown): SearchQuery {
       theftListed: typeof filtersRaw.theftListed === 'boolean' ? filtersRaw.theftListed : undefined,
       safetyTech: asSafetyTech(filtersRaw.safetyTech),
       curbWeightKg: asRange(filtersRaw.curbWeightKg),
+      modelLine: asStringArray(filtersRaw.modelLine),
     };
   }
 
@@ -174,6 +175,7 @@ export function parseSearchQueryString(q: Record<string, unknown>): SearchQuery 
     theftListed: q.stolen === 'no' ? false : q.stolen === 'yes' ? true : undefined,
     safetyTech: q.fcw === 'standard' ? { features: ['fcw' as const], standard: true } : undefined,
     curbWeightKg: range(q.weightMin, q.weightMax),
+    modelLine: csv(q.line),
   };
   if (Object.values(filters).some((v) => v !== undefined)) {
     query.filters = filters;

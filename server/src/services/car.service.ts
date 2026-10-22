@@ -1,5 +1,6 @@
 import type {
   BestSeller,
+  ModelLineSummary,
   BestSellers,
   Car,
   ModelOverview,
@@ -979,7 +980,8 @@ const SUBMODEL_KEYS: Record<string, Array<[RegExp, string]>> = {
   fiat: [[/^500 ?([lx])\b/, '500$1']],
   // EPA's 2003-09 "Carrera 2 Coupe", "Targa" and "Turbo 4 911" are 911s.
   porsche: [[/^(?:911|carrera [24]|targa|turbo)\b/, '911']],
-  honda: [[/^accord crosstour\b/, 'accord crosstour']],
+  // Two words name these: a "Del" or an "EV" was the Del Sol and the EV Plus.
+  honda: [[/^(accord crosstour|del sol|ev plus|fcx clarity)\b/, '$1']],
   jeep: [[/^(grand \w+|wagoneer s)\b/, '$1']],
   pontiac: [[/^(grand \w+)/, '$1']],
   hyundai: [[/^(santa \w+|ioniq \d|genesis coupe)\b/, '$1']],
@@ -1273,6 +1275,22 @@ export function lineYearsOf(car: Pick<Car, 'make' | 'model'>): number[] {
   ensureDatabase();
   const cars = modelPages().carsByKey.get(modelLineKey(car)) ?? [];
   return [...new Set(cars.map((c) => c.year))].sort((a, b) => a - b);
+}
+
+/** A make's model lines with pages, the newest first, for the filter's model picker. */
+export function getModelLinesByMake(make: string): ModelLineSummary[] {
+  ensureDatabase();
+  const wanted = make.toLowerCase();
+  return [...modelPages().byPath]
+    .filter(([, family]) => family.make.toLowerCase() === wanted)
+    .map(([path, family]) => ({
+      label: `${family.make} ${family.name}`,
+      name: family.name,
+      path,
+      first: family.first,
+      last: family.last,
+    }))
+    .sort((a, b) => b.last - a.last || a.name.localeCompare(b.name));
 }
 
 /** Every model page, for the sitemap, the models on sale first. */
@@ -2983,6 +3001,9 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
   const techWanted = filters?.safetyTech?.features.length ? filters.safetyTech : null;
   const theftListed = filters?.theftListed;
   const noRecalls = filters?.noRecalls === true;
+  const lineSet = filters?.modelLine?.length
+    ? new Set(filters.modelLine.map((label) => label.toLowerCase()))
+    : null;
   const weightMin = filters?.curbWeightKg?.min;
   const weightMax = filters?.curbWeightKg?.max;
   const layoutSet = filters?.layout?.length ? new Set(filters.layout) : null;
@@ -3012,6 +3033,7 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
     rangeMax != null ||
     weightMin != null ||
     weightMax != null ||
+    !!lineSet ||
     safetyMin != null ||
     safetyMax != null ||
     hasTextSearch ||
@@ -3110,6 +3132,7 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
       continue;
     }
     if (noRecalls && !recallFree(car)) continue;
+    if (lineSet && !lineSet.has(modelPageOf(car)?.label.toLowerCase() ?? '')) continue;
     if (weightMin != null || weightMax != null) {
       const kg = car.size?.curbWeightKg;
       if (!kg) continue;

@@ -295,6 +295,22 @@ export interface CarFilter {
    * A car it never measured is left out.
    */
   curbWeightKg?: { min?: number; max?: number };
+  /**
+   * Model lines by their pages' names ("Honda Civic"): every version of every
+   * year, whatever EPA calls it ("Civic 4Dr", "Civic Hatchback").
+   */
+  modelLine?: string[];
+}
+
+/** A make's model line with a page of its own, for the filter's model picker. */
+export interface ModelLineSummary {
+  /** "Honda Civic", the filter's value. */
+  label: string;
+  /** "Civic". */
+  name: string;
+  path: string;
+  first: number;
+  last: number;
 }
 
 export interface SearchQuery {

@@ -15,6 +15,7 @@ router.get('/makes', cacheData, carController.getMakes);
 
 // Get models by make
 router.get('/makes/:make/models', cacheData, carController.getModelsByMake);
+router.get('/makes/:make/lines', cacheData, carController.getModelLinesByMake);
 
 // A model across every year on file, for its page
 router.get('/models/:make/:model', cacheData, carController.getModelOverview);

@@ -1,9 +1,8 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useId } from 'react';
 import { useCarStore } from '../stores/carStore';
 import * as api from '../services/api';
 import FilterPills from './FilterPills';
-import { ExpandableSection } from './ui';
-import type { CarFilter, SearchQuery } from '../types/car.types';
+import type { CarFilter, ModelLineSummary, SearchQuery } from '../types/car.types';
 import {
   PRICE_BUCKETS,
   YEAR_BUCKETS,
@@ -22,10 +21,10 @@ import { isFcwStandard } from '../utils/searchParams';
 import {
   bucketMatches,
   countActiveFilterFields,
-  filterFieldHasValue,
   sortForFilters,
   toggleRangeBucket,
 } from '../utils/filterState';
+import { LATEST_FULL_MODEL_YEAR } from '@carinfo/config/model-years';
 
 type RangeKey = 'price' | 'year' | 'fuelEconomy' | 'horsepower' | 'safety' | 'rangeMiles';
 
@@ -35,8 +34,79 @@ const GEARBOXES = [
   { id: 'cvt', label: 'CVT' },
 ];
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <h3 className="text-xs text-zinc-300 mb-3 font-bold">{children}</h3>;
+/**
+ * One filter, folded to its name and what is chosen ("SUV, Sedan", or
+ * "Any"); a section with a choice in it opens by itself. A panel of eleven
+ * open sections ran to four screens.
+ */
+function FilterSection({
+  title,
+  summary,
+  active,
+  defaultOpen = false,
+  children,
+}: {
+  title: string;
+  summary: string | null;
+  active: boolean;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState<boolean | null>(null);
+  const isOpen = open ?? (defaultOpen || active);
+  const panelId = useId();
+  return (
+    <section className="border-b border-zinc-900 last:border-b-0">
+      <h3>
+        <button
+          type="button"
+          aria-expanded={isOpen}
+          aria-controls={panelId}
+          onClick={() => setOpen(!isOpen)}
+          className="group w-full flex items-center justify-between gap-3 min-h-[44px] py-2 text-left"
+        >
+          <span className="text-[13px] font-semibold text-zinc-100 group-hover:text-white">
+            {title}
+          </span>
+          {/* Read as "Type: SUV", not "TypeSUV". */}
+          <span className="sr-only">: </span>
+          <span className="flex items-center gap-2 min-w-0">
+            <span
+              className={`text-xs truncate max-w-[10rem] ${active ? 'text-accent' : 'text-zinc-500'}`}
+            >
+              {summary ?? 'Any'}
+            </span>
+            <svg
+              viewBox="0 0 16 16"
+              className={`w-3.5 h-3.5 shrink-0 text-zinc-500 group-hover:text-white transition-transform duration-200 motion-reduce:transition-none ${isOpen ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              aria-hidden
+            >
+              <path
+                d="M4 6l4 4 4-4"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+        </button>
+      </h3>
+      <div id={panelId} hidden={!isOpen} className="pb-4 pt-1">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+/** "SUV, Sedan" from the ids chosen, or null for none. */
+function namesOf(
+  ids: string[] | undefined,
+  options: Array<{ id: string; label: string }>,
+): string | null {
+  if (!ids?.length) return null;
+  return ids.map((id) => options.find((o) => o.id === id)?.label ?? id).join(', ');
 }
 
 /** A yes-or-no filter with a line saying what it rests on. */
@@ -138,12 +208,13 @@ function RangeInputs({
 }
 
 /**
- * Every filter a shopper reaches for, in plain words: the type, make, year
- * and fuel, EPA's fuel use, the drive, then the records (NHTSA's crash tests
- * and safety features, Transport Canada's recalls, Équité's most-stolen
- * list), seats and gearbox. Power and the estimated value are under More.
- * Shown beside the results on a wide screen and in a full-screen sheet on a
- * phone (FilterSheet).
+ * Every filter a shopper reaches for, in plain words, each section folded to
+ * what is chosen in it: type, make (then its models), year and fuel open;
+ * EPA's fuel use, the drive, the records (NHTSA's crash tests and safety
+ * features, Transport Canada's recalls, Équité's most-stolen list), seats
+ * and gearbox, power and the estimated value folded. Shown beside the
+ * results on a wide screen and in a full-screen sheet on a phone
+ * (FilterSheet).
  *
  * Country of origin, engine size and the lifestyle shortcuts are gone from
  * the panel: a brand's country is not where the car was built, litres say
@@ -163,6 +234,8 @@ export default function FilterSidebar({
   const [filters, setFilters] = useState<CarFilter>(searchQuery.filters || {});
   const [makeSearch, setMakeSearch] = useState('');
   const [ratedShare, setRatedShare] = useState<number | null>(null);
+  const [lines, setLines] = useState<ModelLineSummary[] | null>(null);
+  const [showOlderLines, setShowOlderLines] = useState(false);
 
   useEffect(() => {
     setFilters(searchQuery.filters || {});
@@ -197,6 +270,28 @@ export default function FilterSidebar({
     [onFiltersApplied, performSearch, searchQuery, setSearchQuery],
   );
 
+  // One make chosen: its models to pick from, those on sale first.
+  const singleMake = filters.make?.length === 1 ? filters.make[0] : null;
+  useEffect(() => {
+    if (!singleMake) {
+      setLines(null);
+      return;
+    }
+    let active = true;
+    setShowOlderLines(false);
+    api
+      .getModelLines(singleMake)
+      .then((list) => {
+        if (active) setLines(list);
+      })
+      .catch(() => {
+        if (active) setLines([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [singleMake]);
+
   const activeBucket = useCallback(
     (buckets: BucketOption[], key: RangeKey) =>
       buckets.find((b) => bucketMatches(filters[key], b.filters[key]))?.id ?? null,
@@ -217,6 +312,14 @@ export default function FilterSidebar({
       ? current.filter((v) => v !== value)
       : [...current, value];
     const next = { ...filters, [key]: nextArr.length ? nextArr : undefined };
+    // A model goes with its make: "Honda Civic" stays only while Honda does.
+    if (key === 'make' && next.modelLine?.length) {
+      const makes = (nextArr as string[]).map((m) => m.toLowerCase());
+      const kept = next.modelLine.filter((line) =>
+        makes.some((make) => line.toLowerCase().startsWith(`${make} `)),
+      );
+      next.modelLine = kept.length ? kept : undefined;
+    }
     commitFilters(next);
   };
 
@@ -277,12 +380,39 @@ export default function FilterSidebar({
 
   const isSheet = variant === 'sheet';
 
+  // What each section holds, said in its header.
+  const yearSummary =
+    YEAR_BUCKETS.find((b) => b.id === activeBucket(YEAR_BUCKETS, 'year'))?.label ??
+    (filters.year?.min != null || filters.year?.max != null
+      ? [filters.year?.min ?? '…', filters.year?.max ?? '…'].join('–')
+      : null);
+  const bucketSummary = (buckets: BucketOption[], key: RangeKey) =>
+    buckets.find((b) => b.id === activeBucket(buckets, key))?.label ??
+    (filters[key] ? 'Custom' : null);
+  const recordsOn = [
+    bucketSummary(SAFETY_BUCKETS, 'safety'),
+    isFcwStandard(filters) ? 'Collision warning' : null,
+    filters.noRecalls ? 'No recalls' : null,
+    filters.theftListed === false ? 'Not most stolen' : null,
+  ].filter((part): part is string => !!part);
+  const seats = [
+    filters.threeRow === true ? 'Three rows' : null,
+    ...(filters.transmission ?? []).map((t) => GEARBOXES.find((g) => g.id === t)?.label ?? t),
+  ].filter((part): part is string => !!part);
+  const lineName = (label: string) =>
+    singleMake && label.toLowerCase().startsWith(`${singleMake.toLowerCase()} `)
+      ? label.slice(singleMake.length + 1)
+      : label;
+  const onSale = lines?.filter((line) => line.last >= LATEST_FULL_MODEL_YEAR - 1) ?? [];
+  const older = lines?.filter((line) => line.last < LATEST_FULL_MODEL_YEAR - 1) ?? [];
+  const chosenLines = filters.modelLine ?? [];
+
   return (
     <div
       className={
         isSheet
-          ? 'space-y-7'
-          : 'surface-card p-5 space-y-7 lg:max-h-[calc(100vh-var(--header-height)-2rem)] lg:overflow-y-auto rounded-none'
+          ? ''
+          : 'surface-card px-5 pt-4 pb-2 lg:max-h-[calc(100vh-var(--header-height)-2rem)] lg:overflow-y-auto rounded-none'
       }
     >
       {!isSheet && (
@@ -294,7 +424,7 @@ export default function FilterSidebar({
             <button
               type="button"
               onClick={clearFilters}
-              className="text-xs text-zinc-400 hover:text-white min-h-[32px]"
+              className="text-xs text-zinc-400 hover:text-white min-h-[32px] px-1"
             >
               Clear all
             </button>
@@ -302,7 +432,7 @@ export default function FilterSidebar({
         </div>
       )}
       {isSheet && activeFilterCount > 0 && (
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pb-2">
           <p className="text-sm text-zinc-400">
             {activeFilterCount} filter{activeFilterCount === 1 ? '' : 's'} on
           </p>
@@ -316,8 +446,12 @@ export default function FilterSidebar({
         </div>
       )}
 
-      <div>
-        <SectionLabel>Type</SectionLabel>
+      <FilterSection
+        title="Type"
+        summary={namesOf(filters.bodyStyle, BODY_TYPES)}
+        active={!!filters.bodyStyle?.length}
+        defaultOpen
+      >
         <FilterPills
           // No counts: the whole catalogue's ("SUV (10,508)") misled beside a
           // search of 49, and the sheet's button counts the results as they change.
@@ -328,11 +462,16 @@ export default function FilterSidebar({
           }))}
           activeIds={filters.bodyStyle ?? []}
           onToggle={(id) => toggleArrayFilter('bodyStyle', id)}
+          compact
         />
-      </div>
+      </FilterSection>
 
-      <div>
-        <SectionLabel>Make</SectionLabel>
+      <FilterSection
+        title="Make"
+        summary={selectedMakes.length ? selectedMakes.join(', ') : null}
+        active={selectedMakes.length > 0}
+        defaultOpen
+      >
         <input
           type="search"
           placeholder="Find a make…"
@@ -351,15 +490,52 @@ export default function FilterSidebar({
         ) : (
           <p className="text-xs text-zinc-500">No make on file matches “{makeSearch}”.</p>
         )}
-      </div>
+      </FilterSection>
 
-      <div>
-        <SectionLabel>Model year</SectionLabel>
+      {singleMake && lines && lines.length > 0 && (
+        <FilterSection
+          title={`${singleMake} model`}
+          summary={chosenLines.length ? chosenLines.map(lineName).join(', ') : null}
+          active={chosenLines.length > 0}
+          defaultOpen
+        >
+          <FilterPills
+            options={(showOlderLines ? lines : onSale.length ? onSale : lines).map((line) => ({
+              id: line.label,
+              label: line.name,
+              description: `${line.first}–${line.last}`,
+            }))}
+            activeIds={chosenLines}
+            onToggle={(id) => toggleArrayFilter('modelLine', id)}
+            compact
+          />
+          {!showOlderLines && onSale.length > 0 && older.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowOlderLines(true)}
+              className="mt-2 min-h-[36px] text-xs text-zinc-400 hover:text-white underline underline-offset-4 decoration-zinc-700"
+            >
+              Older models ({older.length})
+            </button>
+          )}
+        </FilterSection>
+      )}
+
+      <FilterSection
+        title="Model year"
+        summary={yearSummary ? String(yearSummary) : null}
+        active={!!yearSummary}
+        defaultOpen
+      >
         {bucketPills(YEAR_BUCKETS, 'year')}
-      </div>
+      </FilterSection>
 
-      <div>
-        <SectionLabel>Fuel</SectionLabel>
+      <FilterSection
+        title="Fuel"
+        summary={namesOf(filters.fuelType, FUEL_TYPES)}
+        active={!!filters.fuelType?.length}
+        defaultOpen
+      >
         <FilterPills
           options={FUEL_TYPES.map((t) => ({
             id: t.id,
@@ -370,38 +546,57 @@ export default function FilterSidebar({
           onToggle={(id) => toggleArrayFilter('fuelType', id)}
           compact
         />
-      </div>
+      </FilterSection>
 
-      <div>
-        <SectionLabel>Fuel use</SectionLabel>
+      <FilterSection
+        title="Fuel use"
+        summary={bucketSummary(MPG_BUCKETS, 'fuelEconomy')}
+        active={!!filters.fuelEconomy}
+      >
         {/* Electric is under Fuel: "100+ MPGe" said the same in jargon. */}
         {bucketPills(
           MPG_BUCKETS.filter((b) => b.id !== 'mpg-100'),
           'fuelEconomy',
         )}
         <p className="text-xs text-zinc-500 mt-2">EPA&apos;s combined rating.</p>
-      </div>
+      </FilterSection>
 
       {electricOnly && (
-        <div>
-          <SectionLabel>Range on a charge</SectionLabel>
+        <FilterSection
+          title="Range on a charge"
+          summary={bucketSummary(RANGE_BUCKETS, 'rangeMiles')}
+          active={!!filters.rangeMiles}
+          defaultOpen
+        >
           {bucketPills(RANGE_BUCKETS, 'rangeMiles')}
           <p className="text-xs text-zinc-500 mt-2">EPA&apos;s rating, new.</p>
-        </div>
+        </FilterSection>
       )}
 
-      <div>
-        <SectionLabel>Drive</SectionLabel>
+      <FilterSection
+        title="Drive"
+        summary={
+          filters.driveType?.length
+            ? filters.driveType
+                .map((d) => DRIVE_LABELS[d as (typeof DRIVE_TYPES)[number]] ?? d)
+                .join(', ')
+            : null
+        }
+        active={!!filters.driveType?.length}
+      >
         <FilterPills
           options={DRIVE_TYPES.map((d) => ({ id: d, label: DRIVE_LABELS[d] }))}
           activeIds={filters.driveType ?? []}
           onToggle={(id) => toggleArrayFilter('driveType', id)}
           compact
         />
-      </div>
+      </FilterSection>
 
-      <div>
-        <SectionLabel>Safety and records</SectionLabel>
+      <FilterSection
+        title="Safety and records"
+        summary={recordsOn.length ? recordsOn.join(', ') : null}
+        active={recordsOn.length > 0}
+      >
         <p className="text-xs text-zinc-400 mb-2">Crash-test stars</p>
         {bucketPills(SAFETY_BUCKETS, 'safety')}
         <p className="text-xs text-zinc-500 mt-2 leading-relaxed">
@@ -431,10 +626,13 @@ export default function FilterSidebar({
             note="Leaves out the 10 models Équité Association counted as most stolen in Canada in 2024."
           />
         </div>
-      </div>
+      </FilterSection>
 
-      <div>
-        <SectionLabel>Seats and gearbox</SectionLabel>
+      <FilterSection
+        title="Seats and gearbox"
+        summary={seats.length ? seats.join(', ') : null}
+        active={seats.length > 0}
+      >
         <FilterPills
           options={[
             { id: 'three-row', label: 'Three rows', description: 'Minivans and three-row SUVs' },
@@ -449,38 +647,33 @@ export default function FilterSidebar({
           }
           compact
         />
-      </div>
+      </FilterSection>
 
-      <div className="pt-5 border-t border-zinc-800">
-        <ExpandableSection
-          title="More filters"
-          summary="Power, estimated value"
-          defaultOpen={
-            filterFieldHasValue(filters.horsepower) || filterFieldHasValue(filters.price)
-          }
-        >
-          <div className="space-y-6">
-            <div>
-              <SectionLabel>Power</SectionLabel>
-              {bucketPills(POWER_BUCKETS, 'horsepower')}
-            </div>
+      <FilterSection
+        title="Power"
+        summary={bucketSummary(POWER_BUCKETS, 'horsepower')}
+        active={!!filters.horsepower}
+      >
+        {bucketPills(POWER_BUCKETS, 'horsepower')}
+      </FilterSection>
 
-            <div>
-              <SectionLabel>Estimated value (CAD)</SectionLabel>
-              {bucketPills(PRICE_BUCKETS, 'price')}
-              <p className="text-xs text-zinc-500 mt-2 mb-3">
-                Our model&apos;s estimate, not an asking price: a car can sell for more or less.
-              </p>
-              <RangeInputs
-                label="estimated value"
-                value={filters.price}
-                step={1000}
-                onCommit={(range) => commitFilters({ ...filters, price: range })}
-              />
-            </div>
-          </div>
-        </ExpandableSection>
-      </div>
+      <FilterSection
+        title="Estimated value"
+        summary={bucketSummary(PRICE_BUCKETS, 'price')}
+        active={!!filters.price}
+      >
+        {bucketPills(PRICE_BUCKETS, 'price')}
+        <p className="text-xs text-zinc-500 mt-2 mb-3">
+          Our model&apos;s estimate in Canadian dollars, not an asking price: a car can sell for
+          more or less.
+        </p>
+        <RangeInputs
+          label="estimated value"
+          value={filters.price}
+          step={1000}
+          onCommit={(range) => commitFilters({ ...filters, price: range })}
+        />
+      </FilterSection>
     </div>
   );
 }

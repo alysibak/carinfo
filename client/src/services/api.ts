@@ -3,6 +3,7 @@ import type {
   CarRecordsSummary,
   CarDashboard,
   CarSpecs,
+  ModelLineSummary,
   ModelOverview,
   SearchQuery,
   SearchResults,
@@ -32,6 +33,13 @@ export async function getMakes(): Promise<string[]> {
  */
 export async function getModelsByMake(make: string): Promise<string[]> {
   return api.get(`/cars/makes/${encodeURIComponent(make)}/models`);
+}
+
+/**
+ * A make's model lines with pages, the newest first, for the filter's model picker.
+ */
+export async function getModelLines(make: string): Promise<ModelLineSummary[]> {
+  return api.get(`/cars/makes/${encodeURIComponent(make)}/lines`);
 }
 
 /**

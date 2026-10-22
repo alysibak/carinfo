@@ -179,6 +179,23 @@ describe('new filters in the URL', () => {
     expect(removeActiveFilterChip({ curbWeightKg: { min: 1248 } }, 'weight')).toEqual({});
   });
 
+  it('round-trips a model picked from the make, and shows its years', () => {
+    const params = searchQueryToParams(
+      { filters: { make: ['Honda'], modelLine: ['Honda Civic'] } },
+      1,
+    );
+    expect(params.get('line')).toBe('Honda Civic');
+    const { query } = paramsToSearchQuery(params);
+    expect(query.filters?.modelLine).toEqual(['Honda Civic']);
+    expect(query.collapseByModel).toBe(false);
+    expect(describeActiveFilters({ modelLine: ['Honda Civic'] })).toEqual([
+      { key: 'line-Honda Civic', label: 'Honda Civic' },
+    ]);
+    expect(
+      removeActiveFilterChip({ make: ['Honda'], modelLine: ['Honda Civic'] }, 'line-Honda Civic'),
+    ).toEqual({ make: ['Honda'] });
+  });
+
   it('keeps a two-row filter, which is false rather than absent', () => {
     const params = searchQueryToParams({ filters: { threeRow: false } }, 1);
     expect(params.get('rows')).toBe('2');

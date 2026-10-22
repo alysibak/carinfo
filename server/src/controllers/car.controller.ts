@@ -107,6 +107,17 @@ export function getCarById(req: Request, res: Response, next: NextFunction) {
 }
 
 /**
+ * A make's model lines, for the filter's model picker: /api/cars/makes/Honda/lines
+ */
+export function getModelLinesByMake(req: Request, res: Response, next: NextFunction) {
+  try {
+    res.json({ success: true, data: carService.getModelLinesByMake(req.params.make) });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
  * Canada's best sellers with their newest year on file: /api/cars/popular
  */
 export function getBestSellers(_req: Request, res: Response, next: NextFunction) {

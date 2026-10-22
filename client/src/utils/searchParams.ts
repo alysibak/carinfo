@@ -53,7 +53,8 @@ export function defaultCollapseByModel(
   queryText?: string,
   filters?: CarFilter,
 ): NonNullable<SearchQuery['collapseByModel']> {
-  if (filters?.model?.length) return false;
+  // One model chosen shows its years, as a typed model name does.
+  if (filters?.model?.length || filters?.modelLine?.length === 1) return false;
   return queryText?.trim() ? 'auto' : true;
 }
 
@@ -85,6 +86,7 @@ export function hasActiveSearch(params: URLSearchParams): boolean {
     'fcw',
     'weightMin',
     'weightMax',
+    'line',
   ];
   return filterKeys.some((k) => params.get(k));
 }
@@ -101,6 +103,7 @@ export function paramsToSearchQuery(params: URLSearchParams): { query: SearchQue
     driveType: splitList(params.get('drive')),
     transmission: splitList(params.get('trans')),
     countryOfOrigin: splitList(params.get('country')),
+    modelLine: splitList(params.get('line')),
   };
 
   const yearMin = numParam(params.get('yearMin'));
@@ -201,6 +204,8 @@ export function searchQueryToParams(query: SearchQuery, page: number): URLSearch
   if (trans) params.set('trans', trans);
   const country = joinList(f.countryOfOrigin);
   if (country) params.set('country', country);
+  const line = joinList(f.modelLine);
+  if (line) params.set('line', line);
 
   if (f.year?.min != null) params.set('yearMin', String(f.year.min));
   if (f.year?.max != null) params.set('yearMax', String(f.year.max));
@@ -243,6 +248,7 @@ export function describeActiveFilters(filters: CarFilter = {}): { key: string; l
 
   filters.make?.forEach((m) => chips.push({ key: `make-${m}`, label: m }));
   filters.model?.forEach((m) => chips.push({ key: `model-${m}`, label: m }));
+  filters.modelLine?.forEach((m) => chips.push({ key: `line-${m}`, label: m }));
   filters.bodyStyle?.forEach((b) => chips.push({ key: `body-${b}`, label: bodyStyleLabel(b) }));
   // Every fuel but hydrogen (the First car situation's) is one chip, not five.
   const fuels = filters.fuelType ?? [];
@@ -364,6 +370,7 @@ export function removeActiveFilterChip(filters: CarFilter, chipKey: string): Car
 
   if (chipKey.startsWith('make-')) dropFromList('make', chipKey.slice(5));
   else if (chipKey.startsWith('model-')) dropFromList('model', chipKey.slice(6));
+  else if (chipKey.startsWith('line-')) dropFromList('modelLine', chipKey.slice(5));
   else if (chipKey.startsWith('body-')) dropFromList('bodyStyle', chipKey.slice(5));
   else if (chipKey === 'fuel-all') delete next.fuelType;
   else if (chipKey.startsWith('fuel-')) dropFromList('fuelType', chipKey.slice(5));

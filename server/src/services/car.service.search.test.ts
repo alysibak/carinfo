@@ -6,6 +6,7 @@ import {
 } from '../config/model-years.js';
 import {
   getCarById,
+  getModelLinesByMake,
   getModelOverview,
   getModelPages,
   getSearchSuggestions,
@@ -711,6 +712,17 @@ describe('car.service natural language search', () => {
     const caddy = searchCars({ query: 'cadillac under 30k', limit: 20 }).results;
     expect(caddy.length).toBeGreaterThan(0);
     expect(caddy.every((c) => c.make === 'Cadillac')).toBe(true);
+  });
+
+  it('keeps to a model line by its page name, whatever EPA calls each version', () => {
+    const civic = searchCars({ filters: { modelLine: ['Honda Civic'] }, limit: 500 });
+    expect(civic.total).toBeGreaterThan(20);
+    expect(civic.results.every((c) => c.make === 'Honda' && /^Civic/.test(c.model))).toBe(true);
+    // A make's lines for the picker, the newest first, named in full.
+    const lines = getModelLinesByMake('Honda');
+    expect(lines.map((l) => l.label)).toContain('Honda Civic');
+    expect(lines.map((l) => l.name)).toContain('Del Sol');
+    expect(lines[0].last).toBeGreaterThanOrEqual(lines.at(-1)!.last);
   });
 
   it('reads price ranges, first cars and snow', () => {
