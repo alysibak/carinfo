@@ -28,6 +28,7 @@ export type {
   ModelLineSummary,
   BestSeller,
   BestSellers,
+  Matchup,
   ModelYearSummary,
   NhtsaInvestigation,
   NhtsaRating,

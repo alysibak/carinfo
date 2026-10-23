@@ -98,3 +98,35 @@ export function modelYearCells(row: ModelYearSummary) {
     versions: String(row.configurations),
   };
 }
+
+/**
+ * A generation's label in its parts: "FE · 11th generation (2022 on)" names
+ * it "11th generation", its years "2022 on" and its maker's code "FE".
+ */
+export function generationParts(label: string): { name: string; years?: string; code?: string } {
+  const match = /^(.*?)\s*\(([^)]+)\)$/.exec(label);
+  const head = match ? match[1] : label;
+  const years = match?.[2];
+  const [first, second] = head.split(' · ');
+  if (second) return { name: second, years, code: first };
+  return { name: first, years };
+}
+
+/** A folded generation in a line: "6 years · from 6.5 L/100 km · 158–306 hp". */
+export function generationSummary(rows: ModelYearSummary[]): string[] {
+  const mpg = Math.max(0, ...rows.map((row) => row.combinedMpg ?? 0));
+  const range = Math.max(0, ...rows.map((row) => row.rangeMiles ?? 0));
+  const powers = rows.flatMap((row) => (row.horsepower ? [row.horsepower] : []));
+  const power = powers.length
+    ? powerText({
+        min: Math.min(...powers.map((p) => p.min)),
+        max: Math.max(...powers.map((p) => p.max)),
+      })
+    : null;
+  return [
+    `${rows.length} ${rows.length === 1 ? 'year' : 'years'}`,
+    mpg ? `from ${(235.215 / mpg).toFixed(1)} L/100 km` : null,
+    !mpg && range ? `up to ${rangeKm(range)} km range` : null,
+    power,
+  ].filter((fact): fact is string => !!fact);
+}

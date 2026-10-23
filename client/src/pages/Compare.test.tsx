@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import Compare from './Compare';
@@ -10,22 +10,26 @@ vi.mock('../stores/carStore');
 vi.mock('../services/api', () => ({
   getCarDashboard: vi.fn(),
   compareCars: vi.fn(),
+  getMatchups: vi.fn(async () => []),
 }));
 
 function mockCompareStore(comparedCars: (typeof trustDashboard.car)[]) {
-  vi.mocked(useCarStore).mockReturnValue({
+  const replaceComparison = vi.fn();
+  const store = {
     comparedCars,
     removeCarFromComparison: vi.fn(),
     clearComparison: vi.fn(),
     addCarToComparison: vi.fn(),
-    replaceComparison: vi.fn(),
+    replaceComparison,
     searchResults: [],
     searchQuery: {},
     setSearchQuery: vi.fn(),
     performSearch: vi.fn(),
     isSearching: false,
     searchError: null,
-  } as ReturnType<typeof useCarStore>);
+  } as ReturnType<typeof useCarStore>;
+  vi.mocked(useCarStore).mockReturnValue(store);
+  return { replaceComparison };
 }
 
 describe('Compare provenance', () => {
@@ -119,5 +123,30 @@ describe('Compare trunks', () => {
   it('ranks one trunk against another', async () => {
     const row = await trunkRow([withLuggage('a', 'sedan', 14), withLuggage('b', 'sedan', 17)]);
     await waitFor(() => expect(row.textContent).toContain('Best'));
+  });
+});
+
+describe('Compare match-ups', () => {
+  it('puts a match-up’s cars side by side in one tap', async () => {
+    const store = mockCompareStore([]);
+    vi.mocked(api.getMatchups).mockResolvedValue([
+      {
+        label: 'Compact cars',
+        year: 2026,
+        cars: [
+          { label: 'Honda Civic', carId: 'civic-2026' },
+          { label: 'Toyota Corolla', carId: 'corolla-2026' },
+        ],
+      },
+    ]);
+    vi.mocked(api.compareCars).mockResolvedValue([trustDashboard.car]);
+    render(
+      <MemoryRouter>
+        <Compare />
+      </MemoryRouter>,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: /Compact cars/ }));
+    expect(api.compareCars).toHaveBeenCalledWith(['civic-2026', 'corolla-2026']);
+    await waitFor(() => expect(store.replaceComparison).toHaveBeenCalledWith([trustDashboard.car]));
   });
 });

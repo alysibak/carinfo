@@ -600,15 +600,18 @@ export default function Home() {
                         { value: 'runningCost', label: 'Est. running cost' },
                       ]}
                     />
-                    <button
-                      type="button"
-                      onClick={() => handleSortChange(sortField)}
-                      className="min-h-[42px] min-w-[42px] px-2 text-zinc-400 hover:text-white transition-colors shrink-0"
-                      title={`Sort ${sortOrder === 'asc' ? 'descending' : 'ascending'}`}
-                      aria-label="Toggle sort direction"
-                    >
-                      {sortOrder === 'asc' ? '↑' : '↓'}
-                    </button>
+                    {/* Best match has no direction to turn. */}
+                    {sortField !== 'relevance' && (
+                      <button
+                        type="button"
+                        onClick={() => handleSortChange(sortField)}
+                        className="min-h-[42px] min-w-[42px] px-2 text-zinc-400 hover:text-white transition-colors shrink-0"
+                        title={`Sort ${sortOrder === 'asc' ? 'descending' : 'ascending'}`}
+                        aria-label="Toggle sort direction"
+                      >
+                        {sortOrder === 'asc' ? '↑' : '↓'}
+                      </button>
+                    )}
                     <div className="flex shrink-0" role="group" aria-label="Show results as">
                       {(['list', 'grid'] as const).map((option) => (
                         <button

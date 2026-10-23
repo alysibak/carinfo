@@ -2,6 +2,7 @@ import type {
   BestSeller,
   ModelLineSummary,
   BestSellers,
+  Matchup,
   Car,
   ModelOverview,
   ModelYearSummary,
@@ -32,7 +33,7 @@ import { withRunningCosts } from '../utils/running-cost.js';
 import { type RuntimeDatabaseFile, unpackRuntimeDatabase } from './runtime-db.js';
 import { LATEST_FULL_MODEL_YEAR } from '../config/model-years.js';
 import { FIRST_CAR } from '../config/first-car.js';
-import { BEST_SELLERS as CANADA_BEST_SELLERS } from '../config/popular-models.js';
+import { BEST_SELLERS as CANADA_BEST_SELLERS, MATCHUPS } from '../config/popular-models.js';
 import { mpgToLPer100Km } from '../config/regional-assumptions.js';
 import { TRIM_QUERY_FORMS } from '../utils/performance-trims.js';
 import { extractQueryModifiers, withoutFigures } from '../utils/search-modifiers.js';
@@ -602,8 +603,17 @@ const FUEL_RANK: Partial<Record<Car['engine']['fuelType'], number>> = {
  * plainest name. Estimated prices are not compared: they put a 2018 Civic Si
  * sedan below the LX.
  */
+/**
+ * Versions sold to fleets, not to a shopper: police cars, taxis, Hyundai's
+ * Ioniq 5 Robotaxi, and cab-chassis trucks sold bare for a body to be built on.
+ */
+const FLEET_ONLY = /\b(?:robo ?taxi|taxi|police|cab chassis)\b/i;
+
 function baseOf(cars: Car[]): Car {
   return cars.reduce((base, car) => {
+    // A version anyone can buy, before one only a fleet can.
+    const fleet = (c: Car) => FLEET_ONLY.test(c.model);
+    if (fleet(base) !== fleet(car)) return fleet(car) ? base : car;
     const price = listedPrice(car);
     const basePrice = listedPrice(base);
     if (price && basePrice && price !== basePrice) return price < basePrice ? car : base;
@@ -1372,7 +1382,8 @@ const litresPer100 = (mpg: number) => Math.round((235.215 / mpg) * 10) / 10;
 function yearChanges(before: ModelYearSummary, after: ModelYearSummary): string[] {
   const changes: string[] = [];
   if (after.generation && after.generation !== before.generation) {
-    changes.push(`New generation: ${after.generation.replace(/\s*\([^)]*\)$/, '')}`);
+    // The year sits under its generation's heading, which names it.
+    changes.push('New generation');
   }
   const named = (names: Record<string, string>, key: string) => names[key] ?? key;
   const added = (now: string[], then: string[]) => now.filter((x) => !then.includes(x));
@@ -1442,6 +1453,41 @@ export function getBestSellers(): BestSellers {
   return value;
 }
 let bestSellerCache: { source: Car[]; value: BestSellers } | null = null;
+
+/**
+ * The match-ups in config/popular-models.ts, each the newest model year all
+ * its rivals share (a full one, not next year's first few), on the version
+ * each model page opens that year. A set missing a model is left out.
+ */
+export function getMatchups(): Matchup[] {
+  ensureDatabase();
+  if (matchupCache?.source === cachedCars) return matchupCache.value;
+  const value = MATCHUPS.flatMap(({ label, paths }): Matchup[] => {
+    const overviews = paths.map((path) => {
+      const [, , make, model] = path.split('/');
+      return getModelOverview(make, model);
+    });
+    if (overviews.some((overview) => !overview)) return [];
+    const years = overviews.map((overview) => new Set(overview!.years.map((row) => row.year)));
+    const year = [...years[0]]
+      .filter((y) => y <= LATEST_FULL_MODEL_YEAR && years.every((set) => set.has(y)))
+      .sort((a, b) => b - a)[0];
+    if (!year) return [];
+    return [
+      {
+        label,
+        year,
+        cars: overviews.map((overview) => ({
+          label: `${overview!.make} ${overview!.name}`,
+          carId: overview!.years.find((row) => row.year === year)!.carId,
+        })),
+      },
+    ];
+  });
+  matchupCache = { source: cachedCars, value };
+  return value;
+}
+let matchupCache: { source: Car[]; value: Matchup[] } | null = null;
 
 /**
  * A model across every year on file, for its page: "/models/toyota/camry".

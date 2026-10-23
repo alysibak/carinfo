@@ -1,5 +1,6 @@
 import type {
   BestSellers,
+  Matchup,
   CarRecordsSummary,
   CarDashboard,
   CarSpecs,
@@ -58,6 +59,13 @@ export async function getModelOverview(
  */
 export async function getBestSellers(options?: RequestOptions): Promise<BestSellers> {
   return api.get('/cars/popular', options);
+}
+
+/**
+ * Rivals to compare in one tap, the same model year of each.
+ */
+export async function getMatchups(options?: RequestOptions): Promise<Matchup[]> {
+  return api.get('/cars/matchups', options);
 }
 
 /**

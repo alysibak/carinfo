@@ -28,7 +28,7 @@ const overview: ModelOverview = {
       fuelTypes: ['hybrid'],
       bodyStyles: ['sedan'],
       generation: 'XV80 · 9th generation (2025 on)',
-      changes: ['New generation: XV80 · 9th generation', 'Gasoline dropped'],
+      changes: ['New generation', 'Gasoline dropped'],
     },
     {
       year: 2024,
@@ -75,32 +75,32 @@ describe('ModelPage', () => {
       await screen.findByRole('heading', { level: 1, name: 'Toyota Camry' }, { timeout: 5000 }),
     ).toBeVisible();
     expect(api.getModelOverview).toHaveBeenCalledWith('toyota', 'camry', expect.anything());
-    expect(screen.getByRole('heading', { name: /^XV70/ })).toBeVisible();
+    // A generation by its name and years, the maker's code beside them.
+    expect(
+      screen.getByRole('heading', { name: /^8th generation\s*·\s*2018–2024\s*XV70$/ }),
+    ).toBeVisible();
     expect(screen.getByRole('link', { name: '2024 Toyota Camry' })).toHaveAttribute(
       'href',
       '/car/camry-2024',
     );
-    // The row reads the year's figures; the newest year is also the header's link.
-    const newest = screen.getAllByRole('link', { name: '2026 Toyota Camry' });
-    expect(newest.some((link) => /from 4\.6 L\/100 km/.test(link.textContent ?? ''))).toBe(true);
-    // No estimated value: a row of them read as prices.
-    expect(newest.some((link) => /Est\. value/.test(link.textContent ?? ''))).toBe(false);
+    // The row reads the year's figures, and no estimated value: a column of them read as prices.
+    const row2026 = screen
+      .getAllByRole('row')
+      .find((row) => within(row).queryByRole('link', { name: '2026 Toyota Camry' }))!;
+    expect(row2026).toHaveTextContent('4.6 L/100 km');
+    expect(row2026).not.toHaveTextContent(/Est\. value|\$/);
     expect(screen.getByRole('link', { name: 'Honda Accord' })).toHaveAttribute(
       'href',
       '/models/honda/accord',
     );
-    // What changed from the year before, in the phone list and the table.
-    expect(screen.getAllByText('Gasoline dropped')).toHaveLength(2);
-    // The table reads a column down the years; each year opens its base version.
-    // One table per generation.
+    // What changed from the year before, under its year.
+    expect(screen.getByText('Gasoline dropped')).toBeVisible();
+    // A table per generation, a column a figure down the years.
     const table = screen
       .getAllByRole('table')
-      .find((t) => within(t).queryByRole('link', { name: '2024' }))!;
+      .find((t) => within(t).queryByRole('link', { name: '2024 Toyota Camry' }))!;
     expect(within(table).getByRole('columnheader', { name: 'Recalls in Canada' })).toBeVisible();
-    expect(within(table).getByRole('link', { name: '2024' })).toHaveAttribute(
-      'href',
-      '/car/camry-2024',
-    );
+    expect(within(table).getByRole('columnheader', { name: 'NHTSA complaints' })).toBeVisible();
     // The years with the most complaints and recalls, most first.
     expect(
       screen.getByText('Most owner complaints to NHTSA: 2023 (632), 2024 (481)'),

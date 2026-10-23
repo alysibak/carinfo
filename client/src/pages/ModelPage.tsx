@@ -3,13 +3,19 @@ import { Fragment, useEffect, useState } from 'react';
 import * as api from '../services/api';
 import { isHttpError } from '../services/http';
 import type { ModelOverview, ModelYearSummary } from '../types/car.types';
-import { ErrorState, LoadingScreen } from '../components/ui';
+import { Chevron, ErrorState, foldSummaryClass, LoadingScreen } from '../components/ui';
 import ToolPageHeader from '../components/ToolPageHeader';
 import PageShell, { PageBody } from '../components/PageShell';
 import CarPhotoFigure from '../components/CarPhotoFigure';
 import { carPhotoSources } from '../utils/carImages';
 import VehiclePlaceholder from '../components/VehiclePlaceholder';
-import { modelYearCells, modelYearFacts, modelYearLines, yearSpan } from '../utils/modelYearFacts';
+import {
+  generationParts,
+  generationSummary,
+  modelYearCells,
+  modelYearFacts,
+  yearSpan,
+} from '../utils/modelYearFacts';
 import { usePageMeta } from '../utils/pageMeta';
 import { complaintPart } from '../utils/recalls';
 import { theftSentence } from '@carinfo/shared/theft';
@@ -41,6 +47,106 @@ function byGeneration(years: ModelYearSummary[]) {
     else groups.push({ label: row.generation, rows: [row] });
   }
   return groups;
+}
+
+/**
+ * One generation's years, a row each and a column a figure, so a figure reads
+ * down the years. Phones keep the five a shopper compares; power, what it was
+ * offered as and the version count join on wider screens.
+ */
+function YearTable({ rows, name }: { rows: ModelYearSummary[]; name: string }) {
+  const th = 'py-2 pr-2 min-[360px]:pr-3 md:pr-4 font-normal';
+  const wide = 'hidden md:table-cell';
+  return (
+    <table className="w-full text-sm tabular-nums border-t border-zinc-800">
+      <thead>
+        <tr className="text-left text-xs text-zinc-500 align-bottom">
+          <th scope="col" className={th}>
+            Year
+          </th>
+          <th scope="col" className={th} aria-label="Best fuel use">
+            <span aria-hidden className="md:hidden">
+              Fuel use
+            </span>
+            <span aria-hidden className="hidden md:inline">
+              Best fuel use
+            </span>
+          </th>
+          <th scope="col" className={`${th} ${wide}`}>
+            Power
+          </th>
+          <th scope="col" className={th}>
+            NHTSA
+          </th>
+          <th scope="col" className={`${th} text-right`} aria-label="Recalls in Canada">
+            <span aria-hidden className="md:hidden">
+              Recalls
+            </span>
+            <span aria-hidden className="hidden md:inline">
+              Recalls in Canada
+            </span>
+          </th>
+          <th
+            scope="col"
+            className={`py-2 md:pr-4 font-normal text-right`}
+            aria-label="NHTSA complaints"
+          >
+            <span aria-hidden className="md:hidden">
+              Complaints
+            </span>
+            <span aria-hidden className="hidden md:inline">
+              NHTSA complaints
+            </span>
+          </th>
+          <th scope="col" className={`${th} ${wide}`}>
+            Offered as
+          </th>
+          <th scope="col" className={`py-2 font-normal text-right ${wide}`}>
+            Versions
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => {
+          const cells = modelYearCells(row);
+          const td = 'py-3 pr-2 min-[360px]:pr-3 md:pr-4';
+          return (
+            <Fragment key={row.year}>
+              <tr
+                className={`text-zinc-300 hover:bg-zinc-950 ${row.changes ? '' : 'border-b border-zinc-900'}`}
+              >
+                <th scope="row" className={`${td} text-left font-semibold`}>
+                  <Link
+                    to={`/car/${row.carId}`}
+                    aria-label={`${row.year} ${name}`}
+                    className="inline-block py-3 -my-3 pr-3 text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-400"
+                  >
+                    {row.year}
+                  </Link>
+                </th>
+                <td className={`${td} whitespace-nowrap`}>{cells.efficiency}</td>
+                <td className={`${td} ${wide}`}>{cells.power}</td>
+                <td className={td}>{cells.safety}</td>
+                <td className={`${td} text-right`}>{cells.recalls}</td>
+                <td className="py-3 md:pr-4 text-right">{cells.complaints}</td>
+                <td className={`${td} ${wide} text-zinc-400`}>{cells.offered}</td>
+                <td className={`py-3 text-right ${wide}`}>{cells.versions}</td>
+              </tr>
+              {row.changes && (
+                // What changed from the year before, from the EPA records.
+                <tr className="border-b border-zinc-900">
+                  <td />
+                  <td colSpan={7} className="pb-3 text-xs text-zinc-400 leading-relaxed">
+                    <Facts facts={row.changes} />
+                  </td>
+                </tr>
+              )}
+            </Fragment>
+          );
+        })}
+      </tbody>
+    </table>
+  );
 }
 
 /**
@@ -232,134 +338,46 @@ export default function ModelPage() {
           </section>
         )}
 
-        {byGeneration(overview.years).map((group) => (
-          <section key={`${group.label ?? 'years'}-${group.rows[0].year}`} className="mb-8">
-            <h2 className="text-base font-bold tracking-tight mb-2">
-              {group.label ?? 'Model years'}
-            </h2>
-            {/* Phones: a row of figures per year. */}
-            <ol className="md:hidden border-t border-zinc-800">
-              {group.rows.map((row) => (
-                <li key={row.year} className="border-b border-zinc-900">
-                  <Link
-                    to={`/car/${row.carId}`}
-                    aria-label={`${row.year} ${name}`}
-                    className="flex items-start gap-3 py-3.5 group"
-                  >
-                    <span className="w-12 shrink-0 text-base font-semibold tabular-nums text-white group-hover:text-zinc-300">
-                      {row.year}
+        {byGeneration(overview.years).map((group, index) => {
+          const key = `${group.label ?? 'years'}-${group.rows[0].year}`;
+          const parts = group.label ? generationParts(group.label) : null;
+          const title = (
+            <>
+              {parts?.name ?? 'Model years'}
+              {parts?.years && <span className="font-normal text-zinc-400"> · {parts.years}</span>}
+              {parts?.code && (
+                <span className="ml-2 text-xs font-normal text-zinc-500">{parts.code}</span>
+              )}
+            </>
+          );
+          // The newest generation open; older ones a line each, their years a tap away.
+          if (index > 0 && overview.years.length > 6) {
+            return (
+              <details key={key} className="border-t border-zinc-800 group/gen">
+                <summary className={`${foldSummaryClass} gap-4 py-3.5`}>
+                  <span className="min-w-0">
+                    <h2 className="text-base font-bold tracking-tight">{title}</h2>
+                    <span className="block text-[13px] text-zinc-400 mt-0.5 tabular-nums">
+                      <Facts facts={generationSummary(group.rows)} />
                     </span>
-                    <span className="min-w-0 flex-1 text-sm leading-relaxed tabular-nums">
-                      {(() => {
-                        // The car, its records, what it was offered as: a line
-                        // each, not eight facts in one run.
-                        const lines = modelYearLines(row);
-                        return (
-                          <>
-                            {lines.car.length > 0 && (
-                              <span className="block text-zinc-100">
-                                <Facts facts={lines.car} />
-                              </span>
-                            )}
-                            {lines.records.length > 0 && (
-                              <span className="block text-zinc-300">
-                                <Facts facts={lines.records} />
-                              </span>
-                            )}
-                            <span className="block text-[13px] text-zinc-500">
-                              <Facts facts={lines.offered} />
-                            </span>
-                          </>
-                        );
-                      })()}
-                      {row.changes && (
-                        // What changed from the year before, from the EPA records.
-                        <span className="block mt-1 text-accent">
-                          <Facts facts={row.changes} />
-                        </span>
-                      )}
-                    </span>
-                    <span
-                      className="shrink-0 text-zinc-600 group-hover:text-white text-sm"
-                      aria-hidden
-                    >
-                      →
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ol>
-            {/* Wider screens: a table, so a column reads down the years. */}
-            <table className="hidden md:table w-full text-sm tabular-nums border-t border-zinc-800">
-              <thead>
-                <tr className="text-left text-xs text-zinc-500">
-                  <th scope="col" className="py-2 pr-4 font-normal">
-                    Year
-                  </th>
-                  <th scope="col" className="py-2 pr-4 font-normal">
-                    Best fuel use
-                  </th>
-                  <th scope="col" className="py-2 pr-4 font-normal">
-                    Power
-                  </th>
-                  <th scope="col" className="py-2 pr-4 font-normal">
-                    NHTSA
-                  </th>
-                  <th scope="col" className="py-2 pr-4 font-normal text-right">
-                    Recalls in Canada
-                  </th>
-                  <th scope="col" className="py-2 pr-4 font-normal text-right">
-                    NHTSA complaints
-                  </th>
-                  <th scope="col" className="py-2 pr-4 font-normal">
-                    Offered as
-                  </th>
-                  <th scope="col" className="py-2 font-normal text-right">
-                    Versions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {group.rows.map((row) => {
-                  const cells = modelYearCells(row);
-                  return (
-                    <Fragment key={row.year}>
-                      <tr
-                        className={`text-zinc-300 hover:bg-zinc-950 ${row.changes ? '' : 'border-b border-zinc-900'}`}
-                      >
-                        <th scope="row" className="py-3 pr-4 text-left font-semibold">
-                          <Link
-                            to={`/car/${row.carId}`}
-                            className="inline-block py-2 -my-2 pr-4 text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-400"
-                          >
-                            {row.year}
-                          </Link>
-                        </th>
-                        <td className="py-3 pr-4">{cells.efficiency}</td>
-                        <td className="py-3 pr-4">{cells.power}</td>
-                        <td className="py-3 pr-4">{cells.safety}</td>
-                        <td className="py-3 pr-4 text-right">{cells.recalls}</td>
-                        <td className="py-3 pr-4 text-right">{cells.complaints}</td>
-                        <td className="py-3 pr-4 text-zinc-400">{cells.offered}</td>
-                        <td className="py-3 text-right">{cells.versions}</td>
-                      </tr>
-                      {row.changes && (
-                        <tr className="border-b border-zinc-900">
-                          <td />
-                          <td colSpan={7} className="pb-3 -mt-1 text-xs text-accent">
-                            <Facts facts={row.changes} />
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-          </section>
-        ))}
+                  </span>
+                  <Chevron className="w-4 h-4 text-zinc-500 group-hover/gen:text-white group-open/gen:rotate-180" />
+                </summary>
+                <div className="pb-6">
+                  <YearTable rows={group.rows} name={name!} />
+                </div>
+              </details>
+            );
+          }
+          return (
+            <section key={key} className="mb-8">
+              <h2 className="text-base font-bold tracking-tight mb-2">{title}</h2>
+              <YearTable rows={group.rows} name={name!} />
+            </section>
+          );
+        })}
 
-        <p className="text-xs text-zinc-500 leading-relaxed max-w-xl">
+        <p className="text-xs text-zinc-500 leading-relaxed max-w-xl mt-6">
           Each figure is the year’s best or its span across its versions: EPA ratings, NHTSA stars,
           Transport Canada’s recalls and owners’ complaints to NHTSA. A year opens its base version.{' '}
           <Link

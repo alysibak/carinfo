@@ -629,7 +629,7 @@ export interface ModelYearSummary {
   standardTech?: Array<'fcw' | 'ldw'>;
   /**
    * What changed from the model year before it on file, from the EPA and NHTSA
-   * records: "New generation: XV70 · 8th generation", "Hybrid added", "Up to 301
+   * records: "New generation", "Hybrid added", "Up to 301
    * hp (was 268)", "Forward collision warning made standard".
    */
   changes?: string[];
@@ -672,6 +672,13 @@ export interface BestSellers {
   year: number;
   source: { name: string; url: string };
   models: BestSeller[];
+}
+
+/** Rivals to compare in one tap, the same model year of each. */
+export interface Matchup {
+  label: string;
+  year: number;
+  cars: Array<{ label: string; carId: string }>;
 }
 
 export interface OwnershipAssumptions {

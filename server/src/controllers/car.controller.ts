@@ -118,6 +118,17 @@ export function getModelLinesByMake(req: Request, res: Response, next: NextFunct
 }
 
 /**
+ * Rivals to compare in one tap: /api/cars/matchups
+ */
+export function getMatchups(_req: Request, res: Response, next: NextFunction) {
+  try {
+    res.json({ success: true, data: carService.getMatchups() });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
  * Canada's best sellers with their newest year on file: /api/cars/popular
  */
 export function getBestSellers(_req: Request, res: Response, next: NextFunction) {

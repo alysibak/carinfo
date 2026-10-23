@@ -244,7 +244,8 @@ export default function CarCard({
     return (
       <article className="group relative flex gap-3 px-3 py-3 border-b border-zinc-900 hover:bg-zinc-950 focus-within:bg-zinc-950">
         <StatusToast message={toast} />
-        <div className="w-16 h-10 sm:w-20 sm:h-12 shrink-0 overflow-hidden mt-0.5" aria-hidden>
+        {/* On a phone the outline took a fifth of the row to say "sedan" again. */}
+        <div className="hidden sm:block w-20 h-12 shrink-0 overflow-hidden mt-0.5" aria-hidden>
           <VehiclePlaceholder car={car} compact hideCaption />
         </div>
         <div className="min-w-0 flex-1">

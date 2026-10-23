@@ -253,7 +253,10 @@ export const TOP_MAKES = [
 ];
 
 export const POPULAR_SEARCHES = [
-  { label: `${LATEST_FULL_MODEL_YEAR} Camry`, query: `${LATEST_FULL_MODEL_YEAR} camry` },
+  {
+    label: `${LATEST_FULL_MODEL_YEAR} Toyota Camry`,
+    query: `${LATEST_FULL_MODEL_YEAR} toyota camry`,
+  },
   { label: 'Honda Civic', query: 'honda civic' },
   { label: 'Ford F-150', query: 'ford f-150' },
   { label: 'Toyota RAV4', query: 'toyota rav4' },

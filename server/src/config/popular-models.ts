@@ -92,3 +92,34 @@ export const EXAMPLE_MODEL_PAGES = [
   { label: 'Kia Sportage', path: '/models/kia/sportage' },
   { label: 'Hyundai Elantra', path: '/models/hyundai/elantra' },
 ] as const;
+
+/**
+ * Rivals shoppers weigh against each other, compared in one tap: each set
+ * the class's best sellers or its best-known names, by model page.
+ */
+export const MATCHUPS = [
+  {
+    label: 'Compact cars',
+    paths: ['/models/honda/civic', '/models/toyota/corolla', '/models/hyundai/elantra'],
+  },
+  {
+    label: 'Compact SUVs',
+    paths: ['/models/toyota/rav4', '/models/honda/cr-v', '/models/mazda/cx-5'],
+  },
+  {
+    label: 'More compact SUVs',
+    paths: ['/models/hyundai/tucson', '/models/kia/sportage', '/models/nissan/rogue'],
+  },
+  {
+    label: 'Pickups',
+    paths: ['/models/ford/f-150', '/models/chevrolet/silverado', '/models/ram/1500'],
+  },
+  {
+    label: 'Midsize sedans',
+    paths: ['/models/toyota/camry', '/models/honda/accord', '/models/hyundai/sonata'],
+  },
+  {
+    label: 'Electric SUVs',
+    paths: ['/models/tesla/model-y', '/models/hyundai/ioniq-5', '/models/kia/ev6'],
+  },
+] as const;

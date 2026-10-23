@@ -1152,8 +1152,15 @@ describe('car.service model pages', () => {
     expect(camry.rivals.map((rival) => rival.name)).toContain('Accord');
     // What changed: the XV70 generation began with the 2018 model year.
     const y2018 = camry.years.find((row) => row.year === 2018)!;
-    expect(y2018.changes?.[0]).toMatch(/^New generation: XV70/);
+    expect(y2018.changes?.[0]).toBe('New generation');
     expect(camry.lead.year).toBe(camry.last);
+  });
+
+  it('opens each year on a version a shopper can buy, not a fleet one', () => {
+    // EPA lists the Ioniq 5 Robotaxi, a driverless fleet car, beside the Ioniq 5.
+    for (const row of getModelOverview('hyundai', 'ioniq-5')!.years) {
+      expect(getCarById(row.carId)!.model).not.toMatch(/robo ?taxi/i);
+    }
   });
 
   it('finds the page from a car, a search and any capitalisation, and nothing for a made-up model', () => {

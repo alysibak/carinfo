@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { ModelYearSummary } from '../types/car.types';
-import { modelYearCells, modelYearFacts, modelYearLines, yearSpan } from './modelYearFacts';
+import {
+  generationParts,
+  generationSummary,
+  modelYearCells,
+  modelYearFacts,
+  modelYearLines,
+  yearSpan,
+} from './modelYearFacts';
 
 describe('modelYearFacts', () => {
   it('reads a year as fuel use, power, safety, then what it was offered as, with no estimate', () => {
@@ -74,5 +81,35 @@ describe('yearSpan', () => {
   it('writes a run of years, or one', () => {
     expect(yearSpan(1995, 2026)).toBe('1995–2026');
     expect(yearSpan(2026, 2026)).toBe('2026');
+  });
+});
+
+describe('generations', () => {
+  it('splits a label into its name, years and code', () => {
+    expect(generationParts('FE · 11th generation (2022 on)')).toEqual({
+      name: '11th generation',
+      years: '2022 on',
+      code: 'FE',
+    });
+    expect(generationParts('9th generation (2018–2024)')).toEqual({
+      name: '9th generation',
+      years: '2018–2024',
+    });
+    expect(generationParts('XV70')).toEqual({ name: 'XV70', years: undefined });
+  });
+
+  it('sums a folded generation up in a line', () => {
+    const base: Omit<ModelYearSummary, 'year'> = {
+      carId: 'x',
+      configurations: 1,
+      fuelTypes: [],
+      bodyStyles: [],
+    };
+    expect(
+      generationSummary([
+        { ...base, year: 2017, combinedMpg: 36, horsepower: { min: 158, max: 306 } },
+        { ...base, year: 2016, combinedMpg: 35, horsepower: { min: 158, max: 174 } },
+      ]),
+    ).toEqual(['2 years', 'from 6.5 L/100 km', '158–306 hp']);
   });
 });

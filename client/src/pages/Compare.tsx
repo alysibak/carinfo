@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useCarStore } from '../stores/carStore';
-import type { CarDashboard, CarSpecs } from '../types/car.types';
+import type { CarDashboard, CarSpecs, Matchup } from '../types/car.types';
 import * as api from '../services/api';
 import { formatEngineForDetail, UNAVAILABLE_LABEL } from '../utils/dataValue';
 import { formatCarFuelLabel } from '../utils/fuelDisplay';
@@ -21,7 +21,7 @@ import { usePageMeta } from '../utils/pageMeta';
 import { formatCompareIds, parseCompareIds } from '../utils/compareIds';
 import { differentiateCars } from '../utils/differentiateCars';
 import { regionName, useRegionStore } from '../stores/regionStore';
-import { POPULAR_SEARCHES } from '../config/browseTaxonomy';
+import Matchups from '../components/Matchups';
 import RegionSelect from '../components/RegionSelect';
 import { formatVolume, luggageLabel } from '../utils/space';
 import { formatFeet, formatKg, formatLb, formatMetres } from '../utils/size';
@@ -398,6 +398,7 @@ export default function Compare() {
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [urlHydrated, setUrlHydrated] = useState(false);
+  const [picking, setPicking] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const region = useRegionStore((s) => s.region);
 
@@ -473,6 +474,19 @@ export default function Compare() {
 
   const urlHasCars = parseCompareIds(searchParams.get('cars')).length > 0;
 
+  // A match-up's cars, straight into the comparison; the URL follows.
+  const pickMatchup = async (matchup: Matchup) => {
+    setLoadError(null);
+    setPicking(matchup.label);
+    try {
+      replaceComparison(await api.compareCars(matchup.cars.map((car) => car.carId)));
+    } catch {
+      setLoadError('Could not load those cars. Try again.');
+    } finally {
+      setPicking(null);
+    }
+  };
+
   // Must run before any early return — Rules of Hooks.
   const diff = useMemo(() => differentiateCars(comparedCars), [comparedCars]);
 
@@ -489,23 +503,28 @@ export default function Compare() {
             Put up to five cars side by side: what each costs to buy and to run, what it burns, and
             how NHTSA rated it. Add cars from any search result or car page.
           </p>
-          <h2 className="eyebrow mb-3">Start with a name</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-8">
-            {POPULAR_SEARCHES.map((s) => (
-              <Link
-                key={s.query}
-                to={`/home?${new URLSearchParams({ q: s.query, sort: 'relevance' }).toString()}`}
-                className="choice-tile"
-              >
-                <span className="text-[15px] text-white">{s.label}</span>
-                <span aria-hidden className="text-zinc-500">
-                  →
-                </span>
-              </Link>
-            ))}
+          <h2 className="eyebrow mb-3">Popular match-ups</h2>
+          {loadError && (
+            <p role="alert" className="text-sm text-red-300 mb-3">
+              {loadError}
+            </p>
+          )}
+          <div className="mb-8">
+            <Matchups onPick={(matchup) => void pickMatchup(matchup)} picking={picking} />
           </div>
           <h2 className="eyebrow mb-3">Or start from</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <Link to="/home" className="choice-tile">
+              <span>
+                <span className="block text-[15px] text-white">A name</span>
+                <span className="block text-[13px] text-zinc-400">
+                  Search any make, model or year, then add it
+                </span>
+              </span>
+              <span aria-hidden className="text-zinc-500">
+                →
+              </span>
+            </Link>
             <Link to="/browse" className="choice-tile">
               <span>
                 <span className="block text-[15px] text-white">A situation</span>
