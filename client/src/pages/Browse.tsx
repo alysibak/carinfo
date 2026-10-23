@@ -91,7 +91,7 @@ export default function Browse() {
               <Link
                 key={type.id}
                 to={filterLink(bodyTypeFilter(type.id))}
-                className="bg-black p-4 sm:p-5 hover:bg-zinc-950 transition-colors group flex flex-col min-w-0"
+                className="bg-black p-4 sm:p-5 hover:bg-zinc-950 transition-colors group flex flex-col min-w-0 last:odd:col-span-2 sm:last:odd:col-span-1"
               >
                 <BodyTypeIllustration
                   bodyType={type.id}

@@ -99,7 +99,15 @@ test.describe('keyboard focus visibility', () => {
     const res = await page.request.get('/api/cars/search?q=civic&limit=1');
     const id = (await res.json()).data.results[0].id;
 
-    for (const path of ['/', '/home?q=toyota', `/car/${id}`, '/vin']) {
+    for (const path of [
+      '/',
+      '/home?q=toyota',
+      `/car/${id}`,
+      '/vin',
+      '/models/honda/civic',
+      '/compare',
+      '/browse',
+    ]) {
       expect(await unmarkedStops(page, path), path).toEqual([]);
     }
   });
