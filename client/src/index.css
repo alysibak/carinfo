@@ -59,6 +59,17 @@
   --animate-float-slow: float 11s ease-in-out infinite;
   --animate-shimmer: shimmer 2.4s linear infinite;
   --animate-grow-x: growX 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* Out from under the header, opaque all the way: a fade let the page show through. */
+  --animate-pin-in: pinIn 0.18s ease-out both;
+
+  @keyframes pinIn {
+    0% {
+      transform: translateY(-100%);
+    }
+    100% {
+      transform: none;
+    }
+  }
 
   @keyframes fadeIn {
     0% {
@@ -209,11 +220,12 @@
 }
 
 @utility btn-primary {
-  @apply inline-flex items-center justify-center gap-2 min-h-[44px] text-sm font-semibold transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:ring-accent px-5 py-2.5 bg-accent text-accent-ink hover:bg-accent-hover rounded-none;
+  /* Pressed in a touch on a tap: a phone has no hover to say it took. */
+  @apply inline-flex items-center justify-center gap-2 min-h-[44px] text-sm font-semibold transition duration-150 active:scale-[0.97] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:ring-accent px-5 py-2.5 bg-accent text-accent-ink hover:bg-accent-hover rounded-none;
 }
 
 @utility btn-secondary {
-  @apply inline-flex items-center justify-center gap-2 min-h-[44px] text-sm font-medium transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60 px-5 py-2.5 border border-zinc-600 text-zinc-200 hover:border-zinc-300 hover:text-white bg-transparent rounded-none;
+  @apply inline-flex items-center justify-center gap-2 min-h-[44px] text-sm font-medium transition duration-150 active:scale-[0.97] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60 px-5 py-2.5 border border-zinc-600 text-zinc-200 hover:border-zinc-300 hover:text-white bg-transparent rounded-none;
 }
 
 @utility btn-ghost {
@@ -222,7 +234,7 @@
 
 @utility choice-tile {
   /* A choice that reads as clickable: a bordered tile with a title and a line. */
-  @apply flex items-center justify-between gap-3 min-h-[56px] px-4 py-3 border border-zinc-800 bg-zinc-950 text-left transition-colors duration-150 hover:border-zinc-500 hover:bg-zinc-900 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60;
+  @apply flex items-center justify-between gap-3 min-h-[56px] px-4 py-3 border border-zinc-800 bg-zinc-950 text-left transition duration-150 hover:border-zinc-500 hover:bg-zinc-900 active:bg-zinc-900 active:scale-[0.99] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60;
 }
 
 @utility animate-battle-slide-in-left {
@@ -254,7 +266,7 @@
 }
 
 @utility chip {
-  @apply inline-flex items-center min-h-[36px] px-3 py-1.5 text-[13px] text-zinc-300 border border-zinc-700 rounded-none transition-colors duration-150 hover:text-white hover:border-zinc-400 bg-transparent focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60;
+  @apply inline-flex items-center min-h-[36px] px-3 py-1.5 text-[13px] text-zinc-300 border border-zinc-700 rounded-none transition duration-150 hover:text-white hover:border-zinc-400 active:scale-[0.97] bg-transparent focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60;
 }
 
 @utility scrollbar-none {

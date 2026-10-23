@@ -18,7 +18,7 @@ export default function PinnedCarBar({
 }) {
   return (
     <div
-      className="fixed inset-x-0 z-40 border-b border-zinc-800 bg-black animate-fade-in [@media(max-height:500px)]:hidden"
+      className="fixed inset-x-0 z-40 border-b border-zinc-800 bg-black animate-pin-in [@media(max-height:500px)]:hidden"
       style={{ top: 'var(--header-height)' }}
     >
       <div className="page-wrap-wide py-2 flex items-center gap-3 min-h-[52px]">
