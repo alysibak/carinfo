@@ -37,6 +37,26 @@ const CONFIG_NOTES: Array<{ pattern: RegExp; note: (hit: RegExpExecArray) => str
     note: (hit) => `${hit[1]}-inch front, ${hit[2]}-inch rear wheels`,
   },
   { pattern: /\s*\bmud terrain tires\b/i, note: () => 'Mud-terrain tires' },
+  // Electric pickups name their battery and charger: "Silverado EV 24-mod
+  // battery, 19kW 6-mode charger", "OPTIQ ... 11 kW Charger 15 modes".
+  { pattern: /\s*\b(\d{1,2})-mod battery,?/i, note: (hit) => `${hit[1]}-module battery` },
+  {
+    pattern: /\s*\b(\d{1,2})\s?kW\s+(?:\d{1,2}-mode\s+)?charger(?:\s+\d{1,2}\s+modes)?/i,
+    note: (hit) => `${hit[1]} kW onboard charger`,
+  },
+  // Tire sizes and brands: "Charger Daytona R/T AWD 255/45R20", "... 325/35ZR20 Rear A/S",
+  // "AWD 20in Goodyear", "AWD 18in".
+  {
+    pattern: /\s*\b(\d{3}\/\d{2}Z?R\d{2})\b(\s+rear)?/i,
+    note: (hit) => `${hit[1].toUpperCase()}${hit[2] ? ' rear' : ''} tires`,
+  },
+  {
+    pattern: /\s*\b(\d{2})in\s+(goodyear|nexen|michelin|pirelli|bridgestone)\b/i,
+    note: (hit) =>
+      `${hit[1]}-inch wheels, ${hit[2].charAt(0).toUpperCase()}${hit[2].slice(1).toLowerCase()} tires`,
+  },
+  { pattern: /\s+(\d{2})in$/i, note: (hit) => `${hit[1]}-inch wheels` },
+  { pattern: /\s+A\/S$/i, note: () => 'All-season tires' },
   { pattern: /\s*\(?\bwith sport mode\b\)?/i, note: () => 'Sport mode' },
   // EPA test annotations, and stop-start or driver monitoring every car has.
   { pattern: /\s*\(\d-mode(?: tm)?\)/i, note: () => null },

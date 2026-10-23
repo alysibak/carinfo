@@ -42,6 +42,7 @@ import TheftRecord from '../components/TheftRecord';
 import SizeAndSpace from '../components/SizeAndSpace';
 import OnThisPage from '../components/OnThisPage';
 import RecentlyViewed from '../components/RecentlyViewed';
+import CarPageSkeleton from '../components/CarPageSkeleton';
 import { recentEntry, useRecentStore } from '../stores/recentStore';
 
 function Subheading({ children }: { children: React.ReactNode }) {
@@ -259,16 +260,7 @@ export default function CarDetail() {
       : undefined,
   );
 
-  if (loading) {
-    return (
-      <div className="min-h-[40vh] bg-black flex items-center justify-center opacity-50 py-16">
-        <div className="text-center">
-          <div className="inline-block w-12 h-12 border-2 border-zinc-800 border-t-zinc-500 mb-4" />
-          <p className="text-xs text-zinc-300">Loading dossier</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <CarPageSkeleton />;
 
   if (!dashboard) {
     const missing = error === 'not-found';

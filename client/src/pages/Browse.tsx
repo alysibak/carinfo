@@ -182,13 +182,13 @@ export default function Browse() {
         </div>
       </section>
 
-      <section className="border-t border-zinc-900">
+      <section id="shortlists" className="border-t border-zinc-900 scroll-mt-20">
         <div className="page-wrap section-y">
           <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2">Shortlists</h2>
           <p className="text-sm text-zinc-400 mb-6">
             Ranked picks for common needs, one per model, with the rule each is ranked by.
           </p>
-          <ShortlistCards />
+          <ShortlistCards columns={2} />
         </div>
       </section>
     </div>

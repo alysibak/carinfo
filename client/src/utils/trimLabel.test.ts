@@ -78,6 +78,20 @@ describe('displayVehicleTitle / model family', () => {
     expect(displayModelLabel(car('Elantra w/Stop-Start'))).toBe('Elantra');
     expect(displayConfigNotes(car('Sentra (3-mode)'))).toEqual([]);
     expect(displayModelLabel(car('Silverado Mud Terrain Tires 4WD'))).toBe('Silverado');
+    // Battery modules, chargers and tire sizes are the configuration, not the name.
+    const ev = car('Silverado EV 24-mod battery, 19kW 6-mode charger');
+    expect(displayModelLabel(ev)).toBe('Silverado EV');
+    expect(displayConfigNotes(ev)).toEqual(['24-module battery', '19 kW onboard charger']);
+    expect(displayModelLabel(car('OPTIQ AWD V SERIES 11 kW Charger 15 modes'))).not.toMatch(/kW/);
+    const daytona = car('Charger Daytona Scat Pack AWD 325/35ZR20 Rear A/S');
+    expect(displayModelLabel(daytona)).toBe('Charger Daytona Scat Pack');
+    expect(displayConfigNotes(daytona)).toEqual(['325/35ZR20 rear tires', 'All-season tires']);
+    expect(displayConfigNotes(car('Charger 2-Dr Daytona R/T AWD 20in Goodyear'))).toEqual([
+      '20-inch wheels, Goodyear tires',
+    ]);
+    expect(displayConfigNotes(car('Charger 2-Dr Daytona R/T AWD 18in'))).toEqual([
+      '18-inch wheels',
+    ]);
     // Not a wheel size.
     expect(displayModelLabel(car('Optima (2006 New Model)'))).toBe('Optima (2006 New Model)');
   });

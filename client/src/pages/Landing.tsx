@@ -5,6 +5,7 @@ import SiteHeader from '../components/SiteHeader';
 import SampleCarCard from '../components/SampleCarCard';
 import CatalogueStats from '../components/CatalogueStats';
 import ShortlistCards from '../components/ShortlistCards';
+import { COLLECTIONS } from '../config/collections';
 import BestSellers from '../components/BestSellers';
 import RecentlyViewed from '../components/RecentlyViewed';
 import * as api from '../services/api';
@@ -251,8 +252,14 @@ export default function Landing() {
             Ranked picks for common situations, one per model, not every trim on file.
           </p>
           <ErrorBoundary fallback={null}>
-            <ShortlistCards />
+            <ShortlistCards limit={6} />
           </ErrorBoundary>
+          <Link
+            to="/browse#shortlists"
+            className="inline-flex items-center min-h-[44px] mt-3 text-sm text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-400"
+          >
+            All {Object.keys(COLLECTIONS).length} shortlists →
+          </Link>
         </section>
       </main>
 
