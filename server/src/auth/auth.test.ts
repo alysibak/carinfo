@@ -243,6 +243,26 @@ describe.skipIf(!hasTestDatabase)('sign-in', () => {
     expect(await getGarageIds(user.id)).toEqual([]);
   });
 
+  it('deletes an account that has no password, from a recent sign-in', async () => {
+    await request(app)
+      .post('/api/auth/email-otp/send-verification-otp')
+      .set('origin', SITE)
+      .send({ email: 'nopass@example.com', type: 'sign-in' });
+    const code = /\b(\d{6})\b/.exec(sent.find((m) => m.to === 'nopass@example.com')!.subject)![1];
+    const signedIn = await request(app)
+      .post('/api/auth/sign-in/email-otp')
+      .set('origin', SITE)
+      .send({ email: 'nopass@example.com', otp: code });
+    const cookie = cookiesOf(signedIn);
+    const me = await request(app).get('/api/me').set('cookie', cookie);
+    const res = await request(app)
+      .post('/api/auth/delete-user')
+      .set({ cookie, origin: SITE })
+      .send({});
+    expect(res.status).toBe(200);
+    expect(await getUser(me.body.data.user.id)).toBeNull();
+  });
+
   it('keeps a Pro account until Pro is cancelled', async () => {
     const user = await signUp(app, 'subscriber@example.com');
     await request(app).get('/api/me').set(as(user));

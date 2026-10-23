@@ -375,6 +375,8 @@ function DeleteSection({
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Without a password, deleting needs a sign-in from the last day.
+  const [stale, setStale] = useState(false);
 
   const remove = async () => {
     setError(null);
@@ -382,6 +384,10 @@ function DeleteSection({
     const { error: failed } = await authClient.deleteUser(hasPassword ? { password } : {});
     setBusy(false);
     if (failed) {
+      if (failed.code === 'SESSION_EXPIRED' || failed.code === 'SESSION_NOT_FRESH') {
+        setStale(true);
+        return;
+      }
       setError(authErrorMessage(failed));
       return;
     }
@@ -396,7 +402,7 @@ function DeleteSection({
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="text-xs text-zinc-400 hover:text-red-400"
+            className="inline-flex items-center min-h-[44px] text-sm text-zinc-400 hover:text-red-400"
           >
             Delete my account…
           </button>
@@ -407,6 +413,22 @@ function DeleteSection({
             This deletes your sign-in and your saved garage for good.
           </p>
           {error && <FormMessage>{error}</FormMessage>}
+          {stale && (
+            <div className="flex flex-col gap-3">
+              <FormMessage>
+                To confirm it&apos;s you, sign in again, then come back here to delete the account.
+              </FormMessage>
+              <button
+                type="button"
+                onClick={() => {
+                  void signOut().then(() => navigate('/sign-in?next=%2Faccount'));
+                }}
+                className="btn-secondary self-start"
+              >
+                Sign in again
+              </button>
+            </div>
+          )}
           {hasPassword && <UsernameHint email={email} />}
           {hasPassword && (
             <Field
