@@ -8,12 +8,16 @@ const LABELS: Record<ProvenanceSource, string> = {
   curated: 'Maker',
 };
 
+/**
+ * A label, not a button: small capitals with no box, which read as a tag a
+ * mouse should press. An estimate is set apart in italics.
+ */
 const STYLES: Record<ProvenanceSource, string> = {
-  epa: 'bg-transparent text-zinc-300 border-zinc-600',
-  nrcan: 'bg-transparent text-zinc-300 border-zinc-600',
-  nhtsa: 'bg-transparent text-zinc-400 border-zinc-600',
-  estimated: 'bg-transparent text-zinc-400 border-zinc-700 border-dashed',
-  curated: 'bg-transparent text-zinc-400 border-zinc-600',
+  epa: 'text-zinc-400',
+  nrcan: 'text-zinc-400',
+  nhtsa: 'text-zinc-400',
+  estimated: 'text-zinc-400 italic',
+  curated: 'text-zinc-400',
 };
 
 interface ProvenanceChipProps {
@@ -25,7 +29,8 @@ export default function ProvenanceChip({ source, className = '' }: ProvenanceChi
   if (!source) return null;
   return (
     <span
-      className={`inline-block text-xs px-1.5 py-0.5 border rounded-none ${STYLES[source]} ${className}`}
+      // The question-mark cursor: hovering explains where the figure is from.
+      className={`inline-block text-[11px] font-semibold uppercase tracking-[0.08em] leading-none cursor-help ${STYLES[source]} ${className}`}
       title={
         source === 'epa'
           ? 'EPA verified via FuelEconomy.gov'

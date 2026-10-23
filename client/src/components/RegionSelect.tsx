@@ -14,7 +14,7 @@ export default function RegionSelect({ className = '' }: { className?: string })
       <select
         value={region}
         onChange={(e) => setRegion(e.target.value as typeof region)}
-        className="bg-black border border-zinc-700 text-zinc-200 text-[13px] px-2 py-1.5 min-h-[36px] focus:outline-hidden focus:border-accent"
+        className="bg-black border border-zinc-700 hover:border-zinc-400 text-zinc-200 hover:text-white text-[13px] px-2 py-1.5 min-h-[36px] transition-colors focus:outline-hidden focus:border-accent"
         aria-label="Costs for region"
       >
         {REGION_OPTIONS.map((opt) => (

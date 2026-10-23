@@ -154,6 +154,38 @@
   }
 }
 
+/*
+ * Anything that does something on a click shows the hand. Tailwind's reset
+ * gives buttons the plain arrow, so every button on the site read as text to
+ * a mouse. Disabled ones say no instead.
+ */
+@layer base {
+  button,
+  [role='button'],
+  [role='tab'],
+  [role='switch'],
+  summary,
+  select,
+  input[type='checkbox'],
+  input[type='radio'],
+  input[type='range'],
+  input[type='submit'],
+  input[type='button'],
+  input[type='file'],
+  ::file-selector-button,
+  label:has(> input[type='checkbox']),
+  label:has(> input[type='radio']) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  select:disabled,
+  input:disabled,
+  [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+}
+
 @utility tabular-nums {
   /* Figures line up in columns in the text face itself: numbers set in the
      monospace face made every value on a page look like a code listing. */
@@ -503,6 +535,20 @@ input[type='range'] {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #71717a;
+}
+
+/*
+ * A text link answers the mouse plainly: on a hover or keyboard focus its
+ * text turns white and its underline solid. Most only turned their faint
+ * underline a shade lighter, too little to see. Outside any layer, so it
+ * wins over each link's own colours.
+ */
+a[class*='decoration-zinc']:hover,
+a[class*='decoration-zinc']:focus-visible,
+button[class*='decoration-zinc']:hover,
+button[class*='decoration-zinc']:focus-visible {
+  color: #fff;
+  text-decoration-color: currentColor;
 }
 
 /*

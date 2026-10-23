@@ -162,13 +162,13 @@ export default function Collection() {
                   <li key={car.id} className="border-b border-zinc-900">
                     <Link
                       to={`/car/${car.id}`}
-                      className="flex items-start sm:items-center gap-3 sm:gap-4 py-3.5 group"
+                      className="flex items-start sm:items-center gap-3 sm:gap-4 py-3.5 -mx-2 px-2 group hover:bg-zinc-950 transition-colors"
                     >
                       <span className="w-7 shrink-0 text-xs tabular-nums text-zinc-600 pt-0.5">
                         {i + 1}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm sm:text-base font-semibold text-white group-hover:text-zinc-300 tracking-tight line-clamp-2">
+                        <p className="text-sm sm:text-base font-semibold text-white group-hover:underline underline-offset-4 decoration-zinc-500 tracking-tight line-clamp-2">
                           {car.year} {car.make} {displayModelLabel(car)}
                         </p>
                         {shortlistDiff.byCarId[car.id]?.edge && (

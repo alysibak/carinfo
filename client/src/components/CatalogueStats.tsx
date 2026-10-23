@@ -71,7 +71,7 @@ export default function CatalogueStats({ className = '' }: { className?: string 
       </dl>
       <Link
         to="/home?filters=open"
-        className="inline-flex items-center min-h-[44px] mt-2 text-sm font-medium text-accent hover:text-accent-hover"
+        className="inline-flex items-center min-h-[44px] mt-2 text-sm font-medium text-white underline underline-offset-4 decoration-zinc-500 hover:decoration-white"
       >
         Filter them by type, year, fuel use, safety or power →
       </Link>

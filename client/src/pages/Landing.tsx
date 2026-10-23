@@ -127,7 +127,7 @@ export default function Landing() {
                   <span className="text-zinc-400">A 17-character VIN works too.</span>
                   <Link
                     to="/browse"
-                    className="text-accent hover:text-accent-hover font-medium min-h-[44px] inline-flex items-center"
+                    className="text-white font-medium underline underline-offset-4 decoration-zinc-500 hover:decoration-white min-h-[44px] inline-flex items-center"
                   >
                     Not sure yet? Start from what you need →
                   </Link>
