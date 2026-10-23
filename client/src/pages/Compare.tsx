@@ -384,7 +384,14 @@ const ALL_SPECS: SpecRow[] = [
     getNumeric: (car) => car.epa?.co2 ?? null,
     higherIsBetter: false,
   },
-  { key: 'country', label: 'Origin', getValue: (car) => car.countryOfOrigin || UNAVAILABLE_LABEL },
+  {
+    key: 'country',
+    // The make's home, not where this car was built: a Canadian RAV4 or
+    // CR-V comes from Ontario.
+    label: 'Brand origin',
+    hint: 'Where the make is from, not where it was built',
+    getValue: (car) => car.countryOfOrigin || UNAVAILABLE_LABEL,
+  },
 ];
 
 export default function Compare() {
