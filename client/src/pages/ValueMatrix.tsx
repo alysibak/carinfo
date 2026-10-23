@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   ScatterChart,
   Scatter,
@@ -597,13 +597,12 @@ export default function ValueMatrix() {
                     {hovered.bodyStyle} · ${hovered.price.toLocaleString()} ·{' '}
                     {litresText(hovered.mpg)}
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/car/${hovered.id}`)}
-                    className="mt-3 text-xs text-white underline"
+                  <Link
+                    to={`/car/${hovered.id}`}
+                    className="inline-block mt-3 text-xs text-white underline underline-offset-4 decoration-zinc-500"
                   >
                     View details →
-                  </button>
+                  </Link>
                 </div>
               )}
 
@@ -654,10 +653,9 @@ export default function ValueMatrix() {
                     {[...chartData]
                       .sort((a, b) => a.price - b.price)
                       .map((car) => (
-                        <button
+                        <Link
                           key={car.id}
-                          type="button"
-                          onClick={() => navigate(`/car/${car.id}`)}
+                          to={`/car/${car.id}`}
                           className="w-full flex items-center gap-3 px-3 py-3 text-left hover:bg-zinc-900 transition-colors"
                         >
                           <span
@@ -676,7 +674,7 @@ export default function ValueMatrix() {
                             </p>
                             <p className="text-xs text-zinc-400">{litresText(car.mpg)}</p>
                           </div>
-                        </button>
+                        </Link>
                       ))}
                   </div>
                 ) : (
@@ -766,13 +764,12 @@ export default function ValueMatrix() {
                         {litresText(hovered.mpg)}
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/car/${hovered.id}`)}
+                    <Link
+                      to={`/car/${hovered.id}`}
                       className="btn-secondary py-2! px-4! text-xs! shrink-0"
                     >
                       View car
-                    </button>
+                    </Link>
                   </div>
                 </div>
               )}
