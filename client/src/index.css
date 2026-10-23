@@ -552,6 +552,20 @@ button[class*='decoration-zinc']:focus-visible {
 }
 
 /*
+ * A text link that leaves the site says so, with an arrow out: a source's
+ * page (NHTSA, Transport Canada, Équité) opens in a new tab. A screen reader
+ * hears "opens in a new tab" rather than the arrow's name.
+ */
+a[target='_blank'][class*='underline']::after {
+  content: '\2197';
+  content: '\2197' / ', opens in a new tab';
+  display: inline-block;
+  margin-left: 0.2em;
+  font-size: 0.85em;
+  text-decoration: none;
+}
+
+/*
  * A main button that cannot be used yet is grey, not a dimmer green that
  * read as a different button (the VIN page's Decode, before a VIN).
  */
