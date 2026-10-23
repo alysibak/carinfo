@@ -493,7 +493,33 @@ input[type='range'] {
   background: #71717a;
 }
 
+/*
+ * Fold-outs slide open and shut where the browser can animate to a natural
+ * height; elsewhere they open at once, as before.
+ */
+@supports (interpolate-size: allow-keywords) {
+  details {
+    interpolate-size: allow-keywords;
+  }
+
+  details::details-content {
+    block-size: 0;
+    overflow-y: clip;
+    transition:
+      block-size 220ms ease,
+      content-visibility 220ms allow-discrete;
+  }
+
+  details[open]::details-content {
+    block-size: auto;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  details::details-content {
+    transition: none !important;
+  }
+
   *,
   *::before,
   *::after {

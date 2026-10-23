@@ -102,10 +102,19 @@ describe('ModelPage', () => {
     expect(within(table).getByRole('columnheader', { name: 'Recalls in Canada' })).toBeVisible();
     expect(within(table).getByRole('columnheader', { name: 'NHTSA complaints' })).toBeVisible();
     // The years with the most complaints and recalls, most first.
-    expect(
-      screen.getByText('Most owner complaints to NHTSA: 2023 (632), 2024 (481)'),
-    ).toBeVisible();
-    expect(screen.getByText('Most recalls in Canada: 2023 (4), 2024 (3)')).toBeVisible();
+    const complaintYears = screen.getByText(/^Most owner complaints to NHTSA/);
+    expect(complaintYears).toHaveTextContent(
+      'Most owner complaints to NHTSA: 2023 (632), 2024 (481)',
+    );
+    expect(screen.getByText(/^Most recalls in Canada/)).toHaveTextContent(
+      'Most recalls in Canada: 2023 (4), 2024 (3)',
+    );
+    // A year there is a tap from its row in the table.
+    expect(within(complaintYears).getByRole('link', { name: '2023' })).toHaveAttribute(
+      'href',
+      '#year-2023',
+    );
+    expect(document.getElementById('year-2023')).toBeInTheDocument();
     // The title is set in an effect, which can land after the heading under load.
     await waitFor(() =>
       expect(document.title).toBe('Toyota Camry: every year, 2023–2026 | CarInfo'),

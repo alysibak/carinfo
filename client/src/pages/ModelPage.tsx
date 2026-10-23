@@ -50,6 +50,29 @@ function byGeneration(years: ModelYearSummary[]) {
 }
 
 /**
+ * A year's row brought into view: its generation opened if folded, the row
+ * lit for a moment so the eye lands on it.
+ */
+function showYear(year: number) {
+  const row = document.getElementById(`year-${year}`);
+  if (!row) return;
+  const fold = row.closest('details');
+  if (fold) fold.open = true;
+  const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+  row.scrollIntoView({ block: 'center', behavior: still ? 'auto' : 'smooth' });
+  if (!still && typeof row.animate === 'function') {
+    row.animate(
+      [{ backgroundColor: 'rgb(52 211 153 / 0.14)' }, { backgroundColor: 'transparent' }],
+      {
+        duration: 1800,
+        easing: 'ease-out',
+      },
+    );
+  }
+  row.querySelector('a')?.focus({ preventScroll: true });
+}
+
+/**
  * One generation's years, a row each and a column a figure, so a figure reads
  * down the years. Phones keep the five a shopper compares; power, what it was
  * offered as and the version count join on wider screens.
@@ -113,7 +136,8 @@ function YearTable({ rows, name }: { rows: ModelYearSummary[]; name: string }) {
           return (
             <Fragment key={row.year}>
               <tr
-                className={`text-zinc-300 hover:bg-zinc-950 ${row.changes ? '' : 'border-b border-zinc-900'}`}
+                id={`year-${row.year}`}
+                className={`scroll-mt-24 text-zinc-300 hover:bg-zinc-950 ${row.changes ? '' : 'border-b border-zinc-900'}`}
               >
                 <th scope="row" className={`${td} text-left font-semibold`}>
                   <Link
@@ -227,8 +251,29 @@ export default function ModelPage() {
             .slice(0, 3)
             .map((row) => {
               const part = about?.(row);
-              return `${row.year} (${(count(row) ?? 0).toLocaleString('en-CA')}${part ? `, most about ${complaintPart(part).toLowerCase()}` : ''})`;
+              return {
+                year: row.year,
+                note: `(${(count(row) ?? 0).toLocaleString('en-CA')}${part ? `, most about ${complaintPart(part).toLowerCase()}` : ''})`,
+              };
             });
+        // Each year a tap from its row, its generation opened if folded.
+        const years = (list: typeof complaints) =>
+          list.map(({ year, note }, i) => (
+            <Fragment key={year}>
+              {i > 0 && ', '}
+              <a
+                href={`#year-${year}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  showYear(year);
+                }}
+                className="text-white underline underline-offset-4 decoration-zinc-600 hover:decoration-zinc-300"
+              >
+                {year}
+              </a>{' '}
+              {note}
+            </Fragment>
+          ));
         const complaints = most(
           (row) => row.complaints,
           (row) => row.complaintPart,
@@ -240,9 +285,9 @@ export default function ModelPage() {
             <h2 className="text-base font-bold tracking-tight mb-2">Years to check</h2>
             <ul className="text-sm text-zinc-300 space-y-1 tabular-nums">
               {complaints.length > 0 && (
-                <li>Most owner complaints to NHTSA: {complaints.join(', ')}</li>
+                <li>Most owner complaints to NHTSA: {years(complaints)}</li>
               )}
-              {recalls.length > 0 && <li>Most recalls in Canada: {recalls.join(', ')}</li>}
+              {recalls.length > 0 && <li>Most recalls in Canada: {years(recalls)}</li>}
             </ul>
             <p className="text-xs text-zinc-500 mt-2 leading-relaxed max-w-xl">
               Counts from NHTSA’s complaint records and Transport Canada’s recall database, not

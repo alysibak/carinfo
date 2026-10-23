@@ -18,10 +18,11 @@ import CarImage from '../components/CarImage';
 import CarPhotoButton from '../components/CarPhotoButton';
 import { StatusToast, LoadingScreen } from '../components/ui';
 import { usePageMeta } from '../utils/pageMeta';
-import { formatCompareIds, parseCompareIds } from '../utils/compareIds';
+import { formatCompareIds, MAX_COMPARE, parseCompareIds } from '../utils/compareIds';
 import { differentiateCars } from '../utils/differentiateCars';
 import { regionName, useRegionStore } from '../stores/regionStore';
 import Matchups from '../components/Matchups';
+import AddCarSearch from '../components/AddCarSearch';
 import RegionSelect from '../components/RegionSelect';
 import { formatVolume, luggageLabel } from '../utils/space';
 import { formatFeet, formatKg, formatLb, formatMetres } from '../utils/size';
@@ -392,13 +393,19 @@ export default function Compare() {
     'Up to five cars side by side: fuel use, crash ratings, recalls in Canada, complaints and theft, from the public records.',
   );
   const [searchParams, setSearchParams] = useSearchParams();
-  const { comparedCars, removeCarFromComparison, clearComparison, replaceComparison } =
-    useCarStore();
+  const {
+    comparedCars,
+    removeCarFromComparison,
+    clearComparison,
+    replaceComparison,
+    addCarToComparison,
+  } = useCarStore();
   const [dashboards, setDashboards] = useState<CarDashboard[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [urlHydrated, setUrlHydrated] = useState(false);
   const [picking, setPicking] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const region = useRegionStore((s) => s.region);
 
@@ -474,6 +481,13 @@ export default function Compare() {
 
   const urlHasCars = parseCompareIds(searchParams.get('cars')).length > 0;
 
+  // A car found by name, into the comparison; the URL follows.
+  const addFound = (car: CarSpecs) => {
+    const result = addCarToComparison(car);
+    if (!result.ok) setToast(result.message);
+    else setAdding(false);
+  };
+
   // A match-up's cars, straight into the comparison; the URL follows.
   const pickMatchup = async (matchup: Matchup) => {
     setLoadError(null);
@@ -503,7 +517,10 @@ export default function Compare() {
             Put up to five cars side by side: what each costs to buy and to run, what it burns, and
             how NHTSA rated it. Add cars from any search result or car page.
           </p>
-          <h2 className="eyebrow mb-3">Popular match-ups</h2>
+          <div className="mb-8 max-w-xl">
+            <AddCarSearch label="Start with a name" onAdd={addFound} />
+          </div>
+          <h2 className="eyebrow mb-3">Or a popular match-up</h2>
           {loadError && (
             <p role="alert" className="text-sm text-red-300 mb-3">
               {loadError}
@@ -514,17 +531,6 @@ export default function Compare() {
           </div>
           <h2 className="eyebrow mb-3">Or start from</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <Link to="/home" className="choice-tile">
-              <span>
-                <span className="block text-[15px] text-white">A name</span>
-                <span className="block text-[13px] text-zinc-400">
-                  Search any make, model or year, then add it
-                </span>
-              </span>
-              <span aria-hidden className="text-zinc-500">
-                →
-              </span>
-            </Link>
             <Link to="/browse" className="choice-tile">
               <span>
                 <span className="block text-[15px] text-white">A situation</span>
@@ -618,6 +624,16 @@ export default function Compare() {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              {comparedCars.length < MAX_COMPARE && (
+                <button
+                  type="button"
+                  aria-expanded={adding}
+                  onClick={() => setAdding((open) => !open)}
+                  className="btn-primary min-h-[40px]! py-2!"
+                >
+                  + Add a car
+                </button>
+              )}
               <button
                 type="button"
                 onClick={async () => {
@@ -642,6 +658,15 @@ export default function Compare() {
             </div>
           </div>
           {loadError && <p className="text-sm text-amber-300/90 mt-3">{loadError}</p>}
+          {adding && comparedCars.length < MAX_COMPARE && (
+            <div className="mt-4 max-w-xl">
+              <AddCarSearch
+                autoFocus
+                onAdd={addFound}
+                addedIds={comparedCars.map((car) => car.id)}
+              />
+            </div>
+          )}
         </div>
       </div>
 
