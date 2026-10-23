@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Fragment, useEffect, useState } from 'react';
 import * as api from '../services/api';
 import { isHttpError } from '../services/http';
@@ -78,6 +78,7 @@ function showYear(year: number) {
  * offered as and the version count join on wider screens.
  */
 function YearTable({ rows, name }: { rows: ModelYearSummary[]; name: string }) {
+  const navigate = useNavigate();
   const th = 'py-2 pr-2 min-[360px]:pr-3 md:pr-4 font-normal';
   const wide = 'hidden md:table-cell';
   return (
@@ -137,7 +138,13 @@ function YearTable({ rows, name }: { rows: ModelYearSummary[]; name: string }) {
             <Fragment key={row.year}>
               <tr
                 id={`year-${row.year}`}
-                className={`scroll-mt-24 text-zinc-300 hover:bg-zinc-950 ${row.changes ? '' : 'border-b border-zinc-900'}`}
+                data-row-link
+                // The whole row opens the year, as its hover says; the year is
+                // its link for a keyboard or a screen reader.
+                onClick={(e) => {
+                  if (!(e.target as Element).closest('a')) navigate(`/car/${row.carId}`);
+                }}
+                className={`scroll-mt-24 cursor-pointer text-zinc-300 hover:bg-zinc-950 ${row.changes ? '' : 'border-b border-zinc-900'}`}
               >
                 <th scope="row" className={`${td} text-left font-semibold`}>
                   <Link
