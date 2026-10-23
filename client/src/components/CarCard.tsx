@@ -33,7 +33,15 @@ interface CarCardProps {
   showValue?: boolean;
   /** How many versions the card's model year has, when it stands for them. */
   versions?: number;
+  /**
+   * In a grid whose rows the cards share (see CARD_GRID): the name, the
+   * figures and the buttons line up across a row though one name wraps.
+   */
+  aligned?: boolean;
 }
+
+/** A results grid whose cards share row heights; pair with <CarCard aligned />. */
+export const CARD_GRID = 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4';
 
 interface Figure {
   label: string;
@@ -160,6 +168,7 @@ export default function CarCard({
   onRemove,
   showValue = false,
   versions,
+  aligned = false,
 }: CarCardProps) {
   const [toast, setToast] = useState<string | null>(null);
 
@@ -288,7 +297,11 @@ export default function CarCard({
   }
 
   return (
-    <article className="surface-card-hover group relative flex flex-col h-full overflow-hidden focus-within:border-zinc-400">
+    <article
+      className={`surface-card-hover group relative overflow-hidden focus-within:border-zinc-400 ${
+        aligned ? 'grid grid-rows-subgrid row-span-3 gap-0' : 'flex flex-col h-full'
+      }`}
+    >
       <StatusToast message={toast} />
 
       {/* Results show the body's outline, alike for every car: community

@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import { useCarStore } from '../stores/carStore';
 import FilterSidebar from '../components/FilterSidebar';
 import FilterSheet from '../components/FilterSheet';
-import CarCard from '../components/CarCard';
+import CarCard, { CARD_GRID } from '../components/CarCard';
 import SearchBar from '../components/SearchBar';
 import SelectMenu from '../components/SelectMenu';
 import PageShell, { PageBody } from '../components/PageShell';
@@ -673,10 +673,11 @@ export default function Home() {
                         ))}
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+                      <div className={CARD_GRID}>
                         {searchResults.results.map((car) => (
                           <CarCard
                             key={car.id}
+                            aligned
                             car={car}
                             showValue={priceAsked}
                             versions={searchResults.versions?.[car.id]}
