@@ -10,29 +10,43 @@ import BestSellers from '../components/BestSellers';
 import RecentlyViewed from '../components/RecentlyViewed';
 import * as api from '../services/api';
 import type { CarSpecs } from '../types/car.types';
-import { LIFESTYLE_PRESETS, POPULAR_SEARCHES, presetToSearchQuery } from '../config/browseTaxonomy';
-import { searchQueryToParams } from '../utils/searchParams';
 import { HERO_PREVIEW_QUERY, pickHeroPreviewCar } from '../utils/landingShowcase';
 import { usePageMeta } from '../utils/pageMeta';
 import CompareTray from '../components/CompareTray';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { useCarStore } from '../stores/carStore';
-import { EXAMPLE_MODEL_PAGES } from '@carinfo/config/popular-models';
 
 const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/i;
 
-/** Searches that sort or keep by NHTSA's records (see the server's search-modifiers.ts). */
-const SAFETY_SEARCHES = [
-  { label: 'Safest SUVs', query: 'safest suv' },
-  { label: 'SUVs with collision warning standard', query: 'suv with standard collision warning' },
-  { label: 'Safest minivans', query: 'safest minivan' },
-  { label: 'Safest first cars', query: 'safest first car' },
-  { label: 'Most stolen in Canada', query: 'most stolen' },
+/** Where people start, a line each. */
+const START_POINTS = [
+  { label: 'I know the car', note: 'Search its make, model or year', to: '/home' },
+  {
+    label: 'I’m still deciding',
+    note: 'Start from what you need it for: commuting, a family, a first car',
+    to: '/browse',
+  },
+  {
+    label: 'Safety first',
+    note: 'Five crash-test stars, collision warning, no recalls',
+    to: '/browse#record',
+  },
+  {
+    label: 'I have a VIN',
+    note: 'What it is, and its year’s recalls, complaints and crash rating',
+    to: '/vin',
+  },
+  {
+    label: 'I’m comparing options',
+    note: 'Popular match-ups side by side in one tap, or any cars you pick',
+    to: '/compare',
+  },
+  {
+    label: 'The whole market',
+    note: 'Every car’s value against its fuel use',
+    to: '/value-matrix',
+  },
 ];
-
-function homeLinkFromPreset(preset: (typeof LIFESTYLE_PRESETS)[number]) {
-  return `/home?${searchQueryToParams(presetToSearchQuery(preset), 1).toString()}`;
-}
 
 export default function Landing() {
   usePageMeta(
@@ -75,8 +89,6 @@ export default function Landing() {
       })
       .catch(() => {});
   }, []);
-
-  const situationPresets = LIFESTYLE_PRESETS.slice(0, 4);
 
   return (
     <div className={`min-h-screen bg-black text-white selection:bg-white/20 ${trayPad}`}>
@@ -144,106 +156,26 @@ export default function Landing() {
         </div>
 
         <section className="page-wrap section-y border-t border-zinc-900">
-          <h2 className="section-title mb-2">How do you want to start?</h2>
-          <p className="text-[15px] text-zinc-400 mb-6 md:mb-8 max-w-xl leading-relaxed">
-            Most people arrive with one of these in mind.
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="border border-zinc-800 bg-zinc-950 p-4 sm:p-5">
-              <h3 className="text-base font-semibold text-white mb-3">I know the car</h3>
-              <div className="flex flex-wrap gap-2">
-                {POPULAR_SEARCHES.map((s) => (
-                  <Link
-                    key={s.query}
-                    to={`/home?${new URLSearchParams({ q: s.query, sort: 'relevance' }).toString()}`}
-                    className="chip"
-                  >
-                    {s.label}
-                  </Link>
-                ))}
-                <Link to="/home" className="chip border-transparent text-zinc-400">
-                  Open search →
+          <h2 className="section-title mb-6">How do you want to start?</h2>
+          {/* A line each, a tap each: the boxes of chips here took two phone
+              screens and repeated the best sellers above them. */}
+          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {START_POINTS.map((start) => (
+              <li key={start.to}>
+                <Link to={start.to} className="choice-tile h-full">
+                  <span className="min-w-0">
+                    <span className="block text-[15px] font-semibold text-white">
+                      {start.label}
+                    </span>
+                    <span className="block text-[13px] text-zinc-400 mt-0.5">{start.note}</span>
+                  </span>
+                  <span aria-hidden className="text-zinc-500 shrink-0">
+                    →
+                  </span>
                 </Link>
-              </div>
-            </div>
-
-            <div className="border border-zinc-800 bg-zinc-950 p-4 sm:p-5">
-              <h3 className="text-base font-semibold text-white mb-1">I&apos;m checking a model</h3>
-              <p className="text-[13px] text-zinc-400 mb-3">
-                Every year at a glance: recalls in Canada, owner complaints, fuel use and what
-                changed.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {EXAMPLE_MODEL_PAGES.map((model) => (
-                  <Link key={model.path} to={model.path} className="chip">
-                    {model.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div className="border border-zinc-800 bg-zinc-950 p-4 sm:p-5">
-              <h3 className="text-base font-semibold text-white mb-3">I&apos;m still deciding</h3>
-              <div className="flex flex-wrap gap-2">
-                {situationPresets.map((preset) => (
-                  <Link key={preset.id} to={homeLinkFromPreset(preset)} className="chip">
-                    {preset.label}
-                  </Link>
-                ))}
-                <Link to="/browse" className="chip border-transparent text-zinc-400">
-                  All situations →
-                </Link>
-              </div>
-            </div>
-
-            <div className="border border-zinc-800 bg-zinc-950 p-4 sm:p-5">
-              <h3 className="text-base font-semibold text-white mb-1">Safety first</h3>
-              <p className="text-[13px] text-zinc-400 mb-3">
-                NHTSA&apos;s crash ratings and the safety technology it lists, year by year, and the
-                models thieves take most in Canada.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {SAFETY_SEARCHES.map((s) => (
-                  <Link
-                    key={s.query}
-                    to={`/home?${new URLSearchParams({ q: s.query, sort: 'relevance' }).toString()}`}
-                    className="chip"
-                  >
-                    {s.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div className="border border-zinc-800 bg-zinc-950 p-4 sm:p-5">
-              <h3 className="text-base font-semibold text-white mb-1">I have a VIN</h3>
-              <p className="text-[13px] text-zinc-400 mb-3">
-                Paste it in the search above, or scan the barcode with your phone: see what it is,
-                and its model year&apos;s recalls, owner complaints and crash rating.
-              </p>
-              <Link to="/vin" className="chip">
-                Decode a VIN →
-              </Link>
-            </div>
-
-            <div className="border border-zinc-800 bg-zinc-950 p-4 sm:p-5">
-              <h3 className="text-base font-semibold text-white mb-1">
-                I&apos;m comparing options
-              </h3>
-              <p className="text-[13px] text-zinc-400 mb-3">
-                Put cars side by side, or see the whole market on one chart.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Link to="/compare" className="chip">
-                  Side-by-side compare
-                </Link>
-                <Link to="/value-matrix" className="chip">
-                  Value chart
-                </Link>
-              </div>
-            </div>
-          </div>
+              </li>
+            ))}
+          </ul>
         </section>
 
         <section className="page-wrap section-y border-t border-zinc-900">

@@ -127,7 +127,7 @@ export default function Browse() {
 
       <section className="border-t border-zinc-900">
         <div className="page-wrap section-y grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
-          <div>
+          <div id="record" className="scroll-mt-20">
             <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2">A clean record</h2>
             <p className="text-sm text-zinc-400 mb-6">
               From NHTSA, Transport Canada and Équité Association, not from us.
