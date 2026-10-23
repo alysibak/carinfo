@@ -552,6 +552,18 @@ button[class*='decoration-zinc']:focus-visible {
 }
 
 /*
+ * A main button that cannot be used yet is grey, not a dimmer green that
+ * read as a different button (the VIN page's Decode, before a VIN).
+ */
+button:disabled:is(.btn-primary, .bg-accent),
+a[aria-disabled='true']:is(.btn-primary, .bg-accent) {
+  background-color: #27272a;
+  color: #a1a1aa;
+  opacity: 1;
+  scale: 1;
+}
+
+/*
  * Fold-outs slide open and shut where the browser can animate to a natural
  * height; elsewhere they open at once, as before.
  */
