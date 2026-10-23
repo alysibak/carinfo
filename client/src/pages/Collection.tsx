@@ -168,7 +168,7 @@ export default function Collection() {
                         {i + 1}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm sm:text-base font-semibold text-white group-hover:text-zinc-300 tracking-tight truncate">
+                        <p className="text-sm sm:text-base font-semibold text-white group-hover:text-zinc-300 tracking-tight line-clamp-2">
                           {car.year} {car.make} {displayModelLabel(car)}
                         </p>
                         {shortlistDiff.byCarId[car.id]?.edge && (

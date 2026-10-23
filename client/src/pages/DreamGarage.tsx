@@ -8,7 +8,7 @@ import { ConfirmDialog, Modal, StatusToast } from '../components/ui';
 import * as api from '../services/api';
 import type { CarSpecs } from '../types/car.types';
 import { COLLECTIONS } from '../config/collections';
-import { displayModelLabel } from '../utils/trimLabel';
+import { displayModelFamilyLabel, displayModelLabel } from '../utils/trimLabel';
 import { rankedFigure } from '../utils/rankedFigure';
 import VehiclePlaceholder from '../components/VehiclePlaceholder';
 import CarCard from '../components/CarCard';
@@ -32,12 +32,14 @@ function GarageSuggestions({ onSaved }: { onSaved: (message: string) => void }) 
       .getCollectionPreviews()
       .then((previews) => {
         if (!active) return;
+        // One of each model: two lists both led with a Prius.
         const seen = new Set<string>();
+        const model = (c: CarSpecs) => `${c.make} ${displayModelFamilyLabel(c)}`;
         const picks: { car: CarSpecs; list: string; figure: string | null }[] = [];
         for (const collection of Object.values(COLLECTIONS)) {
-          const car = previews[collection.id]?.find((c) => !seen.has(c.id));
+          const car = previews[collection.id]?.find((c) => !seen.has(model(c)));
           if (!car) continue;
-          seen.add(car.id);
+          seen.add(model(car));
           picks.push({
             car,
             list: collection.title,
