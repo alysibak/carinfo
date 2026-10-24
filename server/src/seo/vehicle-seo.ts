@@ -1,5 +1,6 @@
 import type { Car } from '../types/car.types.js';
 import { displayListingSubtitle, formatTransmissionLabel } from '../utils/trim-label.js';
+import { displayVehicleTitle } from '../shared/vehicle-labels.js';
 import { escapeHtml } from './html.js';
 import { absoluteUrl } from './site.js';
 import { COMMONS_FILE } from '../utils/car-photos.js';
@@ -56,9 +57,9 @@ function isElectrified(car: Car): boolean {
   return car.engine.fuelType === 'electric' || car.engine.fuelType === 'hydrogen';
 }
 
+/** The car as its page titles it: "2022 Honda Civic", not EPA's "Civic 4Dr". */
 export function vehicleName(car: Car): string {
-  const variant = car.variant && !car.model.toLowerCase().includes(car.variant.toLowerCase());
-  return `${car.year} ${car.make} ${car.model}${variant ? ` ${car.variant}` : ''}`;
+  return displayVehicleTitle(car);
 }
 
 function efficiencyPhrase(car: Car): string | null {
