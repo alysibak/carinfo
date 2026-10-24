@@ -6,6 +6,8 @@ import { useGarageStore } from '../stores/garageStore';
 import ToolPageHeader from '../components/ToolPageHeader';
 import { ErrorState, LoadingScreen, StatusToast } from '../components/ui';
 import CarCard from '../components/CarCard';
+import CarRecordsNote from '../components/CarRecordsNote';
+import { MAX_COMPARE as MAX_COMPARED } from '../utils/compareIds';
 
 export default function SharedGarage() {
   const [searchParams] = useSearchParams();
@@ -88,6 +90,8 @@ export default function SharedGarage() {
     );
   }
 
+  const compareIds = cars.slice(0, MAX_COMPARED).map((car) => car.id);
+
   return (
     <div className="min-h-screen bg-black text-white">
       <StatusToast message={saveMessage} />
@@ -95,17 +99,8 @@ export default function SharedGarage() {
         wide
         backTo="/"
         backLabel="Home"
-        title="Shared Garage"
-        subtitle={`${cars.length} vehicle${cars.length !== 1 ? 's' : ''}`}
-        action={
-          <button
-            type="button"
-            onClick={saveAllToLocalGarage}
-            className="min-h-[44px] px-2 -mr-2 text-xs text-zinc-400 hover:text-white transition-colors text-right"
-          >
-            Save all
-          </button>
-        }
+        title="Cars shared with you"
+        subtitle={`${cars.length} ${cars.length === 1 ? 'car' : 'cars'} from someone’s CarInfo garage`}
       />
 
       <div className="pt-8 pb-16 page-wrap-wide">
@@ -118,13 +113,28 @@ export default function SharedGarage() {
             </Link>
           </div>
         ) : (
-          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {cars.map((car) => (
-              <li key={car.id}>
-                <CarCard car={car} />
-              </li>
-            ))}
-          </ul>
+          <>
+            {/* What someone sent a shortlist for: to weigh the cars up, or keep them. */}
+            <div className="flex flex-wrap items-center gap-3 mb-8">
+              {cars.length > 1 && (
+                <Link to={`/compare?cars=${compareIds.join(',')}`} className="btn-primary">
+                  {cars.length > MAX_COMPARED
+                    ? `Compare the first ${MAX_COMPARED}`
+                    : 'Compare them side by side'}
+                </Link>
+              )}
+              <button type="button" onClick={saveAllToLocalGarage} className="btn-secondary">
+                Save all to my garage
+              </button>
+            </div>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {cars.map((car) => (
+                <li key={car.id}>
+                  <CarCard car={car} notes={<CarRecordsNote carId={car.id} />} />
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </div>
     </div>
