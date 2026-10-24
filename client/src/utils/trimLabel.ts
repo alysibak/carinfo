@@ -139,9 +139,14 @@ function baseModelLabel(car: ModelCar): string {
   return cleaned || base || car.model.trim();
 }
 
-/** Drive / door / config tokens that are not part of the shopper-facing model name. */
+/**
+ * Drive / door / config tokens that are not part of the shopper-facing model
+ * name, EPA's powertrain codes among them: "Camry HEV FF" is a Camry hybrid
+ * with front engine and front drive, "Defender 110 MHEV" a mild hybrid. (The
+ * Ferrari FF, all one word of a name, keeps it.)
+ */
 const MODEL_CONFIG_SUFFIX =
-  /^(?:\d+-door|\d+dr|\d+wd|awd|fwd|rwd|4x4|4x2|di|automatic|manual|cvt|auto|s\d+|er\d+|sr|pro|platinum|hybrid|phev|ffv|si|type|trd|xse|xle|le|se|ex|lx|base|payload|lt)$/i;
+  /^(?:\d+-door|\d+dr|\d+wd|awd|fwd|rwd|4x4|4x2|di|automatic|manual|cvt|auto|s\d+|er\d+|sr|pro|platinum|hybrid|phev|hev|mhev|bev|ff|fr|ffv|si|type|trd|xse|xle|le|se|ex|lx|base|payload|lt)$/i;
 
 /**
  * Shopper-facing model family — "3 4-Door 2WD" → "3", "Model 3" → "Model 3".

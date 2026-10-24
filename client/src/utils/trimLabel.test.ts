@@ -27,6 +27,16 @@ describe('displayVehicleTitle / model family', () => {
     expect(displayModelConfigRemainder(mazda3)).toBe('4-Door');
   });
 
+  it('leaves EPA’s powertrain codes out of the title', () => {
+    const camry = { ...mazda3, make: 'Toyota', model: 'Camry HEV FF' };
+    expect(displayVehicleTitle(camry)).toBe('2026 Toyota Camry');
+    const defender = { ...mazda3, make: 'Land Rover', model: 'Defender 110 MHEV' };
+    expect(displayVehicleTitle(defender)).toBe('2026 Land Rover Defender 110');
+    // A name that is the code itself keeps it.
+    const ff = { ...mazda3, make: 'Ferrari', model: 'FF', year: 2014 };
+    expect(displayVehicleTitle(ff)).toBe('2014 Ferrari FF');
+  });
+
   it('adds a trim EPA leaves out of the name, once', () => {
     const civic = { ...mazda3, make: 'Honda', model: 'Civic 5Dr', year: 2020, variant: 'Type R' };
     expect(displayVehicleTitle(civic)).toBe('2020 Honda Civic Type R');
