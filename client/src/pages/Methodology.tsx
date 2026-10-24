@@ -127,64 +127,57 @@ export default function Methodology() {
         </section>
 
         <section>
-          <h2 className="text-xs font-bold text-white mb-4">Data pipeline</h2>
+          <h2 className="text-xs font-bold text-white mb-4">How a car’s page is put together</h2>
           <ol className="space-y-4 text-sm text-zinc-400 leading-relaxed list-decimal list-inside marker:text-zinc-400">
             <li>
-              <strong className="text-zinc-200 font-medium">Raw master record</strong> (
-              <code className="text-zinc-400 text-xs">cars.json</code>): ~36,300 EPA FuelEconomy.gov
-              configurations ({FIRST_MODEL_YEAR}–{LATEST_MODEL_YEAR}), and the cars sold in Canada
-              that EPA never rated (an Acura CSX, a Chevrolet Orlando, a Kia Magentis) from Natural
-              Resources Canada&rsquo;s fuel consumption ratings, marked NRCan. Deliberately omits
-              horsepower, GHG score, NHTSA ratings, dimensions, and runtime-only fuel types (PHEV,
-              hydrogen).
+              <strong className="text-zinc-200 font-medium">The cars</strong>: every version EPA has
+              rated from {FIRST_MODEL_YEAR} to {LATEST_MODEL_YEAR}, about 36,000, and the cars sold
+              in Canada that EPA never rated (an Acura CSX, a Chevrolet Orlando, a Kia Magentis),
+              from Natural Resources Canada and marked NRCan.
             </li>
             <li>
-              <strong className="text-zinc-200 font-medium">Load-time enrichment</strong>: companion
-              JSON files merge GHG, barrels/yr, PHEV dual-mode economy, EV kWh/range, EPA test-car
-              horsepower, and NHTSA safety when a match exists. No network calls at request time.
+              <strong className="text-zinc-200 font-medium">The records matched to each</strong>:
+              NHTSA’s crash ratings for the same model year, body and drivetrain, Transport Canada’s
+              measurements and recalls, owner complaints, defect investigations and the theft list.
+              The site reads its own copies, so a page never waits on a government server.
             </li>
             <li>
-              <strong className="text-zinc-200 font-medium">Normalization</strong>: fuel-type
-              inference, body-style correction, shopping-segment taxonomy, and regional CAD market
-              valuation run on every served record. Trims EPA leaves out of the model name (a
-              Mustang GT is just &ldquo;Mustang&rdquo;, a 2019 Civic Type R a &ldquo;Civic
-              5Dr&rdquo;) are named from the engine and gearbox, and marked as estimated. Body
-              styles follow the doors, not EPA&rsquo;s size class: a Boxster is a convertible, a BMW
-              Gran Coupe a sedan and a GLE Coupe an SUV. Similar vehicles come from the classes
-              shoppers compare within, so a Camry&rsquo;s are an Accord and a Sonata rather than a
-              Civic at the same price.
+              <strong className="text-zinc-200 font-medium">Names and bodies made plain</strong>:
+              trims EPA leaves out of the model name (a Mustang GT is just &ldquo;Mustang&rdquo;, a
+              2019 Civic Type R a &ldquo;Civic 5Dr&rdquo;) are named from the engine and gearbox,
+              and marked as estimated. Body styles follow the doors, not EPA&rsquo;s size class: a
+              Boxster is a convertible, a BMW Gran Coupe a sedan and a GLE Coupe an SUV. Similar
+              cars come from the classes shoppers compare within, so a Camry&rsquo;s are an Accord
+              and a Sonata rather than a Civic at the same price.
             </li>
             <li>
-              <strong className="text-zinc-200 font-medium">API + UI</strong>: dossier, compare, and
-              search always read the enriched, normalized record. Provenance travels with each
-              field.
+              <strong className="text-zinc-200 font-medium">Each figure keeps its source</strong>,
+              which the page names beside it (see what the labels mean, below).
             </li>
           </ol>
         </section>
 
         <section>
-          <h2 className="text-xs font-bold text-white mb-4">PHEV / BEV reclassification</h2>
-          <p className="text-sm text-zinc-400 leading-relaxed mb-4">
-            EPA bulk data often tags plug-in hybrids as &quot;electric&quot; when electricity
-            appears in the fuel-type string. CarInfo reclassifies at runtime using naming patterns
-            (Volt, Prius Prime, T8, 4xe, etc.), gas displacement plus short electric-only range
-            (&lt;50 mi), and confirmed BEV name patterns (Tesla, Leaf, Bolt EV, etc.).
-          </p>
+          <h2 className="text-xs font-bold text-white mb-4">Plug-in hybrids filed as electric</h2>
           <p className="text-sm text-zinc-400 leading-relaxed">
-            As of the current database, <strong className="text-zinc-200 font-medium">419</strong>{' '}
-            records stored as electric are corrected to plug-in hybrid. EV economy fields wrongly
-            stored as combined MPG (kWh/100mi) are replaced with authoritative MPGe from EPA
-            enrichment. This is pinned by automated tests.
+            EPA&rsquo;s bulk file lists some plug-in hybrids among its electric cars. Each
+            car&rsquo;s fuel type is read again from EPA&rsquo;s own fields for it when the data is
+            built, and checked once more by name (Volt, Prius Prime, T8, 4xe) and by a gas engine
+            with a short electric range (under 80 km), so a plug-in hybrid is not shown as electric.
+            Automated tests hold both checks in place.
           </p>
         </section>
 
         <section>
-          <h2 className="text-xs font-bold text-white mb-4">Canadian (CAD) valuation model</h2>
+          <h2 className="text-xs font-bold text-white mb-4">
+            How we estimate value and running costs
+          </h2>
           <p className="text-sm text-zinc-400 leading-relaxed mb-4">
-            Market value, running cost, resale, and TCO are{' '}
-            <strong className="text-zinc-200 font-medium">always estimated</strong> in Canadian
-            dollars for the region you pick: Ontario (~15,000 km/yr) or British Columbia (~14,000
-            km/yr). They are not live listing prices and never presented as MSRP facts.
+            Value, running costs, resale and the five-year cost are{' '}
+            <strong className="text-zinc-200 font-medium">always estimates</strong>, in Canadian
+            dollars for the region you pick: Ontario (about 15,000 km a year) or British Columbia
+            (about 14,000 km). They are not listing prices, and never shown as a maker&rsquo;s
+            price.
           </p>
           <ul className="space-y-2 text-sm text-zinc-400 leading-relaxed list-disc list-inside marker:text-zinc-400">
             <li>
@@ -263,65 +256,73 @@ export default function Methodology() {
               rather than shown as free. Natural gas uses EPA&rsquo;s own annual fuel-cost figure,
               converted to CAD.
             </li>
-            <li>Output: low / mid / high band plus a confidence label (low, medium, high).</li>
+            <li>
+              Each estimate is a range, low to high with a middle figure, and says how confident it
+              is (low, medium or high): how well the car fits the data the estimate is drawn from,
+              not how close a dealer&rsquo;s quote will be.
+            </li>
           </ul>
         </section>
 
         <section>
-          <h2 className="text-xs font-bold text-white mb-4">Confidence scoring</h2>
+          <h2 className="text-xs font-bold text-white mb-4">What the labels mean</h2>
           <p className="text-sm text-zinc-400 leading-relaxed mb-4">
-            Confidence reflects how much the model trusts its own estimate given data completeness
-            and segment fit, not dealer quote accuracy.
+            Beside each figure, where it came from:
           </p>
-          <ul className="space-y-3 text-sm text-zinc-400">
-            <li className="flex items-center gap-2">
-              <ProvenanceChip source="epa" /> EPA-verified fuel economy, engine, emissions
+          <ul className="space-y-3 text-sm text-zinc-400 leading-relaxed">
+            <li className="flex items-baseline gap-2">
+              <ProvenanceChip source="epa" />
+              <span>Measured in EPA&rsquo;s tests: fuel use, range, engine and emissions.</span>
             </li>
-            <li className="flex items-center gap-2">
-              <ProvenanceChip source="nhtsa" /> NHTSA crash-test stars from the car&rsquo;s own
-              model year, body and drivetrain (about 9,800 cars from 2011 on)
+            <li className="flex items-baseline gap-2">
+              <ProvenanceChip source="nhtsa" />
+              <span>
+                NHTSA&rsquo;s crash-test stars for the car&rsquo;s own model year, body and
+                drivetrain (about 9,800 cars from 2011 on).
+              </span>
             </li>
-            <li className="flex items-center gap-2">
-              <ProvenanceChip source="curated" /> EPA test-car rated horsepower (~55% of listings),
-              or the manufacturer&rsquo;s rating where the test-car match borrowed another
-              engine&rsquo;s (about 600 best-sellers)
+            <li className="flex items-baseline gap-2">
+              <ProvenanceChip source="curated" />
+              <span>
+                Horsepower as rated: by EPA&rsquo;s test car, or by the maker where the test car had
+                another engine (together about 70% of versions).
+              </span>
             </li>
-            <li className="flex items-center gap-2">
-              <ProvenanceChip source="estimated" /> Market value, TCO, predicted 0-60, EV HP when no
-              test-car match, and horsepower taken from the same engine in the same model (another
-              ~17% of listings)
+            <li className="flex items-baseline gap-2">
+              <ProvenanceChip source="estimated" />
+              <span>
+                Our estimates: value, running and five-year costs, predicted 0&ndash;60 mph times,
+                and horsepower taken from the same engine in the same model (about 16% of versions).
+              </span>
             </li>
           </ul>
         </section>
 
         <section>
-          <h2 className="text-xs font-bold text-white mb-4">
-            Photos: on request, of the same year
-          </h2>
+          <h2 className="text-xs font-bold text-white mb-4">Photos</h2>
           <p className="text-sm text-zinc-400 leading-relaxed">
-            Cards and pages show a body-type illustration. Where Wikimedia Commons has a photo of
-            the car’s own model year, make, model and body, a button opens it, with its photographer
-            and licence; none is shown otherwise. No listing or press photography: this is a
-            reference, not a classifieds site. We would rather omit a field than invent one.
+            A car&rsquo;s page and its model&rsquo;s open with a photo from Wikimedia Commons of
+            that model year, make, model and body. Where Commons has none, a photo of another year
+            of the same generation says which year it is; where it has neither, an outline of the
+            body stands in. Each photo names its photographer and licence. Search results show the
+            outline only. No dealer or press photos: this is a reference, not a classifieds site.
           </p>
         </section>
 
         <section>
-          <h2 className="text-xs font-bold text-white mb-4">What we omit</h2>
+          <h2 className="text-xs font-bold text-white mb-4">What we leave out</h2>
           <p className="text-sm text-zinc-400 leading-relaxed">
-            Exterior dimensions, torque, measured 0-60 times and equipment (heated seats, CarPlay)
-            are in none of these sources. EPA gives interior volumes for cars and some SUVs, not
-            pickups. Missing fields are left empty on the dossier (no row, no chip) and dropped from
-            compare when empty across all vehicles. Compare cells use &quot;Not on file&quot; only
-            when some cars have data and others do not.
+            Torque, measured 0&ndash;60 times and equipment (heated seats, CarPlay) are in none of
+            these sources. EPA gives interior space for cars and some SUVs, not pickups, and about
+            one version in seven has no horsepower on file. A figure that is missing is left off the
+            car&rsquo;s page, and dropped from Compare when no car there has it; Compare says
+            &ldquo;Not on file&rdquo; only where some cars have it and others do not. We would
+            rather leave a figure out than make one up.
           </p>
         </section>
 
         <div className="pt-6 border-t border-zinc-900">
-          <Link
-            to="/home"
-            className="inline-block px-6 py-3 bg-accent text-accent-ink text-xs font-semibold hover:bg-accent-hover transition-colors"
-          >
+          <Link to="/home" className="btn-primary">
             Search cars
           </Link>
         </div>
