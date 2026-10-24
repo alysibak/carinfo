@@ -220,9 +220,9 @@ export default function ModelPage() {
     return (
       <ErrorState
         title="Model not found"
-        message="No model by that name is on file. Search finds it by any of its names."
-        backTo="/home"
-        backLabel="Search"
+        message="No model by that name is on file. It may go by another name: search finds it by any of them."
+        backTo={`/home?q=${encodeURIComponent(`${make} ${model}`.replace(/-/g, ' '))}`}
+        backLabel="Search for it"
       />
     );
   }
@@ -233,7 +233,7 @@ export default function ModelPage() {
         message="Could not load this model. Check your connection and try again."
         onRetry={() => setAttempt((n) => n + 1)}
         backTo="/home"
-        backLabel="Search"
+        backLabel="Search cars"
       />
     );
   }

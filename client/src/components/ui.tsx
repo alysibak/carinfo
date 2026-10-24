@@ -69,12 +69,16 @@ export function LoadingScreen({ label = 'Loading' }: { label?: string }) {
   );
 }
 
+/**
+ * A page that could not be shown, with a way on that says where it goes: a
+ * retry when the trouble may pass, and a named page to go to instead.
+ */
 export function ErrorState({
   title,
   message,
   onRetry,
   backTo,
-  backLabel = 'Back to home',
+  backLabel = 'Go to the home page',
 }: {
   title: string;
   message: string;
@@ -85,15 +89,19 @@ export function ErrorState({
   return (
     <div className="min-h-[40vh] bg-black flex items-center justify-center text-white py-16">
       <div className="text-center px-6 max-w-md">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tighter mb-3">{title}</h1>
-        <p className="text-sm tracking-wide text-zinc-400 mb-6">{message}</p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-3">{title}</h1>
+        <p className="text-sm text-zinc-400 leading-relaxed mb-8">{message}</p>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
           {onRetry && (
-            <button type="button" onClick={onRetry} className="btn-primary text-xs">
+            <button type="button" onClick={onRetry} className="btn-primary">
               Try again
             </button>
           )}
-          {backTo && <BackLink to={backTo} label={backLabel} />}
+          {backTo && (
+            <Link to={backTo} className={onRetry ? 'btn-secondary' : 'btn-primary'}>
+              {backLabel}
+            </Link>
+          )}
         </div>
       </div>
     </div>

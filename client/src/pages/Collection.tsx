@@ -27,6 +27,7 @@ export default function Collection() {
   const [cars, setCars] = useState<CarSpecs[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [totalMatching, setTotalMatching] = useState(0);
 
   usePageMeta(
@@ -61,7 +62,7 @@ export default function Collection() {
       } catch {
         if (!active) return;
         setCars([]);
-        setLoadError('Could not load this shortlist.');
+        setLoadError('Could not load this shortlist. Check your connection and try again.');
       } finally {
         if (active) setLoading(false);
       }
@@ -70,7 +71,7 @@ export default function Collection() {
     return () => {
       active = false;
     };
-  }, [collectionId, collection, scoreFn, shortlistSize]);
+  }, [collectionId, collection, scoreFn, shortlistSize, attempt]);
 
   // Hooks must run in the same order on every render, so this sits above the
   // early returns below rather than next to the JSX that consumes it.
@@ -79,10 +80,10 @@ export default function Collection() {
   if (!collection) {
     return (
       <ErrorState
-        title="Collection not found"
-        message="That shortlist doesn’t exist."
-        backTo="/"
-        backLabel="Home"
+        title="Shortlist not found"
+        message="No shortlist goes by that address. It may have been renamed."
+        backTo="/browse#shortlists"
+        backLabel="See all shortlists"
       />
     );
   }
@@ -93,7 +94,13 @@ export default function Collection() {
 
   if (loadError) {
     return (
-      <ErrorState title="Shortlist unavailable" message={loadError} backTo="/" backLabel="Home" />
+      <ErrorState
+        title="Shortlist unavailable"
+        message={loadError}
+        onRetry={() => setAttempt((n) => n + 1)}
+        backTo="/browse#shortlists"
+        backLabel="See all shortlists"
+      />
     );
   }
 

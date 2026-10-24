@@ -268,6 +268,12 @@ export default function Home() {
 
   const activeFilterChips = describeActiveFilters(searchQuery.filters);
   const activeFilterCount = countActiveFilterFields(searchQuery.filters);
+  // An empty result names what narrowed it: "with Diesel and SUV".
+  const filtersOn = activeFilterChips.length > 0;
+  const filterNames =
+    activeFilterChips.length <= 2
+      ? activeFilterChips.map((chip) => chip.label).join(' and ')
+      : `these ${activeFilterChips.length} filters`;
   const quickFilters = QUICK_FILTERS.filter((q) => !q.isOn(searchQuery.filters ?? {}));
   // Wide screens have the filters beside the results; this row then only
   // carries what is switched on.
@@ -478,157 +484,162 @@ export default function Home() {
                     ? `Search results for “${searchQuery.query}”`
                     : 'Search results'}
                 </h1>
-                <div className="flex items-center justify-between flex-wrap gap-3 mb-5 pb-3 border-b border-zinc-900">
-                  <div className="min-w-0">
-                    {searchResults && !searchError && (
-                      // A heading between the page's and the cards' (h3), so the
-                      // outline does not skip a level.
-                      <h2 className="text-sm font-normal text-zinc-400">
-                        <span className="text-white font-semibold tabular-nums">
-                          {searchResults.total.toLocaleString()}
-                        </span>{' '}
-                        {resultNoun(searchResults.total, searchResults.onePerModel)}
-                        {searchResults.total > pageSize && (
-                          <span>
-                            {' '}
-                            · {currentPage} of {totalPages}
-                          </span>
-                        )}
-                      </h2>
-                    )}
-                    {corrected && (
-                      <p className="text-xs text-zinc-400 mt-1">
-                        Showing results for{' '}
-                        <span className="text-white font-medium">{corrected.to}</span>.{' '}
-                        <button
-                          type="button"
-                          // In quotes, the words are searched as typed.
-                          onClick={() => handleTextSearch(`"${corrected.from}"`)}
-                          className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
-                        >
-                          Search instead for {corrected.from}
-                        </button>
-                      </p>
-                    )}
-                    {searchResults &&
-                      !searchError &&
-                      searchResults.total > 0 &&
-                      describeSearchInterpretation(searchResults.interpretation).map((line) => (
-                        <p key={line} className="text-xs text-zinc-400 mt-1">
-                          {line}
+                {/* An error says so below, with nothing above it to sort or count. */}
+                {!searchError && (
+                  <div className="flex items-center justify-between flex-wrap gap-3 mb-5 pb-3 border-b border-zinc-900">
+                    <div className="min-w-0">
+                      {searchResults && !searchError && (
+                        // A heading between the page's and the cards' (h3), so the
+                        // outline does not skip a level.
+                        <h2 className="text-sm font-normal text-zinc-400">
+                          <span className="text-white font-semibold tabular-nums">
+                            {searchResults.total.toLocaleString()}
+                          </span>{' '}
+                          {resultNoun(searchResults.total, searchResults.onePerModel)}
+                          {searchResults.total > pageSize && (
+                            <span>
+                              {' '}
+                              · {currentPage} of {totalPages}
+                            </span>
+                          )}
+                        </h2>
+                      )}
+                      {corrected && (
+                        <p className="text-xs text-zinc-400 mt-1">
+                          Showing results for{' '}
+                          <span className="text-white font-medium">{corrected.to}</span>.{' '}
+                          <button
+                            type="button"
+                            // In quotes, the words are searched as typed.
+                            onClick={() => handleTextSearch(`"${corrected.from}"`)}
+                            className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
+                          >
+                            Search instead for {corrected.from}
+                          </button>
                         </p>
-                      ))}
-                    {searchResults?.interpretation?.compareWith && !searchError && (
-                      <p className="text-xs mt-1">
-                        <Link
-                          to={`/compare?cars=${searchResults.interpretation.compareWith
-                            .map((c) => c.id)
-                            .join(',')}`}
-                          className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
-                        >
-                          Compare the{' '}
-                          {searchResults.interpretation.compareWith
-                            .map((c) => c.label)
-                            .join(' and the ')}{' '}
-                          side by side
-                        </Link>
-                      </p>
-                    )}
-                    {searchResults?.interpretation?.records?.carId && !searchError && (
-                      <p className="text-xs mt-1">
-                        <Link
-                          to={`/car/${encodeURIComponent(searchResults.interpretation.records.carId)}#recalls`}
-                          className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
-                        >
-                          Recalls and owner complaints for the{' '}
-                          {searchResults.interpretation.records.label}
-                        </Link>
-                      </p>
-                    )}
-                    {searchResults?.interpretation?.modelPage && !searchError && (
-                      <p className="text-xs mt-1">
-                        <Link
-                          to={searchResults.interpretation.modelPage.path}
-                          className="inline-block py-1 text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
-                        >
-                          {searchResults.interpretation.records
-                            ? `Recalls and complaints for every year of the ${searchResults.interpretation.modelPage.label}`
-                            : `Every year of the ${searchResults.interpretation.modelPage.label} at a glance`}
-                        </Link>
-                      </p>
-                    )}
-                    {searchResults?.interpretation?.similarTo && !searchError && (
-                      <p className="text-xs mt-1">
-                        <Link
-                          to={`/car/${searchResults.interpretation.similarTo.id}`}
-                          className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
-                        >
-                          See the {searchResults.interpretation.similarTo.label}
-                        </Link>
-                      </p>
-                    )}
-                    {searchError && <p className="text-sm text-red-400">{searchError}</p>}
-                  </div>
-
-                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 w-full sm:w-auto">
-                    <span className="text-xs text-zinc-500 shrink-0">Sort</span>
-                    <SelectMenu
-                      aria-label="Sort results"
-                      className="w-full min-w-0 sm:w-40"
-                      value={sortField}
-                      onChange={handleSortChange}
-                      options={[
-                        ...(searchText || sortField === 'relevance'
-                          ? [{ value: 'relevance', label: 'Best match' }]
-                          : []),
-                        // What EPA and NHTSA recorded first; the estimates last, and named so.
-                        {
-                          value: 'fuelEconomy',
-                          label: isEvBrowse ? 'Energy use (EPA)' : 'Fuel use (EPA)',
-                        },
-                        ...(isEvBrowse || sortField === 'range'
-                          ? [{ value: 'range', label: 'EPA range' }]
-                          : []),
-                        { value: 'safety', label: 'NHTSA rating' },
-                        { value: 'luggage', label: 'Trunk space (EPA)' },
-                        { value: 'weight', label: 'Weight' },
-                        { value: 'horsepower', label: 'Horsepower' },
-                        { value: 'year', label: 'Year' },
-                        { value: 'make', label: 'Make' },
-                        { value: 'model', label: 'Model' },
-                        { value: 'price', label: 'Est. value (CAD)' },
-                        { value: 'runningCost', label: 'Est. running cost' },
-                      ]}
-                    />
-                    {/* Best match has no direction to turn. */}
-                    {sortField !== 'relevance' && (
-                      <button
-                        type="button"
-                        onClick={() => handleSortChange(sortField)}
-                        className="min-h-[42px] min-w-[42px] px-2 text-zinc-400 hover:text-white transition-colors shrink-0"
-                        title={`Sort ${sortOrder === 'asc' ? 'descending' : 'ascending'}`}
-                        aria-label="Toggle sort direction"
-                      >
-                        {sortOrder === 'asc' ? '↑' : '↓'}
-                      </button>
-                    )}
-                    <div className="flex shrink-0" role="group" aria-label="Show results as">
-                      {(['list', 'grid'] as const).map((option) => (
-                        <button
-                          key={option}
-                          type="button"
-                          onClick={() => setView(option)}
-                          aria-pressed={view === option}
-                          className={`chip min-h-[42px]! ${option === 'grid' ? '-ml-px' : ''} ${
-                            view === option ? 'chip-on relative' : ''
-                          }`}
-                        >
-                          {option === 'list' ? 'List' : 'Grid'}
-                        </button>
-                      ))}
+                      )}
+                      {searchResults &&
+                        !searchError &&
+                        searchResults.total > 0 &&
+                        describeSearchInterpretation(searchResults.interpretation).map((line) => (
+                          <p key={line} className="text-xs text-zinc-400 mt-1">
+                            {line}
+                          </p>
+                        ))}
+                      {searchResults?.interpretation?.compareWith && !searchError && (
+                        <p className="text-xs mt-1">
+                          <Link
+                            to={`/compare?cars=${searchResults.interpretation.compareWith
+                              .map((c) => c.id)
+                              .join(',')}`}
+                            className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
+                          >
+                            Compare the{' '}
+                            {searchResults.interpretation.compareWith
+                              .map((c) => c.label)
+                              .join(' and the ')}{' '}
+                            side by side
+                          </Link>
+                        </p>
+                      )}
+                      {searchResults?.interpretation?.records?.carId && !searchError && (
+                        <p className="text-xs mt-1">
+                          <Link
+                            to={`/car/${encodeURIComponent(searchResults.interpretation.records.carId)}#recalls`}
+                            className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
+                          >
+                            Recalls and owner complaints for the{' '}
+                            {searchResults.interpretation.records.label}
+                          </Link>
+                        </p>
+                      )}
+                      {searchResults?.interpretation?.modelPage && !searchError && (
+                        <p className="text-xs mt-1">
+                          <Link
+                            to={searchResults.interpretation.modelPage.path}
+                            className="inline-block py-1 text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
+                          >
+                            {searchResults.interpretation.records
+                              ? `Recalls and complaints for every year of the ${searchResults.interpretation.modelPage.label}`
+                              : `Every year of the ${searchResults.interpretation.modelPage.label} at a glance`}
+                          </Link>
+                        </p>
+                      )}
+                      {searchResults?.interpretation?.similarTo && !searchError && (
+                        <p className="text-xs mt-1">
+                          <Link
+                            to={`/car/${searchResults.interpretation.similarTo.id}`}
+                            className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
+                          >
+                            See the {searchResults.interpretation.similarTo.label}
+                          </Link>
+                        </p>
+                      )}
                     </div>
+
+                    {/* Nothing to sort or lay out when nothing came back. */}
+                    {!(searchResults?.total === 0 && !isSearching) && (
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0 w-full sm:w-auto">
+                        <span className="text-xs text-zinc-500 shrink-0">Sort</span>
+                        <SelectMenu
+                          aria-label="Sort results"
+                          className="w-full min-w-0 sm:w-40"
+                          value={sortField}
+                          onChange={handleSortChange}
+                          options={[
+                            ...(searchText || sortField === 'relevance'
+                              ? [{ value: 'relevance', label: 'Best match' }]
+                              : []),
+                            // What EPA and NHTSA recorded first; the estimates last, and named so.
+                            {
+                              value: 'fuelEconomy',
+                              label: isEvBrowse ? 'Energy use (EPA)' : 'Fuel use (EPA)',
+                            },
+                            ...(isEvBrowse || sortField === 'range'
+                              ? [{ value: 'range', label: 'EPA range' }]
+                              : []),
+                            { value: 'safety', label: 'NHTSA rating' },
+                            { value: 'luggage', label: 'Trunk space (EPA)' },
+                            { value: 'weight', label: 'Weight' },
+                            { value: 'horsepower', label: 'Horsepower' },
+                            { value: 'year', label: 'Year' },
+                            { value: 'make', label: 'Make' },
+                            { value: 'model', label: 'Model' },
+                            { value: 'price', label: 'Est. value (CAD)' },
+                            { value: 'runningCost', label: 'Est. running cost' },
+                          ]}
+                        />
+                        {/* Best match has no direction to turn. */}
+                        {sortField !== 'relevance' && (
+                          <button
+                            type="button"
+                            onClick={() => handleSortChange(sortField)}
+                            className="min-h-[42px] min-w-[42px] px-2 text-zinc-400 hover:text-white transition-colors shrink-0"
+                            title={`Sort ${sortOrder === 'asc' ? 'descending' : 'ascending'}`}
+                            aria-label="Toggle sort direction"
+                          >
+                            {sortOrder === 'asc' ? '↑' : '↓'}
+                          </button>
+                        )}
+                        <div className="flex shrink-0" role="group" aria-label="Show results as">
+                          {(['list', 'grid'] as const).map((option) => (
+                            <button
+                              key={option}
+                              type="button"
+                              onClick={() => setView(option)}
+                              aria-pressed={view === option}
+                              className={`chip min-h-[42px]! ${option === 'grid' ? '-ml-px' : ''} ${
+                                view === option ? 'chip-on relative' : ''
+                              }`}
+                            >
+                              {option === 'list' ? 'List' : 'Grid'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
+                )}
 
                 {isSearching ? (
                   view === 'list' ? (
@@ -645,9 +656,10 @@ export default function Home() {
                     </div>
                   )
                 ) : searchError ? (
-                  <div className="empty-panel">
-                    <p className="text-base text-zinc-300 mb-5">
-                      Something went wrong while searching.
+                  <div className="empty-panel" role="alert">
+                    <p className="text-base text-zinc-300 mb-2">Could not search just now.</p>
+                    <p className="text-sm text-zinc-400 mb-5">
+                      Check your connection, then try again.
                     </p>
                     <button type="button" onClick={performSearch} className="btn-primary">
                       Try again
@@ -718,17 +730,32 @@ export default function Home() {
                 ) : (
                   <div className="empty-panel">
                     <p className="text-base text-zinc-300 mb-2">
-                      {searchText.trim()
-                        ? `No cars matched “${searchText.trim()}”.`
-                        : 'No cars matched these filters.'}
+                      {searchText.trim() && filtersOn
+                        ? `Nothing matched “${searchText.trim()}” with ${filterNames}.`
+                        : searchText.trim()
+                          ? `No cars matched “${searchText.trim()}”.`
+                          : 'No cars matched these filters.'}
                     </p>
                     <p className="text-sm text-zinc-400 mb-5">
                       {yearCoverage
                         ? `Model years ${yearCoverage.min}–${yearCoverage.max} are on file, and the year you asked for is outside that range.`
-                        : searchText.trim()
-                          ? 'Try a different spelling, or clear filters if any are on.'
-                          : 'Try widening the year range or removing a filter.'}
+                        : filtersOn
+                          ? searchText.trim()
+                            ? `Try it without ${activeFilterChips.length === 1 ? 'the filter' : 'the filters'}.`
+                            : 'Try widening the year range or removing a filter.'
+                          : 'Try a different spelling, or the make and model, like “Toyota RAV4”.'}
                     </p>
+                    {filtersOn && !yearCoverage && searchText.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => pushSearch({ ...searchQuery, filters: {}, offset: 0 })}
+                        className="btn-primary mr-6"
+                      >
+                        {activeFilterChips.length === 1
+                          ? `Remove “${activeFilterChips[0].label}”`
+                          : 'Remove the filters'}
+                      </button>
+                    )}
                     {yearCoverage && (textWithoutYears || searchQuery.filters?.year) && (
                       <button
                         type="button"

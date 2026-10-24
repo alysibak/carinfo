@@ -24,6 +24,9 @@ describe('fuzzy-search', () => {
     expect(fuzzyTokenMatch('toyota camry', 'toyata')).toBe(true);
     expect(fuzzyTokenMatch('honda civic', 'civic')).toBe(true);
     expect(fuzzyTokenMatch('honda civic', 'zzzz')).toBe(false);
+    // A typo is matched at the start of a word, never inside one.
+    expect(fuzzyTokenMatch('chevrolet silverado1500', 'silverdo')).toBe(true);
+    expect(fuzzyTokenMatch('cadillac limousine', 'moms')).toBe(false);
   });
 
   it('derives shopper-facing model families from EPA strings', () => {

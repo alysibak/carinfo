@@ -79,7 +79,12 @@ export default function SharedGarage() {
 
   if (error) {
     return (
-      <ErrorState title="Shared garage unavailable" message={error} backTo="/" backLabel="Home" />
+      <ErrorState
+        title="Shared garage unavailable"
+        message={error}
+        backTo="/home"
+        backLabel="Search cars"
+      />
     );
   }
 

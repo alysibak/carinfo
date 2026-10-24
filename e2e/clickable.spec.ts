@@ -90,6 +90,8 @@ test.describe('what is clickable looks it', () => {
       '/vin',
       '/garage',
       '/methodology',
+      '/no-such-page',
+      '/models/toyota/hovercraft',
     ]) {
       const found = await problems(page, path);
       if (found.length) failures.push(`${path}\n  ${found.join('\n  ')}`);

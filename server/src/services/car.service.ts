@@ -424,7 +424,12 @@ function searchSpelt(query: SearchQuery): SearchResults {
   const corrected = correctSpelling(typed);
   if (corrected) {
     const found = searchAsTyped({ ...query, query: corrected });
-    if (found.total > 0) {
+    // "zzqxv flying boat" was read as "bolt" with the other two words set
+    // aside: a guess resting on a third of what was typed. A respelling
+    // stands only when most of the words were used.
+    const setAside = found.interpretation?.ignored?.length ?? 0;
+    const used = corrected.split(/\s+/).filter(Boolean).length - setAside;
+    if (found.total > 0 && setAside < used) {
       return {
         ...found,
         interpretation: {

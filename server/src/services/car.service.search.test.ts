@@ -1056,6 +1056,20 @@ describe('car.service search: typos, questions and one row per model', () => {
     expect(camry.results.every((c) => c.model.startsWith('Camry'))).toBe(true);
   });
 
+  it('does not guess from a respelt word with most of the words set aside', () => {
+    // "boat" read as "bolt", "zzqxv flying" set aside: Chevrolet Bolts.
+    expect(searchCars({ query: 'zzqxv flying boat', limit: 5 }).total).toBe(0);
+    // Most of the words used, one trim word set aside: still the Civic.
+    const civic = searchCars({ query: 'honda civc ex', sort: relevance, limit: 5 });
+    expect(civic.results[0].model).toMatch(/^Civic\b/);
+    expect(civic.interpretation?.ignored).toEqual(['ex']);
+  });
+
+  it('matches a typo at the start of a word, not inside one', () => {
+    // "moms" is one letter from the "mous" of "limousine".
+    expect(searchCars({ query: 'my moms car', limit: 5 }).total).toBe(0);
+  });
+
   it('leaves names, cargo asks and quoted words as typed', () => {
     const cClass = searchCars({ query: 'mercedes c-class', limit: 50 });
     expect(cClass.interpretation?.corrected).toBeUndefined();

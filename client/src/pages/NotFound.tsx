@@ -1,40 +1,57 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import SearchBar from '../components/SearchBar';
 import { useNoIndex, usePageMeta } from '../utils/pageMeta';
 
-const QUICK_LINKS = [
-  { to: '/browse', label: 'Start from a situation', desc: 'Shop by need, budget, or body type' },
-  { to: '/value-matrix', label: 'Value chart', desc: 'Plot price vs efficiency across the fleet' },
-  { to: '/home?fuel=electric', label: 'Electric cars', desc: 'Every electric car on file' },
-  { to: '/vin', label: 'VIN lookup', desc: 'Decode any 17-character VIN' },
+const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/i;
+
+/** Where most people were headed, in their words. */
+const WAYS_ON = [
+  { to: '/browse', label: 'Start from what you need' },
+  { to: '/compare', label: 'Compare cars' },
+  { to: '/vin', label: 'Look up a VIN' },
 ] as const;
 
 export default function NotFound() {
   usePageMeta('Page not found', 'This CarInfo page does not exist.');
   useNoIndex();
+  const navigate = useNavigate();
+  const [query, setQuery] = useState('');
+
+  const search = (q: string) => {
+    const trimmed = q.trim();
+    if (VIN_PATTERN.test(trimmed)) {
+      navigate(`/vin?vin=${encodeURIComponent(trimmed.toUpperCase())}`);
+      return;
+    }
+    navigate(trimmed ? `/home?q=${encodeURIComponent(trimmed)}&sort=relevance` : '/home');
+  };
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center px-6 py-16">
-      <div className="text-center max-w-lg w-full">
-        <p className="text-xs text-zinc-500 mb-3">404</p>
-        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3">
-          This page doesn&apos;t exist
-        </h1>
-        <p className="text-sm text-zinc-400 leading-relaxed mb-10">
-          Wrong URL, or an old bookmark. Pick a path below — the archive is still here.
+    <div className="min-h-[60vh] bg-black text-white flex items-center justify-center px-4 py-16">
+      <div className="max-w-lg w-full">
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3">Page not found</h1>
+        <p className="text-sm text-zinc-400 leading-relaxed mb-8">
+          The address may be mistyped, or the page has moved. Search for the car instead.
         </p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left mb-10">
-          {QUICK_LINKS.map((item) => (
-            <Link key={item.to} to={item.to} className="explore-card p-4 hover:border-zinc-500">
-              <p className="text-sm font-semibold text-white">{item.label}</p>
-              <p className="text-xs text-zinc-500 mt-1 leading-relaxed">{item.desc}</p>
-            </Link>
+        <SearchBar
+          value={query}
+          onChange={setQuery}
+          onSubmit={search}
+          placeholder="Make, model, or VIN"
+        />
+        <ul className="mt-8 flex flex-col sm:flex-row sm:flex-wrap gap-x-6 text-sm">
+          {WAYS_ON.map((item) => (
+            <li key={item.to}>
+              <Link
+                to={item.to}
+                className="text-zinc-200 underline underline-offset-4 decoration-zinc-600 min-h-[44px] inline-flex items-center"
+              >
+                {item.label}
+              </Link>
+            </li>
           ))}
-        </div>
-
-        <Link to="/" className="btn-primary text-xs">
-          Back to home
-        </Link>
+        </ul>
       </div>
     </div>
   );

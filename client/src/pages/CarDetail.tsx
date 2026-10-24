@@ -12,7 +12,7 @@ import { useCarStore } from '../stores/carStore';
 import { useGarageStore } from '../stores/garageStore';
 import { regionName, useRegionStore } from '../stores/regionStore';
 import TCOCalculator from '../components/TCOCalculator';
-import { Chevron, StatusToast, foldSummaryClass } from '../components/ui';
+import { Chevron, ErrorState, StatusToast, foldSummaryClass } from '../components/ui';
 import ValuationLinks from '../components/ValuationLinks';
 import VehiclePlaceholder from '../components/VehiclePlaceholder';
 import CarPhotoFigure from '../components/CarPhotoFigure';
@@ -190,6 +190,7 @@ export default function CarDetail() {
   const [dashboard, setDashboard] = useState<CarDashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [showTCO, setShowTCO] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [pinned, setPinned] = useState(false);
@@ -218,7 +219,7 @@ export default function CarDetail() {
         }
       })
       .finally(() => setLoading(false));
-  }, [id, region]);
+  }, [id, region, attempt]);
 
   // On this device's recent list, for picking up where they left off.
   useEffect(() => {
@@ -263,23 +264,21 @@ export default function CarDetail() {
   if (loading) return <CarPageSkeleton />;
 
   if (!dashboard) {
-    const missing = error === 'not-found';
-    return (
-      <div className="min-h-[40vh] bg-black flex items-center justify-center text-center px-4 py-16">
-        <div className="max-w-md">
-          <h1 className="text-2xl font-bold tracking-tight text-white mb-3">
-            {missing ? 'Car not found' : 'Could not load this car'}
-          </h1>
-          <p className="text-sm text-zinc-400 mb-8 leading-relaxed">
-            {missing
-              ? 'No car with that address is on file. It may have been renamed: search for it by make, model and year.'
-              : 'The page did not load. Check your connection and try again.'}
-          </p>
-          <Link to="/home" className="btn-primary text-xs">
-            Search cars
-          </Link>
-        </div>
-      </div>
+    return error === 'not-found' ? (
+      <ErrorState
+        title="Car not found"
+        message="No car with that address is on file. It may have been renamed: search for it by make, model and year."
+        backTo="/home"
+        backLabel="Search cars"
+      />
+    ) : (
+      <ErrorState
+        title="Could not load this car"
+        message="The page did not load. Check your connection and try again."
+        onRetry={() => setAttempt((n) => n + 1)}
+        backTo="/home"
+        backLabel="Search cars"
+      />
     );
   }
 

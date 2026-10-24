@@ -288,12 +288,14 @@ export function fuzzyTokenMatch(haystack: string, token: string): boolean {
   const words = haystack.split(/[\s\-_/]+/).filter(Boolean);
   for (const word of words) {
     if (editDistance(word, token, maxDist) <= maxDist) return true;
-    if (word.length > token.length + maxDist) {
-      // Prefix / infix window for longer compound model names
-      for (let i = 0; i <= word.length - token.length; i++) {
-        const slice = word.slice(i, i + token.length);
-        if (editDistance(slice, token, maxDist) <= maxDist) return true;
-      }
+    // The start of a longer name, mistyped: "silverad" for "silverado1500".
+    // Only the start: inside a word, "moms" was one letter from the "mous" of
+    // "limousine" and found Cadillac limousines.
+    if (
+      word.length > token.length + maxDist &&
+      editDistance(word.slice(0, token.length), token, maxDist) <= maxDist
+    ) {
+      return true;
     }
   }
   return false;

@@ -79,9 +79,9 @@ export default function CarChecklist() {
     return (
       <ErrorState
         title="Car not found"
-        message="No car with that id is on file."
+        message="No car with that address is on file. It may have been renamed: search for it by make, model and year."
         backTo="/home"
-        backLabel="Search"
+        backLabel="Search cars"
       />
     );
   }
@@ -92,7 +92,7 @@ export default function CarChecklist() {
         message="Could not load this car. Check your connection and try again."
         onRetry={() => setAttempt((n) => n + 1)}
         backTo={carPath}
-        backLabel="Car"
+        backLabel="Back to the car"
       />
     );
   }
