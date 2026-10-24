@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { prefetchForPath } from './utils/prefetch';
 import { installStaleBuildRecovery } from './utils/staleBuildRecovery';
 // Fonts are self-hosted: loading them from Google sent every visitor's IP to a
 // third party and put two extra origins in front of first paint. The weights
@@ -16,6 +17,8 @@ import '@fontsource/ibm-plex-mono/700.css';
 import './index.css';
 
 installStaleBuildRecovery();
+// The page's data starts on its way alongside the page's code.
+prefetchForPath(window.location.pathname);
 
 // The sign-in client loads in its own chunks, so the entry chunk stays free
 // of it. See components/AuthProvider.tsx and components/AuthHeaderSlot.tsx.

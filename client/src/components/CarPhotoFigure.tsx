@@ -1,6 +1,7 @@
 import type { CarSpecs } from '../types/car.types';
 import CarImage from './CarImage';
 import CarPhotoButton from './CarPhotoButton';
+import { PAGE_PHOTO_SIZES } from '../utils/carImages';
 import { displayModelLabel } from '../utils/trimLabel';
 
 type FigureCar = Pick<
@@ -20,12 +21,7 @@ export default function CarPhotoFigure({ car }: { car: FigureCar }) {
     <figure className="min-w-0">
       <div className="aspect-3/2 overflow-hidden border border-zinc-900">
         <CarPhotoButton car={car} variant="tile" mark="Larger" focusable>
-          <CarImage
-            car={car}
-            eager
-            markYear={false}
-            sizes="(min-width: 1024px) 320px, (min-width: 640px) 240px, 100vw"
-          />
+          <CarImage car={car} eager markYear={false} sizes={PAGE_PHOTO_SIZES} />
         </CarPhotoButton>
       </div>
       <figcaption className="mt-1.5 text-xs text-zinc-400 leading-snug">

@@ -19,6 +19,7 @@ import {
 import { usePageMeta } from '../utils/pageMeta';
 import { complaintPart } from '../utils/recalls';
 import { theftSentence } from '@carinfo/shared/theft';
+import { modelKey, takePrefetched } from '../utils/prefetch';
 
 type Status = 'loading' | 'ready' | 'missing' | 'error';
 
@@ -194,9 +195,12 @@ export default function ModelPage() {
   useEffect(() => {
     const controller = new AbortController();
     setStatus('loading');
-    api
-      .getModelOverview(make, model, { signal: controller.signal })
+    (
+      takePrefetched<ModelOverview>(modelKey(make, model)) ??
+      api.getModelOverview(make, model, { signal: controller.signal })
+    )
       .then((found) => {
+        if (controller.signal.aborted) return;
         setOverview(found);
         setStatus('ready');
       })

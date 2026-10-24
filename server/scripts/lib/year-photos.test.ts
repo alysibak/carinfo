@@ -79,6 +79,22 @@ describe('scoreYearPhoto', () => {
     expect(score('2027 BMW M3 Competition interior.jpg', m3)).toBeUndefined();
     expect(score('2027 BMW M3 rear.jpg', m3)).toBeUndefined();
     expect(score('2027 BMW M3 GT3 race car.jpg', m3)).toBeUndefined();
+    // A race's medical car, and its race cars by their series.
+    const civic = car(2026, 'Honda', 'Civic 4Dr');
+    expect(
+      score(
+        '2026 6 Hours of Spa-Francorchamps Honda Civic (FK) FIA WEC Medical Car (DSC05532).jpg',
+        civic,
+      ),
+    ).toBeUndefined();
+    const ferrari = car(2026, 'Ferrari', '296 GTB', 'coupe');
+    expect(
+      score(
+        '2026 6 Hours of Spa-Francorchamps Vista AF Corse Ferrari 296 LMGT3 Evo No.54.jpg',
+        ferrari,
+      ),
+    ).toBeUndefined();
+    expect(score('2026 Honda Civic Sport Touring sedan, front left.jpg', civic)).toBeGreaterThan(0);
   });
 
   it('keeps bodies apart', () => {

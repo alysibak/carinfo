@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { CarSpecs } from '../types/car.types';
-import { carPhotoSources } from '../utils/carImages';
+import { photoImageAttributes } from '../utils/carImages';
 import VehiclePlaceholder from './VehiclePlaceholder';
 
 type ImageCar = Pick<
@@ -34,17 +34,17 @@ export default function CarImage({
   markYear?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
-  const [large, small] = carPhotoSources(car.photo);
-  if (!car.photo || !large || failed) {
+  const image = photoImageAttributes(car.photo, sizes);
+  if (!car.photo || !image || failed) {
     return <VehiclePlaceholder car={car} compact={compact} hideCaption />;
   }
   const year = markYear ? otherYearLabel(car.photo) : null;
   return (
     <div className="relative w-full h-full overflow-hidden bg-zinc-950">
       <img
-        src={small ?? large}
-        srcSet={small ? `${small} 500w, ${large} 960w` : undefined}
-        sizes={small ? sizes : undefined}
+        src={image.src}
+        srcSet={image.srcSet}
+        sizes={image.sizes}
         alt=""
         title={`Photo: ${car.photo.credit}, via Wikimedia Commons`}
         referrerPolicy="no-referrer"

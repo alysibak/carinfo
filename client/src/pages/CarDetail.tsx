@@ -44,6 +44,7 @@ import OnThisPage from '../components/OnThisPage';
 import RecentlyViewed from '../components/RecentlyViewed';
 import CarPageSkeleton from '../components/CarPageSkeleton';
 import { recentEntry, useRecentStore } from '../stores/recentStore';
+import { dashboardKey, takePrefetched } from '../utils/prefetch';
 
 function Subheading({ children }: { children: React.ReactNode }) {
   return <p className="text-sm font-semibold text-zinc-200 pt-3 pb-1">{children}</p>;
@@ -208,8 +209,7 @@ export default function CarDetail() {
     setError(null);
     setLoading(true);
     const region = useRegionStore.getState().region;
-    api
-      .getCarDashboard(id, region)
+    (takePrefetched<CarDashboard>(dashboardKey(id, region)) ?? api.getCarDashboard(id, region))
       .then(setDashboard)
       .catch((err) => {
         if (isHttpError(err) && err.status === 404) {
