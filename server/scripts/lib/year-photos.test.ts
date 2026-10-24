@@ -95,6 +95,20 @@ describe('scoreYearPhoto', () => {
       ),
     ).toBeUndefined();
     expect(score('2026 Honda Civic Sport Touring sedan, front left.jpg', civic)).toBeGreaterThan(0);
+    // A parade float, a delivery car's livery, a museum's mock-up.
+    const wrangler = car(2017, 'Jeep', 'Wrangler Unlimited 4WD', 'suv');
+    expect(
+      score('2017 Texarkana Mardi Gras Parade 08 (Jeep Wrangler Unlimited Sahara).jpg', wrangler),
+    ).toBeUndefined();
+    expect(
+      score('1996 Ford Probe Dominos Delivery Car.JPG', car(1996, 'Ford', 'Probe', 'coupe')),
+    ).toBe(undefined);
+    expect(
+      score(
+        '2014 BMW i3 Chassis Mockup Petersen Automotive Museum.jpg',
+        car(2014, 'BMW', 'i3 BEV'),
+      ),
+    ).toBeUndefined();
   });
 
   it('keeps bodies apart', () => {

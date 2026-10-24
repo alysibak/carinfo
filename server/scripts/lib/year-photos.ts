@@ -191,6 +191,8 @@ const NOT_THE_CAR = new Set([
   ...['whipple', 'wipple'],
   // A race's own cars: its medical and marshals' cars, and the series that run them.
   ...['medical', 'marshal', 'marshals', 'wec', 'fia', 'lmgt3', 'lmp2', 'lmh', 'lmdh'],
+  // Dressed up or not whole: a parade float, a museum's mock-up of the chassis.
+  ...['parade', 'mockup'],
 ]);
 
 /** Versions that look unlike the model's others: a Raptor is not an F-150, a GTI not a Golf. */
@@ -267,6 +269,8 @@ const NOT_THE_CAR_PHRASES = [
   ...['die another day', 'james bond'],
   // Endurance races: "2026 6 Hours of Spa-Francorchamps", "24 Hours of Le Mans".
   ...['hours of', 'le mans'],
+  // Signs and liveries: "1996 Ford Probe Dominos Delivery Car".
+  ...['delivery car', 'mock up'],
 ];
 
 const OPEN = ['convertible', 'cabriolet', 'cabrio', 'roadster', 'spyder', 'spider', 'volante'];
