@@ -8,11 +8,40 @@ import { ConfirmDialog, Modal, StatusToast } from '../components/ui';
 import * as api from '../services/api';
 import type { CarSpecs } from '../types/car.types';
 import { COLLECTIONS } from '../config/collections';
-import { displayModelFamilyLabel, displayModelLabel } from '../utils/trimLabel';
+import {
+  displayModelFamilyLabel,
+  displayModelLabel,
+  displayVehicleTitle,
+} from '../utils/trimLabel';
+import { efficiencyOf } from '../utils/efficiency';
 import { rankedFigure } from '../utils/rankedFigure';
 import VehiclePlaceholder from '../components/VehiclePlaceholder';
 import CarCard from '../components/CarCard';
 import CarRecordsNote from '../components/CarRecordsNote';
+
+interface GarageStat {
+  label: string;
+  value: string;
+  unit?: string;
+  /** The saved car the figure is of. */
+  car?: CarSpecs;
+  estimate?: boolean;
+}
+
+/** The saved car that leads on a figure (none where no car has it), and the figure. */
+function leadingCar(
+  cars: CarSpecs[],
+  best: 'min' | 'max',
+  figure: (car: CarSpecs) => number | null,
+): { car: CarSpecs; value: number } | null {
+  let lead: { car: CarSpecs; value: number } | null = null;
+  for (const car of cars) {
+    const value = figure(car);
+    if (value == null) continue;
+    if (!lead || (best === 'min' ? value < lead.value : value > lead.value)) lead = { car, value };
+  }
+  return lead;
+}
 
 /**
  * An empty garage offers cars to start with, the leading pick of each
@@ -142,24 +171,35 @@ export default function DreamGarage() {
     }
   };
 
-  // The records first; the estimated total comes last and says it is one.
-  // "Avg MPG" averaged an EV's MPGe with a pickup's MPG.
+  // What a shortlist is for: which of the saved cars leads, and on what. The
+  // estimate comes last and says it is one. (A sum of the cars' estimated
+  // values, and a count of their makes, said nothing to someone buying one.)
   const fiveStar = garage.filter((car) => (car.safetyRating?.overall ?? 0) >= 5).length;
-  const mostPower = garage.reduce((max, car) => Math.max(max, car.engine.horsepower ?? 0), 0);
-  const uniqueMakes = new Set(garage.map((car) => car.make)).size;
-  const totalValue = garage.reduce((sum, car) => sum + (car.price?.msrp || 0), 0);
-  const garageStats = [
+  const thriftiest = leadingCar(garage, 'min', (car) => {
+    const efficiency = efficiencyOf(car);
+    return efficiency?.unit === 'L/100 km' ? efficiency.value : null;
+  });
+  const strongest = leadingCar(garage, 'max', (car) => car.engine.horsepower || null);
+  const cheapestToRun = leadingCar(garage, 'min', (car) => car.runningCostCad || null);
+  const garageStats: GarageStat[] = [
     { label: 'NHTSA 5-star', value: `${fiveStar} of ${garage.length}` },
-    { label: 'Most power', value: mostPower > 0 ? `${mostPower} hp` : '—' },
-    { label: 'Makes', value: String(uniqueMakes) },
     {
-      label: 'Est. total value',
-      value:
-        totalValue <= 0
-          ? '—'
-          : totalValue >= 1_000_000
-            ? `$${(totalValue / 1_000_000).toFixed(2)}M`
-            : formatMoneyShort(totalValue),
+      label: 'Lowest fuel use',
+      value: thriftiest ? thriftiest.value.toFixed(1) : '—',
+      unit: thriftiest ? 'L/100 km' : undefined,
+      car: thriftiest?.car,
+    },
+    {
+      label: 'Most power',
+      value: strongest ? String(strongest.value) : '—',
+      unit: strongest ? 'hp' : undefined,
+      car: strongest?.car,
+    },
+    {
+      label: 'Cheapest to run (est.)',
+      value: cheapestToRun ? formatMoneyShort(cheapestToRun.value) : '—',
+      unit: cheapestToRun ? 'a year' : undefined,
+      car: cheapestToRun?.car,
       estimate: true,
     },
   ];
@@ -239,14 +279,23 @@ export default function DreamGarage() {
           <div>
             <dl className="grid grid-cols-2 md:grid-cols-4 gap-px bg-zinc-800 border border-zinc-800 mb-8">
               {garageStats.map((stat) => (
-                <div key={stat.label} className="bg-zinc-950 p-4">
+                <div key={stat.label} className="bg-zinc-950 p-4 min-w-0">
                   <dt className="field-label mb-2">{stat.label}</dt>
-                  <dd
-                    className={`text-2xl sm:text-3xl font-bold tabular-nums ${
-                      stat.estimate ? 'text-zinc-300' : 'text-white'
-                    }`}
-                  >
-                    {stat.value}
+                  <dd>
+                    <span
+                      className={`text-2xl sm:text-3xl font-bold tabular-nums ${
+                        stat.estimate ? 'text-zinc-300' : 'text-white'
+                      }`}
+                    >
+                      {stat.value}
+                    </span>
+                    {stat.unit && <span className="ml-1 text-xs text-zinc-400">{stat.unit}</span>}
+                    {/* Which car, where only one of several leads. */}
+                    {stat.car && garage.length > 1 && (
+                      <span className="block mt-1 text-xs text-zinc-400 truncate">
+                        {displayVehicleTitle(stat.car)}
+                      </span>
+                    )}
                   </dd>
                 </div>
               ))}
@@ -275,8 +324,11 @@ export default function DreamGarage() {
             <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {garage.map((car) => (
                 <li key={car.id}>
-                  <CarCard car={car} onRemove={() => removeFromGarage(car.id)} />
-                  <CarRecordsNote carId={car.id} />
+                  <CarCard
+                    car={car}
+                    onRemove={() => removeFromGarage(car.id)}
+                    notes={<CarRecordsNote carId={car.id} />}
+                  />
                 </li>
               ))}
             </ul>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { CarSpecs } from '../types/car.types';
 import { useCarStore } from '../stores/carStore';
@@ -38,6 +38,11 @@ interface CarCardProps {
    * figures and the buttons line up across a row though one name wraps.
    */
   aligned?: boolean;
+  /**
+   * More about the car under its figures, such as the garage's recalls and
+   * theft note: inside the card, so a note of any length moves nothing else.
+   */
+  notes?: ReactNode;
 }
 
 /** A results grid whose cards share row heights; pair with <CarCard aligned />. */
@@ -169,6 +174,7 @@ export default function CarCard({
   showValue = false,
   versions,
   aligned = false,
+  notes,
 }: CarCardProps) {
   const [toast, setToast] = useState<string | null>(null);
 
@@ -343,6 +349,8 @@ export default function CarCard({
       <div className="p-3 pt-2.5 flex flex-col gap-2 flex-1">
         {estValue && <p className="text-xs text-zinc-500">{estValue}</p>}
         {reasonLine}
+        {/* Above the link stretched over the card, so its own links work. */}
+        {notes && <div className="relative z-10">{notes}</div>}
         {(showCompare || onRemove) && (
           <div className="mt-auto pt-1 flex items-center justify-between gap-2">
             {versionsLink || (
