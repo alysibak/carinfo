@@ -3,7 +3,8 @@ import { Fragment, useEffect, useState } from 'react';
 import * as api from '../services/api';
 import { isHttpError } from '../services/http';
 import type { ModelOverview, ModelYearSummary } from '../types/car.types';
-import { Chevron, ErrorState, foldSummaryClass, LoadingScreen } from '../components/ui';
+import { Chevron, ErrorState, foldSummaryClass } from '../components/ui';
+import ModelPageSkeleton from '../components/ModelPageSkeleton';
 import ToolPageHeader from '../components/ToolPageHeader';
 import PageShell, { PageBody } from '../components/PageShell';
 import CarPhotoFigure from '../components/CarPhotoFigure';
@@ -219,7 +220,7 @@ export default function ModelPage() {
       : undefined,
   );
 
-  if (status === 'loading') return <LoadingScreen label="Loading every year" />;
+  if (status === 'loading') return <ModelPageSkeleton />;
   if (status === 'missing') {
     return (
       <ErrorState
@@ -293,7 +294,7 @@ export default function ModelPage() {
         if (!complaints.length && !recalls.length) return null;
         return (
           <section className="mt-6">
-            <h2 className="text-base font-bold tracking-tight mb-2">Years to check</h2>
+            <h2 className="block-title mb-2">Years to check</h2>
             <ul className="text-sm text-zinc-300 space-y-1 tabular-nums">
               {complaints.length > 0 && (
                 <li>Most owner complaints to NHTSA: {years(complaints)}</li>
@@ -310,7 +311,7 @@ export default function ModelPage() {
 
       {overview.theft && (
         <section className="mt-6">
-          <h2 className="text-base font-bold tracking-tight mb-2">Theft in Canada</h2>
+          <h2 className="block-title mb-2">Theft in Canada</h2>
           <p className="text-sm text-zinc-300">{theftSentence(overview.theft)}</p>
           <p className="text-xs text-zinc-500 mt-2 leading-relaxed max-w-xl">
             A count of thefts, so a model with many on the road ranks higher. Ask your insurer
@@ -381,7 +382,7 @@ export default function ModelPage() {
 
         {overview.rivals.length > 0 && (
           <section className="mb-8">
-            <h2 className="text-base font-bold tracking-tight mb-2">Shopped against</h2>
+            <h2 className="block-title mb-2">Shopped against</h2>
             <ul className="flex flex-wrap gap-2">
               {overview.rivals.map((rival) => (
                 <li key={rival.path}>
@@ -412,7 +413,7 @@ export default function ModelPage() {
               <details key={key} className="border-t border-zinc-800 group/gen">
                 <summary className={`${foldSummaryClass} gap-4 py-3.5`}>
                   <span className="min-w-0">
-                    <h2 className="text-base font-bold tracking-tight">{title}</h2>
+                    <h2 className="block-title">{title}</h2>
                     <span className="block text-[13px] text-zinc-400 mt-0.5 tabular-nums">
                       <Facts facts={generationSummary(group.rows)} />
                     </span>
@@ -427,7 +428,7 @@ export default function ModelPage() {
           }
           return (
             <section key={key} className="mb-8">
-              <h2 className="text-base font-bold tracking-tight mb-2">{title}</h2>
+              <h2 className="block-title mb-2">{title}</h2>
               <YearTable rows={group.rows} name={name!} />
             </section>
           );

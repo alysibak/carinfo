@@ -71,7 +71,7 @@ export default function Investigations({
       <details className="group/inv border-t border-zinc-800">
         <summary className={`${foldSummaryClass} gap-4 py-3`}>
           <span className="min-w-0">
-            <span className="block text-base font-bold tracking-tight">NHTSA investigations</span>
+            <span className="block block-title">NHTSA investigations</span>
             <span className="block text-[13px] text-zinc-400 mt-0.5">
               {applies.length === 0
                 ? `None for this version of the ${name}`

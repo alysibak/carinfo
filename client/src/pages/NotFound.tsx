@@ -30,7 +30,7 @@ export default function NotFound() {
   return (
     <div className="min-h-[60vh] bg-black text-white flex items-center justify-center px-4 py-16">
       <div className="max-w-lg w-full">
-        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3">Page not found</h1>
+        <h1 className="page-title mb-3">Page not found</h1>
         <p className="text-sm text-zinc-400 leading-relaxed mb-8">
           The address may be mistyped, or the page has moved. Search for the car instead.
         </p>

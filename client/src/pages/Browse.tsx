@@ -60,7 +60,7 @@ export default function Browse() {
       </div>
 
       <section className="page-wrap pb-10 sm:pb-12">
-        <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-4">A situation</h2>
+        <h2 className="section-title mb-4">A situation</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {LIFESTYLE_PRESETS.map((preset) => (
             <Link
@@ -82,7 +82,7 @@ export default function Browse() {
 
       <section className="border-t border-zinc-900">
         <div className="page-wrap section-y">
-          <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2">A body style</h2>
+          <h2 className="section-title mb-2">A body style</h2>
           <p className="text-sm text-zinc-400 mb-6 md:mb-8">
             Sedan, SUV, pickup and the rest, from every make.
           </p>
@@ -107,7 +107,7 @@ export default function Browse() {
 
       <section className="border-t border-zinc-900">
         <div className="page-wrap section-y">
-          <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2">A class</h2>
+          <h2 className="section-title mb-2">A class</h2>
           <p className="text-sm text-zinc-400 mb-6">
             Cars of one size and purpose, the ones shoppers compare: a Camry with an Accord.
           </p>
@@ -128,7 +128,7 @@ export default function Browse() {
       <section className="border-t border-zinc-900">
         <div className="page-wrap section-y grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
           <div id="record" className="scroll-mt-20">
-            <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2">A clean record</h2>
+            <h2 className="section-title mb-2">A clean record</h2>
             <p className="text-sm text-zinc-400 mb-6">
               From NHTSA, Transport Canada and Équité Association, not from us.
             </p>
@@ -144,7 +144,7 @@ export default function Browse() {
             </div>
           </div>
           <div>
-            <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2">A model year</h2>
+            <h2 className="section-title mb-2">A model year</h2>
             <p className="text-sm text-zinc-400 mb-6">The newest, the last ten years, or older.</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {YEAR_BUCKETS.map((bucket) => (
@@ -159,7 +159,7 @@ export default function Browse() {
 
       <section className="border-t border-zinc-900">
         <div className="page-wrap section-y">
-          <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2">A manufacturer</h2>
+          <h2 className="section-title mb-2">A manufacturer</h2>
           <p className="text-sm text-zinc-400 mb-6">If you already know the make you want.</p>
           <div className="flex flex-wrap gap-2">
             {TOP_MAKES.map((make) => (
@@ -184,7 +184,7 @@ export default function Browse() {
 
       <section id="shortlists" className="border-t border-zinc-900 scroll-mt-20">
         <div className="page-wrap section-y">
-          <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2">Shortlists</h2>
+          <h2 className="section-title mb-2">Shortlists</h2>
           <p className="text-sm text-zinc-400 mb-6">
             Ranked picks for common needs, one per model, with the rule each is ranked by.
           </p>

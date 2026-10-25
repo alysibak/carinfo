@@ -565,7 +565,7 @@ export default function CarDetail() {
           <div className="page-wrap-wide section-y-tight">
             <div className="max-w-xl">
               <div className="min-w-0">
-                <h2 className="text-base font-bold tracking-tight mb-1">
+                <h2 className="block-title mb-1">
                   {isPhev
                     ? 'Electric and gas modes'
                     : hasEvExtras && hasCityHwy
@@ -625,7 +625,7 @@ export default function CarDetail() {
           <div className="page-wrap-wide section-y-tight">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
               <div className="min-w-0">
-                <h2 className="text-base font-bold tracking-tight mb-1">Running costs</h2>
+                <h2 className="block-title mb-1">Running costs</h2>
                 <p className="text-xs text-zinc-500 leading-relaxed max-w-2xl">
                   In Canadian dollars.
                 </p>
@@ -828,7 +828,7 @@ export default function CarDetail() {
       {unvalued && (
         <section className="border-b border-zinc-900">
           <div className="page-wrap-wide section-y-tight">
-            <h2 className="text-base font-bold tracking-tight mb-1">Value and costs</h2>
+            <h2 className="block-title mb-1">Value and costs</h2>
             <p className="text-sm text-zinc-400 leading-relaxed max-w-2xl">{unvalued.note}</p>
           </div>
         </section>

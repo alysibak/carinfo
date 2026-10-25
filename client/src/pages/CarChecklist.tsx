@@ -122,7 +122,7 @@ export default function CarChecklist() {
               aria-labelledby={`checklist-${section.id}`}
               className="print-flow mt-8 border-t border-zinc-800 pt-4"
             >
-              <h2 id={`checklist-${section.id}`} className="text-base font-bold tracking-tight">
+              <h2 id={`checklist-${section.id}`} className="block-title">
                 {i + 1}. {section.title}
               </h2>
               {section.intro && (

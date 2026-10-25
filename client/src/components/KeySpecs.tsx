@@ -518,7 +518,7 @@ export default function KeySpecs({
         <details className="group/specs">
           <summary className={`${foldSummaryClass} gap-4`}>
             <span className="min-w-0">
-              <h2 className="text-base font-bold tracking-tight">{heading}</h2>
+              <h2 className="block-title">{heading}</h2>
               <span className="block text-xs text-zinc-500 mt-0.5">
                 {rowCount} more {rowCount === 1 ? 'figure' : 'figures'} on file for this version
               </span>

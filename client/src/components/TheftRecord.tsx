@@ -19,7 +19,7 @@ export default function TheftRecord({ theft }: { theft: TheftRank }) {
     >
       <div className="page-wrap-wide section-y-tight">
         <div className="max-w-3xl">
-          <h2 id="theft-heading" className="text-base font-bold tracking-tight mb-1">
+          <h2 id="theft-heading" className="block-title mb-1">
             Theft in Canada
           </h2>
           <p className="text-sm text-zinc-300 leading-relaxed">{theftSentence(theft)}</p>

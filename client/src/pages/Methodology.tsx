@@ -85,7 +85,7 @@ export default function Methodology() {
       <div className="border-b border-zinc-900">
         <div className="page-wrap section-y max-w-3xl">
           <p className="text-xs text-zinc-400 mb-3">Where the figures come from</p>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">Methodology</h1>
+          <h1 className="page-title mb-4">Methodology</h1>
           <p className="text-sm text-zinc-300 leading-relaxed">
             CarInfo puts public records about cars in one place: EPA’s fuel ratings, NHTSA’s crash
             tests, complaints and investigations, Transport Canada’s recalls and measurements, and
@@ -97,7 +97,7 @@ export default function Methodology() {
 
       <div className="page-wrap section-y max-w-3xl space-y-10 md:space-y-12">
         <section>
-          <h2 className="text-xs font-bold text-white mb-4">Sources</h2>
+          <h2 className="block-title mb-3">Sources</h2>
           <p className="text-sm text-zinc-400 leading-relaxed mb-4">
             Each fact on the site comes from one of these, and keeps the identifier its source knows
             it by (an EPA vehicle id, a Transport Canada recall number), so it can be looked up
@@ -127,7 +127,7 @@ export default function Methodology() {
         </section>
 
         <section>
-          <h2 className="text-xs font-bold text-white mb-4">How a car’s page is put together</h2>
+          <h2 className="block-title mb-3">How a car’s page is put together</h2>
           <ol className="space-y-4 text-sm text-zinc-400 leading-relaxed list-decimal list-inside marker:text-zinc-400">
             <li>
               <strong className="text-zinc-200 font-medium">The cars</strong>: every version EPA has
@@ -158,7 +158,7 @@ export default function Methodology() {
         </section>
 
         <section>
-          <h2 className="text-xs font-bold text-white mb-4">Plug-in hybrids filed as electric</h2>
+          <h2 className="block-title mb-3">Plug-in hybrids filed as electric</h2>
           <p className="text-sm text-zinc-400 leading-relaxed">
             EPA&rsquo;s bulk file lists some plug-in hybrids among its electric cars. Each
             car&rsquo;s fuel type is read again from EPA&rsquo;s own fields for it when the data is
@@ -169,9 +169,7 @@ export default function Methodology() {
         </section>
 
         <section>
-          <h2 className="text-xs font-bold text-white mb-4">
-            How we estimate value and running costs
-          </h2>
+          <h2 className="block-title mb-3">How we estimate value and running costs</h2>
           <p className="text-sm text-zinc-400 leading-relaxed mb-4">
             Value, running costs, resale and the five-year cost are{' '}
             <strong className="text-zinc-200 font-medium">always estimates</strong>, in Canadian
@@ -265,7 +263,7 @@ export default function Methodology() {
         </section>
 
         <section>
-          <h2 className="text-xs font-bold text-white mb-4">What the labels mean</h2>
+          <h2 className="block-title mb-3">What the labels mean</h2>
           <p className="text-sm text-zinc-400 leading-relaxed mb-4">
             Beside each figure, where it came from:
           </p>
@@ -299,7 +297,7 @@ export default function Methodology() {
         </section>
 
         <section>
-          <h2 className="text-xs font-bold text-white mb-4">Photos</h2>
+          <h2 className="block-title mb-3">Photos</h2>
           <p className="text-sm text-zinc-400 leading-relaxed">
             A car&rsquo;s page and its model&rsquo;s open with a photo from Wikimedia Commons of
             that model year, make, model and body. Where Commons has none, a photo of another year
@@ -310,7 +308,7 @@ export default function Methodology() {
         </section>
 
         <section>
-          <h2 className="text-xs font-bold text-white mb-4">What we leave out</h2>
+          <h2 className="block-title mb-3">What we leave out</h2>
           <p className="text-sm text-zinc-400 leading-relaxed">
             Torque, measured 0&ndash;60 times and equipment (heated seats, CarPlay) are in none of
             these sources. EPA gives interior space for cars and some SUVs, not pickups, and about

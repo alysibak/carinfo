@@ -39,7 +39,7 @@ export default function SimilarCars({ car }: { car: CarSpecs }) {
   return (
     <section id="similar" className="border-t border-zinc-900 scroll-mt-32">
       <div className="page-wrap-wide section-y-tight">
-        <h2 className="text-base font-bold tracking-tight mb-1">Alternatives</h2>
+        <h2 className="block-title mb-1">Alternatives</h2>
         <p className="text-xs text-zinc-500 mb-3">How each differs from this one.</p>
 
         {cars == null ? (

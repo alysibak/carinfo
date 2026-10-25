@@ -345,7 +345,7 @@ export default function ValueMatrix() {
       <div className="page-wrap py-6 sm:py-8 border-b border-zinc-900">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Value Chart</h1>
+            <h1 className="page-title">Value chart</h1>
             <p className="text-sm text-zinc-400 mt-1">
               {phase === 'chart' && totalMatched > 0
                 ? `${totalMatched.toLocaleString()} cars match. Each square counts the cars at that value and fuel use; pick one to see them.`

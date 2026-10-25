@@ -48,9 +48,8 @@ export function BackLink({ to, label = 'Back' }: { to: string; label?: string })
           d="M7 16l-4-4m0 0l4-4m-4 4h18"
         />
       </svg>
-      {/* Visually hidden on phones, never removed: with the arrow aria-hidden,
-          `hidden` left the link with no accessible name at mobile widths. */}
-      <span className="sr-only sm:not-sr-only">{label}</span>
+      {/* Named on phones too: an arrow alone did not say where it went. */}
+      <span>{label}</span>
     </Link>
   );
 }
@@ -89,7 +88,7 @@ export function ErrorState({
   return (
     <div className="min-h-[40vh] bg-black flex items-center justify-center text-white py-16">
       <div className="text-center px-6 max-w-md">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-3">{title}</h1>
+        <h1 className="page-title mb-3">{title}</h1>
         <p className="text-sm text-zinc-400 leading-relaxed mb-8">{message}</p>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
           {onRetry && (

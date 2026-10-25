@@ -53,7 +53,7 @@ export function CountHeading({
 }) {
   return (
     <div className="flex items-baseline justify-between gap-4">
-      <h2 id={id} className="text-base font-bold tracking-tight">
+      <h2 id={id} className="block-title">
         {title}
       </h2>
       {count != null && (

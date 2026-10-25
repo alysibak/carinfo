@@ -25,7 +25,7 @@ export default function RecentlyViewed({
   return (
     <section aria-labelledby="recently-viewed" className={`@container ${className}`}>
       <div className="flex items-center justify-between gap-4 mb-3">
-        <h2 id="recently-viewed" className="text-base font-bold tracking-tight">
+        <h2 id="recently-viewed" className="block-title">
           Recently viewed
         </h2>
         <button

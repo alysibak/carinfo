@@ -27,9 +27,7 @@ function AccountGate({ tool }: { tool: string }) {
     <div className="page-wrap py-12 sm:py-20">
       <div className="max-w-xl">
         <p className="text-xs text-zinc-500 mb-3">Free with an account</p>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-3">
-          Sign in to use {tool}
-        </h1>
+        <h1 className="page-title mb-3">Sign in to use {tool}</h1>
         <p className="text-sm text-zinc-400 leading-relaxed mb-6">
           {tool} is free with a CarInfo account. Car pages, search and browsing stay open to
           everyone.

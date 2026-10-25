@@ -97,7 +97,7 @@ export default function VinDecoder() {
     <div className="bg-black text-white">
       <div className="page-wrap section-y">
         <p className="text-xs text-zinc-400 mb-3">Tools</p>
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tighter mb-3">VIN lookup</h1>
+        <h1 className="page-title mb-3">VIN lookup</h1>
         <p className="text-sm text-zinc-300 leading-relaxed max-w-2xl mb-2">
           Enter the car’s 17-character VIN to see what it was built as: its year, model, engine,
           drive and the plant it came from, from NHTSA’s decoder. Then open its page here for the

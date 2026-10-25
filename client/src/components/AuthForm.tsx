@@ -17,7 +17,7 @@ export function AuthCard({
   return (
     <div className="page-wrap py-10 sm:py-16">
       <div className="max-w-md mx-auto">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-2">{title}</h1>
+        <h1 className="page-title mb-2">{title}</h1>
         {intro && <div className="text-sm text-zinc-400 leading-relaxed mb-8">{intro}</div>}
         <div className="border border-zinc-800 bg-zinc-950 p-5 sm:p-6">{children}</div>
         {footer && <div className="mt-6 text-sm text-zinc-400 space-y-2">{footer}</div>}

@@ -59,9 +59,7 @@ export default function ToolPageHeader({
           )}
         </div>
         <div className="mt-3 min-w-0">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight wrap-break-word">
-            {title}
-          </h1>
+          <h1 className="page-title wrap-break-word">{title}</h1>
           {subtitle && <p className="text-xs text-zinc-500 mt-1 wrap-break-word">{subtitle}</p>}
         </div>
       </div>

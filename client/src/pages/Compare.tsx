@@ -519,7 +519,7 @@ export default function Compare() {
     return (
       <div className="bg-black text-white">
         <div className="page-wrap section-y max-w-3xl">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">Compare</h1>
+          <h1 className="page-title mb-3">Compare</h1>
           <p className="text-[15px] text-zinc-300 mb-8 max-w-xl leading-relaxed">
             Put up to five cars side by side: what each costs to buy and to run, what it burns, and
             how NHTSA rated it. Add cars from any search result or car page.
@@ -625,7 +625,7 @@ export default function Compare() {
         <div className="page-wrap py-4 sm:py-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Compare</h1>
+              <h1 className="page-title">Compare</h1>
               <p className="text-sm text-zinc-400 mt-0.5">
                 {comparedCars.length} car{comparedCars.length !== 1 ? 's' : ''}
               </p>

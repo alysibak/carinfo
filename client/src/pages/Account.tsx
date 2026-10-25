@@ -54,7 +54,7 @@ function AccountPanel({ session }: { session: AuthSession }) {
 
   return (
     <div className="page-wrap py-10 max-w-2xl">
-      <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-2">Account</h1>
+      <h1 className="page-title mb-2">Account</h1>
       <p className="text-sm text-zinc-400 mb-8">
         Signed in as <span className="text-zinc-200">{user.email}</span>
       </p>

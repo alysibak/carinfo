@@ -51,7 +51,7 @@ export default function BestSellers({
   return (
     <section aria-labelledby="best-sellers" className="@container">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mb-4">
-        <Heading id="best-sellers" className="text-xl md:text-2xl font-bold tracking-tight">
+        <Heading id="best-sellers" className="section-title">
           Canada’s best sellers
         </Heading>
         {data && (

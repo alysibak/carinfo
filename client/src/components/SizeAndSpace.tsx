@@ -210,7 +210,7 @@ export default function SizeAndSpace({ dashboard }: { dashboard: CarDashboard })
   return (
     <section id="size" className="border-b border-zinc-900 scroll-mt-32">
       <div className="page-wrap-wide section-y-tight">
-        <h2 className="text-base font-bold tracking-tight mb-1">Size and space</h2>
+        <h2 className="block-title mb-1">Size and space</h2>
         {compared && (
           <p className="text-[13px] text-zinc-400 mb-3">
             Against the middle of other {classPlural(className!)}, {cls!.years.min}–{cls!.years.max}
