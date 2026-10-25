@@ -4,7 +4,13 @@ import { ordinal } from '@carinfo/shared/theft';
 import Investigations from './Investigations';
 import RecordRow, { CountHeading } from './RecordRow';
 import { Chevron, foldSummaryClass } from './ui';
-import { complaintPart, recallDate, recallHeadline, recallNotice } from '../utils/recalls';
+import {
+  complaintPart,
+  recallDate,
+  recallHeadline,
+  recallIssueRest,
+  recallNotice,
+} from '../utils/recalls';
 import { powertrainNames, splitRecalls } from '@carinfo/shared/recall-scope';
 import type { CanadianRecall } from '../types/car.types';
 
@@ -24,11 +30,15 @@ function rankSentence(rank: { position: number; of: number }, model = 'model'): 
 
 function RecallItem({ recall, forOther }: { recall: CanadianRecall; forOther?: string }) {
   const notice = recallNotice(recall.summary);
+  const headline = recallHeadline(recall.summary);
+  // The line under the title is the notice's first sentence, whole: the
+  // notice goes on from there rather than say it twice.
+  const issue = headline && !headline.endsWith('…') ? recallIssueRest(notice.issue) : notice.issue;
   return (
     <RecordRow
       title={complaintPart(recall.system)}
       flag={forOther ? <span className="text-zinc-400 font-normal"> · {forOther} only</span> : null}
-      lead={recallHeadline(recall.summary)}
+      lead={headline}
       meta={
         <>
           {recallDate(recall.date)}
@@ -36,7 +46,7 @@ function RecallItem({ recall, forOther }: { recall: CanadianRecall; forOther?: s
         </>
       }
     >
-      <p>{notice.issue}</p>
+      {issue && <p>{issue}</p>}
       {notice.risk && (
         <p>
           <span className="text-zinc-500">Risk: </span>

@@ -55,6 +55,14 @@ export function recallHeadline(summary: string, max = 120): string | null {
   return `${cut.slice(0, cut.lastIndexOf(' ')).replace(/[,;:]$/, '')}…`;
 }
 
+/** A notice's issue after its first sentence, the one recallHeadline gives in a line. */
+export function recallIssueRest(issue: string): string {
+  return issue
+    .split(/(?<=[.!?])\s+(?=[A-Z])/)
+    .slice(1)
+    .join(' ');
+}
+
 function tidy(text: string): string {
   return text.replace(/\s+/g, ' ').trim();
 }

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { complaintPart, recallDate, recallHeadline, recallNotice } from './recalls';
+import {
+  complaintPart,
+  recallDate,
+  recallHeadline,
+  recallIssueRest,
+  recallNotice,
+} from './recalls';
 
 describe('recallNotice', () => {
   it('reads a notice in its three parts', () => {
@@ -57,5 +63,14 @@ describe('recallHeadline', () => {
 
   it('gives none for a notice in capitals', () => {
     expect(recallHeadline('ON CERTAIN VEHICLES, THE ABS MODULE COULD FAIL.')).toBeNull();
+  });
+});
+
+describe('recallIssueRest', () => {
+  it('goes on after the first sentence, which the headline gives', () => {
+    expect(
+      recallIssueRest('On certain vehicles, the pump may fail. As a result, it could leak.'),
+    ).toBe('As a result, it could leak.');
+    expect(recallIssueRest('On certain vehicles, the pump may fail.')).toBe('');
   });
 });
