@@ -318,7 +318,7 @@ export default function Home() {
             loading={isSearching}
             size="default"
             showButton={false}
-            placeholder="Keep typing — typos are OK (e.g. toyata camry)"
+            placeholder="Make, model, year or VIN, e.g. 2024 Toyota Camry"
           />
           {/* For screen readers: sighted readers see the results dim. Shown, it
               sat on top of the filter chips under the search box. Always

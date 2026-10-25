@@ -238,19 +238,25 @@
 }
 
 @utility empty-panel {
-  @apply text-center py-12 sm:py-14 px-6 border border-zinc-800 bg-zinc-950;
+  @apply text-center py-12 sm:py-14 px-6 border border-zinc-800 bg-zinc-950 card-sheen;
 }
 
 @utility skip-link {
   @apply absolute left-4 top-4 z-100 -translate-y-16 px-4 py-2 bg-accent text-accent-ink text-sm font-semibold transition-transform focus:translate-y-0 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60;
 }
 
+/* A hairline of light along a card's top edge: depth on black, not a shadow. */
+@utility card-sheen {
+  /* Tailwind's inset shadow, which composes with focus rings rather than replacing them. */
+  @apply inset-shadow-[0_1px_0_rgb(255_255_255/0.045)];
+}
+
 @utility surface-card {
-  @apply bg-black border border-zinc-800 rounded-none;
+  @apply bg-black border border-zinc-800 rounded-none card-sheen;
 }
 
 @utility surface-card-hover {
-  @apply bg-black border border-zinc-800 rounded-none transition-all duration-200 hover:border-zinc-500 hover:bg-zinc-950 hover:-translate-y-0.5;
+  @apply bg-black border border-zinc-800 rounded-none card-sheen transition-all duration-200 hover:border-zinc-500 hover:bg-zinc-950 hover:-translate-y-0.5;
 }
 
 @utility btn {
@@ -272,7 +278,7 @@
 
 @utility choice-tile {
   /* A choice that reads as clickable: a bordered tile with a title and a line. */
-  @apply flex items-center justify-between gap-3 min-h-[56px] px-4 py-3 border border-zinc-800 bg-zinc-950 text-left transition duration-150 hover:border-zinc-500 hover:bg-zinc-900 active:bg-zinc-900 active:scale-[0.99] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60;
+  @apply flex items-center justify-between gap-3 min-h-[56px] px-4 py-3 border border-zinc-800 bg-zinc-950 card-sheen text-left transition duration-150 hover:border-zinc-500 hover:bg-zinc-900 active:bg-zinc-900 active:scale-[0.99] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60;
 }
 
 @utility animate-battle-slide-in-left {
@@ -467,6 +473,12 @@
 
   html {
     overflow-x: clip;
+  }
+
+  /* Selected text takes the accent, faintly: the site's one colour. */
+  ::selection {
+    background: rgb(52 211 153 / 0.3);
+    color: #fff;
   }
 
   body {

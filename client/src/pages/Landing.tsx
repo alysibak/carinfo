@@ -92,7 +92,7 @@ export default function Landing() {
   }, []);
 
   return (
-    <div className={`min-h-screen bg-black text-white selection:bg-white/20 ${trayPad}`}>
+    <div className={`min-h-screen bg-black text-white ${trayPad}`}>
       {/* The landing page renders outside Layout, so it carries its own skip
           link and main landmark — without them keyboard users had to tab
           through the whole header, and screen readers found no main region. */}
@@ -152,48 +152,55 @@ export default function Landing() {
           <RecentlyViewed className="pt-8 sm:pt-10" />
         </div>
 
-        <div className="page-wrap section-y border-t border-zinc-900">
-          <BestSellers />
+        {/* Rules between sections run edge to edge, as on every other page. */}
+        <div className="border-t border-zinc-900">
+          <div className="page-wrap section-y">
+            <BestSellers />
+          </div>
         </div>
 
-        <section className="page-wrap section-y border-t border-zinc-900">
-          <h2 className="section-title mb-6">How do you want to start?</h2>
-          {/* A line each, a tap each: the boxes of chips here took two phone
+        <div className="border-t border-zinc-900">
+          <section className="page-wrap section-y">
+            <h2 className="section-title mb-6">How do you want to start?</h2>
+            {/* A line each, a tap each: the boxes of chips here took two phone
               screens and repeated the best sellers above them. */}
-          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {START_POINTS.map((start) => (
-              <li key={start.to}>
-                <Link to={start.to} className="choice-tile h-full">
-                  <span className="min-w-0">
-                    <span className="block text-[15px] font-semibold text-white">
-                      {start.label}
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {START_POINTS.map((start) => (
+                <li key={start.to}>
+                  <Link to={start.to} className="choice-tile h-full">
+                    <span className="min-w-0">
+                      <span className="block text-[15px] font-semibold text-white">
+                        {start.label}
+                      </span>
+                      <span className="block text-[13px] text-zinc-400 mt-0.5">{start.note}</span>
                     </span>
-                    <span className="block text-[13px] text-zinc-400 mt-0.5">{start.note}</span>
-                  </span>
-                  <span aria-hidden className="text-zinc-500 shrink-0">
-                    →
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
+                    <span aria-hidden className="text-zinc-500 shrink-0">
+                      →
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
 
-        <section className="page-wrap section-y border-t border-zinc-900">
-          <h2 className="section-title mb-2">Shortlists</h2>
-          <p className="text-[15px] text-zinc-400 mb-6 max-w-xl leading-relaxed">
-            Ranked picks for common situations, one per model, not every trim on file.
-          </p>
-          <ErrorBoundary fallback={null}>
-            <ShortlistCards limit={6} />
-          </ErrorBoundary>
-          <Link
-            to="/browse#shortlists"
-            className="inline-flex items-center min-h-[44px] mt-3 text-sm text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-400"
-          >
-            All {Object.keys(COLLECTIONS).length} shortlists →
-          </Link>
-        </section>
+        <div className="border-t border-zinc-900">
+          <section className="page-wrap section-y">
+            <h2 className="section-title mb-2">Shortlists</h2>
+            <p className="text-[15px] text-zinc-400 mb-6 max-w-xl leading-relaxed">
+              Ranked picks for common situations, one per model, not every trim on file.
+            </p>
+            <ErrorBoundary fallback={null}>
+              <ShortlistCards limit={6} />
+            </ErrorBoundary>
+            <Link
+              to="/browse#shortlists"
+              className="inline-flex items-center min-h-[44px] mt-3 text-sm text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-400"
+            >
+              All {Object.keys(COLLECTIONS).length} shortlists →
+            </Link>
+          </section>
+        </div>
       </main>
 
       <SiteFooter />
