@@ -122,8 +122,8 @@ export function vehicleSeo(car: Car): PageSeo {
     .join(', ');
 
   const description =
-    `${name}: ${facts}. EPA-verified specs, NHTSA safety when on file, and clearly ` +
-    `labeled Canadian ownership-cost estimates.`;
+    `${name}: ${facts}. Its crash ratings, recalls in Canada and owners’ complaints from ` +
+    `the public records, and Canadian running costs, marked as estimates.`;
 
   const path = `/car/${encodeURIComponent(car.id)}`;
   const url = absoluteUrl(path);

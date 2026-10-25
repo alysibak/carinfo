@@ -41,7 +41,7 @@ test.describe('Trust UI smoke path', () => {
       .click();
     await expect(page.getByRole('button', { name: /in compare/i }).first()).toBeVisible();
 
-    await page.getByRole('navigation').getByRole('link', { name: 'Compare' }).click();
+    await page.getByRole('banner').getByRole('link', { name: 'Compare' }).click();
     await expect(page.getByRole('heading', { name: 'Compare', exact: true })).toBeVisible();
     await expect(page.getByText('Loading comparison')).toBeHidden({ timeout: 60_000 });
     // Measured and modeled numbers stay distinguishable side by side: the

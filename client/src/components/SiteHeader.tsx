@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, NavLink } from 'react-router-dom';
+import BrandMark from './BrandMark';
 import { useCarStore } from '../stores/carStore';
 import { useGarageStore } from '../stores/garageStore';
 import AuthHeaderSlot from './AuthHeaderSlot';
@@ -105,9 +106,10 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
       <div className="page-wrap py-3 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-3">
         <Link
           to="/"
-          className="text-sm font-bold uppercase tracking-[0.18em] text-white hover:text-zinc-300 transition-colors shrink-0 min-h-[44px] inline-flex items-center"
+          className="group/brand text-sm font-bold uppercase tracking-[0.18em] text-white hover:text-zinc-300 transition-colors shrink-0 min-h-[44px] inline-flex items-center gap-2.5"
           onClick={() => setMenuOpen(false)}
         >
+          <BrandMark className="w-[22px] h-[22px] shrink-0" />
           CarInfo
         </Link>
 

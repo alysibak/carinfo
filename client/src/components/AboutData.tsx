@@ -71,7 +71,7 @@ export default function AboutData({ compact = false }: { compact?: boolean }) {
               <strong className="text-zinc-200 font-medium">
                 {region.label}-baseline estimates in CAD
               </strong>
-              , always labeled, never live listing prices.
+              , always labelled, never live listing prices.
             </p>
           </div>
           <button

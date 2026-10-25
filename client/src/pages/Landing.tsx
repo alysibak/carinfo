@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import SearchBar from '../components/SearchBar';
 import SiteHeader from '../components/SiteHeader';
+import SiteFooter from '../components/SiteFooter';
 import SampleCarCard from '../components/SampleCarCard';
 import CatalogueStats from '../components/CatalogueStats';
 import ShortlistCards from '../components/ShortlistCards';
@@ -195,26 +196,7 @@ export default function Landing() {
         </section>
       </main>
 
-      <footer className="border-t border-zinc-900">
-        <div className="page-wrap py-8 sm:py-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
-          <div>
-            <p className="text-sm font-semibold text-white">CarInfo</p>
-            <p className="text-sm text-zinc-400 mt-2 max-w-sm leading-relaxed">
-              Each car&rsquo;s recalls in Canada, owners&rsquo; complaints, crash ratings and fuel
-              use, from public records. CarInfo sells no cars and lists none for sale.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-zinc-400">
-            <Link to="/vin" className="inline-block py-1.5 hover:text-white">
-              VIN lookup
-            </Link>
-            <Link to="/methodology" className="inline-block py-1.5 hover:text-white">
-              Methodology
-            </Link>
-            <span className="text-zinc-500">© {new Date().getFullYear()}</span>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
 
       <CompareTray />
     </div>

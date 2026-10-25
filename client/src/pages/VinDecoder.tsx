@@ -23,6 +23,22 @@ function Row({ label, value }: { label: string; value: string | number | undefin
   );
 }
 
+/** What one VIN tells a buyer, in the order the page gives it. */
+const VIN_GIVES = [
+  {
+    title: 'What it was built as',
+    body: 'Its year, model, engine, drive and the plant it came from, from NHTSA’s decoder.',
+  },
+  {
+    title: 'Its model year’s record',
+    body: 'Recalls in Canada, owners’ complaints and the crash rating, on its page here.',
+  },
+  {
+    title: 'A check on the ad',
+    body: 'Whether the year, engine and drive the seller gives match what the VIN says.',
+  },
+] as const;
+
 export default function VinDecoder() {
   usePageMeta(
     'VIN lookup',
@@ -143,18 +159,19 @@ export default function VinDecoder() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 mt-3 text-xs text-zinc-400">
+        {/* As wide as the field above it: a line the width of the page was hard to read. */}
+        <div className="flex flex-wrap sm:flex-nowrap items-start gap-x-3 gap-y-2 mt-3 text-xs text-zinc-400 max-w-2xl">
           <button
             type="button"
             onClick={() => {
               setVin(SAMPLE_VIN);
               run(SAMPLE_VIN);
             }}
-            className="chip"
+            className="chip shrink-0"
           >
             Sample VIN
           </button>
-          <span>
+          <span className="min-w-0 leading-relaxed sm:pt-1">
             The VIN is on the dashboard, read through the windshield, on the label in the driver’s
             door frame, and on the ownership papers. Or tap the camera to scan its barcode.
           </span>
@@ -171,6 +188,19 @@ export default function VinDecoder() {
               onClose={() => setScanning(false)}
             />
           </Suspense>
+        )}
+
+        {!result && !error && !loading && (
+          // What a VIN gives, before one is entered: the page was a lone field.
+          <ol className="mt-12 max-w-2xl grid gap-px bg-zinc-900 border border-zinc-900 sm:grid-cols-3">
+            {VIN_GIVES.map((item, index) => (
+              <li key={item.title} className="bg-black p-4">
+                <p className="text-xs text-zinc-500 tabular-nums">{index + 1}</p>
+                <p className="mt-2 text-sm font-semibold text-white">{item.title}</p>
+                <p className="mt-1 text-xs text-zinc-400 leading-relaxed">{item.body}</p>
+              </li>
+            ))}
+          </ol>
         )}
 
         {error && (

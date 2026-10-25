@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 
-const DEFAULT_TITLE = 'CarInfo | EPA-verified specs and honest vehicle estimates';
+const DEFAULT_TITLE = 'CarInfo | Compare cars with facts you can check';
 const DEFAULT_DESCRIPTION =
-  'Search and compare 35,000+ vehicles with EPA-verified specs, NHTSA safety when available, and clearly labeled Ontario/CAD market estimates.';
+  'Fuel use from EPA tests, crash-test stars from NHTSA, recalls in Canada and owners’ complaints for every car since 1995, in litres and kilometres. Anything we estimate is marked.';
 
 /** The path the document was served for; server-rendered tags describe it. */
 const INITIAL_PATH = typeof window !== 'undefined' ? window.location.pathname : '';

@@ -257,7 +257,7 @@ export default function CarDetail() {
   usePageMeta(
     pageTitle,
     pageTitle
-      ? `EPA-verified specs, safety when available, and Ontario/CAD estimates for the ${pageTitle}.`
+      ? `The ${pageTitle}: fuel use, crash ratings, recalls in Canada and owners’ complaints from the public records, and running costs, marked as estimates.`
       : undefined,
   );
 

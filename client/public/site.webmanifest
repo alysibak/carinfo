@@ -1,7 +1,7 @@
 {
   "name": "CarInfo",
   "short_name": "CarInfo",
-  "description": "EPA-verified vehicle specs, NHTSA safety, and clearly labeled Canadian cost estimates.",
+  "description": "Compare cars with facts you can check: EPA fuel use, NHTSA crash ratings, recalls in Canada and owners’ complaints.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0c0c0e",

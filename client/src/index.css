@@ -214,10 +214,16 @@
   @apply text-[13px] text-zinc-400;
 }
 
+/*
+ * One frame for every page, the header and the footer, so the logo and each
+ * page's first line share an edge. The car page and the garage once ran wider
+ * than the rest, and the edge jumped from page to page.
+ */
 @utility page-wrap {
-  @apply max-w-6xl mx-auto px-4 sm:px-5 md:px-10;
+  @apply max-w-7xl mx-auto px-4 sm:px-5 md:px-10;
 }
 
+/* The same frame, under the name the wider pages were written with. */
 @utility page-wrap-wide {
   @apply max-w-7xl mx-auto px-4 sm:px-5 md:px-10;
 }
