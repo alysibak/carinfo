@@ -61,6 +61,18 @@
   --animate-grow-x: growX 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
   /* Out from under the header, opaque all the way: a fade let the page show through. */
   --animate-pin-in: pinIn 0.18s ease-out both;
+  /* A page's code on its way: a sliver of the accent crossing under the
+     header, held back a moment so a quick load shows nothing at all. */
+  --animate-loading-bar: loadingBar 1.1s ease-in-out 0.35s infinite both;
+
+  @keyframes loadingBar {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(400%);
+    }
+  }
 
   @keyframes pinIn {
     0% {

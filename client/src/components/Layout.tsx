@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import SiteHeader from './SiteHeader';
 import CompareTray from './CompareTray';
@@ -27,12 +28,29 @@ export default function Layout() {
         className="flex-1 min-h-[calc(100svh-var(--header-height))]"
         tabIndex={-1}
       >
-        <Outlet />
+        {/* The header and footer stay while a page's code loads: a visit
+            straight to a car page used to show a spinner in place of
+            everything, header included. */}
+        <Suspense fallback={<PageLoading />}>
+          <Outlet />
+        </Suspense>
       </main>
 
       <SiteFooter />
 
       <CompareTray />
+    </div>
+  );
+}
+
+function PageLoading() {
+  return (
+    <div role="status" className="h-0.5 overflow-hidden">
+      <span className="sr-only">Loading</span>
+      <div
+        aria-hidden
+        className="h-full w-1/4 bg-accent/70 animate-loading-bar motion-reduce:hidden"
+      />
     </div>
   );
 }
