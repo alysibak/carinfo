@@ -10,6 +10,7 @@ export default function RecordRow({
   title,
   meta,
   flag,
+  lead,
   children,
 }: {
   title: ReactNode;
@@ -17,6 +18,8 @@ export default function RecordRow({
   meta: ReactNode;
   /** "Open", beside the title. */
   flag?: ReactNode;
+  /** What it is, in a line, under the title: a recall's fault. */
+  lead?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -28,6 +31,9 @@ export default function RecordRow({
               {title}
               {flag}
             </span>
+            {lead && (
+              <span className="block text-[13px] text-zinc-300 mt-0.5 leading-snug">{lead}</span>
+            )}
             <span className="block text-xs text-zinc-500 mt-0.5 tabular-nums">{meta}</span>
           </span>
           <Chevron className="w-3.5 h-3.5 text-zinc-500 group-hover/row:text-white group-open/row:rotate-180" />

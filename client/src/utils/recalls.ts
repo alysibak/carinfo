@@ -35,6 +35,26 @@ export function recallNotice(summary: string): RecallNotice {
   };
 }
 
+/**
+ * A recall in a line, from its notice's first sentence: "The high-pressure
+ * fuel pump may not have been manufactured properly." Transport Canada's
+ * system ("Fuel system", "Other") says where the fault is, not what it is.
+ * None for a notice written in capitals, which a line of would shout.
+ */
+export function recallHeadline(summary: string, max = 120): string | null {
+  const { issue } = recallNotice(summary);
+  const letters = issue.replace(/[^A-Za-z]/g, '');
+  if (!letters || letters.replace(/[^A-Z]/g, '').length > letters.length * 0.6) return null;
+  const [first] = issue.split(/(?<=[.!?])\s+(?=[A-Z])/);
+  // "On certain vehicles, the fuel pump could fail." Some notices have a full stop there.
+  let line = first.replace(/^(?:on|in)\s+(?:certain|some)\s+(?:vehicles|models)\s*[,.]\s*/i, '');
+  if (!line) return null;
+  line = line[0].toUpperCase() + line.slice(1);
+  if (line.length <= max) return line;
+  const cut = line.slice(0, max);
+  return `${cut.slice(0, cut.lastIndexOf(' ')).replace(/[,;:]$/, '')}…`;
+}
+
 function tidy(text: string): string {
   return text.replace(/\s+/g, ' ').trim();
 }

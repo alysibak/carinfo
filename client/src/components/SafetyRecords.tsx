@@ -4,7 +4,7 @@ import { ordinal } from '@carinfo/shared/theft';
 import Investigations from './Investigations';
 import RecordRow, { CountHeading } from './RecordRow';
 import { Chevron, foldSummaryClass } from './ui';
-import { complaintPart, recallDate, recallNotice } from '../utils/recalls';
+import { complaintPart, recallDate, recallHeadline, recallNotice } from '../utils/recalls';
 import { powertrainNames, splitRecalls } from '@carinfo/shared/recall-scope';
 import type { CanadianRecall } from '../types/car.types';
 
@@ -28,6 +28,7 @@ function RecallItem({ recall, forOther }: { recall: CanadianRecall; forOther?: s
     <RecordRow
       title={complaintPart(recall.system)}
       flag={forOther ? <span className="text-zinc-400 font-normal"> · {forOther} only</span> : null}
+      lead={recallHeadline(recall.summary)}
       meta={
         <>
           {recallDate(recall.date)}
