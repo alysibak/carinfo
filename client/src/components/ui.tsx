@@ -54,15 +54,19 @@ export function BackLink({ to, label = 'Back' }: { to: string; label?: string })
   );
 }
 
+/**
+ * Waiting on data, said once and quietly: what is loading, over the same
+ * sliver of the accent that crosses under the header while a page's code
+ * loads, the site's one sign of waiting.
+ */
 export function LoadingScreen({ label = 'Loading' }: { label?: string }) {
   return (
     <div className="min-h-[40vh] bg-black flex items-center justify-center py-16">
-      <div className="text-center" role="status" aria-live="polite">
-        <div
-          className="inline-block w-12 h-12 border-2 border-zinc-800 border-t-zinc-500 mb-4 opacity-60 animate-spin"
-          aria-hidden
-        />
-        <p className="text-xs text-zinc-300">{label}</p>
+      <div className="w-48 text-center" role="status" aria-live="polite">
+        <p className="text-xs text-zinc-300 mb-3">{label}</p>
+        <div className="h-0.5 overflow-hidden bg-zinc-900" aria-hidden>
+          <div className="h-full w-1/4 bg-accent/70 animate-loading-bar motion-reduce:hidden" />
+        </div>
       </div>
     </div>
   );

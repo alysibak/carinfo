@@ -679,10 +679,7 @@ export default function Compare() {
 
       <div className="page-wrap section-y-tight pb-12 sm:pb-16">
         {loading ? (
-          <div className="text-center py-12" role="status">
-            <div className="inline-block w-10 h-10 border-2 border-zinc-800 border-t-zinc-500 mb-3 animate-spin" />
-            <p className="text-sm text-zinc-400">Loading comparison</p>
-          </div>
+          <LoadingScreen label="Loading comparison" />
         ) : (
           <div className="max-w-7xl mx-auto min-w-0">
             {summary.length > 0 && (

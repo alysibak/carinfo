@@ -132,10 +132,9 @@ function PhotoViewer({
                 className="absolute inset-0 flex items-center justify-center"
                 aria-live="polite"
               >
-                <div
-                  className="w-8 h-8 border-2 border-zinc-800 border-t-zinc-500 animate-spin"
-                  aria-hidden
-                />
+                <div className="w-32 h-0.5 overflow-hidden bg-zinc-900" aria-hidden>
+                  <div className="h-full w-1/4 bg-accent/70 animate-loading-bar motion-reduce:hidden" />
+                </div>
                 <span className="sr-only">Loading the photo</span>
               </div>
             )}

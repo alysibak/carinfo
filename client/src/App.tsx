@@ -3,6 +3,7 @@ import { Suspense, lazy } from 'react';
 import Landing from './pages/Landing';
 import Layout from './components/Layout';
 import ScrollToTop from './components/ScrollToTop';
+import { LoadingScreen } from './components/ui';
 import ErrorBoundary from './components/ErrorBoundary';
 import AuthProvider from './components/AuthProvider';
 import { useRecordVisit } from './hooks/useRecordVisit';
@@ -31,15 +32,9 @@ const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const RequireAccount = lazy(() => import('./components/RequireAccount'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
+/** Outside the page frame, which has a loading boundary of its own (Layout). */
 function RouteFallback() {
-  return (
-    <div className="min-h-[50vh] bg-black flex items-center justify-center">
-      <div className="text-center">
-        <div className="inline-block w-10 h-10 border-2 border-zinc-800 border-t-zinc-500 mb-3" />
-        <p className="text-xs text-zinc-400">Loading</p>
-      </div>
-    </div>
-  );
+  return <LoadingScreen />;
 }
 
 function App() {
