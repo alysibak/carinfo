@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCarStore } from '../stores/carStore';
 import FilterSidebar from '../components/FilterSidebar';
@@ -64,6 +64,28 @@ export default function Home() {
       !window.matchMedia?.('(min-width: 1024px)').matches,
   );
   const [view, setView] = useResultsView();
+  // The search box sticks under the header; the filters beside the results
+  // stick under both, and scroll within what is left of the screen. They
+  // stuck under the header alone, their top hidden behind the search box,
+  // and ran past the bottom of the screen where nothing could reach them.
+  const searchBoxRef = useRef<HTMLDivElement>(null);
+  const [searchBoxHeight, setSearchBoxHeight] = useState(0);
+  useEffect(() => {
+    const box = searchBoxRef.current;
+    if (!box || typeof ResizeObserver === 'undefined') return;
+    const measure = () =>
+      setSearchBoxHeight(
+        getComputedStyle(box).position === 'sticky' ? box.getBoundingClientRect().height : 0,
+      );
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(box);
+    window.addEventListener('resize', measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, []);
   const pageSize = getDefaultPageSize();
 
   const runSearchFromParams = useCallback(
@@ -307,7 +329,10 @@ export default function Home() {
         resultLabel={resultLabel}
         updating={isSearching}
       />
-      <div className="sticky top-(--header-height) [@media(max-height:500px)]:static z-20 bg-black border-b border-zinc-900">
+      <div
+        ref={searchBoxRef}
+        className="sticky top-(--header-height) [@media(max-height:500px)]:static z-20 bg-black border-b border-zinc-900"
+      >
         {/* A gap, not space-y: the chip row is hidden on desktop when it has
             nothing to show, and space-y's margin would stay under the box. */}
         <div className="page-wrap py-3 sm:py-4 flex flex-col gap-2.5 relative">
@@ -411,7 +436,13 @@ export default function Home() {
       <PageBody>
         <div className="grid grid-cols-1 lg:grid-cols-[15rem_minmax(0,1fr)] gap-6 lg:gap-8">
           <aside className="hidden lg:block">
-            <div className="lg:sticky lg:top-[calc(var(--header-height)+1rem)]">
+            <div
+              className="lg:sticky lg:overflow-y-auto overscroll-contain [scrollbar-width:thin]"
+              style={{
+                top: `calc(var(--header-height) + ${searchBoxHeight}px + 1rem)`,
+                maxHeight: `calc(100svh - var(--header-height) - ${searchBoxHeight}px - 2rem)`,
+              }}
+            >
               <FilterSidebar onFiltersApplied={onFiltersApplied} />
             </div>
           </aside>
