@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom';
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useCarStore } from '../stores/carStore';
 import type { CarDashboard, CarSpecs, Matchup } from '../types/car.types';
 import * as api from '../services/api';
@@ -24,6 +24,7 @@ import { regionName, useRegionStore } from '../stores/regionStore';
 import Matchups from '../components/Matchups';
 import AddCarSearch from '../components/AddCarSearch';
 import RegionSelect from '../components/RegionSelect';
+import CompareNamesBar from '../components/CompareNamesBar';
 import { formatVolume, luggageLabel } from '../utils/space';
 import { formatFeet, formatKg, formatLb, formatMetres } from '../utils/size';
 import { availabilityLabel, rolloverRiskText } from '../utils/safetyTech';
@@ -394,6 +395,10 @@ const ALL_SPECS: SpecRow[] = [
   },
 ];
 
+/** The table's columns, which the names bar over it repeats. */
+const LABEL_COL = 'w-23 sm:w-40';
+const CAR_COL = 'w-34 sm:w-auto';
+
 export default function Compare() {
   usePageMeta(
     'Compare',
@@ -414,6 +419,8 @@ export default function Compare() {
   const [picking, setPicking] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+  const tableHeadRef = useRef<HTMLTableSectionElement>(null);
   const region = useRegionStore((s) => s.region);
 
   const comparedIds = useMemo(() => comparedCars.map((c) => c.id).join(','), [comparedCars]);
@@ -706,15 +713,25 @@ export default function Compare() {
             )}
             {/* A phone shows the label column and two cars at once; more scroll sideways
                 with the labels pinned. It used to cut the second car off mid-word. */}
-            <div className="overflow-x-auto -mx-4 sm:mx-0 overscroll-x-contain">
+            <CompareNamesBar
+              cars={pairs.map(({ car }) => car)}
+              headRef={tableHeadRef}
+              scrollRef={tableScrollRef}
+              labelColClass={LABEL_COL}
+              carColClass={CAR_COL}
+            />
+            <div
+              ref={tableScrollRef}
+              className="overflow-x-auto -mx-4 sm:mx-0 overscroll-x-contain"
+            >
               <table className="w-full border-collapse table-fixed min-w-full">
                 <colgroup>
-                  <col className="w-23 sm:w-40" />
+                  <col className={LABEL_COL} />
                   {pairs.map(({ car }) => (
-                    <col key={car.id} className="w-34 sm:w-auto" />
+                    <col key={car.id} className={CAR_COL} />
                   ))}
                 </colgroup>
-                <thead>
+                <thead ref={tableHeadRef}>
                   <tr className="border-b border-zinc-700">
                     <th className="sticky left-0 z-10 bg-black px-3 sm:px-4 py-3 text-left align-bottom">
                       <span className="sr-only">Spec</span>
