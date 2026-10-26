@@ -312,11 +312,11 @@ export default function DreamGarage() {
                   )
                 }
                 disabled={garage.length < 2}
-                className={`btn-primary text-xs ${garage.length < 2 ? 'opacity-40 cursor-not-allowed' : ''}`}
+                className="btn-primary"
               >
                 Compare saved
               </button>
-              <button onClick={generateShareLink} className="btn-secondary text-xs">
+              <button onClick={generateShareLink} className="btn-secondary">
                 Share garage
               </button>
             </div>
@@ -361,14 +361,14 @@ export default function DreamGarage() {
                 setToast('Could not copy — select the link above');
               }
             }}
-            className="flex-1 btn-primary text-xs"
+            className="flex-1 btn-primary"
           >
             {copiedAgain ? 'Copied' : 'Copy link'}
           </button>
           <button
             type="button"
             onClick={() => setShowShareModal(false)}
-            className="flex-1 btn-secondary text-xs"
+            className="flex-1 btn-secondary"
           >
             Close
           </button>

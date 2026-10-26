@@ -121,17 +121,22 @@ function CheckRow({
   label: string;
   note: string;
 }) {
+  // The note describes the box rather than naming it, so it is read after.
+  const noteId = useId();
   return (
     <label className="flex items-start gap-3 py-2 cursor-pointer group">
       <input
         type="checkbox"
         checked={checked}
         onChange={onChange}
+        aria-describedby={noteId}
         className="mt-0.5 h-4 w-4 shrink-0 accent-accent cursor-pointer"
       />
       <span className="min-w-0">
         <span className="block text-[13px] text-zinc-200 group-hover:text-white">{label}</span>
-        <span className="block text-xs text-zinc-500 leading-snug mt-0.5">{note}</span>
+        <span id={noteId} aria-hidden className="block text-xs text-zinc-500 leading-snug mt-0.5">
+          {note}
+        </span>
       </span>
     </label>
   );

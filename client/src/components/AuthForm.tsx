@@ -1,4 +1,4 @@
-import type { FormEvent, InputHTMLAttributes, ReactNode } from 'react';
+import { useId, type FormEvent, type InputHTMLAttributes, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { PROVIDER_NAMES, type SignInProvider } from '../services/signInMethods';
 
@@ -46,24 +46,41 @@ export function AuthFormBody({
   );
 }
 
+/**
+ * A labelled field, its hint beneath it as a description: inside the label,
+ * the hint was read as part of the field's name ("Password At least 8
+ * characters").
+ */
 export function Field({
   label,
   hint,
   className = '',
+  id,
   ...input
 }: {
   label: string;
   hint?: string;
 } & InputHTMLAttributes<HTMLInputElement>) {
+  const autoId = useId();
+  const inputId = id ?? autoId;
+  const hintId = `${inputId}-hint`;
   return (
-    <label className="block">
-      <span className="field-label">{label}</span>
+    <div>
+      <label htmlFor={inputId} className="field-label block">
+        {label}
+      </label>
       <input
         {...input}
+        id={inputId}
+        aria-describedby={hint ? hintId : undefined}
         className={`mt-1.5 block w-full h-12 bg-black border border-zinc-700 focus:border-zinc-300 px-3 text-base text-white placeholder:text-zinc-500 focus:outline-hidden rounded-none transition-colors ${className}`}
       />
-      {hint && <span className="block mt-1.5 text-xs text-zinc-500">{hint}</span>}
-    </label>
+      {hint && (
+        <p id={hintId} className="mt-1.5 text-xs text-zinc-500">
+          {hint}
+        </p>
+      )}
+    </div>
   );
 }
 

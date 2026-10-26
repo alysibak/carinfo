@@ -219,7 +219,7 @@ export function ConfirmDialog({
         </h2>
         <p className="text-sm text-zinc-400 leading-relaxed mb-6">{message}</p>
         <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
-          <button type="button" onClick={onClose} className="btn-secondary text-xs">
+          <button type="button" onClick={onClose} className="btn-secondary">
             {cancelLabel}
           </button>
           <button

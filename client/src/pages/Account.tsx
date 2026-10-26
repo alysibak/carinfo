@@ -32,8 +32,9 @@ export default function AccountPage() {
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="border border-zinc-800 bg-zinc-950 p-5 flex flex-col gap-3">
-      <h2 className="text-xs text-zinc-500">{title}</h2>
+    <section className="border border-zinc-800 bg-zinc-950 card-sheen p-5 flex flex-col gap-3">
+      {/* A heading that reads as one: each box's name was 12px and grey. */}
+      <h2 className="block-title">{title}</h2>
       {children}
     </section>
   );
@@ -103,7 +104,7 @@ function ConfirmEmail({ email }: { email: string }) {
             type="button"
             disabled={state === 'busy'}
             onClick={() => void resend()}
-            className="btn-secondary text-xs"
+            className="btn-secondary"
           >
             {state === 'busy' ? 'Sending…' : 'Send the link again'}
           </button>
@@ -127,7 +128,7 @@ function GarageSection() {
 
   return (
     <Section title="Your garage">
-      <p className="text-lg font-semibold">
+      <p className="text-[15px] text-zinc-200 tabular-nums">
         {garageCount} saved · {limitLabel}
       </p>
       <p className="text-sm text-zinc-400">
@@ -137,13 +138,13 @@ function GarageSection() {
       </p>
       {lastSyncError && <p className="text-sm text-amber-200/90">{lastSyncError}</p>}
       <div className="flex flex-wrap gap-3 pt-1">
-        <Link to="/garage" className="btn-secondary text-xs">
+        <Link to="/garage" className="btn-secondary">
           Open garage
         </Link>
         <button
           type="button"
           onClick={() => void syncFromCloud()}
-          className="text-xs text-zinc-400 hover:text-white"
+          className="inline-flex items-center min-h-[44px] text-sm text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-600 hover:decoration-zinc-300"
         >
           Sync now
         </button>
@@ -193,7 +194,7 @@ function PlanSection({ billingConfigured }: { billingConfigured: boolean }) {
               type="button"
               disabled={busy !== null}
               onClick={() => void go('checkout')}
-              className="btn-primary text-xs"
+              className="btn-primary"
             >
               {busy === 'checkout' ? 'Redirecting…' : 'Upgrade to Pro'}
             </button>
@@ -202,7 +203,7 @@ function PlanSection({ billingConfigured }: { billingConfigured: boolean }) {
               type="button"
               disabled={busy !== null}
               onClick={() => void go('portal')}
-              className="btn-secondary text-xs"
+              className="btn-secondary"
             >
               {busy === 'portal' ? 'Opening…' : 'Manage billing'}
             </button>
@@ -346,7 +347,7 @@ function SignInSection({
             setBusy('out');
             void signOut().then(() => navigate('/'));
           }}
-          className="btn-secondary text-xs"
+          className="btn-secondary"
         >
           Sign out
         </button>
@@ -354,7 +355,7 @@ function SignInSection({
           type="button"
           disabled={busy !== null}
           onClick={() => void signOutOthers()}
-          className="text-xs text-zinc-400 hover:text-white"
+          className="inline-flex items-center min-h-[44px] text-sm text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-600 hover:decoration-zinc-300"
         >
           {busy === 'devices' ? 'Signing out…' : 'Sign out of other devices'}
         </button>
@@ -402,7 +403,7 @@ function DeleteSection({
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="inline-flex items-center min-h-[44px] text-sm text-zinc-400 hover:text-red-400"
+            className="inline-flex items-center min-h-[44px] text-sm text-zinc-300 hover:text-red-300 underline underline-offset-4 decoration-zinc-600 hover:decoration-red-400"
           >
             Delete my account…
           </button>
@@ -448,7 +449,7 @@ function DeleteSection({
             >
               {busy ? 'Deleting…' : 'Delete my account'}
             </button>
-            <button type="button" onClick={() => setOpen(false)} className="btn-secondary text-xs">
+            <button type="button" onClick={() => setOpen(false)} className="btn-secondary">
               Keep it
             </button>
           </div>

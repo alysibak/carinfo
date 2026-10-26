@@ -42,12 +42,12 @@ export default class ErrorBoundary extends Component<Props, State> {
           <div className="flex flex-wrap items-center justify-center gap-3">
             <button
               type="button"
-              className="btn-primary text-xs"
+              className="btn-primary"
               onClick={() => this.setState({ error: null })}
             >
               Try again
             </button>
-            <Link to="/home" className="btn-secondary text-xs">
+            <Link to="/home" className="btn-secondary">
               Search
             </Link>
           </div>
