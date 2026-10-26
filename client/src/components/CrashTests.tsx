@@ -3,6 +3,7 @@ import type { CarDashboard, CarSpecs, NhtsaRating } from '../types/car.types';
 import { availabilityLabel, rolloverRiskText, testedLabel } from '../utils/safetyTech';
 import { recallDate } from '../utils/recalls';
 import { SpecLabel } from './SpecExplain';
+import RatingStars from './RatingStars';
 
 const NHTSA_RATINGS = 'https://www.nhtsa.gov/ratings';
 
@@ -68,6 +69,10 @@ export default function CrashTests({ dashboard, car }: { dashboard: CarDashboard
                     {rating![key]}
                     <span className="text-xs text-zinc-500">/5</span>
                   </p>
+                  <RatingStars
+                    stars={rating![key] as number}
+                    className="w-3 h-3 sm:w-3.5 sm:h-3.5"
+                  />
                 </div>
               ))}
             </div>

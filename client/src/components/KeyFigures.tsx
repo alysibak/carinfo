@@ -1,6 +1,7 @@
 import type { CarDashboard } from '../types/car.types';
 import { buildKeyFigures, type KeyFigure } from '../utils/keyFigures';
 import ProvenanceChip from './ProvenanceChip';
+import RatingStars from './RatingStars';
 import { SpecExplain } from './SpecExplain';
 
 const TONE_CLASS = {
@@ -37,6 +38,12 @@ function FigureCell({ figure, wide }: { figure: KeyFigure; wide: boolean }) {
           {figure.value}
         </span>
         {figure.unit && <span className="text-sm text-zinc-400">{figure.unit}</span>}
+        {figure.stars != null && (
+          <RatingStars
+            stars={figure.stars}
+            className="w-3.5 h-3.5 sm:w-[18px] sm:h-[18px] ml-1 self-center"
+          />
+        )}
       </p>
       {figure.detail && <p className="text-xs text-zinc-500 mt-1">{figure.detail}</p>}
       {figure.comparison && (

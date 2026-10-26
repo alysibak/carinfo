@@ -17,7 +17,7 @@ export default function ModelPageSkeleton() {
           </div>
         </div>
         <div className="page-wrap section-y-tight">
-          <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-[15rem_1fr] lg:grid-cols-[20rem_1fr] items-start mb-8">
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-[15rem_1fr] lg:grid-cols-[26rem_1fr] items-start mb-8">
             <div className={`aspect-[3/2] ${block}`} />
             <div className="min-w-0">
               <div className={`h-4 w-60 max-w-full ${block}`} />

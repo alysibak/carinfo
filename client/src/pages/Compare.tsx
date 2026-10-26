@@ -25,6 +25,7 @@ import Matchups from '../components/Matchups';
 import AddCarSearch from '../components/AddCarSearch';
 import RegionSelect from '../components/RegionSelect';
 import CompareNamesBar from '../components/CompareNamesBar';
+import RatingStars from '../components/RatingStars';
 import { formatVolume, luggageLabel } from '../utils/space';
 import { formatFeet, formatKg, formatLb, formatMetres } from '../utils/size';
 import { availabilityLabel, rolloverRiskText } from '../utils/safetyTech';
@@ -50,6 +51,8 @@ interface SpecRow {
   higherIsBetter?: boolean;
   /** Numbers only compare in one unit: litres against kilowatt-hours crowns nobody. */
   unitOf?: (car: CarSpecs) => string | undefined;
+  /** A bar under each car's figure, its length the figure's share of the largest. */
+  bar?: boolean;
 }
 
 /**
@@ -119,6 +122,7 @@ function efficiencyRow(
     getNumeric: (car) => efficiencyOf(car, basis)?.value ?? null,
     higherIsBetter: false,
     unitOf: (car) => efficiencyOf(car, basis)?.unit,
+    bar: basis === 'combined',
   };
 }
 
@@ -193,6 +197,7 @@ const ALL_SPECS: SpecRow[] = [
     getSub: (car) => (car.epa?.rangeMiles ? `${Math.round(car.epa.rangeMiles)} mi` : null),
     getNumeric: (car) => car.epa?.rangeMiles ?? null,
     higherIsBetter: true,
+    bar: true,
   },
   {
     key: 'safety',
@@ -292,6 +297,7 @@ const ALL_SPECS: SpecRow[] = [
       car.engine.horsepower != null ? `${car.engine.horsepower} hp` : UNAVAILABLE_LABEL,
     getNumeric: (car) => car.engine.horsepower ?? null,
     higherIsBetter: true,
+    bar: true,
   },
   {
     key: 'torque',
@@ -587,6 +593,7 @@ export default function Compare() {
     );
 
   const bestByRow = new Map<string, number>();
+  const barMaxByRow = new Map<string, number>();
   if (pairs.length > 1 && !loading) {
     for (const spec of specs) {
       // "Best" is for what was measured, not for the cheapest estimate.
@@ -602,6 +609,7 @@ export default function Compare() {
         .map((p) => spec.getNumeric!(p.car, p.dashboard!))
         .filter((v): v is number => v != null);
       if (values.length < 2) continue;
+      if (spec.bar) barMaxByRow.set(spec.key, Math.max(...values));
       const sorted = [...values].sort((a, b) => (spec.higherIsBetter ? b - a : a - b));
       const [best, next] = sorted;
       // "Best" only where it is ahead by enough to matter: 203 hp against 200,
@@ -858,11 +866,33 @@ export default function Compare() {
                                         Best
                                       </span>
                                     )}
+                                    {spec.key === 'safety' && numeric != null && (
+                                      <span className="block mt-1">
+                                        <RatingStars stars={numeric} className="w-3 h-3" />
+                                      </span>
+                                    )}
                                     {sub && (
                                       <span className="block text-xs text-zinc-500 mt-0.5">
                                         {sub}
                                       </span>
                                     )}
+                                    {numeric != null && barMaxByRow.get(spec.key) ? (
+                                      // The figure's length against the others', for the eye:
+                                      // the figures above say it in numbers.
+                                      <span
+                                        aria-hidden
+                                        className="block h-1 mt-2 bg-zinc-900 sm:max-w-40 sm:mx-auto"
+                                      >
+                                        <span
+                                          className={`block h-full origin-left animate-grow-x motion-reduce:animate-none ${
+                                            isBest ? 'bg-accent' : 'bg-zinc-500'
+                                          }`}
+                                          style={{
+                                            width: `${(numeric / barMaxByRow.get(spec.key)!) * 100}%`,
+                                          }}
+                                        />
+                                      </span>
+                                    ) : null}
                                     {prov === 'estimated' &&
                                       !ESTIMATE_ROWS.has(spec.key) &&
                                       !spec.isEstimatedRow && (

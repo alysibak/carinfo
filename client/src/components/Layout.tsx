@@ -25,7 +25,8 @@ export default function Layout() {
           down when content arrived: most of the dossier's layout shift. */}
       <main
         id="main-content"
-        className="flex-1 min-h-[calc(100svh-var(--header-height))]"
+        // Each page fades in as it arrives, its loading state included.
+        className="flex-1 min-h-[calc(100svh-var(--header-height))] [&>*]:animate-page-in motion-reduce:[&>*]:animate-none"
         tabIndex={-1}
       >
         {/* The header and footer stay while a page's code loads: a visit

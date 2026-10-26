@@ -13,6 +13,8 @@ export interface KeyFigure {
   value: string;
   /** Small, beside the figure: "L/100 km", "/5", "hp". */
   unit?: string;
+  /** NHTSA's stars, drawn beside a rating out of five. */
+  stars?: number;
   /** A line under it: "31 mpg combined", "EPA test-car rating". */
   detail?: string;
   /** Where the figure comes from, shown as a chip beside it. */
@@ -151,6 +153,7 @@ export function buildKeyFigures(dashboard: CarDashboard): KeyFigure[] {
           label: 'Safety',
           value: String(overall),
           unit: '/5',
+          stars: overall,
           detail:
             (car.safetyRating?.nhtsaIds?.length ?? 0) > 1
               ? `Overall crash-test stars, the lowest of ${car.safetyRating!.nhtsaIds!.length} versions tested`

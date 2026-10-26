@@ -64,7 +64,7 @@ export function carPhotoSources(photo: CarSpecs['photo']): string[] {
 }
 
 /** How wide the photo at the head of a car or model page is drawn. */
-export const PAGE_PHOTO_SIZES = '(min-width: 1024px) 320px, (min-width: 640px) 240px, 100vw';
+export const PAGE_PHOTO_SIZES = '(min-width: 1024px) 416px, (min-width: 640px) 240px, 100vw';
 
 /**
  * The image attributes for a photo, which the page's <img> and its preload

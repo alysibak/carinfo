@@ -458,7 +458,7 @@ export default function CarDetail() {
           <div
             className={`mt-1 grid gap-x-4 sm:gap-x-6 gap-y-4 min-w-0 sm:grid-rows-[auto_1fr] ${
               hasPhoto
-                ? 'grid-cols-1 sm:grid-cols-[15rem_1fr] lg:grid-cols-[20rem_1fr] items-start'
+                ? 'grid-cols-1 sm:grid-cols-[15rem_1fr] lg:grid-cols-[26rem_1fr] items-start'
                 : 'grid-cols-[5.5rem_1fr] sm:grid-cols-[9rem_1fr] items-center sm:items-start'
             }`}
           >
@@ -472,10 +472,10 @@ export default function CarDetail() {
               </div>
             )}
             <div className="min-w-0">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight wrap-break-word">
+              <h1 className="text-[1.75rem] sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.08] wrap-break-word">
                 {title}
               </h1>
-              <p className="text-sm sm:text-[15px] text-zinc-300 mt-1">
+              <p className="text-sm sm:text-[15px] text-zinc-300 mt-2">
                 {(() => {
                   // "Electric SUV" already says SUV and electric: no "SUV · Electric SUV · Electric".
                   const cls = dashboard.competitiveClass?.toLowerCase() ?? '';
