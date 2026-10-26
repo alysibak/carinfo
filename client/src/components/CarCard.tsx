@@ -13,6 +13,7 @@ import { efficiencyOf, rangeKm } from '../utils/efficiency';
 import { formatCarFuelLabel } from '../utils/fuelDisplay';
 import VehiclePlaceholder from './VehiclePlaceholder';
 import { StatusToast } from './ui';
+import RatingStars from './RatingStars';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 
 export type CarCardLayout = 'grid' | 'list';
@@ -52,6 +53,8 @@ interface Figure {
   label: string;
   value: string;
   unit?: string;
+  /** NHTSA's stars, drawn under the rating. */
+  stars?: number;
 }
 
 /**
@@ -83,6 +86,7 @@ function figuresFor(car: CarSpecs): Figure[] {
     label: 'NHTSA',
     value: stars && stars > 0 ? String(stars) : '—',
     unit: stars && stars > 0 ? '/5 stars' : 'none on file',
+    stars: stars && stars > 0 ? stars : undefined,
   });
   return figures;
 }
@@ -338,9 +342,17 @@ export default function CarCard({
                 {figure.value}
               </span>
               {/* Under the figure: beside it, "L/100 km" ran into the next column. */}
-              <span className="block text-xs text-zinc-500 whitespace-nowrap">
-                {figure.unit ?? '\u00a0'}
-              </span>
+              {figure.stars ? (
+                // The stars drawn, and said in words to a screen reader.
+                <span className="flex items-center h-4">
+                  <span className="sr-only">{figure.unit}</span>
+                  <RatingStars stars={figure.stars} className="w-2.5 h-2.5" />
+                </span>
+              ) : (
+                <span className="block text-xs text-zinc-500 whitespace-nowrap">
+                  {figure.unit ?? '\u00a0'}
+                </span>
+              )}
             </dd>
           </div>
         ))}

@@ -7,6 +7,8 @@ import { buildKeyFigures } from '../utils/keyFigures';
 import ProvenanceChip from './ProvenanceChip';
 import { displayVehicleTitle } from '../utils/trimLabel';
 import VehiclePlaceholder from './VehiclePlaceholder';
+import CarImage from './CarImage';
+import RatingStars from './RatingStars';
 
 /**
  * A real car's page in miniature, for the home page: the figures every car
@@ -38,10 +40,17 @@ export default function SampleCarCard({ car }: { car: CarSpecs }) {
       to={`/car/${car.id}`}
       className="group block border border-zinc-800 bg-zinc-950/90 backdrop-blur-xs hover:border-zinc-600 transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60"
     >
+      {car.photo && (
+        <div className="aspect-video overflow-hidden border-b border-zinc-800">
+          <CarImage car={car} sizes="(min-width: 1024px) 368px, 448px" />
+        </div>
+      )}
       <div className="flex items-center gap-3 px-4 pt-4">
-        <span className="w-16 h-10 shrink-0 overflow-hidden" aria-hidden>
-          <VehiclePlaceholder car={car} compact hideCaption />
-        </span>
+        {!car.photo && (
+          <span className="w-16 h-10 shrink-0 overflow-hidden" aria-hidden>
+            <VehiclePlaceholder car={car} compact hideCaption />
+          </span>
+        )}
         <div className="min-w-0">
           <p className="text-xs text-zinc-500">A car page, at a glance</p>
           <p className="text-base font-semibold text-white truncate">{displayVehicleTitle(car)}</p>
@@ -63,6 +72,11 @@ export default function SampleCarCard({ car }: { car: CarSpecs }) {
                     {stat.value}
                   </span>
                   {stat.unit && <span className="text-xs text-zinc-400"> {stat.unit}</span>}
+                  {stat.stars != null && (
+                    <span className="ml-2">
+                      <RatingStars stars={stat.stars} className="w-3 h-3" />
+                    </span>
+                  )}
                   {stat.comparison && stat.comparison.tone !== 'neutral' && (
                     <span
                       className={`block text-xs mt-0.5 ${stat.comparison.tone === 'better' ? 'text-accent' : 'text-amber-300'}`}

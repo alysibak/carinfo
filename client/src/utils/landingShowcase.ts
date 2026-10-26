@@ -1,6 +1,7 @@
 import type { CarSpecs, SearchQuery } from '../types/car.types';
 import { hasNumericValue } from './dataValue';
 import { displayModelLabel } from './trimLabel';
+import { LATEST_FULL_MODEL_YEAR } from '@carinfo/config/model-years';
 
 /** Vehicles shown on the landing page must have complete headline stats — no "Not on file". */
 export function isLandingShowcaseEligible(car: CarSpecs): boolean {
@@ -26,25 +27,46 @@ export const HERO_PREVIEW_PRIORITY: { make: string; model: string }[] = [
   { make: 'Ford', model: 'F-150' },
 ];
 
+/**
+ * Last model year's cars: the newest year's often lack their own photo and
+ * have power figures estimated until their records catch up.
+ */
 export const HERO_PREVIEW_QUERY: SearchQuery = {
   filters: {
     make: ['Toyota', 'Honda', 'Ford'],
-    year: { min: 2020 },
+    year: { min: LATEST_FULL_MODEL_YEAR - 1, max: LATEST_FULL_MODEL_YEAR - 1 },
   },
   sort: { field: 'year', order: 'desc' },
-  limit: 40,
+  limit: 60,
   offset: 0,
 };
 
 export function pickHeroPreviewCar(results: CarSpecs[]): CarSpecs | null {
-  for (const target of HERO_PREVIEW_PRIORITY) {
-    const match = results.find(
-      (c) =>
+  // What a car page holds, shown whole: its own year's photo, its crash stars
+  // and figures from the records rather than estimates.
+  const fullness = (c: CarSpecs) =>
+    (c.photo ? (c.photo.otherYear ? 2 : 4) : 0) +
+    ((c.safetyRating?.overall ?? 0) > 0 ? 2 : 0) +
+    (hasNumericValue(c.engine.horsepower) && c.provenance?.['engine.horsepower'] !== 'estimated'
+      ? 1
+      : 0);
+  // Among the fullest, one of the names most people know first.
+  const known = (c: CarSpecs) => {
+    const at = HERO_PREVIEW_PRIORITY.findIndex(
+      (target) =>
         c.make === target.make &&
-        displayModelLabel(c).toLowerCase().includes(target.model.toLowerCase()) &&
-        isLandingShowcaseEligible(c),
+        displayModelLabel(c).toLowerCase().includes(target.model.toLowerCase()),
     );
-    if (match) return match;
-  }
-  return results.find((c) => isLandingShowcaseEligible(c)) ?? null;
+    return at === -1 ? HERO_PREVIEW_PRIORITY.length : at;
+  };
+  return (
+    results
+      .filter(isLandingShowcaseEligible)
+      .map((car, order) => ({ car, order }))
+      .sort(
+        (a, b) =>
+          fullness(b.car) - fullness(a.car) || known(a.car) - known(b.car) || a.order - b.order,
+      )
+      .at(0)?.car ?? null
+  );
 }
