@@ -5,6 +5,7 @@ import BrandMark from './BrandMark';
 import { useCarStore } from '../stores/carStore';
 import { useGarageStore } from '../stores/garageStore';
 import AuthHeaderSlot from './AuthHeaderSlot';
+import { useSlashToSearch } from '../hooks/useSlashToSearch';
 
 interface NavLinkItem {
   to: string;
@@ -40,6 +41,7 @@ interface SiteHeaderProps {
 export default function SiteHeader({ trailing, transparentUntilScroll = false }: SiteHeaderProps) {
   const headerRef = useRef<HTMLElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  useSlashToSearch();
   const [scrolled, setScrolled] = useState(false);
   const comparedCount = useCarStore((s) => s.comparedCars.length);
   const garageCount = useGarageStore((s) => s.cars.length);

@@ -47,7 +47,7 @@ export default function Home() {
   );
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const { pathname, state } = useLocation();
   const { searchResults, searchQuery, setSearchQuery, performSearch, isSearching, searchError } =
     useCarStore();
 
@@ -344,6 +344,9 @@ export default function Home() {
             size="default"
             showButton={false}
             placeholder="Make, model, year or VIN, e.g. 2024 Toyota Camry"
+            siteSearch
+            // Arrived by "/" from another page: straight into the box.
+            autoFocus={!!(state as { focusSearch?: boolean } | null)?.focusSearch}
           />
           {/* For screen readers: sighted readers see the results dim. Shown, it
               sat on top of the filter chips under the search box. Always

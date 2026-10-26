@@ -123,6 +123,7 @@ export default function Landing() {
                   onSubmit={handleHeroSearch}
                   size="hero"
                   placeholder="Make, model, or VIN"
+                  siteSearch
                 />
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
                   <span className="text-zinc-400">A 17-character VIN works too.</span>

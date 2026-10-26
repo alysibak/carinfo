@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { LATEST_FULL_MODEL_YEAR } from '@carinfo/config/model-years';
 import * as api from '../services/api';
+import { SITE_SEARCH_ATTR } from '../hooks/useSlashToSearch';
 import type { SearchSuggestion } from '../services/api';
 
 interface SearchBarProps {
@@ -15,6 +16,8 @@ interface SearchBarProps {
   size?: 'default' | 'large' | 'hero';
   showButton?: boolean;
   loading?: boolean;
+  /** The page's main search: "/" from anywhere lands here, and the box says so. */
+  siteSearch?: boolean;
 }
 
 interface ListPosition {
@@ -38,6 +41,7 @@ export default function SearchBar({
   size = 'default',
   showButton = true,
   loading = false,
+  siteSearch = false,
 }: SearchBarProps) {
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -195,7 +199,7 @@ export default function SearchBar({
         // it was the input's only accessible name.
         aria-label={ariaLabel}
         placeholder={placeholder}
-        className={inputClass}
+        className={`peer ${inputClass}`}
         value={value}
         onChange={(e) => {
           onChange(e.target.value);
@@ -205,7 +209,17 @@ export default function SearchBar({
         // focus's request twice.
         onFocus={() => setOpen(true)}
         onKeyDown={handleKeyDown}
+        {...(siteSearch ? { [SITE_SEARCH_ATTR]: '' } : {})}
       />
+      {siteSearch && !value && (
+        // The shortcut, for a keyboard and a mouse; gone while typing and on touch screens.
+        <kbd
+          aria-hidden
+          className="hidden md:flex pointer-coarse:hidden peer-focus:hidden absolute right-3 top-1/2 -translate-y-1/2 items-center justify-center w-5 h-5 border border-zinc-700 text-[11px] font-sans text-zinc-500 pointer-events-none"
+        >
+          /
+        </kbd>
+      )}
     </div>
   );
 
