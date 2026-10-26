@@ -32,6 +32,17 @@ const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const RequireAccount = lazy(() => import('./components/RequireAccount'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
+/** What the tools behind a sign-in do, for the page that asks for one. */
+const GARAGE_GIVES = [
+  'Save cars from any page, and find them on any device you sign in on.',
+  'See each saved car’s recalls in Canada and its place on the theft list at a glance.',
+  'Compare saved cars side by side, or share the list with a link.',
+];
+const VALUE_CHART_GIVES = [
+  'Every car’s estimated value against its fuel use, on one chart.',
+  'Pick a square to see the cars in it, and open any of them.',
+];
+
 /** Outside the page frame, which has a loading boundary of its own (Layout). */
 function RouteFallback() {
   return <LoadingScreen />;
@@ -66,24 +77,18 @@ function App() {
                   <Route
                     path="/garage"
                     element={
-                      <RequireAccount tool="your garage">
+                      <RequireAccount tool="your garage" gives={GARAGE_GIVES}>
                         <DreamGarage />
                       </RequireAccount>
                     }
                   />
                   <Route path="/shared-garage" element={<SharedGarage />} />
-                  <Route
-                    path="/battle"
-                    element={
-                      <RequireAccount tool="Battle Mode">
-                        <BattleMode />
-                      </RequireAccount>
-                    }
-                  />
+                  {/* An old address, now Compare, which is open to everyone. */}
+                  <Route path="/battle" element={<BattleMode />} />
                   <Route
                     path="/value-matrix"
                     element={
-                      <RequireAccount tool="the Value Matrix">
+                      <RequireAccount tool="the Value chart" gives={VALUE_CHART_GIVES}>
                         <ValueMatrix />
                       </RequireAccount>
                     }

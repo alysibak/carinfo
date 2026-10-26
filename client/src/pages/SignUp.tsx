@@ -84,7 +84,7 @@ export default function SignUp() {
   return (
     <AuthCard
       title="Create a free account"
-      intro="For your garage, Battle Mode and the Value Matrix. Search, car pages, Compare and the VIN lookup stay open to everyone."
+      intro="For your garage and the Value chart. Search, car pages, Compare and the VIN lookup stay open to everyone."
       footer={
         <p>
           Already have an account?{' '}

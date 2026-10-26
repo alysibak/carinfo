@@ -211,8 +211,12 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
               <Badge count={badgeFor(item.to)} />
             </NavLink>
           ))}
-          <div className="py-4">
-            <AuthHeaderSlot onNavigate={() => setMenuOpen(false)} />
+          {/* In line with the links above (its own padding pulled back), and
+              gone, not an empty gap, where accounts are not set up. */}
+          <div className="hidden has-[a,button]:block py-4">
+            <div className="-ml-2">
+              <AuthHeaderSlot onNavigate={() => setMenuOpen(false)} />
+            </div>
           </div>
           <div className="py-4 flex flex-col gap-3 text-sm text-zinc-400">
             <NavLink

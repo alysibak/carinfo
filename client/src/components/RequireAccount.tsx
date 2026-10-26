@@ -6,20 +6,31 @@ import { usePageMeta } from '../utils/pageMeta';
 import { LoadingScreen } from './ui';
 
 /**
- * The garage, Battle Mode and the Value Matrix are for members; car and
+ * The garage and the Value chart are for members; car and
  * model pages, search, Compare and the VIN decoder are open to all: the home
  * page told visitors to paste a VIN and then asked them to sign in.
  * Where accounts are not set up, nothing is gated.
  */
-export default function RequireAccount({ tool, children }: { tool: string; children: ReactNode }) {
+export default function RequireAccount({
+  tool,
+  gives = [],
+  children,
+}: {
+  tool: string;
+  /** What the tool does for someone, a line each, so the gate says what it opens. */
+  gives?: string[];
+  children: ReactNode;
+}) {
   const account = useAccount();
   if (account.kind === 'loading') return <LoadingScreen label="Checking your sign-in" />;
   if (account.kind !== 'signed-out') return <>{children}</>;
-  return <AccountGate tool={tool} />;
+  return <AccountGate tool={tool} gives={gives} />;
 }
 
-function AccountGate({ tool }: { tool: string }) {
-  usePageMeta(tool, `${tool} is free with a CarInfo account.`);
+function AccountGate({ tool, gives }: { tool: string; gives: string[] }) {
+  // "your garage" opens a sentence as "Your garage".
+  const Tool = tool[0].toUpperCase() + tool.slice(1);
+  usePageMeta(Tool, `${Tool} is free with a CarInfo account.`);
   const { pathname, search } = useLocation();
   const saved = useGarageStore((s) => s.cars.length);
   const next = nextParam(pathname, search);
@@ -29,9 +40,19 @@ function AccountGate({ tool }: { tool: string }) {
         <p className="text-xs text-zinc-500 mb-3">Free with an account</p>
         <h1 className="page-title mb-3">Sign in to use {tool}</h1>
         <p className="text-sm text-zinc-400 leading-relaxed mb-6">
-          {tool} is free with a CarInfo account. Car pages, search and browsing stay open to
+          {Tool} is free with a CarInfo account. Car pages, search and browsing stay open to
           everyone.
         </p>
+        {gives.length > 0 && (
+          <ul className="mb-8 space-y-2 text-sm text-zinc-300">
+            {gives.map((line) => (
+              <li key={line} className="flex gap-2.5">
+                <span aria-hidden className="mt-2 w-1.5 h-1.5 shrink-0 bg-accent" />
+                {line}
+              </li>
+            ))}
+          </ul>
+        )}
         {pathname === '/garage' && saved > 0 && (
           <p className="text-sm text-zinc-200 mb-6">
             {saved} car{saved === 1 ? '' : 's'} saved on this device will move into your garage when

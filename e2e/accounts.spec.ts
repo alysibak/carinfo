@@ -3,8 +3,8 @@ import { audit, describeViolations } from './axe';
 import { MEMBER } from './global-setup';
 
 /**
- * Visitors browse, compare and decode VINs freely; the garage, Battle Mode
- * and the Value Matrix ask them to sign in. These run as a visitor (no stored
+ * Visitors browse, compare and decode VINs freely; the garage and the Value
+ * chart ask them to sign in. These run as a visitor (no stored
  * sign-in), and only where the server has accounts.
  */
 test.use({ storageState: { cookies: [], origins: [] } });
@@ -25,10 +25,13 @@ test('a visitor browses, compares and decodes freely but signs in for the rest',
   await page.goto('/compare');
   await expect(page.getByRole('heading', { name: 'Compare', exact: true })).toBeVisible();
 
+  // Battle Mode's old address opens Compare, which asks no one to sign in.
+  await page.goto('/battle');
+  await expect(page.getByRole('heading', { name: 'Compare', exact: true })).toBeVisible();
+
   for (const [path, tool] of [
     ['/garage', 'your garage'],
-    ['/battle', 'Battle Mode'],
-    ['/value-matrix', 'the Value Matrix'],
+    ['/value-matrix', 'the Value chart'],
   ]) {
     await page.goto(path);
     await expect(page.getByRole('heading', { name: `Sign in to use ${tool}` })).toBeVisible();

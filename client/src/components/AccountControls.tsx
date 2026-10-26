@@ -19,14 +19,14 @@ export default function AccountControls({ onNavigate }: { onNavigate?: () => voi
         <Link
           to={`/sign-in${next}`}
           onClick={onNavigate}
-          className="text-xs text-zinc-400 hover:text-white transition-colors px-2 py-1"
+          className="inline-flex items-center min-h-[44px] text-sm text-zinc-300 hover:text-white transition-colors px-2"
         >
           Sign in
         </Link>
         <Link
           to={`/sign-up${next}`}
           onClick={onNavigate}
-          className="text-xs bg-accent text-accent-ink px-2.5 py-1.5 hover:bg-accent-hover transition-colors"
+          className="inline-flex items-center min-h-[36px] text-sm font-semibold bg-accent text-accent-ink px-3.5 hover:bg-accent-hover transition duration-150 active:scale-[0.97]"
         >
           Sign up
         </Link>
@@ -40,11 +40,11 @@ export default function AccountControls({ onNavigate }: { onNavigate?: () => voi
       <Link
         to="/account"
         onClick={onNavigate}
-        className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors px-2 py-1"
+        className="inline-flex items-center gap-1.5 min-h-[44px] text-sm text-zinc-300 hover:text-white transition-colors px-2"
         title={user.email}
       >
         {plan === 'pro' && (
-          <span className="border border-zinc-500 text-zinc-200 px-1.5 py-0.5">Pro</span>
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-accent">Pro</span>
         )}
         <span className="max-w-28 truncate">{user.name || user.email.split('@')[0]}</span>
       </Link>
@@ -54,7 +54,7 @@ export default function AccountControls({ onNavigate }: { onNavigate?: () => voi
           onNavigate?.();
           void signOut();
         }}
-        className="text-xs text-zinc-500 hover:text-white transition-colors px-2 py-1"
+        className="inline-flex items-center min-h-[44px] text-sm text-zinc-400 hover:text-white transition-colors px-2"
       >
         Sign out
       </button>
