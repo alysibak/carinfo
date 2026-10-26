@@ -5,6 +5,7 @@ import { isHttpError } from '../services/http';
 import type { ModelOverview, ModelYearSummary } from '../types/car.types';
 import { Chevron, ErrorState, foldSummaryClass } from '../components/ui';
 import ModelPageSkeleton from '../components/ModelPageSkeleton';
+import ModelYearChart from '../components/ModelYearChart';
 import ToolPageHeader from '../components/ToolPageHeader';
 import PageShell, { PageBody } from '../components/PageShell';
 import CarPhotoFigure from '../components/CarPhotoFigure';
@@ -349,7 +350,7 @@ export default function ModelPage() {
         <div
           className={`grid gap-4 sm:gap-6 min-w-0 mb-8 ${
             hasPhoto
-              ? 'grid-cols-1 sm:grid-cols-[15rem_1fr] lg:grid-cols-[20rem_1fr] items-start'
+              ? 'grid-cols-1 sm:grid-cols-[15rem_1fr] lg:grid-cols-[26rem_1fr] items-start'
               : 'grid-cols-[5.5rem_1fr] sm:grid-cols-[9rem_1fr] items-center'
           }`}
         >
@@ -379,6 +380,9 @@ export default function ModelPage() {
           </div>
         </div>
         {!hasPhoto && <div className="-mt-2 mb-8">{records}</div>}
+
+        {overview.years.filter((row) => row.complaints != null || row.recalls != null).length >=
+          3 && <ModelYearChart years={overview.years} name={name!} />}
 
         {overview.rivals.length > 0 && (
           <section className="mb-8">
