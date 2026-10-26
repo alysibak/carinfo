@@ -1525,10 +1525,16 @@ export function getModelOverview(makeSlug: string, modelSlug: string): ModelOver
     else generations.push({ label: row.generation, from: row.year, to: row.year });
   }
 
-  // The newest year's base car, or one of that year with a photo when it has none.
+  // The newest year's base car, or one of that year with a photo when it has
+  // none; failing that, the newest year that has one, its caption naming the
+  // year. A new generation often has no photo on Commons for months.
   const newest = byYear.get(years[0].year) ?? [];
   const base = cars.find((car) => car.id === years[0].carId) ?? newest[0];
-  const lead = base.photo ? base : (newest.find((car) => car.photo) ?? base);
+  const lead = base.photo
+    ? base
+    : (newest.find((car) => car.photo) ??
+      years.map((row) => byYear.get(row.year)?.find((car) => car.photo)).find(Boolean) ??
+      base);
 
   const theft = theftRankOf(family.key);
   const rivals: ModelOverview['rivals'] = [];

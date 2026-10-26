@@ -82,6 +82,18 @@ export default function ModelYearChart({
     buttons.current.get(to)?.focus();
   };
 
+  /** The year on file under a point across the chart, or the nearest one to it. */
+  const scrub = (chart: HTMLElement, x: number) => {
+    const box = chart.getBoundingClientRect();
+    if (!box.width) return;
+    const slot = Math.floor(((x - box.left) / box.width) * slots.length);
+    const year = slots[Math.max(0, Math.min(slots.length - 1, slot))];
+    const nearest = onFile.reduce((best, y) =>
+      Math.abs(y - year) < Math.abs(best - year) ? y : best,
+    );
+    setActive(nearest);
+  };
+
   // Headroom over the tallest bar for its count.
   const complaintScale = maxComplaints * 1.18;
   const recallScale = maxRecalls * 1.3;
@@ -106,7 +118,9 @@ export default function ModelYearChart({
         <h2 id="years-chart-title" className="block-title">
           Complaints and recalls, year by year
         </h2>
-        <p className="text-xs text-zinc-500">Point at or tap a year. Shading marks generations.</p>
+        <p className="text-xs text-zinc-500">
+          Point at, tap or slide across a year. Shading marks generations.
+        </p>
       </div>
       <p className="ml-9 sm:ml-11 mb-1 text-[11px] text-zinc-400" aria-hidden>
         Owner complaints to NHTSA
@@ -161,7 +175,22 @@ export default function ModelYearChart({
             </div>
           </div>
 
-          <div className="relative flex" role="group" aria-label={`${name}, by model year`}>
+          <div
+            className="relative flex touch-pan-y"
+            role="group"
+            aria-label={`${name}, by model year`}
+            data-chart-years
+            // A finger drawn across the chart steps through the years: a
+            // phone's columns are too narrow to tap one by one.
+            onPointerDown={(event) => {
+              if (event.pointerType !== 'mouse') scrub(event.currentTarget, event.clientX);
+            }}
+            onPointerMove={(event) => {
+              if (event.pointerType !== 'mouse' && event.buttons > 0) {
+                scrub(event.currentTarget, event.clientX);
+              }
+            }}
+          >
             {slots.map((year) => {
               const row = byYear.get(year);
               if (!row) {

@@ -1167,7 +1167,8 @@ describe('car.service model pages', () => {
     // What changed: the XV70 generation began with the 2018 model year.
     const y2018 = camry.years.find((row) => row.year === 2018)!;
     expect(y2018.changes?.[0]).toBe('New generation');
-    expect(camry.lead.year).toBe(camry.last);
+    // The newest year, or the newest with a photo where it has none.
+    expect(camry.lead.year === camry.last || !!camry.lead.photo).toBe(true);
   });
 
   it('opens each year on a version a shopper can buy, not a fleet one', () => {
@@ -1190,6 +1191,17 @@ describe('car.service model pages', () => {
     ).toBeUndefined();
     expect(getModelOverview('Toyota', 'Camry')?.path).toBe('/models/toyota/camry');
     expect(getModelOverview('toyota', 'flying-car')).toBeNull();
+  });
+
+  it('leads a model page with the newest photo on file when its newest year has none', () => {
+    const rav4 = getModelOverview('toyota', 'rav4')!;
+    expect(rav4.lead.photo).toBeDefined();
+    expect(rav4.lead.year).toBeLessThanOrEqual(rav4.years[0].year);
+    // No year newer than the lead's has a photo of its own.
+    const newer = searchCars({ query: 'toyota rav4', limit: 500 }).results.filter(
+      (car) => car.model.startsWith('RAV4') && car.year > rav4.lead.year,
+    );
+    expect(newer.some((car) => car.photo)).toBe(false);
   });
 
   it('answers a car’s problems with its recalls and complaints, not a dropped word', () => {
