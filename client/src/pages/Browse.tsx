@@ -91,11 +91,12 @@ export default function Browse() {
               <Link
                 key={type.id}
                 to={filterLink(bodyTypeFilter(type.id))}
-                className="bg-black p-4 sm:p-5 hover:bg-zinc-950 transition-colors group flex flex-col min-w-0 last:odd:col-span-2 sm:last:odd:col-span-1"
+                className="spotlight bg-black p-4 sm:p-5 transition-colors group flex flex-col min-w-0 overflow-hidden last:odd:col-span-2 sm:last:odd:col-span-1"
               >
+                {/* The car rolls forward a little under the pointer. */}
                 <BodyTypeIllustration
                   bodyType={type.id}
-                  className="h-12 sm:h-14 w-full mb-3 group-hover:opacity-100 transition-opacity"
+                  className="h-12 sm:h-14 w-full mb-3 transition-transform duration-500 ease-out group-hover:translate-x-2 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0"
                 />
                 <p className="font-semibold text-white capitalize">{type.label}</p>
                 <p className="text-xs text-zinc-500 mt-0.5 leading-snug">{type.description}</p>

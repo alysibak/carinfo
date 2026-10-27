@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FIRST_MODEL_YEAR, LATEST_MODEL_YEAR } from '@carinfo/config/model-years';
 import * as api from '../services/api';
 import type { DatabaseStatistics } from '../services/api';
+import CountUp from './CountUp';
 
 /**
  * A count from the stats endpoint, or the rounded stand-in when the response
@@ -10,10 +11,8 @@ import type { DatabaseStatistics } from '../services/api';
  * model count arrived in one deploy, cached copies without it crashed the
  * home page on `undefined.toLocaleString()`.
  */
-function countOr(value: unknown, fallback: string): string {
-  return typeof value === 'number' && Number.isFinite(value)
-    ? value.toLocaleString('en-CA')
-    : fallback;
+function countOr(value: unknown, fallback: string): ReactNode {
+  return typeof value === 'number' && Number.isFinite(value) ? <CountUp value={value} /> : fallback;
 }
 
 function yearOr(value: unknown, fallback: number): number {
@@ -63,7 +62,7 @@ export default function CatalogueStats({ className = '' }: { className?: string 
           // The term comes first, as a list needs; the figure shows on top.
           <div key={figure.label} className="min-w-0 flex flex-col-reverse">
             <dt className="text-xs text-zinc-400 mt-0.5">{figure.label}</dt>
-            <dd className="text-xl sm:text-2xl font-bold tabular-nums tracking-tight text-white leading-tight">
+            <dd className="text-2xl sm:text-[1.75rem] font-semibold tabular-nums tracking-[-0.03em] text-white leading-tight whitespace-nowrap">
               {figure.value}
             </dd>
           </div>

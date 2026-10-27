@@ -4,6 +4,7 @@ import SearchBar from '../components/SearchBar';
 import SiteHeader from '../components/SiteHeader';
 import SiteFooter from '../components/SiteFooter';
 import SampleCarCard from '../components/SampleCarCard';
+import PhotoGlow from '../components/PhotoGlow';
 import CatalogueStats from '../components/CatalogueStats';
 import ShortlistCards from '../components/ShortlistCards';
 import { COLLECTIONS } from '../config/collections';
@@ -103,14 +104,23 @@ export default function Landing() {
       <SiteHeader transparentUntilScroll />
 
       <main id="main-content" tabIndex={-1} className="focus:outline-hidden">
-        <section className="mesh-hero">
-          <div className="hero-content page-wrap pt-10 pb-10 md:pt-16 md:pb-16 lg:pt-20 lg:pb-20 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_23rem] gap-10 lg:gap-14 items-center">
-            <div className="max-w-xl min-w-0">
+        <section className="aurora bg-black border-b border-zinc-900">
+          {/* A fine grid under the light, fading out toward the edges. */}
+          <div
+            aria-hidden
+            className="absolute inset-0 -z-10 bg-[linear-gradient(rgb(255_255_255/0.045)_1px,transparent_1px),linear-gradient(90deg,rgb(255_255_255/0.045)_1px,transparent_1px)] bg-size-[56px_56px] [mask-image:radial-gradient(ellipse_75%_65%_at_40%_35%,#000_25%,transparent_80%)]"
+          />
+          <div className="page-wrap pt-12 pb-14 md:pt-20 md:pb-20 lg:pt-28 lg:pb-28 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_25rem] gap-12 lg:gap-16 items-center">
+            <div className="max-w-2xl min-w-0">
+              <p className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-400 mb-6 animate-hero-rise">
+                <span aria-hidden className="h-px w-10 bg-accent" />
+                Public records, in plain words
+              </p>
               {/* The promise, not the brand: the header already says CarInfo. */}
-              <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-bold tracking-tight leading-[1.05] mb-4 animate-hero-rise">
+              <h1 className="display-text text-[2.9rem] sm:text-6xl lg:text-[5.4rem] pb-2 mb-5 animate-hero-rise [animation-delay:30ms]">
                 Compare cars with facts you can check
               </h1>
-              <p className="text-base md:text-lg text-zinc-300 leading-relaxed mb-6 md:mb-8 animate-hero-rise [animation-delay:40ms]">
+              <p className="text-base md:text-lg text-zinc-300 leading-relaxed mb-8 md:mb-10 max-w-xl animate-hero-rise [animation-delay:60ms]">
                 Fuel use and range from official EPA tests and crash-test stars from NHTSA, in
                 litres and kilometres. Every figure says where it came from, and anything we
                 estimate, like a car’s value, is marked as an estimate.
@@ -140,7 +150,12 @@ export default function Landing() {
               </ErrorBoundary>
             </div>
             {heroCar && (
-              <div className="animate-hero-rise [animation-delay:120ms] w-full max-w-md lg:max-w-none">
+              <div className="relative isolate animate-hero-rise [animation-delay:120ms] w-full max-w-md lg:max-w-none">
+                {/* The car's own colours, glowing behind its card. */}
+                <PhotoGlow
+                  photo={heroCar.photo}
+                  className="absolute -inset-10 -z-10 opacity-35 blur-3xl saturate-150"
+                />
                 <ErrorBoundary fallback={null}>
                   <SampleCarCard car={heroCar} />
                 </ErrorBoundary>
@@ -154,13 +169,13 @@ export default function Landing() {
         </div>
 
         {/* Rules between sections run edge to edge, as on every other page. */}
-        <div className="border-t border-zinc-900">
+        <div className="border-t border-zinc-900 reveal">
           <div className="page-wrap section-y">
             <BestSellers />
           </div>
         </div>
 
-        <div className="border-t border-zinc-900">
+        <div className="border-t border-zinc-900 reveal">
           <section className="page-wrap section-y">
             <h2 className="section-title mb-6">How do you want to start?</h2>
             {/* A line each, a tap each: the boxes of chips here took two phone
@@ -185,7 +200,7 @@ export default function Landing() {
           </section>
         </div>
 
-        <div className="border-t border-zinc-900">
+        <div className="border-t border-zinc-900 reveal">
           <section className="page-wrap section-y">
             <h2 className="section-title mb-2">Shortlists</h2>
             <p className="text-[15px] text-zinc-400 mb-6 max-w-xl leading-relaxed">

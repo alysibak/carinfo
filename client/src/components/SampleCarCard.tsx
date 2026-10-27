@@ -38,7 +38,7 @@ export default function SampleCarCard({ car }: { car: CarSpecs }) {
   return (
     <Link
       to={`/car/${car.id}`}
-      className="group block border border-zinc-800 bg-zinc-950/90 backdrop-blur-xs hover:border-zinc-600 transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60"
+      className="spotlight group block border border-white/10 bg-zinc-950/75 backdrop-blur-md shadow-[0_40px_80px_-30px_rgb(0_0_0/0.95)] hover:border-white/25 transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60"
     >
       {car.photo && (
         <div className="aspect-video overflow-hidden border-b border-zinc-800">

@@ -78,12 +78,13 @@ export default function BestSellers({
                   to={model.path}
                   // One clear name, not the whole card read out.
                   aria-label={`${model.rank}. ${model.sales}, ${model.sold.toLocaleString('en-CA')} sold: every ${model.label} year`}
-                  className="group flex h-full flex-col border border-zinc-800 bg-zinc-950 p-4 @2xl:p-3.5 @5xl:p-4 transition-colors hover:border-zinc-500 hover:bg-zinc-900/60 focus-visible:border-zinc-400"
+                  className="spotlight group flex h-full flex-col border border-zinc-800 bg-zinc-950 p-4 @2xl:p-3.5 @5xl:p-4 transition-colors hover:border-zinc-600 focus-visible:border-zinc-400"
                 >
-                  <span className="text-2xl font-bold tabular-nums text-zinc-600 group-hover:text-zinc-400 transition-colors">
+                  {/* The rank drawn in outline, large: a podium, not a list. */}
+                  <span className="text-5xl font-bold leading-none tabular-nums tracking-[-0.04em] text-transparent [-webkit-text-stroke:1px_rgb(255_255_255/0.3)] group-hover:[-webkit-text-stroke:1px_rgb(255_255_255/0.75)] transition-[-webkit-text-stroke] duration-300">
                     {model.rank}
                   </span>
-                  <h3 className="mt-1 text-[15px] font-semibold text-white leading-snug">
+                  <h3 className="mt-3 text-[15px] font-semibold text-white leading-snug">
                     {model.sales}
                   </h3>
                   <p className="text-[13px] text-zinc-300 tabular-nums">

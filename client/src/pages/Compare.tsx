@@ -667,7 +667,7 @@ export default function Compare() {
         <div className="page-wrap py-4 sm:py-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
-              <h1 className="page-title">Compare</h1>
+              <h1 className="display-text text-4xl sm:text-5xl pb-1">Compare</h1>
               <p className="text-sm text-zinc-400 mt-0.5">
                 {comparedCars.length} car{comparedCars.length !== 1 ? 's' : ''}
               </p>
@@ -727,16 +727,21 @@ export default function Compare() {
             {summary.length > 0 && (
               <section className="mb-6 sm:mb-8 pb-5 sm:pb-6 border-b border-zinc-800">
                 <h2 className="eyebrow mb-3">In short</h2>
-                <ul className="space-y-2.5">
+                {/* A card a car, side by side as the cars are below. */}
+                <ul
+                  className={`grid grid-cols-1 gap-2 ${summary.length >= 3 ? 'md:grid-cols-3' : summary.length === 2 ? 'md:grid-cols-2' : ''}`}
+                >
                   {summary.map((line) => (
-                    <li key={line.carId} className="text-[15px] sm:text-base leading-snug">
-                      <span className="font-semibold text-white">{line.name}</span>
-                      <span className="text-zinc-500"> — </span>
-                      <span className="text-zinc-200">{line.sentence}</span>
+                    <li
+                      key={line.carId}
+                      className="spotlight border border-white/10 bg-zinc-950/70 p-4 leading-snug"
+                    >
+                      <p className="font-semibold text-white text-[15px]">{line.name}</p>
+                      <p className="text-zinc-300 text-sm mt-1">{line.sentence}</p>
                       {line.watch && (
-                        <span className="block text-[13px] text-amber-300/90 mt-0.5">
+                        <p className="text-[13px] text-amber-300/90 mt-2 pt-2 border-t border-white/5">
                           Watch for: {line.watch}
-                        </span>
+                        </p>
                       )}
                     </li>
                   ))}
@@ -777,8 +782,8 @@ export default function Compare() {
                         className="px-2 sm:px-4 py-3 border-l border-zinc-800 align-top text-left sm:text-center font-normal"
                       >
                         <Link to={`/car/${car.id}`} className="block group/col">
-                          <div className="aspect-video mb-2 overflow-hidden max-w-[140px] sm:max-w-[180px] sm:mx-auto">
-                            <CarImage car={car} compact sizes="180px" />
+                          <div className="aspect-video mb-3 overflow-hidden max-w-[140px] sm:max-w-[240px] sm:mx-auto border border-white/10 shadow-[0_24px_48px_-24px_rgb(0_0_0/0.95)]">
+                            <CarImage car={car} compact sizes="240px" />
                           </div>
                           <h2 className="text-sm sm:text-base font-semibold text-white leading-snug group-hover/col:underline underline-offset-4 decoration-zinc-600 wrap-break-word">
                             {car.year} {car.make} {displayModelLabel(car)}
