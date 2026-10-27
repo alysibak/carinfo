@@ -278,7 +278,7 @@
 }
 
 @utility surface-card-hover {
-  @apply bg-black border border-zinc-800 rounded-none card-sheen transition-all duration-200 hover:border-zinc-500 hover:bg-zinc-950 hover:-translate-y-0.5;
+  @apply spotlight bg-black border border-zinc-800 rounded-none card-sheen transition-all duration-200 hover:border-zinc-600 hover:bg-zinc-950 hover:-translate-y-0.5;
 }
 
 @utility btn {
@@ -286,8 +286,9 @@
 }
 
 @utility btn-primary {
-  /* Pressed in a touch on a tap: a phone has no hover to say it took. */
-  @apply inline-flex items-center justify-center gap-2 min-h-[44px] text-sm font-semibold transition duration-150 active:scale-[0.97] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:ring-accent px-5 py-2.5 bg-accent text-accent-ink hover:bg-accent-hover rounded-none;
+  /* Pressed in a touch on a tap: a phone has no hover to say it took. Lit from
+     beneath on hover, the one coloured light on a page. */
+  @apply inline-flex items-center justify-center gap-2 min-h-[44px] text-sm font-semibold transition duration-200 active:scale-[0.97] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:ring-accent px-5 py-2.5 bg-accent text-accent-ink hover:bg-accent-hover hover:shadow-[0_10px_34px_-12px_rgb(52_211_153/0.75)] rounded-none;
 }
 
 @utility btn-secondary {
@@ -300,7 +301,7 @@
 
 @utility choice-tile {
   /* A choice that reads as clickable: a bordered tile with a title and a line. */
-  @apply flex items-center justify-between gap-3 min-h-[56px] px-4 py-3 border border-zinc-800 bg-zinc-950 card-sheen text-left transition duration-150 hover:border-zinc-500 hover:bg-zinc-900 active:bg-zinc-900 active:scale-[0.99] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60;
+  @apply spotlight flex items-center justify-between gap-3 min-h-[56px] px-4 py-3 border border-zinc-800 bg-zinc-950 card-sheen text-left transition duration-150 hover:border-zinc-600 active:bg-zinc-900 active:scale-[0.99] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60;
 }
 
 @utility animate-battle-slide-in-left {
@@ -325,15 +326,16 @@
  * crash tests, its recalls). Pages used five sizes and two weights for these.
  */
 @utility page-title {
-  @apply text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight;
+  /* A page's name in the display face: large, tight, lit from above. */
+  @apply display-text text-[2.4rem] md:text-[3.6rem] pb-1;
 }
 
 @utility section-title {
-  @apply text-2xl md:text-3xl font-bold text-white tracking-tight leading-tight;
+  @apply text-[1.75rem] md:text-[2.6rem] font-bold text-white tracking-[-0.035em] leading-[1.05];
 }
 
 @utility block-title {
-  @apply text-lg font-bold text-white tracking-tight leading-snug;
+  @apply text-xl md:text-[1.45rem] font-bold text-white tracking-[-0.025em] leading-snug;
 }
 
 @utility kicker {
@@ -738,5 +740,158 @@ a[aria-disabled='true']:is(.btn-primary, .bg-accent) {
 
   input[type='checkbox']:checked {
     border-width: 0.45rem !important;
+  }
+}
+
+/*
+ * Light under the pointer: a soft white glow that follows it across a card,
+ * and the card's edge catching it. The pointer's place comes from
+ * utils/spotlight.ts as --mx and --my. White, not the accent: the light of a
+ * showroom, not a sign. Touch screens and reduced motion see the card as it is.
+ */
+@utility spotlight {
+  position: relative;
+  isolation: isolate;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+  /* The glow across the face, under the card's content. */
+  &::before {
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(
+      520px circle at var(--mx, 50%) var(--my, 50%),
+      rgb(255 255 255 / 0.065),
+      transparent 42%
+    );
+  }
+  /* The edge: a one-pixel ring lit nearest the pointer. */
+  &::after {
+    inset: -1px;
+    padding: 1px;
+    background: radial-gradient(
+      260px circle at var(--mx, 50%) var(--my, 50%),
+      rgb(255 255 255 / 0.5),
+      transparent 60%
+    );
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+  }
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    &:hover::before,
+    &:hover::after {
+      opacity: 1;
+    }
+  }
+}
+
+/*
+ * A display line: large, tight, lit from above, white fading to silver. For a
+ * page's one big statement, not for every heading.
+ */
+@utility display-text {
+  @apply font-bold tracking-[-0.035em] leading-[0.98];
+  background: linear-gradient(180deg, #ffffff 0%, #ffffff 45%, #a1a1aa 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* A rule that fades out at both ends: the line between sections, drawn finer. */
+@utility rule-fade {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.14) 20%,
+    rgb(255 255 255 / 0.14) 80%,
+    transparent
+  );
+}
+
+/*
+ * The night sky over a hero: two slow, faint pools of light drifting on
+ * black, mostly white with a breath of the accent. Still for reduced motion.
+ */
+@utility aurora {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -30% -20% auto -20%;
+    height: 130%;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(38% 46% at 22% 32%, rgb(255 255 255 / 0.085), transparent 70%),
+      radial-gradient(30% 40% at 78% 22%, rgb(52 211 153 / 0.07), transparent 70%),
+      radial-gradient(45% 50% at 60% 80%, rgb(148 163 184 / 0.06), transparent 70%);
+    filter: blur(8px);
+    animation: auroraDrift 26s ease-in-out infinite alternate;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    &::before {
+      animation: none;
+    }
+  }
+}
+
+@keyframes auroraDrift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  100% {
+    transform: translate3d(4%, 3%, 0) scale(1.08);
+  }
+}
+
+/*
+ * A block that rises into place as it scrolls into view, driven by the scroll
+ * itself (no script). Browsers without scroll-driven animations, and anyone
+ * who asked for less motion, see it in place.
+ */
+@utility reveal {
+  @supports (animation-timeline: view()) {
+    /* On screen only: a printed page has no scroll to bring a block in. */
+    @media screen and (prefers-reduced-motion: no-preference) {
+      animation: revealUp linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 140px;
+    }
+  }
+}
+
+/* The same for each section of a page after its first, the page's head. */
+@utility reveal-sections {
+  @supports (animation-timeline: view()) {
+    @media screen and (prefers-reduced-motion: no-preference) {
+      & > section ~ section {
+        animation: revealUp linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 140px;
+      }
+    }
+  }
+}
+
+@keyframes revealUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }

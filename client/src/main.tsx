@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { prefetchForPath } from './utils/prefetch';
 import { installStaleBuildRecovery } from './utils/staleBuildRecovery';
+import { installSpotlight } from './utils/spotlight';
 // Fonts are self-hosted: loading them from Google sent every visitor's IP to a
 // third party and put two extra origins in front of first paint. The weights
 // match what the Google Fonts URL requested, so rendering is unchanged.
@@ -17,6 +18,7 @@ import '@fontsource/ibm-plex-mono/700.css';
 import './index.css';
 
 installStaleBuildRecovery();
+installSpotlight();
 // The page's data starts on its way alongside the page's code.
 prefetchForPath(window.location.pathname);
 

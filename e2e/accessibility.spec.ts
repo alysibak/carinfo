@@ -30,7 +30,9 @@ const VIEWPORTS = [
 
 for (const { name, viewport } of VIEWPORTS) {
   test.describe(`accessibility (${name})`, () => {
-    test.use({ viewport });
+    // Sections fade in as they scroll into view: mid-fade, axe measured the
+    // half-transparent text's contrast. The finished page is what is checked.
+    test.use({ viewport, contextOptions: { reducedMotion: 'reduce' } });
 
     test('core pages have no WCAG A/AA violations', async ({ page }) => {
       const a = await firstCarId(page, 'camry');
