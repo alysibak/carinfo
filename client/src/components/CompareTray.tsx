@@ -17,7 +17,8 @@ export default function CompareTray() {
 
   return (
     <div
-      className="fixed bottom-0 inset-x-0 z-40 border-t border-zinc-700 bg-black pb-[env(safe-area-inset-bottom)]"
+      // Where the tab bar shows, its Compare tab carries the count instead.
+      className="tabbar-shown:hidden fixed bottom-0 inset-x-0 z-40 border-t border-zinc-700 bg-black pb-[env(safe-area-inset-bottom)]"
       role="region"
       aria-label="Compare shortlist"
     >

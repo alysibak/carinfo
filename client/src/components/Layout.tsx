@@ -2,16 +2,22 @@ import { Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import SiteHeader from './SiteHeader';
 import CompareTray from './CompareTray';
+import MobileTabBar from './MobileTabBar';
 import SiteFooter from './SiteFooter';
 import { useCarStore } from '../stores/carStore';
 
 export default function Layout() {
   const location = useLocation();
   const compareCount = useCarStore((s) => s.comparedCars.length);
+  // Room at the foot for the compare tray on a wide screen, and for the tab
+  // bar where it shows instead.
   const trayPad =
     compareCount > 0 && location.pathname !== '/compare'
-      ? 'pb-[calc(4.25rem+env(safe-area-inset-bottom))]'
-      : '';
+      ? 'pb-[max(var(--tabbar-height),calc(4.25rem+env(safe-area-inset-bottom)))] tabbar-shown:pb-(--tabbar-height)'
+      : location.pathname.startsWith('/car/')
+        ? // And for the car page's action bar over the tab bar.
+          'pb-(--tabbar-height) tabbar-shown:pb-[calc(var(--tabbar-height)+3.5rem)]'
+        : 'pb-(--tabbar-height)';
 
   return (
     <div className={`min-h-screen bg-black text-white flex flex-col ${trayPad}`}>
@@ -40,6 +46,7 @@ export default function Layout() {
       <SiteFooter />
 
       <CompareTray />
+      <MobileTabBar />
     </div>
   );
 }

@@ -16,6 +16,7 @@ import type { CarSpecs } from '../types/car.types';
 import { HERO_PREVIEW_QUERY, pickHeroPreviewCar } from '../utils/landingShowcase';
 import { usePageMeta } from '../utils/pageMeta';
 import CompareTray from '../components/CompareTray';
+import MobileTabBar from '../components/MobileTabBar';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { useCarStore } from '../stores/carStore';
 
@@ -67,7 +68,10 @@ export default function Landing() {
     }
   }, [navigate]);
   const compareCount = useCarStore((s) => s.comparedCars.length);
-  const trayPad = compareCount > 0 ? 'pb-[calc(4.25rem+env(safe-area-inset-bottom))]' : '';
+  const trayPad =
+    compareCount > 0
+      ? 'pb-[max(var(--tabbar-height),calc(4.25rem+env(safe-area-inset-bottom)))] tabbar-shown:pb-(--tabbar-height)'
+      : 'pb-(--tabbar-height)';
 
   const handleHeroSearch = (q: string) => {
     const trimmed = q.trim();
@@ -225,6 +229,7 @@ export default function Landing() {
       <SiteFooter />
 
       <CompareTray />
+      <MobileTabBar />
     </div>
   );
 }

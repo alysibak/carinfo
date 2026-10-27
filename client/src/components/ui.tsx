@@ -400,7 +400,8 @@ export function StatusToast({ message }: { message: string | null }) {
   return (
     <div
       role="status"
-      className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-5 py-3 bg-zinc-100 text-black text-sm font-semibold shadow-lg"
+      // Clear of the tab bar where it shows.
+      className="fixed bottom-[calc(var(--tabbar-height)+1.25rem)] left-1/2 -translate-x-1/2 z-50 px-5 py-3 bg-zinc-100 text-black text-sm font-semibold shadow-lg max-w-[calc(100vw-2rem)]"
     >
       {message}
     </div>

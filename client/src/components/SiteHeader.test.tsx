@@ -1,7 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import SiteHeader from './SiteHeader';
+import { useMenuStore } from '../stores/menuStore';
 
 function renderHeader() {
   return render(
@@ -16,6 +17,9 @@ function openMenu() {
 }
 
 describe('SiteHeader mobile menu', () => {
+  // The menu's state is shared with the tab bar's More, so it outlives a render.
+  beforeEach(() => useMenuStore.setState({ open: false }));
+
   it('renders the panel outside <header>, which is a fixed-position containing block', () => {
     const { container } = renderHeader();
     openMenu();

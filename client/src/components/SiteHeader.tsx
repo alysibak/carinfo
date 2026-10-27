@@ -6,6 +6,7 @@ import { useCarStore } from '../stores/carStore';
 import { useGarageStore } from '../stores/garageStore';
 import AuthHeaderSlot from './AuthHeaderSlot';
 import { useSlashToSearch } from '../hooks/useSlashToSearch';
+import { useMenuStore } from '../stores/menuStore';
 
 interface NavLinkItem {
   to: string;
@@ -43,7 +44,8 @@ export const HEADER_SLOT_ID = 'site-header-slot';
 
 export default function SiteHeader({ trailing, transparentUntilScroll = false }: SiteHeaderProps) {
   const headerRef = useRef<HTMLElement>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const menuOpen = useMenuStore((s) => s.open);
+  const setMenuOpen = useMenuStore((s) => s.setOpen);
   useSlashToSearch();
   const [scrolled, setScrolled] = useState(false);
   const comparedCount = useCarStore((s) => s.comparedCars.length);
@@ -94,7 +96,7 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [menuOpen]);
+  }, [menuOpen, setMenuOpen]);
 
   const showBorder = !transparentUntilScroll || scrolled;
 
@@ -108,7 +110,7 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
           : 'border-b border-transparent bg-transparent'
       }`}
     >
-      <div className="page-wrap py-3 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-3">
+      <div className="page-wrap py-1.5 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-3">
         <Link
           to="/"
           className="group/brand text-sm font-bold uppercase tracking-[0.18em] text-white hover:text-zinc-300 transition-colors shrink-0 min-h-[44px] inline-flex items-center gap-2.5"
@@ -144,10 +146,11 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
           </div>
           <button
             type="button"
-            className="lg:hidden min-h-[44px] min-w-[44px] inline-flex items-center justify-center -mr-1 text-zinc-400 hover:text-white transition-colors"
+            // Upright, the tab bar's More opens the menu; sideways, there is no tab bar.
+            className="hidden phone-sideways:inline-flex min-h-[44px] min-w-[44px] items-center justify-center -mr-1 text-zinc-400 hover:text-white transition-colors"
             aria-expanded={menuOpen}
             aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-            onClick={() => setMenuOpen((o) => !o)}
+            onClick={() => setMenuOpen(!menuOpen)}
           >
             {menuOpen ? (
               <svg
@@ -197,8 +200,9 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
     typeof document !== 'undefined' &&
     createPortal(
       <div
-        className="lg:hidden fixed inset-x-0 bottom-0 z-40 overflow-y-auto overscroll-contain bg-black"
-        style={{ top: 'var(--header-height, 64px)' }}
+        className="lg:hidden fixed inset-x-0 z-40 overflow-y-auto overscroll-contain bg-black animate-fade-in"
+        // Between the header and the tab bar, both still in reach.
+        style={{ top: 'var(--header-height, 64px)', bottom: 'var(--tabbar-height, 0px)' }}
         onClick={(e) => {
           if (e.target === e.currentTarget) setMenuOpen(false);
         }}
