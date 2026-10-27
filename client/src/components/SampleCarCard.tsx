@@ -76,7 +76,10 @@ export default function SampleCarCard({ car }: { car: CarSpecs }) {
                 <dt className="flex items-start justify-between gap-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
                   <span className="min-w-0 truncate">{stat.label}</span>
                   {stat.source && (
-                    <ProvenanceChip source={stat.source} className="shrink-0 hidden sm:inline" />
+                    // The source beside the label where there is room for both.
+                    <span className="hidden sm:inline-flex shrink-0">
+                      <ProvenanceChip source={stat.source} />
+                    </span>
                   )}
                 </dt>
                 <dd className="mt-1">
