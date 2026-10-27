@@ -12,6 +12,7 @@ import {
   volumeVsClass,
 } from '../utils/size';
 import type { SpecGlossaryKey } from '../utils/specGlossary';
+import { typicalOf } from '../utils/keyFigures';
 import { SpecLabel } from './SpecExplain';
 import { Chevron, foldSummaryClass } from './ui';
 
@@ -50,6 +51,12 @@ function Measure({
       )}
     </div>
   );
+}
+
+/** "long, wide and tall". */
+function listWords(words: readonly string[]): string {
+  if (words.length <= 1) return words[0] ?? '';
+  return `${words.slice(0, -1).join(', ')} and ${words.at(-1)}`;
 }
 
 /** "compact SUVs", "sport compacts". */
@@ -205,6 +212,24 @@ export default function SizeAndSpace({ dashboard }: { dashboard: CarDashboard })
   const compared =
     !!className &&
     !!(cls?.length || cls?.width || cls?.height || cls?.weight || cls?.luggage || cls?.passenger);
+  // Measurements about those of the class are said once, together: "About the
+  // same length as a typical compact SUV" three times over read as filler.
+  const outside = size
+    ? ([
+        ['length', size.lengthCm, 'long'],
+        ['width', size.widthCm, 'wide'],
+        ['height', size.heightCm, 'tall'],
+        ['weight', size.curbWeightKg, 'heavy'],
+      ] as const)
+    : [];
+  const against = new Map(outside.map(([measure, span]) => [measure, vs(measure, span)]));
+  const alike = outside
+    .filter(([measure]) => against.get(measure)?.startsWith('About'))
+    .map(([, , word]) => word);
+  const differs = (measure: (typeof outside)[number][0]) => {
+    const said = against.get(measure);
+    return said && !said.startsWith('About') ? said : null;
+  };
   const several = (size?.measured.length ?? 0) > 1;
 
   return (
@@ -213,6 +238,11 @@ export default function SizeAndSpace({ dashboard }: { dashboard: CarDashboard })
         <h2 className="block-title mb-1">Size and space</h2>
         {compared && (
           <p className="text-[13px] text-zinc-400 mb-3">
+            {alike.length > 0 && (
+              <span className="text-zinc-200">
+                About as {listWords(alike)} as {typicalOf(className!)}.{' '}
+              </span>
+            )}
             Against the middle of other {classPlural(className!)}, {cls!.years.min}–{cls!.years.max}
             .
           </p>
@@ -224,25 +254,25 @@ export default function SizeAndSpace({ dashboard }: { dashboard: CarDashboard })
                 label="Length"
                 value={formatMetres(size.lengthCm)}
                 alt={formatFeet(size.lengthCm)}
-                comparison={vs('length', size.lengthCm)}
+                comparison={differs('length')}
               />
               <Measure
                 label="Width without mirrors"
                 value={formatMetres(size.widthCm)}
                 alt={formatFeet(size.widthCm)}
-                comparison={vs('width', size.widthCm)}
+                comparison={differs('width')}
               />
               <Measure
                 label="Height"
                 value={formatMetres(size.heightCm)}
                 alt={formatFeet(size.heightCm)}
-                comparison={vs('height', size.heightCm)}
+                comparison={differs('height')}
               />
               <Measure
                 label="Weight"
                 value={formatKg(size.curbWeightKg)}
                 alt={formatLb(size.curbWeightKg)}
-                comparison={vs('weight', size.curbWeightKg)}
+                comparison={differs('weight')}
                 glossaryKey="curbWeight"
               />
             </div>

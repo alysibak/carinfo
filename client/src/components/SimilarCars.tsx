@@ -7,6 +7,7 @@ import { efficiencyOf } from '../utils/efficiency';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 import { displayModelLabel, displayVehicleTitle } from '../utils/trimLabel';
 import { useCarStore } from '../stores/carStore';
+import RatingStars from './RatingStars';
 
 /** Nearby alternatives with plain-English trade-offs vs the car you're viewing. */
 export default function SimilarCars({ car }: { car: CarSpecs }) {
@@ -66,15 +67,31 @@ export default function SimilarCars({ car }: { car: CarSpecs }) {
                           {edges[alt.id]}
                         </p>
                       )}
-                      <p className="text-xs text-zinc-500 mt-0.5">
-                        {[
-                          efficiency?.text,
-                          alt.engine.horsepower ? `${alt.engine.horsepower} hp` : null,
-                          bodyStyleLabel(alt.bodyStyle),
-                          alt.driveType,
-                        ]
-                          .filter(Boolean)
-                          .join(' · ')}
+                      <p className="flex flex-wrap items-center gap-x-2 text-xs text-zinc-500 mt-0.5">
+                        <span>
+                          {[
+                            // The fuel figure once: the line above often gives it.
+                            edges[alt.id]?.includes(efficiency?.unit ?? '\u0000')
+                              ? null
+                              : efficiency?.text,
+                            alt.engine.horsepower ? `${alt.engine.horsepower} hp` : null,
+                            bodyStyleLabel(alt.bodyStyle),
+                            alt.driveType,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </span>
+                        {(alt.safetyRating?.overall ?? 0) > 0 && (
+                          <span className="inline-flex items-center gap-1">
+                            <span className="sr-only">
+                              NHTSA {alt.safetyRating!.overall} out of 5 stars
+                            </span>
+                            <RatingStars
+                              stars={alt.safetyRating!.overall!}
+                              className="w-2.5 h-2.5"
+                            />
+                          </span>
+                        )}
                       </p>
                     </Link>
                     <button

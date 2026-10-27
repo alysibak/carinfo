@@ -66,8 +66,14 @@ function classCount(count: number, className: string): string {
  * NHTSA recorded, each marked with its source, and one line saying what the
  * class comparison is drawn from.
  */
-export default function KeyFigures({ dashboard }: { dashboard: CarDashboard }) {
-  const figures = buildKeyFigures(dashboard);
+export default function KeyFigures({
+  dashboard,
+  fuelCost,
+}: {
+  dashboard: CarDashboard;
+  fuelCost?: Parameters<typeof buildKeyFigures>[1];
+}) {
+  const figures = buildKeyFigures(dashboard, fuelCost);
   if (figures.length === 0) return null;
   const cls = dashboard.classComparison;
   const lgCols =

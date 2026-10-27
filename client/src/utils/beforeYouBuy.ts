@@ -2,11 +2,20 @@ import type { CarDashboard } from '../types/car.types';
 import { complaintPart, recallDate } from './recalls';
 import { powertrainNames, splitInvestigations, splitRecalls } from '@carinfo/shared/recall-scope';
 import { investigationPart, investigationText } from './investigations';
-import { theftPlace } from '@carinfo/shared/theft';
+import { ordinal, theftPlace } from '@carinfo/shared/theft';
 
 export interface BeforeYouBuyItem {
   key: 'recalls' | 'complaints' | 'investigation' | 'safety' | 'theft';
+  /** The whole check in a sentence, where it stands alone. */
   text: string;
+  /** The check in a few words, for a glance: "1 recall in Canada". */
+  headline: string;
+  /** What it means or what to do, in a line. */
+  detail: string;
+  /** Clear, worth checking, or for information. */
+  tone: 'good' | 'check' | 'info';
+  /** NHTSA's overall stars, drawn beside the crash rating. */
+  stars?: number;
   /** The section of the car page it comes from. */
   href: '#recalls' | '#safety' | '#theft';
 }
@@ -16,6 +25,12 @@ const FCW_WORDS = {
   some: ', with forward collision warning standard on some versions',
   optional: ', with forward collision warning optional',
   none: '',
+} as const;
+
+const FCW_DETAIL = {
+  standard: 'standard',
+  some: 'standard on some versions',
+  optional: 'optional',
 } as const;
 
 /** NHTSA's component in words, or nothing where it names none ("UNKNOWN OR OTHER"). */
@@ -49,6 +64,9 @@ export function beforeYouBuy(dashboard: CarDashboard): BeforeYouBuyItem[] {
     const others = other.length
       ? ` (${other.length} more ${other.length === 1 ? 'is' : 'are'} for ${[...new Set(other.map((o) => powertrainNames(o.powertrains)))].join(' or ')} alone)`
       : '';
+    const elsewhere = other.length
+      ? `${other.length} more for ${[...new Set(other.map((o) => powertrainNames(o.powertrains)))].join(' or ')} only.`
+      : '';
     items.push({
       key: 'recalls',
       href: '#recalls',
@@ -57,6 +75,15 @@ export function beforeYouBuy(dashboard: CarDashboard): BeforeYouBuyItem[] {
         : other.length
           ? `No recalls in Canada listed for this version of the ${name}${others}.`
           : `No recalls in Canada listed for the ${name}.`,
+      headline: applies.length
+        ? `${applies.length} ${applies.length === 1 ? 'recall' : 'recalls'} in Canada`
+        : 'No recalls in Canada',
+      detail: applies.length
+        ? `Ask for proof ${applies.length === 1 ? 'it was' : 'they were'} fixed, or check the VIN with the maker.${elsewhere ? ` ${elsewhere}` : ''}`
+        : elsewhere
+          ? `None for this version. ${elsewhere}`
+          : `None listed for the ${name}.`,
+      tone: applies.length ? 'check' : 'good',
     });
   }
 
@@ -66,10 +93,16 @@ export function beforeYouBuy(dashboard: CarDashboard): BeforeYouBuyItem[] {
       complaintRank?.position === 1 && modelPage
         ? `, the most of any ${modelPage.label} year on file`
         : '';
+    const count = `${complaints.complaints.toLocaleString('en-CA')} owner ${complaints.complaints === 1 ? 'complaint' : 'complaints'}`;
     items.push({
       key: 'complaints',
       href: '#recalls',
       text: `Owners complained to NHTSA most about the ${list(parts)} (${complaints.complaints.toLocaleString('en-CA')} ${complaints.complaints === 1 ? 'complaint' : 'complaints'}${most}): worth a look on a test drive.`,
+      headline: count,
+      detail: `Most about the ${list(parts)}${complaintRank?.position === 1 && modelPage ? `, the most of any ${modelPage.label} year` : ''}. Worth a look on a test drive.`,
+      // A count not adjusted for how many were sold says little alone; the
+      // worst year of its model is worth a closer look.
+      tone: complaintRank?.position === 1 ? 'check' : 'info',
     });
   }
 
@@ -79,10 +112,14 @@ export function beforeYouBuy(dashboard: CarDashboard): BeforeYouBuyItem[] {
     mildHybrid: car.engine.mildHybrid,
   }).applies.find((inv) => !inv.closed);
   if (open) {
+    const part = namedPart(open.component);
     items.push({
       key: 'investigation',
       href: '#recalls',
-      text: `NHTSA (U.S.) has had an investigation open since ${recallDate(open.opened)}${namedPart(open.component) ? ` into its ${namedPart(open.component)}` : ''}: ${investigationText(open.subject).replace(/\.$/, '')}. A recall may follow.`,
+      text: `NHTSA (U.S.) has had an investigation open since ${recallDate(open.opened)}${part ? ` into its ${part}` : ''}: ${investigationText(open.subject).replace(/\.$/, '')}. A recall may follow.`,
+      headline: 'Open NHTSA investigation',
+      detail: `${part ? `Into its ${part}, s` : 'S'}ince ${recallDate(open.opened)}: ${investigationText(open.subject).replace(/\.$/, '')}. A recall may follow.`,
+      tone: 'check',
     });
   }
 
@@ -93,12 +130,19 @@ export function beforeYouBuy(dashboard: CarDashboard): BeforeYouBuyItem[] {
       key: 'safety',
       href: '#safety',
       text: `NHTSA crash rating ${overall}/5 overall${FCW_WORDS[fcw ?? 'none']}.`,
+      headline: `${overall}-star crash rating`,
+      detail: `NHTSA’s overall rating.${fcw ? ` Forward collision warning ${FCW_DETAIL[fcw]}.` : ''}`,
+      tone: overall >= 5 ? 'good' : overall >= 4 ? 'info' : 'check',
+      stars: overall,
     });
   } else if (car.safetyRating?.nhtsaIds?.length) {
     items.push({
       key: 'safety',
       href: '#safety',
       text: 'NHTSA lists this version but has not given it star ratings.',
+      headline: 'No crash rating yet',
+      detail: 'NHTSA lists this version but has not given it stars.',
+      tone: 'info',
     });
   }
 
@@ -107,6 +151,9 @@ export function beforeYouBuy(dashboard: CarDashboard): BeforeYouBuyItem[] {
       key: 'theft',
       href: '#theft',
       text: `The ${theft.model} was ${theftPlace(theft)}: ask your insurer what it would cost to insure and whether it requires an anti-theft device.`,
+      headline: `${theft.rank === 1 ? 'Most' : `${ordinal(theft.rank)} most`} stolen in Canada`,
+      detail: `In ${theft.year}. Ask your insurer what it costs to insure and whether it needs an anti-theft device.`,
+      tone: 'check',
     });
   }
   return items;

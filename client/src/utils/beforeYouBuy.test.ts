@@ -48,6 +48,17 @@ describe('beforeYouBuy', () => {
       'NHTSA crash rating 5/5 overall, with forward collision warning optional.',
     ]);
     expect(items.map((i) => i.href)).toEqual(['#recalls', '#recalls', '#safety']);
+    // The same, at a glance: a few words each, marked.
+    expect(items.map((i) => [i.headline, i.tone])).toEqual([
+      ['1 recall in Canada', 'check'],
+      ['2,158 owner complaints', 'check'],
+      ['5-star crash rating', 'good'],
+    ]);
+    expect(items[1].detail).toBe(
+      'Most about the engine, electrical system and airbags, the most of any Honda CR-V year. Worth a look on a test drive.',
+    );
+    expect(items[2].detail).toBe('NHTSA’s overall rating. Forward collision warning optional.');
+    expect(items[2].stars).toBe(5);
   });
 
   it('says only what is on file', () => {
@@ -79,6 +90,10 @@ describe('beforeYouBuy', () => {
         key: 'theft',
         href: '#theft',
         text: 'The Honda CR-V was the 3rd most stolen vehicle in Canada in 2024: ask your insurer what it would cost to insure and whether it requires an anti-theft device.',
+        headline: '3rd most stolen in Canada',
+        detail:
+          'In 2024. Ask your insurer what it costs to insure and whether it needs an anti-theft device.',
+        tone: 'check',
       },
     ]);
   });
@@ -115,6 +130,10 @@ describe('beforeYouBuy', () => {
         key: 'investigation',
         href: '#recalls',
         text: 'NHTSA (U.S.) has had an investigation open since Mar 11, 2019 into its engine and cooling: Oil dilution. A recall may follow.',
+        headline: 'Open NHTSA investigation',
+        detail:
+          'Into its engine and cooling, since Mar 11, 2019: Oil dilution. A recall may follow.',
+        tone: 'check',
       },
     ]);
   });
@@ -145,6 +164,10 @@ describe('beforeYouBuy', () => {
     );
     expect(item.text).toBe(
       '1 recall in Canada for the 2018 Honda CR-V (2 more are for the plug-in hybrid alone): ask for proof the work was done, or check the VIN with the maker or Transport Canada.',
+    );
+    expect(item.headline).toBe('1 recall in Canada');
+    expect(item.detail).toBe(
+      'Ask for proof it was fixed, or check the VIN with the maker. 2 more for the plug-in hybrid only.',
     );
   });
 });

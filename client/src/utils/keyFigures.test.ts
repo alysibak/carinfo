@@ -25,12 +25,23 @@ describe('buildKeyFigures', () => {
     expect(ids).not.toContain('cost');
   });
 
-  it('gives fuel use in L/100 km from EPA, with the EPA mpg beneath', () => {
-    expect(byId(trustDashboard, 'fuel')).toMatchObject({
-      value: '7.1',
-      unit: 'L/100 km',
-      detail: '33 US mpg combined',
-      source: 'epa',
+  it('gives fuel use in L/100 km from EPA, without US miles per gallon', () => {
+    const fuel = byId(trustDashboard, 'fuel');
+    expect(fuel).toMatchObject({ value: '7.1', unit: 'L/100 km', source: 'epa' });
+    expect(fuel?.detail).toBeUndefined();
+  });
+
+  it('puts the yearly fuel bill beside fuel use, marked as an estimate, in place of the engine', () => {
+    const figures = buildKeyFigures(trustDashboard, {
+      amount: 1835,
+      basis: 'At $1.56/L and 15,000 km a year',
+    });
+    expect(figures.map((f) => f.id)).toEqual(['fuel', 'fuelCost', 'safety', 'power']);
+    expect(figures[1]).toMatchObject({
+      label: 'Fuel a year',
+      value: '$1,835',
+      detail: 'At $1.56/L and 15,000 km a year',
+      source: 'estimated',
     });
   });
 
@@ -76,7 +87,7 @@ describe('buildKeyFigures', () => {
     expect(byId(phev, 'fuel')).toMatchObject({
       label: 'Fuel use',
       value: '9.0',
-      detail: 'In gas mode, 26 US mpg combined',
+      detail: 'In gas mode',
     });
   });
 
@@ -101,12 +112,20 @@ describe('buildKeyFigures', () => {
       value: '17.4',
       unit: 'kWh/100 km',
     });
+    // With its yearly charging bill, the bill takes the energy use's place.
+    const billed = buildKeyFigures(ev, { amount: 610, basis: 'x', electric: true });
+    expect(billed.map((f) => f.id)).toEqual(['range', 'fuelCost', 'safety', 'power']);
+    expect(billed[1].label).toBe('Charging a year');
   });
 });
 
 describe('buildSpecLine', () => {
   it('lists the gearbox and drive, and leaves a predicted 0–60 to the estimates', () => {
     expect(buildSpecLine(trustDashboard)).toEqual(['8-Speed Automatic', 'FWD']);
+  });
+
+  it('leads with the engine where the figures above leave it out', () => {
+    expect(buildSpecLine(trustDashboard, true)[0]).toMatch(/cylinder|L /);
   });
 
   it('keeps a 0–60 time that is on record', () => {

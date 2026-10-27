@@ -125,7 +125,6 @@ function FuelBar({ label, efficiency }: { label: string; efficiency: Efficiency 
             {efficiency.value.toFixed(efficiency.unit === 'kg/100 km' ? 2 : 1)}
           </span>
           <span className="text-sm text-zinc-400"> {efficiency.unit}</span>
-          {efficiency.epa && <p className="text-xs text-zinc-500 mt-0.5">{efficiency.epa}</p>}
         </div>
       </div>
       <div className="meter-track">
@@ -323,6 +322,27 @@ export default function CarDetail() {
         : '';
     return `From EPA's rating, at ${pump(price, premium ? 'premium' : 'regular')}${plug}, and ${distance}.`;
   })();
+  // The same in a few words, under the yearly figure at the top of the page.
+  const fuelCostFigure = (() => {
+    if (annualCost.energy == null || ownership.unvalued) return undefined;
+    const regional = getRegionalAssumptions(region);
+    const distance = `${regional.annualKm.toLocaleString('en-CA')} km a year`;
+    const fuel = car.engine.fuelType;
+    const premium = car.epa?.premiumFuel === true;
+    const basis =
+      fuel === 'electric'
+        ? `At $${regional.electricityRateCadPerKwh.toFixed(3)}/kWh and ${distance}`
+        : fuel === 'hydrogen' && hydrogenPrice != null
+          ? `At $${hydrogenPrice.toFixed(2)}/kg and ${distance}`
+          : fuel === 'diesel'
+            ? `At $${regional.dieselPriceCadPerL.toFixed(2)}/L diesel and ${distance}`
+            : fuel === 'plug-in hybrid'
+              ? `Gas and home charging, ${distance}`
+              : fuel === 'natural gas'
+                ? `EPA’s yearly cost, ${distance}`
+                : `At $${(regional.gasPriceCadPerL + (premium ? regional.premiumOverRegularCadPerL : 0)).toFixed(2)}/L${premium ? ' premium' : ''} and ${distance}`;
+    return { amount: annualCost.energy, basis, electric: fuel === 'electric' };
+  })();
   const isInCompare = comparedCars.some((c) => c.id === car.id);
   const title = displayVehicleTitle(car);
   // A photo on Commons leads the page; without one, the small body illustration.
@@ -333,14 +353,16 @@ export default function CarDetail() {
   // The line under the title names the configuration; the gearbox is in the spec line.
   const trimLabel = displayConfigSubtitle(car);
   const configLabel = trimLabel && trimLabel !== transmissionLabel ? trimLabel : null;
-  const specLine = buildSpecLine(dashboard);
+
   const isPhev = car.engine.fuelType === 'plug-in hybrid';
   const phev = phevModes(car);
   const hasFuelData = hasFuelEconomyData(car);
   const hasEconomics = annualCost.total != null;
   const hasMarketValue = hasNumericValue(marketValue.low) && hasNumericValue(marketValue.high);
 
-  const keyFigures = buildKeyFigures(dashboard);
+  const keyFigures = buildKeyFigures(dashboard, fuelCostFigure);
+  // The engine under the title where the figures above leave it out.
+  const specLine = buildSpecLine(dashboard, !keyFigures.some((figure) => figure.id === 'engine'));
   const hasCityHwy =
     hasNumericValue(car.fuelEconomy.city) || hasNumericValue(car.fuelEconomy.highway);
   const hasEvExtras =
@@ -523,7 +545,7 @@ export default function CarDetail() {
           </div>
 
           <div ref={statsRef} className="mt-5 sm:mt-6">
-            <KeyFigures dashboard={dashboard} />
+            <KeyFigures dashboard={dashboard} fuelCost={fuelCostFigure} />
             <OnThisPage pageKey={car.id} />
           </div>
         </div>
@@ -534,7 +556,9 @@ export default function CarDetail() {
           title={title}
           figures={
             keyFigures
-              .filter((figure) => !figure.missing && figure.id !== 'engine')
+              .filter(
+                (figure) => !figure.missing && figure.id !== 'engine' && figure.id !== 'fuelCost',
+              )
               .map((figure) =>
                 figure.id === 'safety'
                   ? `NHTSA ${figure.value}/5`
