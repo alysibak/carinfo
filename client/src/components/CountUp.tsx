@@ -40,15 +40,19 @@ export default function CountUp({ value, duration = 1100 }: { value: number; dur
     };
   }, [value, duration]);
 
-  // Counted, it is plain text; while counting, a screen reader hears the
-  // figure itself rather than every step on the way.
-  if (shown === value) return <span ref={ref}>{value.toLocaleString('en-CA')}</span>;
+  // One element throughout, watched from the start: counted, it holds plain
+  // text; while counting, a screen reader hears the figure itself rather than
+  // every step on the way.
   return (
-    <>
-      <span className="sr-only">{value.toLocaleString('en-CA')}</span>
-      <span ref={ref} aria-hidden>
-        {shown.toLocaleString('en-CA')}
-      </span>
-    </>
+    <span ref={ref}>
+      {shown === value ? (
+        value.toLocaleString('en-CA')
+      ) : (
+        <>
+          <span className="sr-only">{value.toLocaleString('en-CA')}</span>
+          <span aria-hidden>{shown.toLocaleString('en-CA')}</span>
+        </>
+      )}
+    </span>
   );
 }

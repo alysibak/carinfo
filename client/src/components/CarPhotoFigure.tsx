@@ -15,7 +15,16 @@ type FigureCar = Pick<
  * a car of this model year, or of another year of the generation, said
  * plainly where Commons has none of this one. Its author and licence below.
  */
-export default function CarPhotoFigure({ car, glow = false }: { car: FigureCar; glow?: boolean }) {
+export default function CarPhotoFigure({
+  car,
+  glow = false,
+  stage = false,
+}: {
+  car: FigureCar;
+  glow?: boolean;
+  /** The head of a page: edge to edge on a phone, its caption kept off the edge. */
+  stage?: boolean;
+}) {
   const other = car.photo?.otherYear;
   const name = `${car.make} ${displayModelLabel(car)}`;
   return (
@@ -30,8 +39,8 @@ export default function CarPhotoFigure({ car, glow = false }: { car: FigureCar; 
           />
         )}
         <div
-          className={`aspect-3/2 overflow-hidden border ${
-            glow ? 'border-white/10 shadow-[0_40px_80px_-30px_rgb(0_0_0/0.95)]' : 'border-zinc-900'
+          className={`aspect-3/2 overflow-hidden ${stage ? 'sm:border' : 'border'} ${
+            glow ? 'border-white/10 shadow-[0_50px_100px_-40px_rgb(0_0_0/0.95)]' : 'border-zinc-900'
           }`}
         >
           <CarPhotoButton car={car} variant="tile" mark="Larger" focusable>
@@ -39,7 +48,9 @@ export default function CarPhotoFigure({ car, glow = false }: { car: FigureCar; 
           </CarPhotoButton>
         </div>
       </div>
-      <figcaption className="mt-1.5 text-xs text-zinc-400 leading-snug">
+      <figcaption
+        className={`mt-1.5 text-xs text-zinc-400 leading-snug ${stage ? 'px-4 sm:px-0' : ''}`}
+      >
         {other ? (
           <>
             <span className="text-amber-200/90">

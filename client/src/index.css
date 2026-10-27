@@ -59,6 +59,8 @@
   --animate-float-slow: float 11s ease-in-out infinite;
   --animate-shimmer: shimmer 2.4s linear infinite;
   --animate-grow-x: growX 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* A band of names drifting left, one copy's width, for ever. */
+  --animate-marquee: marquee 90s linear infinite;
   /* A page arriving: a quick fade, nothing moving, so nothing fixed inside it shifts. */
   --animate-page-in: pageIn 0.2s ease-out backwards;
   /* Out from under the header, opaque all the way: a fade let the page show through. */
@@ -91,6 +93,14 @@
     }
     100% {
       opacity: 1;
+    }
+  }
+  @keyframes marquee {
+    0% {
+      transform: translate3d(0, 0, 0);
+    }
+    100% {
+      transform: translate3d(-50%, 0, 0);
     }
   }
   @keyframes pageIn {

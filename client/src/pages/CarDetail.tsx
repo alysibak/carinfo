@@ -346,6 +346,9 @@ export default function CarDetail() {
   })();
   const isInCompare = comparedCars.some((c) => c.id === car.id);
   const title = displayVehicleTitle(car);
+  // The year and the name apart, for the head of the page.
+  const titleYear = title.startsWith(`${car.year} `) ? String(car.year) : null;
+  const titleName = titleYear ? title.slice(titleYear.length + 1) : title;
   // A photo on Commons leads the page; without one, the small body illustration.
   const hasPhoto = carPhotoSources(car.photo).length > 0;
   const transmissionLabel = car.transmission?.type
@@ -467,15 +470,17 @@ export default function CarDetail() {
       )}
 
       <section className="relative isolate border-b border-zinc-900 overflow-x-clip">
-        {/* The car's colours washed across the head of its page, fading to black. */}
+        {/* The car's colours flooding the head of its page: its own photo,
+            blurred to light, dark behind the name and fading to black below. */}
         {hasPhoto && (
           <div aria-hidden className="absolute inset-0 -z-10 pointer-events-none">
             <PhotoGlow
               photo={car.photo}
-              className="absolute inset-0 opacity-50"
-              imageClassName="scale-125 blur-[90px] saturate-150"
+              className="absolute inset-0 opacity-75"
+              imageClassName="scale-125 blur-[80px] saturate-150"
             />
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(12_12_14/0.25)_0%,rgb(12_12_14/0.7)_55%,#0c0c0e_100%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgb(12_12_14/0.85)_0%,rgb(12_12_14/0.45)_45%,rgb(12_12_14/0.15)_100%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_45%,#0c0c0e_100%)]" />
           </div>
         )}
         <div className="page-wrap-wide pt-2 pb-6 sm:pb-8">
@@ -487,29 +492,26 @@ export default function CarDetail() {
             <span aria-hidden>←</span> Back
           </button>
 
-          {/* The photo (or the illustration) beside the title; the actions and
-              the version picker under the title, not across the page from it. */}
+          {/* A stage: the name large on the left, the car larger on the right;
+              on a phone the photo runs edge to edge above the name. */}
           <div
-            className={`mt-1 grid gap-x-4 sm:gap-x-6 gap-y-4 min-w-0 sm:grid-rows-[auto_1fr] ${
+            className={`mt-1 grid min-w-0 ${
               hasPhoto
-                ? 'grid-cols-1 sm:grid-cols-[15rem_1fr] lg:grid-cols-[26rem_1fr] items-start'
-                : 'grid-cols-[5.5rem_1fr] sm:grid-cols-[9rem_1fr] items-center sm:items-start'
+                ? 'grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-y-6 gap-x-12 items-center lg:min-h-[30rem]'
+                : 'grid-cols-[5.5rem_1fr] sm:grid-cols-[9rem_1fr] gap-x-4 sm:gap-x-6 gap-y-4 items-center sm:items-start'
             }`}
           >
             {hasPhoto ? (
-              <div className="sm:row-span-2 min-w-0">
-                <CarPhotoFigure car={car} glow />
+              <div className="order-first lg:order-last -mx-4 sm:mx-0 min-w-0">
+                <CarPhotoFigure car={car} glow stage />
               </div>
             ) : (
-              <div className="h-14 sm:h-20 overflow-hidden sm:row-span-2">
+              <div className="h-14 sm:h-20 overflow-hidden">
                 <VehiclePlaceholder car={car} compact hideCaption />
               </div>
             )}
             <div className="min-w-0">
-              <h1 className="display-text text-[2.1rem] sm:text-5xl lg:text-6xl leading-[1.02] pb-1 wrap-break-word">
-                {title}
-              </h1>
-              <p className="text-sm sm:text-[15px] text-zinc-300 mt-2">
+              <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
                 {(() => {
                   // "Electric SUV" already says SUV and electric: no "SUV · Electric SUV · Electric".
                   const cls = dashboard.competitiveClass?.toLowerCase() ?? '';
@@ -525,22 +527,30 @@ export default function CarDetail() {
                     .join(' · ');
                 })()}
               </p>
+              <h1 className="display-text text-[2.75rem] sm:text-6xl xl:text-[5.25rem] leading-[0.98] pb-2 mt-3 wrap-break-word">
+                {/* The year set small over the name, read as one: "2022 Toyota RAV4". */}
+                {titleYear && (
+                  <span className="block text-[0.4em] leading-tight tracking-[-0.01em] text-zinc-400 mb-1">
+                    {titleYear}
+                  </span>
+                )}
+                {titleYear ? ' ' : ''}
+                {titleName}
+              </h1>
               {specLine.length > 0 && (
-                <p className="text-sm text-zinc-500 mt-1 tabular-nums">{specLine.join(' · ')}</p>
+                <p className="text-sm text-zinc-400 mt-2 tabular-nums">{specLine.join(' · ')}</p>
               )}
               {dashboard.modelPage && (
-                <p className="mt-2 text-sm">
+                <p className="mt-1 text-sm">
                   <Link
                     to={dashboard.modelPage.path}
-                    className="inline-block py-1.5 text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
+                    className="inline-block py-1.5 text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-600 hover:decoration-zinc-300"
                   >
                     Every year of the {dashboard.modelPage.label}
                   </Link>
                 </p>
               )}
-            </div>
-            <div className={`min-w-0 ${hasPhoto ? '' : 'col-span-2 sm:col-span-1'}`}>
-              <div className="flex flex-wrap gap-2">
+              <div className="mt-5 flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={handleAddToComparison}
@@ -556,7 +566,7 @@ export default function CarDetail() {
             </div>
           </div>
 
-          <div ref={statsRef} className="mt-5 sm:mt-6">
+          <div ref={statsRef} className="mt-6 sm:mt-8">
             <KeyFigures dashboard={dashboard} fuelCost={fuelCostFigure} />
             <OnThisPage pageKey={car.id} />
           </div>

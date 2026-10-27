@@ -5,6 +5,7 @@ import SiteHeader from '../components/SiteHeader';
 import SiteFooter from '../components/SiteFooter';
 import SampleCarCard from '../components/SampleCarCard';
 import PhotoGlow from '../components/PhotoGlow';
+import MakesBand from '../components/MakesBand';
 import CatalogueStats from '../components/CatalogueStats';
 import ShortlistCards from '../components/ShortlistCards';
 import { COLLECTIONS } from '../config/collections';
@@ -110,7 +111,7 @@ export default function Landing() {
             aria-hidden
             className="absolute inset-0 -z-10 bg-[linear-gradient(rgb(255_255_255/0.045)_1px,transparent_1px),linear-gradient(90deg,rgb(255_255_255/0.045)_1px,transparent_1px)] bg-size-[56px_56px] [mask-image:radial-gradient(ellipse_75%_65%_at_40%_35%,#000_25%,transparent_80%)]"
           />
-          <div className="page-wrap pt-12 pb-14 md:pt-20 md:pb-20 lg:pt-28 lg:pb-28 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_25rem] gap-12 lg:gap-16 items-center">
+          <div className="page-wrap pt-12 pb-14 md:pt-20 md:pb-20 lg:pt-24 lg:pb-24 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-12 lg:gap-14 items-center">
             <div className="max-w-2xl min-w-0">
               <p className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-400 mb-6 animate-hero-rise">
                 <span aria-hidden className="h-px w-10 bg-accent" />
@@ -150,7 +151,7 @@ export default function Landing() {
               </ErrorBoundary>
             </div>
             {heroCar && (
-              <div className="relative isolate animate-hero-rise [animation-delay:120ms] w-full max-w-md lg:max-w-none">
+              <div className="relative isolate animate-hero-rise [animation-delay:120ms] w-full max-w-xl lg:max-w-none">
                 {/* The car's own colours, glowing behind its card. */}
                 <PhotoGlow
                   photo={heroCar.photo}
@@ -163,6 +164,8 @@ export default function Landing() {
             )}
           </div>
         </section>
+
+        <MakesBand />
 
         <div className="page-wrap">
           <RecentlyViewed className="pt-8 sm:pt-10" />

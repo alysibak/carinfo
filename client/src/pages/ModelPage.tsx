@@ -333,48 +333,53 @@ export default function ModelPage() {
 
   return (
     <PageShell>
-      {/* The head of the page in the car's own colours, as on a car's page. */}
+      {/* The head of the page in the car's own colours, as on a car's page:
+          the name large on the left, the car larger on the right. */}
       <div className="relative isolate overflow-x-clip border-b border-zinc-900">
         {hasPhoto && (
           <div aria-hidden className="absolute inset-0 -z-10 pointer-events-none">
             <PhotoGlow
               photo={overview.lead.photo}
-              className="absolute inset-0 opacity-50"
-              imageClassName="scale-125 blur-[90px] saturate-150"
+              className="absolute inset-0 opacity-75"
+              imageClassName="scale-125 blur-[80px] saturate-150"
             />
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(12_12_14/0.25)_0%,rgb(12_12_14/0.7)_55%,#0c0c0e_100%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgb(12_12_14/0.85)_0%,rgb(12_12_14/0.45)_45%,rgb(12_12_14/0.15)_100%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_45%,#0c0c0e_100%)]" />
           </div>
         )}
         <div className="page-wrap pt-2 pb-8 sm:pb-10">
           <BackLink to="/home" label="Search" />
-          <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-400">
-            {[
-              yearSpan(overview.first, overview.last),
-              `${overview.years.length} model ${overview.years.length === 1 ? 'year' : 'years'} on file`,
-              overview.onSale ? 'on sale' : null,
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-          </p>
-          <h1 className="display-text text-[2.6rem] sm:text-6xl lg:text-7xl pb-1 mt-2 mb-6 sm:mb-8 wrap-break-word">
-            {name}
-          </h1>
           <div
-            className={`grid gap-4 sm:gap-8 min-w-0 ${
+            className={`mt-1 grid min-w-0 ${
               hasPhoto
-                ? 'grid-cols-1 sm:grid-cols-[15rem_1fr] lg:grid-cols-[26rem_1fr] items-start'
-                : 'grid-cols-[5.5rem_1fr] sm:grid-cols-[9rem_1fr] items-center'
+                ? 'grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-y-6 gap-x-12 items-center lg:min-h-[30rem]'
+                : 'grid-cols-1'
             }`}
           >
-            {hasPhoto ? (
-              <CarPhotoFigure car={overview.lead} glow />
-            ) : (
-              <div className="h-14 sm:h-20 overflow-hidden">
-                <VehiclePlaceholder car={overview.lead} compact hideCaption />
+            {hasPhoto && (
+              <div className="order-first lg:order-last -mx-4 sm:mx-0 min-w-0">
+                <CarPhotoFigure car={overview.lead} glow stage />
               </div>
             )}
             <div className="min-w-0">
-              <p className="text-sm text-zinc-300">
+              <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
+                {[
+                  yearSpan(overview.first, overview.last),
+                  `${overview.years.length} model ${overview.years.length === 1 ? 'year' : 'years'} on file`,
+                  overview.onSale ? 'on sale' : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </p>
+              <h1 className="display-text text-[2.75rem] sm:text-6xl xl:text-[5.25rem] leading-[0.98] pb-2 mt-3 wrap-break-word">
+                {name}
+              </h1>
+              {!hasPhoto && (
+                <div className="h-14 sm:h-20 w-40 overflow-hidden my-2">
+                  <VehiclePlaceholder car={overview.lead} compact hideCaption />
+                </div>
+              )}
+              <p className="text-sm text-zinc-300 mt-3">
                 Newest on file:{' '}
                 <Link
                   to={`/car/${newest.carId}`}
@@ -386,17 +391,13 @@ export default function ModelPage() {
               <p className="text-sm text-zinc-400 mt-1 tabular-nums">
                 <Facts facts={modelYearFacts(newest).slice(0, 4)} />
               </p>
-              {/* The years to check and the theft record beside the photo, where
-                  a wide screen left half the width empty. */}
-              {hasPhoto && records}
+              {records}
             </div>
           </div>
         </div>
       </div>
 
       <PageBody className="reveal-sections">
-        {!hasPhoto && <div className="-mt-2 mb-8">{records}</div>}
-
         {overview.years.filter((row) => row.complaints != null || row.recalls != null).length >=
           3 && <ModelYearChart years={overview.years} name={name!} />}
 

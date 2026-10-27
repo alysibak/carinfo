@@ -33,55 +33,62 @@ export default function SampleCarCard({ car }: { car: CarSpecs }) {
     };
   }, [car.id, region]);
 
-  const stats = dashboard ? buildKeyFigures(dashboard).slice(0, 4) : null;
+  // What it uses, how it crashed, its power: the engine is in the name's line.
+  const stats = dashboard
+    ? buildKeyFigures(dashboard)
+        .filter((figure) => figure.id !== 'engine')
+        .slice(0, 3)
+    : null;
 
   return (
     <Link
       to={`/car/${car.id}`}
-      className="spotlight group block border border-white/10 bg-zinc-950/75 backdrop-blur-md shadow-[0_40px_80px_-30px_rgb(0_0_0/0.95)] hover:border-white/25 transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60"
+      className="group block focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-4 focus-visible:ring-offset-black"
     >
-      {car.photo && (
-        <div className="aspect-video overflow-hidden border-b border-zinc-800">
-          <CarImage car={car} sizes="(min-width: 1024px) 368px, 448px" />
+      {/* The car large, its name over the photo's foot. */}
+      <div className="relative aspect-16/10 overflow-hidden border border-white/10 shadow-[0_50px_100px_-40px_rgb(0_0_0/0.95)]">
+        <div className="absolute inset-0 transition-transform duration-[1.2s] ease-out group-hover:scale-[1.035] motion-reduce:transition-none motion-reduce:group-hover:scale-100">
+          {car.photo ? (
+            <CarImage car={car} sizes="(min-width: 1024px) 600px, 100vw" />
+          ) : (
+            <VehiclePlaceholder car={car} hideCaption />
+          )}
         </div>
-      )}
-      <div className="flex items-center gap-3 px-4 pt-4">
-        {!car.photo && (
-          <span className="w-16 h-10 shrink-0 overflow-hidden" aria-hidden>
-            <VehiclePlaceholder car={car} compact hideCaption />
-          </span>
-        )}
-        <div className="min-w-0">
-          <p className="text-xs text-zinc-500">A car page, at a glance</p>
-          <p className="text-base font-semibold text-white truncate">{displayVehicleTitle(car)}</p>
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(0_0_0/0.35)_0%,transparent_30%,transparent_55%,rgb(0_0_0/0.85)_100%)]" />
+        <p className="absolute left-4 top-3.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-zinc-300">
+          A car page, at a glance
+        </p>
+        <div className="absolute inset-x-4 bottom-10 sm:bottom-12">
+          <p className="text-2xl sm:text-3xl font-bold tracking-[-0.03em] text-white leading-tight">
+            {displayVehicleTitle(car)}
+          </p>
         </div>
       </div>
-      <dl className="grid grid-cols-2 gap-px bg-zinc-800 border-y border-zinc-800 mt-4">
-        {(stats ?? [null, null, null, null]).map((stat, i) => (
-          <div key={stat?.id ?? i} className="bg-zinc-950 px-4 py-3 min-h-[76px]">
+      {/* Its figures in glass, lifted over the photo's edge. */}
+      <dl className="relative -mt-7 mx-3 sm:mx-5 grid grid-cols-3 gap-px bg-white/10 border border-white/15 shadow-[0_24px_48px_-20px_rgb(0_0_0/0.9)]">
+        {(stats ?? [null, null, null]).map((stat, i) => (
+          <div
+            key={stat?.id ?? i}
+            className="bg-zinc-950/80 backdrop-blur-md px-3 py-2.5 min-h-[72px]"
+          >
             {stat ? (
               <>
-                <dt className="text-xs text-zinc-400 flex items-start justify-between gap-2">
-                  <span className="min-w-0">{stat.label}</span>
-                  {stat.source && <ProvenanceChip source={stat.source} className="shrink-0" />}
+                <dt className="flex items-start justify-between gap-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
+                  <span className="min-w-0 truncate">{stat.label}</span>
+                  {stat.source && (
+                    <ProvenanceChip source={stat.source} className="shrink-0 hidden sm:inline" />
+                  )}
                 </dt>
-                <dd className="mt-0.5">
+                <dd className="mt-1">
                   <span
-                    className={`text-lg font-bold tabular-nums ${stat.missing ? 'text-zinc-400' : 'text-white'}`}
+                    className={`text-xl sm:text-2xl font-semibold tracking-[-0.03em] tabular-nums ${stat.missing ? 'text-zinc-400 text-base!' : 'text-white'}`}
                   >
                     {stat.value}
                   </span>
-                  {stat.unit && <span className="text-xs text-zinc-400"> {stat.unit}</span>}
+                  {stat.unit && <span className="text-[11px] text-zinc-400"> {stat.unit}</span>}
                   {stat.stars != null && (
-                    <span className="ml-2">
-                      <RatingStars stars={stat.stars} className="w-3 h-3" />
-                    </span>
-                  )}
-                  {stat.comparison && stat.comparison.tone !== 'neutral' && (
-                    <span
-                      className={`block text-xs mt-0.5 ${stat.comparison.tone === 'better' ? 'text-accent' : 'text-amber-300'}`}
-                    >
-                      {stat.comparison.text}
+                    <span className="block mt-0.5">
+                      <RatingStars stars={stat.stars} className="w-2.5 h-2.5" />
                     </span>
                   )}
                 </dd>
@@ -92,8 +99,14 @@ export default function SampleCarCard({ car }: { car: CarSpecs }) {
           </div>
         ))}
       </dl>
-      <p className="px-4 py-3 text-[13px] text-zinc-300 group-hover:text-white transition-colors">
-        See the whole page →
+      <p className="mt-3 px-3 sm:px-5 text-[13px] text-zinc-300 group-hover:text-white transition-colors">
+        See the whole page{' '}
+        <span
+          aria-hidden
+          className="inline-block transition-transform duration-300 group-hover:translate-x-1"
+        >
+          →
+        </span>
       </p>
     </Link>
   );
