@@ -32,17 +32,15 @@ export default function OnThisPage({ pageKey }: { pageKey: string }) {
 
   if (present.length < 3) return null;
   return (
+    // One line of chips a thumb swipes along on a phone; wrapped links read as
+    // a paragraph and took four lines.
     <nav
       aria-label="On this page"
-      className="mt-3 flex flex-wrap items-baseline gap-x-4 text-[13px]"
+      className="mt-4 -mx-4 px-4 sm:mx-0 sm:px-0 flex items-center gap-2 overflow-x-auto scrollbar-none sm:flex-wrap sm:overflow-visible overscroll-x-contain"
     >
-      <span className="text-zinc-500">On this page</span>
+      <span className="text-[13px] text-zinc-500 shrink-0 mr-1">On this page</span>
       {SECTIONS.filter(([id]) => present.includes(id)).map(([id, label]) => (
-        <a
-          key={id}
-          href={`#${id}`}
-          className="inline-block py-1.5 text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
-        >
+        <a key={id} href={`#${id}`} className="chip shrink-0 whitespace-nowrap">
           {label}
         </a>
       ))}
