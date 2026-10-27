@@ -56,6 +56,34 @@ interface SpecRow {
 }
 
 /**
+ * The table's rows under a few headings, so a long table reads as parts: what
+ * it burns, how it crashed, its record, its size, the car itself.
+ */
+const ROW_GROUP: Record<string, string> = {
+  fuelUse: 'Fuel',
+  fuelCity: 'Fuel',
+  fuelHighway: 'Fuel',
+  range: 'Fuel',
+  co2: 'Fuel',
+  safety: 'Safety',
+  rolloverRisk: 'Safety',
+  fcw: 'Safety',
+  ldw: 'Safety',
+  recalls: 'Recalls, complaints and theft',
+  complaints: 'Recalls, complaints and theft',
+  complaintPart: 'Recalls, complaints and theft',
+  theft: 'Recalls, complaints and theft',
+  length: 'Size and space',
+  width: 'Size and space',
+  height: 'Size and space',
+  weight: 'Size and space',
+  luggage: 'Size and space',
+  passenger: 'Size and space',
+};
+const groupOf = (key: string) =>
+  ESTIMATE_ROWS.has(key) ? 'Estimates' : (ROW_GROUP[key] ?? 'The car');
+
+/**
  * Rows from the records first, then the estimates as a group of their own:
  * the table used to open with estimated value and costs, above what EPA and
  * NHTSA measured.
@@ -66,6 +94,7 @@ const ROW_ORDER = [
   'fuelCity',
   'fuelHighway',
   'range',
+  'co2',
   'safety',
   'rolloverRisk',
   'fcw',
@@ -87,7 +116,6 @@ const ROW_ORDER = [
   'driveType',
   'fuelType',
   'bodyStyle',
-  'co2',
   'country',
   'price',
   'running',
@@ -118,7 +146,6 @@ function efficiencyRow(
     label,
     provenanceKey: 'fuelEconomy.combined',
     getValue: (car) => efficiencyOf(car, basis)?.text ?? UNAVAILABLE_LABEL,
-    getSub: (car) => efficiencyOf(car, basis)?.epa || null,
     getNumeric: (car) => efficiencyOf(car, basis)?.value ?? null,
     higherIsBetter: false,
     unitOf: (car) => efficiencyOf(car, basis)?.unit,
@@ -784,8 +811,8 @@ export default function Compare() {
                 <tbody>
                   {specs.map((spec, index) => {
                     const estimate = ESTIMATE_ROWS.has(spec.key);
-                    const startsGroup =
-                      index === 0 || ESTIMATE_ROWS.has(specs[index - 1].key) !== estimate;
+                    const group = groupOf(spec.key);
+                    const startsGroup = index === 0 || groupOf(specs[index - 1].key) !== group;
                     return (
                       <Fragment key={spec.key}>
                         {startsGroup && (
@@ -796,9 +823,7 @@ export default function Compare() {
                               className="sticky left-0 bg-black px-3 sm:px-4 pt-6 pb-2.5 text-left font-normal"
                             >
                               <span className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                                <span className="eyebrow">
-                                  {estimate ? 'Estimates' : 'From the records'}
-                                </span>
+                                <span className="eyebrow">{group}</span>
                                 {estimate && (
                                   <>
                                     <span className="text-xs text-zinc-500">
