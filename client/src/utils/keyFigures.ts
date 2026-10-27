@@ -22,6 +22,8 @@ export interface KeyFigure {
   source?: ProvenanceSource;
   /** Against the class, from the same records: "1.5 L/100 km less than a typical sport compact". */
   comparison?: { text: string; tone: Tone };
+  /** The car's figure and the class's middle, for a bar that sets one against the other. */
+  scale?: { car: number; typical: number };
   glossaryKey?: SpecGlossaryKey;
   /** Shown but not on file. */
   missing?: boolean;
@@ -141,6 +143,10 @@ export function buildKeyFigures(
         cls?.fuel && className && cls.fuel.unit === efficiency.unit
           ? fuelVsClass(cls.fuel, className)
           : undefined,
+      scale:
+        cls?.fuel && className && cls.fuel.unit === efficiency.unit
+          ? { car: cls.fuel.car, typical: cls.fuel.median }
+          : undefined,
     });
   }
 
@@ -184,6 +190,10 @@ export function buildKeyFigures(
       glossaryKey: 'power',
       comparison:
         cls?.horsepower && className ? powerVsClass(cls.horsepower, className) : undefined,
+      scale:
+        cls?.horsepower && className
+          ? { car: cls.horsepower.car, typical: cls.horsepower.median }
+          : undefined,
     });
   }
 

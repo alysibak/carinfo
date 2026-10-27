@@ -76,7 +76,7 @@ export default function BeforeYouBuy({ dashboard }: { dashboard: CarDashboard })
             <li key={item.key} className="min-w-0">
               <a
                 href={item.href}
-                className="group flex items-start gap-3 h-full p-3.5 border border-zinc-800 bg-zinc-950/60 hover:border-zinc-600 hover:bg-zinc-950 transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60"
+                className="spotlight group flex items-start gap-3 h-full p-3.5 border border-zinc-800 bg-zinc-950/60 hover:border-zinc-600 hover:bg-zinc-950 transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent/60"
               >
                 <Mark tone={item.tone} />
                 <span className="min-w-0 flex-1">

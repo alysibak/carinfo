@@ -3,12 +3,12 @@ import { Fragment, useEffect, useState } from 'react';
 import * as api from '../services/api';
 import { isHttpError } from '../services/http';
 import type { ModelOverview, ModelYearSummary } from '../types/car.types';
-import { Chevron, ErrorState, foldSummaryClass } from '../components/ui';
+import { BackLink, Chevron, ErrorState, foldSummaryClass } from '../components/ui';
 import ModelPageSkeleton from '../components/ModelPageSkeleton';
 import ModelYearChart from '../components/ModelYearChart';
-import ToolPageHeader from '../components/ToolPageHeader';
 import PageShell, { PageBody } from '../components/PageShell';
 import CarPhotoFigure from '../components/CarPhotoFigure';
+import PhotoGlow from '../components/PhotoGlow';
 import { carPhotoSources } from '../utils/carImages';
 import VehiclePlaceholder from '../components/VehiclePlaceholder';
 import {
@@ -333,52 +333,68 @@ export default function ModelPage() {
 
   return (
     <PageShell>
-      <ToolPageHeader
-        backTo="/home"
-        backLabel="Search"
-        title={name!}
-        subtitle={[
-          yearSpan(overview.first, overview.last),
-          `${overview.years.length} model ${overview.years.length === 1 ? 'year' : 'years'} on file`,
-          overview.onSale ? 'on sale' : null,
-        ]
-          .filter(Boolean)
-          .join(' · ')}
-      />
-
-      <PageBody>
-        <div
-          className={`grid gap-4 sm:gap-6 min-w-0 mb-8 ${
-            hasPhoto
-              ? 'grid-cols-1 sm:grid-cols-[15rem_1fr] lg:grid-cols-[26rem_1fr] items-start'
-              : 'grid-cols-[5.5rem_1fr] sm:grid-cols-[9rem_1fr] items-center'
-          }`}
-        >
-          {hasPhoto ? (
-            <CarPhotoFigure car={overview.lead} />
-          ) : (
-            <div className="h-14 sm:h-20 overflow-hidden">
-              <VehiclePlaceholder car={overview.lead} compact hideCaption />
+      {/* The head of the page in the car's own colours, as on a car's page. */}
+      <div className="relative isolate overflow-x-clip border-b border-zinc-900">
+        {hasPhoto && (
+          <div aria-hidden className="absolute inset-0 -z-10 pointer-events-none">
+            <PhotoGlow
+              photo={overview.lead.photo}
+              className="absolute inset-0 opacity-50"
+              imageClassName="scale-125 blur-[90px] saturate-150"
+            />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(12_12_14/0.25)_0%,rgb(12_12_14/0.7)_55%,#0c0c0e_100%)]" />
+          </div>
+        )}
+        <div className="page-wrap pt-2 pb-8 sm:pb-10">
+          <BackLink to="/home" label="Search" />
+          <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-400">
+            {[
+              yearSpan(overview.first, overview.last),
+              `${overview.years.length} model ${overview.years.length === 1 ? 'year' : 'years'} on file`,
+              overview.onSale ? 'on sale' : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </p>
+          <h1 className="display-text text-[2.6rem] sm:text-6xl lg:text-7xl pb-1 mt-2 mb-6 sm:mb-8 wrap-break-word">
+            {name}
+          </h1>
+          <div
+            className={`grid gap-4 sm:gap-8 min-w-0 ${
+              hasPhoto
+                ? 'grid-cols-1 sm:grid-cols-[15rem_1fr] lg:grid-cols-[26rem_1fr] items-start'
+                : 'grid-cols-[5.5rem_1fr] sm:grid-cols-[9rem_1fr] items-center'
+            }`}
+          >
+            {hasPhoto ? (
+              <CarPhotoFigure car={overview.lead} glow />
+            ) : (
+              <div className="h-14 sm:h-20 overflow-hidden">
+                <VehiclePlaceholder car={overview.lead} compact hideCaption />
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="text-sm text-zinc-300">
+                Newest on file:{' '}
+                <Link
+                  to={`/car/${newest.carId}`}
+                  className="text-white font-medium underline underline-offset-4 decoration-zinc-600 hover:decoration-zinc-300"
+                >
+                  {newest.year} {name}
+                </Link>
+              </p>
+              <p className="text-sm text-zinc-400 mt-1 tabular-nums">
+                <Facts facts={modelYearFacts(newest).slice(0, 4)} />
+              </p>
+              {/* The years to check and the theft record beside the photo, where
+                  a wide screen left half the width empty. */}
+              {hasPhoto && records}
             </div>
-          )}
-          <div className="min-w-0">
-            <p className="text-sm text-zinc-300">
-              Newest on file:{' '}
-              <Link
-                to={`/car/${newest.carId}`}
-                className="text-white font-medium underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-400"
-              >
-                {newest.year} {name}
-              </Link>
-            </p>
-            <p className="text-sm text-zinc-500 mt-1 tabular-nums">
-              <Facts facts={modelYearFacts(newest).slice(0, 4)} />
-            </p>
-            {/* The years to check and the theft record beside the photo, where
-                a wide screen left half the width empty. */}
-            {hasPhoto && records}
           </div>
         </div>
+      </div>
+
+      <PageBody className="reveal-sections">
         {!hasPhoto && <div className="-mt-2 mb-8">{records}</div>}
 
         {overview.years.filter((row) => row.complaints != null || row.recalls != null).length >=

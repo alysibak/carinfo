@@ -16,6 +16,7 @@ import { Chevron, ErrorState, StatusToast, foldSummaryClass } from '../component
 import ValuationLinks from '../components/ValuationLinks';
 import VehiclePlaceholder from '../components/VehiclePlaceholder';
 import CarPhotoFigure from '../components/CarPhotoFigure';
+import PhotoGlow from '../components/PhotoGlow';
 import { carPhotoSources } from '../utils/carImages';
 import KeyFigures from '../components/KeyFigures';
 import RegionSelect from '../components/RegionSelect';
@@ -450,7 +451,7 @@ export default function CarDetail() {
   };
 
   return (
-    <div className="bg-black text-white">
+    <div className="bg-black text-white reveal-sections">
       <StatusToast message={toast} />
 
       {isHydrogen && (
@@ -465,7 +466,18 @@ export default function CarDetail() {
         </div>
       )}
 
-      <section className="border-b border-zinc-900">
+      <section className="relative isolate border-b border-zinc-900 overflow-x-clip">
+        {/* The car's colours washed across the head of its page, fading to black. */}
+        {hasPhoto && (
+          <div aria-hidden className="absolute inset-0 -z-10 pointer-events-none">
+            <PhotoGlow
+              photo={car.photo}
+              className="absolute inset-0 opacity-50"
+              imageClassName="scale-125 blur-[90px] saturate-150"
+            />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(12_12_14/0.25)_0%,rgb(12_12_14/0.7)_55%,#0c0c0e_100%)]" />
+          </div>
+        )}
         <div className="page-wrap-wide pt-2 pb-6 sm:pb-8">
           <button
             type="button"
@@ -486,7 +498,7 @@ export default function CarDetail() {
           >
             {hasPhoto ? (
               <div className="sm:row-span-2 min-w-0">
-                <CarPhotoFigure car={car} />
+                <CarPhotoFigure car={car} glow />
               </div>
             ) : (
               <div className="h-14 sm:h-20 overflow-hidden sm:row-span-2">
@@ -494,7 +506,7 @@ export default function CarDetail() {
               </div>
             )}
             <div className="min-w-0">
-              <h1 className="text-[1.75rem] sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.08] wrap-break-word">
+              <h1 className="display-text text-[2.1rem] sm:text-5xl lg:text-6xl leading-[1.02] pb-1 wrap-break-word">
                 {title}
               </h1>
               <p className="text-sm sm:text-[15px] text-zinc-300 mt-2">
