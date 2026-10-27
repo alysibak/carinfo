@@ -1,3 +1,5 @@
+import { createPortal } from 'react-dom';
+import { HEADER_SLOT_ID } from './SiteHeader';
 /**
  * A slim bar under the site header once the car page's figures scroll away:
  * the car, what it is worth and costs a year, and the two things a reader
@@ -16,10 +18,14 @@ export default function PinnedCarBar({
   onCompare: () => void;
   onGarage: () => void;
 }) {
-  return (
+  // Hung from the site header, so header and bar move together: fixed under
+  // it, a Mac's bounce at the end of a page moved the header and not the bar,
+  // and the page showed through between them.
+  const slot = document.getElementById(HEADER_SLOT_ID);
+  const bar = (
     <div
-      className="fixed inset-x-0 z-40 border-b border-zinc-800 bg-black animate-pin-in [@media(max-height:500px)]:hidden"
-      style={{ top: 'var(--header-height)' }}
+      className={`${slot ? '' : 'fixed inset-x-0 z-40'} border-b border-zinc-800 bg-black/90 backdrop-blur-md animate-pin-in [@media(max-height:500px)]:hidden`}
+      style={slot ? undefined : { top: 'var(--header-height)' }}
     >
       <div className="page-wrap-wide py-2 flex items-center gap-3 min-h-[52px]">
         <div className="min-w-0 flex-1">
@@ -43,4 +49,5 @@ export default function PinnedCarBar({
       </div>
     </div>
   );
+  return slot ? createPortal(bar, slot) : bar;
 }

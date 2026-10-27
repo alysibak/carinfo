@@ -38,6 +38,9 @@ interface SiteHeaderProps {
   transparentUntilScroll?: boolean;
 }
 
+/** The element under the header that a page's pinned bar is drawn into. */
+export const HEADER_SLOT_ID = 'site-header-slot';
+
 export default function SiteHeader({ trailing, transparentUntilScroll = false }: SiteHeaderProps) {
   const headerRef = useRef<HTMLElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -180,6 +183,9 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
           </button>
         </div>
       </div>
+      {/* Where a page hangs a bar under the header (the car page's pinned
+          bar): inside it, so the two move as one, even in a scroll's bounce. */}
+      <div id={HEADER_SLOT_ID} className="absolute inset-x-0 top-full" />
     </header>
   );
 
