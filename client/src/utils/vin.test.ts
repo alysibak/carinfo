@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractVinFromScan, isLikelyVin, vinCheckDigitValid } from './vin';
+import { cleanVinInput, extractVinFromScan, isLikelyVin, vinCheckDigitValid } from './vin';
 
 // 2003 Honda Accord — the VIN page's own sample, known check-digit-valid.
 const VALID_VIN = '1HGCM82633A004352';
@@ -59,5 +59,22 @@ describe('extractVinFromScan', () => {
     expect(extractVinFromScan('')).toBeNull();
     expect(extractVinFromScan('hello world')).toBeNull();
     expect(extractVinFromScan('1234')).toBeNull();
+  });
+});
+
+describe('cleanVinInput', () => {
+  it('drops spaces and dashes from a pasted VIN', () => {
+    expect(cleanVinInput(' 1hg-cm826 33a004352 ')).toEqual({
+      vin: '1HGCM82633A004352',
+      swapped: false,
+    });
+  });
+
+  it('reads I, O and Q as the 1 and 0 a VIN has instead', () => {
+    expect(cleanVinInput('IHGCM82633AOQ4352')).toEqual({ vin: '1HGCM82633A004352', swapped: true });
+  });
+
+  it('stops at 17 characters', () => {
+    expect(cleanVinInput('1HGCM82633A004352999').vin).toBe('1HGCM82633A004352');
   });
 });

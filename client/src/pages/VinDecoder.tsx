@@ -4,6 +4,7 @@ import { apiErrorMessage, decodeVin, type VinDecodeResult } from '../services/ap
 import { searchQueryToParams } from '../utils/searchParams';
 import { usePageMeta } from '../utils/pageMeta';
 import VinCatalogMatch from '../components/VinCatalogMatch';
+import { cleanVinInput, vinCheckDigitValid } from '../utils/vin';
 
 const VinScanner = lazy(() => import('../components/VinScanner'));
 
@@ -19,6 +20,40 @@ function Row({ label, value }: { label: string; value: string | number | undefin
     <div className="flex items-center justify-between py-3 border-b border-zinc-900 last:border-b-0 gap-4">
       <span className="text-xs text-zinc-400">{label}</span>
       <span className="text-sm font-bold text-white text-right">{value}</span>
+    </div>
+  );
+}
+
+/**
+ * How far along the VIN typed is, under the field: how many of its 17, then
+ * whether its check digit (the 9th character) matches the rest, so a slip of
+ * a key shows before it is looked up.
+ */
+function VinProgress({ vin, swapped }: { vin: string; swapped: boolean }) {
+  const whole = vin.length === 17;
+  const checks = whole && vinCheckDigitValid(vin);
+  return (
+    <div
+      id="vin-progress"
+      className="mt-2 max-w-2xl min-h-5 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs"
+    >
+      {vin.length > 0 && (
+        <p
+          className={`font-semibold tabular-nums ${
+            !whole ? 'text-zinc-400' : checks ? 'text-accent' : 'text-amber-200'
+          }`}
+        >
+          {!whole
+            ? `${vin.length} of 17`
+            : checks
+              ? '17 of 17, and its check digit matches'
+              : '17 of 17, but its check digit does not match: look for a mistyped character'}
+        </p>
+      )}
+      {whole && !checks && (
+        <p className="text-zinc-400">Some VINs from outside North America carry no check digit.</p>
+      )}
+      {swapped && <p className="text-zinc-400">I, O and Q are never in a VIN: read as 1 and 0.</p>}
     </div>
   );
 }
@@ -50,6 +85,14 @@ export default function VinDecoder() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [swapped, setSwapped] = useState(false);
+
+  const enter = (raw: string) => {
+    const cleaned = cleanVinInput(raw);
+    setVin(cleaned.vin);
+    // Said until the field is cleared: a 0 that appeared unasked needs saying once.
+    setSwapped((was) => cleaned.vin !== '' && (was || cleaned.swapped));
+  };
 
   const run = async (raw: string) => {
     const v = raw.trim().toUpperCase();
@@ -71,9 +114,9 @@ export default function VinDecoder() {
   };
 
   useEffect(() => {
-    const fromUrl = searchParams.get('vin')?.trim().toUpperCase();
-    if (fromUrl && fromUrl.length >= 11) {
-      setVin(fromUrl.slice(0, 17));
+    const fromUrl = cleanVinInput(searchParams.get('vin') ?? '').vin;
+    if (fromUrl.length >= 11) {
+      setVin(fromUrl);
       run(fromUrl);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once when ?vin= is present
@@ -110,24 +153,25 @@ export default function VinDecoder() {
 
         {/* The input drops its own outline, so the frame shows where focus is. */}
         <div className="flex flex-col sm:flex-row border border-zinc-700 focus-within:border-zinc-300 transition-colors rounded-none max-w-2xl min-w-0">
+          {/* Large and spaced: a VIN is checked a character at a time against the car. */}
           <input
             value={vin}
-            onChange={(e) => setVin(e.target.value.toUpperCase().slice(0, 17))}
+            onChange={(e) => enter(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && run(vin)}
             aria-label="Vehicle identification number (VIN)"
-            placeholder="e.g. 1HGCM82633A004352"
+            aria-describedby="vin-progress"
+            placeholder="17 characters"
             autoComplete="off"
             autoCapitalize="characters"
             spellCheck={false}
-            className="w-full sm:w-auto sm:flex-1 min-w-0 h-12 sm:h-14 bg-zinc-950 border-0 px-3 sm:px-4 text-base font-mono tracking-normal text-white placeholder:text-zinc-500 focus:outline-hidden rounded-none"
+            className="w-full sm:w-auto sm:flex-1 min-w-0 h-14 bg-zinc-950 border-0 px-3 sm:px-4 text-lg sm:text-xl font-mono tracking-[0.12em] text-white placeholder:text-zinc-500 placeholder:tracking-normal placeholder:font-sans placeholder:text-base focus:outline-hidden rounded-none"
           />
           <div className="flex border-t sm:border-t-0 sm:border-l border-zinc-700 shrink-0">
             <button
               type="button"
               onClick={() => setScanning(true)}
-              aria-label="Scan VIN barcode with camera"
-              title="Scan VIN barcode with camera"
-              className="h-12 sm:h-14 px-4 bg-zinc-950 text-zinc-300 hover:text-white rounded-none transition-colors"
+              aria-label="Scan the VIN with the camera"
+              className="h-12 sm:h-14 px-4 flex items-center gap-2 bg-zinc-950 text-[15px] font-semibold text-zinc-200 hover:text-white hover:bg-zinc-900 rounded-none transition-colors"
             >
               <svg
                 className="w-6 h-6"
@@ -148,6 +192,7 @@ export default function VinDecoder() {
                   d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"
                 />
               </svg>
+              Scan
             </button>
             <button
               onClick={() => run(vin)}
@@ -159,12 +204,14 @@ export default function VinDecoder() {
           </div>
         </div>
 
+        <VinProgress vin={vin} swapped={swapped} />
+
         {/* As wide as the field above it: a line the width of the page was hard to read. */}
         <div className="flex flex-wrap sm:flex-nowrap items-start gap-x-3 gap-y-2 mt-3 text-xs text-zinc-400 max-w-2xl">
           <button
             type="button"
             onClick={() => {
-              setVin(SAMPLE_VIN);
+              enter(SAMPLE_VIN);
               run(SAMPLE_VIN);
             }}
             className="chip shrink-0"
@@ -173,7 +220,8 @@ export default function VinDecoder() {
           </button>
           <span className="min-w-0 leading-relaxed sm:pt-1">
             The VIN is on the dashboard, read through the windshield, on the label in the driver’s
-            door frame, and on the ownership papers. Or tap the camera to scan its barcode.
+            door frame, and on the ownership papers. Or scan it: the camera reads the barcode or the
+            printed VIN.
           </span>
         </div>
 
@@ -182,7 +230,7 @@ export default function VinDecoder() {
             <VinScanner
               onDetected={(scanned) => {
                 setScanning(false);
-                setVin(scanned);
+                enter(scanned);
                 run(scanned);
               }}
               onClose={() => setScanning(false)}

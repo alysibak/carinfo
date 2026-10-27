@@ -69,6 +69,8 @@
   --animate-page-in: pageIn 0.2s ease-out backwards;
   /* Out from under the header, opaque all the way: a fade let the page show through. */
   --animate-pin-in: pinIn 0.18s ease-out both;
+  /* The VIN scanner's line, sweeping its frame while it reads. */
+  --animate-scan-line: scanLine 1.6s ease-in-out infinite alternate;
   /* Up from the foot of the screen, the same way. */
   --animate-pin-up: pinUp 0.2s ease-out both;
   /* A page's code on its way: a sliver of the accent crossing under the
@@ -93,6 +95,14 @@
     }
   }
 
+  @keyframes scanLine {
+    0% {
+      top: 12%;
+    }
+    100% {
+      top: 88%;
+    }
+  }
   @keyframes pinUp {
     0% {
       transform: translateY(100%);

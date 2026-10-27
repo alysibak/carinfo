@@ -87,3 +87,17 @@ export function extractVinFromScan(raw: string): string | null {
   // exact-length read (some non-North-American VINs don't comply).
   return exactReads.find(vinCheckDigitValid) ?? windowed[0] ?? exactReads[0] ?? null;
 }
+
+/**
+ * What was typed or pasted, as a VIN can be: no spaces, dashes or other
+ * marks, at most 17 characters, and I, O and Q (never in a VIN) as the 1 and
+ * 0 they are mistaken for. `swapped` when one was.
+ */
+export function cleanVinInput(raw: string): { vin: string; swapped: boolean } {
+  const plain = raw
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+    .slice(0, 17);
+  const vin = plain.replace(/[IOQ]/g, (c) => (c === 'I' ? '1' : '0'));
+  return { vin, swapped: vin !== plain };
+}
