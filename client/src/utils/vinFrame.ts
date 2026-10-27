@@ -5,6 +5,23 @@
  * distant barcode and the character reader a page of everything else.
  */
 
+/**
+ * How the camera's picture sits in the box it is shown in: scaled to fill
+ * it and cut at the sides or top (object-cover). Null before it has a picture.
+ */
+function coverFit(video: { videoWidth: number; videoHeight: number }, shown: DOMRect) {
+  const { videoWidth: vw, videoHeight: vh } = video;
+  if (!vw || !vh || !shown.width || !shown.height) return null;
+  const scale = Math.max(shown.width / vw, shown.height / vh);
+  return {
+    vw,
+    vh,
+    scale,
+    left: shown.left + (shown.width - vw * scale) / 2,
+    top: shown.top + (shown.height - vh * scale) / 2,
+  };
+}
+
 /** Where on the camera's own picture a box drawn over the video sits. */
 export function guideCrop(
   video: { videoWidth: number; videoHeight: number },
@@ -13,23 +30,37 @@ export function guideCrop(
   /** A margin round the box, as a share of its size: a VIN at its edge is still read. */
   margin = 0.12,
 ): { x: number; y: number; width: number; height: number } | null {
-  const { videoWidth: vw, videoHeight: vh } = video;
-  if (!vw || !vh || !shown.width || !shown.height) return null;
-  // The video fills its frame and is cut at the sides or top (object-cover).
-  const scale = Math.max(shown.width / vw, shown.height / vh);
-  const offsetX = (shown.width - vw * scale) / 2;
-  const offsetY = (shown.height - vh * scale) / 2;
-  const left = (guide.left - shown.left - offsetX) / scale;
-  const top = (guide.top - shown.top - offsetY) / scale;
-  const width = guide.width / scale;
-  const height = guide.height / scale;
+  const fit = coverFit(video, shown);
+  if (!fit) return null;
+  const left = (guide.left - fit.left) / fit.scale;
+  const top = (guide.top - fit.top) / fit.scale;
+  const width = guide.width / fit.scale;
+  const height = guide.height / fit.scale;
   // Each edge moved out by the margin, then kept inside the picture.
   const x = Math.max(0, left - width * margin);
   const y = Math.max(0, top - height * margin);
-  const right = Math.min(vw, left + width * (1 + margin));
-  const bottom = Math.min(vh, top + height * (1 + margin));
+  const right = Math.min(fit.vw, left + width * (1 + margin));
+  const bottom = Math.min(fit.vh, top + height * (1 + margin));
   if (right <= x || bottom <= y) return null;
   return { x, y, width: right - x, height: bottom - y };
+}
+
+/**
+ * Where a point on screen falls on the camera's own picture, as shares of
+ * its width and height (what a camera is told to focus on). Null off it.
+ */
+export function videoPoint(
+  video: { videoWidth: number; videoHeight: number },
+  shown: DOMRect,
+  clientX: number,
+  clientY: number,
+): { x: number; y: number } | null {
+  const fit = coverFit(video, shown);
+  if (!fit) return null;
+  const x = (clientX - fit.left) / fit.scale / fit.vw;
+  const y = (clientY - fit.top) / fit.scale / fit.vh;
+  if (x < 0 || x > 1 || y < 0 || y > 1) return null;
+  return { x, y };
 }
 
 /** A region of an image drawn onto a canvas of the given width. */

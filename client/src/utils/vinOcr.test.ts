@@ -6,7 +6,24 @@ import {
   normalizeOcrText,
   VinTally,
   vinsFromText,
+  withoutStrays,
+  type ReadSymbol,
 } from './vinOcr';
+
+/** Boxes as the reader gives them: a character each, left to right. */
+function boxes(spans: Array<[string, number, number]>, top = 100, bottom = 150): ReadSymbol[] {
+  return spans.map(([text, x0, x1]) => ({ text, x0, x1, y0: top, y1: bottom }));
+}
+
+/** A word's characters spaced evenly, `pitch` apart, `width` wide. */
+function evenly(
+  word: string,
+  start = 100,
+  pitch = 40,
+  width = 32,
+): Array<[string, number, number]> {
+  return word.split('').map((text, i) => [text, start + i * pitch, start + i * pitch + width]);
+}
 
 // A real, valid VIN (check digit 3 at position 9).
 const VIN = '1HGCM82633A004352';
@@ -50,7 +67,7 @@ describe('correctVin', () => {
 describe('vinsFromText', () => {
   it('finds the VIN among a sticker’s other words', () => {
     const text = 'MFD BY HONDA\nVIN: 1HGCM82633A004352\nGVWR 1810 KG';
-    expect(vinsFromText(text)[0]).toEqual({ vin: VIN, changed: [] });
+    expect(vinsFromText(text)[0]).toEqual({ vin: VIN, changed: [], raw: VIN });
   });
 
   it('reads I, O and Q as the 1 and 0 a VIN has in their place', () => {
@@ -62,13 +79,31 @@ describe('vinsFromText', () => {
     expect(vinsFromText('1HG CM826 33A 004352')[0]?.vin).toBe(VIN);
   });
 
-  it('takes a VIN run into a stray character only as read', () => {
-    // The plate's edge read as an S before it.
-    expect(vinsFromText('S5YJ3E1EA7KF317283')).toEqual([
-      { vin: '5YJ3E1EA7KF317283', changed: [], trimmed: true },
+  it('takes a VIN with a glyph read twice, without the one that does not belong', () => {
+    // Off a plate: its 5 read as S and as 5, two boxes over one place.
+    const read = boxes([['S', 117, 152], ...evenly('5YJ3E1EA7KF317283', 138)]);
+    expect(vinsFromText('S5YJ3E1EA7KF317283', [read])).toEqual([
+      { vin: '5YJ3E1EA7KF317283', changed: [], trimmed: true, raw: 'S5YJ3E1EA7KF317283' },
     ]);
-    // A stray G within: no stretch of it checks out without a guess.
-    expect(vinsFromText('JTDKN3DUG6A0123456')).toEqual([]);
+  });
+
+  it('takes nothing from a word a character long without the reader’s boxes', () => {
+    expect(vinsFromText('S5YJ3E1EA7KF317283')).toEqual([]);
+  });
+
+  it('never cuts a real character off the end of a word read a character long', () => {
+    // An E read inside, its box over the M's: cutting the last 2 instead
+    // would have checked out by chance (1HGCME82633A00435).
+    const spans = evenly('1HGCM82633A004352');
+    const read = boxes([...spans.slice(0, 5), ['E', 280, 300], ...spans.slice(5)]);
+    expect(vinsFromText('1HGCME82633A004352', [read]).map((r) => r.vin)).toEqual([VIN]);
+  });
+
+  it('cuts a mark at an end standing apart from the rest', () => {
+    const read = boxes([...evenly(VIN), ['1', 100 + 17 * 40 + 60, 100 + 17 * 40 + 70]]);
+    expect(vinsFromText(`${VIN}1`, [read])).toEqual([
+      { vin: VIN, changed: [], trimmed: true, raw: `${VIN}1` },
+    ]);
   });
 
   it('never cuts a VIN from a line of words run together', () => {
@@ -106,20 +141,48 @@ describe('VinTally', () => {
     expect(tally.add([{ vin: VIN, changed: [] }])).toEqual({ vin: VIN, changed: [] });
   });
 
-  it('needs three reads when a character had to be swapped', () => {
+  it('needs three reads, two of them different misreads, when a character was set', () => {
     const tally = new VinTally();
-    const fixed = { vin: VIN, changed: [5] };
-    expect(tally.add([fixed])).toBeNull();
-    expect(tally.add([fixed])).toBeNull();
-    expect(tally.add([fixed])).toEqual(fixed);
+    const bForEight = { vin: VIN, changed: [5], raw: '1HGCMB2633A004352' };
+    const sForFive = { vin: VIN, changed: [15], raw: '1HGCM82633A0043S2' };
+    expect(tally.add([bForEight])).toBeNull();
+    expect(tally.add([bForEight])).toBeNull();
+    expect(tally.add([sForFive])).toEqual({ vin: VIN, changed: [5] });
   });
 
-  it('takes a VIN with a stray character at its end as it does a corrected one', () => {
+  it('never takes one misread repeated, however often', () => {
+    // A small VIN zoomed, misread the same way each frame (an E read in, a 2
+    // lost): with B swapped for 8 it checks out, as 1HGCME82633A00435.
     const tally = new VinTally();
-    const trimmed = { vin: VIN, changed: [], trimmed: true };
+    const reads = vinsFromText('1HGCMEB2633A00435');
+    expect(reads[0]?.vin).toBe('1HGCME82633A00435');
+    for (let frame = 0; frame < 10; frame++) expect(tally.add(reads)).toBeNull();
+  });
+
+  it('takes a VIN with a stray mark cut off once a second misread agrees', () => {
+    const tally = new VinTally();
+    const trimmed = {
+      vin: '5YJ3E1EA7KF317283',
+      changed: [],
+      trimmed: true,
+      raw: 'S5YJ3E1EA7KF317283',
+    };
+    const swapped = { vin: '5YJ3E1EA7KF317283', changed: [0], raw: 'SYJ3E1EA7KF317283' };
     expect(tally.add([trimmed])).toBeNull();
     expect(tally.add([trimmed])).toBeNull();
-    expect(tally.add([trimmed])).toEqual({ vin: VIN, changed: [] });
+    expect(tally.add([swapped])).toEqual({ vin: '5YJ3E1EA7KF317283', changed: [], trimmed: true });
+  });
+
+  it('takes a VIN with a glyph read twice, cut by its boxes, read so four times', () => {
+    const tally = new VinTally();
+    const trimmed = {
+      vin: '5YJ3E1EA7KF317283',
+      changed: [],
+      trimmed: true,
+      raw: 'S5YJ3E1EA7KF317283',
+    };
+    for (let frame = 0; frame < 3; frame++) expect(tally.add([trimmed])).toBeNull();
+    expect(tally.add([trimmed])).toEqual({ vin: '5YJ3E1EA7KF317283', changed: [], trimmed: true });
   });
 
   it('starts over when cleared', () => {
@@ -140,9 +203,18 @@ describe('bestOfPasses', () => {
     });
   });
 
-  it('is sure of a VIN two ways agree on, however read', () => {
-    const trimmed = { vin: OTHER, changed: [], trimmed: true };
-    expect(bestOfPasses([[trimmed], [{ vin: OTHER, changed: [0] }]])?.sure).toBe(true);
+  it('is sure of a VIN two different reads agree on, however read', () => {
+    const trimmed = { vin: OTHER, changed: [], trimmed: true, raw: 'S5YJ3E1EA7KF317283' };
+    const swapped = { vin: OTHER, changed: [0], raw: 'SYJ3E1EA7KF317283' };
+    expect(bestOfPasses([[trimmed], [swapped]])).toEqual({
+      read: { vin: OTHER, changed: [], trimmed: true },
+      sure: true,
+    });
+  });
+
+  it('is unsure of a VIN only the same misread gives, in every way', () => {
+    const swapped = { vin: OTHER, changed: [0], raw: 'SYJ3E1EA7KF317283' };
+    expect(bestOfPasses([[swapped], [swapped], [swapped]])?.sure).toBe(false);
   });
 
   it('takes, unsure, a VIN read whole with a character set', () => {
@@ -163,5 +235,28 @@ describe('bestOfPasses', () => {
       [{ vin: VIN, changed: [] }],
     ];
     expect(bestOfPasses(passes)?.read.vin).toBe(VIN);
+  });
+});
+
+describe('withoutStrays', () => {
+  it('finds nothing to cut from a word spaced evenly', () => {
+    expect(withoutStrays(boxes(evenly(VIN)))).toEqual([]);
+  });
+
+  it('cuts either of two boxes over one place', () => {
+    const read = boxes([['S', 117, 152], ...evenly('5YJ', 138)]);
+    expect(withoutStrays(read)).toEqual(['5YJ', 'SYJ']);
+  });
+
+  it('cuts a mark at an end far shorter than the rest', () => {
+    const read = [...boxes(evenly('ABC')), { text: '1', x0: 220, x1: 230, y0: 130, y1: 140 }];
+    expect(withoutStrays(read)).toEqual(['ABC']);
+  });
+
+  it('pays no heed to a box spanning several characters', () => {
+    // The reader now and then gives one box the width of three.
+    const spans = evenly('1FTFW1ET9');
+    spans[2] = ['T', 160, 300];
+    expect(withoutStrays(boxes(spans))).toEqual([]);
   });
 });

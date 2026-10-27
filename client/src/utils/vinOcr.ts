@@ -71,8 +71,18 @@ export interface VinRead {
   vin: string;
   /** Characters changed from what was read to make it check out. */
   changed: number[];
-  /** Read in a word a character or two longer: a stray mark at its end (a plate's edge) cut off. */
+  /**
+   * Read in a word a character longer, with one cut out where the reader's
+   * own boxes show it does not belong: one glyph read twice, or a stray mark
+   * at an end (see withoutStrays).
+   */
   trimmed?: boolean;
+  /**
+   * What was read, before any change. Two different misreads that come out
+   * the same VIN are evidence of it; one misread repeated (a still picture
+   * misread the same way each frame) is not.
+   */
+  raw?: string;
 }
 
 /** Read whole and as it stands: the surest read there is. */
@@ -124,27 +134,81 @@ export function correctVin(read: string): VinRead | null {
   return likely.length === 1 ? { vin: likely[0].vin, changed: likely[0].changed } : null;
 }
 
-/** A reader's text in the VIN alphabet: a list of words for each line. */
-function vinWords(text: string): string[][] {
+/** Text in the VIN alphabet: I, O and Q (never in a VIN) as the 1 and 0 they are mistaken for. */
+function inVinAlphabet(text: string): string {
   return text
     .toUpperCase()
     .replace(/[IO]/g, (c) => (c === 'I' ? '1' : '0'))
-    .replace(/Q/g, '0')
+    .replace(/Q/g, '0');
+}
+
+/** A reader's text in the VIN alphabet: a list of words for each line. */
+function vinWords(text: string): string[][] {
+  return inVinAlphabet(text)
     .split(/\n+/)
     .map((line) => line.split(/[^A-Z0-9]+/).filter(Boolean));
 }
 
+/** A character the reader read, and its box on the picture. */
+export interface ReadSymbol {
+  text: string;
+  x0: number;
+  x1: number;
+  y0: number;
+  y1: number;
+}
+
+const median = (values: number[]) =>
+  values.length ? [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)] : 0;
+
 /**
- * Runs of whole neighbouring words up to `most` characters, each word at
- * least `least` long when joined to another.
+ * A word as it would read without a character that, by the reader's own
+ * boxes, does not belong: one of two boxes over the same place (one glyph
+ * read twice, the commonest way a read comes out a character long), or a mark
+ * at an end standing well apart from the evenly spaced rest, or far shorter
+ * (a plate's edge, a dash). Each way it could go. The boxes are rough (now
+ * and then one spans several characters, and those are left out of it), so
+ * they only ever offer a read, never rule one out.
  */
-function wordRuns(words: string[], most: number, least = 1): string[] {
+export function withoutStrays(symbols: ReadSymbol[]): string[] {
+  const count = symbols.length;
+  if (count < 3) return [];
+  const width = (s: ReadSymbol) => s.x1 - s.x0;
+  const height = (s: ReadSymbol) => s.y1 - s.y0;
+  const pitch = median(symbols.map(width));
+  const plausible = (s: ReadSymbol) => width(s) <= 1.6 * pitch;
+  const drop = new Set<number>();
+  for (let i = 0; i + 1 < count; i++) {
+    const [a, b] = [symbols[i], symbols[i + 1]];
+    if (!plausible(a) || !plausible(b)) continue;
+    const overlap = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0);
+    if (overlap > 0.4 * Math.min(width(a), width(b))) {
+      drop.add(i);
+      drop.add(i + 1);
+    }
+  }
+  const gaps = symbols.slice(1).map((s, i) => s.x0 - symbols[i].x1);
+  const gap = Math.max(0, median(gaps.slice(1, -1)));
+  const tall = median(symbols.map(height));
+  const apart = (space: number) => space > Math.max(2 * gap, gap + pitch / 2);
+  if (apart(gaps[0]) || height(symbols[0]) < 0.6 * tall) drop.add(0);
+  if (apart(gaps[count - 2]) || height(symbols[count - 1]) < 0.6 * tall) drop.add(count - 1);
+  return [...drop].map((i) =>
+    inVinAlphabet(
+      symbols
+        .filter((_, j) => j !== i)
+        .map((s) => s.text)
+        .join(''),
+    ),
+  );
+}
+
+/** Runs of whole neighbouring words, each as long as it can be up to `most` characters. */
+function wordRuns(words: string[], most: number): string[] {
   const runs: string[] = [];
   for (let start = 0; start < words.length; start++) {
     let run = '';
     for (let end = start; end < words.length && run.length + words[end].length <= most; end++) {
-      const joining = end > start;
-      if (joining && (words[end].length < least || words[end - 1].length < least)) break;
       run += words[end];
       runs.push(run);
     }
@@ -162,32 +226,38 @@ export function normalizeOcrText(text: string): string[] {
 /**
  * Every VIN a reader's text holds. A VIN is read whole: a word of 17
  * characters, or up to four neighbouring words of three or more that make 17
- * where the reader saw gaps in it; that may be corrected (see correctVin). A
- * word a character or two longer, a VIN with a stray mark read at an end, is
- * taken where what is left checks out exactly as read. Never a stretch cut
- * from a line of words run together: a sticker's other lines, sliced, now and
- * then check out. The likeliest come first.
+ * where the reader saw gaps in it; that may be corrected (see correctVin).
+ * Given the reader's boxes for its words (`boxed`), a word a character long
+ * with one shown not to belong is taken too, where what is left checks out
+ * exactly as read. Never a stretch cut from a line of words run together: a
+ * sticker's other lines, sliced, now and then check out. The likeliest come
+ * first.
  */
-export function vinsFromText(text: string): VinRead[] {
+export function vinsFromText(text: string, boxed: ReadSymbol[][] = []): VinRead[] {
   const found = new Map<string, VinRead>();
   const rank = (read: VinRead) => (asItStands(read) ? 0 : 1) * 100 + read.changed.length;
-  const keep = (read: VinRead | null) => {
+  const keep = (read: VinRead | null, raw: string, trimmed = false) => {
     if (!read) return;
-    const known = found.get(read.vin);
-    if (!known || rank(read) < rank(known)) found.set(read.vin, read);
+    const taken: VinRead = trimmed ? { ...read, trimmed, raw } : { ...read, raw };
+    const known = found.get(taken.vin);
+    if (!known || rank(taken) < rank(known)) found.set(taken.vin, taken);
   };
-  for (const words of vinWords(text)) {
-    for (const run of wordRuns(words, 17, 3)) {
-      if (run.length === 17) keep(correctVin(run));
+  for (const symbols of boxed) {
+    if (symbols.length !== 18) continue;
+    const raw = inVinAlphabet(symbols.map((s) => s.text).join(''));
+    for (const word of withoutStrays(symbols)) {
+      const read = correctVin(word);
+      if (read?.changed.length === 0) keep(read, raw, true);
     }
-    for (const word of words) {
-      for (
-        let start = 0;
-        word.length > 17 && word.length <= 19 && start + 17 <= word.length;
-        start++
-      ) {
-        const read = correctVin(word.slice(start, start + 17));
-        if (read?.changed.length === 0) keep({ ...read, trimmed: true });
+  }
+  for (const words of vinWords(text)) {
+    for (let start = 0; start < words.length; start++) {
+      let run = '';
+      for (let end = start; end < words.length; end++) {
+        if (end > start && (words[end].length < 3 || words[end - 1].length < 3)) break;
+        run += words[end];
+        if (run.length > 17) break;
+        if (run.length === 17) keep(correctVin(run), run);
       }
     }
   }
@@ -217,20 +287,42 @@ export function bestPartialRead(text: string): string {
 /**
  * Agreement across a camera's frames: a VIN is taken once it has been read
  * the same way enough times, so one frame's misread is never taken. Read
- * whole and as it stands, twice; corrected or trimmed, three times.
+ * whole and as it stands, twice. Corrected or trimmed, three times, and by
+ * two different reads at least: a still picture misread the same way each
+ * frame, then a look-alike swapped (a guess among a score), came out a wrong
+ * VIN that checked out. Trimmed alone, four times: what is cut is shown by the
+ * reader's own boxes, and what is left checks out with nothing changed.
  */
 export class VinTally {
-  private counts = new Map<string, { exact: number; likely: number; changed: number[] }>();
+  private counts = new Map<
+    string,
+    { exact: number; likely: number; trims: number; raws: Set<string>; changed: number[] }
+  >();
 
   add(reads: VinRead[]): VinRead | null {
     for (const read of reads) {
-      const entry = this.counts.get(read.vin) ?? { exact: 0, likely: 0, changed: read.changed };
+      const entry = this.counts.get(read.vin) ?? {
+        exact: 0,
+        likely: 0,
+        trims: 0,
+        raws: new Set<string>(),
+        changed: read.changed,
+      };
       if (asItStands(read)) entry.exact += 1;
       else entry.likely += 1;
+      if (read.trimmed && read.changed.length === 0) entry.trims += 1;
+      entry.raws.add(read.raw ?? read.vin);
       if (read.changed.length < entry.changed.length) entry.changed = read.changed;
       this.counts.set(read.vin, entry);
       if (entry.exact >= 2) return { vin: read.vin, changed: [] };
-      if (entry.exact + entry.likely >= 3) return { vin: read.vin, changed: entry.changed };
+      if (entry.trims >= 4) return { vin: read.vin, changed: [], trimmed: true };
+      if (entry.exact + entry.likely >= 3 && entry.raws.size >= 2) {
+        // Never read as it stands, nor with a character changed: trimmed.
+        const trimmed = entry.exact === 0 && entry.changed.length === 0;
+        return trimmed
+          ? { vin: read.vin, changed: [], trimmed }
+          : { vin: read.vin, changed: entry.changed };
+      }
     }
     return null;
   }
@@ -242,30 +334,40 @@ export class VinTally {
 
 /**
  * The VIN in one photo, read in several ways (each a list of reads): one read
- * whole and as it stands, in the most ways; else one that two ways or more
+ * whole and as it stands, in the most ways; else one that two different reads
  * agree on; else one corrected or trimmed. `sure` when it is one of the first
  * two, so no more ways need trying.
  */
 export function bestOfPasses(passes: VinRead[][]): { read: VinRead; sure: boolean } | null {
-  const seen = new Map<string, { read: VinRead; times: number; standing: boolean }>();
+  const seen = new Map<
+    string,
+    { read: VinRead; times: number; raws: Set<string>; standing: boolean }
+  >();
   for (const reads of passes) {
     for (const read of reads) {
+      const raw = read.raw ?? read.vin;
       const entry = seen.get(read.vin);
       if (!entry) {
-        seen.set(read.vin, { read, times: 1, standing: asItStands(read) });
+        seen.set(read.vin, { read, times: 1, raws: new Set([raw]), standing: asItStands(read) });
         continue;
       }
       entry.times += 1;
+      entry.raws.add(raw);
       entry.standing ||= asItStands(read);
       if (read.changed.length < entry.read.changed.length) entry.read = read;
     }
   }
-  const rank = (entry: { times: number; standing: boolean }) =>
-    entry.standing ? 0 : entry.times >= 2 ? 1 : 2;
+  const rank = (entry: { times: number; raws: Set<string>; standing: boolean }) =>
+    entry.standing ? 0 : entry.raws.size >= 2 ? 1 : 2;
   const [best] = [...seen.values()].sort((a, b) => rank(a) - rank(b) || b.times - a.times);
   if (!best) return null;
+  const { vin, changed, trimmed } = best.read;
   return {
-    read: { vin: best.read.vin, changed: best.standing ? [] : best.read.changed },
+    read: best.standing
+      ? { vin, changed: [] }
+      : trimmed && changed.length === 0
+        ? { vin, changed, trimmed }
+        : { vin, changed },
     sure: rank(best) < 2,
   };
 }

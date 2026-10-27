@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { guideCrop } from './vinFrame';
+import { guideCrop, videoPoint } from './vinFrame';
 
 const rect = (left: number, top: number, width: number, height: number) =>
   ({ left, top, width, height }) as DOMRect;
@@ -54,6 +54,37 @@ describe('guideCrop', () => {
   it('gives nothing before the camera has a picture', () => {
     expect(
       guideCrop({ videoWidth: 0, videoHeight: 0 }, rect(0, 0, 100, 100), rect(0, 0, 50, 10)),
+    ).toBeNull();
+  });
+});
+
+describe('videoPoint', () => {
+  it('finds the middle of the screen in the middle of the picture', () => {
+    const point = videoPoint(
+      { videoWidth: 1280, videoHeight: 720 },
+      rect(0, 0, 1280, 800),
+      640,
+      400,
+    );
+    expect(point?.x).toBeCloseTo(0.5);
+    expect(point?.y).toBeCloseTo(0.5);
+  });
+
+  it('allows for the picture enlarged on screen', () => {
+    // Zoomed 2× on screen: the box is twice the frame, centred on it.
+    const point = videoPoint(
+      { videoWidth: 1000, videoHeight: 500 },
+      rect(-500, -250, 2000, 1000),
+      750,
+      250,
+    );
+    expect(point?.x).toBeCloseTo(0.625);
+    expect(point?.y).toBeCloseTo(0.5);
+  });
+
+  it('gives nothing off the picture', () => {
+    expect(
+      videoPoint({ videoWidth: 1000, videoHeight: 500 }, rect(0, 0, 1000, 500), 1200, 100),
     ).toBeNull();
   });
 });

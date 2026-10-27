@@ -1,5 +1,5 @@
 import type { Worker } from 'tesseract.js';
-import { VIN_CHARS } from './vinOcr';
+import { VIN_CHARS, type ReadSymbol } from './vinOcr';
 
 /**
  * The character reader the VIN scanner runs on camera frames and photos:
@@ -45,9 +45,34 @@ export async function stopVinReader(): Promise<void> {
   }
 }
 
-/** What the reader read in an image, as plain text. */
-export async function readText(image: HTMLCanvasElement): Promise<string> {
+/** What the reader read in an image: its text, and the boxes of its longer words (see withoutStrays). */
+export interface PageRead {
+  text: string;
+  boxed: ReadSymbol[][];
+}
+
+export async function readText(image: HTMLCanvasElement): Promise<PageRead> {
   const worker = await startVinReader();
-  const { data } = await worker.recognize(image);
-  return data.text ?? '';
+  const { data } = await worker.recognize(image, {}, { text: true, blocks: true });
+  const boxed: ReadSymbol[][] = [];
+  for (const block of data.blocks ?? []) {
+    for (const paragraph of block.paragraphs) {
+      for (const line of paragraph.lines) {
+        for (const word of line.words) {
+          // Only words a VIN could be, as read or a character long.
+          if (word.symbols.length < 17 || word.symbols.length > 18) continue;
+          boxed.push(
+            word.symbols.map(({ text, bbox }) => ({
+              text,
+              x0: bbox.x0,
+              x1: bbox.x1,
+              y0: bbox.y0,
+              y1: bbox.y1,
+            })),
+          );
+        }
+      }
+    }
+  }
+  return { text: data.text ?? '', boxed };
 }

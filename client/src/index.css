@@ -73,6 +73,8 @@
   --animate-scan-line: scanLine 1.6s ease-in-out infinite alternate;
   /* Up from the foot of the screen, the same way. */
   --animate-pin-up: pinUp 0.2s ease-out both;
+  /* Where the camera was told to focus: a square closing in on the spot, then gone. */
+  --animate-focus-mark: focusMark 0.9s ease-out both;
   /* A page's code on its way: a sliver of the accent crossing under the
      header, held back a moment so a quick load shows nothing at all. */
   --animate-loading-bar: loadingBar 1.1s ease-in-out 0.35s infinite both;
@@ -109,6 +111,24 @@
     }
     100% {
       transform: none;
+    }
+  }
+
+  @keyframes focusMark {
+    0% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(1.5);
+    }
+    25% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    75% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(1);
     }
   }
 
