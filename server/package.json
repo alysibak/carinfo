@@ -20,6 +20,7 @@
     "test": "vitest run --config vitest.config.ts",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.scripts.json",
     "validate:data": "tsx scripts/validate-data.ts",
+    "audit:nhtsa": "tsx scripts/audit-nhtsa-matches.ts",
     "build-sitemap": "tsx scripts/build-sitemap.ts",
     "recall-alerts": "tsx scripts/send-recall-alerts.ts"
   },

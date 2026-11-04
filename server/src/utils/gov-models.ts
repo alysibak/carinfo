@@ -19,6 +19,8 @@ const compact = (text: string) =>
 const MAKE_ALIASES: Record<string, string> = {
   'mercedes benz': 'Mercedes-Benz',
   mercedes: 'Mercedes-Benz',
+  'mercedes maybach': 'Mercedes-Benz',
+  'mercedes-maybach': 'Mercedes-Benz',
   'rolls royce': 'Rolls-Royce',
   chevy: 'Chevrolet',
   vw: 'Volkswagen',
@@ -38,13 +40,16 @@ export function withoutCab(model: string): string {
 
 /**
  * What NHTSA's newest records add to a name: "CR-V ICE" (the engine car),
- * "F-150 (SUPER CAB) GAS", "MODEL Y (All Variants)", "MAZDA3 SEDAN".
+ * "F-150 (SUPER CAB) GAS", "MODEL Y (All Variants)", "MAZDA3 SEDAN",
+ * "RANGE ROVER (SWB)". Body words are stripped before powertrain tags so
+ * "MAZDA3 SEDAN ICE" becomes "MAZDA3", not "MAZDA3 SEDAN".
  */
-const NOISE = /\((?:\s*all variants\s*)\)|\(\s*\)|\b(?:ice|gas)\b|\s(?:sedan|hatchback)$/gi;
+const NOISE =
+  /\((?:\s*all variants\s*|swb|lwb|ewb)\s*\)|\(\s*\)|\s(?:sedan|hatchback)\b|\b(?:ice|gas)\b/gi;
 
 /** Words after a line's name that leave it the same line: "SILVERADO 1500", "IONIQ HYBRID". */
 const SAME_LINE_AFTER =
-  /^(?:\d|hybrid|plugin|phev|hev|bev|ev|electric|fcev|awd|4wd|2wd|fwd|rwd|4x4|4x2)/;
+  /^(?:\d|hybrid|plugin|phev|hev|bev|ev|electric|fcev|diesel|awd|4wd|2wd|fwd|rwd|4x4|4x2|coupe|convertible|gran|hardtop|clubman|countryman|paceman|roadster|lwb|swb|l(?:wb)?|p?\d{2,3}d)/;
 /** Words that name a body, not a model. */
 const BODY_WORDS =
   /^(?:pickup|truck|van|wagon|sedan|coupe|convertible|hatchback|suv|cab|chassis|cargo|passenger)$/;
@@ -55,6 +60,9 @@ const HEAVY_DUTY = /^(?:[2-5]500|hd|sd)/;
 /** Words after a record's name in an EPA model name that leave it the same vehicle: "Yukon XL 2WD". */
 const DRIVE_OR_BODY_AFTER =
   /^(?:awd|4wd|2wd|fwd|rwd|4x4|4x2|ffv|cng|hybrid|wagon|sedan|coupe|convertible|hatchback|van|pickup)/;
+
+/** MINI bodies NHTSA lists without "Cooper" from 2017 on. */
+const MINI_BODY = /^(hardtop|clubman|countryman|convertible|paceman|roadster)\b/i;
 
 interface Line {
   key: string;
@@ -69,6 +77,20 @@ interface Line {
 export interface GovModelIndex {
   /** The site's model line for a government make, model and model year, or null. */
   match(make: string, model: string, year: number): string | null;
+}
+
+/** True when every EPA model is this name plus a distinct submodel ("city"), not a drive/body tag. */
+function onlyDistinctLonger(line: Line, n: string): boolean {
+  return [...line.models].every((m) => {
+    if (m === n || !m.startsWith(n)) return false;
+    const rest = m.slice(n.length);
+    return (
+      Boolean(rest) &&
+      !SAME_LINE_AFTER.test(rest) &&
+      !DRIVE_OR_BODY_AFTER.test(rest) &&
+      !HEAVY_DUTY.test(rest)
+    );
+  });
 }
 
 export function govModelIndex(cars: readonly Car[], lineOf: (car: Car) => string): GovModelIndex {
@@ -103,8 +125,41 @@ export function govModelIndex(cars: readonly Car[], lineOf: (car: Car) => string
       model = rest.join(' ');
     }
     const lower = make.toLowerCase();
-    const ourMake = MAKE_ALIASES[lower] ?? makes.get(lower);
+    let ourMake = MAKE_ALIASES[lower] ?? makes.get(lower);
+    // NHTSA's Maybach make is the site's Mercedes-Benz Maybach S / S-Class.
+    if (!ourMake && /^mercedes[-\s]?maybach$/i.test(make)) {
+      ourMake = MAKE_ALIASES['mercedes-maybach'];
+    }
     if (!ourMake) return null;
+    if (/^mercedes[-\s]?maybach$/i.test(make) || lower === 'mercedes-maybach') {
+      model = /^maybach\b/i.test(model)
+        ? model
+        : `Maybach ${model.replace(/^s(?:-|\s)?class\b/i, 'S')}`.trim();
+    }
+    // From 2017 NHTSA drops "Cooper": "HARDTOP", "CLUBMAN", "COUNTRYMAN".
+    if (ourMake.toLowerCase() === 'mini' && MINI_BODY.test(model)) {
+      model = `Cooper ${model}`;
+    }
+    // BMW's "650XI" is the 650i xDrive; "535I GT" the Gran Turismo.
+    if (ourMake === 'BMW') {
+      model = model
+        .replace(/(\d)xi\b/i, '$1i')
+        .replace(/\bgt\b/i, 'Gran Turismo')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+    // Volvo's "S60I" beside "S60"; Smart's body-only "COUPE"; Honda's "FCX" the Clarity.
+    if (ourMake === 'Volvo') model = model.replace(/\b([a-z]\d{2})i\b/i, '$1');
+    if (ourMake.toLowerCase() === 'smart' && /^(coupe|cabrio|cabriolet|ed)\b/i.test(model)) {
+      model = model.replace(/^ed\b/i, 'fortwo electric').replace(/^(coupe|cabrio|cabriolet)\b/i, 'fortwo $1');
+    }
+    if (ourMake === 'Honda' && /^fcx\b/i.test(model) && !/clarity/i.test(model)) {
+      model = model.replace(/^fcx\b/i, 'FCX Clarity');
+    }
+    // Mercedes "B-CLASS E-CELL" is EPA's B-Class Electric Drive.
+    if (ourMake === 'Mercedes-Benz') {
+      model = model.replace(/\be-?cell\b/i, 'Electric Drive');
+    }
     const candidates = [...(lines.get(`${ourMake.toLowerCase()}|${year}`)?.values() ?? [])];
     if (!candidates.length) return null;
     const name = compact(model);
@@ -118,7 +173,8 @@ export function govModelIndex(cars: readonly Car[], lineOf: (car: Car) => string
     ].filter(Boolean);
     for (const n of names) {
       const byName = candidates.find((line) => line.name === n);
-      if (byName) return byName.key;
+      // "PROMASTER" is not the Promaster City: the line key collapsed a longer name.
+      if (byName && !onlyDistinctLonger(byName, n)) return byName.key;
     }
     for (const n of names) {
       const byModel = candidates.find((line) => line.models.has(n));
@@ -148,6 +204,7 @@ export function govModelIndex(cars: readonly Car[], lineOf: (car: Car) => string
       for (const line of candidates) {
         if (!n.startsWith(line.name) || line.name.length < 1) continue;
         const rest = n.slice(line.name.length);
+        if (!rest && onlyDistinctLonger(line, line.name)) continue;
         const sameLine = SAME_LINE_AFTER.test(rest) || PERFORMANCE_TRIM.test(rest);
         if (rest && (!sameLine || HEAVY_DUTY.test(rest))) continue;
         if (!best || line.name.length > best.name.length) best = line;

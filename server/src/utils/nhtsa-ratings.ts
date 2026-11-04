@@ -60,15 +60,22 @@ const DRIVES: Record<string, Drive> = {
 
 /** Words naming a hybrid, plug-in, electric or fuel-cell version: "CAMRY HV", "RAV4 PRIME", "SOUL EV". */
 const ELECTRIFIED_WORD =
-  /^(?:hybrid|hv|hev|phev|plug-?in|electric|ev|bev|energi|e-tron|prime|fcv|fcev)$/;
+  /^(?:hybrid|hv|hev|phev|plug-?in|electric|ev|bev|energi|e-tron|prime|fcv|fcev|4xe|t8)$/;
+/** BMW's "530e" / "330e" plug-in names, which carry no hybrid word. */
+const ELECTRIFIED_CODE = /^\d{2,3}e$/;
 
 /**
  * The powertrain NHTSA's newest descriptions add before the drivetrain:
  * "CR-V SUV N/A FWD", "CR-V HYBRID SUV HEV AWD".
  */
 const POWERTRAIN_CODE = /^(?:n\/a|ice|gas|bev|hev|phev|mhev|fcv)$/;
-/** Words in NHTSA's newest model names that tell no versions apart: "CR-V ICE", "MODEL Y (All Variants)". */
-const NAME_NOISE = /^(?:n\/a|ice|gas|mhev|fcv|all|variants)$/;
+/**
+ * Words in NHTSA's model names that tell no versions apart for matching: engine
+ * codes ("XC90 T5"), battery sizes ("MODEL S 60KWH"), seat counts, packages,
+ * and chassis tags ("DEFENDER L663"), once the body and drivetrain are fixed.
+ */
+const NAME_NOISE =
+  /^(?:n\/a|ice|gas|mhev|fcv|all|variants|series|class|early|later|release|with|without|recaro|kwh|battery|seat|seats|lwb|swb|ewb|l663|t[4-8]|p?\d{2,3}d|\d+kwh)$/;
 
 /** What a car's fuel says its name would, were it written out: a Prius is a hybrid. */
 const FUEL_WORDS: Partial<Record<Car['engine']['fuelType'], string[]>> = {
@@ -82,6 +89,8 @@ const FUEL_WORDS: Partial<Record<Car['engine']['fuelType'], string[]>> = {
 const HYBRID = ['hybrid', 'hv', 'hev'];
 const PLUG_IN = ['phev', 'plugin'];
 const ELECTRIC = ['electric', 'ev', 'bev'];
+const DOORS_2 = ['2door', '2dr', '2'];
+const DOORS_4 = ['4door', '4dr', '4'];
 const SYNONYMS: Record<string, string[]> = {
   hybrid: HYBRID,
   hv: HYBRID,
@@ -91,6 +100,10 @@ const SYNONYMS: Record<string, string[]> = {
   electric: ELECTRIC,
   ev: ELECTRIC,
   bev: ELECTRIC,
+  '2door': DOORS_2,
+  '2dr': DOORS_2,
+  '4door': DOORS_4,
+  '4dr': DOORS_4,
 };
 /** Codes found only as words: "hev" is inside "phev", "ev" inside "chevelle". */
 const CODES = new Set(['hv', 'hev', 'phev', 'ev', 'bev']);
@@ -136,8 +149,10 @@ export function testedConfiguration(vehicle: NhtsaVehicle): TestedConfiguration 
   }
   const make = compact(vehicle.Make);
   // A pickup's cabs are versions of one truck, which the site lists once.
+  // Parenthetical battery/seat notes: "LEAF (40 KWH BATTERY)", "SPORT (5 Seat)".
   const modelWords = withoutCab(vehicle.Model)
     .toLowerCase()
+    .replace(/\([^)]*\)/g, ' ')
     .split(/[^a-z0-9-]+/)
     .filter(Boolean);
   return {
@@ -145,10 +160,10 @@ export function testedConfiguration(vehicle: NhtsaVehicle): TestedConfiguration 
     ...(drive ? { drive } : {}),
     // "Silverado 1500 Hybrid PU/CC RWD": some say so only in the description.
     electrified: [...modelWords, ...vehicle.VehicleDescription.toLowerCase().split(/\s+/)].some(
-      (w) => ELECTRIFIED_WORD.test(w),
+      (w) => ELECTRIFIED_WORD.test(w) || ELECTRIFIED_CODE.test(compact(w)),
     ),
     name: modelWords
-      .filter((w) => !DRIVES[w] && !NAME_NOISE.test(w))
+      .filter((w) => !DRIVES[w] && !NAME_NOISE.test(compact(w)) && !NAME_NOISE.test(w))
       .map(compact)
       // "MAZDA3": the make written into the name.
       .map((w) => (w.startsWith(make) && w.length > make.length ? w.slice(make.length) : w))
@@ -211,7 +226,11 @@ function byName<T extends { config: TestedConfiguration }>(
     ...car.model.toLowerCase().split(/[^a-z0-9]+/),
     ...(FUEL_WORDS[car.engine.fuelType] ?? []),
   ]);
-  const has = (w: string) => words.has(w) || (!CODES.has(w) && w.length > 1 && whole.includes(w));
+  // "530i" is the 5 Series: a leading series digit in a numbered BMW/etc. name.
+  const has = (w: string) =>
+    words.has(w) ||
+    (!CODES.has(w) && w.length > 1 && whole.includes(w)) ||
+    (/^\d$/.test(w) && new RegExp(`^${w}\\d`).test(whole));
   const fits = tests.filter((test) =>
     test.config.name.every((w) => (SYNONYMS[w] ?? [w]).some(has)),
   );
