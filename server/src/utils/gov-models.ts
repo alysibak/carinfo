@@ -79,18 +79,18 @@ export interface GovModelIndex {
   match(make: string, model: string, year: number): string | null;
 }
 
-/** True when every EPA model is this name plus a distinct submodel ("city"), not a drive/body tag. */
+/**
+ * Submodel words that mean another vehicle when glued onto a shorter name:
+ * "Promaster City" is not "PROMASTER", "Transit Connect" is not "TRANSIT".
+ * Chassis codes (C1500) and drive words (quattro) must not trip this.
+ */
+const DISTINCT_SUBMODEL = /^(city|connect)$/;
+
+/** True when every EPA model is this name plus a distinct submodel ("city"). */
 function onlyDistinctLonger(line: Line, n: string): boolean {
-  return [...line.models].every((m) => {
-    if (m === n || !m.startsWith(n)) return false;
-    const rest = m.slice(n.length);
-    return (
-      Boolean(rest) &&
-      !SAME_LINE_AFTER.test(rest) &&
-      !DRIVE_OR_BODY_AFTER.test(rest) &&
-      !HEAVY_DUTY.test(rest)
-    );
-  });
+  return [...line.models].every(
+    (m) => m.startsWith(n) && DISTINCT_SUBMODEL.test(m.slice(n.length)),
+  );
 }
 
 export function govModelIndex(cars: readonly Car[], lineOf: (car: Car) => string): GovModelIndex {
@@ -151,7 +151,9 @@ export function govModelIndex(cars: readonly Car[], lineOf: (car: Car) => string
     // Volvo's "S60I" beside "S60"; Smart's body-only "COUPE"; Honda's "FCX" the Clarity.
     if (ourMake === 'Volvo') model = model.replace(/\b([a-z]\d{2})i\b/i, '$1');
     if (ourMake.toLowerCase() === 'smart' && /^(coupe|cabrio|cabriolet|ed)\b/i.test(model)) {
-      model = model.replace(/^ed\b/i, 'fortwo electric').replace(/^(coupe|cabrio|cabriolet)\b/i, 'fortwo $1');
+      model = model
+        .replace(/^ed\b/i, 'fortwo electric')
+        .replace(/^(coupe|cabrio|cabriolet)\b/i, 'fortwo $1');
     }
     if (ourMake === 'Honda' && /^fcx\b/i.test(model) && !/clarity/i.test(model)) {
       model = model.replace(/^fcx\b/i, 'FCX Clarity');
@@ -226,7 +228,11 @@ export function govModelIndex(cars: readonly Car[], lineOf: (car: Car) => string
     const word = model.toLowerCase().trim();
     if (/^[a-z0-9-]{2,}$/.test(word) && !BODY_WORDS.test(word)) {
       const worded = candidates.filter(
-        (line) => line.words.has(word) && !(line.name.startsWith(name) && line.name !== name),
+        (line) =>
+          line.words.has(word) &&
+          !(line.name.startsWith(name) && line.name !== name) &&
+          // "PROMASTER" is a word of "Promaster City", not that vehicle.
+          !onlyDistinctLonger(line, name),
       );
       if (worded.length === 1) return worded[0].key;
     }

@@ -25,6 +25,8 @@ export type SpecGlossaryKey =
   | 'ghgScore'
   | 'luggageVolume'
   | 'passengerVolume'
+  | 'seats'
+  | 'towing'
   | 'annualFuelCost'
   | 'barrelsPerYear'
   | 'fuelSavings5yr'
@@ -167,6 +169,16 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
     plain: 'Room for the people inside',
     what: 'EPA’s passenger volume: the space for the occupants, front and rear, as EPA lists it.',
     why: 'A bigger number is more room; compare cars of the same size class.',
+  },
+  seats: {
+    plain: 'How many people it seats',
+    what: 'Seating capacity from the maker. A range means a third row is optional.',
+    why: 'Tells you whether a third row is on the table before you cross-shop.',
+  },
+  towing: {
+    plain: 'Heaviest trailer it can tow',
+    what: 'Maximum conventional towing capacity in pounds when properly equipped, as the maker publishes it. EPA does not rate towing.',
+    why: 'A boat, camper or utility trailer: compare only against other properly-equipped ratings.',
   },
   ghgScore: {
     plain: '1 = most CO₂, 10 = least',

@@ -100,6 +100,9 @@ const SYNONYMS: Record<string, string[]> = {
   electric: ELECTRIC,
   ev: ELECTRIC,
   bev: ELECTRIC,
+  // Jeep's 4xe and Volvo's T8 are plug-ins named without "phev".
+  '4xe': PLUG_IN,
+  t8: PLUG_IN,
   '2door': DOORS_2,
   '2dr': DOORS_2,
   '4door': DOORS_4,

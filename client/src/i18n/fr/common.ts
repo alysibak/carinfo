@@ -11,6 +11,10 @@ const fr: Record<string, string> = {
   'Value chart': 'Graphique des valeurs',
   Methodology: 'Méthodologie',
 
+  // Region picker
+  'Costs for': 'Coûts pour',
+  'Costs for region': 'Région des coûts',
+
   // Footer
   'VIN lookup': 'Recherche par NIV',
   'Methodology and data policy': 'Méthodologie et politique des données',
@@ -33,6 +37,14 @@ const fr: Record<string, string> = {
   'B.C.': 'C.-B.',
   Alberta: 'Alberta',
   Quebec: 'Québec',
+  Manitoba: 'Manitoba',
+  Saskatchewan: 'Saskatchewan',
+  'Nova Scotia': 'Nouvelle-Écosse',
+  'New Brunswick': 'Nouveau-Brunswick',
+  'Prince Edward Island': 'Île-du-Prince-Édouard',
+  'P.E.I.': 'Î.-P.-É.',
+  'Newfoundland and Labrador': 'Terre-Neuve-et-Labrador',
+  'N.L.': 'T.-N.-L.',
 };
 
 export default fr;

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { gotoReady } from './load';
 
 /**
  * Every keyboard focus stop must look different from its unfocused self.
@@ -25,8 +26,7 @@ const nextFrames = (page: Page) =>
   );
 
 async function unmarkedStops(page: Page, path: string): Promise<string[]> {
-  await page.goto(path);
-  await page.waitForLoadState('networkidle');
+  await gotoReady(page, path);
 
   const seen = new Set<string>();
   const unmarked: string[] = [];
@@ -98,6 +98,10 @@ test.describe('keyboard focus visibility', () => {
   test('every focus stop on core pages visibly changes', async ({ page }) => {
     const res = await page.request.get('/api/cars/search?q=civic&limit=1');
     const id = (await res.json()).data.results[0].id;
+    const modelRes = await page.request.get('/api/cars/models/honda/civic');
+    const year = (
+      (await modelRes.json()).data.years as { year: number; configurations: number }[]
+    ).find((row) => row.configurations >= 2)!.year;
 
     for (const path of [
       '/',
@@ -105,8 +109,11 @@ test.describe('keyboard focus visibility', () => {
       `/car/${id}`,
       '/vin',
       '/models/honda/civic',
+      `/models/honda/civic/${year}`,
       '/compare',
       '/browse',
+      '/privacy',
+      '/terms',
     ]) {
       expect(await unmarkedStops(page, path), path).toEqual([]);
     }

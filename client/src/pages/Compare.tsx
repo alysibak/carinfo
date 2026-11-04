@@ -317,6 +317,33 @@ const ALL_SPECS: SpecRow[] = [
     higherIsBetter: true,
   },
   {
+    key: 'seats',
+    label: 'Seats',
+    hint: 'Maker',
+    provenanceKey: 'seats',
+    getValue: (car) => {
+      if (car.seats == null) return UNAVAILABLE_LABEL;
+      if (car.seatsMax != null && car.seatsMax !== car.seats) {
+        return `${car.seats}–${car.seatsMax}`;
+      }
+      return String(car.seats);
+    },
+    getNumeric: (car) => car.seatsMax ?? car.seats ?? null,
+    higherIsBetter: true,
+  },
+  {
+    key: 'towing',
+    label: 'Max towing',
+    hint: 'Maker, properly equipped',
+    provenanceKey: 'towingCapacityLb',
+    getValue: (car) =>
+      car.towingCapacityLb != null
+        ? `${car.towingCapacityLb.toLocaleString()} lb`
+        : UNAVAILABLE_LABEL,
+    getNumeric: (car) => car.towingCapacityLb ?? null,
+    higherIsBetter: true,
+  },
+  {
     key: 'horsepower',
     label: 'Power',
     provenanceKey: 'engine.horsepower',
@@ -329,6 +356,7 @@ const ALL_SPECS: SpecRow[] = [
   {
     key: 'torque',
     label: 'Torque',
+    provenanceKey: 'engine.torque',
     getValue: (car) =>
       car.engine.torque != null ? `${car.engine.torque} lb-ft` : UNAVAILABLE_LABEL,
     getNumeric: (car) => car.engine.torque ?? null,

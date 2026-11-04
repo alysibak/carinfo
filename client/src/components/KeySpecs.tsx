@@ -107,6 +107,14 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
       label: 'Torque',
       value: `${car.engine.torque} lb-ft`,
       glossary: 'torque',
+      ...(car.provenance?.['engine.torque']
+        ? {
+            provenanceSource: displayProvenanceSource(
+              'engine.torque',
+              car.provenance['engine.torque'],
+            ),
+          }
+        : {}),
     });
   }
   pushIf(powertrain, {
@@ -196,6 +204,31 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   }
 
   const space: SpecRow[] = [];
+  if (hasNumericValue(car.seats)) {
+    const seatsLabel =
+      car.seatsMax != null && car.seatsMax !== car.seats
+        ? `${car.seats}–${car.seatsMax}`
+        : String(car.seats);
+    pushIf(space, {
+      key: 'seats',
+      label: 'Seats',
+      value: seatsLabel,
+      glossary: 'seats',
+      provenanceSource: displayProvenanceSource('seats', car.provenance?.seats ?? 'curated'),
+    });
+  }
+  if (hasNumericValue(car.towingCapacityLb)) {
+    pushIf(space, {
+      key: 'towing',
+      label: 'Max towing',
+      value: `${car.towingCapacityLb!.toLocaleString()} lb`,
+      glossary: 'towing',
+      provenanceSource: displayProvenanceSource(
+        'towingCapacityLb',
+        car.provenance?.towingCapacityLb ?? 'curated',
+      ),
+    });
+  }
   if (car.size) {
     pushIf(space, {
       key: 'wheelbase',
