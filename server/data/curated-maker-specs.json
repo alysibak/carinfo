@@ -757,6 +757,36 @@
           "source": "https://www.ford.com/trucks/maverick/"
         }
       ]
+    },
+    {
+      "make": "Ford",
+      "model": "Ranger",
+      "years": [
+        2024,
+        2026
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.fromtheroad.ford.com/content/dam/fordmediasite/us/en/library/2026/specs/2026_Ford_Ranger%20Technical_Specs.pdf",
+      "engines": [
+        {
+          "displacementL": 2.3,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 310,
+          "maxTowingLb": 7500,
+          "source": "https://www.fromtheroad.ford.com/content/dam/fordmediasite/us/en/library/2026/specs/2026_Ford_Ranger%20Technical_Specs.pdf"
+        },
+        {
+          "displacementL": 2.7,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 430,
+          "maxTowingLb": 7500,
+          "source": "https://www.fromtheroad.ford.com/content/dam/fordmediasite/us/en/library/2026/specs/2026_Ford_Ranger%20Technical_Specs.pdf"
+        }
+      ]
     }
   ]
 }
