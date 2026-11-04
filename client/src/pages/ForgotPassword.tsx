@@ -6,9 +6,11 @@ import { useAccountStatus } from '../hooks/useAccountStatus';
 import { authClient, authErrorMessage } from '../services/authClient';
 import { PROVIDER_NAMES } from '../services/signInMethods';
 import { useNoIndex, usePageMeta } from '../utils/pageMeta';
+import { t } from '../i18n';
+import { rich } from '../i18n/rich';
 
 export default function ForgotPassword() {
-  usePageMeta('Reset your password', 'Reset your CarInfo password.');
+  usePageMeta(t('Reset your password'), t('Reset your CarInfo password.'));
   useNoIndex();
   const status = useAccountStatus();
   const [email, setEmail] = useState('');
@@ -21,19 +23,23 @@ export default function ForgotPassword() {
   const back = (
     <p>
       <Link to="/sign-in" className="text-white underline">
-        Back to sign in
+        {t('Back to sign in')}
       </Link>
     </p>
   );
 
   if (!status?.emailConfigured) {
+    const providers = status?.providers ?? [];
+    const providerNames = providers.map((p) => PROVIDER_NAMES[p]).join(` ${t('or')} `);
     return (
-      <AuthCard title="Reset your password" footer={back}>
+      <AuthCard title={t('Reset your password')} footer={back}>
         <p className="text-sm text-zinc-300 leading-relaxed">
-          Password reset by email isn&apos;t available on this site yet.
-          {status?.providers.length
-            ? ` If you signed up with ${status.providers.map((p) => PROVIDER_NAMES[p]).join(' or ')}, sign in with it instead.`
-            : ''}
+          {providers.length
+            ? t(
+                "Password reset by email isn't available on this site yet. If you signed up with {providers}, sign in with it instead.",
+                { providers: providerNames },
+              )
+            : t("Password reset by email isn't available on this site yet.")}
         </p>
       </AuthCard>
     );
@@ -53,15 +59,18 @@ export default function ForgotPassword() {
 
   return (
     <AuthCard
-      title="Reset your password"
-      intro="Enter the email you signed up with. We'll send a link to choose a new password."
+      title={t('Reset your password')}
+      intro={t("Enter the email you signed up with. We'll send a link to choose a new password.")}
       footer={
         <>
           <p>
-            Or skip the password:{' '}
-            <Link to="/sign-in?code=1" className="text-white underline">
-              sign in with a code by email
-            </Link>
+            {rich(t('Or skip the password: <0>sign in with a code by email</0>'), [
+              (children) => (
+                <Link to="/sign-in?code=1" className="text-white underline">
+                  {children}
+                </Link>
+              ),
+            ])}
           </p>
           {back}
         </>
@@ -69,13 +78,15 @@ export default function ForgotPassword() {
     >
       {sent ? (
         <FormMessage tone="ok">
-          If an account uses {email}, a reset link is on its way. It works for one hour.
+          {t('If an account uses {email}, a reset link is on its way. It works for one hour.', {
+            email,
+          })}
         </FormMessage>
       ) : (
         <AuthFormBody onSubmit={submit}>
           {error && <FormMessage>{error}</FormMessage>}
           <Field
-            label="Email"
+            label={t('Email')}
             type="email"
             name="email"
             autoComplete="email"
@@ -83,7 +94,7 @@ export default function ForgotPassword() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-          <SubmitButton busy={busy}>{busy ? 'Sending…' : 'Send reset link'}</SubmitButton>
+          <SubmitButton busy={busy}>{busy ? t('Sending…') : t('Send reset link')}</SubmitButton>
         </AuthFormBody>
       )}
     </AuthCard>

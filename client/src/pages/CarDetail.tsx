@@ -46,6 +46,8 @@ import RecentlyViewed from '../components/RecentlyViewed';
 import CarPageSkeleton from '../components/CarPageSkeleton';
 import { recentEntry, useRecentStore } from '../stores/recentStore';
 import { dashboardKey, takePrefetched } from '../utils/prefetch';
+import { msg, t } from '../i18n';
+import { fmtNumber } from '../i18n/format';
 
 function Subheading({ children }: { children: React.ReactNode }) {
   return <p className="text-sm font-semibold text-zinc-200 pt-3 pb-1">{children}</p>;
@@ -69,11 +71,11 @@ const ANNUAL_COST_SEGMENTS: {
   label: string;
   color: string;
 }[] = [
-  { key: 'energy', label: 'Fuel / energy', color: 'bg-zinc-300' },
-  { key: 'insurance', label: 'Insurance', color: 'bg-zinc-400' },
-  { key: 'maintenance', label: 'Maintenance', color: 'bg-zinc-500' },
-  { key: 'tires', label: 'Tires', color: 'bg-zinc-600' },
-  { key: 'registration', label: 'Registration', color: 'bg-zinc-700' },
+  { key: 'energy', label: msg('Fuel / energy'), color: 'bg-zinc-300' },
+  { key: 'insurance', label: msg('Insurance'), color: 'bg-zinc-400' },
+  { key: 'maintenance', label: msg('Maintenance'), color: 'bg-zinc-500' },
+  { key: 'tires', label: msg('Tires'), color: 'bg-zinc-600' },
+  { key: 'registration', label: msg('Registration'), color: 'bg-zinc-700' },
 ];
 
 function AnnualCostStackBar({ annualCost }: { annualCost: AnnualCostBreakdown }) {
@@ -96,7 +98,7 @@ function AnnualCostStackBar({ annualCost }: { annualCost: AnnualCostBreakdown })
             key={seg.key}
             className={`${seg.color} min-w-0`}
             style={{ width: `${(seg.value / total) * 100}%` }}
-            title={`${seg.label}: ${seg.value}`}
+            title={`${t(seg.label)}: ${seg.value}`}
           />
         ))}
       </div>
@@ -105,7 +107,7 @@ function AnnualCostStackBar({ annualCost }: { annualCost: AnnualCostBreakdown })
           <li key={seg.key} className="flex items-center gap-1.5">
             <span className={`inline-block w-2 h-2 shrink-0 ${seg.color}`} aria-hidden />
             <span className={TIER_HELPER}>
-              {seg.label} {Math.round((seg.value / total) * 100)}%
+              {t(seg.label)} {Math.round((seg.value / total) * 100)}%
             </span>
           </li>
         ))}
@@ -142,36 +144,46 @@ function PhevDualModeBlock({ modes }: { modes: PhevModes }) {
       {hasNumericValue(modes.electricMpge) && (
         <div>
           <div className="flex items-baseline justify-between gap-4">
-            <span className="text-xs text-zinc-300">Electric mode</span>
+            <span className="text-xs text-zinc-300">{t('Electric mode')}</span>
             <span className="text-sm font-bold text-white">
-              {modes.electricMpge} MPGe
-              {hasNumericValue(modes.electricRangeMi) ? ` · ${modes.electricRangeMi} mi` : ''}
+              {t('{mpge} MPGe', { mpge: modes.electricMpge! })}
+              {hasNumericValue(modes.electricRangeMi)
+                ? t(' · {mi} mi', { mi: modes.electricRangeMi! })
+                : ''}
             </span>
           </div>
           <p className="text-xs text-zinc-400 leading-relaxed mt-1">
-            Drives on battery power
             {hasNumericValue(modes.electricRangeMi)
-              ? ` for about ${modes.electricRangeMi} miles`
-              : ''}{' '}
-            after a full charge, like an EV, then switches to gas automatically.
+              ? t(
+                  'Drives on battery power for about {mi} miles after a full charge, like an EV, then switches to gas automatically.',
+                  { mi: modes.electricRangeMi! },
+                )
+              : t(
+                  'Drives on battery power after a full charge, like an EV, then switches to gas automatically.',
+                )}
           </p>
         </div>
       )}
       {hasNumericValue(modes.gasMpg) && (
         <div>
           <div className="flex items-baseline justify-between gap-4">
-            <span className="text-xs text-zinc-300">Gas mode</span>
-            <span className="text-sm font-bold text-white">{modes.gasMpg} MPG</span>
+            <span className="text-xs text-zinc-300">{t('Gas mode')}</span>
+            <span className="text-sm font-bold text-white">
+              {t('{mpg} MPG', { mpg: modes.gasMpg! })}
+            </span>
           </div>
           <p className="text-xs text-zinc-400 leading-relaxed mt-1">
-            Once the battery is used up it runs like a regular hybrid on gasoline. No plugging in
-            required.
+            {t(
+              'Once the battery is used up it runs like a regular hybrid on gasoline. No plugging in required.',
+            )}
           </p>
         </div>
       )}
       {hasNumericValue(modes.chargeL2Hours) && (
         <p className="text-xs text-zinc-400 leading-relaxed">
-          Recharges in about {modes.chargeL2Hours} h on a 240V Level 2 charger.
+          {t('Recharges in about {hours} h on a 240V Level 2 charger.', {
+            hours: modes.chargeL2Hours!,
+          })}
         </p>
       )}
     </div>
@@ -257,7 +269,10 @@ export default function CarDetail() {
   usePageMeta(
     pageTitle,
     pageTitle
-      ? `The ${pageTitle}: fuel use, crash ratings, recalls in Canada and owners’ complaints from the public records, and running costs, marked as estimates.`
+      ? t(
+          'The {name}: fuel use, crash ratings, recalls in Canada and owners’ complaints from the public records, and running costs, marked as estimates.',
+          { name: pageTitle },
+        )
       : undefined,
   );
 
@@ -266,18 +281,20 @@ export default function CarDetail() {
   if (!dashboard) {
     return error === 'not-found' ? (
       <ErrorState
-        title="Car not found"
-        message="No car with that address is on file. It may have been renamed: search for it by make, model and year."
+        title={t('Car not found')}
+        message={t(
+          'No car with that address is on file. It may have been renamed: search for it by make, model and year.',
+        )}
         backTo="/home"
-        backLabel="Search cars"
+        backLabel={t('Search cars')}
       />
     ) : (
       <ErrorState
-        title="Could not load this car"
-        message="The page did not load. Check your connection and try again."
+        title={t('Could not load this car')}
+        message={t('The page did not load. Check your connection and try again.')}
         onRetry={() => setAttempt((n) => n + 1)}
         backTo="/home"
-        backLabel="Search cars"
+        backLabel={t('Search cars')}
       />
     );
   }
@@ -300,48 +317,92 @@ export default function CarDetail() {
     const regional = getRegionalAssumptions(region);
     const { place, from, through } = regional.pumpPrices;
     const city = place.split(',')[0];
-    const distance = `${regional.annualKm.toLocaleString('en-CA')} km a year`;
+    const distance = t('{km} km a year', { km: fmtNumber(regional.annualKm) });
+    const fromMonth = monthLabel(from);
+    const throughMonth = monthLabel(through);
     const pump = (price: number, kind: string) =>
-      `$${price.toFixed(2)}/L ${kind}, ${city}'s average from ${monthLabel(from)} to ${monthLabel(through)} (Statistics Canada)`;
+      t("${price}/L {kind}, {city}'s average from {from} to {through} (Statistics Canada)", {
+        price: price.toFixed(2),
+        kind,
+        city,
+        from: fromMonth,
+        through: throughMonth,
+      });
     const fuel = car.engine.fuelType;
     if (fuel === 'hydrogen' && hydrogenPrice != null) {
-      return `From EPA's rating, at $${hydrogenPrice.toFixed(2)}/kg of hydrogen and ${distance}.`;
+      return t("From EPA's rating, at ${price}/kg of hydrogen and {distance}.", {
+        price: hydrogenPrice.toFixed(2),
+        distance,
+      });
     }
     if (fuel === 'natural gas') {
-      return `From EPA's yearly fuel cost, in Canadian dollars, for ${distance}.`;
+      return t("From EPA's yearly fuel cost, in Canadian dollars, for {distance}.", {
+        distance,
+      });
     }
     if (fuel === 'electric') {
-      return `From EPA's rating, at $${regional.electricityRateCadPerKwh.toFixed(3)}/kWh charged at home and ${distance}.`;
+      return t("From EPA's rating, at ${rate}/kWh charged at home and {distance}.", {
+        rate: regional.electricityRateCadPerKwh.toFixed(3),
+        distance,
+      });
     }
     if (fuel === 'diesel')
-      return `From EPA's rating, at ${pump(regional.dieselPriceCadPerL, 'diesel')}, and ${distance}.`;
+      return t("From EPA's rating, at {pump}, and {distance}.", {
+        pump: pump(regional.dieselPriceCadPerL, t('diesel')),
+        distance,
+      });
     const premium = car.epa?.premiumFuel === true;
     const price = regional.gasPriceCadPerL + (premium ? regional.premiumOverRegularCadPerL : 0);
     const plug =
       fuel === 'plug-in hybrid'
-        ? `, partly charged at $${regional.electricityRateCadPerKwh.toFixed(3)}/kWh`
+        ? t(', partly charged at ${rate}/kWh', {
+            rate: regional.electricityRateCadPerKwh.toFixed(3),
+          })
         : '';
-    return `From EPA's rating, at ${pump(price, premium ? 'premium' : 'regular')}${plug}, and ${distance}.`;
+    return t("From EPA's rating, at {pump}{plug}, and {distance}.", {
+      pump: pump(price, premium ? t('premium') : t('regular')),
+      plug,
+      distance,
+    });
   })();
   // The same in a few words, under the yearly figure at the top of the page.
   const fuelCostFigure = (() => {
     if (annualCost.energy == null || ownership.unvalued) return undefined;
     const regional = getRegionalAssumptions(region);
-    const distance = `${regional.annualKm.toLocaleString('en-CA')} km a year`;
+    const distance = t('{km} km a year', { km: fmtNumber(regional.annualKm) });
     const fuel = car.engine.fuelType;
     const premium = car.epa?.premiumFuel === true;
     const basis =
       fuel === 'electric'
-        ? `At $${regional.electricityRateCadPerKwh.toFixed(3)}/kWh and ${distance}`
+        ? t('At ${rate}/kWh and {distance}', {
+            rate: regional.electricityRateCadPerKwh.toFixed(3),
+            distance,
+          })
         : fuel === 'hydrogen' && hydrogenPrice != null
-          ? `At $${hydrogenPrice.toFixed(2)}/kg and ${distance}`
+          ? t('At ${price}/kg and {distance}', {
+              price: hydrogenPrice.toFixed(2),
+              distance,
+            })
           : fuel === 'diesel'
-            ? `At $${regional.dieselPriceCadPerL.toFixed(2)}/L diesel and ${distance}`
+            ? t('At ${price}/L diesel and {distance}', {
+                price: regional.dieselPriceCadPerL.toFixed(2),
+                distance,
+              })
             : fuel === 'plug-in hybrid'
-              ? `Gas and home charging, ${distance}`
+              ? t('Gas and home charging, {distance}', { distance })
               : fuel === 'natural gas'
-                ? `EPA’s yearly cost, ${distance}`
-                : `At $${(regional.gasPriceCadPerL + (premium ? regional.premiumOverRegularCadPerL : 0)).toFixed(2)}/L${premium ? ' premium' : ''} and ${distance}`;
+                ? t('EPA’s yearly cost, {distance}', { distance })
+                : premium
+                  ? t('At ${price}/L premium and {distance}', {
+                      price: (
+                        regional.gasPriceCadPerL + regional.premiumOverRegularCadPerL
+                      ).toFixed(2),
+                      distance,
+                    })
+                  : t('At ${price}/L and {distance}', {
+                      price: regional.gasPriceCadPerL.toFixed(2),
+                      distance,
+                    });
     return { amount: annualCost.energy, basis, electric: fuel === 'electric' };
   })();
   const isInCompare = comparedCars.some((c) => c.id === car.id);
@@ -433,24 +494,26 @@ export default function CarDetail() {
     }
     if (res.swappedOut) {
       setToast(
-        `Replaced ${res.swappedOut.year} ${res.swappedOut.make} ${displayModelLabel(res.swappedOut)}`,
+        t('Replaced {name}', {
+          name: `${res.swappedOut.year} ${res.swappedOut.make} ${displayModelLabel(res.swappedOut)}`,
+        }),
       );
       return;
     }
-    setToast('Added to compare');
+    setToast(t('Added to compare'));
   };
 
   const handleAddToGarage = async () => {
     const res = await Promise.resolve(addToGarage(car));
     if (!res.ok && res.reason === 'duplicate') {
-      setToast('Already in garage');
+      setToast(t('Already in garage'));
       return;
     }
     if (!res.ok && res.reason === 'limit') {
-      setToast(res.message ?? 'Garage limit reached. Upgrade to Pro.');
+      setToast(res.message ?? t('Garage limit reached. Upgrade to Pro.'));
       return;
     }
-    setToast('Added to garage');
+    setToast(t('Added to garage'));
   };
 
   return (
@@ -460,11 +523,22 @@ export default function CarDetail() {
       {isHydrogen && (
         <div className="border-b border-amber-900/50 bg-amber-950/20">
           <div className="page-wrap py-4 text-sm text-amber-200/90 leading-relaxed">
-            <strong className="text-amber-100">Hydrogen fuel cell (FCEV).</strong> EPA&rsquo;s MPGe
-            reads as miles per kilogram of hydrogen.{' '}
+            <strong className="text-amber-100">{t('Hydrogen fuel cell (FCEV).')}</strong>{' '}
+            {t('EPA’s MPGe reads as miles per kilogram of hydrogen.')}{' '}
             {hydrogenPrice != null
-              ? `Fuel cost uses ${regionName(region)}'s posted pump price, about $${hydrogenPrice.toFixed(2)}/kg; public stations are few, so check the one you would use.`
-              : `${regionName(region)} has no posted retail hydrogen price${region === 'ontario' ? ' (its one public station is at Toronto Pearson)' : ''}, so fuel is left out of the yearly cost.`}
+              ? t(
+                  "Fuel cost uses {region}'s posted pump price, about ${price}/kg; public stations are few, so check the one you would use.",
+                  { region: regionName(region), price: hydrogenPrice.toFixed(2) },
+                )
+              : region === 'ontario'
+                ? t(
+                    '{region} has no posted retail hydrogen price (its one public station is at Toronto Pearson), so fuel is left out of the yearly cost.',
+                    { region: regionName(region) },
+                  )
+                : t(
+                    '{region} has no posted retail hydrogen price, so fuel is left out of the yearly cost.',
+                    { region: regionName(region) },
+                  )}
           </div>
         </div>
       )}
@@ -489,7 +563,7 @@ export default function CarDetail() {
             onClick={() => navigate(-1)}
             className="text-sm text-zinc-400 hover:text-white transition-colors min-h-[44px] inline-flex items-center gap-1.5"
           >
-            <span aria-hidden>←</span> Back
+            <span aria-hidden>←</span> {t('Back')}
           </button>
 
           {/* A stage: the name large on the left, the car larger on the right;
@@ -546,7 +620,7 @@ export default function CarDetail() {
                     to={dashboard.modelPage.path}
                     className="inline-block py-1.5 text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-600 hover:decoration-zinc-300"
                   >
-                    Every year of the {dashboard.modelPage.label}
+                    {t('Every year of the {name}', { name: dashboard.modelPage.label })}
                   </Link>
                 </p>
               )}
@@ -556,13 +630,13 @@ export default function CarDetail() {
                   onClick={handleAddToComparison}
                   className={isInCompare ? 'btn-secondary' : 'btn-primary'}
                 >
-                  {isInCompare ? 'In compare' : 'Add to compare'}
+                  {isInCompare ? t('In compare') : t('Add to compare')}
                 </button>
                 <button type="button" onClick={handleAddToGarage} className="btn-secondary">
-                  Save to garage
+                  {t('Save to garage')}
                 </button>
               </div>
-              <VersionPicker car={car} />
+              <VersionPicker car={car} modelPath={dashboard.modelPage?.path} />
             </div>
           </div>
 
@@ -583,7 +657,7 @@ export default function CarDetail() {
               )
               .map((figure) =>
                 figure.id === 'safety'
-                  ? `NHTSA ${figure.value}/5`
+                  ? t('NHTSA {value}/5', { value: figure.value })
                   : `${figure.value}${figure.unit ? ` ${figure.unit}` : ''}`,
               )
               .join(' · ') || null
@@ -613,45 +687,45 @@ export default function CarDetail() {
               <div className="min-w-0">
                 <h2 className="block-title mb-1">
                   {isPhev
-                    ? 'Electric and gas modes'
+                    ? t('Electric and gas modes')
                     : hasEvExtras && hasCityHwy
-                      ? 'Energy use'
+                      ? t('Energy use')
                       : hasEvExtras
-                        ? 'Charging'
-                        : 'City and highway'}
+                        ? t('Charging')
+                        : t('City and highway')}
                 </h2>
                 {isPhev && (
                   <p className="text-[13px] text-zinc-400 mb-3">
-                    The figure above is gas mode, not a blend.
+                    {t('The figure above is gas mode, not a blend.')}
                   </p>
                 )}
                 {isPhev && phev ? (
                   <PhevDualModeBlock modes={phev} />
                 ) : (
                   <>
-                    <FuelBar label="City" efficiency={efficiencyOf(car, 'city')} />
-                    <FuelBar label="Highway" efficiency={efficiencyOf(car, 'highway')} />
+                    <FuelBar label={t('City')} efficiency={efficiencyOf(car, 'city')} />
+                    <FuelBar label={t('Highway')} efficiency={efficiencyOf(car, 'highway')} />
                   </>
                 )}
                 {hasEvExtras && (
                   <>
                     {hasNumericValue(evCharge?.kWhPer100Mi) && (
                       <DataRow
-                        label="Consumption"
+                        label={t('Consumption')}
                         value={formatKwhPer100KmFromMi(evCharge!.kWhPer100Mi!)}
                         glossaryKey="kwhPer100mi"
                       />
                     )}
                     {hasNumericValue(evCharge?.charge240Hours) && (
                       <DataRow
-                        label="Home charge (240V)"
+                        label={t('Home charge (240V)')}
                         value={`~${evCharge!.charge240Hours} h`}
                         glossaryKey="charge240"
                       />
                     )}
                     {hasNumericValue(evCharge?.charge120Hours ?? car.epa?.charge120Hours) && (
                       <DataRow
-                        label="Home charge (120V)"
+                        label={t('Home charge (120V)')}
                         value={`~${evCharge?.charge120Hours ?? car.epa!.charge120Hours} h`}
                         glossaryKey="charge120"
                       />
@@ -671,9 +745,9 @@ export default function CarDetail() {
           <div className="page-wrap-wide section-y-tight">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
               <div className="min-w-0">
-                <h2 className="block-title mb-1">Running costs</h2>
+                <h2 className="block-title mb-1">{t('Running costs')}</h2>
                 <p className="text-xs text-zinc-500 leading-relaxed max-w-2xl">
-                  In Canadian dollars.
+                  {t('In Canadian dollars.')}
                 </p>
               </div>
               <RegionSelect />
@@ -682,7 +756,9 @@ export default function CarDetail() {
             {annualCost.energy != null ? (
               <div className="max-w-xl">
                 <DataRow
-                  label={car.engine.fuelType === 'electric' ? 'Electricity a year' : 'Fuel a year'}
+                  label={
+                    car.engine.fuelType === 'electric' ? t('Electricity a year') : t('Fuel a year')
+                  }
                   value={formatMoney(annualCost.energy)}
                   valueTier={1}
                   pairLayout
@@ -692,7 +768,9 @@ export default function CarDetail() {
             ) : (
               isHydrogen && (
                 <p className="text-sm text-zinc-400">
-                  Fuel is left out: there is no posted hydrogen price for {regionName(region)}.
+                  {t('Fuel is left out: there is no posted hydrogen price for {region}.', {
+                    region: regionName(region),
+                  })}
                 </p>
               )
             )}
@@ -701,7 +779,7 @@ export default function CarDetail() {
               <summary
                 className={`${foldSummaryClass} py-3 text-sm text-zinc-200 hover:text-white`}
               >
-                Value, insurance, upkeep and resale: rougher estimates
+                {t('Value, insurance, upkeep and resale: rougher estimates')}
                 <Chevron className="w-3.5 h-3.5 text-zinc-500 group-open/est:rotate-180" />
               </summary>
               <div className="pt-2">
@@ -721,7 +799,7 @@ export default function CarDetail() {
                   <div className="min-w-0">
                     {hasMarketValue && (
                       <DataRow
-                        label="Est. value range"
+                        label={t('Est. value range')}
                         value={formatMoneyRange(marketValue.low, marketValue.high)}
                         valueTier={1}
                         pairLayout
@@ -730,13 +808,13 @@ export default function CarDetail() {
                     {marketValue.batteryHealth && (
                       <>
                         <DataRow
-                          label="Battery health"
+                          label={t('Battery health')}
                           value={marketValue.batteryHealth.label}
                           valueTier={2}
                           pairLayout
                         />
                         <DataRow
-                          label="Pack note"
+                          label={t('Pack note')}
                           value={marketValue.batteryHealth.chemistryNote}
                           valueTier={2}
                           pairLayout
@@ -755,10 +833,10 @@ export default function CarDetail() {
 
                     {hasEconomics ? (
                       <>
-                        <Subheading>Yearly cost</Subheading>
+                        <Subheading>{t('Yearly cost')}</Subheading>
                         {annualCost.energy != null ? (
                           <DataRow
-                            label="Fuel / energy"
+                            label={t('Fuel / energy')}
                             value={formatMoney(annualCost.energy)}
                             valueTier={2}
                             pairLayout
@@ -766,43 +844,43 @@ export default function CarDetail() {
                         ) : (
                           isHydrogen && (
                             <DataRow
-                              label="Fuel / energy"
-                              value="Not included (no posted hydrogen price)"
+                              label={t('Fuel / energy')}
+                              value={t('Not included (no posted hydrogen price)')}
                               valueTier={2}
                               pairLayout
                             />
                           )
                         )}
                         <DataRow
-                          label="Insurance"
+                          label={t('Insurance')}
                           value={formatMoney(annualCost.insurance)}
                           valueTier={2}
                           pairLayout
                         />
                         <DataRow
-                          label="Maintenance"
+                          label={t('Maintenance')}
                           value={formatMoney(annualCost.maintenance)}
                           valueTier={2}
                           pairLayout
                         />
                         <DataRow
-                          label="Tires"
+                          label={t('Tires')}
                           value={formatMoney(annualCost.tires)}
                           valueTier={2}
                           pairLayout
                         />
                         <DataRow
-                          label="Registration"
+                          label={t('Registration')}
                           value={
                             annualCost.registration === 0
-                              ? 'No renewal fee'
+                              ? t('No renewal fee')
                               : formatMoney(annualCost.registration)
                           }
                           valueTier={2}
                           pairLayout
                         />
                         <DataRow
-                          label="Total per year"
+                          label={t('Total per year')}
                           value={
                             annualCost.totalLow != null && annualCost.totalHigh != null
                               ? formatMoneyRange(annualCost.totalLow, annualCost.totalHigh)
@@ -816,20 +894,23 @@ export default function CarDetail() {
                       </>
                     ) : (
                       <p className="text-sm text-zinc-500 leading-relaxed">
-                        Running-cost breakdown is not modeled for this configuration
-                        {isHydrogen ? ' (hydrogen fuel costs vary too widely)' : ''}.
+                        {isHydrogen
+                          ? t(
+                              'Running-cost breakdown is not modeled for this configuration (hydrogen fuel costs vary too widely).',
+                            )
+                          : t('Running-cost breakdown is not modeled for this configuration.')}
                       </p>
                     )}
                   </div>
 
                   {hasEconomics && (
                     <div className="min-w-0">
-                      <Subheading>After five years</Subheading>
+                      <Subheading>{t('After five years')}</Subheading>
                       <p className="text-xs text-zinc-500 leading-relaxed py-1 mb-1">
                         {resaleImpact.note}
                       </p>
                       <DataRow
-                        label="Projected resale"
+                        label={t('Projected resale')}
                         value={formatMoneyRange(
                           resaleImpact.projectedResale5Year.low,
                           resaleImpact.projectedResale5Year.high,
@@ -838,7 +919,7 @@ export default function CarDetail() {
                         pairLayout
                       />
                       <DataRow
-                        label="Value lost"
+                        label={t('Value lost')}
                         value={formatMoneyRange(
                           resaleImpact.estimatedLoss5Year.low,
                           resaleImpact.estimatedLoss5Year.high,
@@ -850,8 +931,8 @@ export default function CarDetail() {
                         <DataRow
                           label={
                             ownership.tco5Year.mode === 'operating'
-                              ? 'Annual running cost'
-                              : '5-year total'
+                              ? t('Annual running cost')
+                              : t('5-year total')
                           }
                           value={formatMoneyRange(ownership.tco5Year.low, ownership.tco5Year.high)}
                           valueTier={2}
@@ -865,7 +946,7 @@ export default function CarDetail() {
             </details>
 
             <button type="button" onClick={() => setShowTCO(true)} className="btn-secondary mt-4">
-              Work out my own costs
+              {t('Work out my own costs')}
             </button>
           </div>
         </section>
@@ -874,13 +955,13 @@ export default function CarDetail() {
       {unvalued && (
         <section className="border-b border-zinc-900">
           <div className="page-wrap-wide section-y-tight">
-            <h2 className="block-title mb-1">Value and costs</h2>
+            <h2 className="block-title mb-1">{t('Value and costs')}</h2>
             <p className="text-sm text-zinc-400 leading-relaxed max-w-2xl">{unvalued.note}</p>
           </div>
         </section>
       )}
 
-      <KeySpecs dashboard={dashboard} omitKeys={specOmitKeys} heading="More specs" />
+      <KeySpecs dashboard={dashboard} omitKeys={specOmitKeys} heading={t('More specs')} />
 
       <DataTrustPanel dashboard={dashboard} />
 

@@ -4,6 +4,7 @@ import type { DerivedComparisonMetric, OwnershipAssumptions } from '../types/car
 import { formatCostPerKm } from '../utils/dataValue';
 import { currencyMethodologyNote } from '../utils/currency';
 import { regionName, useRegionStore } from '../stores/regionStore';
+import { t } from '../i18n';
 
 interface ValuationLinksProps {
   compact?: boolean;
@@ -30,7 +31,7 @@ export default function ValuationLinks({
           onClick={() => setOpen(true)}
           className="inline-flex items-center min-h-6 self-start text-xs text-zinc-300 underline underline-offset-2 hover:text-white transition-colors"
         >
-          How these estimates work
+          {t('How these estimates work')}
         </button>
         {open && (
           <MethodologyModal
@@ -47,7 +48,7 @@ export default function ValuationLinks({
 
   return (
     <div className="surface-card p-5 space-y-3">
-      <p className="text-sm font-semibold text-white">About these price estimates</p>
+      <p className="text-sm font-semibold text-white">{t('About these price estimates')}</p>
       <MethodologyBody
         assumptions={assumptions}
         derivedComparison={derivedComparison}
@@ -88,13 +89,13 @@ function MethodologyModal({
       >
         <div className="flex items-start justify-between gap-4 mb-4">
           <h2 id="methodology-title" className="text-sm font-bold text-white">
-            How these estimates work
+            {t('How these estimates work')}
           </h2>
           <button
             type="button"
             onClick={onClose}
             className="text-zinc-400 hover:text-white text-lg leading-none"
-            aria-label="Close"
+            aria-label={t('Close')}
           >
             ×
           </button>
@@ -125,33 +126,43 @@ function MethodologyBody({
   return (
     <div className="text-xs text-zinc-400 leading-relaxed space-y-4">
       <p>
-        {currencyMethodologyNote(region)} Individual condition, mileage, and local demand still move
-        real prices. Check marketplaces when you are ready to buy or sell.
+        {currencyMethodologyNote(region)}{' '}
+        {t(
+          'Individual condition, mileage, and local demand still move real prices. Check marketplaces when you are ready to buy or sell.',
+        )}
       </p>
       {practicalityNote && (
         <p className="text-zinc-400 border-l-2 border-zinc-800 pl-3">{practicalityNote}</p>
       )}
       {assumptions && (
         <div className="space-y-2">
-          <p className="text-xs text-zinc-400">Assumptions</p>
+          <p className="text-xs text-zinc-400">{t('Assumptions')}</p>
           <ul className="space-y-1 list-none">
-            <li>Annual driving: {assumptions.annualKm}</li>
-            <li>Energy / fuel: {assumptions.energyPriceNote}</li>
-            <li>Insurance: {assumptions.insuranceTier}</li>
-            <li>Depreciation: {assumptions.depreciationNote}</li>
-            <li>Region: {assumptions.regionNote}</li>
+            <li>{t('Annual driving: {value}', { value: assumptions.annualKm })}</li>
+            <li>{t('Energy / fuel: {value}', { value: assumptions.energyPriceNote })}</li>
+            <li>{t('Insurance: {value}', { value: assumptions.insuranceTier })}</li>
+            <li>{t('Depreciation: {value}', { value: assumptions.depreciationNote })}</li>
+            <li>{t('Region: {value}', { value: assumptions.regionNote })}</li>
           </ul>
         </div>
       )}
       {derivedComparison && (
         <div className="space-y-2">
-          <p className="text-xs text-zinc-400">Derived comparison only</p>
+          <p className="text-xs text-zinc-400">{t('Derived comparison only')}</p>
           <p className="text-zinc-400">{derivedComparison.disclaimer}</p>
           {derivedComparison.fuelCostPerMile != null && (
-            <p>Fuel / energy per km: {formatCostPerKm(derivedComparison.fuelCostPerMile)}</p>
+            <p>
+              {t('Fuel / energy per km: {value}', {
+                value: formatCostPerKm(derivedComparison.fuelCostPerMile),
+              })}
+            </p>
           )}
           {derivedComparison.effectiveCostPerMile != null && (
-            <p>Effective cost per km: {formatCostPerKm(derivedComparison.effectiveCostPerMile)}</p>
+            <p>
+              {t('Effective cost per km: {value}', {
+                value: formatCostPerKm(derivedComparison.effectiveCostPerMile),
+              })}
+            </p>
           )}
         </div>
       )}

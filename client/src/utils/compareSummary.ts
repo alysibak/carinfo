@@ -1,4 +1,5 @@
 import type { CarDashboard, CarSpecs } from '../types/car.types';
+import { t } from '../i18n';
 import { efficiencyOf, rangeKm } from './efficiency';
 import { displayModelLabel } from './trimLabel';
 import { rolloverRiskText } from './safetyTech';
@@ -37,6 +38,15 @@ const FUEL_WORD: Record<string, string> = {
   hydrogen: 'fuel-cell car',
 };
 
+function fuelWord(fuel: string): string {
+  if (fuel === 'hybrid') return t('hybrid');
+  if (fuel === 'plug-in hybrid') return t('plug-in hybrid');
+  if (fuel === 'EV') return t('EV');
+  if (fuel === 'diesel') return t('diesel');
+  if (fuel === 'fuel-cell car') return t('fuel-cell car');
+  return fuel;
+}
+
 interface Scored {
   id: string;
   value: number;
@@ -63,7 +73,10 @@ function leader(
 
 function joinWords(parts: string[]): string {
   if (parts.length <= 1) return parts[0] ?? '';
-  return `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`;
+  return t('{head} and {tail}', {
+    head: parts.slice(0, -1).join(', '),
+    tail: parts[parts.length - 1],
+  });
 }
 
 /**
@@ -90,20 +103,27 @@ export function summarizeComparison(pairs: ComparePair[]): CompareLine[] {
       body &&
       cars.filter((c) => bodyWord(c.bodyStyle) === body).length === 1
     ) {
-      kinds.set(car.id, `the ${body}`);
+      kinds.set(
+        car.id,
+        body === 'SUV'
+          ? t('the SUV')
+          : body === 'pickup'
+            ? t('the pickup')
+            : t('the {body}', { body }),
+      );
     }
     const fuel = FUEL_WORD[car.engine.fuelType];
     if (fuel && cars.filter((c) => c.engine.fuelType === car.engine.fuelType).length === 1) {
-      add(car.id, `the only ${fuel}`);
+      add(car.id, t('the only {fuel}', { fuel: fuelWord(fuel) }));
     }
     if (isAwd(car.driveType) && cars.filter((c) => isAwd(c.driveType)).length === 1) {
-      add(car.id, `the only ${car.driveType} (better in snow)`);
+      add(car.id, t('the only {drive} (better in snow)', { drive: car.driveType }));
     }
     if (
       car.transmission?.type === 'manual' &&
       cars.filter((c) => c.transmission?.type === 'manual').length === 1
     ) {
-      add(car.id, 'the only manual');
+      add(car.id, t('the only manual'));
     }
   }
 
@@ -123,21 +143,30 @@ export function summarizeComparison(pairs: ComparePair[]): CompareLine[] {
       const unit = efficiencies[0].eff!.unit;
       add(
         fuel.id,
-        `the least fuel (${fuel.best.toFixed(1)} against ${fuel.next.toFixed(1)} ${unit})`,
+        t('the least fuel ({best} against {next} {unit})', {
+          best: fuel.best.toFixed(1),
+          next: fuel.next.toFixed(1),
+          unit: unit!,
+        }),
       );
     }
   }
 
   const rated = cars.filter((c) => (c.safetyRating?.overall ?? 0) > 0);
   if (rated.length === 1 && cars.length > 1) {
-    add(rated[0].id, `the only one NHTSA has rated (${rated[0].safetyRating!.overall}/5)`);
+    add(
+      rated[0].id,
+      t('the only one NHTSA has rated ({rating}/5)', {
+        rating: rated[0].safetyRating!.overall!,
+      }),
+    );
   } else {
     const safety = leader(
       rated.map((c) => ({ id: c.id, value: c.safetyRating!.overall! })),
       false,
       (best, next) => best - next >= 1,
     );
-    if (safety) add(safety.id, `the best NHTSA rating (${safety.best}/5)`);
+    if (safety) add(safety.id, t('the best NHTSA rating ({rating}/5)', { rating: safety.best }));
   }
 
   // NHTSA's rollover risk compares across classes, unlike its frontal stars.
@@ -153,7 +182,10 @@ export function summarizeComparison(pairs: ComparePair[]): CompareLine[] {
   if (rollover) {
     add(
       rollover.id,
-      `the least rollover risk (${rolloverRiskText(rollover.best)} against ${rolloverRiskText(rollover.next)})`,
+      t('the least rollover risk ({best} against {next})', {
+        best: rolloverRiskText(rollover.best),
+        next: rolloverRiskText(rollover.next),
+      }),
     );
   }
 
@@ -164,7 +196,14 @@ export function summarizeComparison(pairs: ComparePair[]): CompareLine[] {
       ['ldw', 'lane departure warning'],
     ] as const) {
       const standard = cars.filter((c) => c.safetyTech?.[feature] === 'standard');
-      if (standard.length === 1) add(standard[0].id, `the only one with ${name} standard`);
+      if (standard.length === 1) {
+        add(
+          standard[0].id,
+          name === 'forward collision warning'
+            ? t('the only one with forward collision warning standard')
+            : t('the only one with lane departure warning standard'),
+        );
+      }
     }
   }
 
@@ -173,7 +212,11 @@ export function summarizeComparison(pairs: ComparePair[]): CompareLine[] {
     false,
     (best, next) => best - next >= 25 && (best - next) / next >= 0.1,
   );
-  if (power) add(power.id, `the most power (${power.best} against ${power.next} hp)`);
+  if (power)
+    add(
+      power.id,
+      t('the most power ({best} against {next} hp)', { best: power.best, next: power.next }),
+    );
 
   const range = leader(
     cars.flatMap((c) =>
@@ -185,7 +228,13 @@ export function summarizeComparison(pairs: ComparePair[]): CompareLine[] {
     (best, next) => best - next >= 20,
   );
   if (range)
-    add(range.id, `the longest range (${rangeKm(range.best)} against ${rangeKm(range.next)} km)`);
+    add(
+      range.id,
+      t('the longest range ({best} against {next} km)', {
+        best: rangeKm(range.best),
+        next: rangeKm(range.next),
+      }),
+    );
 
   // Recalls that can cover each version, where every car's are on file: a
   // count of campaigns, which, unlike complaints, does not grow with sales.
@@ -202,7 +251,13 @@ export function summarizeComparison(pairs: ComparePair[]): CompareLine[] {
       (best, next) => next - best >= 2,
     );
     if (recalls) {
-      add(recalls.id, `the fewest recalls in Canada (${recalls.best} against ${recalls.next})`);
+      add(
+        recalls.id,
+        t('the fewest recalls in Canada ({best} against {next})', {
+          best: recalls.best,
+          next: recalls.next,
+        }),
+      );
     }
   }
 
@@ -210,7 +265,7 @@ export function summarizeComparison(pairs: ComparePair[]): CompareLine[] {
   const listed = pairs.filter((p) => p.dashboard?.theft);
   if (listed.length && listed.length < pairs.length && pairs.every((p) => p.dashboard)) {
     for (const { car, dashboard } of pairs) {
-      if (!dashboard?.theft) add(car.id, 'not on Canada’s most-stolen list');
+      if (!dashboard?.theft) add(car.id, t('not on Canada’s most-stolen list'));
     }
   }
 
@@ -219,28 +274,31 @@ export function summarizeComparison(pairs: ComparePair[]): CompareLine[] {
     false,
     (best, next) => best - next >= 2,
   );
-  if (year) add(year.id, `the newest (${year.best})`);
+  if (year) add(year.id, t('the newest ({year})', { year: year.best }));
 
   return pairs.map(({ car, dashboard }) => {
     const found = (strengths.get(car.id) ?? []).slice(0, 3);
     const watch = [
       dashboard?.theft
-        ? `${ordinal(dashboard.theft.rank)} on Canada’s most-stolen list (${dashboard.theft.year})`
+        ? t('{rank} on Canada’s most-stolen list ({year})', {
+            rank: ordinal(dashboard.theft.rank),
+            year: dashboard.theft.year,
+          })
         : null,
       dashboard?.investigations &&
       splitInvestigations(dashboard.investigations, {
         fuelType: car.engine.fuelType,
         mildHybrid: car.engine.mildHybrid,
       }).applies.some((inv) => !inv.closed)
-        ? 'an NHTSA investigation still open'
+        ? t('an NHTSA investigation still open')
         : null,
     ].filter((w): w is string => !!w);
     const kind = kinds.get(car.id);
     let sentence: string;
-    if (kind && found.length) sentence = `${kind}: ${joinWords(found)}`;
+    if (kind && found.length) sentence = t('{kind}: {found}', { kind, found: joinWords(found) });
     else if (kind) sentence = kind;
     else if (found.length) sentence = joinWords(found);
-    else sentence = 'much the same as the others on paper';
+    else sentence = t('much the same as the others on paper');
     return {
       carId: car.id,
       name: `${car.year} ${car.make} ${displayModelLabel(car)}`,

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { audit, describeViolations } from './axe';
+import { gotoReady } from './load';
 
 /**
  * Automated WCAG 2.2 A/AA checks with axe-core, at desktop and phone widths
@@ -23,6 +24,16 @@ async function firstCarId(page: Page, query: string): Promise<string> {
   return body.data.results[0].id;
 }
 
+async function firstMultiConfigYear(page: Page, make: string, model: string): Promise<number> {
+  const res = await page.request.get(`/api/cars/models/${make}/${model}`);
+  const body = await res.json();
+  const year = (body.data.years as { year: number; configurations: number }[]).find(
+    (row) => row.configurations >= 2,
+  );
+  if (!year) throw new Error(`no multi-config year for ${make}/${model}`);
+  return year.year;
+}
+
 const VIEWPORTS = [
   { name: 'desktop', viewport: { width: 1280, height: 900 } },
   { name: 'phone', viewport: { width: 375, height: 812 } },
@@ -37,6 +48,7 @@ for (const { name, viewport } of VIEWPORTS) {
     test('core pages have no WCAG A/AA violations', async ({ page }) => {
       const a = await firstCarId(page, 'camry');
       const b = await firstCarId(page, 'accord');
+      const modelYear = await firstMultiConfigYear(page, 'honda', 'civic');
       const pages = [
         '/',
         '/home',
@@ -50,19 +62,22 @@ for (const { name, viewport } of VIEWPORTS) {
         `/car/${a}/checklist`,
         // Every year of a model, with its theft and records sections.
         '/models/toyota/rav4',
+        // A year with several configurations side by side.
+        `/models/honda/civic/${modelYear}`,
         `/compare?cars=${a},${b}`,
         '/collection/goldilocks',
         '/vin',
         '/garage',
         '/account',
         '/methodology',
+        '/privacy',
+        '/terms',
         '/no-such-page',
       ];
 
       const failures: string[] = [];
       for (const path of pages) {
-        await page.goto(path);
-        await page.waitForLoadState('networkidle');
+        await gotoReady(page, path);
         const violations = await audit(page);
         if (violations.length) failures.push(`${path}\n${describeViolations(violations)}`);
       }

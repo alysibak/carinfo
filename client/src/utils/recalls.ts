@@ -1,4 +1,5 @@
 import { plainPartName } from '@carinfo/shared/part-names';
+import { fmtDate } from '../i18n/format';
 
 /**
  * A Transport Canada recall notice in its parts. Notices since about 2017 are
@@ -71,12 +72,7 @@ function tidy(text: string): string {
 export function recallDate(iso: string): string {
   const date = new Date(`${iso}T12:00:00Z`);
   if (Number.isNaN(date.getTime())) return iso;
-  return date.toLocaleDateString('en-CA', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    timeZone: 'UTC',
-  });
+  return fmtDate(iso, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 /**

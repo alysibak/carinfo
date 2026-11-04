@@ -5,6 +5,7 @@ import { searchQueryToParams } from '../utils/searchParams';
 import { usePageMeta } from '../utils/pageMeta';
 import VinCatalogMatch from '../components/VinCatalogMatch';
 import { cleanVinInput, vinCheckDigitValid } from '../utils/vin';
+import { msg, t } from '../i18n';
 
 const VinScanner = lazy(() => import('../components/VinScanner'));
 
@@ -44,16 +45,20 @@ function VinProgress({ vin, swapped }: { vin: string; swapped: boolean }) {
           }`}
         >
           {!whole
-            ? `${vin.length} of 17`
+            ? t('{n} of 17', { n: vin.length })
             : checks
-              ? '17 of 17, and its check digit matches'
-              : '17 of 17, but its check digit does not match: look for a mistyped character'}
+              ? t('17 of 17, and its check digit matches')
+              : t('17 of 17, but its check digit does not match: look for a mistyped character')}
         </p>
       )}
       {whole && !checks && (
-        <p className="text-zinc-400">Some VINs from outside North America carry no check digit.</p>
+        <p className="text-zinc-400">
+          {t('Some VINs from outside North America carry no check digit.')}
+        </p>
       )}
-      {swapped && <p className="text-zinc-400">I, O and Q are never in a VIN: read as 1 and 0.</p>}
+      {swapped && (
+        <p className="text-zinc-400">{t('I, O and Q are never in a VIN: read as 1 and 0.')}</p>
+      )}
     </div>
   );
 }
@@ -61,23 +66,25 @@ function VinProgress({ vin, swapped }: { vin: string; swapped: boolean }) {
 /** What one VIN tells a buyer, in the order the page gives it. */
 const VIN_GIVES = [
   {
-    title: 'What it was built as',
-    body: 'Its year, model, engine, drive and the plant it came from, from NHTSA’s decoder.',
+    title: msg('What it was built as'),
+    body: msg('Its year, model, engine, drive and the plant it came from, from NHTSA’s decoder.'),
   },
   {
-    title: 'Its model year’s record',
-    body: 'Recalls in Canada, owners’ complaints and the crash rating, on its page here.',
+    title: msg('Its model year’s record'),
+    body: msg('Recalls in Canada, owners’ complaints and the crash rating, on its page here.'),
   },
   {
-    title: 'A check on the ad',
-    body: 'Whether the year, engine and drive the seller gives match what the VIN says.',
+    title: msg('A check on the ad'),
+    body: msg('Whether the year, engine and drive the seller gives match what the VIN says.'),
   },
 ] as const;
 
 export default function VinDecoder() {
   usePageMeta(
-    'VIN lookup',
-    'See what a car was built as from its 17-character VIN: year, model, engine, drive and plant, from NHTSA’s decoder, then its recalls, complaints and crash rating.',
+    t('VIN lookup'),
+    t(
+      'See what a car was built as from its 17-character VIN: year, model, engine, drive and plant, from NHTSA’s decoder, then its recalls, complaints and crash rating.',
+    ),
   );
   const [searchParams] = useSearchParams();
   const [vin, setVin] = useState('');
@@ -106,7 +113,7 @@ export default function VinDecoder() {
     } catch (e: unknown) {
       setError(
         apiErrorMessage(e) ??
-          'VIN not found in NHTSA records. Check the 17-character code and try again.',
+          t('VIN not found in NHTSA records. Check the 17-character code and try again.'),
       );
     } finally {
       setLoading(false);
@@ -139,16 +146,17 @@ export default function VinDecoder() {
   return (
     <div className="bg-black text-white">
       <div className="page-wrap section-y">
-        <p className="text-xs text-zinc-400 mb-3">Tools</p>
-        <h1 className="page-title mb-3">VIN lookup</h1>
+        <p className="text-xs text-zinc-400 mb-3">{t('Tools')}</p>
+        <h1 className="page-title mb-3">{t('VIN lookup')}</h1>
         <p className="text-sm text-zinc-300 leading-relaxed max-w-2xl mb-2">
-          Enter the car’s 17-character VIN to see what it was built as: its year, model, engine,
-          drive and the plant it came from, from NHTSA’s decoder. Then open its page here for the
-          model year’s recalls, owners’ complaints and crash rating, and check the ad against it.
+          {t(
+            'Enter the car’s 17-character VIN to see what it was built as: its year, model, engine, drive and the plant it came from, from NHTSA’s decoder. Then open its page here for the model year’s recalls, owners’ complaints and crash rating, and check the ad against it.',
+          )}
         </p>
         <p className="text-xs text-zinc-400 leading-relaxed max-w-2xl mb-6">
-          NHTSA’s decoder covers cars sold in the U.S., and most sold in Canada. A field it leaves
-          out is not on file, not missing from the car.
+          {t(
+            'NHTSA’s decoder covers cars sold in the U.S., and most sold in Canada. A field it leaves out is not on file, not missing from the car.',
+          )}
         </p>
 
         {/* The input drops its own outline, so the frame shows where focus is. */}
@@ -158,9 +166,9 @@ export default function VinDecoder() {
             value={vin}
             onChange={(e) => enter(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && run(vin)}
-            aria-label="Vehicle identification number (VIN)"
+            aria-label={t('Vehicle identification number (VIN)')}
             aria-describedby="vin-progress"
-            placeholder="17 characters"
+            placeholder={t('17 characters')}
             autoComplete="off"
             autoCapitalize="characters"
             spellCheck={false}
@@ -170,7 +178,7 @@ export default function VinDecoder() {
             <button
               type="button"
               onClick={() => setScanning(true)}
-              aria-label="Scan the VIN with the camera"
+              aria-label={t('Scan the VIN with the camera')}
               className="h-12 sm:h-14 px-4 flex items-center gap-2 bg-zinc-950 text-[15px] font-semibold text-zinc-200 hover:text-white hover:bg-zinc-900 rounded-none transition-colors"
             >
               <svg
@@ -192,14 +200,14 @@ export default function VinDecoder() {
                   d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"
                 />
               </svg>
-              Scan
+              {t('Scan')}
             </button>
             <button
               onClick={() => run(vin)}
               disabled={loading || vin.trim().length < 11}
               className="flex-1 sm:flex-none h-12 sm:h-14 px-5 sm:px-8 bg-accent text-accent-ink text-[15px] font-semibold hover:bg-accent-hover disabled:opacity-40 border-l border-zinc-700 rounded-none transition-colors"
             >
-              {loading ? '…' : 'Decode'}
+              {loading ? '…' : t('Decode')}
             </button>
           </div>
         </div>
@@ -216,12 +224,12 @@ export default function VinDecoder() {
             }}
             className="chip shrink-0"
           >
-            Sample VIN
+            {t('Sample VIN')}
           </button>
           <span className="min-w-0 leading-relaxed sm:pt-1">
-            The VIN is on the dashboard, read through the windshield, on the label in the driver’s
-            door frame, and on the ownership papers. Or scan it: the camera reads the barcode or the
-            printed VIN.
+            {t(
+              'The VIN is on the dashboard, read through the windshield, on the label in the driver’s door frame, and on the ownership papers. Or scan it: the camera reads the barcode or the printed VIN.',
+            )}
           </span>
         </div>
 
@@ -242,10 +250,10 @@ export default function VinDecoder() {
           // What a VIN gives, before one is entered: the page was a lone field.
           <ol className="mt-12 max-w-2xl grid gap-px bg-zinc-900 border border-zinc-900 sm:grid-cols-3">
             {VIN_GIVES.map((item, index) => (
-              <li key={item.title} className="bg-black p-4">
+              <li key={t(item.title)} className="bg-black p-4">
                 <p className="text-xs text-zinc-500 tabular-nums">{index + 1}</p>
-                <p className="mt-2 text-sm font-semibold text-white">{item.title}</p>
-                <p className="mt-1 text-xs text-zinc-400 leading-relaxed">{item.body}</p>
+                <p className="mt-2 text-sm font-semibold text-white">{t(item.title)}</p>
+                <p className="mt-1 text-xs text-zinc-400 leading-relaxed">{t(item.body)}</p>
               </li>
             ))}
           </ol>
@@ -262,7 +270,7 @@ export default function VinDecoder() {
             {result.make ? (
               <>
                 <div className="border-b border-zinc-900 pb-5 mb-1">
-                  <p className="text-xs text-zinc-400 mb-1">From the VIN</p>
+                  <p className="text-xs text-zinc-400 mb-1">{t('From the VIN')}</p>
                   <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
                     {result.year} {result.make} {result.model}
                   </h2>
@@ -276,32 +284,38 @@ export default function VinDecoder() {
 
                 {!result.decodedClean && (
                   <p className="text-xs text-amber-300/80 leading-relaxed py-3">
-                    NHTSA flagged a checksum issue on this VIN ({result.errorText}). The decode
-                    below may be partial. Double-check the VIN for typos.
+                    {t(
+                      'NHTSA flagged a checksum issue on this VIN ({error}). The decode below may be partial. Double-check the VIN for typos.',
+                      { error: result.errorText ?? '' },
+                    )}
                   </p>
                 )}
 
                 {result.decodedClean && <VinCatalogMatch decoded={result} />}
 
-                <Subheading>As built, by NHTSA’s decoder</Subheading>
-                <Row label="Engine" value={engineSummary || undefined} />
+                <Subheading>{t('As built, by NHTSA’s decoder')}</Subheading>
+                <Row label={t('Engine')} value={engineSummary || undefined} />
                 <Row
-                  label="Power"
+                  label={t('Power')}
                   value={
                     eng?.hp != null
-                      ? `${eng.hp} hp${eng.kw != null ? ` (${eng.kw} kW)` : ''}${eng.hpFromKw ? ', from NHTSA’s kW figure' : ''}`
+                      ? t('{hp} hp{kw}{fromKw}', {
+                          hp: eng.hp,
+                          kw: eng.kw != null ? t(' ({kw} kW)', { kw: eng.kw }) : '',
+                          fromKw: eng.hpFromKw ? t(', from NHTSA’s kW figure') : '',
+                        })
                       : undefined
                   }
                 />
                 <Row
-                  label="Turbo"
-                  value={eng?.turbo == null ? undefined : eng.turbo ? 'Yes' : 'No'}
+                  label={t('Turbo')}
+                  value={eng?.turbo == null ? undefined : eng.turbo ? t('Yes') : t('No')}
                 />
-                <Row label="Fuel" value={fuelLabel} />
-                <Row label="Engine model" value={eng?.model} />
-                <Row label="Drive type" value={result.driveType} />
+                <Row label={t('Fuel')} value={fuelLabel} />
+                <Row label={t('Engine model')} value={eng?.model} />
+                <Row label={t('Drive type')} value={result.driveType} />
                 <Row
-                  label="Transmission"
+                  label={t('Transmission')}
                   value={
                     [
                       result.transmission,
@@ -312,33 +326,41 @@ export default function VinDecoder() {
                   }
                 />
 
-                <Row label="Body class" value={result.bodyClass} />
-                <Row label="Vehicle type" value={result.vehicleType} />
-                <Row label="Doors" value={result.doors} />
-                <Row label="Manufacturer" value={result.manufacturer} />
+                <Row label={t('Body class')} value={result.bodyClass} />
+                <Row label={t('Vehicle type')} value={result.vehicleType} />
+                <Row label={t('Doors')} value={result.doors} />
+                <Row label={t('Manufacturer')} value={result.manufacturer} />
                 <Row
-                  label="Assembled in"
+                  label={t('Assembled in')}
                   value={
                     [result.plantCity, result.plantCountry].filter(Boolean).join(', ') || undefined
                   }
                 />
 
                 <p className="text-xs text-zinc-400 leading-relaxed pt-5 mt-2 border-t border-zinc-900">
-                  Source: NHTSA’s VIN decoder (vPIC), read live. A field is shown only where NHTSA
-                  has it on record.
+                  {t(
+                    'Source: NHTSA’s VIN decoder (vPIC), read live. A field is shown only where NHTSA has it on record.',
+                  )}
                 </p>
               </>
             ) : (
               <div className="border border-zinc-800 bg-zinc-950 px-5 py-4 text-sm text-zinc-300 leading-relaxed">
-                NHTSA couldn’t identify a vehicle from that VIN
-                {result.errorText ? ` (${result.errorText})` : ''}. Double-check the 17 characters
-                and try again.
+                {result.errorText
+                  ? t(
+                      'NHTSA couldn’t identify a vehicle from that VIN ({error}). Double-check the 17 characters and try again.',
+                      { error: result.errorText },
+                    )
+                  : t(
+                      'NHTSA couldn’t identify a vehicle from that VIN. Double-check the 17 characters and try again.',
+                    )}
               </div>
             )}
 
             {result.make && (
               <div className="mt-6 border border-zinc-800 bg-zinc-950 px-5 py-4 space-y-3">
-                <p className="text-sm text-zinc-300">Not the version you expected? See them all.</p>
+                <p className="text-sm text-zinc-300">
+                  {t('Not the version you expected? See them all.')}
+                </p>
                 <div className="flex flex-wrap gap-3">
                   <Link
                     to={`/home?${searchQueryToParams(
@@ -350,7 +372,10 @@ export default function VinDecoder() {
                     ).toString()}`}
                     className="px-4 py-2 bg-accent text-accent-ink text-xs font-semibold hover:bg-accent-hover"
                   >
-                    Search the {result.year} {result.model}
+                    {t('Search the {year} {model}', {
+                      year: result.year ?? '',
+                      model: result.model ?? '',
+                    })}
                   </Link>
                   {result.make && result.model && (
                     <Link
@@ -370,7 +395,10 @@ export default function VinDecoder() {
                       ).toString()}`}
                       className="px-4 py-2 border border-zinc-600 text-xs font-semibold text-zinc-200 hover:border-zinc-400"
                     >
-                      Every year of the {result.make} {result.model}
+                      {t('Every year of the {make} {model}', {
+                        make: result.make,
+                        model: result.model,
+                      })}
                     </Link>
                   )}
                 </div>

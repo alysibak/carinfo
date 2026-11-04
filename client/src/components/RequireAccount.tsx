@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { nextParam, useAccount } from '../hooks/useAccount';
 import { useGarageStore } from '../stores/garageStore';
 import { usePageMeta } from '../utils/pageMeta';
+import { t, tp } from '../i18n';
 import { LoadingScreen } from './ui';
 
 /**
@@ -22,49 +23,55 @@ export default function RequireAccount({
   children: ReactNode;
 }) {
   const account = useAccount();
-  if (account.kind === 'loading') return <LoadingScreen label="Checking your sign-in" />;
+  if (account.kind === 'loading') return <LoadingScreen label={t('Checking your sign-in')} />;
   if (account.kind !== 'signed-out') return <>{children}</>;
   return <AccountGate tool={tool} gives={gives} />;
 }
 
 function AccountGate({ tool, gives }: { tool: string; gives: string[] }) {
   // "your garage" opens a sentence as "Your garage".
-  const Tool = tool[0].toUpperCase() + tool.slice(1);
-  usePageMeta(Tool, `${Tool} is free with a CarInfo account.`);
+  const toolLabel = t(tool);
+  const ToolLabel = toolLabel.charAt(0).toUpperCase() + toolLabel.slice(1);
+  usePageMeta(ToolLabel, t('{tool} is free with a CarInfo account.', { tool: ToolLabel }));
   const { pathname, search } = useLocation();
   const saved = useGarageStore((s) => s.cars.length);
   const next = nextParam(pathname, search);
   return (
     <div className="page-wrap py-12 sm:py-20">
       <div className="max-w-xl">
-        <p className="text-xs text-zinc-500 mb-3">Free with an account</p>
-        <h1 className="page-title mb-3">Sign in to use {tool}</h1>
+        <p className="text-xs text-zinc-500 mb-3">{t('Free with an account')}</p>
+        <h1 className="page-title mb-3">{t('Sign in to use {tool}', { tool: toolLabel })}</h1>
         <p className="text-sm text-zinc-400 leading-relaxed mb-6">
-          {Tool} is free with a CarInfo account. Car pages, search and browsing stay open to
-          everyone.
+          {t(
+            '{tool} is free with a CarInfo account. Car pages, search and browsing stay open to everyone.',
+            { tool: ToolLabel },
+          )}
         </p>
         {gives.length > 0 && (
           <ul className="mb-8 space-y-2 text-sm text-zinc-300">
             {gives.map((line) => (
               <li key={line} className="flex gap-2.5">
                 <span aria-hidden className="mt-2 w-1.5 h-1.5 shrink-0 bg-accent" />
-                {line}
+                {t(line)}
               </li>
             ))}
           </ul>
         )}
         {pathname === '/garage' && saved > 0 && (
           <p className="text-sm text-zinc-200 mb-6">
-            {saved} car{saved === 1 ? '' : 's'} saved on this device will move into your garage when
-            you sign in.
+            {tp(
+              saved,
+              '{count} car saved on this device will move into your garage when you sign in.',
+              '{count} cars saved on this device will move into your garage when you sign in.',
+            )}
           </p>
         )}
         <div className="flex flex-wrap gap-3">
           <Link to={`/sign-up${next}`} className="btn-primary">
-            Create free account
+            {t('Create free account')}
           </Link>
           <Link to={`/sign-in${next}`} className="btn-secondary">
-            Sign in
+            {t('Sign in')}
           </Link>
         </div>
       </div>

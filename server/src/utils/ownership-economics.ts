@@ -3,8 +3,8 @@ import { unvaluedReason } from './unvalued.js';
 import { estimateAnnualEnergyCost } from '../shared/energy-cost.js';
 import {
   annualKmToMiles,
-  formatOntarioEnergyAssumptionNote,
-  formatOntarioRegionNote,
+  formatEnergyAssumptionNote,
+  formatRegionNote,
   getRegionalAssumptions,
   type RegionalAssumptions,
   type RegionId,
@@ -455,7 +455,7 @@ export function computeOwnershipEconomics(
     assumptions: {
       annualKm: `~${region.annualKm.toLocaleString()} km / year`,
       annualMiles,
-      energyPriceNote: formatOntarioEnergyAssumptionNote(region),
+      energyPriceNote: formatEnergyAssumptionNote(region),
       insuranceTier: beater
         ? `Aged vehicle / liability-focused ${region.label} estimate`
         : isHeavyEvTruck(car)
@@ -464,7 +464,7 @@ export function computeOwnershipEconomics(
             ? `Luxury coupe or convertible (${region.label} baseline)`
             : `${isTwoDoor(car) ? 'coupe / convertible' : car.bodyStyle} baseline (${region.label})`,
       depreciationNote: `${depNote}; US MSRP anchors × ${region.vehiclePriceCadPerUsd} (Canadian vs US sticker prices)`,
-      regionNote: formatOntarioRegionNote(region),
+      regionNote: formatRegionNote(region),
     },
     warnings,
     practicalityNote: practicalityNote(car, market.mid, region),

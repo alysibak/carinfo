@@ -67,4 +67,14 @@ describe('DreamGarage', () => {
     const recalls = await screen.findByRole('link', { name: /3 recalls in Canada/ });
     expect(recalls.closest('article')).toHaveTextContent('2024 Toyota Tundra');
   });
+
+  it('summarises recalls across the garage and how the cars differ', async () => {
+    render(
+      <MemoryRouter>
+        <DreamGarage />
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText(/One saved car has recalls in Canada/i)).toBeInTheDocument();
+    expect(screen.getByText(/How your saved cars differ/i)).toBeInTheDocument();
+  });
 });

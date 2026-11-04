@@ -4,6 +4,9 @@ import App from './App';
 import { prefetchForPath } from './utils/prefetch';
 import { installStaleBuildRecovery } from './utils/staleBuildRecovery';
 import { installSpotlight } from './utils/spotlight';
+import { installErrorReporting } from './utils/errorReporting';
+import LocaleRoot from './i18n/LocaleRoot';
+import { detectLocale, useLocaleStore } from './i18n/store';
 // Fonts are self-hosted: loading them from Google sent every visitor's IP to a
 // third party and put two extra origins in front of first paint. The weights
 // match what the Google Fonts URL requested, so rendering is unchanged.
@@ -17,15 +20,39 @@ import '@fontsource/ibm-plex-mono/600.css';
 import '@fontsource/ibm-plex-mono/700.css';
 import './index.css';
 
+installErrorReporting();
 installStaleBuildRecovery();
 installSpotlight();
 // The page's data starts on its way alongside the page's code.
 prefetchForPath(window.location.pathname);
 
+if (import.meta.env.PROD) {
+  window.addEventListener(
+    'load',
+    () => {
+      import('./utils/analytics').then((m) => m.installAnalytics()).catch(() => {});
+    },
+    { once: true },
+  );
+}
+
 // The sign-in client loads in its own chunks, so the entry chunk stays free
 // of it. See components/AuthProvider.tsx and components/AuthHeaderSlot.tsx.
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-);
+const render = () =>
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <LocaleRoot>{(locale) => <App key={locale} />}</LocaleRoot>
+    </React.StrictMode>,
+  );
+
+// French readers wait for the French dictionary rather than see English first.
+const initial = detectLocale();
+if (initial === 'fr') {
+  useLocaleStore
+    .getState()
+    .setLocale('fr', { remember: false })
+    .catch(() => {})
+    .finally(render);
+} else {
+  render();
+}

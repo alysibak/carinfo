@@ -164,6 +164,72 @@ describe('testsDescribing', () => {
       '2026 HONDA CR-V SUV N/A FWD',
     );
   });
+
+  it('ignores engine, battery and seat tags once body and drive match', () => {
+    const xc90 = tested(
+      vehicle('2016 Volvo XC90 T5 SUV AWD', 'XC90 T5'),
+      vehicle('2016 Volvo XC90 T6 SUV AWD', 'XC90 T6'),
+      vehicle('2016 Volvo XC90 T8 SUV AWD', 'XC90 T8'),
+    );
+    // Gas/diesel trims share a rating; the T8 plug-in stays on its own.
+    expect(testsDescribing(car('XC90 AWD', 'suv', 'AWD'), xc90).map((t) => t.tested)).toEqual([
+      '2016 Volvo XC90 T5 SUV AWD',
+      '2016 Volvo XC90 T6 SUV AWD',
+    ]);
+    expect(
+      testsDescribing(car('XC90 AWD', 'suv', 'AWD', 'plug-in hybrid'), xc90).map((t) => t.tested),
+    ).toEqual(['2016 Volvo XC90 T8 SUV AWD']);
+
+    const series = tested(
+      vehicle('2019 BMW 5 Series 4 DR RWD', '5 SERIES'),
+      vehicle('2019 BMW 530e 4 DR RWD', '530E'),
+    );
+    expect(testsDescribing(car('530i', 'sedan', 'RWD'), series)[0].tested).toBe(
+      '2019 BMW 5 Series 4 DR RWD',
+    );
+    expect(testsDescribing(car('530e', 'sedan', 'RWD', 'plug-in hybrid'), series)[0].tested).toBe(
+      '2019 BMW 530e 4 DR RWD',
+    );
+
+    const sport = tested(
+      vehicle('2015 Land Rover Range Rover Sport (5 Seat) SUV 4WD', 'RANGE ROVER SPORT'),
+      vehicle('2015 Land Rover Range Rover Sport (7 Seat) SUV 4WD', 'RANGE ROVER SPORT'),
+    );
+    expect(
+      testsDescribing(car('Range Rover Sport', 'suv', '4WD'), sport).map((t) => t.tested),
+    ).toHaveLength(2);
+
+    const leaf = tested(
+      vehicle('2022 Nissan LEAF (40 KWh Battery) 5 HB FWD', 'LEAF (40 KWH BATTERY)'),
+      vehicle('2022 Nissan LEAF PLUS (62 KWh Battery) 5 HB FWD', 'LEAF PLUS (62 KWH BATTERY)'),
+    );
+    expect(testsDescribing(car('Leaf', 'hatchback', 'FWD', 'electric'), leaf)[0].tested).toBe(
+      '2022 Nissan LEAF (40 KWh Battery) 5 HB FWD',
+    );
+  });
+
+  it('matches door-count spellings without crossing 2-door and 4-door', () => {
+    const wrangler = tested(
+      vehicle('2024 Jeep Wrangler 2-Door SUV 4WD', 'WRANGLER 2-DOOR'),
+      vehicle('2024 Jeep Wrangler 4-Door SUV 4WD', 'WRANGLER 4-DOOR'),
+      vehicle('2024 Jeep Wrangler 4-Door 4xe SUV 4WD', 'WRANGLER 4-DOOR 4XE'),
+    );
+    expect(
+      testsDescribing(car('Wrangler 4dr 4WD', 'suv', '4WD'), wrangler).map((t) => t.tested),
+    ).toEqual(['2024 Jeep Wrangler 4-Door SUV 4WD']);
+    expect(
+      testsDescribing(car('Wrangler 2dr 4WD', 'suv', '4WD'), wrangler).map((t) => t.tested),
+    ).toEqual(['2024 Jeep Wrangler 2-Door SUV 4WD']);
+    expect(
+      testsDescribing(car('Wrangler 4dr 4WD', 'suv', '4WD', 'plug-in hybrid'), wrangler)[0].tested,
+    ).toBe('2024 Jeep Wrangler 4-Door 4xe SUV 4WD');
+    // A Bronco with no door count is not either NHTSA body.
+    const bronco = tested(
+      vehicle('2025 Ford Bronco 2dr SUV 4WD', 'BRONCO 2DR'),
+      vehicle('2025 Ford Bronco 4dr SUV 4WD', 'BRONCO 4DR'),
+    );
+    expect(testsDescribing(car('Bronco Raptor 4WD', 'suv', '4WD'), bronco)).toEqual([]);
+  });
 });
 
 describe('ratings', () => {

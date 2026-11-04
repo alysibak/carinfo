@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { authClient, authErrorMessage } from '../services/authClient';
+import { t } from '../i18n';
 import { AuthFormBody, Field, FormMessage, SubmitButton } from './AuthForm';
 
 const CODE_LENGTH = 6;
@@ -15,12 +16,13 @@ const COOKIE_WAIT_MS = 6_000;
 export default function EmailCodeForm({
   initialEmail = '',
   onBack,
-  backLabel = 'Use a password instead',
+  backLabel,
 }: {
   initialEmail?: string;
   onBack?: () => void;
   backLabel?: string;
 }) {
+  const resolvedBackLabel = backLabel ?? t('Use a password instead');
   const [email, setEmail] = useState(initialEmail);
   const [code, setCode] = useState('');
   const [stage, setStage] = useState<'email' | 'code'>('email');
@@ -33,7 +35,7 @@ export default function EmailCodeForm({
     const timer = setTimeout(() => {
       setBusy(null);
       setError(
-        'Signed in, but this browser did not keep the sign-in. Allow cookies for this site.',
+        t('Signed in, but this browser did not keep the sign-in. Allow cookies for this site.'),
       );
     }, COOKIE_WAIT_MS);
     return () => clearTimeout(timer);
@@ -53,7 +55,12 @@ export default function EmailCodeForm({
     }
     setCode('');
     setStage('code');
-    setNotice(`We emailed a ${CODE_LENGTH}-digit code to ${email}. It works for 10 minutes.`);
+    setNotice(
+      t('We emailed a {count}-digit code to {email}. It works for 10 minutes.', {
+        count: CODE_LENGTH,
+        email,
+      }),
+    );
   };
 
   const verify = async (otp = code) => {
@@ -78,22 +85,22 @@ export default function EmailCodeForm({
         {error && <FormMessage>{error}</FormMessage>}
         <AuthFormBody onSubmit={send}>
           <Field
-            label="Email"
+            label={t('Email')}
             type="email"
             name="email"
             autoComplete="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            hint="We'll email you a code to sign in with. New here? This makes your account."
+            hint={t("We'll email you a code to sign in with. New here? This makes your account.")}
           />
           <SubmitButton busy={busy !== null}>
-            {busy === 'send' ? 'Sending…' : 'Email me a code'}
+            {busy === 'send' ? t('Sending…') : t('Email me a code')}
           </SubmitButton>
         </AuthFormBody>
         {onBack && (
           <button type="button" onClick={onBack} className="btn-ghost self-center">
-            {backLabel}
+            {resolvedBackLabel}
           </button>
         )}
       </div>
@@ -109,7 +116,7 @@ export default function EmailCodeForm({
       )}
       <AuthFormBody onSubmit={() => verify()}>
         <Field
-          label="Code"
+          label={t('Code')}
           name="code"
           autoComplete="one-time-code"
           inputMode="numeric"
@@ -127,7 +134,7 @@ export default function EmailCodeForm({
           className="tracking-[0.4em]"
         />
         <SubmitButton busy={busy !== null}>
-          {busy === 'verify' ? 'Signing in…' : 'Sign in'}
+          {busy === 'verify' ? t('Signing in…') : t('Sign in')}
         </SubmitButton>
       </AuthFormBody>
       <div className="flex flex-wrap justify-center gap-x-2">
@@ -137,7 +144,7 @@ export default function EmailCodeForm({
           onClick={() => void send()}
           className="btn-ghost"
         >
-          Send a new code
+          {t('Send a new code')}
         </button>
         <button
           type="button"
@@ -147,7 +154,7 @@ export default function EmailCodeForm({
           }}
           className="btn-ghost"
         >
-          Use a different email
+          {t('Use a different email')}
         </button>
       </div>
     </div>

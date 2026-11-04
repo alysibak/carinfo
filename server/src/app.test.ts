@@ -60,6 +60,31 @@ describe('cross-cutting behavior', () => {
     expect(missing.status).toBe(404);
   });
 
+  it('serves a model year with several configurations, and 404s a single-config year page', async () => {
+    const overview = await request(app).get('/api/cars/models/honda/civic');
+    const multi = overview.body.data.years.find(
+      (row: { configurations: number }) => row.configurations >= 2,
+    );
+    expect(multi).toBeTruthy();
+    const yearPage = await request(app).get(`/api/cars/models/honda/civic/${multi.year}`);
+    expect(yearPage.status).toBe(200);
+    expect(yearPage.body.data).toMatchObject({
+      make: 'Honda',
+      name: 'Civic',
+      year: multi.year,
+      modelPath: '/models/honda/civic',
+    });
+    expect(yearPage.body.data.cars.length).toBeGreaterThanOrEqual(2);
+
+    const lonely = overview.body.data.years.find(
+      (row: { configurations: number }) => row.configurations === 1,
+    );
+    if (lonely) {
+      const missing = await request(app).get(`/api/cars/models/honda/civic/${lonely.year}`);
+      expect(missing.status).toBe(404);
+    }
+  });
+
   it('answers unknown API paths with JSON, not the SPA', async () => {
     const res = await request(app).get('/api/definitely-not-a-route');
     expect(res.status).toBe(404);
@@ -319,10 +344,13 @@ describe('account API without configuration', () => {
 });
 
 describe('security headers', () => {
-  it('sends the baseline Content-Security-Policy', async () => {
+  it('sends a Content-Security-Policy that locks scripts to this origin', async () => {
     const res = await request(app).get('/api/health');
-    expect(res.headers['content-security-policy']).toBe(
-      "base-uri 'self';object-src 'none';frame-ancestors 'none'",
-    );
+    const csp = res.headers['content-security-policy'];
+    expect(csp).toMatch(/script-src[^;]*'self'/);
+    expect(csp).toMatch(/script-src[^;]*'wasm-unsafe-eval'/);
+    expect(csp).toMatch(/object-src 'none'/);
+    expect(csp).toMatch(/frame-ancestors 'none'/);
+    expect(csp).toMatch(/img-src[^;]*https:\/\/\*\.wikimedia\.org/);
   });
 });

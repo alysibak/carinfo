@@ -39,14 +39,13 @@ export function isPlausibleRatedHorsepower(
 }
 
 /**
- * EPA's test-car list is matched to cars by displacement and cylinders, not by
- * forced induction (scripts/build-horsepower-enrichment.ts). Where one model
- * year offers the same engine size with and without a turbo, the turbo car
- * could take the naturally aspirated rating: the 2005 Subaru Legacy GT showed
- * the 2.5i's 168 hp instead of 250, the Civic Type R the base car's 150. A
- * turbo or supercharged car rated no higher than a naturally aspirated sibling
- * of the same size, fuel and model year loses its rating, so it reads "not on
- * file" rather than a figure that is wrong.
+ * EPA's test-car matcher now compares aspiration where the carline names it
+ * and picks the upper/lower cluster when NA and turbo still share one carline
+ * (scripts/build-horsepower-enrichment.ts). This pass remains as a safety net
+ * for enrichment files built before that change: a turbo or supercharged car
+ * rated no higher than a naturally aspirated sibling of the same size, fuel
+ * and model year loses its rating, so it reads "not on file" rather than a
+ * figure that is wrong (the 2005 Legacy GT at the 2.5i's 168 hp).
  */
 export function dropInductionMismatchedHorsepower(cars: Car[]): { cars: Car[]; dropped: number } {
   const key = (c: Car) =>

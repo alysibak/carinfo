@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { createPortal } from 'react-dom';
 import { HEADER_SLOT_ID } from './SiteHeader';
 /**
@@ -37,14 +38,14 @@ export default function PinnedCarBar({
           onClick={onGarage}
           className="hidden sm:inline-flex btn-secondary min-h-[36px]! py-1.5! px-3! text-[13px]"
         >
-          Save to garage
+          {t('Save to garage')}
         </button>
         <button
           type="button"
           onClick={onCompare}
           className={`${inCompare ? 'btn-secondary' : 'btn-primary'} min-h-[36px]! py-1.5! px-3! text-[13px] shrink-0`}
         >
-          {inCompare ? 'In compare' : 'Add to compare'}
+          {inCompare ? t('In compare') : t('Add to compare')}
         </button>
       </div>
     </div>
@@ -65,14 +66,14 @@ export default function PinnedCarBar({
           onClick={onGarage}
           className="btn-secondary min-h-[44px]! py-2! px-3! text-[13px] shrink-0"
         >
-          Save
+          {t('Save')}
         </button>
         <button
           type="button"
           onClick={onCompare}
           className={`${inCompare ? 'btn-secondary' : 'btn-primary'} min-h-[44px]! py-2! px-3.5! text-[13px] shrink-0`}
         >
-          {inCompare ? 'In compare' : '+ Compare'}
+          {inCompare ? t('In compare') : t('+ Compare')}
         </button>
       </div>
     </div>

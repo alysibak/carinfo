@@ -16,6 +16,28 @@ CREATE TABLE IF NOT EXISTS garage_items (
 
 CREATE INDEX IF NOT EXISTS garage_items_user_id_idx ON garage_items (user_id);
 
+-- Recall alerts (src/services/recall-alerts.service.ts): the opt-in; each saved
+-- car watched, from when; and each recall a user has been sent for one, or
+-- that was already listed when they began watching it (sent_at null), so a
+-- recall is emailed once.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS recall_alerts BOOLEAN NOT NULL DEFAULT FALSE;
+
+CREATE TABLE IF NOT EXISTS recall_watches (
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  car_id TEXT NOT NULL,
+  since TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (user_id, car_id)
+);
+
+CREATE TABLE IF NOT EXISTS recall_notices (
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  car_id TEXT NOT NULL,
+  recall_number TEXT NOT NULL,
+  sent_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (user_id, car_id, recall_number)
+);
+
 -- Sign-in (Better Auth; see src/auth/auth.ts). An auth_user's id is its users id.
 -- These are the tables Better Auth's own migration makes for that
 -- configuration; src/auth/auth.test.ts fails if an upgrade wants others.

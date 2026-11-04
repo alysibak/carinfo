@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Car } from '../types/car.types.js';
 import { getAllCars } from '../services/car.service.js';
-import { getRegionalAssumptions } from '../config/regional-assumptions.js';
+import { getRegionalAssumptions, parseRegionId } from '../config/regional-assumptions.js';
 import { computeOwnershipEconomics } from './ownership-economics.js';
 import { applyValuationReliabilityGuard, estimateNewVehicleMsrp } from './vehicle-valuation.js';
 
@@ -124,6 +124,57 @@ describe('regions', () => {
   it('charges no Ontario plate renewal fee', () => {
     const [car] = sample();
     expect(computeOwnershipEconomics(car, [], 'ontario').annualCost.registration).toBe(0);
+  });
+
+  it('prices Alberta and Quebec with their own fuel, power and registration', () => {
+    const [car] = sample();
+    const ab = getRegionalAssumptions('alberta');
+    const qc = getRegionalAssumptions('quebec');
+    const on = getRegionalAssumptions('ontario');
+
+    expect(ab.gasPriceCadPerL).not.toBe(on.gasPriceCadPerL);
+    expect(qc.gasPriceCadPerL).not.toBe(on.gasPriceCadPerL);
+    expect(ab.electricityRateCadPerKwh).toBeGreaterThan(on.electricityRateCadPerKwh);
+    expect(qc.electricityRateCadPerKwh).toBeLessThan(on.electricityRateCadPerKwh);
+    expect(computeOwnershipEconomics(car, [], 'alberta').annualCost.registration).toBe(94);
+    expect(computeOwnershipEconomics(car, [], 'quebec').annualCost.registration).toBe(230);
+    expect(parseRegionId('ab')).toBe('alberta');
+    expect(parseRegionId('qc')).toBe('quebec');
+  });
+
+  it('prices the six newer provinces with their own fuel, power and registration', () => {
+    const [car] = sample();
+    const on = getRegionalAssumptions('ontario');
+    const mb = getRegionalAssumptions('manitoba');
+    const sk = getRegionalAssumptions('saskatchewan');
+    const ns = getRegionalAssumptions('nova-scotia');
+    const nb = getRegionalAssumptions('new-brunswick');
+    const pe = getRegionalAssumptions('prince-edward-island');
+    const nl = getRegionalAssumptions('newfoundland-and-labrador');
+
+    expect(mb.gasPriceCadPerL).not.toBe(on.gasPriceCadPerL);
+    expect(sk.electricityRateCadPerKwh).toBeCloseTo(0.15476);
+    expect(ns.electricityRateCadPerKwh).toBeCloseTo(0.19128);
+    expect(mb.electricityRateCadPerKwh).toBeCloseTo(0.0997);
+    expect(nl.electricityRateCadPerKwh).toBeCloseTo(0.15587);
+    expect(computeOwnershipEconomics(car, [], 'manitoba').annualCost.registration).toBe(119);
+    expect(computeOwnershipEconomics(car, [], 'saskatchewan').annualCost.registration).toBe(68);
+    expect(computeOwnershipEconomics(car, [], 'nova-scotia').annualCost.registration).toBe(88);
+    expect(computeOwnershipEconomics(car, [], 'new-brunswick').annualCost.registration).toBe(117);
+    expect(computeOwnershipEconomics(car, [], 'prince-edward-island').annualCost.registration).toBe(
+      100,
+    );
+    expect(
+      computeOwnershipEconomics(car, [], 'newfoundland-and-labrador').annualCost.registration,
+    ).toBe(90);
+    expect(nb.insurance.sedan).toBeLessThan(on.insurance.sedan);
+    expect(pe.insurance.sedan).toBeLessThan(nb.insurance.sedan);
+    expect(parseRegionId('mb')).toBe('manitoba');
+    expect(parseRegionId('sk')).toBe('saskatchewan');
+    expect(parseRegionId('ns')).toBe('nova-scotia');
+    expect(parseRegionId('nb')).toBe('new-brunswick');
+    expect(parseRegionId('pei')).toBe('prince-edward-island');
+    expect(parseRegionId('nl')).toBe('newfoundland-and-labrador');
   });
 });
 

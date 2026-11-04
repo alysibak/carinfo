@@ -3,6 +3,7 @@ import type { CarSpecs } from '../types/car.types';
 import { carPhotoSources } from '../utils/carImages';
 import { displayVehicleTitle } from '../utils/trimLabel';
 import { Modal } from './ui';
+import { t } from '../i18n';
 
 type PhotoCar = Pick<CarSpecs, 'year' | 'make' | 'model' | 'trim' | 'engine' | 'variant' | 'photo'>;
 
@@ -49,16 +50,18 @@ const CAMERA = (
  */
 export default function CarPhotoButton({
   car,
-  label = 'See photo',
+  label,
   className = '',
   variant = 'button',
-  mark = 'Photo',
+  mark,
   focusable = false,
   children,
 }: CarPhotoButtonProps) {
   const [open, setOpen] = useState(false);
   const preloaded = useRef(false);
   const sources = carPhotoSources(car.photo);
+  const buttonLabel = label ?? t('See photo');
+  const tileMark = mark ?? t('Photo');
   if (!car.photo || sources.length === 0) return variant === 'tile' ? <>{children}</> : null;
 
   // Pointing at the button starts the download, so the photo is there on click.
@@ -76,7 +79,9 @@ export default function CarPhotoButton({
       <button
         type="button"
         tabIndex={focusable ? 0 : -1}
-        aria-label={`Open the photo of the ${displayVehicleTitle(car)}, larger`}
+        aria-label={t('Open the photo of the {name}, larger', {
+          name: displayVehicleTitle(car),
+        })}
         onClick={() => setOpen(true)}
         onPointerEnter={preload}
         onFocus={preload}
@@ -85,7 +90,7 @@ export default function CarPhotoButton({
         {children}
         <span className="absolute bottom-1 right-1 inline-flex items-center gap-1 bg-zinc-950/85 border border-zinc-700 px-1.5 py-0.5 text-[11px] text-zinc-200 group-hover:border-zinc-400 group-hover:text-white transition-colors">
           {CAMERA}
-          {mark}
+          {tileMark}
         </span>
       </button>
     ) : (
@@ -97,7 +102,7 @@ export default function CarPhotoButton({
         className={`inline-flex items-center gap-1.5 border border-zinc-700 px-3 text-zinc-200 hover:border-zinc-400 hover:text-white transition-colors ${className}`}
       >
         {CAMERA}
-        {label}
+        {buttonLabel}
       </button>
     );
 
@@ -135,13 +140,13 @@ function PhotoViewer({
                 <div className="w-32 h-0.5 overflow-hidden bg-zinc-900" aria-hidden>
                   <div className="h-full w-1/4 bg-accent/70 animate-loading-bar motion-reduce:hidden" />
                 </div>
-                <span className="sr-only">Loading the photo</span>
+                <span className="sr-only">{t('Loading the photo')}</span>
               </div>
             )}
             <img
               key={src}
               src={src}
-              alt={`Photo: ${photo.caption}`}
+              alt={t('Photo: {caption}', { caption: photo.caption })}
               referrerPolicy="no-referrer"
               decoding="async"
               onLoad={() => setLoaded(true)}
@@ -154,14 +159,14 @@ function PhotoViewer({
           </>
         ) : (
           <p className="p-6 text-sm text-zinc-400 text-center">
-            The photo did not load.{' '}
+            {t('The photo did not load.')}{' '}
             <a
               href={photo.page}
               target="_blank"
               rel="noopener noreferrer"
               className="text-white underline underline-offset-4"
             >
-              See it on Wikimedia Commons
+              {t('See it on Wikimedia Commons')}
             </a>
             .
           </p>
@@ -172,17 +177,22 @@ function PhotoViewer({
         {photo.generation && <p className="text-zinc-400">{photo.generation}</p>}
         {photo.otherYear ? (
           <p className="text-xs text-amber-200/90 leading-relaxed">
-            A photo of a {photo.otherYear.year} model, not this model year: none of this year is on
-            file. It is the same generation ({photo.otherYear.generation[0]}–
-            {photo.otherYear.generation[1]}), but lights, bumpers and trim can change within one.
+            {t(
+              'A photo of a {year} model, not this model year: none of this year is on file. It is the same generation ({from}–{to}), but lights, bumpers and trim can change within one.',
+              {
+                year: photo.otherYear.year,
+                from: photo.otherYear.generation[0],
+                to: photo.otherYear.generation[1],
+              },
+            )}
           </p>
         ) : (
           <p className="text-xs text-zinc-500 leading-relaxed">
-            A photo of this model year. Trim, colour and options may differ from this car.
+            {t('A photo of this model year. Trim, colour and options may differ from this car.')}
           </p>
         )}
         <p className="text-xs text-zinc-500">
-          Photo:{' '}
+          {t('Photo:')}{' '}
           <a
             href={photo.page}
             target="_blank"
@@ -191,7 +201,7 @@ function PhotoViewer({
           >
             {photo.credit}
           </a>
-          , via Wikimedia Commons
+          {t(', via Wikimedia Commons')}
         </p>
       </figcaption>
     </figure>

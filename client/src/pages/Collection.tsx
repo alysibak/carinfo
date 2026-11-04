@@ -15,6 +15,8 @@ import { ErrorState, LoadingScreen } from '../components/ui';
 import ToolPageHeader from '../components/ToolPageHeader';
 import PageShell, { PageBody } from '../components/PageShell';
 import { usePageMeta } from '../utils/pageMeta';
+import { t } from '../i18n';
+import { fmtNumber } from '../i18n/format';
 
 /**
  * Curated shortlist page — ranked picks + exit to Search.
@@ -31,8 +33,8 @@ export default function Collection() {
   const [totalMatching, setTotalMatching] = useState(0);
 
   usePageMeta(
-    collection?.title ?? 'Collection',
-    collection?.description ?? 'A shortlist of cars, from the public records.',
+    collection ? t(collection.title) : t('Collection'),
+    collection ? t(collection.description) : t('A shortlist of cars, from the public records.'),
   );
 
   const rankBy = collection?.display?.rankBy ?? 'best-value';
@@ -62,7 +64,7 @@ export default function Collection() {
       } catch {
         if (!active) return;
         setCars([]);
-        setLoadError('Could not load this shortlist. Check your connection and try again.');
+        setLoadError(t('Could not load this shortlist. Check your connection and try again.'));
       } finally {
         if (active) setLoading(false);
       }
@@ -80,26 +82,26 @@ export default function Collection() {
   if (!collection) {
     return (
       <ErrorState
-        title="Shortlist not found"
-        message="No shortlist goes by that address. It may have been renamed."
+        title={t('Shortlist not found')}
+        message={t('No shortlist goes by that address. It may have been renamed.')}
         backTo="/browse#shortlists"
-        backLabel="See all shortlists"
+        backLabel={t('See all shortlists')}
       />
     );
   }
 
   if (loading) {
-    return <LoadingScreen label="Building shortlist" />;
+    return <LoadingScreen label={t('Building shortlist')} />;
   }
 
   if (loadError) {
     return (
       <ErrorState
-        title="Shortlist unavailable"
+        title={t('Shortlist unavailable')}
         message={loadError}
         onRetry={() => setAttempt((n) => n + 1)}
         backTo="/browse#shortlists"
-        backLabel="See all shortlists"
+        backLabel={t('See all shortlists')}
       />
     );
   }
@@ -118,25 +120,26 @@ export default function Collection() {
     <PageShell>
       <ToolPageHeader
         backTo="/"
-        backLabel="Home"
-        title={collection.title}
-        subtitle={collection.subtitle}
+        backLabel={t('Home')}
+        title={t(collection.title)}
+        subtitle={t(collection.subtitle)}
       />
 
       <PageBody>
         <p className="text-sm text-zinc-400 mb-2 max-w-xl leading-relaxed">
-          {collection.description}
+          {t(collection.description)}
         </p>
         <p className="text-xs text-zinc-600 mb-8">
-          {cars.length} ranked picks
-          {moreInSearch > 0 ? ` · ${moreInSearch.toLocaleString()}+ more in Search` : ''}
-          {' · '}
-          one trim per model
+          {t('{count} ranked picks', { count: cars.length })}
+          {moreInSearch > 0
+            ? t(' · {count}+ more in Search', { count: fmtNumber(moreInSearch) })
+            : ''}
+          {t(' · one trim per model')}
         </p>
 
         {shortlistDiff.axes.length > 0 && (
           <div className="mb-6 pb-5 border-b border-zinc-800">
-            <p className="text-xs text-zinc-500 mb-2">How the top picks differ</p>
+            <p className="text-xs text-zinc-500 mb-2">{t('How the top picks differ')}</p>
             <ul className="space-y-2">
               {shortlistDiff.axes.map((axis) => (
                 <li key={axis} className="text-base text-zinc-200 leading-snug">
@@ -149,12 +152,12 @@ export default function Collection() {
 
         {cars.length === 0 ? (
           <div className="py-16 border-t border-zinc-900">
-            <p className="text-base text-zinc-300 mb-3">Nothing matched this shortlist.</p>
+            <p className="text-base text-zinc-300 mb-3">{t('Nothing matched this shortlist.')}</p>
             <Link
               to={searchHref}
               className="text-xs text-zinc-400 underline underline-offset-4 hover:text-white"
             >
-              Open filters in Search
+              {t('Open filters in Search')}
             </Link>
           </div>
         ) : (
@@ -188,7 +191,7 @@ export default function Collection() {
                             power === 'Not on file' ? null : power,
                             efficiency?.text,
                             bodyStyleLabel(car.bodyStyle),
-                            price === 'Not on file' ? null : `est. value ~${price}`,
+                            price === 'Not on file' ? null : t('est. value ~{price}', { price }),
                           ]
                             .filter((part) => part && part !== figure)
                             .join(' · ')}
@@ -215,14 +218,14 @@ export default function Collection() {
                 className="text-xs text-white border border-zinc-600 px-4 py-2.5 hover:border-white text-center sm:text-left"
               >
                 {moreInSearch > 0
-                  ? `Browse all ${totalMatching.toLocaleString()} in Search`
-                  : 'Open in Search'}
+                  ? t('Browse all {count} in Search', { count: fmtNumber(totalMatching) })
+                  : t('Open in Search')}
               </Link>
               <Link
                 to="/browse"
                 className="inline-block py-1.5 text-xs text-zinc-400 hover:text-white"
               >
-                Other shortlists and ways to start
+                {t('Other shortlists and ways to start')}
               </Link>
             </div>
           </>

@@ -4,7 +4,7 @@ import * as carService from '../services/car.service.js';
 import type { Car } from '../types/car.types.js';
 import { loadTemplate, renderShell } from './html-shell.js';
 import { vehicleName, vehicleSeo, type PageSeo } from './vehicle-seo.js';
-import { modelSeo } from './model-seo.js';
+import { modelSeo, modelYearSeo } from './model-seo.js';
 
 /**
  * Server-rendered HTML shells for the pages people share and search engines
@@ -77,6 +77,27 @@ router.get('/car/:id', (req, res) => {
     return;
   }
   send(req, res, vehicleSeo(car));
+});
+
+router.get('/models/:make/:model/:year', (req, res) => {
+  const year = parseInt(req.params.year, 10);
+  const overview = carService.getModelYearOverview(req.params.make, req.params.model, year);
+  if (!overview) {
+    send(
+      req,
+      res,
+      {
+        title: 'Model year not found',
+        description: 'This model year is not in the CarInfo database.',
+        canonicalPath: req.path,
+        ogType: 'website',
+        noindex: true,
+      },
+      404,
+    );
+    return;
+  }
+  send(req, res, modelYearSeo(overview));
 });
 
 router.get('/models/:make/:model', (req, res) => {

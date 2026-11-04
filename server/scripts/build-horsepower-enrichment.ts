@@ -17,8 +17,11 @@
  *      (filenames encode the model year, e.g. 26-testcar-*.xlsx, 16tstcar.csv).
  *   2. Download + cache them under data/raw/test-car-data/ (xlsx and csv supported).
  *   3. Parse RHP from both EPA schemas (modern verbose + legacy coded 2000–2009).
- *   4. Match every vehicle in cars.json by engine (displacement + cylinders) and
- *      carline name, then write data/horsepower-enrichment.json keyed by epaId.
+ *   4. Match every vehicle in cars.json by engine (displacement + cylinders +
+ *      aspiration where known) and carline name, then write
+ *      data/horsepower-enrichment.json keyed by epaId. When one carline still
+ *      carries both a NA and a turbo reading, the car's own aspiration picks
+ *      the upper or lower cluster so a Legacy GT does not keep the 2.5i's hp.
  *
  * The result is merged into records at load time by services/content-enrichment.ts
  * (provenance: 'epa'), consistent with the static-JSON architecture.
@@ -38,6 +41,13 @@ import { parse as parseCsv } from 'csv-parse/sync';
 import type { Car } from '../src/types/car.types.js';
 import { isPlausibleRatedHorsepower } from '../src/utils/horsepower-plausibility.js';
 import { fetchBuffer, fetchText } from './lib/fetch.js';
+import {
+  inductionCompatible,
+  inductionFromCar,
+  inductionFromCarline,
+  pickHorsepowerForInduction,
+  type Induction,
+} from './lib/horsepower-match.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = resolve(__dirname, '..', 'data');
@@ -178,6 +188,8 @@ interface Variant {
   model: string; // normalized carline
   displ: string; // litres, 1 decimal ('' if unknown)
   cyl: string; // cylinder count ('' if unknown)
+  /** From the carline text when EPA names turbo/supercharg; else unknown. */
+  induction: Induction;
   hp: number;
 }
 
@@ -344,7 +356,8 @@ async function parseTestCarFile(path: string, idx: Indexes): Promise<number> {
     const cylNum = ex.cyl ? parseInt(String(row[ex.cyl]), 10) : NaN;
     const cyl = Number.isNaN(cylNum) || cylNum <= 0 ? '' : String(cylNum);
 
-    const variant: Variant = { model, displ, cyl, hp };
+    const induction = inductionFromCarline(String(row[ex.model] ?? ''));
+    const variant: Variant = { model, displ, cyl, induction, hp };
     pushVariant(idx.byMakeYear, `${make}|${year}`, variant);
     if (displ && cyl) pushVariant(idx.byEngineYear, `${displ}|${cyl}|${year}`, variant);
     added++;
@@ -374,10 +387,9 @@ function carlineRelated(a: string, b: string): boolean {
  * Choose a horsepower from candidate variants.
  *  - When a carline is required, prefer rows whose carline matches EXACTLY before
  *    falling back to prefix-related rows (sharper than prefix matching alone).
- *  - Aggregate over DISTINCT horsepower values (not raw rows) so a make/year that
- *    tested one trim more often than another doesn't bias the median. Same-engine
- *    trims the EPA lumps under one carline (e.g. NA + turbo "IMPREZA AWD") then
- *    yield a stable central figure instead of whichever trim was tested most.
+ *  - Drop rows whose named induction conflicts with the car's (turbo vs NA).
+ *  - When NA and turbo still share one carline, pick by the car's aspiration
+ *    instead of averaging them into a figure nobody made.
  */
 function bestHp(
   candidates: Variant[],
@@ -387,8 +399,11 @@ function bestHp(
   combined: string,
   requireCarline: boolean,
   requireTight: boolean,
+  carInduction: Induction,
 ): number | null {
-  const pool = candidates.filter(enginePred);
+  const pool = candidates.filter(
+    (v) => enginePred(v) && inductionCompatible(carInduction, v.induction),
+  );
   if (pool.length === 0) return null;
 
   let chosen: number[];
@@ -402,7 +417,8 @@ function bestHp(
 
   const distinct = [...new Set(chosen)];
   if (requireTight && !isTight(distinct)) return null;
-  return Math.round(median(distinct));
+  const picked = pickHorsepowerForInduction(distinct, carInduction);
+  return picked == null ? null : Math.round(picked);
 }
 
 function matchHorsepower(car: Car, idx: Indexes): MatchResult | null {
@@ -412,6 +428,7 @@ function matchHorsepower(car: Car, idx: Indexes): MatchResult | null {
   const year = car.year;
   const displ = car.engine.displacement != null ? car.engine.displacement.toFixed(1) : null;
   const cyl = car.engine.cylinders != null ? String(car.engine.cylinders) : null;
+  const carInduction = inductionFromCar(car.engine.aspiration);
 
   const makeBucket = idx.byMakeYear.get(`${make}|${year}`) ?? [];
   const engineBucket = displ && cyl ? (idx.byEngineYear.get(`${displ}|${cyl}|${year}`) ?? []) : [];
@@ -427,7 +444,7 @@ function matchHorsepower(car: Car, idx: Indexes): MatchResult | null {
 
   // Tier 1 — same make + exact engine + carline. Highest confidence (modern files).
   if (displ && cyl) {
-    const hp = bestHp(makeBucket, sameEngine, related, model, combined, true, false);
+    const hp = bestHp(makeBucket, sameEngine, related, model, combined, true, false, carInduction);
     if (hp != null) return { hp, tier: 'make+engine+model' };
   }
 
@@ -435,14 +452,23 @@ function matchHorsepower(car: Car, idx: Indexes): MatchResult | null {
   // field is the parent company (e.g. "GENERAL MOTORS", "FUJI HEAVY IND"=Subaru).
   // The exact engine + distinctive carline keep cross-make contamination low.
   if (engineBucket.length) {
-    const hp = bestHp(engineBucket, () => true, related, model, combined, true, false);
+    const hp = bestHp(
+      engineBucket,
+      () => true,
+      related,
+      model,
+      combined,
+      true,
+      false,
+      carInduction,
+    );
     if (hp != null) return { hp, tier: 'engine+model' };
   }
 
   // Tier 3 — same make + carline + cylinders (tolerates displacement rounding),
   // accepted only when the readings agree closely.
   if (cyl) {
-    const hp = bestHp(makeBucket, sameCyl, related, model, combined, true, true);
+    const hp = bestHp(makeBucket, sameCyl, related, model, combined, true, true, carInduction);
     if (hp != null) return { hp, tier: 'model+cyl' };
   }
 
@@ -457,7 +483,7 @@ function matchHorsepower(car: Car, idx: Indexes): MatchResult | null {
     );
     const renamed = (v: Variant) =>
       sameEngine(v) && !others.some((m) => carlineRelated(m, v.model));
-    const hp = bestHp(makeBucket, renamed, related, model, combined, false, true);
+    const hp = bestHp(makeBucket, renamed, related, model, combined, false, true, carInduction);
     if (hp != null) return { hp, tier: 'engine' };
   }
 

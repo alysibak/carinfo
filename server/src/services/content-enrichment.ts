@@ -4,6 +4,7 @@ import { resolveDataFile } from '../utils/data-paths.js';
 import { estimateEvHorsepower } from '../utils/ev-power-estimates.js';
 import { canonicalizeDisplayModel, resolveNhtsaCountry } from '../utils/vehicle-taxonomy.js';
 import { isPlausibleRatedHorsepower } from '../utils/horsepower-plausibility.js';
+import { withCuratedMakerSpecs } from '../utils/curated-maker-specs.js';
 
 /**
  * Load-time enrichment from offline companion files (no network calls):
@@ -187,5 +188,7 @@ export function enrichCar(car: Car): Car {
     next.provenance = { ...next.provenance, countryOfOrigin: 'nhtsa' };
   }
 
-  return next;
+  // Maker torque, seats and towing: matched by model family and engine, not
+  // EPA id. Applied last so a curated horsepower above stays the EPA figure.
+  return withCuratedMakerSpecs(next);
 }

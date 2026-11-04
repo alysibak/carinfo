@@ -1,3 +1,6 @@
+import { t } from '../i18n';
+import { fmtNumber } from '../i18n/format';
+
 interface FilterPillsProps {
   options: { id: string; label: string; description?: string; count?: number }[];
   activeIds: string[];
@@ -21,7 +24,7 @@ export default function FilterPills({
             type="button"
             aria-pressed={active}
             onClick={() => onToggle(opt.id)}
-            title={opt.description}
+            title={opt.description ? t(opt.description) : undefined}
             className={`text-left border transition-colors ${
               compact ? 'px-3 py-1.5 text-[13px]' : 'px-3 py-2 text-[13px]'
             } ${
@@ -30,10 +33,10 @@ export default function FilterPills({
                 : 'border-zinc-700 text-zinc-300 hover:border-zinc-400 hover:text-white bg-black'
             }`}
           >
-            <span className="font-medium">{opt.label}</span>
+            <span className="font-medium">{t(opt.label)}</span>
             {opt.count != null && (
               <span className={`ml-1.5 ${active ? 'text-accent-ink/70' : 'text-zinc-400'}`}>
-                ({opt.count.toLocaleString()})
+                ({fmtNumber(opt.count)})
               </span>
             )}
           </button>

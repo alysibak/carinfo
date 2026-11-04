@@ -4,6 +4,7 @@ import { efficiencyOf, rangeKm } from './efficiency';
 import { formatEngineForDetail, hasNumericValue } from './dataValue';
 import { formatTransmissionLabel } from './trimLabel';
 import { formatMoney } from './money';
+import { t } from '../i18n';
 
 export type Tone = 'better' | 'worse' | 'neutral';
 
@@ -32,7 +33,7 @@ export interface KeyFigure {
 /** "a typical sport compact", "a typical compact SUV". */
 export function typicalOf(className: string): string {
   const noun = className.charAt(0).toLowerCase() + className.slice(1);
-  return `a typical ${noun}`;
+  return t('a typical {noun}', { noun });
 }
 
 function fuelVsClass(
@@ -43,10 +44,25 @@ function fuelVsClass(
   // Under 0.3 L/100 km is about $50 a year: the same, for anyone deciding.
   const threshold = fuel.unit === 'L/100 km' ? 0.3 : 0.5;
   if (Math.abs(diff) < threshold) {
-    return { text: `About the same as ${typicalOf(className)}`, tone: 'neutral' };
+    return {
+      text: t('About the same as {typical}', { typical: typicalOf(className) }),
+      tone: 'neutral',
+    };
   }
+  const amount = Math.abs(diff).toFixed(1);
   return {
-    text: `${Math.abs(diff).toFixed(1)} ${fuel.unit} ${diff < 0 ? 'less' : 'more'} than ${typicalOf(className)}`,
+    text:
+      diff < 0
+        ? t('{amount} {unit} less than {typical}', {
+            amount,
+            unit: fuel.unit,
+            typical: typicalOf(className),
+          })
+        : t('{amount} {unit} more than {typical}', {
+            amount,
+            unit: fuel.unit,
+            typical: typicalOf(className),
+          }),
     tone: diff < 0 ? 'better' : 'worse',
   };
 }
@@ -58,10 +74,17 @@ function powerVsClass(
   const diff = power.car - power.median;
   // More power is neither better nor worse: a fact about the car, in grey.
   if (Math.abs(diff) / power.median < 0.05) {
-    return { text: `About the same as ${typicalOf(className)}`, tone: 'neutral' };
+    return {
+      text: t('About the same as {typical}', { typical: typicalOf(className) }),
+      tone: 'neutral',
+    };
   }
+  const amount = Math.abs(Math.round(diff));
   return {
-    text: `${Math.abs(Math.round(diff))} hp ${diff > 0 ? 'more' : 'less'} than ${typicalOf(className)}`,
+    text:
+      diff > 0
+        ? t('{amount} hp more than {typical}', { amount, typical: typicalOf(className) })
+        : t('{amount} hp less than {typical}', { amount, typical: typicalOf(className) }),
     tone: 'neutral',
   };
 }
@@ -76,9 +99,9 @@ function powerSource(dashboard: CarDashboard): { detail?: string; source?: Prove
   const prov =
     dashboard.fieldProvenance?.['engine.horsepower'] ?? car.provenance?.['engine.horsepower'];
   if (car.engine.horsepowerBasis === 'sibling') {
-    return { detail: 'Same engine in this model', source: 'estimated' };
+    return { detail: t('Same engine in this model'), source: 'estimated' };
   }
-  if (prov === 'estimated') return { detail: 'Estimated output', source: 'estimated' };
+  if (prov === 'estimated') return { detail: t('Estimated output'), source: 'estimated' };
   // A figure on record says where from in its chip alone: "EPA test-car
   // rating" under it said nothing a shopper uses.
   if (car.engine.horsepowerBasis === 'manufacturer') return { source: 'curated' };
@@ -116,10 +139,10 @@ export function buildKeyFigures(
   if (isEv && hasNumericValue(rangeMiles)) {
     figures.push({
       id: 'range',
-      label: recordSource === 'epa' ? 'EPA range' : 'Range',
+      label: recordSource === 'epa' ? t('EPA range') : t('Range'),
       value: String(rangeKm(rangeMiles!)),
       unit: 'km',
-      detail: 'On a full charge',
+      detail: t('On a full charge'),
       source: recordSource,
       glossaryKey: 'range',
     });
@@ -130,13 +153,21 @@ export function buildKeyFigures(
     // A plug-in hybrid's figure is its gas-mode use: said beneath, so the
     // label stays short enough for a phone.
     const gasMode = efficiency.label === 'Gas-mode fuel use';
+    const efficiencyLabel =
+      gasMode || efficiency.label === 'Fuel use'
+        ? t('Fuel use')
+        : efficiency.label === 'Energy use'
+          ? t('Energy use')
+          : efficiency.label === 'Hydrogen use'
+            ? t('Hydrogen use')
+            : t('Fuel use');
     figures.push({
       id: isEv ? 'energy' : 'fuel',
-      label: gasMode ? 'Fuel use' : efficiency.label,
+      label: efficiencyLabel,
       value: number,
       unit: unitWords.join(' '),
       // EPA's US miles per gallon left to the spec list: a Canadian reads litres.
-      detail: gasMode ? 'In gas mode' : undefined,
+      detail: gasMode ? t('In gas mode') : undefined,
       source: recordSource,
       glossaryKey: 'efficiency',
       comparison:
@@ -155,24 +186,26 @@ export function buildKeyFigures(
     hasNumericValue(overall, { allowZero: false })
       ? {
           id: 'safety',
-          label: 'Safety',
+          label: t('Safety'),
           value: String(overall),
           unit: '/5',
           stars: overall,
           detail:
             (car.safetyRating?.nhtsaIds?.length ?? 0) > 1
-              ? `Overall crash-test stars, the lowest of ${car.safetyRating!.nhtsaIds!.length} versions tested`
-              : 'Overall crash-test stars',
+              ? t('Overall crash-test stars, the lowest of {count} versions tested', {
+                  count: car.safetyRating!.nhtsaIds!.length,
+                })
+              : t('Overall crash-test stars'),
           source: 'nhtsa',
           glossaryKey: 'safetyOverall',
         }
       : {
           id: 'safety',
-          label: 'Safety',
+          label: t('Safety'),
           // "Not rated" said NHTSA never tested it; often it did, and the
           // rating is not matched to this version here.
-          value: 'Not on file',
-          detail: 'No NHTSA crash rating on file for this version',
+          value: t('Not on file'),
+          detail: t('No NHTSA crash rating on file for this version'),
           glossaryKey: 'safetyOverall',
           missing: true,
         },
@@ -182,9 +215,9 @@ export function buildKeyFigures(
     const { detail, source } = powerSource(dashboard);
     figures.push({
       id: 'power',
-      label: 'Power',
+      label: t('Power'),
       value: String(car.engine.horsepower),
-      unit: 'hp',
+      unit: t('hp'),
       detail,
       source,
       glossaryKey: 'power',
@@ -200,7 +233,7 @@ export function buildKeyFigures(
   if (fuelCost) {
     figures.push({
       id: 'fuelCost',
-      label: fuelCost.electric ? 'Charging a year' : 'Fuel a year',
+      label: fuelCost.electric ? t('Charging a year') : t('Fuel a year'),
       value: formatMoney(fuelCost.amount),
       detail: fuelCost.basis,
       source: 'estimated',
@@ -213,7 +246,7 @@ export function buildKeyFigures(
     if (engine !== 'Not on file') {
       figures.push({
         id: 'engine',
-        label: 'Engine',
+        label: t('Engine'),
         value: engine,
         source: recordSource,
         glossaryKey: 'engine',
@@ -251,7 +284,7 @@ export function buildSpecLine(
   if (car.transmission?.type) parts.push(formatTransmissionLabel(car.transmission));
   if (car.driveType) parts.push(car.driveType);
   if (dashboard.zeroToSixty?.method === 'actual') {
-    parts.push(`0–60 mph ${dashboard.zeroToSixty.value.toFixed(1)} s`);
+    parts.push(t('0–60 mph {seconds} s', { seconds: dashboard.zeroToSixty.value.toFixed(1) }));
   }
   return parts;
 }

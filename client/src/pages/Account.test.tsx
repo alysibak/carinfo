@@ -10,6 +10,8 @@ import Account from './Account';
 vi.mock('../services/accountApi', async (importOriginal) => ({
   ...(await importOriginal<typeof AccountApi>()),
   getAccountStatus: vi.fn(),
+  getMe: vi.fn(),
+  setRecallAlerts: vi.fn(),
 }));
 
 function renderAccount() {
@@ -70,5 +72,51 @@ describe('Account: delete', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Sign in again' }));
     await waitFor(() => expect(fakeAuthClient.signOut).toHaveBeenCalled());
     expect(await screen.findByText('Sign-in page')).toBeInTheDocument();
+  });
+});
+
+describe('Account: recall alerts and data', () => {
+  beforeEach(() => {
+    __resetAccountStatusForTests();
+    vi.mocked(accountApi.getAccountStatus).mockResolvedValue({
+      authConfigured: true,
+      storageConfigured: true,
+      billingConfigured: false,
+      providers: [],
+      emailConfigured: true,
+      freeGarageLimit: 10,
+    });
+    vi.mocked(accountApi.getMe).mockResolvedValue({
+      user: {
+        id: 'u1',
+        email: 'sam@example.com',
+        plan: 'free',
+        stripeCustomerId: null,
+        recallAlerts: false,
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+      garageIds: [],
+      freeGarageLimit: 10,
+      garageLimit: 10,
+    });
+    vi.mocked(accountApi.setRecallAlerts).mockResolvedValue({ recallAlerts: true });
+    fakeAuth.signedIn();
+  });
+
+  it('turns recall alerts on from the account page', async () => {
+    renderAccount();
+    const box = await screen.findByRole('checkbox', { name: 'Email me about new recalls' });
+    await waitFor(() => expect(box).toBeEnabled());
+    expect(box).not.toBeChecked();
+    fireEvent.click(box);
+    await waitFor(() => expect(box).toBeChecked());
+    expect(accountApi.setRecallAlerts).toHaveBeenCalledWith(true);
+  });
+
+  it('offers the account’s data as a download', async () => {
+    renderAccount();
+    const link = await screen.findByRole('link', { name: 'Download my data' });
+    expect(link).toHaveAttribute('href', '/api/me/export');
+    expect(link).toHaveAttribute('download');
   });
 });

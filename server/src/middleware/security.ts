@@ -82,3 +82,6 @@ export const writeLimiter = () =>
   limiter(60_000, 40, 'Too many requests. Please wait a moment and try again.');
 
 export const statsWriteLimiter = () => limiter(60_000, 5, 'Too many requests.');
+
+/** Crash reports: a page sends at most five, so this only stops a flood. */
+export const clientErrorLimiter = () => limiter(60_000, 30, 'Too many error reports.');
