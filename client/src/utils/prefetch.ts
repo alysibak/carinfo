@@ -93,15 +93,8 @@ export function prefetchForPath(pathname: string): void {
         decodeURIComponent(modelYear[2]),
         parseInt(modelYear[3], 10),
       ];
-      preconnect(PHOTO_ORIGIN);
-      prefetch(modelYearKey(make, name, year), () =>
-        api.getModelYearOverview(make, name, year).then((found) => {
-          whenSafe(() =>
-            preloadPhoto(found.cars.find((c) => c.photo)?.photo ?? found.cars[0]?.photo),
-          );
-          return found;
-        }),
-      );
+      // Its cards show no photos, so there is none to preload.
+      prefetch(modelYearKey(make, name, year), () => api.getModelYearOverview(make, name, year));
       return;
     }
     const model = /^\/models\/([^/]+)\/([^/]+)\/?$/.exec(pathname);

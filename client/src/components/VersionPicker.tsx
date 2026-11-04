@@ -143,14 +143,14 @@ export default function VersionPicker({
         <p className="px-3 pt-2.5 pb-2 text-xs text-zinc-400 leading-relaxed border-b border-zinc-900">
           EPA lists each engine, gearbox and drive, not trim names; each is named by what sets it
           apart.
-          {modelPath && count >= 2 && (
+          {modelPath && (
             <>
               {' '}
               <Link
                 to={`${modelPath}/${car.year}`}
                 className="text-zinc-200 underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-400"
               >
-                All {count} on one page
+                See them all on one page
               </Link>
               .
             </>

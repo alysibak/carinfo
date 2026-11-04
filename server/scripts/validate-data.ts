@@ -84,9 +84,8 @@ if (cars.length < MIN_EXPECTED_CARS) {
   fail('corpus-size', undefined, `only ${cars.length} cars (expected >= ${MIN_EXPECTED_CARS})`);
 }
 
-// Body-style floors: a normalize regression once left hatchbacks near zero in
-// the committed breakdown while runtime inference had ~1,500. Convertibles
-// similarly must not vanish. Floors are well under today's counts.
+// EPA has no hatchback or convertible class; both come from name rules, so a
+// regression there can empty them without moving the corpus size.
 const MIN_BODY: Record<string, number> = { hatchback: 500, convertible: 500 };
 const bodyCounts = new Map<string, number>();
 for (const car of cars) {

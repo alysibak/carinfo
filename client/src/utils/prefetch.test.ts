@@ -5,9 +5,7 @@ import { dashboardKey, modelKey, modelYearKey, prefetchForPath, takePrefetched }
 vi.mock('../services/api', () => ({
   getCarDashboard: vi.fn(() => Promise.resolve({ car: { photo: undefined } })),
   getModelOverview: vi.fn(() => Promise.resolve({ lead: { photo: undefined } })),
-  getModelYearOverview: vi.fn(() =>
-    Promise.resolve({ cars: [{ photo: undefined }], path: '/models/honda/civic/2024' }),
-  ),
+  getModelYearOverview: vi.fn(() => Promise.resolve({ cars: [] })),
 }));
 
 describe('prefetchForPath', () => {
