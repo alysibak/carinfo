@@ -177,7 +177,7 @@
       ],
       "seats": 3,
       "seatsMax": 6,
-      "seatsSource": "https://www.ford.com/trucks/f150/models/",
+      "seatsSource": "https://media.ford.com/content/dam/fordmedia/North%20America/US/product/2021/f150/pdfs/2021-F-150-Technical-Specs.pdf",
       "engines": [
         {
           "displacementL": 2.7,
@@ -194,7 +194,7 @@
           "fuel": "gasoline",
           "forcedInduction": true,
           "torqueLbFt": 500,
-          "maxTowingLb": 13000,
+          "maxTowingLb": 14000,
           "source": "https://media.ford.com/content/dam/fordmedia/North%20America/US/product/2021/f150/pdfs/2021-F-150-Technical-Specs.pdf"
         },
         {
@@ -212,8 +212,26 @@
           "fuel": "hybrid",
           "forcedInduction": true,
           "torqueLbFt": 570,
-          "maxTowingLb": 10700,
-          "source": "https://www.ford.com/trucks/f150/models/f150-powerboost-hybrid/"
+          "maxTowingLb": 12700,
+          "source": "https://media.ford.com/content/dam/fordmedia/North%20America/US/product/2021/f150/pdfs/2021-F-150-Technical-Specs.pdf"
+        },
+        {
+          "displacementL": 3.3,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 265,
+          "maxTowingLb": 8200,
+          "source": "https://media.ford.com/content/dam/fordmedia/North%20America/US/product/2021/f150/pdfs/2021-F-150-Technical-Specs.pdf"
+        },
+        {
+          "displacementL": 3.0,
+          "cylinders": 6,
+          "fuel": "diesel",
+          "forcedInduction": true,
+          "torqueLbFt": 440,
+          "maxTowingLb": 12100,
+          "source": "https://media.ford.com/content/dam/fordmedia/North%20America/US/product/2021/f150/pdfs/2021-F-150-Technical-Specs.pdf"
         }
       ]
     },
@@ -658,6 +676,85 @@
           "torqueLbFt": 262,
           "maxTowingLb": 3600,
           "source": "https://www.chrysler.com/pacifica.html"
+        }
+      ]
+    },
+    {
+      "make": "GMC",
+      "model": "Sierra 1500",
+      "years": [
+        2022,
+        2026
+      ],
+      "seats": 3,
+      "seatsMax": 6,
+      "seatsSource": "https://www.gmc.com/trucks/sierra/1500",
+      "engines": [
+        {
+          "displacementL": 2.7,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 430,
+          "maxTowingLb": 9500,
+          "source": "https://www.gmc.com/trucks/sierra/1500"
+        },
+        {
+          "displacementL": 5.3,
+          "cylinders": 8,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 383,
+          "maxTowingLb": 11000,
+          "source": "https://www.gmc.com/trucks/sierra/1500"
+        },
+        {
+          "displacementL": 6.2,
+          "cylinders": 8,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 460,
+          "maxTowingLb": 13300,
+          "source": "https://www.gmc.com/trucks/sierra/1500"
+        },
+        {
+          "displacementL": 3.0,
+          "cylinders": 6,
+          "fuel": "diesel",
+          "forcedInduction": true,
+          "torqueLbFt": 495,
+          "maxTowingLb": 13300,
+          "source": "https://www.gmc.com/trucks/sierra/1500"
+        }
+      ]
+    },
+    {
+      "make": "Ford",
+      "model": "Maverick",
+      "years": [
+        2022,
+        2026
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.ford.com/trucks/maverick/",
+      "engines": [
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "hybrid",
+          "forcedInduction": false,
+          "torqueLbFt": 155,
+          "maxTowingLb": 2000,
+          "source": "https://www.ford.com/trucks/maverick/"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 310,
+          "maxTowingLb": 4000,
+          "source": "https://www.ford.com/trucks/maverick/"
         }
       ]
     }
