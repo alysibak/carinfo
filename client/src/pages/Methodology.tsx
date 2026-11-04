@@ -77,7 +77,7 @@ const SOURCES = [
 export default function Methodology() {
   usePageMeta(
     'Methodology',
-    'How CarInfo loads EPA data, corrects PHEV mislabels, enriches specs at runtime, and estimates Ontario/CAD market value with stated confidence.',
+    'How CarInfo loads EPA data, corrects PHEV mislabels, enriches specs at runtime, and estimates Canadian market value by province with stated confidence.',
   );
 
   return (

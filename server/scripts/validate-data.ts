@@ -84,6 +84,25 @@ if (cars.length < MIN_EXPECTED_CARS) {
   fail('corpus-size', undefined, `only ${cars.length} cars (expected >= ${MIN_EXPECTED_CARS})`);
 }
 
+// Body-style floors: a normalize regression once left hatchbacks near zero in
+// the committed breakdown while runtime inference had ~1,500. Convertibles
+// similarly must not vanish. Floors are well under today's counts.
+const MIN_BODY: Record<string, number> = { hatchback: 500, convertible: 500 };
+const bodyCounts = new Map<string, number>();
+for (const car of cars) {
+  bodyCounts.set(car.bodyStyle, (bodyCounts.get(car.bodyStyle) ?? 0) + 1);
+}
+for (const [style, min] of Object.entries(MIN_BODY)) {
+  const count = bodyCounts.get(style) ?? 0;
+  if (count < min) {
+    fail(
+      'body-style-floor',
+      undefined,
+      `only ${count} ${style} cars (expected >= ${min}); check inferBodyStyle / normalize`,
+    );
+  }
+}
+
 if (!db.lastUpdated || Number.isNaN(Date.parse(db.lastUpdated))) {
   fail('corpus-lastUpdated', undefined, `missing or unparseable lastUpdated: ${db.lastUpdated}`);
 }

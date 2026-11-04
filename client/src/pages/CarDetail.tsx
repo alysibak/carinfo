@@ -562,7 +562,7 @@ export default function CarDetail() {
                   Save to garage
                 </button>
               </div>
-              <VersionPicker car={car} />
+              <VersionPicker car={car} modelPath={dashboard.modelPage?.path} />
             </div>
           </div>
 

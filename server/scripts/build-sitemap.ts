@@ -57,7 +57,6 @@ const pages: SitemapEntry[] = [
   { path: '/home', changefreq: 'weekly', priority: 0.9 },
   { path: '/browse', changefreq: 'weekly', priority: 0.8 },
   { path: '/value-matrix', changefreq: 'monthly', priority: 0.6 },
-  { path: '/smart-search', changefreq: 'monthly', priority: 0.6 },
   { path: '/vin', changefreq: 'yearly', priority: 0.5 },
   { path: '/methodology', changefreq: 'monthly', priority: 0.5 },
   ...Object.keys(COLLECTIONS).map((id): SitemapEntry => ({

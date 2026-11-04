@@ -394,7 +394,11 @@ export default function ModelPage() {
               <p className="text-sm text-zinc-300 mt-3">
                 Newest on file:{' '}
                 <Link
-                  to={`/car/${newest.carId}`}
+                  to={
+                    newest.configurations >= 2
+                      ? `${overview.path}/${newest.year}`
+                      : `/car/${newest.carId}`
+                  }
                   className="text-white font-medium underline underline-offset-4 decoration-zinc-600 hover:decoration-zinc-300"
                 >
                   {newest.year} {name}
@@ -411,7 +415,7 @@ export default function ModelPage() {
 
       <PageBody className="reveal-sections">
         {overview.years.filter((row) => row.complaints != null || row.recalls != null).length >=
-          3 && <ModelYearChart years={overview.years} name={name!} />}
+          3 && <ModelYearChart years={overview.years} name={name!} modelPath={overview.path} />}
 
         {overview.rivals.length > 0 && (
           <section className="mb-8">

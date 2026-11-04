@@ -532,7 +532,7 @@ Loaded once at startup into memory:
 | `/home`                            | `Home.tsx`         | Yes    | Main search                                              |
 | `/compare`                         | `Compare.tsx`      | Yes    | Side-by-side table (members; dashboard API, provenance)  |
 | `/collection/:collectionId`        | `Collection.tsx`   | Yes    | Curated collection                                       |
-| `/smart-search`                    | `SmartSearch.tsx`  | Yes    | Persona-ranked search                                    |
+| `/smart-search`                    | → `/browse`        | Yes    | Old quiz URL; redirects to Browse                        |
 | `/garage`                          | `DreamGarage.tsx`  | Yes    | Saved garage (members)                                   |
 | `/shared-garage`                   | `SharedGarage.tsx` | Yes    | `?cars=id1,id2`                                          |
 | `/battle`                          | `BattleMode.tsx`   | Yes    | 2-car head-to-head (members)                             |

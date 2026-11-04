@@ -68,7 +68,14 @@ function VersionRow({ car, current, edge }: { car: CarSpecs; current?: boolean; 
  * drive, with how each differs from this one. EPA lists configurations, not
  * trim names. Opens from a search card's "15 versions" link (#versions).
  */
-export default function VersionPicker({ car }: { car: CarSpecs }) {
+export default function VersionPicker({
+  car,
+  modelPath,
+}: {
+  car: CarSpecs;
+  /** "/models/honda/civic" — when set, offers the year page above the list. */
+  modelPath?: string;
+}) {
   const { hash } = useLocation();
   const [siblings, setSiblings] = useState<CarSpecs[] | null>(null);
   const [open, setOpen] = useState(false);
@@ -136,6 +143,18 @@ export default function VersionPicker({ car }: { car: CarSpecs }) {
         <p className="px-3 pt-2.5 pb-2 text-xs text-zinc-400 leading-relaxed border-b border-zinc-900">
           EPA lists each engine, gearbox and drive, not trim names; each is named by what sets it
           apart.
+          {modelPath && count >= 2 && (
+            <>
+              {' '}
+              <Link
+                to={`${modelPath}/${car.year}`}
+                className="text-zinc-200 underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-400"
+              >
+                All {count} on one page
+              </Link>
+              .
+            </>
+          )}
         </p>
         <div className="max-h-[22rem] overflow-y-auto overscroll-contain">
           {groups.map(([body, cars]) => (

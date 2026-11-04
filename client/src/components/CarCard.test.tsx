@@ -42,4 +42,16 @@ describe('CarCard', () => {
     const meta = screen.getByText(/AWD/);
     expect(meta.textContent?.toLowerCase().match(/electric/g) ?? []).toHaveLength(1);
   });
+
+  it('sends a multi-version year to the model-year page when the family path is known', () => {
+    render(
+      <MemoryRouter>
+        <CarCard car={car} versions={4} modelPath="/models/toyota/corolla" />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('link', { name: /4 versions in 2020/i })).toHaveAttribute(
+      'href',
+      '/models/toyota/corolla/2020',
+    );
+  });
 });

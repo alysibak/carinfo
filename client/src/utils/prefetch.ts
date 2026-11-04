@@ -29,6 +29,8 @@ export function takePrefetched<T>(key: string): Promise<T> | undefined {
 
 export const dashboardKey = (id: string, region: string) => `dashboard:${id}:${region}`;
 export const modelKey = (make: string, model: string) => `model:${make}/${model}`;
+export const modelYearKey = (make: string, model: string, year: number) =>
+  `model-year:${make}/${model}/${year}`;
 
 /** Commons' resized photos, which the car and model pages open with. */
 const PHOTO_ORIGIN = 'https://thumb.wikimedia.org';
@@ -79,6 +81,24 @@ export function prefetchForPath(pathname: string): void {
       prefetch(dashboardKey(id, region), () =>
         api.getCarDashboard(id, region).then((found) => {
           whenSafe(() => preloadPhoto(found.car.photo));
+          return found;
+        }),
+      );
+      return;
+    }
+    const modelYear = /^\/models\/([^/]+)\/([^/]+)\/(\d{4})\/?$/.exec(pathname);
+    if (modelYear) {
+      const [make, name, year] = [
+        decodeURIComponent(modelYear[1]),
+        decodeURIComponent(modelYear[2]),
+        parseInt(modelYear[3], 10),
+      ];
+      preconnect(PHOTO_ORIGIN);
+      prefetch(modelYearKey(make, name, year), () =>
+        api.getModelYearOverview(make, name, year).then((found) => {
+          whenSafe(() =>
+            preloadPhoto(found.cars.find((c) => c.photo)?.photo ?? found.cars[0]?.photo),
+          );
           return found;
         }),
       );

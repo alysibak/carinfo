@@ -709,6 +709,7 @@ export default function Home() {
                             car={car}
                             showValue={priceAsked}
                             versions={searchResults.versions?.[car.id]}
+                            modelPath={searchResults.interpretation?.modelPage?.path}
                             layout="list"
                             reasons={matchReasons(
                               car,
@@ -727,6 +728,7 @@ export default function Home() {
                             car={car}
                             showValue={priceAsked}
                             versions={searchResults.versions?.[car.id]}
+                            modelPath={searchResults.interpretation?.modelPage?.path}
                             reasons={matchReasons(
                               car,
                               searchQuery.filters,

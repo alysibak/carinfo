@@ -10,6 +10,7 @@ import CarCard from '../components/CarCard';
 import { modelYearFacts } from '../utils/modelYearFacts';
 import { usePageMeta } from '../utils/pageMeta';
 import { differentiateCars } from '../utils/differentiateCars';
+import { modelYearKey, takePrefetched } from '../utils/prefetch';
 
 type Status = 'loading' | 'ready' | 'missing' | 'error';
 
@@ -39,8 +40,10 @@ export default function ModelYearPage() {
       setStatus('missing');
       return;
     }
-    api
-      .getModelYearOverview(make, model, year, { signal: controller.signal })
+    (
+      takePrefetched<ModelYearOverview>(modelYearKey(make, model, year)) ??
+      api.getModelYearOverview(make, model, year, { signal: controller.signal })
+    )
       .then((found) => {
         if (controller.signal.aborted) return;
         setOverview(found);

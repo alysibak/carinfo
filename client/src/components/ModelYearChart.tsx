@@ -31,11 +31,14 @@ function yearSentence(row: ModelYearSummary): string {
 export default function ModelYearChart({
   years,
   name,
+  modelPath,
 }: {
   /** Newest first, as the model overview lists them. */
   years: ModelYearSummary[];
   /** "Toyota RAV4". */
   name: string;
+  /** "/models/toyota/rav4" — multi-config years open under it. */
+  modelPath: string;
 }) {
   const byYear = useMemo(() => new Map(years.map((row) => [row.year, row])), [years]);
   const first = Math.min(...years.map((row) => row.year));
@@ -299,7 +302,7 @@ export default function ModelYearChart({
               <p className="text-sm text-zinc-300 mt-0.5 tabular-nums">{yearSentence(shown)}</p>
             </div>
             <Link
-              to={`/car/${shown.carId}`}
+              to={shown.configurations >= 2 ? `${modelPath}/${shown.year}` : `/car/${shown.carId}`}
               className="shrink-0 inline-flex items-center min-h-[44px] sm:min-h-0 text-sm text-white underline underline-offset-4 decoration-zinc-600 hover:decoration-zinc-300"
             >
               See the {shown.year} {name} →
