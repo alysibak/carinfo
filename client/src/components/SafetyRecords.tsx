@@ -54,9 +54,7 @@ function RecallItem({ recall, forOther }: { recall: CanadianRecall; forOther?: s
       meta={
         <>
           {recallDate(recall.date)}
-          {recall.units
-            ? t(' · {count} in Canada', { count: fmtNumber(recall.units) })
-            : ''}
+          {recall.units ? t(' · {count} in Canada', { count: fmtNumber(recall.units) }) : ''}
         </>
       }
     >
@@ -215,19 +213,13 @@ export default function SafetyRecords({
                           count: fmtNumber(complaints.fires),
                         }),
                       complaints.injuries > 0 &&
-                        tp(
-                          complaints.injuries,
-                          '{count} injury',
-                          '{count} injuries',
-                          { count: fmtNumber(complaints.injuries) },
-                        ),
+                        tp(complaints.injuries, '{count} injury', '{count} injuries', {
+                          count: fmtNumber(complaints.injuries),
+                        }),
                       complaints.deaths > 0 &&
-                        tp(
-                          complaints.deaths,
-                          '{count} death',
-                          '{count} deaths',
-                          { count: fmtNumber(complaints.deaths) },
-                        ),
+                        tp(complaints.deaths, '{count} death', '{count} deaths', {
+                          count: fmtNumber(complaints.deaths),
+                        }),
                     ]
                       .filter(Boolean)
                       .join(' · ')}
@@ -240,9 +232,7 @@ export default function SafetyRecords({
               <a href={NHTSA_LOOKUP} target="_blank" rel="noreferrer" className={linkClass}>
                 NHTSA
               </a>{' '}
-              {t(
-                '(U.S.), not confirmed defects, and not adjusted for how many were sold',
-              )}
+              {t('(U.S.), not confirmed defects, and not adjusted for how many were sold')}
               {dashboard.recordDates?.complaints &&
                 t('; as of {date}', {
                   date: recallDate(dashboard.recordDates.complaints),

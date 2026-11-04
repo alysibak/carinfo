@@ -235,7 +235,9 @@ export default function SizeAndSpace({ dashboard }: { dashboard: CarDashboard })
   const against = new Map(outside.map(([measure, span]) => [measure, vs(measure, span)]));
   const isAlike = (said: string | null | undefined) =>
     !!said && (said.startsWith('About') || said.startsWith('À peu près'));
-  const alike = outside.filter(([measure]) => isAlike(against.get(measure))).map(([, , word]) => t(word));
+  const alike = outside
+    .filter(([measure]) => isAlike(against.get(measure)))
+    .map(([, , word]) => t(word));
   const differs = (measure: (typeof outside)[number][0]) => {
     const said = against.get(measure);
     return said && !isAlike(said) ? said : null;

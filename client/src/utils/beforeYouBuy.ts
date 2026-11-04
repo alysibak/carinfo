@@ -75,7 +75,10 @@ export function beforeYouBuy(dashboard: CarDashboard): BeforeYouBuyItem[] {
             { name, others },
           )
         : other.length
-          ? t('No recalls in Canada listed for this version of the {name}{others}.', { name, others })
+          ? t('No recalls in Canada listed for this version of the {name}{others}.', {
+              name,
+              others,
+            })
           : t('No recalls in Canada listed for the {name}.', { name }),
       headline: applies.length
         ? tp(applies.length, '{count} recall in Canada', '{count} recalls in Canada')
@@ -148,7 +151,11 @@ export function beforeYouBuy(dashboard: CarDashboard): BeforeYouBuyItem[] {
           ),
       headline: t('Open NHTSA investigation'),
       detail: part
-        ? t('Into its {part}, since {opened}: {subject}. A recall may follow.', { part, opened, subject })
+        ? t('Into its {part}, since {opened}: {subject}. A recall may follow.', {
+            part,
+            opened,
+            subject,
+          })
         : t('Since {opened}: {subject}. A recall may follow.', { opened, subject }),
       tone: 'check',
     });

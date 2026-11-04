@@ -81,9 +81,7 @@ export default function Investigations({
                     '{count} possible defects looked into',
                   )}
               {open ? t(', {count} still open', { count: open }) : ''}
-              {other.length
-                ? t(' · {count} for other versions', { count: other.length })
-                : ''}
+              {other.length ? t(' · {count} for other versions', { count: other.length }) : ''}
             </span>
           </span>
           <Chevron className="w-4 h-4 text-zinc-500 group-hover/inv:text-white group-open/inv:rotate-180" />

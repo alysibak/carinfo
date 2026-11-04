@@ -79,18 +79,28 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
   },
   displacement: {
     plain: msg('Engine size, not the only measure of power'),
-    what: msg('Liters (L) of air+fuel the engine moves per full cycle. A 1.6L engine is smaller than a 3.5L.'),
-    why: msg('Bigger often means more power, but turbos let small engines punch above their weight.'),
+    what: msg(
+      'Liters (L) of air+fuel the engine moves per full cycle. A 1.6L engine is smaller than a 3.5L.',
+    ),
+    why: msg(
+      'Bigger often means more power, but turbos let small engines punch above their weight.',
+    ),
   },
   configuration: {
     plain: msg('How the cylinders are laid out'),
-    what: msg('I4 or I6 = cylinders in a line. V6/V8 = in a V. Flat-4/Flat-6 = opposed (boxer: Subaru, Porsche). W12 = two narrow Vs side by side (Bentley). VR6 = a very narrow V6 (Volkswagen). Rotary = a Wankel, with rotors instead of pistons (Mazda RX-7, RX-8). EPA records only the cylinder count; the layout comes from the engine family, and a six from a maker we do not have on record shows as a count.'),
-    why: msg('Layout affects smoothness, packaging, and sometimes repair cost. I4 is the everyday default.'),
+    what: msg(
+      'I4 or I6 = cylinders in a line. V6/V8 = in a V. Flat-4/Flat-6 = opposed (boxer: Subaru, Porsche). W12 = two narrow Vs side by side (Bentley). VR6 = a very narrow V6 (Volkswagen). Rotary = a Wankel, with rotors instead of pistons (Mazda RX-7, RX-8). EPA records only the cylinder count; the layout comes from the engine family, and a six from a maker we do not have on record shows as a count.',
+    ),
+    why: msg(
+      'Layout affects smoothness, packaging, and sometimes repair cost. I4 is the everyday default.',
+    ),
   },
   cylinders: {
     plain: msg('More cylinders can feel smoother'),
     what: msg('The number of combustion chambers firing in the engine.'),
-    why: msg('Six or eight cylinders often feel smoother; four is lighter and usually cheaper on fuel.'),
+    why: msg(
+      'Six or eight cylinders often feel smoother; four is lighter and usually cheaper on fuel.',
+    ),
   },
   horsepower: {
     plain: msg('Higher = quicker acceleration'),
@@ -109,12 +119,16 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
   },
   transmission: {
     plain: msg('How power reaches the wheels'),
-    what: msg('Automatic shifts for you. Manual you shift. CVT has no fixed gears. An automated manual is a gearbox with clutches instead of a torque converter that the car shifts itself: usually a dual-clutch (Porsche PDK, VW DSG).'),
+    what: msg(
+      'Automatic shifts for you. Manual you shift. CVT has no fixed gears. An automated manual is a gearbox with clutches instead of a torque converter that the car shifts itself: usually a dual-clutch (Porsche PDK, VW DSG).',
+    ),
     why: msg('Affects how the car feels day to day and how it sips fuel on the highway.'),
   },
   fuel: {
     plain: msg('What powers the car'),
-    what: msg('Gas, diesel, hybrid, plug-in hybrid, electric, or hydrogen fuel cell. A mild hybrid is listed by its fuel: its 48-volt motor helps the engine but never drives the car alone.'),
+    what: msg(
+      'Gas, diesel, hybrid, plug-in hybrid, electric, or hydrogen fuel cell. A mild hybrid is listed by its fuel: its 48-volt motor helps the engine but never drives the car alone.',
+    ),
     why: msg('Drives your fuel stops, charging habits, and running costs.'),
   },
   body: {
@@ -129,7 +143,9 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
   },
   epaClass: {
     plain: msg('EPA’s size class, by the room inside'),
-    what: msg('EPA sorts cars by passenger and cargo room, not by their size outside, so a roomy compact like the 2022 Civic is “Midsize Cars”. SUVs, pickups and vans go by type and weight.'),
+    what: msg(
+      'EPA sorts cars by passenger and cargo room, not by their size outside, so a roomy compact like the 2022 Civic is “Midsize Cars”. SUVs, pickups and vans go by type and weight.',
+    ),
     why: msg('“Competes as” is the class shoppers compare it within.'),
   },
   mpgCity: {
@@ -159,17 +175,23 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
   },
   co2: {
     plain: msg('Tailpipe emissions per kilometre'),
-    what: msg('Grams of CO₂ out the tailpipe each kilometre (EPA publishes grams per mile, shown beside it). EVs show 0 at the pipe.'),
+    what: msg(
+      'Grams of CO₂ out the tailpipe each kilometre (EPA publishes grams per mile, shown beside it). EVs show 0 at the pipe.',
+    ),
     why: msg('Lower = less climate impact from driving this car.'),
   },
   luggageVolume: {
     plain: msg('How much fits in the trunk or cargo area'),
-    what: msg('EPA’s luggage volume: a sedan’s or coupe’s trunk, or for a hatchback, wagon, SUV or van the space behind the rearmost seats with every seat up. EPA measures it for cars and some SUVs, not pickups.'),
+    what: msg(
+      'EPA’s luggage volume: a sedan’s or coupe’s trunk, or for a hatchback, wagon, SUV or van the space behind the rearmost seats with every seat up. EPA measures it for cars and some SUVs, not pickups.',
+    ),
     why: msg('Strollers, hockey bags and groceries: litres you can compare across cars.'),
   },
   passengerVolume: {
     plain: msg('Room for the people inside'),
-    what: msg('EPA’s passenger volume: the space for the occupants, front and rear, as EPA lists it.'),
+    what: msg(
+      'EPA’s passenger volume: the space for the occupants, front and rear, as EPA lists it.',
+    ),
     why: msg('A bigger number is more room; compare cars of the same size class.'),
   },
   seats: {
@@ -179,8 +201,12 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
   },
   towing: {
     plain: msg('Heaviest trailer it can tow'),
-    what: msg('Maximum conventional towing capacity in pounds when properly equipped, as the maker publishes it. EPA does not rate towing.'),
-    why: msg('A boat, camper or utility trailer: compare only against other properly-equipped ratings.'),
+    what: msg(
+      'Maximum conventional towing capacity in pounds when properly equipped, as the maker publishes it. EPA does not rate towing.',
+    ),
+    why: msg(
+      'A boat, camper or utility trailer: compare only against other properly-equipped ratings.',
+    ),
   },
   ghgScore: {
     plain: msg('1 = most CO₂, 10 = least'),
@@ -199,7 +225,9 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
   },
   fuelSavings5yr: {
     plain: msg('Fuel cost vs. an average new car'),
-    what: msg('EPA’s estimate over 5 years against the average new vehicle, in US dollars at US fuel prices, as published on fueleconomy.gov.'),
+    what: msg(
+      'EPA’s estimate over 5 years against the average new vehicle, in US dollars at US fuel prices, as published on fueleconomy.gov.',
+    ),
     why: msg('Shows if this car saves or costs more at the pump over time.'),
   },
   kwhPer100mi: {
@@ -254,32 +282,46 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
   },
   rolloverRisk: {
     plain: msg('Chance of rolling over in a single-vehicle crash'),
-    what: msg('NHTSA’s estimate, from how top-heavy the vehicle is (its static stability factor) and a driving test of whether it tips.'),
-    why: msg('Lower is better. Tall, narrow vehicles roll more readily; NHTSA compares this across all kinds of vehicle.'),
+    what: msg(
+      'NHTSA’s estimate, from how top-heavy the vehicle is (its static stability factor) and a driving test of whether it tips.',
+    ),
+    why: msg(
+      'Lower is better. Tall, narrow vehicles roll more readily; NHTSA compares this across all kinds of vehicle.',
+    ),
   },
   stabilityControl: {
     plain: msg('Helps stop a skid'),
-    what: msg('Electronic stability control brakes individual wheels when the car starts to slide, to keep it going where it is steered.'),
+    what: msg(
+      'Electronic stability control brakes individual wheels when the car starts to slide, to keep it going where it is steered.',
+    ),
     why: msg('Most useful on wet, snowy or icy roads.'),
   },
   collisionWarning: {
     plain: msg('Warns before a frontal crash'),
-    what: msg('Forward collision warning alerts the driver when the car is closing on the vehicle ahead too fast. It warns; braking on its own is automatic emergency braking, which these NHTSA listings do not cover.'),
+    what: msg(
+      'Forward collision warning alerts the driver when the car is closing on the vehicle ahead too fast. It warns; braking on its own is automatic emergency braking, which these NHTSA listings do not cover.',
+    ),
     why: msg('A warning in time can prevent a rear-end collision.'),
   },
   laneDepartureWarning: {
     plain: msg('Warns when drifting out of the lane'),
-    what: msg('Lane departure warning alerts the driver when the car crosses a lane marking without the turn signal on. Lane keeping assist, which steers back, is a different feature.'),
+    what: msg(
+      'Lane departure warning alerts the driver when the car crosses a lane marking without the turn signal on. Lane keeping assist, which steers back, is a different feature.',
+    ),
     why: msg('Helps on long drives, when attention drifts.'),
   },
   wheelbase: {
     plain: msg('Distance between the front and rear wheels'),
-    what: msg('From the centre of the front wheels to the centre of the rear wheels, as Transport Canada measured it.'),
+    what: msg(
+      'From the centre of the front wheels to the centre of the rear wheels, as Transport Canada measured it.',
+    ),
     why: msg('Longer usually means more room inside and a wider turning circle.'),
   },
   curbWeight: {
     plain: msg('Weight empty, ready to drive'),
-    what: msg('The car’s weight with fluids and a full tank, without passengers or cargo, as Transport Canada measured it.'),
+    what: msg(
+      'The car’s weight with fluids and a full tank, without passengers or cargo, as Transport Canada measured it.',
+    ),
   },
   countryOfOrigin: {
     plain: msg('Where the brand is rooted'),
@@ -292,22 +334,34 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
   },
   variant: {
     plain: msg('Named from the engine'),
-    what: msg('EPA leaves this trim out of the model name (a Mustang GT is just "Mustang"), so we name it from the engine and gearbox, which only this trim has in these years.'),
-    why: msg('It is how sellers list the car, and it moves the price far more than the model name suggests.'),
+    what: msg(
+      'EPA leaves this trim out of the model name (a Mustang GT is just "Mustang"), so we name it from the engine and gearbox, which only this trim has in these years.',
+    ),
+    why: msg(
+      'It is how sellers list the car, and it moves the price far more than the model name suggests.',
+    ),
   },
   competitiveClass: {
     plain: msg('The rivals it is shopped against'),
-    what: msg("The class shoppers compare it within, by model: a Camry is a midsize car beside an Accord and a Sonata, whatever EPA's interior-volume class says. A second class qualifies the first: a G-Class is a full-size luxury SUV and an off-roader."),
+    what: msg(
+      "The class shoppers compare it within, by model: a Camry is a midsize car beside an Accord and a Sonata, whatever EPA's interior-volume class says. A second class qualifies the first: a G-Class is a full-size luxury SUV and an off-roader.",
+    ),
     why: msg('Similar vehicles are drawn from it first.'),
   },
   generation: {
     plain: msg('Which version of the model'),
-    what: msg("The model's generation, by the maker's chassis code and count, in North American model years. EPA files years, not generations, so this comes from a table of the best-known lines."),
-    why: msg('Parts, known problems and how a car drives follow the generation more than the year: a 2006 3 Series may be an E46 or an E90.'),
+    what: msg(
+      "The model's generation, by the maker's chassis code and count, in North American model years. EPA files years, not generations, so this comes from a table of the best-known lines.",
+    ),
+    why: msg(
+      'Parts, known problems and how a car drives follow the generation more than the year: a 2006 3 Series may be an E46 or an E90.',
+    ),
   },
   enginePosition: {
     plain: msg('Where the engine sits'),
-    what: msg('Behind the seats (mid-engine) or behind the rear axle (rear-engine), by model: EPA does not record it.'),
+    what: msg(
+      'Behind the seats (mid-engine) or behind the rear axle (rear-engine), by model: EPA does not record it.',
+    ),
     why: msg('It shapes the balance and handling, and how much luggage room there is.'),
   },
   shoppingSegment: {

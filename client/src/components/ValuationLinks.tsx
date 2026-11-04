@@ -138,16 +138,10 @@ function MethodologyBody({
         <div className="space-y-2">
           <p className="text-xs text-zinc-400">{t('Assumptions')}</p>
           <ul className="space-y-1 list-none">
-            <li>
-              {t('Annual driving: {value}', { value: assumptions.annualKm })}
-            </li>
-            <li>
-              {t('Energy / fuel: {value}', { value: assumptions.energyPriceNote })}
-            </li>
+            <li>{t('Annual driving: {value}', { value: assumptions.annualKm })}</li>
+            <li>{t('Energy / fuel: {value}', { value: assumptions.energyPriceNote })}</li>
             <li>{t('Insurance: {value}', { value: assumptions.insuranceTier })}</li>
-            <li>
-              {t('Depreciation: {value}', { value: assumptions.depreciationNote })}
-            </li>
+            <li>{t('Depreciation: {value}', { value: assumptions.depreciationNote })}</li>
             <li>{t('Region: {value}', { value: assumptions.regionNote })}</li>
           </ul>
         </div>

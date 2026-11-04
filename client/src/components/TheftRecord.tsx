@@ -19,7 +19,9 @@ export default function TheftRecord({ theft }: { theft: TheftRank }) {
           </h2>
           <p className="text-sm text-zinc-300 leading-relaxed">{theftSentence(theft)}</p>
           <p className="text-[13px] text-zinc-400 mt-1.5">
-            {t('Ask your insurer what it costs to insure and whether it needs an anti-theft device.')}{' '}
+            {t(
+              'Ask your insurer what it costs to insure and whether it needs an anti-theft device.',
+            )}{' '}
             <a href={theft.url} target="_blank" rel="noreferrer" className={linkClass}>
               {t('Équité’s top {of}', { of: theft.of })}
             </a>

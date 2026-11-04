@@ -35,8 +35,7 @@ const BODY_CODES: Array<[RegExp, string | ((match: string, ...groups: string[]) 
  */
 export function testedLabel(tested: string): string {
   return BODY_CODES.reduce(
-    (text, [code, words]) =>
-      text.replace(code, typeof words === 'function' ? words : () => words),
+    (text, [code, words]) => text.replace(code, typeof words === 'function' ? words : () => words),
     tested,
   )
     .replace(/\s+/g, ' ')

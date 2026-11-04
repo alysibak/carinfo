@@ -55,9 +55,7 @@ export default function SimilarCars({ car }: { car: CarSpecs }) {
             {cars.map((alt) => {
               const efficiency = efficiencyOf(alt);
               const inCompare = comparedCars.some((c) => c.id === alt.id);
-              const hp = alt.engine.horsepower
-                ? t('{hp} hp', { hp: alt.engine.horsepower })
-                : null;
+              const hp = alt.engine.horsepower ? t('{hp} hp', { hp: alt.engine.horsepower }) : null;
               return (
                 <li key={alt.id} className="border-b border-zinc-900">
                   {/* A row each: the name, how it differs, and a small compare toggle. */}

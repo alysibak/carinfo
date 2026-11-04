@@ -50,7 +50,10 @@ export default function DataTrustPanel({ dashboard }: DataTrustPanelProps) {
               ),
               [
                 (c) => (
-                  <Link to="/methodology" className="underline underline-offset-2 hover:text-zinc-300">
+                  <Link
+                    to="/methodology"
+                    className="underline underline-offset-2 hover:text-zinc-300"
+                  >
                     {c}
                   </Link>
                 ),
@@ -66,9 +69,11 @@ export default function DataTrustPanel({ dashboard }: DataTrustPanelProps) {
                 <span className="min-w-0 text-zinc-400">
                   <SpecLabel label={entry.label} glossaryKey={provenanceGlossaryKey(entry.key)} />
                 </span>
-                <span className="shrink-0 text-zinc-500">{entry.source === 'curated' || entry.source === 'estimated'
+                <span className="shrink-0 text-zinc-500">
+                  {entry.source === 'curated' || entry.source === 'estimated'
                     ? t(SOURCE_LABEL[entry.source])
-                    : SOURCE_LABEL[entry.source]}</span>
+                    : SOURCE_LABEL[entry.source]}
+                </span>
               </li>
             ))}
           </ul>

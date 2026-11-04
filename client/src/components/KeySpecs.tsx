@@ -425,7 +425,10 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
     pushIf(performance, {
       key: 'zero60',
       label: t('0-60 mph'),
-      value: zeroToSixty.method === 'predicted' ? t('~{seconds}s (est.)', { seconds: zeroToSixty.value }) : t('~{seconds}s', { seconds: zeroToSixty.value }),
+      value:
+        zeroToSixty.method === 'predicted'
+          ? t('~{seconds}s (est.)', { seconds: zeroToSixty.value })
+          : t('~{seconds}s', { seconds: zeroToSixty.value }),
       glossary: 'zeroToSixty',
     });
   }
@@ -554,7 +557,11 @@ export default function KeySpecs({
             <span className="min-w-0">
               <h2 className="block-title">{heading}</h2>
               <span className="block text-xs text-zinc-500 mt-0.5">
-                {tp(rowCount, '{count} more figure on file for this version', '{count} more figures on file for this version')}
+                {tp(
+                  rowCount,
+                  '{count} more figure on file for this version',
+                  '{count} more figures on file for this version',
+                )}
               </span>
             </span>
             <Chevron className="w-4 h-4 text-zinc-500 group-hover/specs:text-white group-open/specs:rotate-180" />

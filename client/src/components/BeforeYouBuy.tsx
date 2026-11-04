@@ -84,8 +84,8 @@ export default function BeforeYouBuy({ dashboard }: { dashboard: CarDashboard })
                   <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[15px] font-semibold text-white leading-snug">
                     <span>
                       {TONE[item.tone].said ? (
-                      <span className="sr-only">{t(TONE[item.tone].said)}</span>
-                    ) : null}
+                        <span className="sr-only">{t(TONE[item.tone].said)}</span>
+                      ) : null}
                       {item.headline}
                     </span>
                     {item.stars != null && <RatingStars stars={item.stars} className="w-3 h-3" />}

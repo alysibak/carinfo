@@ -245,7 +245,11 @@ export function compareFieldProvenance(car: CarSpecs): ProvenanceEntry[] {
     push('engine.horsepower', t('Horsepower'), car.provenance['engine.horsepower']);
   }
   if (car.fuelEconomy?.combined) {
-    push('fuelEconomy.combined', t('Fuel economy'), car.provenance?.['fuelEconomy.combined'] ?? 'epa');
+    push(
+      'fuelEconomy.combined',
+      t('Fuel economy'),
+      car.provenance?.['fuelEconomy.combined'] ?? 'epa',
+    );
   }
   if (car.price?.msrp) {
     push(

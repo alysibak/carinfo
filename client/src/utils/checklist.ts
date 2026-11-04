@@ -28,8 +28,7 @@ export interface ChecklistSection {
   source: string;
 }
 
-const asOf = (day?: string) =>
-  day ? t(', records as of {date}', { date: recallDate(day) }) : '';
+const asOf = (day?: string) => (day ? t(', records as of {date}', { date: recallDate(day) }) : '');
 
 export function checklistSections(dashboard: CarDashboard): ChecklistSection[] {
   const { car, recalls, complaints, investigations, theft, recordDates } = dashboard;
@@ -61,9 +60,7 @@ export function checklistSections(dashboard: CarDashboard): ChecklistSection[] {
       fuelType: car.engine.fuelType,
       mildHybrid: car.engine.mildHybrid,
     });
-    const powertrains = [...new Set(other.map((o) => powertrainNames(o.powertrains)))].join(
-      ' or ',
-    );
+    const powertrains = [...new Set(other.map((o) => powertrainNames(o.powertrains)))].join(' or ');
     const others = other.length
       ? tp(
           other.length,
@@ -288,9 +285,7 @@ export function checklistSections(dashboard: CarDashboard): ChecklistSection[] {
     title: t('Facts to hold the ad to'),
     intro: t('As rated and measured for this version: an ad that differs is worth a question.'),
     items: facts,
-    source: car.size
-      ? t('EPA ratings; Transport Canada measurements')
-      : t('EPA ratings'),
+    source: car.size ? t('EPA ratings; Transport Canada measurements') : t('EPA ratings'),
   });
 
   return sections;

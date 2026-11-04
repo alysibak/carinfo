@@ -157,9 +157,7 @@ export default function CrashTests({ dashboard, car }: { dashboard: CarDashboard
                   <Link to={`/car/${encodeURIComponent(alt.id)}`} className={linkClass}>
                     {alt.label}
                   </Link>
-                  <span className="text-zinc-500">
-                    {t(': {reason}', { reason: alt.reason })}
-                  </span>
+                  <span className="text-zinc-500">{t(': {reason}', { reason: alt.reason })}</span>
                 </li>
               ))}
             </ul>
