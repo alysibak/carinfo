@@ -98,7 +98,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
     pushIf(powertrain, {
       key: 'horsepower',
       label: t('Horsepower'),
-      value: t('{hp} hp', { hp: car.engine.horsepower }),
+      value: t('{hp} hp', { hp: car.engine.horsepower! }),
       glossary: 'horsepower',
     });
   }
@@ -106,7 +106,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
     pushIf(powertrain, {
       key: 'torque',
       label: t('Torque'),
-      value: t('{torque} lb-ft', { torque: car.engine.torque }),
+      value: t('{torque} lb-ft', { torque: car.engine.torque! }),
       glossary: 'torque',
       ...(car.provenance?.['engine.torque']
         ? {
@@ -406,7 +406,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
     pushIf(environment, {
       key: 'barrels',
       label: t('Oil use'),
-      value: t('{n} barrels/yr', { n: car.epa!.barrelsPerYear }),
+      value: t('{n} barrels/yr', { n: car.epa!.barrelsPerYear! }),
       glossary: 'barrelsPerYear',
     });
   }
@@ -436,7 +436,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
     pushIf(safety, {
       key: 'safetyOverall',
       label: t('NHTSA overall'),
-      value: t('{n}/5 stars', { n: sr!.overall }),
+      value: t('{n}/5 stars', { n: sr!.overall! }),
       glossary: 'safetyOverall',
     });
     if (hasNumericValue(sr?.frontal, { allowZero: false })) {

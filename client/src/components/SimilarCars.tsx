@@ -89,7 +89,7 @@ export default function SimilarCars({ car }: { car: CarSpecs }) {
                           <span className="inline-flex items-center gap-1">
                             <span className="sr-only">
                               {t('NHTSA {stars} out of 5 stars', {
-                                stars: alt.safetyRating!.overall,
+                                stars: alt.safetyRating!.overall!,
                               })}
                             </span>
                             <RatingStars

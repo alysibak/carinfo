@@ -156,6 +156,7 @@ describe('regions', () => {
     expect(sk.electricityRateCadPerKwh).toBeCloseTo(0.15476);
     expect(ns.electricityRateCadPerKwh).toBeCloseTo(0.19128);
     expect(mb.electricityRateCadPerKwh).toBeCloseTo(0.0997);
+    expect(nl.electricityRateCadPerKwh).toBeCloseTo(0.15587);
     expect(computeOwnershipEconomics(car, [], 'manitoba').annualCost.registration).toBe(119);
     expect(computeOwnershipEconomics(car, [], 'saskatchewan').annualCost.registration).toBe(68);
     expect(computeOwnershipEconomics(car, [], 'nova-scotia').annualCost.registration).toBe(88);
