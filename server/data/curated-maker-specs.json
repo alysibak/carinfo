@@ -5,7 +5,10 @@
     {
       "make": "Toyota",
       "model": "RAV4",
-      "years": [2019, 2025],
+      "years": [
+        2019,
+        2025
+      ],
       "seats": 5,
       "seatsSource": "https://www.toyota.com/rav4/features/capacity/",
       "engines": [
@@ -41,7 +44,10 @@
     {
       "make": "Honda",
       "model": "CR-V",
-      "years": [2023, 2026],
+      "years": [
+        2023,
+        2026
+      ],
       "seats": 5,
       "seatsSource": "https://automobiles.honda.com/cr-v",
       "engines": [
@@ -68,7 +74,10 @@
     {
       "make": "Toyota",
       "model": "Highlander",
-      "years": [2020, 2026],
+      "years": [
+        2020,
+        2026
+      ],
       "seats": 8,
       "seatsMax": 8,
       "seatsSource": "https://www.toyota.com/highlander/features/capacity/",
@@ -96,7 +105,10 @@
     {
       "make": "Honda",
       "model": "Pilot",
-      "years": [2023, 2026],
+      "years": [
+        2023,
+        2026
+      ],
       "seats": 8,
       "seatsMax": 8,
       "seatsSource": "https://automobiles.honda.com/pilot",
@@ -115,7 +127,10 @@
     {
       "make": "Toyota",
       "model": "Sienna",
-      "years": [2021, 2026],
+      "years": [
+        2021,
+        2026
+      ],
       "seats": 8,
       "seatsMax": 8,
       "seatsSource": "https://www.toyota.com/sienna/features/capacity/",
@@ -134,7 +149,10 @@
     {
       "make": "Honda",
       "model": "Odyssey",
-      "years": [2018, 2026],
+      "years": [
+        2018,
+        2026
+      ],
       "seats": 8,
       "seatsMax": 8,
       "seatsSource": "https://automobiles.honda.com/odyssey",
@@ -153,7 +171,10 @@
     {
       "make": "Ford",
       "model": "F-150",
-      "years": [2021, 2026],
+      "years": [
+        2021,
+        2026
+      ],
       "seats": 3,
       "seatsMax": 6,
       "seatsSource": "https://www.ford.com/trucks/f150/models/",
@@ -174,7 +195,7 @@
           "forcedInduction": true,
           "torqueLbFt": 500,
           "maxTowingLb": 13000,
-          "source": "https://www.ford.com/trucks/f150/models/"
+          "source": "https://media.ford.com/content/dam/fordmedia/North%20America/US/product/2021/f150/pdfs/2021-F-150-Technical-Specs.pdf"
         },
         {
           "displacementL": 5.0,
@@ -199,7 +220,10 @@
     {
       "make": "Toyota",
       "model": "Tacoma",
-      "years": [2024, 2026],
+      "years": [
+        2024,
+        2026
+      ],
       "seats": 5,
       "seatsMax": 5,
       "seatsSource": "https://www.toyota.com/tacoma/",
@@ -227,7 +251,10 @@
     {
       "make": "Toyota",
       "model": "Tundra",
-      "years": [2022, 2026],
+      "years": [
+        2022,
+        2026
+      ],
       "seats": 5,
       "seatsMax": 5,
       "seatsSource": "https://www.toyota.com/tundra/",
@@ -255,7 +282,10 @@
     {
       "make": "Kia",
       "model": "Telluride",
-      "years": [2020, 2026],
+      "years": [
+        2020,
+        2026
+      ],
       "seats": 8,
       "seatsMax": 8,
       "seatsSource": "https://www.kia.com/us/en/telluride",
@@ -274,7 +304,10 @@
     {
       "make": "Hyundai",
       "model": "Palisade",
-      "years": [2020, 2026],
+      "years": [
+        2020,
+        2026
+      ],
       "seats": 8,
       "seatsMax": 8,
       "seatsSource": "https://www.hyundaiusa.com/us/en/vehicles/palisade",
@@ -293,7 +326,10 @@
     {
       "make": "Chevrolet",
       "model": "Silverado 1500",
-      "years": [2022, 2026],
+      "years": [
+        2022,
+        2026
+      ],
       "seats": 3,
       "seatsMax": 6,
       "seatsSource": "https://www.chevrolet.com/trucks/silverado/1500",
@@ -339,7 +375,10 @@
     {
       "make": "Ram",
       "model": "1500",
-      "years": [2019, 2026],
+      "years": [
+        2019,
+        2026
+      ],
       "seats": 3,
       "seatsMax": 6,
       "seatsSource": "https://www.ramtrucks.com/ram-1500.html",
@@ -376,7 +415,10 @@
     {
       "make": "Mazda",
       "model": "CX-5",
-      "years": [2017, 2026],
+      "years": [
+        2017,
+        2026
+      ],
       "seats": 5,
       "seatsSource": "https://www.mazdausa.com/vehicles/cx-5",
       "engines": [
@@ -403,7 +445,10 @@
     {
       "make": "Subaru",
       "model": "Outback",
-      "years": [2020, 2026],
+      "years": [
+        2020,
+        2026
+      ],
       "seats": 5,
       "seatsSource": "https://www.subaru.com/vehicles/outback/features.html",
       "engines": [
@@ -424,6 +469,195 @@
           "torqueLbFt": 277,
           "maxTowingLb": 3500,
           "source": "https://www.subaru.com/vehicles/outback/features.html"
+        }
+      ]
+    },
+    {
+      "make": "Hyundai",
+      "model": "Tucson",
+      "years": [
+        2022,
+        2026
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.hyundaiusa.com/us/en/vehicles/tucson/compare-specs",
+      "engines": [
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 178,
+          "maxTowingLb": 2750,
+          "source": "https://www.hyundaiusa.com/us/en/vehicles/tucson/compare-specs"
+        },
+        {
+          "displacementL": 1.6,
+          "cylinders": 4,
+          "fuel": "hybrid",
+          "forcedInduction": true,
+          "torqueLbFt": 271,
+          "maxTowingLb": 2000,
+          "source": "https://www.hyundaiusa.com/us/en/vehicles/tucson/compare-specs"
+        },
+        {
+          "displacementL": 1.6,
+          "cylinders": 4,
+          "fuel": "plug-in hybrid",
+          "forcedInduction": true,
+          "torqueLbFt": 258,
+          "maxTowingLb": 2000,
+          "source": "https://www.hyundaiusa.com/us/en/vehicles/tucson/compare-specs"
+        }
+      ]
+    },
+    {
+      "make": "Ford",
+      "model": "Escape",
+      "years": [
+        2020,
+        2026
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.ford.com/suvs/escape/",
+      "engines": [
+        {
+          "displacementL": 1.5,
+          "cylinders": 3,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 177,
+          "maxTowingLb": 2000,
+          "source": "https://www.ford.com/suvs/escape/"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 280,
+          "maxTowingLb": 3500,
+          "source": "https://www.ford.com/suvs/escape/"
+        },
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "hybrid",
+          "forcedInduction": false,
+          "torqueLbFt": 155,
+          "maxTowingLb": 1500,
+          "source": "https://www.ford.com/suvs/escape/"
+        },
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "plug-in hybrid",
+          "forcedInduction": false,
+          "torqueLbFt": 155,
+          "maxTowingLb": 1500,
+          "source": "https://www.ford.com/suvs/escape/"
+        }
+      ]
+    },
+    {
+      "make": "Mazda",
+      "model": "CX-90",
+      "years": [
+        2024,
+        2026
+      ],
+      "seats": 6,
+      "seatsMax": 8,
+      "seatsSource": "https://www.mazdausa.com/vehicles/cx-90",
+      "engines": [
+        {
+          "displacementL": 3.3,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 320,
+          "maxTowingLb": 3500,
+          "source": "https://www.mazdausa.com/vehicles/cx-90"
+        },
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "plug-in hybrid",
+          "forcedInduction": false,
+          "torqueLbFt": 369,
+          "maxTowingLb": 3500,
+          "source": "https://www.mazdausa.com/vehicles/cx-90"
+        }
+      ]
+    },
+    {
+      "make": "Toyota",
+      "model": "Grand Highlander",
+      "years": [
+        2024,
+        2026
+      ],
+      "seats": 7,
+      "seatsMax": 8,
+      "seatsSource": "https://www.toyota.com/grandhighlander/",
+      "engines": [
+        {
+          "displacementL": 2.4,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 310,
+          "maxTowingLb": 5000,
+          "source": "https://www.toyota.com/grandhighlander/features/capabilities/"
+        },
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "hybrid",
+          "forcedInduction": false,
+          "torqueLbFt": 175,
+          "maxTowingLb": 3500,
+          "source": "https://www.toyota.com/grandhighlander/features/capabilities/"
+        },
+        {
+          "displacementL": 2.4,
+          "cylinders": 4,
+          "fuel": "hybrid",
+          "forcedInduction": true,
+          "torqueLbFt": 400,
+          "maxTowingLb": 5000,
+          "source": "https://www.toyota.com/grandhighlander/features/capabilities/"
+        }
+      ]
+    },
+    {
+      "make": "Chrysler",
+      "model": "Pacifica",
+      "years": [
+        2017,
+        2026
+      ],
+      "seats": 7,
+      "seatsMax": 8,
+      "seatsSource": "https://www.chrysler.com/pacifica.html",
+      "engines": [
+        {
+          "displacementL": 3.6,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 262,
+          "maxTowingLb": 3600,
+          "source": "https://www.chrysler.com/pacifica.html"
+        },
+        {
+          "displacementL": 3.6,
+          "cylinders": 6,
+          "fuel": "plug-in hybrid",
+          "forcedInduction": false,
+          "torqueLbFt": 262,
+          "maxTowingLb": 3600,
+          "source": "https://www.chrysler.com/pacifica.html"
         }
       ]
     }
