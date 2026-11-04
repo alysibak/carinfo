@@ -41,7 +41,7 @@ export async function getUser(id: string): Promise<AccountUser | null> {
   await ensureSchema();
   const { rows } = await getPool().query(
     `SELECT id, email, plan, stripe_customer_id AS "stripeCustomerId",
-            created_at AS "createdAt"
+            recall_alerts AS "recallAlerts", created_at AS "createdAt"
      FROM users WHERE id = $1`,
     [id],
   );
@@ -51,8 +51,197 @@ export async function getUser(id: string): Promise<AccountUser | null> {
     email: rows[0].email,
     plan: rows[0].plan as UserPlan,
     stripeCustomerId: rows[0].stripeCustomerId,
+    recallAlerts: rows[0].recallAlerts === true,
     createdAt: new Date(rows[0].createdAt).toISOString(),
   };
+}
+
+// ─── Recall alerts ───────────────────────────────────────────────────────────
+
+/**
+ * Turns recall alerts on or off. Off forgets what was watched and sent: it is
+ * kept only to send each recall once, and turning alerts back on starts over.
+ */
+export async function setRecallAlerts(userId: string, enabled: boolean): Promise<void> {
+  await ensureSchema();
+  const client = await getPool().connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(`UPDATE users SET recall_alerts = $2 WHERE id = $1`, [userId, enabled]);
+    if (!enabled) {
+      await client.query(`DELETE FROM recall_watches WHERE user_id = $1`, [userId]);
+      await client.query(`DELETE FROM recall_notices WHERE user_id = $1`, [userId]);
+    }
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Starts watching cars for recalls, and returns those not watched before.
+ * `reset` forgets every earlier watch and notice first.
+ */
+export async function watchCars(
+  userId: string,
+  carIds: string[],
+  { reset = false }: { reset?: boolean } = {},
+): Promise<string[]> {
+  await ensureSchema();
+  const client = await getPool().connect();
+  try {
+    await client.query('BEGIN');
+    if (reset) {
+      await client.query(`DELETE FROM recall_watches WHERE user_id = $1`, [userId]);
+      await client.query(`DELETE FROM recall_notices WHERE user_id = $1`, [userId]);
+    }
+    const { rows } = carIds.length
+      ? await client.query(
+          `INSERT INTO recall_watches (user_id, car_id)
+           SELECT $1, car_id FROM unnest($2::text[]) AS car_id
+           ON CONFLICT DO NOTHING
+           RETURNING car_id`,
+          [userId, Array.from(new Set(carIds))],
+        )
+      : { rows: [] };
+    await client.query('COMMIT');
+    return rows.map((r) => r.car_id as string);
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+export async function getWatchedCarIds(userId: string): Promise<Set<string>> {
+  await ensureSchema();
+  const { rows } = await getPool().query(`SELECT car_id FROM recall_watches WHERE user_id = $1`, [
+    userId,
+  ]);
+  return new Set(rows.map((r) => r.car_id as string));
+}
+
+export async function listRecallWatches(
+  userId: string,
+): Promise<Array<{ carId: string; since: string }>> {
+  await ensureSchema();
+  const { rows } = await getPool().query(
+    `SELECT car_id AS "carId", since FROM recall_watches WHERE user_id = $1 ORDER BY since, car_id`,
+    [userId],
+  );
+  return rows.map((row) => ({ carId: row.carId, since: new Date(row.since).toISOString() }));
+}
+
+export interface RecallNoticeKey {
+  carId: string;
+  recallNumber: string;
+}
+
+/**
+ * Notes recalls as known for a user's cars: sent (an alert went out) or not
+ * (already listed when the car was first watched). A recall noted either way
+ * is never emailed again.
+ */
+export async function recordRecallNotices(
+  userId: string,
+  notices: RecallNoticeKey[],
+  sent: boolean,
+): Promise<void> {
+  if (!notices.length) return;
+  await ensureSchema();
+  await getPool().query(
+    `INSERT INTO recall_notices (user_id, car_id, recall_number, sent_at)
+     SELECT $1, n.car_id, n.recall_number, CASE WHEN $4::boolean THEN NOW() END
+     FROM unnest($2::text[], $3::text[]) AS n(car_id, recall_number)
+     ON CONFLICT (user_id, car_id, recall_number) DO UPDATE
+       SET sent_at = COALESCE(recall_notices.sent_at, EXCLUDED.sent_at)`,
+    [userId, notices.map((n) => n.carId), notices.map((n) => n.recallNumber), sent],
+  );
+}
+
+/** The recalls already noted for each of a user's cars. */
+export async function getRecallNoticeNumbers(userId: string): Promise<Map<string, Set<string>>> {
+  await ensureSchema();
+  const { rows } = await getPool().query(
+    `SELECT car_id, recall_number FROM recall_notices WHERE user_id = $1`,
+    [userId],
+  );
+  const byCar = new Map<string, Set<string>>();
+  for (const row of rows) {
+    const set = byCar.get(row.car_id) ?? new Set<string>();
+    set.add(row.recall_number);
+    byCar.set(row.car_id, set);
+  }
+  return byCar;
+}
+
+export interface RecallNoticeRow extends RecallNoticeKey {
+  sentAt: string | null;
+  createdAt: string;
+}
+
+export async function listRecallNotices(userId: string): Promise<RecallNoticeRow[]> {
+  await ensureSchema();
+  const { rows } = await getPool().query(
+    `SELECT car_id AS "carId", recall_number AS "recallNumber", sent_at AS "sentAt",
+            created_at AS "createdAt"
+     FROM recall_notices WHERE user_id = $1 ORDER BY created_at, car_id, recall_number`,
+    [userId],
+  );
+  return rows.map((row) => ({
+    carId: row.carId,
+    recallNumber: row.recallNumber,
+    sentAt: row.sentAt ? new Date(row.sentAt).toISOString() : null,
+    createdAt: new Date(row.createdAt).toISOString(),
+  }));
+}
+
+export interface RecallAlertRecipient {
+  userId: string;
+  email: string;
+  name: string | null;
+}
+
+/**
+ * Who gets recall alerts: those who asked, at a confirmed address. An
+ * unconfirmed one could be someone else's, typed by mistake or on purpose.
+ */
+export async function listRecallAlertRecipients(): Promise<RecallAlertRecipient[]> {
+  await ensureSchema();
+  const { rows } = await getPool().query(
+    `SELECT u.id AS "userId", a.email, NULLIF(a.name, '') AS name
+     FROM users u JOIN auth_user a ON a.id = u.id
+     WHERE u.recall_alerts AND a.email_verified
+     ORDER BY u.id`,
+  );
+  return rows as RecallAlertRecipient[];
+}
+
+/**
+ * Holds the recall-alert run's lock for the length of `fn`, so two runs (a
+ * retried cron call, a manual run) never email the same recall twice.
+ * Returns null without running `fn` when another run holds it.
+ */
+export async function withRecallAlertLock<T>(fn: () => Promise<T>): Promise<T | null> {
+  await ensureSchema();
+  const client = await getPool().connect();
+  try {
+    const { rows } = await client.query(
+      `SELECT pg_try_advisory_lock(hashtext('carinfo-recall-alerts')) AS locked`,
+    );
+    if (!rows[0]?.locked) return null;
+    try {
+      return await fn();
+    } finally {
+      await client.query(`SELECT pg_advisory_unlock(hashtext('carinfo-recall-alerts'))`);
+    }
+  } finally {
+    client.release();
+  }
 }
 
 export async function setUserPlan(
@@ -124,6 +313,13 @@ export async function setGarageIds(
   try {
     await client.query('BEGIN');
     await client.query(`DELETE FROM garage_items WHERE user_id = $1`, [userId]);
+    // A car no longer saved is no longer watched for recalls.
+    for (const table of ['recall_watches', 'recall_notices']) {
+      await client.query(
+        `DELETE FROM ${table} WHERE user_id = $1 AND NOT (car_id = ANY($2::text[]))`,
+        [userId, unique],
+      );
+    }
     if (unique.length > 0) {
       // One statement instead of one round trip per car. A 200-car pro garage
       // went from 201 queries to 2.
@@ -161,7 +357,89 @@ export async function removeGarageId(userId: string, carId: string): Promise<str
     userId,
     carId,
   ]);
+  for (const table of ['recall_watches', 'recall_notices']) {
+    await getPool().query(`DELETE FROM ${table} WHERE user_id = $1 AND car_id = $2`, [
+      userId,
+      carId,
+    ]);
+  }
   return getGarageIds(userId);
+}
+
+/** Saved cars with when each was saved, for the account's data download. */
+export async function listGarageItems(
+  userId: string,
+): Promise<Array<{ carId: string; savedAt: string }>> {
+  await ensureSchema();
+  const { rows } = await getPool().query(
+    `SELECT car_id AS "carId", created_at AS "savedAt" FROM garage_items
+     WHERE user_id = $1 ORDER BY created_at, car_id`,
+    [userId],
+  );
+  return rows.map((row) => ({ carId: row.carId, savedAt: new Date(row.savedAt).toISOString() }));
+}
+
+/**
+ * What sign-in keeps about a user (Better Auth's tables), for the data
+ * download: the profile, linked providers, and sessions. Never a password
+ * hash or a token.
+ */
+export async function exportSignInData(userId: string): Promise<{
+  profile: {
+    name: string;
+    email: string;
+    emailVerified: boolean;
+    image: string | null;
+    createdAt: string;
+  } | null;
+  signInMethods: Array<{ provider: string; linkedAt: string }>;
+  sessions: Array<{
+    startedAt: string;
+    expiresAt: string;
+    ipAddress: string | null;
+    userAgent: string | null;
+  }>;
+}> {
+  await ensureSchema();
+  const pool = getPool();
+  const [profile, accounts, sessions] = await Promise.all([
+    pool.query(
+      `SELECT name, email, email_verified AS "emailVerified", image, created_at AS "createdAt"
+       FROM auth_user WHERE id = $1`,
+      [userId],
+    ),
+    pool.query(
+      `SELECT provider_id AS provider, created_at AS "linkedAt" FROM auth_account
+       WHERE user_id = $1 ORDER BY created_at`,
+      [userId],
+    ),
+    pool.query(
+      `SELECT created_at AS "startedAt", expires_at AS "expiresAt", ip_address AS "ipAddress",
+              user_agent AS "userAgent"
+       FROM auth_session WHERE user_id = $1 ORDER BY created_at`,
+      [userId],
+    ),
+  ]);
+  const iso = (value: unknown) => new Date(value as string).toISOString();
+  const row = profile.rows[0];
+  return {
+    profile: row
+      ? {
+          name: row.name,
+          email: row.email,
+          emailVerified: row.emailVerified === true,
+          image: row.image ?? null,
+          createdAt: iso(row.createdAt),
+        }
+      : null,
+    signInMethods: accounts.rows.map((a) => ({ provider: a.provider, linkedAt: iso(a.linkedAt) })),
+    sessions: sessions.rows.map((s) => ({
+      startedAt: iso(s.startedAt),
+      expiresAt: iso(s.expiresAt),
+      ipAddress: s.ipAddress ?? null,
+      userAgent: s.userAgent ?? null,
+    })),
+  };
 }
 
 /**

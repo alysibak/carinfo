@@ -18,5 +18,7 @@ router.get('/garage', requireAuth, meController.getMyGarage);
 router.put('/garage', writeLimiter(), requireAuth, meController.putMyGarage);
 router.post('/garage/items', writeLimiter(), requireAuth, meController.addMyGarageItem);
 router.delete('/garage/items/:carId', writeLimiter(), requireAuth, meController.removeMyGarageItem);
+router.put('/alerts', writeLimiter(), requireAuth, meController.putMyAlerts);
+router.get('/export', writeLimiter(), requireAuth, meController.getMyExport);
 
 export default router;

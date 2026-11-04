@@ -25,9 +25,10 @@ export default function Privacy() {
     >
       <LegalSection title="Without an account">
         <p>
-          Your browser keeps your province, your compare list, the cars you viewed recently and
-          whether you prefer a grid or a list, in its own storage on your device. Pages send what
-          they need to work: your province, to cost a car for it, and the cars you compare.
+          Your browser keeps your province, your compare list, your garage, the cars you viewed
+          recently and whether you prefer a grid or a list, in its own storage on your device. Pages
+          send what they need to work: your province, to cost a car for it, and the cars you
+          compare.
         </p>
         <p>
           Each browser tab adds one to an anonymous count of visits, once. Nothing about who visited

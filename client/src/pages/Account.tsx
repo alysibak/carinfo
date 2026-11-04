@@ -11,6 +11,7 @@ import { LoadingScreen } from '../components/ui';
 import { signOut, useAccount } from '../hooks/useAccount';
 import { useAccountStatus } from '../hooks/useAccountStatus';
 import * as accountApi from '../services/accountApi';
+import { isHttpError } from '../services/http';
 import { authClient, authErrorMessage, type AuthSession } from '../services/authClient';
 import { PROVIDER_NAMES, type SignInProvider } from '../services/signInMethods';
 import { FREE_GARAGE_LIMIT, useGarageStore } from '../stores/garageStore';
@@ -75,11 +76,95 @@ function AccountPanel({ session }: { session: AuthSession }) {
       <div className="flex flex-col gap-6">
         {status?.emailConfigured && !user.emailVerified && <ConfirmEmail email={user.email} />}
         <GarageSection />
+        {status?.emailConfigured && status.storageConfigured && (
+          <AlertsSection emailVerified={user.emailVerified} />
+        )}
         <PlanSection billingConfigured={Boolean(status?.billingConfigured)} />
         <SignInSection email={user.email} hasPassword={hasPassword} linked={linked} />
+        {status?.storageConfigured && <DataSection />}
         <DeleteSection email={user.email} hasPassword={hasPassword} />
       </div>
     </div>
+  );
+}
+
+/** The opt-in to recall emails, which go only to a confirmed address. */
+function AlertsSection({ emailVerified }: { emailVerified: boolean }) {
+  const [on, setOn] = useState<boolean | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    accountApi
+      .getMe()
+      .then((me) => active && setOn(me.user.recallAlerts === true))
+      .catch(() => active && setOn(false));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const toggle = async (next: boolean) => {
+    setBusy(true);
+    setError(null);
+    try {
+      setOn((await accountApi.setRecallAlerts(next)).recallAlerts);
+    } catch (err) {
+      const body = isHttpError(err) ? (err.body as { error?: string } | null) : null;
+      setError(body?.error ?? 'Could not change recall alerts. Try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Section title="Recall alerts">
+      <p className="text-sm text-zinc-300">
+        An email when Transport Canada lists a new recall for a car in your garage. Recalls already
+        listed are on the garage page.
+      </p>
+      <label className="flex items-start gap-3 text-[15px] text-zinc-200 cursor-pointer">
+        <input
+          type="checkbox"
+          className="mt-1 h-4 w-4 accent-white"
+          checked={on === true}
+          disabled={on === null || busy || (!emailVerified && on !== true)}
+          onChange={(e) => void toggle(e.target.checked)}
+        />
+        <span>Email me about new recalls</span>
+      </label>
+      {!emailVerified && on !== true && (
+        <p className="text-sm text-zinc-400">
+          Confirm your email address first: alerts go only to a confirmed one.
+        </p>
+      )}
+      {error && <p className="text-sm text-red-300">{error}</p>}
+    </Section>
+  );
+}
+
+/** Law 25's right to one's data, in a file: what the privacy policy lists. */
+function DataSection() {
+  return (
+    <Section title="Your data">
+      <p className="text-sm text-zinc-400">
+        Everything CarInfo keeps about your account, in one file: your profile, sign-ins, garage and
+        recall alerts. The{' '}
+        <Link
+          to="/privacy"
+          className="underline underline-offset-4 decoration-zinc-600 hover:text-white"
+        >
+          privacy policy
+        </Link>{' '}
+        says why each is kept.
+      </p>
+      <div>
+        <a href={accountApi.ACCOUNT_EXPORT_URL} download className="btn-secondary">
+          Download my data
+        </a>
+      </div>
+    </Section>
   );
 }
 

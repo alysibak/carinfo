@@ -53,6 +53,12 @@
       "memory": 1024
     }
   },
+  "crons": [
+    {
+      "path": "/api/cron/recall-alerts",
+      "schedule": "0 14 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/assets/(.*)",

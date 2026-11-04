@@ -10,6 +10,8 @@ export interface EmailMessage {
   subject: string;
   text: string;
   html: string;
+  /** Extra headers, such as List-Unsubscribe on recall alerts. */
+  headers?: Record<string, string>;
 }
 
 type Sender = (message: EmailMessage) => Promise<void>;
@@ -31,6 +33,7 @@ const resend: Sender = async (message) => {
       subject: message.subject,
       text: message.text,
       html: message.html,
+      ...(message.headers ? { headers: message.headers } : {}),
     }),
     signal: AbortSignal.timeout(10_000),
   });
@@ -42,6 +45,11 @@ let sender: Sender = resend;
 /** Test seam: capture messages instead of calling Resend. */
 export function __setEmailSenderForTests(fn: Sender | null): void {
   sender = fn ?? resend;
+}
+
+/** Any other email the site sends, such as recall alerts, through the same sender. */
+export function sendEmail(message: EmailMessage): Promise<void> {
+  return sender(message);
 }
 
 /** One link, one line of context. The link is the only variable part. */

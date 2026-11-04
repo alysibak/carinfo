@@ -26,6 +26,7 @@ const VinDecoder = lazy(() => import('./pages/VinDecoder'));
 const Methodology = lazy(() => import('./pages/Methodology'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const Terms = lazy(() => import('./pages/Terms'));
+const Unsubscribe = lazy(() => import('./pages/Unsubscribe'));
 const Account = lazy(() => import('./pages/Account'));
 const SignIn = lazy(() => import('./pages/SignIn'));
 const SignUp = lazy(() => import('./pages/SignUp'));
@@ -101,6 +102,7 @@ function App() {
                   <Route path="/methodology" element={<Methodology />} />
                   <Route path="/privacy" element={<Privacy />} />
                   <Route path="/terms" element={<Terms />} />
+                  <Route path="/unsubscribe" element={<Unsubscribe />} />
                   <Route path="/account" element={<Account />} />
                   <Route path="/sign-in" element={<SignIn />} />
                   <Route path="/sign-up" element={<SignUp />} />

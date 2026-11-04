@@ -540,6 +540,7 @@ Loaded once at startup into memory:
 | `/methodology`                     | `Methodology.tsx`  | Yes    | Data pipeline, PHEV correction, valuation model          |
 | `/privacy`                         | `Privacy.tsx`      | Yes    | What is kept, where, how long; rights and contact        |
 | `/terms`                           | `Terms.tsx`        | Yes    | Terms of use: estimates, accounts, Pro, data licences    |
+| `/unsubscribe`                     | `Unsubscribe.tsx`  | Yes    | Turns recall alerts off from an email's link             |
 | `/vin`                             | `VinDecoder.tsx`   | Yes    | VIN lookup (open to everyone)                            |
 | `/models/:make/:model/:year`       | `ModelYearPage.tsx`| Yes    | One year of a family with several configurations         |
 | `/account`                         | `Account.tsx`      | Yes    | Garage sync, plan, password, sign-out, delete            |
@@ -746,6 +747,28 @@ On load, fetches a full `CarDashboard` per compared car (same depth as the dossi
 - Parses `?cars=` comma-separated IDs
 - Fetches via `compareCars()` API
 - Option to merge into local garage
+
+### Recall alerts
+
+- **Opt-in** on `/account` (`PUT /api/me/alerts`), only for a confirmed address and only where
+  email is set up. Turning them on watches the garage afresh: recalls already listed are noted
+  without an email (the garage page shows them), so no backlog is ever sent.
+- **Daily run:** Vercel Cron calls `GET /api/cron/recall-alerts` (`vercel.json`, 14:00 UTC) with
+  `CRON_SECRET` as a bearer token. Each recipient gets one email listing every recall that is
+  new for their saved cars, by Transport Canada's number; a recall is noted once sent, and a
+  Postgres advisory lock keeps overlapping runs from sending twice. A run stops starting new
+  recipients after 45 s and the next carries on.
+- **Watching:** a car saved while alerts are on is watched from then; one the run finds unwatched
+  is watched silently. Removing a car, or turning alerts off, deletes what was kept for it
+  (`recall_watches`, `recall_notices`).
+- **Unsubscribe:** every email links to `/unsubscribe?token=…` (asks before acting, so mail
+  scanners following links change nothing) and sends `List-Unsubscribe` + one-click
+  `List-Unsubscribe-Post` headers for mail clients (`POST /api/alerts/unsubscribe`). The token is
+  an HMAC of the user id under `BETTER_AUTH_SECRET` and does not expire.
+- **By hand:** `npm run recall-alerts --workspace=server -- --dry-run` lists who would get what.
+- **Data download:** `GET /api/me/export` (the account page's "Download my data") returns the
+  profile, sign-in methods, sessions, garage and alert history as JSON — never a password hash
+  or a token.
 
 ### Compare store
 

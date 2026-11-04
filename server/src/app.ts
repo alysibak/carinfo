@@ -10,6 +10,7 @@ import meRoutes from './routes/me.routes.js';
 import billingRoutes from './routes/billing.routes.js';
 import statsRoutes from './routes/stats.routes.js';
 import clientErrorRoutes from './routes/client-errors.routes.js';
+import { alertsRouter, cronRouter } from './routes/alerts.routes.js';
 import seoRoutes from './seo/seo.routes.js';
 import * as carService from './services/car.service.js';
 import * as billingController from './controllers/billing.controller.js';
@@ -98,6 +99,8 @@ app.use('/api/me', meRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/client-errors', clientErrorRoutes);
+app.use('/api/alerts', alertsRouter);
+app.use('/api/cron', cronRouter);
 
 app.get('/api/health', (_req, res) => {
   try {

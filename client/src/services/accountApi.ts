@@ -26,6 +26,8 @@ export interface AccountUser {
   email: string | null;
   plan: 'free' | 'pro';
   stripeCustomerId: string | null;
+  /** Emails when Transport Canada lists a new recall for a saved car. */
+  recallAlerts?: boolean;
   createdAt: string;
 }
 
@@ -67,6 +69,18 @@ export async function addMyGarageItem(carId: string): Promise<GarageResponse> {
 export async function removeMyGarageItem(carId: string): Promise<GarageResponse> {
   return accountApi.delete(`/me/garage/items/${encodeURIComponent(carId)}`);
 }
+
+export async function setRecallAlerts(recallAlerts: boolean): Promise<{ recallAlerts: boolean }> {
+  return accountApi.put('/me/alerts', { recallAlerts });
+}
+
+/** From an alert's unsubscribe link: needs no sign-in, only the link's token. */
+export async function unsubscribeRecallAlerts(token: string): Promise<{ recallAlerts: false }> {
+  return accountApi.post(`/alerts/unsubscribe?token=${encodeURIComponent(token)}`);
+}
+
+/** Everything kept about the account, downloaded as a file by the browser itself. */
+export const ACCOUNT_EXPORT_URL = `${API_BASE_URL}/me/export`;
 
 export async function createCheckoutSession(): Promise<{ url: string }> {
   return accountApi.post('/billing/checkout');
