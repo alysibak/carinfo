@@ -77,6 +77,13 @@ export function isThreeRow(car: CarSpecs): boolean {
   if (car.bodyStyle === 'minivan') return true;
   // Pickups, the Avalanche and Escalade EXT among them, have two rows at most.
   if (car.bodyStyle === 'truck') return false;
+  // Maker seating when curated: a third row is seatsMax ≥ 7 (or seats ≥ 7 when
+  // the maker lists only one figure). Prefer this over the name table.
+  if (car.seatsMax != null) return car.seatsMax >= 7;
+  if (car.seats != null) {
+    if (car.seats >= 7) return true;
+    if (car.seats <= 5) return false;
+  }
   const name = `${car.make} ${car.model}`.toLowerCase();
   if (car.bodyStyle === 'van') return /passenger|wagon/.test(name);
   // Lucid names the rows ("Gravity GT (3R)"); the Maybach GLS seats four or five.

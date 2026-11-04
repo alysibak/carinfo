@@ -55,6 +55,18 @@ export interface CarSpecs {
   shoppingSegment?: ShoppingSegment;
   ownershipProfile?: OwnershipProfile;
 
+  /**
+   * Seating capacity from the maker (curated): standard, and seatsMax when a
+   * third row is optional. EPA publishes none.
+   */
+  seats?: number;
+  seatsMax?: number;
+  /**
+   * Maximum conventional towing capacity in pounds when properly equipped,
+   * from the maker (curated). EPA publishes none.
+   */
+  towingCapacityLb?: number;
+
   engine: {
     displacement?: number;
     horsepower?: number;

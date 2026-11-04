@@ -36,6 +36,15 @@ describe('isThreeRow', () => {
     expect(isThreeRow(car('Cadillac', 'Escalade ESV AWD', 'suv', 2010))).toBe(true);
   });
 
+  it('prefers curated seating over the name table', () => {
+    expect(isThreeRow({ ...car('Toyota', 'RAV4'), seats: 5 })).toBe(false);
+    expect(isThreeRow({ ...car('Toyota', 'Mystery Suv'), seats: 5 })).toBe(false);
+    expect(isThreeRow({ ...car('Toyota', 'Mystery Suv'), seats: 8 })).toBe(true);
+    expect(isThreeRow({ ...car('Toyota', 'Mystery Suv'), seats: 5, seatsMax: 8 })).toBe(true);
+    // Pickups stay two-row even when a crew cab seats six.
+    expect(isThreeRow({ ...car('Ford', 'F-150', 'truck'), seats: 3, seatsMax: 6 })).toBe(false);
+  });
+
   it('reads the rows Lucid puts in the name', () => {
     expect(isThreeRow(car('Lucid', 'Gravity GT w/21F22R wheels (3R)', 'suv', 2026))).toBe(true);
     expect(isThreeRow(car('Lucid', 'Gravity GT w/21F22R wheels (2R)', 'suv', 2026))).toBe(false);
