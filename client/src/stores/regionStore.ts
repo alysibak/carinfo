@@ -14,6 +14,8 @@ interface RegionStore {
 export const REGION_OPTIONS: { id: ClientRegionId; label: string }[] = [
   { id: 'ontario', label: 'Ontario' },
   { id: 'british-columbia', label: 'B.C.' },
+  { id: 'alberta', label: 'Alberta' },
+  { id: 'quebec', label: 'Quebec' },
 ];
 
 /** The chosen region's full name ("British Columbia"), for prose. */

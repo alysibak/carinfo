@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGarageStore, FREE_GARAGE_LIMIT } from '../stores/garageStore';
 import { formatMoneyShort } from '../utils/money';
@@ -6,7 +6,7 @@ import { useAccountStatus } from '../hooks/useAccountStatus';
 import ToolPageHeader from '../components/ToolPageHeader';
 import { ConfirmDialog, Modal, StatusToast } from '../components/ui';
 import * as api from '../services/api';
-import type { CarSpecs } from '../types/car.types';
+import type { CarRecordsSummary, CarSpecs } from '../types/car.types';
 import { COLLECTIONS } from '../config/collections';
 import {
   displayModelFamilyLabel,
@@ -15,6 +15,7 @@ import {
 } from '../utils/trimLabel';
 import { efficiencyOf } from '../utils/efficiency';
 import { rankedFigure } from '../utils/rankedFigure';
+import { differentiateCars } from '../utils/differentiateCars';
 import VehiclePlaceholder from '../components/VehiclePlaceholder';
 import CarCard from '../components/CarCard';
 import CarRecordsNote from '../components/CarRecordsNote';
@@ -149,12 +150,52 @@ export default function DreamGarage() {
   const lastSyncError = useGarageStore((s) => s.lastSyncError);
   const billingConfigured = Boolean(useAccountStatus()?.billingConfigured);
   const navigate = useNavigate();
+  const [recordsById, setRecordsById] = useState<Record<string, CarRecordsSummary>>({});
 
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(null), 2200);
     return () => clearTimeout(t);
   }, [toast]);
+
+  useEffect(() => {
+    let active = true;
+    const ids = garage.map((car) => car.id);
+    if (ids.length === 0) {
+      setRecordsById({});
+      return;
+    }
+    Promise.all(
+      ids.map(async (id) => {
+        try {
+          return [id, await api.getCarRecords(id)] as const;
+        } catch {
+          return [id, null] as const;
+        }
+      }),
+    ).then((entries) => {
+      if (!active) return;
+      const next: Record<string, CarRecordsSummary> = {};
+      for (const [id, records] of entries) {
+        if (records) next[id] = records;
+      }
+      setRecordsById(next);
+    });
+    return () => {
+      active = false;
+    };
+  }, [garage]);
+
+  const shortlistDiff = useMemo(() => differentiateCars(garage), [garage]);
+  const recallAlerts = useMemo(() => {
+    return garage
+      .map((car) => {
+        const recalls = recordsById[car.id]?.recalls;
+        if (!recalls) return null;
+        return { car, recalls };
+      })
+      .filter((row): row is { car: CarSpecs; recalls: number } => row != null);
+  }, [garage, recordsById]);
 
   const generateShareLink = async () => {
     const carIds = garage.map((car) => car.id).join(',');
@@ -301,6 +342,42 @@ export default function DreamGarage() {
               ))}
             </dl>
 
+            {recallAlerts.length > 0 && (
+              <div className="mb-6 border border-amber-900/60 bg-zinc-950 px-4 py-3">
+                <p className="text-sm text-amber-100/90 font-medium mb-1">
+                  {recallAlerts.length === 1
+                    ? 'One saved car has recalls in Canada'
+                    : `${recallAlerts.length} saved cars have recalls in Canada`}
+                </p>
+                <ul className="space-y-1">
+                  {recallAlerts.map(({ car, recalls }) => (
+                    <li key={car.id} className="text-xs text-zinc-400">
+                      <Link
+                        to={`/car/${encodeURIComponent(car.id)}#recalls`}
+                        className="underline underline-offset-4 decoration-zinc-700 hover:text-white hover:decoration-zinc-400"
+                      >
+                        {displayVehicleTitle(car)}
+                      </Link>
+                      {`: ${recalls} ${recalls === 1 ? 'recall' : 'recalls'} — check yours by VIN`}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {shortlistDiff.axes.length > 0 && (
+              <div className="mb-6 pb-5 border-b border-zinc-800">
+                <p className="text-xs text-zinc-500 mb-2">How your saved cars differ</p>
+                <ul className="space-y-2">
+                  {shortlistDiff.axes.map((axis) => (
+                    <li key={axis} className="text-base text-zinc-200 leading-snug">
+                      {axis}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className="flex flex-wrap items-center gap-3 mb-8">
               <button
                 onClick={() =>
@@ -327,7 +404,16 @@ export default function DreamGarage() {
                   <CarCard
                     car={car}
                     onRemove={() => removeFromGarage(car.id)}
-                    notes={<CarRecordsNote carId={car.id} />}
+                    notes={
+                      <div className="space-y-1">
+                        {shortlistDiff.byCarId[car.id]?.edge && (
+                          <p className="text-sm text-zinc-100 font-medium leading-snug">
+                            {shortlistDiff.byCarId[car.id].edge}
+                          </p>
+                        )}
+                        <CarRecordsNote carId={car.id} />
+                      </div>
+                    }
                   />
                 </li>
               ))}

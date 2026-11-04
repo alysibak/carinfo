@@ -5,6 +5,7 @@ import type {
   Matchup,
   Car,
   ModelOverview,
+  ModelYearOverview,
   ModelYearSummary,
   SearchQuery,
   SearchResults,
@@ -1499,6 +1500,64 @@ let matchupCache: { source: Car[]; value: Matchup[] } | null = null;
  * Search showed a model a configuration at a time; this is the whole line,
  * year by year, with what changed and what it is shopped against.
  */
+/**
+ * One model year of a family that has several configurations that year.
+ * Single-configuration years stay on the car dossier (no near-duplicate page).
+ */
+export function getModelYearOverview(
+  makeSlug: string,
+  modelSlug: string,
+  year: number,
+): ModelYearOverview | null {
+  ensureDatabase();
+  if (!Number.isFinite(year) || year < 1980 || year > 2100) return null;
+  const overview = getModelOverview(makeSlug, modelSlug);
+  if (!overview) return null;
+  const summary = overview.years.find((row) => row.year === year);
+  if (!summary || summary.configurations < 2) return null;
+
+  const pages = modelPages();
+  const family = pages.byPath.get(overview.path);
+  const cars = family && pages.carsByKey.get(family.key);
+  if (!cars?.length) return null;
+  const thatYear = cars
+    .filter((car) => car.year === year)
+    .sort((a, b) => {
+      // Same base-first ordering summarizeYear uses via baseOf: cheaper, then 2WD.
+      const price = (a.price?.msrp ?? 1e12) - (b.price?.msrp ?? 1e12);
+      if (price !== 0) return price;
+      return a.id.localeCompare(b.id);
+    });
+  if (thatYear.length < 2) return null;
+
+  return {
+    make: overview.make,
+    name: overview.name,
+    path: `${overview.path}/${year}`,
+    modelPath: overview.path,
+    year,
+    summary,
+    cars: thatYear,
+  };
+}
+
+/** Model-year pages worth publishing: families already grouped, ≥2 configs that year. */
+export function getModelYearPages(): Array<{ path: string; year: number; last: number }> {
+  ensureDatabase();
+  const pages = modelPages();
+  const out: Array<{ path: string; year: number; last: number }> = [];
+  for (const [path, family] of pages.byPath) {
+    const cars = pages.carsByKey.get(family.key) ?? [];
+    const byYear = new Map<number, number>();
+    for (const car of cars) byYear.set(car.year, (byYear.get(car.year) ?? 0) + 1);
+    for (const [year, count] of byYear) {
+      if (count < 2) continue;
+      out.push({ path: `${path}/${year}`, year, last: family.last });
+    }
+  }
+  return out;
+}
+
 export function getModelOverview(makeSlug: string, modelSlug: string): ModelOverview | null {
   ensureDatabase();
   const pages = modelPages();

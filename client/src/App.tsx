@@ -13,6 +13,7 @@ const VehicleGrid = lazy(() => import('./pages/VehicleGrid'));
 const CarDetail = lazy(() => import('./pages/CarDetail'));
 const CarChecklist = lazy(() => import('./pages/CarChecklist'));
 const ModelPage = lazy(() => import('./pages/ModelPage'));
+const ModelYearPage = lazy(() => import('./pages/ModelYearPage'));
 const Home = lazy(() => import('./pages/Home'));
 const Compare = lazy(() => import('./pages/Compare'));
 const Collection = lazy(() => import('./pages/Collection'));
@@ -35,7 +36,7 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 /** What the tools behind a sign-in do, for the page that asks for one. */
 const GARAGE_GIVES = [
   'Save cars from any page, and find them on any device you sign in on.',
-  'See each saved car’s recalls in Canada and its place on the theft list at a glance.',
+  'See how your shortlist differs, and which saved cars have recalls in Canada.',
   'Compare saved cars side by side, or share the list with a link.',
 ];
 const VALUE_CHART_GIVES = [
@@ -67,6 +68,7 @@ function App() {
                   <Route path="/vehicles/:category/:subcategory" element={<VehicleGrid />} />
                   <Route path="/car/:id" element={<CarDetail />} />
                   <Route path="/car/:id/checklist" element={<CarChecklist />} />
+                  <Route path="/models/:make/:model/:year" element={<ModelYearPage />} />
                   <Route path="/models/:make/:model" element={<ModelPage />} />
                   <Route path="/home" element={<Home />} />
                   {/* Open to visitors: the tools shoppers reach for first. */}

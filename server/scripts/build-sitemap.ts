@@ -13,7 +13,12 @@
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { dirname, join, resolve } from 'path';
 import { fileURLToPath } from 'url';
-import { getAllCars, getModelPages, getStatistics } from '../src/services/car.service.js';
+import {
+  getAllCars,
+  getModelPages,
+  getModelYearPages,
+  getStatistics,
+} from '../src/services/car.service.js';
 import {
   URLS_PER_SITEMAP,
   chunk,
@@ -81,6 +86,15 @@ const models: SitemapEntry[] = getModelPages().map((page) => ({
   priority: page.last >= new Date().getFullYear() - 1 ? 0.8 : 0.6,
 }));
 
+// Model-year pages for families with several configurations that year (not
+// one-config near-duplicates of a car dossier).
+const modelYears: SitemapEntry[] = getModelYearPages().map((page) => ({
+  path: page.path,
+  lastmod: lastUpdated,
+  changefreq: 'monthly',
+  priority: page.year >= new Date().getFullYear() - 3 ? 0.7 : 0.5,
+}));
+
 rmSync(CHUNK_DIR, { recursive: true, force: true });
 mkdirSync(CHUNK_DIR, { recursive: true });
 
@@ -89,6 +103,8 @@ writeFileSync(join(CHUNK_DIR, 'pages.xml'), renderUrlset(origin, pages));
 files.push('sitemaps/pages.xml');
 writeFileSync(join(CHUNK_DIR, 'models.xml'), renderUrlset(origin, models));
 files.push('sitemaps/models.xml');
+writeFileSync(join(CHUNK_DIR, 'model-years.xml'), renderUrlset(origin, modelYears));
+files.push('sitemaps/model-years.xml');
 
 chunk(vehicles, URLS_PER_SITEMAP).forEach((entries, i) => {
   const name = `vehicles-${i + 1}.xml`;

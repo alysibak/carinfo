@@ -6,6 +6,7 @@ import type {
   CarSpecs,
   ModelLineSummary,
   ModelOverview,
+  ModelYearOverview,
   SearchQuery,
   SearchResults,
 } from '../types/car.types';
@@ -52,6 +53,21 @@ export async function getModelOverview(
   options?: RequestOptions,
 ): Promise<ModelOverview> {
   return api.get(`/cars/models/${encodeURIComponent(make)}/${encodeURIComponent(model)}`, options);
+}
+
+/**
+ * One model year with several configurations: ("honda", "civic", 2024).
+ */
+export async function getModelYearOverview(
+  make: string,
+  model: string,
+  year: number,
+  options?: RequestOptions,
+): Promise<ModelYearOverview> {
+  return api.get(
+    `/cars/models/${encodeURIComponent(make)}/${encodeURIComponent(model)}/${year}`,
+    options,
+  );
 }
 
 /**

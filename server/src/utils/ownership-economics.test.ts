@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Car } from '../types/car.types.js';
 import { getAllCars } from '../services/car.service.js';
-import { getRegionalAssumptions } from '../config/regional-assumptions.js';
+import { getRegionalAssumptions, parseRegionId } from '../config/regional-assumptions.js';
 import { computeOwnershipEconomics } from './ownership-economics.js';
 import { applyValuationReliabilityGuard, estimateNewVehicleMsrp } from './vehicle-valuation.js';
 
@@ -124,6 +124,22 @@ describe('regions', () => {
   it('charges no Ontario plate renewal fee', () => {
     const [car] = sample();
     expect(computeOwnershipEconomics(car, [], 'ontario').annualCost.registration).toBe(0);
+  });
+
+  it('prices Alberta and Quebec with their own fuel, power and registration', () => {
+    const [car] = sample();
+    const ab = getRegionalAssumptions('alberta');
+    const qc = getRegionalAssumptions('quebec');
+    const on = getRegionalAssumptions('ontario');
+
+    expect(ab.gasPriceCadPerL).not.toBe(on.gasPriceCadPerL);
+    expect(qc.gasPriceCadPerL).not.toBe(on.gasPriceCadPerL);
+    expect(ab.electricityRateCadPerKwh).toBeGreaterThan(on.electricityRateCadPerKwh);
+    expect(qc.electricityRateCadPerKwh).toBeLessThan(on.electricityRateCadPerKwh);
+    expect(computeOwnershipEconomics(car, [], 'alberta').annualCost.registration).toBe(94);
+    expect(computeOwnershipEconomics(car, [], 'quebec').annualCost.registration).toBe(230);
+    expect(parseRegionId('ab')).toBe('alberta');
+    expect(parseRegionId('qc')).toBe('quebec');
   });
 });
 

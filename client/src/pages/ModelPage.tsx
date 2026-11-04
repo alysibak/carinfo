@@ -80,7 +80,16 @@ function showYear(year: number) {
  * down the years. Phones keep the five a shopper compares; power, what it was
  * offered as and the version count join on wider screens.
  */
-function YearTable({ rows, name }: { rows: ModelYearSummary[]; name: string }) {
+function YearTable({
+  rows,
+  name,
+  modelPath,
+}: {
+  rows: ModelYearSummary[];
+  name: string;
+  /** "/models/honda/civic" — year pages hang under it when a year has several configs. */
+  modelPath: string;
+}) {
   const navigate = useNavigate();
   const th = 'py-2 pr-2 min-[360px]:pr-3 md:pr-4 font-normal';
   const wide = 'hidden md:table-cell';
@@ -137,6 +146,10 @@ function YearTable({ rows, name }: { rows: ModelYearSummary[]; name: string }) {
         {rows.map((row) => {
           const cells = modelYearCells(row);
           const td = 'py-3 pr-2 min-[360px]:pr-3 md:pr-4';
+          // Several configurations that year → the model-year page; one alone
+          // stays on the car dossier so we do not duplicate it.
+          const href =
+            row.configurations >= 2 ? `${modelPath}/${row.year}` : `/car/${row.carId}`;
           return (
             <Fragment key={row.year}>
               <tr
@@ -145,13 +158,13 @@ function YearTable({ rows, name }: { rows: ModelYearSummary[]; name: string }) {
                 // The whole row opens the year, as its hover says; the year is
                 // its link for a keyboard or a screen reader.
                 onClick={(e) => {
-                  if (!(e.target as Element).closest('a')) navigate(`/car/${row.carId}`);
+                  if (!(e.target as Element).closest('a')) navigate(href);
                 }}
                 className={`scroll-mt-24 cursor-pointer text-zinc-300 hover:bg-zinc-950 ${row.changes ? '' : 'border-b border-zinc-900'}`}
               >
                 <th scope="row" className={`${td} text-left font-semibold`}>
                   <Link
-                    to={`/car/${row.carId}`}
+                    to={href}
                     aria-label={`${row.year} ${name}`}
                     className="inline-block py-3 -my-3 pr-3 text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-400"
                   >
@@ -442,7 +455,7 @@ export default function ModelPage() {
                   <Chevron className="w-4 h-4 text-zinc-500 group-hover/gen:text-white group-open/gen:rotate-180" />
                 </summary>
                 <div className="pb-6">
-                  <YearTable rows={group.rows} name={name!} />
+                  <YearTable rows={group.rows} name={name!} modelPath={overview.path} />
                 </div>
               </details>
             );
@@ -450,7 +463,7 @@ export default function ModelPage() {
           return (
             <section key={key} className="mb-8">
               <h2 className="block-title mb-2">{title}</h2>
-              <YearTable rows={group.rows} name={name!} />
+              <YearTable rows={group.rows} name={name!} modelPath={overview.path} />
             </section>
           );
         })}

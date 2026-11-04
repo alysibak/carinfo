@@ -66,7 +66,7 @@ function renderAt(path: string) {
 }
 
 describe('ModelPage', () => {
-  it('lists every year by generation, each opening that year’s car, and the rivals’ pages', async () => {
+  it('lists every year by generation, multi-config years opening the year page, and the rivals’ pages', async () => {
     vi.mocked(api.getModelOverview).mockResolvedValue(overview);
     renderAt('/models/toyota/camry');
 
@@ -81,7 +81,7 @@ describe('ModelPage', () => {
     ).toBeVisible();
     expect(screen.getByRole('link', { name: '2024 Toyota Camry' })).toHaveAttribute(
       'href',
-      '/car/camry-2024',
+      '/models/toyota/camry/2024',
     );
     // The row reads the year's figures, and no estimated value: a column of them read as prices.
     const row2026 = screen

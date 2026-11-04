@@ -656,6 +656,25 @@ export interface ModelOverview {
   theft?: TheftRank;
 }
 
+/**
+ * One model year of a family with several configurations: "/models/honda/civic/2024".
+ * Built on the same model-family keys as ModelOverview (not raw EPA carlines), so
+ * "Civic 4Dr" and "Civic 5Dr" share a page. Years with a single configuration stay
+ * on the car dossier instead.
+ */
+export interface ModelYearOverview {
+  make: string;
+  name: string;
+  /** "/models/honda/civic/2024" */
+  path: string;
+  /** "/models/honda/civic" */
+  modelPath: string;
+  year: number;
+  summary: ModelYearSummary;
+  /** Every configuration of that year, cheapest / base first. */
+  cars: Car[];
+}
+
 /** One of Canada's best sellers, with its model's newest year on file (config/popular-models.ts). */
 export interface BestSeller {
   rank: number;

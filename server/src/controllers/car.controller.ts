@@ -153,6 +153,20 @@ export function getModelOverview(req: Request, res: Response, next: NextFunction
 }
 
 /**
+ * One model year with several configurations: /api/cars/models/honda/civic/2024
+ */
+export function getModelYearOverview(req: Request, res: Response, next: NextFunction) {
+  try {
+    const year = parseInt(req.params.year, 10);
+    const overview = carService.getModelYearOverview(req.params.make, req.params.model, year);
+    if (!overview) throw new HttpError(404, 'Model year not found');
+    res.json({ success: true, data: overview });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
  * Compare multiple cars
  */
 export function compareCars(req: Request, res: Response, next: NextFunction) {

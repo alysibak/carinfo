@@ -37,18 +37,32 @@ app.use(requestContext);
 
 app.use(
   helmet({
-    // Baseline CSP, matching vercel.json, for the HTML this server renders
-    // (vehicle and compare pages, and the SPA under `npm start`). It leaves
-    // script sources open. No upgrade-insecure-requests here: `npm start`
-    // over plain http://localhost would break.
+    // CSP matching vercel.json for the HTML this server renders (vehicle and
+    // compare pages, and the SPA under `npm start`). Scripts are same-origin
+    // only (Clerk is gone); wasm-unsafe-eval is for the self-hosted VIN OCR
+    // worker. Wikimedia hosts car photos. No upgrade-insecure-requests here:
+    // `npm start` over plain http://localhost would break.
     contentSecurityPolicy: {
       useDefaults: false,
       directives: {
-        // Deliberately no default-src: it would restrict scripts and styles.
-        defaultSrc: helmet.contentSecurityPolicy.dangerouslyDisableDefaultSrc,
+        defaultSrc: ["'self'"],
         baseUri: ["'self'"],
         objectSrc: ["'none'"],
         frameAncestors: ["'none'"],
+        frameSrc: ["'none'"],
+        scriptSrc: ["'self'", "'wasm-unsafe-eval'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: [
+          "'self'",
+          'data:',
+          'blob:',
+          'https://upload.wikimedia.org',
+          'https://*.wikimedia.org',
+        ],
+        fontSrc: ["'self'", 'data:'],
+        connectSrc: ["'self'", 'https://upload.wikimedia.org', 'https://*.wikimedia.org', 'blob:'],
+        workerSrc: ["'self'", 'blob:'],
+        mediaSrc: ["'self'", 'blob:'],
       },
     },
     crossOriginEmbedderPolicy: false,

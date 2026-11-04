@@ -25,6 +25,7 @@ export type {
   FuelType,
   MarketValueEstimate,
   ModelOverview,
+  ModelYearOverview,
   ModelLineSummary,
   BestSeller,
   BestSellers,
