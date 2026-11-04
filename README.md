@@ -538,6 +538,8 @@ Loaded once at startup into memory:
 | `/battle`                          | `BattleMode.tsx`   | Yes    | 2-car head-to-head (members)                             |
 | `/value-matrix`                    | `ValueMatrix.tsx`  | Yes    | Recharts scatter (members; lazy-loaded chunk)            |
 | `/methodology`                     | `Methodology.tsx`  | Yes    | Data pipeline, PHEV correction, valuation model          |
+| `/privacy`                         | `Privacy.tsx`      | Yes    | What is kept, where, how long; rights and contact        |
+| `/terms`                           | `Terms.tsx`        | Yes    | Terms of use: estimates, accounts, Pro, data licences    |
 | `/vin`                             | `VinDecoder.tsx`   | Yes    | VIN lookup (open to everyone)                            |
 | `/models/:make/:model/:year`       | `ModelYearPage.tsx`| Yes    | One year of a family with several configurations         |
 | `/account`                         | `Account.tsx`      | Yes    | Garage sync, plan, password, sign-out, delete            |

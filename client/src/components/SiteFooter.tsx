@@ -97,6 +97,14 @@ export default function SiteFooter() {
           </p>
           <p>
             Estimates in CAD, for {regionLabel} · © {new Date().getFullYear()} CarInfo
+            <span aria-hidden="true"> · </span>
+            <Link to="/privacy" className="text-zinc-400 hover:text-white">
+              Privacy
+            </Link>
+            <span aria-hidden="true"> · </span>
+            <Link to="/terms" className="text-zinc-400 hover:text-white">
+              Terms
+            </Link>
           </p>
         </div>
       </div>

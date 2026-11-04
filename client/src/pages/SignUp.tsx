@@ -168,6 +168,17 @@ export default function SignUp() {
             )}
           </>
         )}
+        <p className="text-xs text-zinc-500 leading-relaxed">
+          Creating an account accepts the{' '}
+          <Link to="/terms" className="underline underline-offset-2 hover:text-zinc-300">
+            terms of use
+          </Link>
+          ; the{' '}
+          <Link to="/privacy" className="underline underline-offset-2 hover:text-zinc-300">
+            privacy policy
+          </Link>{' '}
+          says what is kept and why.
+        </p>
       </div>
     </AuthCard>
   );
