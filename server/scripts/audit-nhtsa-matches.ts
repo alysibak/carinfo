@@ -19,7 +19,8 @@ import {
 
 const HEAVY_DUTY =
   /\b(?:[2-5]500(?:hd)?|3500|4500|5500|f-2\d0|f-3\d0|f-4\d0|f-5\d0|super ?duty|\bhd\b|\bsd\b)\b/i;
-const COMMERCIAL_MAKE = /^(?:freightliner|workhorse|navistar|international|brightDrop|brightdrop)$/i;
+const COMMERCIAL_MAKE =
+  /^(?:freightliner|workhorse|navistar|international|brightDrop|brightdrop)$/i;
 
 type UnmatchedReason =
   | 'heavy-duty / not in EPA corpus'
@@ -70,9 +71,7 @@ function main(): void {
   console.log(
     `Matched to a site model line: ${matchedTests.length} (${pct(matchedTests.length, tests.length)})`,
   );
-  console.log(
-    `Unmatched: ${unmatchedTests.length} (${pct(unmatchedTests.length, tests.length)})`,
-  );
+  console.log(`Unmatched: ${unmatchedTests.length} (${pct(unmatchedTests.length, tests.length)})`);
 
   const groups = new Map<string, UnmatchedGroup>();
   for (const test of unmatchedTests) {
@@ -113,12 +112,11 @@ function main(): void {
     );
   }
 
-  const { cars: ratedCars, rated, described } = withNhtsaRatings(
-    cars,
-    tests,
-    modelLineKey,
-    index.match,
-  );
+  const {
+    cars: ratedCars,
+    rated,
+    described,
+  } = withNhtsaRatings(cars, tests, modelLineKey, index.match);
 
   const from2011 = ratedCars.filter((c) => c.year >= 2011);
   const from2015 = ratedCars.filter((c) => c.year >= 2015);
@@ -154,7 +152,10 @@ function main(): void {
   }
 
   // Body/drive/version misses among cars whose line matched that year.
-  const byLine = new Map<string, Array<{ config: ReturnType<typeof testedConfiguration>; rating: NhtsaTest }>>();
+  const byLine = new Map<
+    string,
+    Array<{ config: ReturnType<typeof testedConfiguration>; rating: NhtsaTest }>
+  >();
   for (const test of tests) {
     const line = index.match(test.make, test.model, test.year);
     if (!line) continue;
