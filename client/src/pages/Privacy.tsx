@@ -41,8 +41,8 @@ export default function Privacy() {
         </p>
         <p>
           When a page breaks, your browser sends CarInfo the error, the page&rsquo;s address (also
-          without anything after &ldquo;?&rdquo;) and the browser&rsquo;s name and version, so the
-          fault can be found. No account details go with it.
+          without anything after &ldquo;?&rdquo;) and the browser&rsquo;s name, version and
+          operating system, so the fault can be found. No account details go with it.
         </p>
       </LegalSection>
 
