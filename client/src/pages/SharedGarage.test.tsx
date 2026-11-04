@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CarSpecs } from '../types/car.types';
@@ -49,9 +49,9 @@ describe('SharedGarage', () => {
 
     expect(await screen.findByText(/How these cars differ/i)).toBeInTheDocument();
     expect(await screen.findByText(/One shared car has recalls in Canada/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /2024 Toyota Tundra/i })).toHaveAttribute(
-      'href',
-      '/car/thirsty#recalls',
-    );
+    const recallLink = screen
+      .getAllByRole('link', { name: /2024 Toyota Tundra/i })
+      .find((el) => el.getAttribute('href')?.includes('#recalls'));
+    expect(recallLink).toHaveAttribute('href', '/car/thirsty#recalls');
   });
 });
