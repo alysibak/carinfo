@@ -153,12 +153,12 @@ describe('regions', () => {
     const nl = getRegionalAssumptions('newfoundland-and-labrador');
 
     expect(mb.gasPriceCadPerL).not.toBe(on.gasPriceCadPerL);
-    expect(sk.electricityRateCadPerKwh).toBeCloseTo(0.155);
-    expect(ns.electricityRateCadPerKwh).toBeGreaterThan(on.electricityRateCadPerKwh);
-    expect(mb.electricityRateCadPerKwh).toBeLessThan(on.electricityRateCadPerKwh);
-    expect(computeOwnershipEconomics(car, [], 'manitoba').annualCost.registration).toBe(129);
-    expect(computeOwnershipEconomics(car, [], 'saskatchewan').annualCost.registration).toBe(77);
-    expect(computeOwnershipEconomics(car, [], 'nova-scotia').annualCost.registration).toBe(89);
+    expect(sk.electricityRateCadPerKwh).toBeCloseTo(0.15476);
+    expect(ns.electricityRateCadPerKwh).toBeCloseTo(0.19128);
+    expect(mb.electricityRateCadPerKwh).toBeCloseTo(0.0997);
+    expect(computeOwnershipEconomics(car, [], 'manitoba').annualCost.registration).toBe(119);
+    expect(computeOwnershipEconomics(car, [], 'saskatchewan').annualCost.registration).toBe(68);
+    expect(computeOwnershipEconomics(car, [], 'nova-scotia').annualCost.registration).toBe(88);
     expect(computeOwnershipEconomics(car, [], 'new-brunswick').annualCost.registration).toBe(117);
     expect(computeOwnershipEconomics(car, [], 'prince-edward-island').annualCost.registration).toBe(
       100,

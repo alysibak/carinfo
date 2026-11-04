@@ -413,20 +413,20 @@ export const REGIONAL_ASSUMPTIONS: Record<RegionId, RegionalAssumptions> = {
     ...pumpPricesOf('Winnipeg, Manitoba'),
     // Manitoba Hydro residential energy charge, 9.970¢/kWh from 1 Jan 2026
     // (PUB Order 1/26 / Hydro rate schedule).
-    electricityRateCadPerKwh: 0.1,
+    electricityRateCadPerKwh: 0.0997,
     hydrogenCadPerKg: null,
     annualKm: 15000,
-    // MPI annual registration for most non-commercial vehicles: $129
-    // (bundled with Autopac renewal).
-    registrationCadPerYear: 129,
+    // MPI passenger-vehicle registration charge: $119/yr (separate from
+    // Autopac; collected together at renewal). Man. Reg. 42/2006.
+    registrationCadPerYear: 119,
     beaterValueThresholdCad: 8000,
-    // MPI projected average Basic Autopac premium ~$1,350 for 2026/27
+    // MPI projected average Basic Autopac premium ~$1,264 for 2026/27
     // (excludes optional Extension). Bases sit near that Basic figure.
     insurance: {
-      sedan: 1400,
-      suv: 1550,
-      truck: 1700,
-      coupe: 1550,
+      sedan: 1300,
+      suv: 1450,
+      truck: 1600,
+      coupe: 1450,
       luxuryMultiplier: 1.4,
       heavyEvTruck: 3000,
       luxuryPerformance: 2900,
@@ -471,12 +471,12 @@ export const REGIONAL_ASSUMPTIONS: Record<RegionId, RegionalAssumptions> = {
     // Statistics Canada, Regina, the last twelve months on file.
     ...pumpPricesOf('Regina, Saskatchewan'),
     // SaskPower residential energy charge 15.476¢/kWh from 1 Feb 2026.
-    electricityRateCadPerKwh: 0.155,
+    electricityRateCadPerKwh: 0.15476,
     hydrogenCadPerKg: null,
     annualKm: 16000,
-    // Plate/admin portion of the SGI Autopak renewal for a typical car;
-    // basic insurance is in the premium bases below.
-    registrationCadPerYear: 77,
+    // SGI Class LV registration (GVW ≤5,000 kg, 1942 & newer): $68/yr;
+    // Auto Fund basic insurance is in the premium bases below.
+    registrationCadPerYear: 68,
     beaterValueThresholdCad: 8000,
     // AIRB 2024 cross-province comparison puts Saskatchewan near $1,545.
     insurance: {
@@ -527,14 +527,14 @@ export const REGIONAL_ASSUMPTIONS: Record<RegionId, RegionalAssumptions> = {
     vehiclePriceCadPerUsd: 1.22,
     // Statistics Canada, Halifax, the last twelve months on file.
     ...pumpPricesOf('Halifax, Nova Scotia'),
-    // Nova Scotia Power domestic energy ~18.3¢/kWh (2026 tariff, before
-    // FAM/DSM riders); planning rate rounds to 18¢.
-    electricityRateCadPerKwh: 0.183,
+    // Nova Scotia Power domestic energy 19.128¢/kWh from 1 May 2026
+    // (base energy + FAM/DSM/storm riders on the customer-facing rate).
+    electricityRateCadPerKwh: 0.19128,
     hydrogenCadPerKg: null,
     annualKm: 14000,
-    // Registry of Motor Vehicles: ~$177 for a two-year 1,001–1,500 kg
-    // passenger permit → about $89 a year.
-    registrationCadPerYear: 89,
+    // Registry of Motor Vehicles: $176.90 for a two-year 1,001–1,500 kg
+    // passenger permit → $88.45 a year.
+    registrationCadPerYear: 88,
     beaterValueThresholdCad: 8000,
     // GISA 2024 average earned premium ~$1,302 (private market).
     insurance: {
@@ -585,8 +585,9 @@ export const REGIONAL_ASSUMPTIONS: Record<RegionId, RegionalAssumptions> = {
     vehiclePriceCadPerUsd: 1.2,
     // Statistics Canada, Saint John, the last twelve months on file.
     ...pumpPricesOf('Saint John, New Brunswick'),
-    // NB Power residential energy 15.84¢/kWh from 14 Apr 2026.
-    electricityRateCadPerKwh: 0.158,
+    // NB Power residential energy 15.84¢/kWh from 14 Apr 2026
+    // (15.39¢ base + 0.45¢ variance account charge).
+    electricityRateCadPerKwh: 0.1584,
     hydrogenCadPerKg: null,
     annualKm: 14000,
     // Service New Brunswick weight band for a ~1,500 kg car: $117/yr
@@ -642,8 +643,8 @@ export const REGIONAL_ASSUMPTIONS: Record<RegionId, RegionalAssumptions> = {
     vehiclePriceCadPerUsd: 1.22,
     // Statistics Canada, Charlottetown and Summerside, last twelve months.
     ...pumpPricesOf('Charlottetown and Summerside, Prince Edward Island'),
-    // Maritime Electric first-block residential ~17.8¢/kWh (Aug 2026).
-    electricityRateCadPerKwh: 0.178,
+    // Maritime Electric first-block residential 17.84¢/kWh from 1 Aug 2026.
+    electricityRateCadPerKwh: 0.1784,
     hydrogenCadPerKg: null,
     annualKm: 13000,
     // Highway Safety: $100/yr for a private passenger vehicle under 4,100 kg.
@@ -698,8 +699,8 @@ export const REGIONAL_ASSUMPTIONS: Record<RegionId, RegionalAssumptions> = {
     vehiclePriceCadPerUsd: 1.22,
     // Statistics Canada, St. John's, the last twelve months on file.
     ...pumpPricesOf("St. John's, Newfoundland and Labrador"),
-    // NL Hydro / Newfoundland Power domestic energy ~15.6¢/kWh (2026).
-    electricityRateCadPerKwh: 0.156,
+    // Newfoundland Power domestic energy 15.587¢/kWh from 1 Jul 2026.
+    electricityRateCadPerKwh: 0.15587,
     hydrogenCadPerKg: null,
     annualKm: 14000,
     // Motor Registration Division: $90/yr passenger ($80 online).

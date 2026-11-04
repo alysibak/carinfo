@@ -787,6 +787,148 @@
           "source": "https://www.fromtheroad.ford.com/content/dam/fordmediasite/us/en/library/2026/specs/2026_Ford_Ranger%20Technical_Specs.pdf"
         }
       ]
+    },
+    {
+      "make": "Nissan",
+      "model": "Rogue",
+      "years": [
+        2021,
+        2021
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.nissanusa.com/vehicles/crossovers-suvs/rogue.html",
+      "engines": [
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 181,
+          "maxTowingLb": 1350,
+          "source": "https://www.nissanusa.com/content/dam/Nissan/us/vehicle-brochures/2021/2021-nissan-rogue-brochure-en.pdf"
+        }
+      ]
+    },
+    {
+      "make": "Nissan",
+      "model": "Rogue",
+      "years": [
+        2022,
+        2026
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.nissanusa.com/vehicles/crossovers-suvs/rogue/specs-trims.html",
+      "engines": [
+        {
+          "displacementL": 1.5,
+          "cylinders": 3,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 225,
+          "maxTowingLb": 1500,
+          "source": "https://www.nissanusa.com/vehicles/crossovers-suvs/rogue/specs-trims.html"
+        }
+      ]
+    },
+    {
+      "make": "Kia",
+      "model": "Sportage",
+      "years": [
+        2023,
+        2026
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.kia.com/us/en/sportage/specs-compare",
+      "engines": [
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 178,
+          "maxTowingLb": 2000,
+          "source": "https://www.kia.com/us/en/sportage/specs-compare"
+        },
+        {
+          "displacementL": 1.6,
+          "cylinders": 4,
+          "fuel": "hybrid",
+          "forcedInduction": true,
+          "torqueLbFt": 258,
+          "maxTowingLb": 2000,
+          "source": "https://www.kia.com/content/dam/kia/us/brochures/MY23_SUV_Brochure_Sportage_r11.pdf"
+        },
+        {
+          "displacementL": 1.6,
+          "cylinders": 4,
+          "fuel": "plug-in hybrid",
+          "forcedInduction": true,
+          "torqueLbFt": 258,
+          "maxTowingLb": 2000,
+          "source": "https://www.kianewscenter.com/news/kia-announces-2024-sportage-plug-in-hybrid-pricing/s/129e1255-1f9d-4adf-8f01-a7485eac5c2f"
+        }
+      ]
+    },
+    {
+      "make": "Subaru",
+      "model": "Forester",
+      "years": [
+        2019,
+        2024
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.subaru.com/vehicles/forester.html",
+      "engines": [
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 176,
+          "maxTowingLb": 1500,
+          "source": "https://www.subaru.com/content/dam/subaru/downloads/pdf/brochures/2024/2024_Forester_Brochure_032024.pdf"
+        }
+      ]
+    },
+    {
+      "make": "Ford",
+      "model": "Explorer",
+      "years": [
+        2020,
+        2026
+      ],
+      "seats": 6,
+      "seatsMax": 7,
+      "seatsSource": "https://www.ford.com/suvs/explorer/2026/",
+      "engines": [
+        {
+          "displacementL": 2.3,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 310,
+          "maxTowingLb": 5000,
+          "source": "https://media.ford.com/content/dam/fordmedia/North%20America/US/product/2020/Explorer/2020-Explorer-Tech-Specs.pdf"
+        },
+        {
+          "displacementL": 3.0,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 415,
+          "maxTowingLb": 5000,
+          "source": "https://media.ford.com/content/dam/fordmedia/North%20America/US/product/2020/Explorer/2020-Explorer-Tech-Specs.pdf"
+        },
+        {
+          "displacementL": 3.3,
+          "cylinders": 6,
+          "fuel": "hybrid",
+          "forcedInduction": false,
+          "torqueLbFt": 322,
+          "maxTowingLb": 3000,
+          "source": "https://media.ford.com/content/dam/fordmedia/North%20America/US/product/2020/Explorer/2020-Explorer-Tech-Specs.pdf"
+        }
+      ]
     }
   ]
 }
