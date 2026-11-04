@@ -1,28 +1,36 @@
 import { Link } from 'react-router-dom';
 import BrandMark from './BrandMark';
+import LanguageSwitch from './LanguageSwitch';
 import { regionName, useRegionStore } from '../stores/regionStore';
+import { locale, msg, t } from '../i18n';
+import { rich } from '../i18n/rich';
 
 const linkClass = 'inline-flex items-center min-h-[36px] text-zinc-400 hover:text-white';
 
 const FIND = [
-  { to: '/home', label: 'Search' },
-  { to: '/browse', label: 'Browse' },
-  { to: '/compare', label: 'Compare' },
-  { to: '/vin', label: 'VIN lookup' },
+  { to: '/home', label: msg('Search') },
+  { to: '/browse', label: msg('Browse') },
+  { to: '/compare', label: msg('Compare') },
+  { to: '/vin', label: msg('VIN lookup') },
 ] as const;
 
 const ABOUT = [
-  { to: '/methodology', label: 'Methodology and data policy' },
-  { to: '/value-matrix', label: 'Value chart' },
+  { to: '/methodology', label: msg('Methodology and data policy') },
+  { to: '/value-matrix', label: msg('Value chart') },
 ] as const;
 
 const SOURCES = [
-  { href: 'https://www.fueleconomy.gov', label: 'EPA', gives: 'fuel use' },
-  { href: 'https://www.nhtsa.gov', label: 'NHTSA', gives: 'crash ratings and complaints' },
+  { href: 'https://www.fueleconomy.gov', label: 'EPA', gives: msg('Fuel use from <0>EPA</0>') },
+  {
+    href: 'https://www.nhtsa.gov',
+    label: 'NHTSA',
+    gives: msg('Crash ratings and complaints from <0>NHTSA</0>'),
+  },
   {
     href: 'https://recalls-rappels.canada.ca/en',
+    hrefFr: 'https://recalls-rappels.canada.ca/fr',
     label: 'Transport Canada',
-    gives: 'recalls',
+    gives: msg('Recalls from <0>Transport Canada</0>'),
   },
 ] as const;
 
@@ -32,7 +40,7 @@ const SOURCES = [
  * each, laid out and worded differently.
  */
 export default function SiteFooter() {
-  const regionLabel = regionName(useRegionStore((s) => s.region));
+  const regionLabel = t(regionName(useRegionStore((s) => s.region)));
   return (
     <footer className="border-t border-zinc-900 mt-auto">
       <div className="page-wrap py-10 grid grid-cols-2 gap-x-6 gap-y-8 md:grid-cols-[minmax(0,1.4fr)_repeat(2,minmax(0,1fr))] text-sm">
@@ -42,36 +50,40 @@ export default function SiteFooter() {
             CarInfo
           </p>
           <p className="mt-3 text-zinc-400 leading-relaxed">
-            Each car&rsquo;s recalls in Canada, owners&rsquo; complaints, crash ratings and fuel
-            use, from public records. CarInfo sells no cars and lists none for sale.
+            {t(
+              'Each car’s recalls in Canada, owners’ complaints, crash ratings and fuel use, from public records. CarInfo sells no cars and lists none for sale.',
+            )}
           </p>
         </div>
-        <nav aria-label="Find a car">
+        <nav aria-label={t('Find a car')}>
           <p className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500 mb-2">
-            Find a car
+            {t('Find a car')}
           </p>
           <ul>
             {FIND.map((item) => (
               <li key={item.to}>
                 <Link to={item.to} className={linkClass}>
-                  {item.label}
+                  {t(item.label)}
                 </Link>
               </li>
             ))}
           </ul>
         </nav>
-        <nav aria-label="About the data">
+        <nav aria-label={t('About the data')}>
           <p className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500 mb-2">
-            About the data
+            {t('About the data')}
           </p>
           <ul>
             {ABOUT.map((item) => (
               <li key={item.to}>
                 <Link to={item.to} className={linkClass}>
-                  {item.label}
+                  {t(item.label)}
                 </Link>
               </li>
             ))}
+            <li>
+              <LanguageSwitch className="!px-0 !min-h-[36px]" />
+            </li>
           </ul>
         </nav>
       </div>
@@ -81,29 +93,33 @@ export default function SiteFooter() {
             {SOURCES.map((source, index) => (
               <span key={source.label}>
                 {index > 0 && <span aria-hidden="true"> · </span>}
-                {source.gives[0].toUpperCase() + source.gives.slice(1)} from{' '}
-                <a
-                  href={source.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-zinc-400 hover:text-white underline underline-offset-2 decoration-zinc-700"
-                >
-                  {source.label}
-                </a>
+                {rich(t(source.gives), [
+                  (children) => (
+                    <a
+                      href={'hrefFr' in source && locale() === 'fr' ? source.hrefFr : source.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-zinc-400 hover:text-white underline underline-offset-2 decoration-zinc-700"
+                    >
+                      {children}
+                    </a>
+                  ),
+                ])}
               </span>
             ))}
             <span aria-hidden="true"> · </span>
-            Photos from Wikimedia Commons
+            {t('Photos from Wikimedia Commons')}
           </p>
           <p>
-            Estimates in CAD, for {regionLabel} · © {new Date().getFullYear()} CarInfo
+            {t('Estimates in CAD, for {region}', { region: regionLabel })} · ©{' '}
+            {new Date().getFullYear()} CarInfo
             <span aria-hidden="true"> · </span>
             <Link to="/privacy" className="text-zinc-400 hover:text-white">
-              Privacy
+              {t('Privacy')}
             </Link>
             <span aria-hidden="true"> · </span>
             <Link to="/terms" className="text-zinc-400 hover:text-white">
-              Terms
+              {t('Terms')}
             </Link>
           </p>
         </div>
