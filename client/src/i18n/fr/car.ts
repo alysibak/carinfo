@@ -757,6 +757,145 @@ const fr: Record<string, string> = {
   'Depreciation: {value}': 'Dépréciation : {value}',
   'Region: {value}': 'Région : {value}',
   'Derived comparison only': 'Comparaison dérivée seulement',
+  'Natural gas': 'Gaz naturel',
+  MPGe: 'mi/gal éq',
+  MPG: 'mi/gal',
+  Electricity: 'Électricité',
+  'Fuel & electricity': 'Carburant et électricité',
+  'TOTAL COST OF OWNERSHIP': 'COÛT TOTAL DE POSSESSION',
+  'Close cost calculator': 'Fermer le calculateur de coûts',
+  'Your assumptions': 'Vos hypothèses',
+  Reset: 'Réinitialiser',
+  'Years owned': 'Années de possession',
+  'Purchase price': 'Prix d’achat',
+  'Starts at the dossier’s estimated market value.':
+    'Part de la valeur marchande estimée du dossier.',
+  'Distance per year': 'Distance par année',
+  'Pump prices for': 'Prix à la pompe pour',
+  'Statistics Canada’s self-serve average, {from}–{through}. Insurance and registration stay {region}’s.':
+    'Moyenne libre-service de Statistique Canada, {from}–{through}. L’assurance et l’immatriculation restent celles de {region}.',
+  'Gas price': 'Prix de l’essence',
+  'Regular. EPA rates this car on premium, costed at this plus ${amount}/L.':
+    'Ordinaire. L’EPA cote ce véhicule à l’essence super, coûtée à ce prix plus {amount} $/L.',
+  'Diesel price': 'Prix du diesel',
+  'Electricity rate': 'Tarif d’électricité',
+  Insurance: 'Assurance',
+  Maintenance: 'Entretien',
+  Financed: 'Financé',
+  'Down payment': 'Mise de fonds',
+  'Interest rate': 'Taux d’intérêt',
+  'Loan term matches years owned ({months} months).':
+    'La durée du prêt correspond aux années de possession ({months} mois).',
+  'Cash purchase, as in the dossier estimate. Tick to add loan interest.':
+    'Achat au comptant, comme dans l’estimation du dossier. Cochez pour ajouter les intérêts du prêt.',
+  'Your total cost': 'Votre coût total',
+  '{years}-year total': 'Total sur {years} ans',
+  '{amount} per month': '{amount} par mois',
+  'At these starting assumptions this matches the dossier’s estimate. Change any field to see your own number.':
+    'Avec ces hypothèses de départ, cela correspond à l’estimation du dossier. Modifiez un champ pour voir votre propre chiffre.',
+  'Value lost (depreciation)': 'Valeur perdue (dépréciation)',
+  '{label} ({years} yr)': '{label} ({years} ans)',
+  'Insurance ({years} yr)': 'Assurance ({years} ans)',
+  'Maintenance ({years} yr)': 'Entretien ({years} ans)',
+  'Tires & registration ({years} yr)': 'Pneus et immatriculation ({years} ans)',
+  'Loan interest': 'Intérêts du prêt',
+  'This record has no fuel-economy figure, so fuel/energy is left out of the total rather than guessed.':
+    'Ce dossier n’a pas de chiffre de consommation, alors le carburant/énergie est omis du total plutôt que deviné.',
+  'Hydrogen cost reads EPA’s MPGe as miles per kilogram, at the region’s posted pump price. It does not change with the price inputs above.':
+    'Le coût de l’hydrogène lit le mi/gal éq de l’EPA comme des milles par kilogramme, au prix à la pompe affiché de la région. Il ne change pas avec les prix saisis ci-dessus.',
+  '{fuel} cost uses EPA’s own annual estimate, scaled to your distance. It does not change with the price inputs above.':
+    'Le coût du {fuel} utilise l’estimation annuelle de l’EPA, proportionnée à votre distance. Il ne change pas avec les prix saisis ci-dessus.',
+  'Depreciation uses a generic ~15%/year curve because the dossier did not load.':
+    'La dépréciation utilise une courbe générique d’environ 15 %/an parce que le dossier ne s’est pas chargé.',
+  'Resale after {years} yr': 'Revente après {years} ans',
+  '{label} / yr': '{label} / an',
+  'Loan payment': 'Paiement du prêt',
+  '{amount}/mo': '{amount}/mois',
+  'Fuel / energy': 'Carburant / énergie',
+  Tires: 'Pneus',
+  Registration: 'Immatriculation',
+  'Electric mode': 'Mode électrique',
+  '{mpge} MPGe': '{mpge} mi/gal éq',
+  ' · {mi} mi': ' · {mi} mi',
+  'Drives on battery power for about {mi} miles after a full charge, like an EV, then switches to gas automatically.':
+    'Roule sur la batterie environ {mi} milles après une charge complète, comme un VE, puis passe à l’essence automatiquement.',
+  'Drives on battery power after a full charge, like an EV, then switches to gas automatically.':
+    'Roule sur la batterie après une charge complète, comme un VE, puis passe à l’essence automatiquement.',
+  '{mpg} MPG': '{mpg} mi/gal',
+  'Once the battery is used up it runs like a regular hybrid on gasoline. No plugging in required.':
+    'Une fois la batterie épuisée, il roule comme un hybride ordinaire à l’essence. Aucune recharge requise.',
+  'Recharges in about {hours} h on a 240V Level 2 charger.':
+    'Se recharge en environ {hours} h sur un chargeur de niveau 2 à 240 V.',
+  'The {name}: fuel use, crash ratings, recalls in Canada and owners’ complaints from the public records, and running costs, marked as estimates.':
+    'Le {name} : consommation, cotes de sécurité, rappels au Canada et plaintes des propriétaires tirés des dossiers publics, et coûts d’utilisation, indiqués comme estimations.',
+  'Could not load this car': 'Impossible de charger ce véhicule',
+  'The page did not load. Check your connection and try again.':
+    'La page ne s’est pas chargée. Vérifiez votre connexion et réessayez.',
+  '{km} km a year': '{km} km par année',
+  "${price}/L {kind}, {city}'s average from {from} to {through} (Statistics Canada)":
+    '{price} $/L {kind}, moyenne de {city} de {from} à {through} (Statistique Canada)',
+  "From EPA's rating, at ${price}/kg of hydrogen and {distance}.":
+    'Selon la cote de l’EPA, à {price} $/kg d’hydrogène et {distance}.',
+  "From EPA's yearly fuel cost, in Canadian dollars, for {distance}.":
+    'Selon le coût annuel de carburant de l’EPA, en dollars canadiens, pour {distance}.',
+  "From EPA's rating, at ${rate}/kWh charged at home and {distance}.":
+    'Selon la cote de l’EPA, à {rate} $/kWh rechargé à domicile et {distance}.',
+  "From EPA's rating, at {pump}, and {distance}.":
+    'Selon la cote de l’EPA, à {pump}, et {distance}.',
+  ', partly charged at ${rate}/kWh': ', en partie rechargé à {rate} $/kWh',
+  "From EPA's rating, at {pump}{plug}, and {distance}.":
+    'Selon la cote de l’EPA, à {pump}{plug}, et {distance}.',
+  premium: 'super',
+  regular: 'ordinaire',
+  'At ${rate}/kWh and {distance}': 'À {rate} $/kWh et {distance}',
+  'At ${price}/kg and {distance}': 'À {price} $/kg et {distance}',
+  'At ${price}/L diesel and {distance}': 'À {price} $/L de diesel et {distance}',
+  'Gas and home charging, {distance}': 'Essence et recharge à domicile, {distance}',
+  'EPA’s yearly cost, {distance}': 'Coût annuel de l’EPA, {distance}',
+  'At ${price}/L premium and {distance}': 'À {price} $/L de super et {distance}',
+  'At ${price}/L and {distance}': 'À {price} $/L et {distance}',
+  'Replaced {name}': 'Remplacé {name}',
+  'Already in garage': 'Déjà dans le garage',
+  'Garage limit reached. Upgrade to Pro.': 'Limite du garage atteinte. Passez à Pro.',
+  'Added to garage': 'Ajouté au garage',
+  'Hydrogen fuel cell (FCEV).': 'Pile à combustible à hydrogène (FCEV).',
+  'EPA’s MPGe reads as miles per kilogram of hydrogen.':
+    'Le mi/gal éq de l’EPA se lit en milles par kilogramme d’hydrogène.',
+  "Fuel cost uses {region}'s posted pump price, about ${price}/kg; public stations are few, so check the one you would use.":
+    'Le coût du carburant utilise le prix à la pompe affiché de {region}, environ {price} $/kg ; les stations publiques sont rares, alors vérifiez celle que vous utiliseriez.',
+  '{region} has no posted retail hydrogen price (its one public station is at Toronto Pearson), so fuel is left out of the yearly cost.':
+    '{region} n’a pas de prix de détail affiché pour l’hydrogène (sa seule station publique est à Toronto Pearson), alors le carburant est omis du coût annuel.',
+  '{region} has no posted retail hydrogen price, so fuel is left out of the yearly cost.':
+    '{region} n’a pas de prix de détail affiché pour l’hydrogène, alors le carburant est omis du coût annuel.',
+  'Every year of the {name}': 'Toutes les années du {name}',
+  'NHTSA {value}/5': 'NHTSA {value}/5',
+  'Electric and gas modes': 'Modes électrique et essence',
+  Charging: 'Recharge',
+  'City and highway': 'Ville et route',
+  'The figure above is gas mode, not a blend.':
+    'Le chiffre ci-dessus est le mode essence, pas un mélange.',
+  'In Canadian dollars.': 'En dollars canadiens.',
+  'Electricity a year': 'Électricité par année',
+  'Fuel is left out: there is no posted hydrogen price for {region}.':
+    'Le carburant est omis : il n’y a pas de prix d’hydrogène affiché pour {region}.',
+  'Value, insurance, upkeep and resale: rougher estimates':
+    'Valeur, assurance, entretien et revente : estimations plus approximatives',
+  'Est. value range': 'Fourchette de valeur estimée',
+  'Battery health': 'Santé de la batterie',
+  'Pack note': 'Note sur le bloc',
+  'Not included (no posted hydrogen price)': 'Non inclus (aucun prix d’hydrogène affiché)',
+  'No renewal fee': 'Aucuns frais de renouvellement',
+  'Total per year': 'Total par année',
+  'Running-cost breakdown is not modeled for this configuration (hydrogen fuel costs vary too widely).':
+    'La répartition des coûts d’utilisation n’est pas modélisée pour cette configuration (les coûts de l’hydrogène varient trop).',
+  'Running-cost breakdown is not modeled for this configuration.':
+    'La répartition des coûts d’utilisation n’est pas modélisée pour cette configuration.',
+  'After five years': 'Après cinq ans',
+  'Projected resale': 'Revente projetée',
+  'Value lost': 'Valeur perdue',
+  '5-year total': 'Total sur cinq ans',
+  'Work out my own costs': 'Calculer mes propres coûts',
+  'Value and costs': 'Valeur et coûts',
 };
 
 export default fr;

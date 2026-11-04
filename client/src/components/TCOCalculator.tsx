@@ -10,6 +10,8 @@ import { DISPLAY_CURRENCY } from '../utils/currency';
 import { usesMpge } from '../utils/fuelDisplay';
 import { useModalFocus } from '../hooks/useModalFocus';
 import { computeTco, defaultTcoInputs, type TcoInputs } from '../utils/tco';
+import { t } from '../i18n';
+import { fmtMoney } from '../i18n/format';
 
 interface TCOCalculatorProps {
   car: CarSpecs;
@@ -19,7 +21,7 @@ interface TCOCalculatorProps {
   onClose: () => void;
 }
 
-const money = (n: number) => `$${Math.round(n).toLocaleString()}`;
+const money = (n: number) => fmtMoney(Math.round(n));
 
 function NumberField({
   label,
@@ -142,11 +144,19 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
   const showDiesel = basis === 'diesel';
   const showElectricity = basis === 'electric' || basis === 'plug-in hybrid';
   const fuelNoun =
-    fuelType === 'hydrogen' ? 'Hydrogen' : fuelType === 'natural gas' ? 'Natural gas' : 'Fuel';
+    fuelType === 'hydrogen'
+      ? t('Hydrogen')
+      : fuelType === 'natural gas'
+        ? t('Natural gas')
+        : t('Fuel');
 
   const efficiency = car.fuelEconomy?.combined;
-  const efficiencyLabel = usesMpge(fuelType) ? 'MPGe' : 'MPG';
-  const energyLabel = isElectric ? 'Electricity' : isPlugIn ? 'Fuel & electricity' : 'Fuel';
+  const efficiencyLabel = usesMpge(fuelType) ? t('MPGe') : t('MPG');
+  const energyLabel = isElectric
+    ? t('Electricity')
+    : isPlugIn
+      ? t('Fuel & electricity')
+      : t('Fuel');
   const years = inputs.yearsOwned;
 
   return (
@@ -166,7 +176,7 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
         <div className="flex items-start justify-between gap-4 mb-8 pb-8 border-b border-zinc-900">
           <div>
             <h2 id={titleId} className="text-2xl md:text-3xl font-bold tracking-tighter mb-2">
-              TOTAL COST OF OWNERSHIP
+              {t('TOTAL COST OF OWNERSHIP')}
             </h2>
             <p className="text-sm text-zinc-400">
               {car.year} {car.make} {car.model}
@@ -175,7 +185,7 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close cost calculator"
+            aria-label={t('Close cost calculator')}
             className="text-zinc-400 hover:text-white transition-colors p-1"
           >
             <svg
@@ -196,9 +206,9 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12">
-          <form onSubmit={(e) => e.preventDefault()} aria-label="Assumptions">
+          <form onSubmit={(e) => e.preventDefault()} aria-label={t('Assumptions')}>
             <div className="flex items-baseline justify-between gap-4 mb-6">
-              <h3 className="text-xl font-bold tracking-tight">Your assumptions</h3>
+              <h3 className="text-xl font-bold tracking-tight">{t('Your assumptions')}</h3>
               <button
                 type="button"
                 onClick={() => {
@@ -208,28 +218,28 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
                 disabled={atDefaults}
                 className="text-xs text-zinc-400 hover:text-white disabled:opacity-40 disabled:hover:text-zinc-400"
               >
-                Reset
+                {t('Reset')}
               </button>
             </div>
 
             <div className="space-y-5">
               <NumberField
-                label="Years owned"
+                label={t('Years owned')}
                 value={inputs.yearsOwned}
                 onChange={set('yearsOwned')}
                 min={1}
                 max={15}
               />
               <NumberField
-                label="Purchase price"
+                label={t('Purchase price')}
                 suffix={DISPLAY_CURRENCY}
                 value={inputs.purchasePrice}
                 onChange={set('purchasePrice')}
                 step={500}
-                hint={ownership ? 'Starts at the dossier’s estimated market value.' : undefined}
+                hint={ownership ? t('Starts at the dossier’s estimated market value.') : undefined}
               />
               <NumberField
-                label="Distance per year"
+                label={t('Distance per year')}
                 suffix="km"
                 value={inputs.annualKm}
                 onChange={set('annualKm')}
@@ -238,7 +248,7 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
               {(showGas || showDiesel) && (
                 <div>
                   <label htmlFor={`${titleId}-city`} className="block text-xs text-zinc-300 mb-2">
-                    Pump prices for
+                    {t('Pump prices for')}
                   </label>
                   <select
                     id={`${titleId}-city`}
@@ -253,29 +263,40 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
                     ))}
                   </select>
                   <p className="mt-1.5 text-xs text-zinc-500">
-                    Statistics Canada’s self-serve average, {monthLabel(PUMP_PRICES.from)}–
-                    {monthLabel(PUMP_PRICES.through)}. Insurance and registration stay{' '}
-                    {getRegionalAssumptions(region).label}’s.
+                    {t(
+                      'Statistics Canada’s self-serve average, {from}–{through}. Insurance and registration stay {region}’s.',
+                      {
+                        from: monthLabel(PUMP_PRICES.from),
+                        through: monthLabel(PUMP_PRICES.through),
+                        region: getRegionalAssumptions(region).label,
+                      },
+                    )}
                   </p>
                 </div>
               )}
               {showGas && (
                 <NumberField
-                  label="Gas price"
+                  label={t('Gas price')}
                   suffix={`${DISPLAY_CURRENCY}/L`}
                   value={inputs.gasPriceCadPerL}
                   onChange={set('gasPriceCadPerL')}
                   step={0.01}
                   hint={
                     car.epa?.premiumFuel
-                      ? `Regular. EPA rates this car on premium, costed at this plus $${getRegionalAssumptions(region).premiumOverRegularCadPerL.toFixed(2)}/L.`
+                      ? t(
+                          'Regular. EPA rates this car on premium, costed at this plus ${amount}/L.',
+                          {
+                            amount:
+                              getRegionalAssumptions(region).premiumOverRegularCadPerL.toFixed(2),
+                          },
+                        )
                       : undefined
                   }
                 />
               )}
               {showDiesel && (
                 <NumberField
-                  label="Diesel price"
+                  label={t('Diesel price')}
                   suffix={`${DISPLAY_CURRENCY}/L`}
                   value={inputs.dieselPriceCadPerL}
                   onChange={set('dieselPriceCadPerL')}
@@ -284,7 +305,7 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
               )}
               {showElectricity && (
                 <NumberField
-                  label="Electricity rate"
+                  label={t('Electricity rate')}
                   suffix={`${DISPLAY_CURRENCY}/kWh`}
                   value={inputs.electricityRateCadPerKwh}
                   onChange={set('electricityRateCadPerKwh')}
@@ -292,14 +313,14 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
                 />
               )}
               <NumberField
-                label="Insurance"
+                label={t('Insurance')}
                 suffix={`${DISPLAY_CURRENCY}/yr`}
                 value={inputs.insurancePerYear}
                 onChange={set('insurancePerYear')}
                 step={100}
               />
               <NumberField
-                label="Maintenance"
+                label={t('Maintenance')}
                 suffix={`${DISPLAY_CURRENCY}/yr`}
                 value={inputs.maintenancePerYear}
                 onChange={set('maintenancePerYear')}
@@ -315,31 +336,33 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
                       onChange={(e) => set('financed')(e.target.checked)}
                       className="accent-white"
                     />
-                    Financed
+                    {t('Financed')}
                   </label>
                 </legend>
                 {inputs.financed ? (
                   <div className="space-y-5 mt-2">
                     <NumberField
-                      label="Down payment"
+                      label={t('Down payment')}
                       suffix={DISPLAY_CURRENCY}
                       value={inputs.downPayment}
                       onChange={set('downPayment')}
                       step={1000}
                     />
                     <NumberField
-                      label="Interest rate"
+                      label={t('Interest rate')}
                       suffix="% APR"
                       value={Math.round(inputs.loanRate * 10000) / 100}
                       onChange={(pct) => set('loanRate')(pct / 100)}
                       step={0.1}
                       max={30}
-                      hint={`Loan term matches years owned (${years * 12} months).`}
+                      hint={t('Loan term matches years owned ({months} months).', {
+                        months: years * 12,
+                      })}
                     />
                   </div>
                 ) : (
                   <p className="text-xs text-zinc-500 mt-1">
-                    Cash purchase, as in the dossier estimate. Tick to add loan interest.
+                    {t('Cash purchase, as in the dossier estimate. Tick to add loan interest.')}
                   </p>
                 )}
               </fieldset>
@@ -348,7 +371,7 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
 
           <section aria-labelledby={`${titleId}-results`}>
             <h3 id={`${titleId}-results`} className="text-xl font-bold tracking-tight mb-6">
-              Your total cost
+              {t('Your total cost')}
             </h3>
 
             <div
@@ -356,65 +379,83 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
               aria-live="polite"
               aria-atomic="true"
             >
-              <p className="text-sm text-zinc-300 mb-2">{years}-year total</p>
+              <p className="text-sm text-zinc-300 mb-2">{t('{years}-year total', { years })}</p>
               <p className="text-4xl md:text-5xl font-bold tracking-tight mb-4 tabular-nums text-white">
                 {money(result.total)}
               </p>
               <div className="h-px bg-zinc-700 mb-4" />
               <p className="text-sm tabular-nums text-zinc-200">
-                {money(result.monthly)} per month
+                {t('{amount} per month', { amount: money(result.monthly) })}
               </p>
             </div>
 
             {atDefaults && ownership && (
               <p className="text-xs text-zinc-500 mb-6">
-                At these starting assumptions this matches the dossier’s estimate. Change any field
-                to see your own number.
+                {t(
+                  'At these starting assumptions this matches the dossier’s estimate. Change any field to see your own number.',
+                )}
               </p>
             )}
 
             <dl className="space-y-3 text-sm">
-              <Row label="Value lost (depreciation)" value={money(result.depreciation)} strong />
               <Row
-                label={`${energyLabel} (${years} yr)`}
-                value={result.energy ? money(result.energy.total) : 'Not on file'}
+                label={t('Value lost (depreciation)')}
+                value={money(result.depreciation)}
+                strong
               />
-              <Row label={`Insurance (${years} yr)`} value={money(result.insurance)} />
-              <Row label={`Maintenance (${years} yr)`} value={money(result.maintenance)} />
               <Row
-                label={`Tires & registration (${years} yr)`}
+                label={t('{label} ({years} yr)', { label: energyLabel, years })}
+                value={result.energy ? money(result.energy.total) : t('Not on file')}
+              />
+              <Row label={t('Insurance ({years} yr)', { years })} value={money(result.insurance)} />
+              <Row
+                label={t('Maintenance ({years} yr)', { years })}
+                value={money(result.maintenance)}
+              />
+              <Row
+                label={t('Tires & registration ({years} yr)', { years })}
                 value={money(result.tires + result.registration)}
               />
-              {inputs.financed && <Row label="Loan interest" value={money(result.interest)} />}
+              {inputs.financed && <Row label={t('Loan interest')} value={money(result.interest)} />}
             </dl>
 
             <div className="mt-6 space-y-2 text-xs text-zinc-500">
               {!result.energy && (
                 <p>
-                  This record has no fuel-economy figure, so fuel/energy is left out of the total
-                  rather than guessed.
+                  {t(
+                    'This record has no fuel-economy figure, so fuel/energy is left out of the total rather than guessed.',
+                  )}
                 </p>
               )}
               {result.energy?.basis === 'hydrogen' && (
                 <p>
-                  Hydrogen cost reads EPA&rsquo;s MPGe as miles per kilogram, at the region&rsquo;s
-                  posted pump price. It does not change with the price inputs above.
+                  {t(
+                    'Hydrogen cost reads EPA’s MPGe as miles per kilogram, at the region’s posted pump price. It does not change with the price inputs above.',
+                  )}
                 </p>
               )}
               {result.energy?.basis === 'epa-annual-cost' && (
                 <p>
-                  {fuelNoun} cost uses EPA’s own annual estimate, scaled to your distance. It does
-                  not change with the price inputs above.
+                  {t(
+                    '{fuel} cost uses EPA’s own annual estimate, scaled to your distance. It does not change with the price inputs above.',
+                    { fuel: fuelNoun },
+                  )}
                 </p>
               )}
               {!result.depreciationFromDossier && (
-                <p>Depreciation uses a generic ~15%/year curve because the dossier did not load.</p>
+                <p>
+                  {t(
+                    'Depreciation uses a generic ~15%/year curve because the dossier did not load.',
+                  )}
+                </p>
               )}
             </div>
 
             <div className="mt-8 pt-8 border-t border-zinc-900 grid grid-cols-2 gap-4">
               <div className="bg-zinc-950 border border-zinc-900 p-4">
-                <p className="text-xs text-zinc-300 mb-2">Resale after {years} yr</p>
+                <p className="text-xs text-zinc-300 mb-2">
+                  {t('Resale after {years} yr', { years })}
+                </p>
                 <p className="text-2xl font-bold tabular-nums">{money(result.resaleValue)}</p>
               </div>
               <div className="bg-zinc-950 border border-zinc-900 p-4">
@@ -423,15 +464,17 @@ export default function TCOCalculator({ car, ownership, region, onClose }: TCOCa
               </div>
               {result.energy && (
                 <div className="bg-zinc-950 border border-zinc-900 p-4">
-                  <p className="text-xs text-zinc-300 mb-2">{energyLabel} / yr</p>
+                  <p className="text-xs text-zinc-300 mb-2">
+                    {t('{label} / yr', { label: energyLabel })}
+                  </p>
                   <p className="text-2xl font-bold tabular-nums">{money(result.energy.annual)}</p>
                 </div>
               )}
               {inputs.financed && (
                 <div className="bg-zinc-950 border border-zinc-900 p-4">
-                  <p className="text-xs text-zinc-300 mb-2">Loan payment</p>
+                  <p className="text-xs text-zinc-300 mb-2">{t('Loan payment')}</p>
                   <p className="text-2xl font-bold tabular-nums">
-                    {money(result.monthlyLoanPayment)}/mo
+                    {t('{amount}/mo', { amount: money(result.monthlyLoanPayment) })}
                   </p>
                 </div>
               )}
