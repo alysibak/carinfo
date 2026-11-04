@@ -123,16 +123,17 @@ This README quotes **actual source** in [Code reference](#code-reference). To re
 
 ### Body style breakdown
 
-| Body style | Count  |
-| ---------- | ------ |
-| sedan      | 16,599 |
-| suv        | 10,584 |
-| truck      | 4,132  |
-| coupe      | 2,046  |
-| wagon      | 1,869  |
-| van        | 889    |
-| minivan    | 601    |
-| hatchback  | 39     |
+| Body style  | Count  |
+| ----------- | ------ |
+| suv         | 11,015 |
+| sedan       | 11,007 |
+| truck       | 4,195  |
+| coupe       | 3,819  |
+| convertible | 2,466  |
+| hatchback   | 1,553  |
+| wagon       | 1,355  |
+| van         | 925    |
+| minivan     | 601    |
 
 ### Fuel types
 
@@ -935,7 +936,7 @@ gasoline, so the dossier and its own TCO calculator showed different totals.
 
 ### Client — components (42)
 
-`AboutData` · `AccountControls` · `AccountSync` · `AuthForm` · `AuthHeaderSlot` · `AuthProvider` · `BodyTypeIllustration` · `CarCard` · `CatalogueStats` · `CompareTray` · `DataTrustPanel` · `DataValue` · `ErrorBoundary` · `FilterPills` · `FilterSheet` · `FilterSidebar` · `KeyFigures` · `KeySpecs` · `Layout` · `PageHeader` · `PageShell` · `PersonaQuiz` · `PinnedCarBar` · `ProvenanceChip` · `RegionSelect` · `RequireAccount` · `SampleCarCard` · `ScrollToTop` · `SearchBar` · `SelectMenu` · `ShortlistCards` · `SiblingConfigs` · `SimilarCars` · `SiteHeader` · `SpecExplain` · `TCOCalculator` · `ToolPageHeader` · `ui` · `ValuationLinks` · `ValueMatrixHeatmap` · `VehiclePlaceholder` · `VinScanner`
+`AboutData` · `AccountControls` · `AccountSync` · `AuthForm` · `AuthHeaderSlot` · `AuthProvider` · `BodyTypeIllustration` · `CarCard` · `CatalogueStats` · `CompareTray` · `DataTrustPanel` · `DataValue` · `ErrorBoundary` · `FilterPills` · `FilterSheet` · `FilterSidebar` · `KeyFigures` · `KeySpecs` · `Layout` · `PageHeader` · `PageShell` · `PinnedCarBar` · `ProvenanceChip` · `RegionSelect` · `RequireAccount` · `SampleCarCard` · `ScrollToTop` · `SearchBar` · `SelectMenu` · `ShortlistCards` · `SiblingConfigs` · `SimilarCars` · `SiteHeader` · `SpecExplain` · `TCOCalculator` · `ToolPageHeader` · `ui` · `ValuationLinks` · `ValueMatrixHeatmap` · `VehiclePlaceholder` · `VinScanner`
 
 ### Client — utils (31)
 
@@ -1243,7 +1244,8 @@ renamed chunk (`utils/staleBuildRecovery.ts`).
       a CSP exception.
 - [x] Alberta and Quebec regional cost assumptions (StatCan pump prices + province-specific
       insurance, electricity, registration)
-- [x] Garage shortlist diffs, recall alert banner, and share/compare unchanged
+- [x] Garage shortlist diffs, recall alert banner (Dream Garage and Shared Garage)
+- [x] Model-year SEO/SSR shells so Vercel share/unfurl hits do not soft-404
 - [ ] Shared rate-limit store if abuse appears on serverless
 
 ## Git & deployment notes

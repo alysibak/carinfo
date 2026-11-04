@@ -116,7 +116,7 @@ export function describeSearchInterpretation(
     safety:
       'Best NHTSA crash rating first, ties by its crash scores and the safety technology it lists; its ratings start with 2011 models',
     runningCost:
-      'Lowest estimated yearly running cost first: fuel, insurance, upkeep and tires, at the Ontario baseline',
+      'Lowest estimated yearly running cost first: fuel, insurance, upkeep and tires, at the chosen region’s baseline',
     luggage:
       'Most trunk or cargo space first, by EPA’s luggage volume; cars EPA gives none (pickups, most SUVs and vans) come last',
     theft: 'Most stolen first, in Équité Association’s order',

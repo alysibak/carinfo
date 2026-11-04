@@ -18,7 +18,11 @@ type Status = 'loading' | 'ready' | 'missing' | 'error';
  * Years with a single configuration stay on the car dossier.
  */
 export default function ModelYearPage() {
-  const { make = '', model = '', year: yearParam = '' } = useParams<{
+  const {
+    make = '',
+    model = '',
+    year: yearParam = '',
+  } = useParams<{
     make: string;
     model: string;
     year: string;
@@ -49,10 +53,7 @@ export default function ModelYearPage() {
     return () => controller.abort();
   }, [make, model, year, attempt]);
 
-  const diff = useMemo(
-    () => (overview ? differentiateCars(overview.cars) : null),
-    [overview],
-  );
+  const diff = useMemo(() => (overview ? differentiateCars(overview.cars) : null), [overview]);
 
   const name = overview ? `${overview.year} ${overview.make} ${overview.name}` : 'Model year';
   usePageMeta(
@@ -117,7 +118,9 @@ export default function ModelYearPage() {
                 car={car}
                 notes={
                   diff?.byCarId[car.id]?.edge ? (
-                    <p className="text-sm text-zinc-200 leading-snug">{diff.byCarId[car.id].edge}</p>
+                    <p className="text-sm text-zinc-200 leading-snug">
+                      {diff.byCarId[car.id].edge}
+                    </p>
                   ) : undefined
                 }
               />

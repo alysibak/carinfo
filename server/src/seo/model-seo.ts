@@ -1,10 +1,11 @@
-import type { ModelOverview, ModelYearSummary } from '../types/car.types.js';
+import type { ModelOverview, ModelYearOverview, ModelYearSummary } from '../types/car.types.js';
 import { escapeHtml } from './html.js';
 import { absoluteUrl } from './site.js';
 import { COMMONS_FILE } from '../utils/car-photos.js';
 import type { PageSeo } from './vehicle-seo.js';
 import { theftSentence } from '../shared/theft.js';
 import { plainPartName } from '../shared/part-names.js';
+import { displayModelLabel } from '../shared/vehicle-labels.js';
 
 const KM_PER_MILE = 1.609344;
 
@@ -101,12 +102,17 @@ function modelSummaryHtml(overview: ModelOverview, name: string, years: string):
       (group) =>
         `<h2>${escapeHtml(group.label ?? 'Model years')}</h2><ul>` +
         group.rows
-          .map(
-            (row) =>
-              `<li><a href="/car/${escapeHtml(encodeURIComponent(row.carId))}">${row.year} ${escapeHtml(name)}</a>` +
+          .map((row) => {
+            const href =
+              row.configurations >= 2
+                ? `${overview.path}/${row.year}`
+                : `/car/${encodeURIComponent(row.carId)}`;
+            return (
+              `<li><a href="${escapeHtml(href)}">${row.year} ${escapeHtml(name)}</a>` +
               `${yearFacts(row) ? `: ${escapeHtml(yearFacts(row))}` : ''}` +
-              `${row.changes ? `. ${escapeHtml(row.changes.join('; '))}` : ''}</li>`,
-          )
+              `${row.changes ? `. ${escapeHtml(row.changes.join('; '))}` : ''}</li>`
+            );
+          })
           .join('') +
         `</ul>`,
     )
@@ -135,4 +141,69 @@ function modelSummaryHtml(overview: ModelOverview, name: string, years: string):
     `<p><a href="/">CarInfo</a> · <a href="/methodology">How this data is sourced</a></p>` +
     `</main>`
   );
+}
+
+/**
+ * One model year with several configurations: mirrors ModelYearPage's title
+ * and lists each version so crawlers reach the car pages.
+ */
+export function modelYearSeo(overview: ModelYearOverview): PageSeo {
+  const name = `${overview.year} ${overview.make} ${overview.name}`;
+  const title = name;
+  const description = `${overview.summary.configurations} configurations of the ${overview.year} ${overview.make} ${overview.name}: fuel use, power, crash ratings and estimated value side by side.`;
+  const lead = overview.cars.find((car) => car.photo) ?? overview.cars[0];
+  const photo =
+    lead?.photo && COMMONS_FILE.test(lead.photo.src)
+      ? { url: lead.photo.src, alt: `Photo: ${lead.photo.caption}` }
+      : undefined;
+  const url = absoluteUrl(overview.path);
+
+  const jsonLd: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: title,
+    description,
+    about: { '@type': 'Brand', name: overview.make },
+    ...(url ? { url } : {}),
+    ...(photo ? { image: photo.url } : {}),
+    mainEntity: {
+      '@type': 'ItemList',
+      numberOfItems: overview.cars.length,
+      itemListElement: overview.cars.map((car, i) => {
+        const carUrl = absoluteUrl(`/car/${encodeURIComponent(car.id)}`);
+        return {
+          '@type': 'ListItem',
+          position: i + 1,
+          name: `${car.year} ${car.make} ${displayModelLabel(car)}`,
+          ...(carUrl ? { url: carUrl } : {}),
+        };
+      }),
+    },
+  };
+
+  const list = overview.cars
+    .map(
+      (car) =>
+        `<li><a href="/car/${escapeHtml(encodeURIComponent(car.id))}">${escapeHtml(
+          `${car.year} ${car.make} ${displayModelLabel(car)}`,
+        )}</a></li>`,
+    )
+    .join('');
+
+  return {
+    title,
+    description,
+    canonicalPath: overview.path,
+    ogType: 'website',
+    jsonLd,
+    ...(photo ? { image: photo } : {}),
+    bodyHtml:
+      `<main class="seo-prerender">` +
+      `<h1>${escapeHtml(name)}</h1>` +
+      `<p>${escapeHtml(`${overview.summary.configurations} configurations on file.`)} ` +
+      `<a href="${escapeHtml(overview.modelPath)}">Every year of the ${escapeHtml(`${overview.make} ${overview.name}`)}</a>.</p>` +
+      `<ul>${list}</ul>` +
+      `<p><a href="/">CarInfo</a> · <a href="/methodology">How this data is sourced</a></p>` +
+      `</main>`,
+  };
 }

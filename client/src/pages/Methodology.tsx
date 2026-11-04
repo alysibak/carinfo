@@ -173,9 +173,9 @@ export default function Methodology() {
           <p className="text-sm text-zinc-400 leading-relaxed mb-4">
             Value, running costs, resale and the five-year cost are{' '}
             <strong className="text-zinc-200 font-medium">always estimates</strong>, in Canadian
-            dollars for the region you pick: Ontario (about 15,000 km a year) or British Columbia
-            (about 14,000 km). They are not listing prices, and never shown as a maker&rsquo;s
-            price.
+            dollars for the region you pick — Ontario, British Columbia, Alberta or Quebec, each
+            with its own yearly kilometres, fuel and insurance. They are not listing prices, and
+            never shown as a maker&rsquo;s price.
           </p>
           <ul className="space-y-2 text-sm text-zinc-400 leading-relaxed list-disc list-inside marker:text-zinc-400">
             <li>
@@ -235,24 +235,25 @@ export default function Methodology() {
             </li>
             <li>
               Insurance starts from each province&rsquo;s average premium (FSRA in Ontario, ICBC in
-              B.C.), then scales with body style, luxury make, value and age: above $30,000 of value
-              it rises 0.4% for each $1,000, since collision and comprehensive cover grow with the
-              car&rsquo;s worth. Teslas and other premium EVs cost about a quarter more to insure
-              for their repair costs. Your own quote depends on your record and postal code far more
-              than on the car.
+              B.C., private markets in Alberta, SAAQ plus private collision in Quebec), then scales
+              with body style, luxury make, value and age: above $30,000 of value it rises 0.4% for
+              each $1,000, since collision and comprehensive cover grow with the car&rsquo;s worth.
+              Teslas and other premium EVs cost about a quarter more to insure for their repair
+              costs. Your own quote depends on your record and postal code far more than on the car.
             </li>
             <li>
               Maintenance and tires follow AAA and CAA driving-cost studies, by fuel type and age;
               exotics (a Ferrari, a Rolls-Royce, a Bentley) cost about $4,000 a year to service and
               wear through performance tires. Ontario charges no plate renewal fee (since 2022);
-              B.C.&rsquo;s licence fee is set by weight, about $61 a year for most cars.
+              B.C.&rsquo;s licence fee is set by weight (~$61), Alberta&rsquo;s registration about
+              $94, and Quebec&rsquo;s SAAQ rights about $230 a year for a typical car.
             </li>
             <li>
               Energy costs from your region&rsquo;s gas, diesel and home-electricity prices (recent
               Statistics Canada averages). Hydrogen uses B.C.&rsquo;s posted pump price (about
-              $16.50/kg); Ontario posts none, so a fuel-cell car&rsquo;s fuel is left out there
-              rather than shown as free. Natural gas uses EPA&rsquo;s own annual fuel-cost figure,
-              converted to CAD.
+              $16.50/kg); Ontario, Alberta and Quebec post none, so a fuel-cell car&rsquo;s fuel is
+              left out there rather than shown as free. Natural gas uses EPA&rsquo;s own annual
+              fuel-cost figure, converted to CAD.
             </li>
             <li>
               Each estimate is a range, low to high with a middle figure, and says how confident it

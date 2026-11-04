@@ -452,7 +452,16 @@ function matchHorsepower(car: Car, idx: Indexes): MatchResult | null {
   // field is the parent company (e.g. "GENERAL MOTORS", "FUJI HEAVY IND"=Subaru).
   // The exact engine + distinctive carline keep cross-make contamination low.
   if (engineBucket.length) {
-    const hp = bestHp(engineBucket, () => true, related, model, combined, true, false, carInduction);
+    const hp = bestHp(
+      engineBucket,
+      () => true,
+      related,
+      model,
+      combined,
+      true,
+      false,
+      carInduction,
+    );
     if (hp != null) return { hp, tier: 'engine+model' };
   }
 

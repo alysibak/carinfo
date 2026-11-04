@@ -115,10 +115,7 @@ export interface RegionalAssumptions {
 /** A region's pump prices from its city's row of Statistics Canada's table. */
 function pumpPricesOf(
   place:
-    | 'Toronto, Ontario'
-    | 'Vancouver, British Columbia'
-    | 'Calgary, Alberta'
-    | 'Montréal, Quebec',
+    'Toronto, Ontario' | 'Vancouver, British Columbia' | 'Calgary, Alberta' | 'Montréal, Quebec',
 ): Pick<
   RegionalAssumptions,
   'gasPriceCadPerL' | 'dieselPriceCadPerL' | 'premiumOverRegularCadPerL' | 'pumpPrices'
@@ -441,7 +438,8 @@ export function monthLabel(month: string): string {
  * (Statistics Canada; Sep 2026 alone, $1.84/L regular). Premium adds $0.31/L
  * for cars EPA rates on it. ~$0.155/kWh home electricity, ~15,000 km/yr."
  */
-export function formatOntarioEnergyAssumptionNote(
+/** Energy-price note for the chosen region (name kept for call-site clarity). */
+export function formatEnergyAssumptionNote(
   region: RegionalAssumptions = getRegionalAssumptions(),
 ): string {
   const { place, from, through, latest } = region.pumpPrices;
@@ -458,11 +456,14 @@ export function formatOntarioEnergyAssumptionNote(
   );
 }
 
-export function formatOntarioRegionNote(
-  region: RegionalAssumptions = getRegionalAssumptions(),
-): string {
+export function formatRegionNote(region: RegionalAssumptions = getRegionalAssumptions()): string {
   return `${region.label}-baseline estimates in ${region.displayCurrency}. Condition, mileage, and local demand still cause real variation`;
 }
+
+/** @deprecated Prefer formatEnergyAssumptionNote */
+export const formatOntarioEnergyAssumptionNote = formatEnergyAssumptionNote;
+/** @deprecated Prefer formatRegionNote */
+export const formatOntarioRegionNote = formatRegionNote;
 
 export function parseRegionId(raw: unknown): RegionId {
   if (raw === 'british-columbia' || raw === 'bc') return 'british-columbia';

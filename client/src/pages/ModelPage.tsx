@@ -148,8 +148,7 @@ function YearTable({
           const td = 'py-3 pr-2 min-[360px]:pr-3 md:pr-4';
           // Several configurations that year → the model-year page; one alone
           // stays on the car dossier so we do not duplicate it.
-          const href =
-            row.configurations >= 2 ? `${modelPath}/${row.year}` : `/car/${row.carId}`;
+          const href = row.configurations >= 2 ? `${modelPath}/${row.year}` : `/car/${row.carId}`;
           return (
             <Fragment key={row.year}>
               <tr
