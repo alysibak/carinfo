@@ -114,11 +114,17 @@ export default function SiteFooter() {
             {t('Estimates in CAD, for {region}', { region: regionLabel })} · ©{' '}
             {new Date().getFullYear()} CarInfo
             <span aria-hidden="true"> · </span>
-            <Link to="/privacy" className="text-zinc-400 hover:text-white">
+            <Link
+              to="/privacy"
+              className="text-zinc-400 hover:text-white underline underline-offset-2 decoration-zinc-700"
+            >
               {t('Privacy')}
             </Link>
             <span aria-hidden="true"> · </span>
-            <Link to="/terms" className="text-zinc-400 hover:text-white">
+            <Link
+              to="/terms"
+              className="text-zinc-400 hover:text-white underline underline-offset-2 decoration-zinc-700"
+            >
               {t('Terms')}
             </Link>
           </p>
