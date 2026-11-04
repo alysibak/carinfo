@@ -141,6 +141,40 @@ describe('regions', () => {
     expect(parseRegionId('ab')).toBe('alberta');
     expect(parseRegionId('qc')).toBe('quebec');
   });
+
+  it('prices the six newer provinces with their own fuel, power and registration', () => {
+    const [car] = sample();
+    const on = getRegionalAssumptions('ontario');
+    const mb = getRegionalAssumptions('manitoba');
+    const sk = getRegionalAssumptions('saskatchewan');
+    const ns = getRegionalAssumptions('nova-scotia');
+    const nb = getRegionalAssumptions('new-brunswick');
+    const pe = getRegionalAssumptions('prince-edward-island');
+    const nl = getRegionalAssumptions('newfoundland-and-labrador');
+
+    expect(mb.gasPriceCadPerL).not.toBe(on.gasPriceCadPerL);
+    expect(sk.electricityRateCadPerKwh).toBeCloseTo(0.155);
+    expect(ns.electricityRateCadPerKwh).toBeGreaterThan(on.electricityRateCadPerKwh);
+    expect(mb.electricityRateCadPerKwh).toBeLessThan(on.electricityRateCadPerKwh);
+    expect(computeOwnershipEconomics(car, [], 'manitoba').annualCost.registration).toBe(129);
+    expect(computeOwnershipEconomics(car, [], 'saskatchewan').annualCost.registration).toBe(77);
+    expect(computeOwnershipEconomics(car, [], 'nova-scotia').annualCost.registration).toBe(89);
+    expect(computeOwnershipEconomics(car, [], 'new-brunswick').annualCost.registration).toBe(117);
+    expect(computeOwnershipEconomics(car, [], 'prince-edward-island').annualCost.registration).toBe(
+      100,
+    );
+    expect(
+      computeOwnershipEconomics(car, [], 'newfoundland-and-labrador').annualCost.registration,
+    ).toBe(90);
+    expect(nb.insurance.sedan).toBeLessThan(on.insurance.sedan);
+    expect(pe.insurance.sedan).toBeLessThan(nb.insurance.sedan);
+    expect(parseRegionId('mb')).toBe('manitoba');
+    expect(parseRegionId('sk')).toBe('saskatchewan');
+    expect(parseRegionId('ns')).toBe('nova-scotia');
+    expect(parseRegionId('nb')).toBe('new-brunswick');
+    expect(parseRegionId('pei')).toBe('prince-edward-island');
+    expect(parseRegionId('nl')).toBe('newfoundland-and-labrador');
+  });
 });
 
 describe('insurance', () => {
