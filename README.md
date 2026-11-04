@@ -1081,6 +1081,20 @@ allow alongside `headers`):
 - Node is pinned by `engines` (`>=22 <25`, so Vercel runs 24 and never jumps a
   major unannounced).
 
+### Monitoring
+
+- **Crashes:** the browser reports uncaught errors, unhandled rejections and
+  error-boundary catches to `POST /api/client-errors` (at most five a page,
+  each once; queries stripped from paths and stacks, since reset and
+  unsubscribe links carry tokens). The server logs one JSON line per report,
+  `"msg":"client error"`, without the IP address; search the function logs
+  for it. Chunk-load failures after a deploy are left to the stale-build
+  reload and not reported.
+- **Traffic and speed:** Vercel Web Analytics and Speed Insights load after the
+  page, from the site's own `/_vercel/` paths (no CSP change, no cookies), with
+  queries stripped from every address. Turn both on in the Vercel project's
+  Analytics and Speed Insights tabs; until then their scripts 404 harmlessly.
+
 ### Environment variables
 
 [`.env.example`](.env.example) is the annotated source of truth. In summary:
