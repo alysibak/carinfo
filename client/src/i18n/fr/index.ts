@@ -1,6 +1,7 @@
 import account from './account';
 import car from './car';
 import common from './common';
+import legal from './legal';
 import pages from './pages';
 import search from './search';
 import tools from './tools';
@@ -13,6 +14,7 @@ const fr: Record<string, string> = {
   ...tools,
   ...account,
   ...pages,
+  ...legal,
 };
 
 export default fr;
