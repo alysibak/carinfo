@@ -9,15 +9,14 @@ import {
 } from './investigations';
 import { complaintPart, recallDate, recallNotice } from './recalls';
 import { powertrainNames, splitInvestigations, splitRecalls } from '@carinfo/shared/recall-scope';
-import { availabilityLabel } from './safetyTech';
 import { formatFeet, formatKg, formatMetres } from './size';
 import { formatTransmissionLabel } from './trimLabel';
+import { t, tp } from '../i18n';
+import { fmtNumber } from '../i18n/format';
 
 export interface ChecklistItem {
   text: string;
-  /** A second line: a recall's number and date, a part's count. */
   detail?: string;
-  /** A box to tick at the car. */
   tick?: boolean;
 }
 
@@ -26,18 +25,12 @@ export interface ChecklistSection {
   title: string;
   intro?: string;
   items: ChecklistItem[];
-  /** Where it comes from, and as of when. */
   source: string;
 }
 
-const asOf = (day?: string) => (day ? `, records as of ${recallDate(day)}` : '');
+const asOf = (day?: string) =>
+  day ? t(', records as of {date}', { date: recallDate(day) }) : '';
 
-/**
- * What to check when seeing the car, from the records on its page: the VIN,
- * the model year's recalls, what owners complained of, open investigations,
- * the crash rating and its safety technology, theft, and the facts to hold
- * the ad to. Only what is on file is said; a section with nothing is left out.
- */
 export function checklistSections(dashboard: CarDashboard): ChecklistSection[] {
   const { car, recalls, complaints, investigations, theft, recordDates } = dashboard;
   const name = `${car.year} ${dashboard.modelPage?.label ?? `${car.make} ${car.model}`}`;
@@ -45,18 +38,22 @@ export function checklistSections(dashboard: CarDashboard): ChecklistSection[] {
 
   sections.push({
     id: 'vin',
-    title: 'The VIN',
+    title: t('The VIN'),
     items: [
       {
-        text: 'Find the VIN on the dashboard, read through the windshield, and on the label in the driver’s door frame. Check they match each other and the ownership papers.',
+        text: t(
+          'Find the VIN on the dashboard, read through the windshield, and on the label in the driver’s door frame. Check they match each other and the ownership papers.',
+        ),
         tick: true,
       },
       {
-        text: 'Enter it on Transport Canada’s recall site or the maker’s: they say which recalls cover this car and whether they were done.',
+        text: t(
+          'Enter it on Transport Canada’s recall site or the maker’s: they say which recalls cover this car and whether they were done.',
+        ),
         tick: true,
       },
     ],
-    source: 'Transport Canada, recalls-rappels.canada.ca',
+    source: t('Transport Canada, recalls-rappels.canada.ca'),
   });
 
   if (recalls) {
@@ -64,37 +61,75 @@ export function checklistSections(dashboard: CarDashboard): ChecklistSection[] {
       fuelType: car.engine.fuelType,
       mildHybrid: car.engine.mildHybrid,
     });
+    const powertrains = [...new Set(other.map((o) => powertrainNames(o.powertrains)))].join(
+      ' or ',
+    );
     const others = other.length
-      ? ` ${other.length} more ${other.length === 1 ? 'is' : 'are'} for ${[...new Set(other.map((o) => powertrainNames(o.powertrains)))].join(' or ')} alone, and left out.`
+      ? tp(
+          other.length,
+          ' {count} more is for {powertrains} alone, and left out.',
+          ' {count} more are for {powertrains} alone, and left out.',
+          { powertrains },
+        )
       : '';
     sections.push({
       id: 'recalls',
-      title: 'Recalls in Canada',
+      title: t('Recalls in Canada'),
       intro: applies.length
-        ? `Transport Canada lists ${applies.length} ${applies.length === 1 ? 'recall' : 'recalls'} ${other.length ? 'that can cover this version of' : 'for'} the ${name}. Ask for proof each was done; a recall can cover only some cars of a model year.${others}`
+        ? other.length
+          ? tp(
+              applies.length,
+              'Transport Canada lists {count} recall that can cover this version of the {name}. Ask for proof each was done; a recall can cover only some cars of a model year.{others}',
+              'Transport Canada lists {count} recalls that can cover this version of the {name}. Ask for proof each was done; a recall can cover only some cars of a model year.{others}',
+              { name, others },
+            )
+          : tp(
+              applies.length,
+              'Transport Canada lists {count} recall for the {name}. Ask for proof each was done; a recall can cover only some cars of a model year.{others}',
+              'Transport Canada lists {count} recalls for the {name}. Ask for proof each was done; a recall can cover only some cars of a model year.{others}',
+              { name, others },
+            )
         : other.length
-          ? `Transport Canada lists no recalls for this version of the ${name}.${others}`
-          : `Transport Canada lists no recalls for the ${name}.`,
+          ? t('Transport Canada lists no recalls for this version of the {name}.{others}', {
+              name,
+              others,
+            })
+          : t('Transport Canada lists no recalls for the {name}.', { name }),
       items: applies.map((recall) => ({
         text: `${complaintPart(recall.system)}: ${recallNotice(recall.summary).issue}`,
-        detail: `Recall ${recall.number} · ${recallDate(recall.date)}`,
+        detail: t('Recall {number} · {date}', {
+          number: recall.number,
+          date: recallDate(recall.date),
+        }),
         tick: true,
       })),
-      source: `Transport Canada, Motor Vehicle Safety Recalls Database${asOf(recordDates?.recalls)}`,
+      source: t('Transport Canada, Motor Vehicle Safety Recalls Database{asOf}', {
+        asOf: asOf(recordDates?.recalls),
+      }),
     });
   }
 
   if (complaints && complaints.complaints > 0 && complaints.parts.length) {
+    const countFormatted = fmtNumber(complaints.complaints);
     sections.push({
       id: 'complaints',
-      title: 'What owners complained of most',
-      intro: `${complaints.complaints.toLocaleString('en-CA')} owner ${complaints.complaints === 1 ? 'complaint' : 'complaints'} about the ${name} to NHTSA (U.S.), by part. Check these on the test drive, and ask whether any were repaired.`,
+      title: t('What owners complained of most'),
+      intro: tp(
+        complaints.complaints,
+        '{count} owner complaint about the {name} to NHTSA (U.S.), by part. Check these on the test drive, and ask whether any were repaired.',
+        '{count} owner complaints about the {name} to NHTSA (U.S.), by part. Check these on the test drive, and ask whether any were repaired.',
+        { count: countFormatted, name },
+      ),
       items: complaints.parts.map(([part, count]) => ({
         text: complaintPart(part),
-        detail: `${count.toLocaleString('en-CA')} ${count === 1 ? 'complaint' : 'complaints'}`,
+        detail: tp(count, '{count} complaint', '{count} complaints', {
+          count: fmtNumber(count),
+        }),
         tick: true,
       })),
-      source: `NHTSA owner complaints, owners’ reports, not confirmed defects${asOf(recordDates?.complaints)}`,
+      source: t('NHTSA owner complaints, owners’ reports, not confirmed defects{asOf}', {
+        asOf: asOf(recordDates?.complaints),
+      }),
     });
   }
 
@@ -107,15 +142,22 @@ export function checklistSections(dashboard: CarDashboard): ChecklistSection[] {
   if (open.length) {
     sections.push({
       id: 'investigations',
-      title: 'Open NHTSA investigations',
-      intro:
+      title: t('Open NHTSA investigations'),
+      intro: t(
         'NHTSA (U.S.) is still looking into these; a recall may follow. Ask the dealer or the maker whether one has.',
+      ),
       items: open.map((inv) => ({
         text: `${investigationPart(inv.component)}: ${investigationText(inv.subject)}`,
-        detail: `${investigationKind(inv.kind)} ${inv.id} · opened ${recallDate(inv.opened)}`,
+        detail: t('{kind} {id} · opened {date}', {
+          kind: investigationKind(inv.kind),
+          id: inv.id,
+          date: recallDate(inv.opened),
+        }),
         tick: true,
       })),
-      source: `NHTSA Office of Defects Investigation${asOf(recordDates?.investigations)}`,
+      source: t('NHTSA Office of Defects Investigation{asOf}', {
+        asOf: asOf(recordDates?.investigations),
+      }),
     });
   }
 
@@ -123,26 +165,33 @@ export function checklistSections(dashboard: CarDashboard): ChecklistSection[] {
   const tech = car.safetyTech;
   if (rating?.overall || tech?.fcw || tech?.ldw) {
     const stars = (label: string, value?: number) =>
-      value ? [{ text: `${label}: ${value}/5` }] : [];
+      value ? [{ text: t('{label}: {value}/5', { label, value }) }] : [];
     sections.push({
       id: 'safety',
-      title: 'Crash rating and safety technology',
+      title: t('Crash rating and safety technology'),
       intro:
         tech?.fcw === 'optional' ||
         tech?.fcw === 'some' ||
         tech?.ldw === 'optional' ||
         tech?.ldw === 'some'
-          ? 'Some of the technology NHTSA lists was optional: check this car has it.'
+          ? t('Some of the technology NHTSA lists was optional: check this car has it.')
           : undefined,
       items: [
-        ...stars('Overall', rating?.overall),
-        ...stars('Frontal crash', rating?.frontal),
-        ...stars('Side crash', rating?.side),
-        ...stars('Rollover', rating?.rollover),
+        ...stars(t('Overall'), rating?.overall),
+        ...stars(t('Frontal crash'), rating?.frontal),
+        ...stars(t('Side crash'), rating?.side),
+        ...stars(t('Rollover'), rating?.rollover),
         ...(tech?.fcw
           ? [
               {
-                text: `Forward collision warning: ${availabilityLabel(tech.fcw).toLowerCase()}`,
+                text: t('Forward collision warning: {availability}', {
+                  availability:
+                    tech.fcw === 'standard'
+                      ? t('standard')
+                      : tech.fcw === 'optional'
+                        ? t('optional')
+                        : t('standard on some versions'),
+                }),
                 tick: tech.fcw !== 'standard',
               },
             ]
@@ -150,53 +199,98 @@ export function checklistSections(dashboard: CarDashboard): ChecklistSection[] {
         ...(tech?.ldw
           ? [
               {
-                text: `Lane departure warning: ${availabilityLabel(tech.ldw).toLowerCase()}`,
+                text: t('Lane departure warning: {availability}', {
+                  availability:
+                    tech.ldw === 'standard'
+                      ? t('standard')
+                      : tech.ldw === 'optional'
+                        ? t('optional')
+                        : t('standard on some versions'),
+                }),
                 tick: tech.ldw !== 'standard',
               },
             ]
           : []),
       ],
-      source: 'NHTSA 5-Star Safety Ratings',
+      source: t('NHTSA 5-Star Safety Ratings'),
     });
   }
 
   if (theft) {
     sections.push({
       id: 'theft',
-      title: 'Theft and insurance',
+      title: t('Theft and insurance'),
       items: [
         { text: theftSentence(theft) },
         {
-          text: 'Get an insurance quote before you buy, and ask whether the insurer requires an anti-theft device.',
+          text: t(
+            'Get an insurance quote before you buy, and ask whether the insurer requires an anti-theft device.',
+          ),
           tick: true,
         },
       ],
-      source: 'Équité Association, Top 10 Most Stolen Vehicles in Canada',
+      source: t('Équité Association, Top 10 Most Stolen Vehicles in Canada'),
     });
   }
 
   const efficiency = efficiencyOf(car);
+  const efficiencyLabel =
+    efficiency?.label === 'Energy use'
+      ? t('Energy use')
+      : efficiency?.label === 'Hydrogen use'
+        ? t('Hydrogen use')
+        : efficiency?.label === 'Gas-mode fuel use'
+          ? t('Gas-mode fuel use')
+          : t('Fuel use');
   const facts: ChecklistItem[] = [
-    ...(efficiency ? [{ text: `${efficiency.label}: ${efficiency.text} combined` }] : []),
-    { text: `Drive: ${car.driveType}` },
-    ...(car.transmission?.type
-      ? [{ text: `Gearbox: ${formatTransmissionLabel(car.transmission)}` }]
+    ...(efficiency
+      ? [
+          {
+            text: t('{label}: {value} combined', {
+              label: efficiencyLabel,
+              value: efficiency.text,
+            }),
+          },
+        ]
       : []),
-    ...(car.engine.horsepower ? [{ text: `Power: ${car.engine.horsepower} hp` }] : []),
+    { text: t('Drive: {drive}', { drive: car.driveType }) },
+    ...(car.transmission?.type
+      ? [
+          {
+            text: t('Gearbox: {gearbox}', {
+              gearbox: formatTransmissionLabel(car.transmission),
+            }),
+          },
+        ]
+      : []),
+    ...(car.engine.horsepower
+      ? [{ text: t('Power: {hp} hp', { hp: car.engine.horsepower }) }]
+      : []),
     ...(car.size
       ? [
           {
-            text: `Size: ${formatMetres(car.size.lengthCm)} long and ${formatMetres(car.size.widthCm)} wide without mirrors (${formatFeet(car.size.lengthCm)} by ${formatFeet(car.size.widthCm)}); weighs ${formatKg(car.size.curbWeightKg)} empty`,
+            text: t(
+              'Size: {length} long and {width} wide without mirrors ({lengthFt} by {widthFt}); weighs {weight} empty',
+              {
+                length: formatMetres(car.size.lengthCm),
+                width: formatMetres(car.size.widthCm),
+                lengthFt: formatFeet(car.size.lengthCm),
+                widthFt: formatFeet(car.size.widthCm),
+                weight: formatKg(car.size.curbWeightKg),
+              },
+            ),
           },
         ]
       : []),
   ];
   sections.push({
     id: 'facts',
-    title: 'Facts to hold the ad to',
-    intro: 'As rated and measured for this version: an ad that differs is worth a question.',
+    title: t('Facts to hold the ad to'),
+    intro: t('As rated and measured for this version: an ad that differs is worth a question.'),
     items: facts,
-    source: car.size ? 'EPA ratings; Transport Canada measurements' : 'EPA ratings',
+    source: car.size
+      ? t('EPA ratings; Transport Canada measurements')
+      : t('EPA ratings'),
   });
 
   return sections;

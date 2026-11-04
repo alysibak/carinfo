@@ -22,6 +22,8 @@ import { usePageMeta } from '../utils/pageMeta';
 import { complaintPart } from '../utils/recalls';
 import { theftSentence } from '@carinfo/shared/theft';
 import { modelKey, takePrefetched } from '../utils/prefetch';
+import { t, tp } from '../i18n';
+import { rich } from '../i18n/rich';
 
 type Status = 'loading' | 'ready' | 'missing' | 'error';
 
@@ -98,47 +100,47 @@ function YearTable({
       <thead>
         <tr className="text-left text-xs text-zinc-500 align-bottom">
           <th scope="col" className={th}>
-            Year
+            {t('Year')}
           </th>
-          <th scope="col" className={th} aria-label="Best fuel use">
+          <th scope="col" className={th} aria-label={t('Best fuel use')}>
             <span aria-hidden className="md:hidden">
-              Fuel use
+              {t('Fuel use')}
             </span>
             <span aria-hidden className="hidden md:inline">
-              Best fuel use
+              {t('Best fuel use')}
             </span>
           </th>
           <th scope="col" className={`${th} ${wide}`}>
-            Power
+            {t('Power')}
           </th>
           <th scope="col" className={th}>
             NHTSA
           </th>
-          <th scope="col" className={`${th} text-right`} aria-label="Recalls in Canada">
+          <th scope="col" className={`${th} text-right`} aria-label={t('Recalls in Canada')}>
             <span aria-hidden className="md:hidden">
-              Recalls
+              {t('Recalls')}
             </span>
             <span aria-hidden className="hidden md:inline">
-              Recalls in Canada
+              {t('Recalls in Canada')}
             </span>
           </th>
           <th
             scope="col"
             className={`py-2 md:pr-4 font-normal text-right`}
-            aria-label="NHTSA complaints"
+            aria-label={t('NHTSA complaints')}
           >
             <span aria-hidden className="md:hidden">
-              Complaints
+              {t('Complaints')}
             </span>
             <span aria-hidden className="hidden md:inline">
-              NHTSA complaints
+              {t('NHTSA complaints')}
             </span>
           </th>
           <th scope="col" className={`${th} ${wide}`}>
-            Offered as
+            {t('Offered as')}
           </th>
           <th scope="col" className={`py-2 font-normal text-right ${wide}`}>
-            Versions
+            {t('Versions')}
           </th>
         </tr>
       </thead>
@@ -227,9 +229,17 @@ export default function ModelPage() {
 
   const name = overview ? `${overview.make} ${overview.name}` : undefined;
   usePageMeta(
-    name ? `${name}: every year, ${yearSpan(overview!.first, overview!.last)}` : 'Model',
     name
-      ? `Every ${name} from ${overview!.first} to ${overview!.last}, year by year: recalls in Canada, owner complaints, NHTSA crash ratings, fuel use, power and estimated value, by generation.`
+      ? t('{name}: every year, {span}', {
+          name,
+          span: yearSpan(overview!.first, overview!.last),
+        })
+      : t('Model'),
+    name
+      ? t(
+          'Every {name} from {first} to {last}, year by year: recalls in Canada, owner complaints, NHTSA crash ratings, fuel use, power and estimated value, by generation.',
+          { name, first: overview!.first, last: overview!.last },
+        )
       : undefined,
   );
 
@@ -237,21 +247,23 @@ export default function ModelPage() {
   if (status === 'missing') {
     return (
       <ErrorState
-        title="Model not found"
-        message="No model by that name is on file. It may go by another name: search finds it by any of them."
+        title={t('Model not found')}
+        message={t(
+          'No model by that name is on file. It may go by another name: search finds it by any of them.',
+        )}
         backTo={`/home?q=${encodeURIComponent(`${make} ${model}`.replace(/-/g, ' '))}`}
-        backLabel="Search for it"
+        backLabel={t('Search for it')}
       />
     );
   }
   if (status === 'error' || !overview) {
     return (
       <ErrorState
-        title="Model unavailable"
-        message="Could not load this model. Check your connection and try again."
+        title={t('Model unavailable')}
+        message={t('Could not load this model. Check your connection and try again.')}
         onRetry={() => setAttempt((n) => n + 1)}
         backTo="/home"
-        backLabel="Search cars"
+        backLabel={t('Search cars')}
       />
     );
   }
@@ -276,9 +288,15 @@ export default function ModelPage() {
             .slice(0, 3)
             .map((row) => {
               const part = about?.(row);
+              const n = (count(row) ?? 0).toLocaleString('en-CA');
               return {
                 year: row.year,
-                note: `(${(count(row) ?? 0).toLocaleString('en-CA')}${part ? `, most about ${complaintPart(part).toLowerCase()}` : ''})`,
+                note: part
+                  ? t('({count}, most about {part})', {
+                      count: n,
+                      part: complaintPart(part).toLowerCase(),
+                    })
+                  : t('({count})', { count: n }),
               };
             });
         // Each year a tap from its row, its generation opened if folded.
@@ -307,16 +325,23 @@ export default function ModelPage() {
         if (!complaints.length && !recalls.length) return null;
         return (
           <section className="mt-6">
-            <h2 className="block-title mb-2">Years to check</h2>
+            <h2 className="block-title mb-2">{t('Years to check')}</h2>
             <ul className="text-sm text-zinc-300 space-y-1 tabular-nums">
               {complaints.length > 0 && (
-                <li>Most owner complaints to NHTSA: {years(complaints)}</li>
+                <li>
+                  {t('Most owner complaints to NHTSA:')} {years(complaints)}
+                </li>
               )}
-              {recalls.length > 0 && <li>Most recalls in Canada: {years(recalls)}</li>}
+              {recalls.length > 0 && (
+                <li>
+                  {t('Most recalls in Canada:')} {years(recalls)}
+                </li>
+              )}
             </ul>
             <p className="text-xs text-zinc-500 mt-2 leading-relaxed max-w-xl">
-              Counts from NHTSA’s complaint records and Transport Canada’s recall database, not
-              adjusted for how many of each year were sold.
+              {t(
+                'Counts from NHTSA’s complaint records and Transport Canada’s recall database, not adjusted for how many of each year were sold.',
+              )}
             </p>
           </section>
         );
@@ -324,19 +349,27 @@ export default function ModelPage() {
 
       {overview.theft && (
         <section className="mt-6">
-          <h2 className="block-title mb-2">Theft in Canada</h2>
+          <h2 className="block-title mb-2">{t('Theft in Canada')}</h2>
           <p className="text-sm text-zinc-300">{theftSentence(overview.theft)}</p>
           <p className="text-xs text-zinc-500 mt-2 leading-relaxed max-w-xl">
-            A count of thefts, so a model with many on the road ranks higher. Ask your insurer
-            whether it requires an anti-theft device.{' '}
-            <a
-              href={overview.theft.url}
-              target="_blank"
-              rel="noreferrer"
-              className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
-            >
-              Équité’s top {overview.theft.of}
-            </a>
+            {rich(
+              t(
+                'A count of thefts, so a model with many on the road ranks higher. Ask your insurer whether it requires an anti-theft device. <0>Équité’s top {of}</0>',
+                { of: overview.theft.of },
+              ),
+              [
+                (c) => (
+                  <a
+                    href={overview.theft!.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
+                  >
+                    {c}
+                  </a>
+                ),
+              ],
+            )}
           </p>
         </section>
       )}
@@ -360,7 +393,7 @@ export default function ModelPage() {
           </div>
         )}
         <div className="page-wrap pt-2 pb-8 sm:pb-10">
-          <BackLink to="/home" label="Search" />
+          <BackLink to="/home" label={t('Search')} />
           <div
             className={`mt-1 grid min-w-0 ${
               hasPhoto
@@ -377,8 +410,12 @@ export default function ModelPage() {
               <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
                 {[
                   yearSpan(overview.first, overview.last),
-                  `${overview.years.length} model ${overview.years.length === 1 ? 'year' : 'years'} on file`,
-                  overview.onSale ? 'on sale' : null,
+                  tp(
+                    overview.years.length,
+                    '{count} model year on file',
+                    '{count} model years on file',
+                  ),
+                  overview.onSale ? t('on sale') : null,
                 ]
                   .filter(Boolean)
                   .join(' · ')}
@@ -392,7 +429,7 @@ export default function ModelPage() {
                 </div>
               )}
               <p className="text-sm text-zinc-300 mt-3">
-                Newest on file:{' '}
+                {t('Newest on file:')}{' '}
                 <Link
                   to={
                     newest.configurations >= 2
@@ -419,7 +456,7 @@ export default function ModelPage() {
 
         {overview.rivals.length > 0 && (
           <section className="mb-8">
-            <h2 className="block-title mb-2">Shopped against</h2>
+            <h2 className="block-title mb-2">{t('Shopped against')}</h2>
             <ul className="flex flex-wrap gap-2">
               {overview.rivals.map((rival) => (
                 <li key={rival.path}>
@@ -437,7 +474,7 @@ export default function ModelPage() {
           const parts = group.label ? generationParts(group.label) : null;
           const title = (
             <>
-              {parts?.name ?? 'Model years'}
+              {parts?.name ?? t('Model years')}
               {parts?.years && <span className="font-normal text-zinc-400"> · {parts.years}</span>}
               {parts?.code && (
                 <span className="ml-2 text-xs font-normal text-zinc-500">{parts.code}</span>
@@ -472,14 +509,22 @@ export default function ModelPage() {
         })}
 
         <p className="text-xs text-zinc-500 leading-relaxed max-w-xl mt-6">
-          Each figure is the year’s best or its span across its versions: EPA ratings, NHTSA stars,
-          Transport Canada’s recalls and owners’ complaints to NHTSA. A year opens its base version.{' '}
-          <Link
-            to={searchHref}
-            className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700"
-          >
-            Search every {name} version
-          </Link>
+          {rich(
+            t(
+              'Each figure is the year’s best or its span across its versions: EPA ratings, NHTSA stars, Transport Canada’s recalls and owners’ complaints to NHTSA. A year opens its base version. <0>Search every {name} version</0>',
+              { name: name! },
+            ),
+            [
+              (c) => (
+                <Link
+                  to={searchHref}
+                  className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700"
+                >
+                  {c}
+                </Link>
+              ),
+            ],
+          )}
         </p>
       </PageBody>
     </PageShell>

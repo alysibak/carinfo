@@ -1,6 +1,8 @@
 import { useId, type FormEvent, type InputHTMLAttributes, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { PROVIDER_NAMES, type SignInProvider } from '../services/signInMethods';
+import { t } from '../i18n';
+import { rich } from '../i18n/rich';
 
 /** The frame every sign-in page shares: a heading, a line, the form, links below. */
 export function AuthCard({
@@ -197,12 +199,14 @@ export function ProviderButtons({
             className="btn-secondary w-full disabled:opacity-60"
           >
             <Mark />
-            {pending === provider ? `Opening ${name}…` : `Continue with ${name}`}
+            {pending === provider
+              ? t('Opening {name}…', { name })
+              : t('Continue with {name}', { name })}
             {last === provider && (
               <span className="ml-1 text-[11px] font-semibold uppercase tracking-wide text-accent">
                 {/* Read as "Continue with Apple, last used". */}
                 <span className="sr-only">, </span>
-                Last used
+                {t('Last used')}
               </span>
             )}
           </button>
@@ -216,7 +220,7 @@ export function OrDivider() {
   return (
     <div className="flex items-center gap-3 text-xs text-zinc-500" aria-hidden>
       <span className="h-px flex-1 bg-zinc-800" />
-      or
+      {t('or')}
       <span className="h-px flex-1 bg-zinc-800" />
     </div>
   );
@@ -226,17 +230,26 @@ export function OrDivider() {
 export function AccountsUnavailable() {
   return (
     <AuthCard
-      title="Accounts aren't available"
-      intro="Sign-in isn't set up on this site right now. Every page and tool is open to you meanwhile."
+      title={t("Accounts aren't available")}
+      intro={t(
+        "Sign-in isn't set up on this site right now. Every page and tool is open to you meanwhile.",
+      )}
     >
       {import.meta.env.DEV && (
         <p className="text-xs text-zinc-500 mb-4">
-          Set <code className="text-zinc-300">DATABASE_URL</code> and{' '}
-          <code className="text-zinc-300">BETTER_AUTH_SECRET</code> on the server to turn them on.
+          {rich(
+            t(
+              'Set <0>DATABASE_URL</0> and <1>BETTER_AUTH_SECRET</1> on the server to turn them on.',
+            ),
+            [
+              (children) => <code className="text-zinc-300">{children}</code>,
+              (children) => <code className="text-zinc-300">{children}</code>,
+            ],
+          )}
         </p>
       )}
       <Link to="/home" className="btn-secondary w-full">
-        Search cars
+        {t('Search cars')}
       </Link>
     </AuthCard>
   );

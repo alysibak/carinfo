@@ -19,6 +19,7 @@ import { differentiateCars } from '../utils/differentiateCars';
 import VehiclePlaceholder from '../components/VehiclePlaceholder';
 import CarCard from '../components/CarCard';
 import CarRecordsNote from '../components/CarRecordsNote';
+import { t, tp } from '../i18n';
 
 interface GarageStat {
   label: string;
@@ -122,11 +123,11 @@ function GarageSuggestions({ onSaved }: { onSaved: (message: string) => void }) 
               disabled={isSaved}
               onClick={async () => {
                 const res = await Promise.resolve(add(car));
-                onSaved(res.ok ? 'Saved to garage' : (res.message ?? 'Could not save'));
+                onSaved(res.ok ? t('Saved to garage') : (res.message ?? t('Could not save')));
               }}
               className={`chip shrink-0 ${isSaved ? 'chip-on' : ''}`}
             >
-              {isSaved ? 'Saved' : 'Save'}
+              {isSaved ? t('Saved') : t('Save')}
             </button>
           </li>
         );
@@ -154,8 +155,8 @@ export default function DreamGarage() {
 
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(() => setToast(null), 2200);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setToast(null), 2200);
+    return () => clearTimeout(timer);
   }, [toast]);
 
   useEffect(() => {
@@ -206,9 +207,9 @@ export default function DreamGarage() {
 
     try {
       await navigator.clipboard.writeText(link);
-      setToast('Link copied to clipboard');
+      setToast(t('Link copied to clipboard'));
     } catch {
-      setToast('Share link ready — copy from the dialog');
+      setToast(t('Share link ready — copy from the dialog'));
     }
   };
 
@@ -223,23 +224,26 @@ export default function DreamGarage() {
   const strongest = leadingCar(garage, 'max', (car) => car.engine.horsepower || null);
   const cheapestToRun = leadingCar(garage, 'min', (car) => car.runningCostCad || null);
   const garageStats: GarageStat[] = [
-    { label: 'NHTSA 5-star', value: `${fiveStar} of ${garage.length}` },
     {
-      label: 'Lowest fuel use',
+      label: t('NHTSA 5-star'),
+      value: t('{n} of {total}', { n: fiveStar, total: garage.length }),
+    },
+    {
+      label: t('Lowest fuel use'),
       value: thriftiest ? thriftiest.value.toFixed(1) : '—',
       unit: thriftiest ? 'L/100 km' : undefined,
       car: thriftiest?.car,
     },
     {
-      label: 'Most power',
+      label: t('Most power'),
       value: strongest ? String(strongest.value) : '—',
-      unit: strongest ? 'hp' : undefined,
+      unit: strongest ? t('hp') : undefined,
       car: strongest?.car,
     },
     {
-      label: 'Cheapest to run (est.)',
+      label: t('Cheapest to run (est.)'),
       value: cheapestToRun ? formatMoneyShort(cheapestToRun.value) : '—',
-      unit: cheapestToRun ? 'a year' : undefined,
+      unit: cheapestToRun ? t('a year') : undefined,
       car: cheapestToRun?.car,
       estimate: true,
     },
@@ -252,18 +256,18 @@ export default function DreamGarage() {
         open={showClearConfirm}
         onClose={() => setShowClearConfirm(false)}
         onConfirm={clearGarage}
-        title="Clear your garage?"
-        message="This removes every saved vehicle from your garage. You can't undo this."
-        confirmLabel="Clear all"
+        title={t('Clear your garage?')}
+        message={t("This removes every saved vehicle from your garage. You can't undo this.")}
+        confirmLabel={t('Clear all')}
         danger
       />
 
       <ToolPageHeader
         wide
         backTo="/"
-        backLabel="Home"
-        title="Your garage"
-        subtitle={`${garage.length} ${garage.length === 1 ? 'car' : 'cars'} saved`}
+        backLabel={t('Home')}
+        title={t('Your garage')}
+        subtitle={tp(garage.length, '{count} car saved', '{count} cars saved')}
         action={
           garage.length > 0 ? (
             <button
@@ -271,7 +275,7 @@ export default function DreamGarage() {
               onClick={() => setShowClearConfirm(true)}
               className="min-h-[44px] px-2 -mr-2 text-xs text-zinc-400 hover:text-red-500 transition-colors"
             >
-              Clear
+              {t('Clear')}
             </button>
           ) : undefined
         }
@@ -287,13 +291,16 @@ export default function DreamGarage() {
           {plan === 'free' && (
             <div className="border border-zinc-800 bg-zinc-950 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <p className="text-sm text-zinc-400">
-                {billingConfigured ? 'Free plan · ' : ''}
-                {garage.length}/{garageLimit ?? FREE_GARAGE_LIMIT} cars
-                {syncMode === 'cloud' ? ' · saved to your account' : ' · this device'}
+                {billingConfigured ? t('Free plan · ') : ''}
+                {t('{n}/{limit} cars', {
+                  n: garage.length,
+                  limit: garageLimit ?? FREE_GARAGE_LIMIT,
+                })}
+                {syncMode === 'cloud' ? t(' · saved to your account') : t(' · this device')}
               </p>
               {billingConfigured && (
                 <Link to="/account" className="text-xs text-white hover:underline shrink-0">
-                  Upgrade to Pro →
+                  {t('Upgrade to Pro →')}
                 </Link>
               )}
             </div>
@@ -301,18 +308,19 @@ export default function DreamGarage() {
         </div>
         {garage.length === 0 ? (
           <div className="max-w-4xl py-8 sm:py-12">
-            <h2 className="text-2xl font-bold tracking-tight mb-2">Nothing saved yet</h2>
+            <h2 className="text-2xl font-bold tracking-tight mb-2">{t('Nothing saved yet')}</h2>
             <p className="text-[15px] text-zinc-400 mb-6 max-w-lg leading-relaxed">
-              Save cars from any search result or car page to keep a shortlist here. Start with one
-              of these, or search for your own.
+              {t(
+                'Save cars from any search result or car page to keep a shortlist here. Start with one of these, or search for your own.',
+              )}
             </p>
             <GarageSuggestions onSaved={setToast} />
             <div className="flex flex-wrap gap-2 mt-6">
               <Link to="/home" className="btn-primary">
-                Search cars
+                {t('Search cars')}
               </Link>
               <Link to="/browse" className="btn-secondary">
-                Browse
+                {t('Browse')}
               </Link>
             </div>
           </div>
@@ -346,8 +354,10 @@ export default function DreamGarage() {
               <div className="mb-6 border border-amber-900/60 bg-zinc-950 px-4 py-3">
                 <p className="text-sm text-amber-100/90 font-medium mb-1">
                   {recallAlerts.length === 1
-                    ? 'One saved car has recalls in Canada'
-                    : `${recallAlerts.length} saved cars have recalls in Canada`}
+                    ? t('One saved car has recalls in Canada')
+                    : t('{count} saved cars have recalls in Canada', {
+                        count: recallAlerts.length,
+                      })}
                 </p>
                 <ul className="space-y-1">
                   {recallAlerts.map(({ car, recalls }) => (
@@ -358,7 +368,7 @@ export default function DreamGarage() {
                       >
                         {displayVehicleTitle(car)}
                       </Link>
-                      {`: ${recalls} ${recalls === 1 ? 'recall' : 'recalls'} — check yours by VIN`}
+                      {`: ${tp(recalls, '{count} recall — check yours by VIN', '{count} recalls — check yours by VIN')}`}
                     </li>
                   ))}
                 </ul>
@@ -367,7 +377,7 @@ export default function DreamGarage() {
 
             {shortlistDiff.axes.length > 0 && (
               <div className="mb-6 pb-5 border-b border-zinc-800">
-                <p className="text-xs text-zinc-500 mb-2">How your saved cars differ</p>
+                <p className="text-xs text-zinc-500 mb-2">{t('How your saved cars differ')}</p>
                 <ul className="space-y-2">
                   {shortlistDiff.axes.map((axis) => (
                     <li key={axis} className="text-base text-zinc-200 leading-snug">
@@ -391,10 +401,10 @@ export default function DreamGarage() {
                 disabled={garage.length < 2}
                 className="btn-primary"
               >
-                Compare saved
+                {t('Compare saved')}
               </button>
               <button onClick={generateShareLink} className="btn-secondary">
-                Share garage
+                {t('Share garage')}
               </button>
             </div>
 
@@ -425,10 +435,10 @@ export default function DreamGarage() {
       <Modal
         open={showShareModal}
         onClose={() => setShowShareModal(false)}
-        title="Share your garage"
+        title={t('Share your garage')}
       >
         <p className="text-sm tracking-wide text-zinc-400 mb-6">
-          Anyone with this link can see the cars you saved and add them to their own garage.
+          {t('Anyone with this link can see the cars you saved and add them to their own garage.')}
         </p>
 
         <div className="bg-zinc-950 border border-zinc-900 p-4 mb-6 font-mono text-sm break-all">
@@ -442,21 +452,21 @@ export default function DreamGarage() {
               try {
                 await navigator.clipboard.writeText(shareLink);
                 setCopiedAgain(true);
-                setToast('Link copied');
+                setToast(t('Link copied'));
               } catch {
-                setToast('Could not copy — select the link above');
+                setToast(t('Could not copy — select the link above'));
               }
             }}
             className="flex-1 btn-primary"
           >
-            {copiedAgain ? 'Copied' : 'Copy link'}
+            {copiedAgain ? t('Copied') : t('Copy link')}
           </button>
           <button
             type="button"
             onClick={() => setShowShareModal(false)}
             className="flex-1 btn-secondary"
           >
-            Close
+            {t('Close')}
           </button>
         </div>
       </Modal>

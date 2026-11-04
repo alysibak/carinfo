@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Chevron, foldSummaryClass } from './ui';
+import { fmtNumber } from '../i18n/format';
 
 /**
  * One record in a list (a recall, an investigation): its name and date on a
@@ -68,7 +69,7 @@ export function CountHeading({
             tone === 'warn' && count > 0 ? 'text-amber-300' : 'text-white'
           }`}
         >
-          {count.toLocaleString('en-CA')}
+          {fmtNumber(count)}
         </span>
       )}
     </div>

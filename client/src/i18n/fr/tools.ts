@@ -4,6 +4,8 @@ const fr: Record<string, string> = {
   ' Busiest area: {area}, {count} cars.': ' Zone la plus dense : {area}, {count} véhicules.',
   ' · saved to your account': ' · enregistré dans votre compte',
   ' · this device': ' · cet appareil',
+  '({count}, most about {part})': '({count}, surtout sur {part})',
+  '({count})': '({count})',
   '(all types)': '(tous les types)',
   '+ Add a car': '+ Ajouter un véhicule',
   '+{n} for other versions': '+{n} pour d’autres versions',
@@ -317,6 +319,7 @@ const fr: Record<string, string> = {
   'Rollover risk': 'Risque de retournement',
   'Room for passengers': 'Place pour les passagers',
   'Running costs and value lost': 'Coûts d’utilisation et perte de valeur',
+  Spec: 'Caractéristique',
   SUV: 'VUS',
   Safety: 'Sécurité',
   'Sample VIN': 'NIV exemple',
@@ -534,6 +537,8 @@ const fr: Record<string, string> = {
   '{count} configurations of the {year} {make} {model}: fuel use, power, crash ratings and estimated value side by side.':
     '{count} configurations du {year} {make} {model} : consommation, puissance, cotes de sécurité et valeur estimée côte à côte.',
   '{count} configurations on file': '{count} configurations au dossier',
+  '{count} model year on file': '{count} année modèle au dossier',
+  '{count} model years on file': '{count} années modèle au dossier',
   '{count} owner complaint to NHTSA': '{count} plainte de propriétaire à la NHTSA',
   '{count} owner complaint to NHTSA, most about {part}':
     '{count} plainte de propriétaire à la NHTSA, surtout sur {part}',

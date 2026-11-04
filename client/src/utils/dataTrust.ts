@@ -2,6 +2,7 @@ import type { CarDashboard, CarSpecs, Provenance, ProvenanceSource } from '../ty
 import type { SpecGlossaryKey } from './specGlossary';
 import { hasNumericValue, hasTextValue } from './dataValue';
 import { formatAnnualEnergyCost } from './fuelLabels';
+import { msg, t } from '../i18n';
 
 export type TrustFilter = 'all' | 'verified' | 'estimated';
 
@@ -11,38 +12,39 @@ export function isVerifiedSource(source: ProvenanceSource): boolean {
 
 /** Single map from provenance field key to human label for Data Sources and related trust UI. */
 export const PROVENANCE_FIELD_LABELS: Record<string, string> = {
-  bodyStyle: 'Body style',
-  'engine.cylinders': 'Cylinders',
-  'engine.displacement': 'Engine displacement',
-  'engine.horsepower': 'Horsepower',
-  'engine.fuelType': 'Fuel type',
-  'engine.aspiration': 'Turbo / supercharger',
-  variant: 'Trim (named from the engine)',
-  fuelType: 'Fuel type',
-  'epa.annualFuelCost': 'Annual fuel cost',
-  'epa.charge120Hours': '120V charge time',
-  'epa.charge240Hours': '240V charge time',
-  'epa.co2': 'CO₂ emissions',
-  'epa.rangeMiles': 'Range',
-  'epa.kWhPer100Mi': 'Energy consumption',
-  'fuelEconomy.city': 'City fuel economy',
-  'fuelEconomy.highway': 'Highway fuel economy',
-  'fuelEconomy.combined': 'Combined fuel economy',
-  driveType: 'Drivetrain',
-  transmission: 'Transmission',
-  make: 'Make',
-  model: 'Model',
-  year: 'Year',
-  countryOfOrigin: 'Brand origin',
-  safetyRating: 'Crash safety',
-  'price.msrp': 'Est. current value',
-  'analytics.annualCost': 'Annual running cost',
-  'analytics.tco5Year': '5-year total cost',
-  'performance.zeroToSixty': '0-60 mph',
+  bodyStyle: msg('Body style'),
+  'engine.cylinders': msg('Cylinders'),
+  'engine.displacement': msg('Engine displacement'),
+  'engine.horsepower': msg('Horsepower'),
+  'engine.fuelType': msg('Fuel type'),
+  'engine.aspiration': msg('Turbo / supercharger'),
+  variant: msg('Trim (named from the engine)'),
+  fuelType: msg('Fuel type'),
+  'epa.annualFuelCost': msg('Annual fuel cost'),
+  'epa.charge120Hours': msg('120V charge time'),
+  'epa.charge240Hours': msg('240V charge time'),
+  'epa.co2': msg('CO₂ emissions'),
+  'epa.rangeMiles': msg('Range'),
+  'epa.kWhPer100Mi': msg('Energy consumption'),
+  'fuelEconomy.city': msg('City fuel economy'),
+  'fuelEconomy.highway': msg('Highway fuel economy'),
+  'fuelEconomy.combined': msg('Combined fuel economy'),
+  driveType: msg('Drivetrain'),
+  transmission: msg('Transmission'),
+  make: msg('Make'),
+  model: msg('Model'),
+  year: msg('Year'),
+  countryOfOrigin: msg('Brand origin'),
+  safetyRating: msg('Crash safety'),
+  'price.msrp': msg('Est. current value'),
+  'analytics.annualCost': msg('Annual running cost'),
+  'analytics.tco5Year': msg('5-year total cost'),
+  'performance.zeroToSixty': msg('0-60 mph'),
 };
 
 export function provenanceFieldLabel(key: string): string | null {
-  return PROVENANCE_FIELD_LABELS[key] ?? null;
+  const label = PROVENANCE_FIELD_LABELS[key];
+  return label ? t(label) : null;
 }
 
 /** Glossary keys for Data Sources rows that have explainer copy. */
@@ -240,21 +242,21 @@ export function compareFieldProvenance(car: CarSpecs): ProvenanceEntry[] {
   };
 
   if (car.provenance?.['engine.horsepower']) {
-    push('engine.horsepower', 'Horsepower', car.provenance['engine.horsepower']);
+    push('engine.horsepower', t('Horsepower'), car.provenance['engine.horsepower']);
   }
   if (car.fuelEconomy?.combined) {
-    push('fuelEconomy.combined', 'Fuel economy', car.provenance?.['fuelEconomy.combined'] ?? 'epa');
+    push('fuelEconomy.combined', t('Fuel economy'), car.provenance?.['fuelEconomy.combined'] ?? 'epa');
   }
   if (car.price?.msrp) {
     push(
       'price.msrp',
-      'Est. value',
+      t('Est. value'),
       car.provenance?.['price.msrp'] ?? (car.price.isEstimated ? 'estimated' : 'epa'),
       car.price.confidenceLabel,
     );
   }
   if (car.safetyRating?.overall) {
-    push('safetyRating', 'Safety', car.provenance?.safetyRating ?? 'nhtsa');
+    push('safetyRating', t('Safety'), car.provenance?.safetyRating ?? 'nhtsa');
   }
 
   return entries;

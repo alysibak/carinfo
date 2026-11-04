@@ -17,11 +17,13 @@ import { useAccountStatus } from '../hooks/useAccountStatus';
 import { authClient, authErrorMessage, safeNext } from '../services/authClient';
 import { signInWith, type SignInProvider } from '../services/signInMethods';
 import { useNoIndex, usePageMeta } from '../utils/pageMeta';
+import { t } from '../i18n';
+import { rich } from '../i18n/rich';
 
 const COOKIE_WAIT_MS = 6_000;
 
 export default function SignUp() {
-  usePageMeta('Create an account', 'Create a free CarInfo account.');
+  usePageMeta(t('Create an account'), t('Create a free CarInfo account.'));
   useNoIndex();
   const [params] = useSearchParams();
   const next = safeNext(params.get('next'), '/home');
@@ -41,7 +43,7 @@ export default function SignUp() {
     const timer = setTimeout(() => {
       setPending(null);
       setError(
-        'Account made, but this browser did not keep the sign-in. Allow cookies for this site.',
+        t('Account made, but this browser did not keep the sign-in. Allow cookies for this site.'),
       );
     }, COOKIE_WAIT_MS);
     return () => clearTimeout(timer);
@@ -83,14 +85,19 @@ export default function SignUp() {
 
   return (
     <AuthCard
-      title="Create a free account"
-      intro="For your garage and the Value chart. Search, car pages, Compare and the VIN lookup stay open to everyone."
+      title={t('Create a free account')}
+      intro={t(
+        'For your garage and the Value chart. Search, car pages, Compare and the VIN lookup stay open to everyone.',
+      )}
       footer={
         <p>
-          Already have an account?{' '}
-          <Link to={`/sign-in${withNext}`} className="text-white underline">
-            Sign in
-          </Link>
+          {rich(t('Already have an account? <0>Sign in</0>'), [
+            (children) => (
+              <Link to={`/sign-in${withNext}`} className="text-white underline">
+                {children}
+              </Link>
+            ),
+          ])}
         </p>
       }
     >
@@ -111,13 +118,13 @@ export default function SignUp() {
           <EmailCodeForm
             initialEmail={email}
             onBack={() => setMode('password')}
-            backLabel="Make a password instead"
+            backLabel={t('Make a password instead')}
           />
         ) : (
           <>
             <AuthFormBody onSubmit={submit}>
               <Field
-                label="Name (optional)"
+                label={t('Name (optional)')}
                 name="name"
                 autoComplete="name"
                 maxLength={80}
@@ -125,7 +132,7 @@ export default function SignUp() {
                 onChange={(e) => setName(e.target.value)}
               />
               <Field
-                label="Email"
+                label={t('Email')}
                 type="email"
                 name="email"
                 autoComplete="email"
@@ -134,25 +141,25 @@ export default function SignUp() {
                 onChange={(e) => setEmail(e.target.value)}
               />
               <Field
-                label="Password"
+                label={t('Password')}
                 type="password"
                 name="new-password"
                 autoComplete="new-password"
                 required
                 minLength={8}
                 maxLength={128}
-                hint="At least 8 characters."
+                hint={t('At least 8 characters.')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
               <SubmitButton busy={busy}>
-                {pending === 'password' ? 'Creating account…' : 'Create account'}
+                {pending === 'password' ? t('Creating account…') : t('Create account')}
               </SubmitButton>
             </AuthFormBody>
             {codes && (
               <>
                 <p className="text-xs text-zinc-500">
-                  We&apos;ll email you a link to confirm the address.
+                  {t("We'll email you a link to confirm the address.")}
                 </p>
                 <button
                   type="button"
@@ -162,22 +169,30 @@ export default function SignUp() {
                   }}
                   className="btn-ghost self-center"
                 >
-                  Rather not make a password? Email me a code
+                  {t('Rather not make a password? Email me a code')}
                 </button>
               </>
             )}
           </>
         )}
         <p className="text-xs text-zinc-500 leading-relaxed">
-          Creating an account accepts the{' '}
-          <Link to="/terms" className="underline underline-offset-2 hover:text-zinc-300">
-            terms of use
-          </Link>
-          ; the{' '}
-          <Link to="/privacy" className="underline underline-offset-2 hover:text-zinc-300">
-            privacy policy
-          </Link>{' '}
-          says what is kept and why.
+          {rich(
+            t(
+              'Creating an account accepts the <0>terms of use</0>; the <1>privacy policy</1> says what is kept and why.',
+            ),
+            [
+              (children) => (
+                <Link to="/terms" className="underline underline-offset-2 hover:text-zinc-300">
+                  {children}
+                </Link>
+              ),
+              (children) => (
+                <Link to="/privacy" className="underline underline-offset-2 hover:text-zinc-300">
+                  {children}
+                </Link>
+              ),
+            ],
+          )}
         </p>
       </div>
     </AuthCard>

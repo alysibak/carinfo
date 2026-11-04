@@ -1,4 +1,5 @@
 import type { CarSpecs } from '../types/car.types';
+import { t } from '../i18n';
 
 /**
  * Helpers that turn raw EPA enrichment fields into dual-framed content:
@@ -30,12 +31,22 @@ export function fiveYearFuelSavings(car: CarSpecs): FuelSavings | null {
 
 /** Compact glance value, e.g. "US$5,500 less". */
 export function fuelSavingsShort(s: FuelSavings): string {
-  return `US$${s.usd.toLocaleString('en-US')} ${s.saves ? 'less' : 'more'}`;
+  const amount = s.usd.toLocaleString('en-US');
+  return s.saves ? t('US${amount} less', { amount }) : t('US${amount} more', { amount });
 }
 
 /** Full plain-language sentence for the expanded view, with whose figure it is. */
 export function fuelSavingsSentence(s: FuelSavings): string {
-  return `US$${s.usd.toLocaleString('en-US')} ${s.saves ? 'less' : 'more'} in fuel over 5 years than the average new vehicle, by EPA’s estimate at US fuel prices.`;
+  const amount = s.usd.toLocaleString('en-US');
+  return s.saves
+    ? t(
+        'US${amount} less in fuel over 5 years than the average new vehicle, by EPA’s estimate at US fuel prices.',
+        { amount },
+      )
+    : t(
+        'US${amount} more in fuel over 5 years than the average new vehicle, by EPA’s estimate at US fuel prices.',
+        { amount },
+      );
 }
 
 export interface GhgFraming {
@@ -49,20 +60,20 @@ export function ghgFraming(car: CarSpecs): GhgFraming | null {
   if (s == null || s <= 0) return null;
   let plain: string;
   if (car.engine.fuelType === 'hydrogen' && car.epa?.co2 === 0) {
-    plain = 'Zero tailpipe emissions from hydrogen fuel cell';
-  } else if (s >= 9) plain = 'Among the cleanest-running vehicles';
-  else if (s >= 7) plain = 'Cleaner-running than most new vehicles';
-  else if (s >= 5) plain = 'About average tailpipe emissions';
-  else if (s >= 3) plain = 'Dirtier-running than most new vehicles';
-  else plain = 'Among the highest-emitting vehicles';
+    plain = t('Zero tailpipe emissions from hydrogen fuel cell');
+  } else if (s >= 9) plain = t('Among the cleanest-running vehicles');
+  else if (s >= 7) plain = t('Cleaner-running than most new vehicles');
+  else if (s >= 5) plain = t('About average tailpipe emissions');
+  else if (s >= 3) plain = t('Dirtier-running than most new vehicles');
+  else plain = t('Among the highest-emitting vehicles');
   return { score: s, plain };
 }
 
 /** Plain-language note for zero tailpipe CO₂ (EV / FCEV). */
 export function tailpipeEmissionsNote(car: CarSpecs): string | null {
   if (car.epa?.co2 !== 0) return null;
-  if (car.engine.fuelType === 'hydrogen') return 'Zero tailpipe CO₂ emissions.';
-  if (car.engine.fuelType === 'electric') return 'Zero tailpipe CO₂ emissions.';
+  if (car.engine.fuelType === 'hydrogen') return t('Zero tailpipe CO₂ emissions.');
+  if (car.engine.fuelType === 'electric') return t('Zero tailpipe CO₂ emissions.');
   return null;
 }
 

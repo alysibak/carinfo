@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ChartDensityCell, ChartDensityResult } from '../services/api';
 import { DISPLAY_CURRENCY } from '../utils/currency';
+import { t } from '../i18n';
 
 const BODY_STYLE_COLORS: Record<string, string> = {
   sedan: '#ffffff',
@@ -41,9 +42,9 @@ function metricUnit(metric: ChartDensityResult['metric']): string {
 }
 
 function metricName(metric: ChartDensityResult['metric']): string {
-  if (metric === 'mpg') return 'fuel use';
-  if (metric === 'displacement') return 'engine size';
-  return 'CO₂';
+  if (metric === 'mpg') return t('fuel use');
+  if (metric === 'displacement') return t('engine size');
+  return t('CO₂');
 }
 
 /** "$20k–$30k · 7.8–9.4 L/100 km": more mpg is fewer litres, so the ends swap. */
@@ -74,9 +75,15 @@ export default function ValueMatrixHeatmap({
     [density.cells],
   );
   const summary =
-    `Heat map of ${density.total.toLocaleString()} cars by estimated value and ${metricName(density.metric)}.` +
+    t('Heat map of {total} cars by estimated value and {metric}.', {
+      total: density.total.toLocaleString(),
+      metric: metricName(density.metric),
+    }) +
     (busiest[0]
-      ? ` Busiest area: ${describeCell(busiest[0], density.metric)}, ${busiest[0].count.toLocaleString()} cars.`
+      ? t(' Busiest area: {area}, {count} cars.', {
+          area: describeCell(busiest[0], density.metric),
+          count: busiest[0].count.toLocaleString(),
+        })
       : '');
 
   useEffect(() => {
@@ -191,7 +198,11 @@ export default function ValueMatrixHeatmap({
     ctx.restore();
 
     ctx.textAlign = 'center';
-    ctx.fillText(`Est. value (${DISPLAY_CURRENCY})`, pad.left + plotW / 2, height - 28);
+    ctx.fillText(
+      t('Est. value ({currency})', { currency: DISPLAY_CURRENCY }),
+      pad.left + plotW / 2,
+      height - 28,
+    );
   }, [density, height, width, hovered, yLabel]);
 
   useEffect(() => {
@@ -244,14 +255,18 @@ export default function ValueMatrixHeatmap({
       />
       {hovered && (
         <div className="absolute top-3 right-3 bg-zinc-950 border border-zinc-600 px-3 py-2 text-xs pointer-events-none">
-          <p className="text-white font-semibold">{hovered.count.toLocaleString()} cars</p>
+          <p className="text-white font-semibold">
+            {t('{count} cars', { count: hovered.count.toLocaleString() })}
+          </p>
           <p className="text-zinc-400 mt-1">{describeCell(hovered, density.metric)}</p>
-          <p className="text-zinc-500 mt-1 capitalize">Mostly {hovered.dominantBodyStyle}</p>
-          <p className="text-zinc-500 mt-1">Click to zoom in</p>
+          <p className="text-zinc-500 mt-1 capitalize">
+            {t('Mostly {style}', { style: hovered.dominantBodyStyle })}
+          </p>
+          <p className="text-zinc-500 mt-1">{t('Click to zoom in')}</p>
         </div>
       )}
       <div className="flex items-center justify-end gap-2 mt-2 text-xs text-zinc-500">
-        <span>Low density</span>
+        <span>{t('Low density')}</span>
         <div className="flex h-2 w-24 rounded-xs overflow-hidden border border-zinc-700">
           {Array.from({ length: 8 }, (_, i) => (
             <div
@@ -261,11 +276,11 @@ export default function ValueMatrixHeatmap({
             />
           ))}
         </div>
-        <span>High density</span>
+        <span>{t('High density')}</span>
       </div>
       {busiest.length > 0 && (
         <div className="mt-4">
-          <p className="text-xs text-zinc-500 mb-2">Busiest areas · select to zoom in</p>
+          <p className="text-xs text-zinc-500 mb-2">{t('Busiest areas · select to zoom in')}</p>
           <ul className="grid gap-1 sm:grid-cols-2">
             {busiest.map((cell) => (
               <li key={`${cell.priceMin}:${cell.yMin}`}>
@@ -276,7 +291,10 @@ export default function ValueMatrixHeatmap({
                 >
                   <span className="text-zinc-200">{describeCell(cell, density.metric)}</span>
                   <span className="text-zinc-400 shrink-0 tabular-nums">
-                    {cell.count.toLocaleString()} · mostly {cell.dominantBodyStyle}
+                    {t('{count} · mostly {style}', {
+                      count: cell.count.toLocaleString(),
+                      style: cell.dominantBodyStyle,
+                    })}
                   </span>
                 </button>
               </li>

@@ -19,43 +19,46 @@ import CompareTray from '../components/CompareTray';
 import MobileTabBar from '../components/MobileTabBar';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { useCarStore } from '../stores/carStore';
+import { msg, t } from '../i18n';
 
 const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/i;
 
 /** Where people start, a line each. */
 const START_POINTS = [
-  { label: 'I know the car', note: 'Search its make, model or year', to: '/home' },
+  { label: msg('I know the car'), note: msg('Search its make, model or year'), to: '/home' },
   {
-    label: 'I’m still deciding',
-    note: 'Start from what you need it for: commuting, a family, a first car',
+    label: msg('I’m still deciding'),
+    note: msg('Start from what you need it for: commuting, a family, a first car'),
     to: '/browse',
   },
   {
-    label: 'Safety first',
-    note: 'Five crash-test stars, collision warning, no recalls',
+    label: msg('Safety first'),
+    note: msg('Five crash-test stars, collision warning, no recalls'),
     to: '/browse#record',
   },
   {
-    label: 'I have a VIN',
-    note: 'What it is, and its year’s recalls, complaints and crash rating',
+    label: msg('I have a VIN'),
+    note: msg('What it is, and its year’s recalls, complaints and crash rating'),
     to: '/vin',
   },
   {
-    label: 'I’m comparing options',
-    note: 'Popular match-ups side by side in one tap, or any cars you pick',
+    label: msg('I’m comparing options'),
+    note: msg('Popular match-ups side by side in one tap, or any cars you pick'),
     to: '/compare',
   },
   {
-    label: 'The whole market',
-    note: 'Every car’s value against its fuel use',
+    label: msg('The whole market'),
+    note: msg('Every car’s value against its fuel use'),
     to: '/value-matrix',
   },
 ];
 
 export default function Landing() {
   usePageMeta(
-    'Compare cars with facts you can check',
-    'Look up 35,000+ versions of cars since 1995: fuel use and range from official EPA tests, NHTSA crash ratings when on file, and rated power, in Canadian units, each marked with its source.',
+    t('Compare cars with facts you can check'),
+    t(
+      'Look up 35,000+ versions of cars since 1995: fuel use and range from official EPA tests, NHTSA crash ratings when on file, and rated power, in Canadian units, each marked with its source.',
+    ),
   );
   const [heroQuery, setHeroQuery] = useState('');
   const [heroCar, setHeroCar] = useState<CarSpecs | null>(null);
@@ -103,7 +106,7 @@ export default function Landing() {
           link and main landmark — without them keyboard users had to tab
           through the whole header, and screen readers found no main region. */}
       <a href="#main-content" className="skip-link">
-        Skip to content
+        {t('Skip to content')}
       </a>
 
       <SiteHeader transparentUntilScroll />
@@ -119,16 +122,16 @@ export default function Landing() {
             <div className="max-w-2xl min-w-0">
               <p className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-400 mb-6 animate-hero-rise">
                 <span aria-hidden className="h-px w-10 bg-accent" />
-                Public records, in plain words
+                {t('Public records, in plain words')}
               </p>
               {/* The promise, not the brand: the header already says CarInfo. */}
               <h1 className="display-text text-[2.9rem] sm:text-6xl lg:text-[5.4rem] pb-2 mb-5 animate-hero-rise [animation-delay:30ms]">
-                Compare cars with facts you can check
+                {t('Compare cars with facts you can check')}
               </h1>
               <p className="text-base md:text-lg text-zinc-300 leading-relaxed mb-8 md:mb-10 max-w-xl animate-hero-rise [animation-delay:60ms]">
-                Fuel use and range from official EPA tests and crash-test stars from NHTSA, in
-                litres and kilometres. Every figure says where it came from, and anything we
-                estimate, like a car’s value, is marked as an estimate.
+                {t(
+                  'Fuel use and range from official EPA tests and crash-test stars from NHTSA, in litres and kilometres. Every figure says where it came from, and anything we estimate, like a car’s value, is marked as an estimate.',
+                )}
               </p>
 
               <div className="animate-hero-rise [animation-delay:80ms]">
@@ -137,16 +140,16 @@ export default function Landing() {
                   onChange={setHeroQuery}
                   onSubmit={handleHeroSearch}
                   size="hero"
-                  placeholder="Make, model, or VIN"
+                  placeholder={t('Make, model, or VIN')}
                   siteSearch
                 />
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-                  <span className="text-zinc-400">A 17-character VIN works too.</span>
+                  <span className="text-zinc-400">{t('A 17-character VIN works too.')}</span>
                   <Link
                     to="/browse"
                     className="text-white font-medium underline underline-offset-4 decoration-zinc-500 hover:decoration-white min-h-[44px] inline-flex items-center"
                   >
-                    Not sure yet? Start from what you need →
+                    {t('Not sure yet? Start from what you need →')}
                   </Link>
                 </div>
               </div>
@@ -184,7 +187,7 @@ export default function Landing() {
 
         <div className="border-t border-zinc-900 reveal">
           <section className="page-wrap section-y">
-            <h2 className="section-title mb-6">How do you want to start?</h2>
+            <h2 className="section-title mb-6">{t('How do you want to start?')}</h2>
             {/* A line each, a tap each: the boxes of chips here took two phone
               screens and repeated the best sellers above them. */}
             <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
@@ -193,9 +196,11 @@ export default function Landing() {
                   <Link to={start.to} className="choice-tile h-full">
                     <span className="min-w-0">
                       <span className="block text-[15px] font-semibold text-white">
-                        {start.label}
+                        {t(start.label)}
                       </span>
-                      <span className="block text-[13px] text-zinc-400 mt-0.5">{start.note}</span>
+                      <span className="block text-[13px] text-zinc-400 mt-0.5">
+                        {t(start.note)}
+                      </span>
                     </span>
                     <span aria-hidden className="text-zinc-500 shrink-0">
                       →
@@ -209,9 +214,9 @@ export default function Landing() {
 
         <div className="border-t border-zinc-900 reveal">
           <section className="page-wrap section-y">
-            <h2 className="section-title mb-2">Shortlists</h2>
+            <h2 className="section-title mb-2">{t('Shortlists')}</h2>
             <p className="text-[15px] text-zinc-400 mb-6 max-w-xl leading-relaxed">
-              Ranked picks for common situations, one per model, not every trim on file.
+              {t('Ranked picks for common situations, one per model, not every trim on file.')}
             </p>
             <ErrorBoundary fallback={null}>
               <ShortlistCards limit={6} />
@@ -220,7 +225,7 @@ export default function Landing() {
               to="/browse#shortlists"
               className="inline-flex items-center min-h-[44px] mt-3 text-sm text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-400"
             >
-              All {Object.keys(COLLECTIONS).length} shortlists →
+              {t('All {count} shortlists →', { count: Object.keys(COLLECTIONS).length })}
             </Link>
           </section>
         </div>

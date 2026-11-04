@@ -7,6 +7,7 @@ import { LoadingScreen } from './components/ui';
 import ErrorBoundary from './components/ErrorBoundary';
 import AuthProvider from './components/AuthProvider';
 import { useRecordVisit } from './hooks/useRecordVisit';
+import { msg } from './i18n';
 
 const Explore = lazy(() => import('./pages/Explore'));
 const VehicleGrid = lazy(() => import('./pages/VehicleGrid'));
@@ -38,13 +39,13 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 
 /** What the tools behind a sign-in do, for the page that asks for one. */
 const GARAGE_GIVES = [
-  'Save cars from any page, and find them on any device you sign in on.',
-  'See how your shortlist differs, and which saved cars have recalls in Canada.',
-  'Compare saved cars side by side, or share the list with a link.',
+  msg('Save cars from any page, and find them on any device you sign in on.'),
+  msg('See how your shortlist differs, and which saved cars have recalls in Canada.'),
+  msg('Compare saved cars side by side, or share the list with a link.'),
 ];
 const VALUE_CHART_GIVES = [
-  'Every car’s estimated value against its fuel use, on one chart.',
-  'Pick a square to see the cars in it, and open any of them.',
+  msg('Every car’s estimated value against its fuel use, on one chart.'),
+  msg('Pick a square to see the cars in it, and open any of them.'),
 ];
 
 /** Outside the page frame, which has a loading boundary of its own (Layout). */
@@ -82,7 +83,7 @@ function App() {
                   <Route
                     path="/garage"
                     element={
-                      <RequireAccount tool="your garage" gives={GARAGE_GIVES}>
+                      <RequireAccount tool={msg('your garage')} gives={GARAGE_GIVES}>
                         <DreamGarage />
                       </RequireAccount>
                     }
@@ -93,7 +94,7 @@ function App() {
                   <Route
                     path="/value-matrix"
                     element={
-                      <RequireAccount tool="the Value chart" gives={VALUE_CHART_GIVES}>
+                      <RequireAccount tool={msg('the Value chart')} gives={VALUE_CHART_GIVES}>
                         <ValueMatrix />
                       </RequireAccount>
                     }

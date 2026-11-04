@@ -15,6 +15,7 @@ import { TIER1_SPEC_EMPHASIS, TIER2_VALUE, TIER3_LABEL } from '../utils/visualTi
 import { SpecLabel } from './SpecExplain';
 import DataValue from './DataValue';
 import { Chevron, foldSummaryClass } from './ui';
+import { t, tp } from '../i18n';
 
 interface SpecRow {
   key: string;
@@ -54,14 +55,14 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   const powertrain: SpecRow[] = [];
   pushIf(powertrain, {
     key: 'engine',
-    label: 'Engine',
+    label: t('Engine'),
     value: engineCharacter(car),
     glossary: 'engine',
   });
   if (!isEv && !isFcev && hasNumericValue(car.engine.displacement)) {
     pushIf(powertrain, {
       key: 'displacement',
-      label: 'Displacement',
+      label: t('Displacement'),
       value: engineLitres(car.engine.displacement!),
       glossary: 'displacement',
     });
@@ -72,7 +73,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (!isEv && !isFcev && knownLayout) {
     pushIf(powertrain, {
       key: 'configuration',
-      label: 'Layout',
+      label: t('Layout'),
       value: knownLayout,
       glossary: 'configuration',
     });
@@ -80,15 +81,15 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (dashboard.enginePosition) {
     pushIf(powertrain, {
       key: 'enginePosition',
-      label: 'Engine position',
-      value: dashboard.enginePosition === 'mid' ? 'Mid-engine' : 'Rear-engine',
+      label: t('Engine position'),
+      value: dashboard.enginePosition === 'mid' ? t('Mid-engine') : t('Rear-engine'),
       glossary: 'enginePosition',
     });
   }
   if (!isEv && !isFcev && hasNumericValue(car.engine.cylinders)) {
     pushIf(powertrain, {
       key: 'cylinders',
-      label: 'Cylinders',
+      label: t('Cylinders'),
       value: car.engine.cylinders,
       glossary: 'cylinders',
     });
@@ -96,16 +97,16 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (hasNumericValue(car.engine.horsepower)) {
     pushIf(powertrain, {
       key: 'horsepower',
-      label: 'Horsepower',
-      value: `${car.engine.horsepower} hp`,
+      label: t('Horsepower'),
+      value: t('{hp} hp', { hp: car.engine.horsepower }),
       glossary: 'horsepower',
     });
   }
   if (hasNumericValue(car.engine.torque)) {
     pushIf(powertrain, {
       key: 'torque',
-      label: 'Torque',
-      value: `${car.engine.torque} lb-ft`,
+      label: t('Torque'),
+      value: t('{torque} lb-ft', { torque: car.engine.torque }),
       glossary: 'torque',
       ...(car.provenance?.['engine.torque']
         ? {
@@ -119,20 +120,20 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   }
   pushIf(powertrain, {
     key: 'drivetrain',
-    label: 'Drivetrain',
+    label: t('Drivetrain'),
     value: car.driveType,
     glossary: 'drivetrain',
   });
   pushIf(powertrain, {
     key: 'transmission',
-    label: 'Transmission',
+    label: t('Transmission'),
     value: transmissionLabel(car),
     glossary: 'transmission',
   });
   if (!isEv) {
     pushIf(powertrain, {
       key: 'fuel',
-      label: 'Fuel',
+      label: t('Fuel'),
       value: formatCarFuelLabel(car),
       glossary: 'fuel',
     });
@@ -143,7 +144,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (trim) {
     pushIf(vehicle, {
       key: 'trim',
-      label: 'Trim',
+      label: t('Trim'),
       value: trim,
       glossary: 'trim',
     });
@@ -151,7 +152,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (car.bodyStyle) {
     pushIf(vehicle, {
       key: 'body',
-      label: 'Body',
+      label: t('Body'),
       value: bodyStyleLabel(car.bodyStyle),
       glossary: 'body',
     });
@@ -162,7 +163,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
       key: 'epaClass',
       // By room inside, not outside size: a 2022 Civic is "Midsize Cars"
       // beside "Competes as: Compact car".
-      label: 'EPA size, by room inside',
+      label: t('EPA size, by room inside'),
       value: car.epa.vClass,
       glossary: 'epaClass',
     });
@@ -171,7 +172,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (car.countryOfOrigin) {
     pushIf(vehicle, {
       key: 'origin',
-      label: 'Brand origin',
+      label: t('Brand origin'),
       value: car.countryOfOrigin,
       glossary: 'countryOfOrigin',
     });
@@ -179,7 +180,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (car.variant) {
     pushIf(vehicle, {
       key: 'variant',
-      label: 'Trim',
+      label: t('Trim'),
       value: car.variant,
       glossary: 'variant',
       provenanceSource: displayProvenanceSource('variant', car.provenance?.variant ?? 'estimated'),
@@ -189,7 +190,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
     pushIf(vehicle, {
       key: 'class',
       // Beside "EPA class", which measures interior volume.
-      label: 'Competes as',
+      label: t('Competes as'),
       value: dashboard.competitiveClass,
       glossary: 'competitiveClass',
     });
@@ -197,7 +198,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (dashboard.generation) {
     pushIf(vehicle, {
       key: 'generation',
-      label: 'Generation',
+      label: t('Generation'),
       value: dashboard.generation,
       glossary: 'generation',
     });
@@ -211,7 +212,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
         : String(car.seats);
     pushIf(space, {
       key: 'seats',
-      label: 'Seats',
+      label: t('Seats'),
       value: seatsLabel,
       glossary: 'seats',
       provenanceSource: displayProvenanceSource('seats', car.provenance?.seats ?? 'curated'),
@@ -220,8 +221,8 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (hasNumericValue(car.towingCapacityLb)) {
     pushIf(space, {
       key: 'towing',
-      label: 'Max towing',
-      value: `${car.towingCapacityLb!.toLocaleString()} lb`,
+      label: t('Max towing'),
+      value: t('{lb} lb', { lb: car.towingCapacityLb!.toLocaleString() }),
       glossary: 'towing',
       provenanceSource: displayProvenanceSource(
         'towingCapacityLb',
@@ -232,7 +233,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (car.size) {
     pushIf(space, {
       key: 'wheelbase',
-      label: 'Wheelbase',
+      label: t('Wheelbase'),
       value: `${formatMetres(car.size.wheelbaseCm)} (${formatFeet(car.size.wheelbaseCm)})`,
       glossary: 'wheelbase',
     });
@@ -248,7 +249,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (car.epa?.passengerVolumeCuFt) {
     pushIf(space, {
       key: 'passenger',
-      label: 'Passenger space',
+      label: t('Passenger space'),
       value: formatVolume(car.epa.passengerVolumeCuFt),
       glossary: 'passengerVolume',
     });
@@ -256,7 +257,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
 
   const market: SpecRow[] = [];
   if (hasNumericValue(car.price?.msrp)) {
-    const priceLabel = car.price?.isEstimated ? 'Est. current value' : 'Current value';
+    const priceLabel = car.price?.isEstimated ? t('Est. current value') : t('Current value');
     pushIf(market, {
       key: 'msrp',
       label: priceLabel,
@@ -267,7 +268,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (car.price?.confidenceLabel) {
     pushIf(market, {
       key: 'valueConfidence',
-      label: 'Value confidence',
+      label: t('Value confidence'),
       value: car.price.confidenceLabel,
     });
   }
@@ -276,7 +277,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (hasNumericValue(car.fuelEconomy.city) && !isEv) {
     pushIf(fuel, {
       key: 'mpgCity',
-      label: `City ${effLabel}`,
+      label: effLabel === 'MPGe' ? t('City MPGe') : t('City MPG'),
       value: car.fuelEconomy.city,
       glossary: 'mpgCity',
     });
@@ -284,7 +285,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (hasNumericValue(car.fuelEconomy.highway) && !isEv) {
     pushIf(fuel, {
       key: 'mpgHighway',
-      label: `Highway ${effLabel}`,
+      label: effLabel === 'MPGe' ? t('Highway MPGe') : t('Highway MPG'),
       value: car.fuelEconomy.highway,
       glossary: 'mpgHighway',
     });
@@ -292,7 +293,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (hasNumericValue(car.fuelEconomy.combined)) {
     pushIf(fuel, {
       key: 'mpgCombined',
-      label: `Combined ${effLabel}`,
+      label: effLabel === 'MPGe' ? t('Combined MPGe') : t('Combined MPG'),
       value: car.fuelEconomy.combined,
       glossary: isEv || isFcev ? 'mpge' : 'mpgCombined',
     });
@@ -301,7 +302,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
     if (hasNumericValue(phev.electricMpge)) {
       pushIf(fuel, {
         key: 'phevElectricMpge',
-        label: 'Electric-mode MPGe',
+        label: t('Electric-mode MPGe'),
         value: phev.electricMpge,
         glossary: 'phevElectricMpge',
       });
@@ -309,7 +310,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
     if (hasNumericValue(phev.electricRangeMi)) {
       pushIf(fuel, {
         key: 'phevRange',
-        label: 'Electric range',
+        label: t('Electric range'),
         value: `${Math.round(phev.electricRangeMi!)} mi`,
         glossary: 'phevElectricRange',
       });
@@ -317,7 +318,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
     if (hasNumericValue(phev.gasMpg)) {
       pushIf(fuel, {
         key: 'phevGas',
-        label: 'Gas-mode MPG',
+        label: t('Gas-mode MPG'),
         value: phev.gasMpg,
         glossary: 'phevGasMpg',
       });
@@ -325,7 +326,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
     if (hasNumericValue(phev.blendedMpge)) {
       pushIf(fuel, {
         key: 'phevBlended',
-        label: 'Blended MPGe',
+        label: t('Blended MPGe'),
         value: phev.blendedMpge,
         glossary: 'phevBlendedMpge',
       });
@@ -333,7 +334,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
     if (hasNumericValue(phev.chargeL2Hours)) {
       pushIf(fuel, {
         key: 'phevCharge',
-        label: 'Level 2 charge',
+        label: t('Level 2 charge'),
         value: `~${phev.chargeL2Hours} h`,
         glossary: 'charge240',
       });
@@ -343,7 +344,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if ((isEv || isFcev) && hasNumericValue(rangeMi)) {
     pushIf(fuel, {
       key: 'epaRange',
-      label: car.provenance?.['epa.rangeMiles'] === 'nrcan' ? 'Range' : 'EPA range',
+      label: car.provenance?.['epa.rangeMiles'] === 'nrcan' ? t('Range') : t('EPA range'),
       value: `${Math.round(rangeMi!)} mi`,
       glossary: 'epaRange',
     });
@@ -351,7 +352,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (hasNumericValue(evCharge?.kWhPer100Mi)) {
     pushIf(fuel, {
       key: 'kwh',
-      label: 'Consumption',
+      label: t('Consumption'),
       value: `${evCharge!.kWhPer100Mi} kWh/100mi`,
       glossary: 'kwhPer100mi',
     });
@@ -359,7 +360,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (hasNumericValue(evCharge?.charge240Hours)) {
     pushIf(fuel, {
       key: 'charge240',
-      label: 'Home charge (240V)',
+      label: t('Home charge (240V)'),
       value: `~${evCharge!.charge240Hours} h`,
       glossary: 'charge240',
     });
@@ -368,7 +369,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
     const hrs = evCharge?.charge120Hours ?? car.epa!.charge120Hours!;
     pushIf(fuel, {
       key: 'charge120',
-      label: 'Home charge (120V)',
+      label: t('Home charge (120V)'),
       value: `~${hrs} h`,
       glossary: 'charge120',
     });
@@ -378,7 +379,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (annualFuelCad) {
     pushIf(fuel, {
       key: 'annualFuel',
-      label: 'Annual fuel cost',
+      label: t('Annual fuel cost'),
       value: annualFuelCad,
       glossary: 'annualFuelCost',
     });
@@ -388,7 +389,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (car.epa?.co2 != null) {
     pushIf(environment, {
       key: 'co2',
-      label: 'CO₂ emissions',
+      label: t('CO₂ emissions'),
       value: formatCo2(car.epa.co2),
       glossary: 'co2',
     });
@@ -396,7 +397,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (hasNumericValue(car.epa?.ghgScore)) {
     pushIf(environment, {
       key: 'ghg',
-      label: 'EPA greenhouse rating',
+      label: t('EPA greenhouse rating'),
       value: `${car.epa!.ghgScore}/10`,
       glossary: 'ghgScore',
     });
@@ -404,8 +405,8 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (hasNumericValue(car.epa?.barrelsPerYear)) {
     pushIf(environment, {
       key: 'barrels',
-      label: 'Oil use',
-      value: `${car.epa!.barrelsPerYear} barrels/yr`,
+      label: t('Oil use'),
+      value: t('{n} barrels/yr', { n: car.epa!.barrelsPerYear }),
       glossary: 'barrelsPerYear',
     });
   }
@@ -413,8 +414,8 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (fuelSav) {
     pushIf(environment, {
       key: 'fuelSav5',
-      label: '5-yr fuel vs. average',
-      value: `${fuelSavingsShort(fuelSav)} over 5 yr`,
+      label: t('5-yr fuel vs. average'),
+      value: t('{short} over 5 yr', { short: fuelSavingsShort(fuelSav) }),
       glossary: 'fuelSavings5yr',
     });
   }
@@ -423,8 +424,8 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (zeroToSixty) {
     pushIf(performance, {
       key: 'zero60',
-      label: '0-60 mph',
-      value: `~${zeroToSixty.value}s${zeroToSixty.method === 'predicted' ? ' (est.)' : ''}`,
+      label: t('0-60 mph'),
+      value: zeroToSixty.method === 'predicted' ? t('~{seconds}s (est.)', { seconds: zeroToSixty.value }) : t('~{seconds}s', { seconds: zeroToSixty.value }),
       glossary: 'zeroToSixty',
     });
   }
@@ -434,14 +435,14 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   if (hasNumericValue(sr?.overall, { allowZero: false })) {
     pushIf(safety, {
       key: 'safetyOverall',
-      label: 'NHTSA overall',
-      value: `${sr!.overall}/5 stars`,
+      label: t('NHTSA overall'),
+      value: t('{n}/5 stars', { n: sr!.overall }),
       glossary: 'safetyOverall',
     });
     if (hasNumericValue(sr?.frontal, { allowZero: false })) {
       pushIf(safety, {
         key: 'safetyFrontal',
-        label: 'Frontal crash',
+        label: t('Frontal crash'),
         value: `${sr!.frontal}/5`,
         glossary: 'safetyFrontal',
       });
@@ -449,7 +450,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
     if (hasNumericValue(sr?.side, { allowZero: false })) {
       pushIf(safety, {
         key: 'safetySide',
-        label: 'Side crash',
+        label: t('Side crash'),
         value: `${sr!.side}/5`,
         glossary: 'safetySide',
       });
@@ -457,7 +458,7 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
     if (hasNumericValue(sr?.rollover, { allowZero: false })) {
       pushIf(safety, {
         key: 'safetyRollover',
-        label: 'Rollover',
+        label: t('Rollover'),
         value: `${sr!.rollover}/5`,
         glossary: 'safetyRollover',
       });
@@ -465,14 +466,14 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   }
 
   return [
-    { title: 'Powertrain', rows: powertrain },
-    { title: 'Vehicle', rows: vehicle },
-    { title: 'Size and space', rows: space },
-    { title: 'Market', rows: market },
-    { title: 'Fuel economy', rows: fuel },
-    { title: 'Crash safety', rows: safety },
-    { title: 'Performance', rows: performance },
-    { title: 'Emissions', rows: environment },
+    { title: t('Powertrain'), rows: powertrain },
+    { title: t('Vehicle'), rows: vehicle },
+    { title: t('Size and space'), rows: space },
+    { title: t('Market'), rows: market },
+    { title: t('Fuel economy'), rows: fuel },
+    { title: t('Crash safety'), rows: safety },
+    { title: t('Performance'), rows: performance },
+    { title: t('Emissions'), rows: environment },
   ].filter((g) => g.rows.length > 0);
 }
 
@@ -512,7 +513,7 @@ function SpecGroupBlock({ group }: { group: SpecGroup }) {
                   }`}
                 />
                 {spec.provenanceSource === 'estimated' && (
-                  <span className="text-xs text-zinc-600">est.</span>
+                  <span className="text-xs text-zinc-600">{t('est.')}</span>
                 )}
               </div>
             </div>
@@ -526,7 +527,7 @@ function SpecGroupBlock({ group }: { group: SpecGroup }) {
 export default function KeySpecs({
   dashboard,
   omitKeys,
-  heading = 'Specifications',
+  heading = t('Specifications'),
 }: {
   dashboard: CarDashboard;
   /** Row keys already shown in glance or deepening sections. */
@@ -553,7 +554,7 @@ export default function KeySpecs({
             <span className="min-w-0">
               <h2 className="block-title">{heading}</h2>
               <span className="block text-xs text-zinc-500 mt-0.5">
-                {rowCount} more {rowCount === 1 ? 'figure' : 'figures'} on file for this version
+                {tp(rowCount, '{count} more figure on file for this version', '{count} more figures on file for this version')}
               </span>
             </span>
             <Chevron className="w-4 h-4 text-zinc-500 group-hover/specs:text-white group-open/specs:rotate-180" />

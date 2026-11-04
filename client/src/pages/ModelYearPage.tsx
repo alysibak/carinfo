@@ -11,6 +11,7 @@ import { modelYearFacts } from '../utils/modelYearFacts';
 import { usePageMeta } from '../utils/pageMeta';
 import { differentiateCars } from '../utils/differentiateCars';
 import { modelYearKey, takePrefetched } from '../utils/prefetch';
+import { t } from '../i18n';
 
 type Status = 'loading' | 'ready' | 'missing' | 'error';
 
@@ -58,11 +59,19 @@ export default function ModelYearPage() {
 
   const diff = useMemo(() => (overview ? differentiateCars(overview.cars) : null), [overview]);
 
-  const name = overview ? `${overview.year} ${overview.make} ${overview.name}` : 'Model year';
+  const name = overview ? `${overview.year} ${overview.make} ${overview.name}` : t('Model year');
   usePageMeta(
     name,
     overview
-      ? `${overview.summary.configurations} configurations of the ${overview.year} ${overview.make} ${overview.name}: fuel use, power, crash ratings and estimated value side by side.`
+      ? t(
+          '{count} configurations of the {year} {make} {model}: fuel use, power, crash ratings and estimated value side by side.',
+          {
+            count: overview.summary.configurations,
+            year: overview.year,
+            make: overview.make,
+            model: overview.name,
+          },
+        )
       : undefined,
   );
 
@@ -70,21 +79,23 @@ export default function ModelYearPage() {
   if (status === 'missing') {
     return (
       <ErrorState
-        title="Model year not found"
-        message="No page for that year of this model. It may have only one configuration on file, or go by another name."
+        title={t('Model year not found')}
+        message={t(
+          'No page for that year of this model. It may have only one configuration on file, or go by another name.',
+        )}
         backTo={`/models/${encodeURIComponent(make)}/${encodeURIComponent(model)}`}
-        backLabel="Back to the model"
+        backLabel={t('Back to the model')}
       />
     );
   }
   if (status === 'error' || !overview) {
     return (
       <ErrorState
-        title="Model year unavailable"
-        message="Could not load this model year. Check your connection and try again."
+        title={t('Model year unavailable')}
+        message={t('Could not load this model year. Check your connection and try again.')}
         onRetry={() => setAttempt((n) => n + 1)}
         backTo="/home"
-        backLabel="Search cars"
+        backLabel={t('Search cars')}
       />
     );
   }
@@ -97,13 +108,13 @@ export default function ModelYearPage() {
         <BackLink to={overview.modelPath} label={`${overview.make} ${overview.name}`} />
         <h1 className="page-title mt-4 mb-2">{name}</h1>
         <p className="text-sm text-zinc-400 mb-6 max-w-2xl leading-relaxed">
-          {overview.summary.configurations} configurations on file
+          {t('{count} configurations on file', { count: overview.summary.configurations })}
           {facts.length ? ` · ${facts.join(' · ')}` : ''}.
         </p>
 
         {diff && diff.axes.length > 0 && (
           <div className="mb-6 pb-5 border-b border-zinc-800">
-            <p className="text-xs text-zinc-500 mb-2">How the versions differ</p>
+            <p className="text-xs text-zinc-500 mb-2">{t('How the versions differ')}</p>
             <ul className="space-y-2">
               {diff.axes.map((axis) => (
                 <li key={axis} className="text-base text-zinc-200 leading-snug">
@@ -136,7 +147,10 @@ export default function ModelYearPage() {
             to={overview.modelPath}
             className="underline underline-offset-4 decoration-zinc-700 hover:text-white hover:decoration-zinc-400"
           >
-            Every year of the {overview.make} {overview.name}
+            {t('Every year of the {make} {model}', {
+              make: overview.make,
+              model: overview.name,
+            })}
           </Link>
         </p>
       </PageBody>

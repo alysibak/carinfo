@@ -31,19 +31,24 @@ import { usePageMeta } from '../utils/pageMeta';
 import { describeSearchInterpretation } from '../utils/searchInterpretation';
 import { matchReasons } from '../utils/matchReasons';
 import { useResultsView } from '../hooks/useResultsView';
+import { t, tp } from '../i18n';
+import { fmtNumber } from '../i18n/format';
 
 const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/i;
 
 /** What a result row is: a model, a model year, or one version of a year. */
 function resultNoun(total: number, onePerModel?: boolean): string {
-  const noun = onePerModel ? 'model' : onePerModel === false ? 'model year' : 'version';
-  return total === 1 ? noun : `${noun}s`;
+  if (onePerModel) return tp(total, 'model', 'models');
+  if (onePerModel === false) return tp(total, 'model year', 'model years');
+  return tp(total, 'version', 'versions');
 }
 
 export default function Home() {
   usePageMeta(
-    'Search',
-    'Search and filter 1,000+ models by type, make, year, EPA fuel use, NHTSA crash rating and power.',
+    t('Search'),
+    t(
+      'Search and filter 1,000+ models by type, make, year, EPA fuel use, NHTSA crash rating and power.',
+    ),
   );
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -277,7 +282,7 @@ export default function Home() {
   // What the sheet's button offers to show: "309 models".
   const resultLabel =
     hasSearched && searchResults && !searchError
-      ? `${searchResults.total.toLocaleString()} ${resultNoun(searchResults.total, searchResults.onePerModel)}`
+      ? `${fmtNumber(searchResults.total)} ${resultNoun(searchResults.total, searchResults.onePerModel)}`
       : null;
 
   const toggleOnePerModel = () => {
@@ -293,9 +298,14 @@ export default function Home() {
   // An empty result names what narrowed it: "with Diesel and SUV".
   const filtersOn = activeFilterChips.length > 0;
   const filterNames =
-    activeFilterChips.length <= 2
-      ? activeFilterChips.map((chip) => chip.label).join(' and ')
-      : `these ${activeFilterChips.length} filters`;
+    activeFilterChips.length === 1
+      ? activeFilterChips[0].label
+      : activeFilterChips.length === 2
+        ? t('{a} and {b}', {
+            a: activeFilterChips[0].label,
+            b: activeFilterChips[1].label,
+          })
+        : t('these {count} filters', { count: activeFilterChips.length });
   const quickFilters = QUICK_FILTERS.filter((q) => !q.isOn(searchQuery.filters ?? {}));
   // Wide screens have the filters beside the results; this row then only
   // carries what is switched on.
@@ -343,7 +353,7 @@ export default function Home() {
             loading={isSearching}
             size="default"
             showButton={false}
-            placeholder="Make, model, year or VIN, e.g. 2024 Toyota Camry"
+            placeholder={t('Make, model, year or VIN, e.g. 2024 Toyota Camry')}
             siteSearch
             // Arrived by "/" from another page: straight into the box.
             autoFocus={!!(state as { focusSearch?: boolean } | null)?.focusSearch}
@@ -352,7 +362,7 @@ export default function Home() {
               sat on top of the filter chips under the search box. Always
               present so the status change is announced. */}
           <p role="status" className="sr-only">
-            {isSearching && searchText.trim().length >= 2 ? 'Updating results…' : ''}
+            {isSearching && searchText.trim().length >= 2 ? t('Updating results…') : ''}
           </p>
 
           {/* Filters stay one tap away however far down the results go: the
@@ -380,12 +390,12 @@ export default function Home() {
               >
                 <path d="M3 5h14M6 10h8M8.5 15h3" strokeLinecap="round" />
               </svg>
-              Filters
+              {t('Filters')}
               {activeFilterCount > 0 && (
                 <span className="tabular-nums">
-                  <span className="sr-only">, </span>
+                  <span className="sr-only">{t(', ')}</span>
                   {activeFilterCount}
-                  <span className="sr-only"> on</span>
+                  <span className="sr-only">{t(' on')}</span>
                 </span>
               )}
             </button>
@@ -395,7 +405,7 @@ export default function Home() {
                 type="button"
                 onClick={() => removeChip(chip.key)}
                 className="chip chip-on shrink-0 gap-1.5 whitespace-nowrap"
-                aria-label={`Remove filter ${chip.label}`}
+                aria-label={t('Remove filter {label}', { label: chip.label })}
               >
                 {chip.label}
                 <span aria-hidden>×</span>
@@ -408,19 +418,19 @@ export default function Home() {
                 onClick={() => applyQuickFilter(quick.toggle)}
                 className="lg:hidden chip shrink-0 whitespace-nowrap"
               >
-                {quick.label}
+                {t(quick.label)}
               </button>
             ))}
             {hasSearched && (
               // One row per model, or one per model year.
-              <div role="group" aria-label="Show results" className="flex shrink-0">
+              <div role="group" aria-label={t('Show results')} className="flex shrink-0">
                 <button
                   type="button"
                   onClick={onePerModel ? undefined : toggleOnePerModel}
                   aria-pressed={onePerModel}
                   className={`chip whitespace-nowrap ${onePerModel ? 'chip-on' : ''}`}
                 >
-                  By model
+                  {t('By model')}
                 </button>
                 <button
                   type="button"
@@ -428,7 +438,7 @@ export default function Home() {
                   aria-pressed={!onePerModel}
                   className={`chip -ml-px whitespace-nowrap ${!onePerModel ? 'chip-on' : ''}`}
                 >
-                  By year
+                  {t('By year')}
                 </button>
               </div>
             )}
@@ -459,32 +469,36 @@ export default function Home() {
                 <RecentlyViewed className="mb-10" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 pt-1">
                   <div>
-                    <h2 className="text-xl font-bold tracking-tight mb-1">I know the name</h2>
+                    <h2 className="text-xl font-bold tracking-tight mb-1">
+                      {t('I know the name')}
+                    </h2>
                     <p className="text-sm text-zinc-500 mb-5">
-                      Type above, or jump to a common search.
+                      {t('Type above, or jump to a common search.')}
                     </p>
                     <div className="flex flex-col">
                       {POPULAR_SEARCHES.map((item) => (
                         <button
-                          key={item.label}
+                          key={t(item.label)}
                           type="button"
                           onClick={() => handleTextSearch(item.query)}
                           className="list-row text-left text-sm text-zinc-300 hover:text-white"
                         >
-                          {item.label}
+                          {t(item.label)}
                         </button>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold tracking-tight mb-1">I know the situation</h2>
+                    <h2 className="text-xl font-bold tracking-tight mb-1">
+                      {t('I know the situation')}
+                    </h2>
                     <p className="text-sm text-zinc-500 mb-5">
-                      Opens a filtered set you can refine.
+                      {t('Opens a filtered set you can refine.')}
                     </p>
                     <div className="flex flex-col">
                       {LIFESTYLE_PRESETS.slice(0, 6).map((item) => (
                         <button
-                          key={item.label}
+                          key={t(item.label)}
                           type="button"
                           onClick={() => {
                             pushSearch({
@@ -499,9 +513,9 @@ export default function Home() {
                           className="list-row text-left"
                         >
                           <span>
-                            <span className="block text-sm text-zinc-200">{item.label}</span>
+                            <span className="block text-sm text-zinc-200">{t(item.label)}</span>
                             <span className="block text-xs text-zinc-500 mt-0.5">
-                              {item.description}
+                              {t(item.description)}
                             </span>
                           </span>
                         </button>
@@ -515,8 +529,8 @@ export default function Home() {
                 {/* The start page's heading goes with it; results need their own. */}
                 <h1 className="sr-only">
                   {searchQuery.query
-                    ? `Search results for “${searchQuery.query}”`
-                    : 'Search results'}
+                    ? t('Search results for “{query}”', { query: searchQuery.query })
+                    : t('Search results')}
                 </h1>
                 {/* An error says so below, with nothing above it to sort or count. */}
                 {!searchError && (
@@ -527,20 +541,20 @@ export default function Home() {
                         // outline does not skip a level.
                         <h2 className="text-sm font-normal text-zinc-400">
                           <span className="text-white font-semibold tabular-nums">
-                            {searchResults.total.toLocaleString()}
+                            {fmtNumber(searchResults.total)}
                           </span>{' '}
                           {resultNoun(searchResults.total, searchResults.onePerModel)}
                           {searchResults.total > pageSize && (
                             <span>
                               {' '}
-                              · {currentPage} of {totalPages}
+                              · {t('{page} of {pages}', { page: currentPage, pages: totalPages })}
                             </span>
                           )}
                         </h2>
                       )}
                       {corrected && (
                         <p className="text-xs text-zinc-400 mt-1">
-                          Showing results for{' '}
+                          {t('Showing results for')}{' '}
                           <span className="text-white font-medium">{corrected.to}</span>.{' '}
                           <button
                             type="button"
@@ -548,7 +562,7 @@ export default function Home() {
                             onClick={() => handleTextSearch(`"${corrected.from}"`)}
                             className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
                           >
-                            Search instead for {corrected.from}
+                            {t('Search instead for {query}', { query: corrected.from })}
                           </button>
                         </p>
                       )}
@@ -568,11 +582,11 @@ export default function Home() {
                               .join(',')}`}
                             className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
                           >
-                            Compare the{' '}
-                            {searchResults.interpretation.compareWith
-                              .map((c) => c.label)
-                              .join(' and the ')}{' '}
-                            side by side
+                            {t('Compare the {cars} side by side', {
+                              cars: searchResults.interpretation.compareWith
+                                .map((c) => c.label)
+                                .join(t(' and the ')),
+                            })}
                           </Link>
                         </p>
                       )}
@@ -582,8 +596,9 @@ export default function Home() {
                             to={`/car/${encodeURIComponent(searchResults.interpretation.records.carId)}#recalls`}
                             className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
                           >
-                            Recalls and owner complaints for the{' '}
-                            {searchResults.interpretation.records.label}
+                            {t('Recalls and owner complaints for the {label}', {
+                              label: searchResults.interpretation.records.label ?? '',
+                            })}
                           </Link>
                         </p>
                       )}
@@ -594,8 +609,12 @@ export default function Home() {
                             className="inline-block py-1 text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
                           >
                             {searchResults.interpretation.records
-                              ? `Recalls and complaints for every year of the ${searchResults.interpretation.modelPage.label}`
-                              : `Every year of the ${searchResults.interpretation.modelPage.label} at a glance`}
+                              ? t('Recalls and complaints for every year of the {label}', {
+                                  label: searchResults.interpretation.modelPage.label,
+                                })
+                              : t('Every year of the {label} at a glance', {
+                                  label: searchResults.interpretation.modelPage.label,
+                                })}
                           </Link>
                         </p>
                       )}
@@ -605,7 +624,9 @@ export default function Home() {
                             to={`/car/${searchResults.interpretation.similarTo.id}`}
                             className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
                           >
-                            See the {searchResults.interpretation.similarTo.label}
+                            {t('See the {label}', {
+                              label: searchResults.interpretation.similarTo.label,
+                            })}
                           </Link>
                         </p>
                       )}
@@ -614,33 +635,33 @@ export default function Home() {
                     {/* Nothing to sort or lay out when nothing came back. */}
                     {!(searchResults?.total === 0 && !isSearching) && (
                       <div className="flex items-center gap-2 sm:gap-3 min-w-0 w-full sm:w-auto">
-                        <span className="text-xs text-zinc-500 shrink-0">Sort</span>
+                        <span className="text-xs text-zinc-500 shrink-0">{t('Sort')}</span>
                         <SelectMenu
-                          aria-label="Sort results"
+                          aria-label={t('Sort results')}
                           className="w-full min-w-0 sm:w-40"
                           value={sortField}
                           onChange={handleSortChange}
                           options={[
                             ...(searchText || sortField === 'relevance'
-                              ? [{ value: 'relevance', label: 'Best match' }]
+                              ? [{ value: 'relevance', label: t('Best match') }]
                               : []),
                             // What EPA and NHTSA recorded first; the estimates last, and named so.
                             {
                               value: 'fuelEconomy',
-                              label: isEvBrowse ? 'Energy use (EPA)' : 'Fuel use (EPA)',
+                              label: isEvBrowse ? t('Energy use (EPA)') : t('Fuel use (EPA)'),
                             },
                             ...(isEvBrowse || sortField === 'range'
-                              ? [{ value: 'range', label: 'EPA range' }]
+                              ? [{ value: 'range', label: t('EPA range') }]
                               : []),
-                            { value: 'safety', label: 'NHTSA rating' },
-                            { value: 'luggage', label: 'Trunk space (EPA)' },
-                            { value: 'weight', label: 'Weight' },
-                            { value: 'horsepower', label: 'Horsepower' },
-                            { value: 'year', label: 'Year' },
-                            { value: 'make', label: 'Make' },
-                            { value: 'model', label: 'Model' },
-                            { value: 'price', label: 'Est. value (CAD)' },
-                            { value: 'runningCost', label: 'Est. running cost' },
+                            { value: 'safety', label: t('NHTSA rating') },
+                            { value: 'luggage', label: t('Trunk space (EPA)') },
+                            { value: 'weight', label: t('Weight') },
+                            { value: 'horsepower', label: t('Horsepower') },
+                            { value: 'year', label: t('Year') },
+                            { value: 'make', label: t('Make') },
+                            { value: 'model', label: t('Model') },
+                            { value: 'price', label: t('Est. value (CAD)') },
+                            { value: 'runningCost', label: t('Est. running cost') },
                           ]}
                         />
                         {/* Best match has no direction to turn. */}
@@ -649,13 +670,19 @@ export default function Home() {
                             type="button"
                             onClick={() => handleSortChange(sortField)}
                             className="min-h-[42px] min-w-[42px] px-2 text-zinc-400 hover:text-white transition-colors shrink-0"
-                            title={`Sort ${sortOrder === 'asc' ? 'descending' : 'ascending'}`}
-                            aria-label="Toggle sort direction"
+                            title={t('Sort {direction}', {
+                              direction: sortOrder === 'asc' ? t('descending') : t('ascending'),
+                            })}
+                            aria-label={t('Toggle sort direction')}
                           >
                             {sortOrder === 'asc' ? '↑' : '↓'}
                           </button>
                         )}
-                        <div className="flex shrink-0" role="group" aria-label="Show results as">
+                        <div
+                          className="flex shrink-0"
+                          role="group"
+                          aria-label={t('Show results as')}
+                        >
                           {(['list', 'grid'] as const).map((option) => (
                             <button
                               key={option}
@@ -666,7 +693,7 @@ export default function Home() {
                                 view === option ? 'chip-on relative' : ''
                               }`}
                             >
-                              {option === 'list' ? 'List' : 'Grid'}
+                              {option === 'list' ? t('List') : t('Grid')}
                             </button>
                           ))}
                         </div>
@@ -691,9 +718,11 @@ export default function Home() {
                   )
                 ) : searchError ? (
                   <div className="empty-panel" role="alert">
-                    <p className="text-base text-zinc-300 mb-2">Could not search just now.</p>
+                    <p className="text-base text-zinc-300 mb-2">
+                      {t('Could not search just now.')}
+                    </p>
                     <p className="text-sm text-zinc-400 mb-5">
-                      Check your connection, then try again.
+                      {t('Check your connection, then try again.')}
                     </p>
                     <button type="button" onClick={performSearch} className="btn-primary">
                       Try again
@@ -747,7 +776,7 @@ export default function Home() {
                           onClick={() => goToPage(currentPage - 1)}
                           className="chip min-h-[44px]! px-5 disabled:opacity-40 disabled:hover:border-zinc-700"
                         >
-                          ← Previous
+                          {t('← Previous')}
                         </button>
                         <span className="text-sm text-zinc-400 tabular-nums">
                           {currentPage} / {totalPages}
@@ -758,7 +787,7 @@ export default function Home() {
                           onClick={() => goToPage(currentPage + 1)}
                           className="chip min-h-[44px]! px-5 disabled:opacity-40 disabled:hover:border-zinc-700"
                         >
-                          Next →
+                          {t('Next →')}
                         </button>
                       </div>
                     )}
@@ -767,19 +796,29 @@ export default function Home() {
                   <div className="empty-panel">
                     <p className="text-base text-zinc-300 mb-2">
                       {searchText.trim() && filtersOn
-                        ? `Nothing matched “${searchText.trim()}” with ${filterNames}.`
+                        ? t('Nothing matched “{query}” with {filters}.', {
+                            query: searchText.trim(),
+                            filters: filterNames,
+                          })
                         : searchText.trim()
-                          ? `No cars matched “${searchText.trim()}”.`
-                          : 'No cars matched these filters.'}
+                          ? t('No cars matched “{query}”.', { query: searchText.trim() })
+                          : t('No cars matched these filters.')}
                     </p>
                     <p className="text-sm text-zinc-400 mb-5">
                       {yearCoverage
-                        ? `Model years ${yearCoverage.min}–${yearCoverage.max} are on file, and the year you asked for is outside that range.`
+                        ? t(
+                            'Model years {min}–{max} are on file, and the year you asked for is outside that range.',
+                            { min: yearCoverage.min, max: yearCoverage.max },
+                          )
                         : filtersOn
                           ? searchText.trim()
-                            ? `Try it without ${activeFilterChips.length === 1 ? 'the filter' : 'the filters'}.`
-                            : 'Try widening the year range or removing a filter.'
-                          : 'Try a different spelling, or the make and model, like “Toyota RAV4”.'}
+                            ? activeFilterChips.length === 1
+                              ? t('Try it without the filter.')
+                              : t('Try it without the filters.')
+                            : t('Try widening the year range or removing a filter.')
+                          : t(
+                              'Try a different spelling, or the make and model, like “Toyota RAV4”.',
+                            )}
                     </p>
                     {filtersOn && !yearCoverage && searchText.trim() && (
                       <button
@@ -788,8 +827,8 @@ export default function Home() {
                         className="btn-primary mr-6"
                       >
                         {activeFilterChips.length === 1
-                          ? `Remove “${activeFilterChips[0].label}”`
-                          : 'Remove the filters'}
+                          ? t('Remove “{label}”', { label: activeFilterChips[0].label })
+                          : t('Remove the filters')}
                       </button>
                     )}
                     {yearCoverage && (textWithoutYears || searchQuery.filters?.year) && (
@@ -799,8 +838,8 @@ export default function Home() {
                         className="min-h-[44px] mr-6 text-xs text-zinc-200 hover:text-white underline underline-offset-4"
                       >
                         {textWithoutYears
-                          ? `Search “${textWithoutYears}” in every year`
-                          : 'Remove the year filter'}
+                          ? t('Search “{query}” in every year', { query: textWithoutYears })
+                          : t('Remove the year filter')}
                       </button>
                     )}
                     <button
@@ -819,7 +858,7 @@ export default function Home() {
                       }}
                       className="min-h-[44px] text-xs text-zinc-400 hover:text-white underline underline-offset-4"
                     >
-                      Clear and start over
+                      {t('Clear and start over')}
                     </button>
                   </div>
                 )}

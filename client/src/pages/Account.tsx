@@ -16,14 +16,16 @@ import { authClient, authErrorMessage, type AuthSession } from '../services/auth
 import { PROVIDER_NAMES, type SignInProvider } from '../services/signInMethods';
 import { FREE_GARAGE_LIMIT, useGarageStore } from '../stores/garageStore';
 import { useNoIndex, usePageMeta } from '../utils/pageMeta';
+import { t } from '../i18n';
+import { rich } from '../i18n/rich';
 
 export default function AccountPage() {
-  usePageMeta('Account', 'Your CarInfo account, garage and plan.');
+  usePageMeta(t('Account'), t('Your CarInfo account, garage and plan.'));
   useNoIndex();
   const account = useAccount();
   const { search } = useLocation();
 
-  if (account.kind === 'loading') return <LoadingScreen label="Loading account" />;
+  if (account.kind === 'loading') return <LoadingScreen label={t('Loading account')} />;
   if (account.kind === 'unavailable') return <AccountsUnavailable />;
   if (account.kind === 'signed-out') {
     return <Navigate to={`/sign-in?next=${encodeURIComponent(`/account${search}`)}`} replace />;
@@ -56,20 +58,23 @@ function AccountPanel({ session }: { session: AuthSession }) {
 
   return (
     <div className="page-wrap py-10 max-w-2xl">
-      <h1 className="page-title mb-2">Account</h1>
+      <h1 className="page-title mb-2">{t('Account')}</h1>
       <p className="text-sm text-zinc-400 mb-8">
-        Signed in as <span className="text-zinc-200">{user.email}</span>
+        {rich(t('Signed in as <0>{email}</0>', { email: user.email }), [
+          (children) => <span className="text-zinc-200">{children}</span>,
+        ])}
       </p>
 
       {checkoutFlash === 'success' && (
         <div className="mb-6 border border-zinc-600 bg-zinc-950 px-4 py-3 text-sm text-zinc-200">
-          Checkout complete. If Pro is not showing yet, refresh in a few seconds while Stripe
-          confirms.
+          {t(
+            'Checkout complete. If Pro is not showing yet, refresh in a few seconds while Stripe confirms.',
+          )}
         </div>
       )}
       {checkoutFlash === 'cancel' && (
         <div className="mb-6 border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-400">
-          Checkout canceled. Nothing was charged.
+          {t('Checkout canceled. Nothing was charged.')}
         </div>
       )}
 
@@ -112,17 +117,18 @@ function AlertsSection({ emailVerified }: { emailVerified: boolean }) {
       setOn((await accountApi.setRecallAlerts(next)).recallAlerts);
     } catch (err) {
       const body = isHttpError(err) ? (err.body as { error?: string } | null) : null;
-      setError(body?.error ?? 'Could not change recall alerts. Try again.');
+      setError(body?.error ?? t('Could not change recall alerts. Try again.'));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <Section title="Recall alerts">
+    <Section title={t('Recall alerts')}>
       <p className="text-sm text-zinc-300">
-        An email when Transport Canada lists a new recall for a car in your garage. Recalls already
-        listed are on the garage page.
+        {t(
+          'An email when Transport Canada lists a new recall for a car in your garage. Recalls already listed are on the garage page.',
+        )}
       </p>
       <label className="flex items-start gap-3 text-[15px] text-zinc-200 cursor-pointer">
         <input
@@ -132,11 +138,11 @@ function AlertsSection({ emailVerified }: { emailVerified: boolean }) {
           disabled={on === null || busy || (!emailVerified && on !== true)}
           onChange={(e) => void toggle(e.target.checked)}
         />
-        <span>Email me about new recalls</span>
+        <span>{t('Email me about new recalls')}</span>
       </label>
       {!emailVerified && on !== true && (
         <p className="text-sm text-zinc-400">
-          Confirm your email address first: alerts go only to a confirmed one.
+          {t('Confirm your email address first: alerts go only to a confirmed one.')}
         </p>
       )}
       {error && <p className="text-sm text-red-300">{error}</p>}
@@ -147,21 +153,27 @@ function AlertsSection({ emailVerified }: { emailVerified: boolean }) {
 /** Law 25's right to one's data, in a file: what the privacy policy lists. */
 function DataSection() {
   return (
-    <Section title="Your data">
+    <Section title={t('Your data')}>
       <p className="text-sm text-zinc-400">
-        Everything CarInfo keeps about your account, in one file: your profile, sign-ins, garage and
-        recall alerts. The{' '}
-        <Link
-          to="/privacy"
-          className="underline underline-offset-4 decoration-zinc-600 hover:text-white"
-        >
-          privacy policy
-        </Link>{' '}
-        says why each is kept.
+        {rich(
+          t(
+            'Everything CarInfo keeps about your account, in one file: your profile, sign-ins, garage and recall alerts. The <0>privacy policy</0> says why each is kept.',
+          ),
+          [
+            (children) => (
+              <Link
+                to="/privacy"
+                className="underline underline-offset-4 decoration-zinc-600 hover:text-white"
+              >
+                {children}
+              </Link>
+            ),
+          ],
+        )}
       </p>
       <div>
         <a href={accountApi.ACCOUNT_EXPORT_URL} download className="btn-secondary">
-          Download my data
+          {t('Download my data')}
         </a>
       </div>
     </Section>
@@ -176,13 +188,15 @@ function ConfirmEmail({ email }: { email: string }) {
     setState(error ? authErrorMessage(error) : 'sent');
   };
   return (
-    <Section title="Confirm your email">
+    <Section title={t('Confirm your email')}>
       <p className="text-sm text-zinc-300">
-        We sent a link to {email}. Confirming it lets you reset a forgotten password, and brings
-        over a garage or plan from an account you made here before.
+        {t(
+          'We sent a link to {email}. Confirming it lets you reset a forgotten password, and brings over a garage or plan from an account you made here before.',
+          { email },
+        )}
       </p>
       {state === 'sent' ? (
-        <FormMessage tone="ok">Sent. Check your inbox.</FormMessage>
+        <FormMessage tone="ok">{t('Sent. Check your inbox.')}</FormMessage>
       ) : (
         <div>
           <button
@@ -191,7 +205,7 @@ function ConfirmEmail({ email }: { email: string }) {
             onClick={() => void resend()}
             className="btn-secondary"
           >
-            {state === 'busy' ? 'Sending…' : 'Send the link again'}
+            {state === 'busy' ? t('Sending…') : t('Send the link again')}
           </button>
           {state !== 'idle' && state !== 'busy' && (
             <p className="mt-2 text-sm text-red-300">{state}</p>
@@ -209,29 +223,33 @@ function GarageSection() {
   const syncMode = useGarageStore((s) => s.syncMode);
   const lastSyncError = useGarageStore((s) => s.lastSyncError);
   const syncFromCloud = useGarageStore((s) => s.syncFromCloud);
-  const limitLabel = plan === 'pro' ? 'no limit' : `up to ${garageLimit ?? FREE_GARAGE_LIMIT}`;
+  const summary =
+    plan === 'pro'
+      ? t('{count} saved · no limit', { count: garageCount })
+      : t('{count} saved · up to {limit}', {
+          count: garageCount,
+          limit: garageLimit ?? FREE_GARAGE_LIMIT,
+        });
 
   return (
-    <Section title="Your garage">
-      <p className="text-[15px] text-zinc-200 tabular-nums">
-        {garageCount} saved · {limitLabel}
-      </p>
+    <Section title={t('Your garage')}>
+      <p className="text-[15px] text-zinc-200 tabular-nums">{summary}</p>
       <p className="text-sm text-zinc-400">
         {syncMode === 'cloud'
-          ? 'Saved to your account, on every device you sign in on.'
-          : 'On this device only until it syncs.'}
+          ? t('Saved to your account, on every device you sign in on.')
+          : t('On this device only until it syncs.')}
       </p>
       {lastSyncError && <p className="text-sm text-amber-200/90">{lastSyncError}</p>}
       <div className="flex flex-wrap gap-3 pt-1">
         <Link to="/garage" className="btn-secondary">
-          Open garage
+          {t('Open garage')}
         </Link>
         <button
           type="button"
           onClick={() => void syncFromCloud()}
           className="inline-flex items-center min-h-[44px] text-sm text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-600 hover:decoration-zinc-300"
         >
-          Sync now
+          {t('Sync now')}
         </button>
       </div>
     </Section>
@@ -254,10 +272,12 @@ function PlanSection({ billingConfigured }: { billingConfigured: boolean }) {
           ? await accountApi.createCheckoutSession()
           : await accountApi.createPortalSession();
       if (url) window.location.href = url;
-      else setError('Billing did not answer. Try again.');
+      else setError(t('Billing did not answer. Try again.'));
     } catch {
       setError(
-        kind === 'checkout' ? 'Could not start checkout. Try again.' : 'Could not open billing.',
+        kind === 'checkout'
+          ? t('Could not start checkout. Try again.')
+          : t('Could not open billing.'),
       );
     } finally {
       setBusy(null);
@@ -265,11 +285,15 @@ function PlanSection({ billingConfigured }: { billingConfigured: boolean }) {
   };
 
   return (
-    <Section title="Plan">
-      <p className="text-2xl font-bold tracking-tight">{plan === 'pro' ? 'Pro' : 'Free'}</p>
+    <Section title={t('Plan')}>
+      <p className="text-2xl font-bold tracking-tight">{plan === 'pro' ? t('Pro') : t('Free')}</p>
       <ul className="text-sm text-zinc-400 flex flex-col gap-1.5 list-disc list-inside">
-        <li>Free: every tool, and a garage of up to {FREE_GARAGE_LIMIT} cars</li>
-        <li>Pro: a garage with no limit</li>
+        <li>
+          {t('Free: every tool, and a garage of up to {limit} cars', {
+            limit: FREE_GARAGE_LIMIT,
+          })}
+        </li>
+        <li>{t('Pro: a garage with no limit')}</li>
       </ul>
       {error && <p className="text-sm text-red-300">{error}</p>}
       {billingConfigured && (
@@ -281,7 +305,7 @@ function PlanSection({ billingConfigured }: { billingConfigured: boolean }) {
               onClick={() => void go('checkout')}
               className="btn-primary"
             >
-              {busy === 'checkout' ? 'Redirecting…' : 'Upgrade to Pro'}
+              {busy === 'checkout' ? t('Redirecting…') : t('Upgrade to Pro')}
             </button>
           ) : (
             <button
@@ -290,7 +314,7 @@ function PlanSection({ billingConfigured }: { billingConfigured: boolean }) {
               onClick={() => void go('portal')}
               className="btn-secondary"
             >
-              {busy === 'portal' ? 'Opening…' : 'Manage billing'}
+              {busy === 'portal' ? t('Opening…') : t('Manage billing')}
             </button>
           )}
         </div>
@@ -331,7 +355,7 @@ function useSignInMethods(): { hasPassword: boolean | undefined; linked: string[
 function orList(names: string[]): string {
   return names.length < 2
     ? (names[0] ?? '')
-    : `${names.slice(0, -1).join(', ')} or ${names.at(-1)}`;
+    : t('{list} or {last}', { list: names.slice(0, -1).join(', '), last: names.at(-1)! });
 }
 
 /** Tells password managers which account a password form is for. */
@@ -371,7 +395,10 @@ function SignInSection({
     }
     setCurrent('');
     setNext('');
-    setMessage({ tone: 'ok', text: 'Password changed. Other devices have been signed out.' });
+    setMessage({
+      tone: 'ok',
+      text: t('Password changed. Other devices have been signed out.'),
+    });
   };
 
   const signOutOthers = async () => {
@@ -382,24 +409,25 @@ function SignInSection({
     setMessage(
       error
         ? { tone: 'error', text: authErrorMessage(error) }
-        : { tone: 'ok', text: 'Signed out everywhere but here.' },
+        : { tone: 'ok', text: t('Signed out everywhere but here.') },
     );
   };
 
   return (
-    <Section title="Sign-in">
+    <Section title={t('Sign-in')}>
       {message && <FormMessage tone={message.tone}>{message.text}</FormMessage>}
       {hasPassword === false && (
         <p className="text-sm text-zinc-300">
-          This account has no password: you sign in with{' '}
-          {linked.length ? orList(linked) : 'a code by email'}.
+          {t('This account has no password: you sign in with {method}.', {
+            method: linked.length ? orList(linked) : t('a code by email'),
+          })}
         </p>
       )}
       {hasPassword && (
         <AuthFormBody onSubmit={changePassword}>
           <UsernameHint email={email} />
           <Field
-            label="Current password"
+            label={t('Current password')}
             type="password"
             autoComplete="current-password"
             required
@@ -407,19 +435,19 @@ function SignInSection({
             onChange={(e) => setCurrent(e.target.value)}
           />
           <Field
-            label="New password"
+            label={t('New password')}
             type="password"
             autoComplete="new-password"
             required
             minLength={8}
             maxLength={128}
-            hint="At least 8 characters. Other devices are signed out."
+            hint={t('At least 8 characters. Other devices are signed out.')}
             value={next}
             onChange={(e) => setNext(e.target.value)}
           />
           <div>
             <SubmitButton busy={busy === 'password'}>
-              {busy === 'password' ? 'Saving…' : 'Change password'}
+              {busy === 'password' ? t('Saving…') : t('Change password')}
             </SubmitButton>
           </div>
         </AuthFormBody>
@@ -434,7 +462,7 @@ function SignInSection({
           }}
           className="btn-secondary"
         >
-          Sign out
+          {t('Sign out')}
         </button>
         <button
           type="button"
@@ -442,7 +470,7 @@ function SignInSection({
           onClick={() => void signOutOthers()}
           className="inline-flex items-center min-h-[44px] text-sm text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-600 hover:decoration-zinc-300"
         >
-          {busy === 'devices' ? 'Signing out…' : 'Sign out of other devices'}
+          {busy === 'devices' ? t('Signing out…') : t('Sign out of other devices')}
         </button>
       </div>
     </Section>
@@ -482,7 +510,7 @@ function DeleteSection({
   };
 
   return (
-    <Section title="Delete account">
+    <Section title={t('Delete account')}>
       {!open ? (
         <div>
           <button
@@ -490,19 +518,21 @@ function DeleteSection({
             onClick={() => setOpen(true)}
             className="inline-flex items-center min-h-[44px] text-sm text-zinc-300 hover:text-red-300 underline underline-offset-4 decoration-zinc-600 hover:decoration-red-400"
           >
-            Delete my account…
+            {t('Delete my account…')}
           </button>
         </div>
       ) : (
         <AuthFormBody onSubmit={remove}>
           <p className="text-sm text-zinc-300">
-            This deletes your sign-in and your saved garage for good.
+            {t('This deletes your sign-in and your saved garage for good.')}
           </p>
           {error && <FormMessage>{error}</FormMessage>}
           {stale && (
             <div className="flex flex-col gap-3">
               <FormMessage>
-                To confirm it&apos;s you, sign in again, then come back here to delete the account.
+                {t(
+                  "To confirm it's you, sign in again, then come back here to delete the account.",
+                )}
               </FormMessage>
               <button
                 type="button"
@@ -511,14 +541,14 @@ function DeleteSection({
                 }}
                 className="btn-secondary self-start"
               >
-                Sign in again
+                {t('Sign in again')}
               </button>
             </div>
           )}
           {hasPassword && <UsernameHint email={email} />}
           {hasPassword && (
             <Field
-              label="Your password, to confirm"
+              label={t('Your password, to confirm')}
               type="password"
               autoComplete="current-password"
               required
@@ -532,10 +562,10 @@ function DeleteSection({
               disabled={busy || hasPassword === undefined}
               className="inline-flex items-center justify-center min-h-[44px] px-5 py-2.5 text-xs font-semibold bg-red-700 hover:bg-red-600 text-white transition-colors disabled:opacity-60 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-red-400"
             >
-              {busy ? 'Deleting…' : 'Delete my account'}
+              {busy ? t('Deleting…') : t('Delete my account')}
             </button>
             <button type="button" onClick={() => setOpen(false)} className="btn-secondary">
-              Keep it
+              {t('Keep it')}
             </button>
           </div>
         </AuthFormBody>

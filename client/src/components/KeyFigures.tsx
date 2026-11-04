@@ -3,6 +3,7 @@ import { buildKeyFigures, type KeyFigure, type Tone } from '../utils/keyFigures'
 import ProvenanceChip from './ProvenanceChip';
 import RatingStars from './RatingStars';
 import { SpecExplain } from './SpecExplain';
+import { t, tp } from '../i18n';
 
 const TONE_CLASS = {
   better: 'text-accent',
@@ -88,7 +89,10 @@ function FigureCell({ figure, wide }: { figure: KeyFigure; wide: boolean }) {
 /** "7 sport compacts", "20 compact SUVs". */
 function classCount(count: number, className: string): string {
   const noun = className.charAt(0).toLowerCase() + className.slice(1);
-  return `${count} ${noun}${count === 1 || noun.endsWith('s') ? '' : 's'}`;
+  if (count === 1 || noun.endsWith('s')) {
+    return t('{count} {noun}', { count, noun });
+  }
+  return tp(count, '{count} {noun}', '{count} {noun}s', { noun });
 }
 
 /**
@@ -128,7 +132,11 @@ export default function KeyFigures({
       </div>
       {cls && (cls.fuel || cls.horsepower) && (
         <p className="text-xs text-zinc-500 mt-2.5">
-          Compared with {classCount(cls.models, cls.className)}, {cls.years.min}–{cls.years.max}.
+          {t('Compared with {classCount}, {min}–{max}.', {
+            classCount: classCount(cls.models, cls.className),
+            min: cls.years.min,
+            max: cls.years.max,
+          })}
         </p>
       )}
     </div>

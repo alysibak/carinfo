@@ -7,13 +7,15 @@ import {
 } from '../utils/dataTrust';
 import { ExpandableSection } from './ui';
 import { SpecLabel } from './SpecExplain';
+import { msg, t } from '../i18n';
+import { rich } from '../i18n/rich';
 
 const SOURCE_LABEL = {
   epa: 'EPA',
   nrcan: 'NRCan',
   nhtsa: 'NHTSA',
-  curated: 'Maker',
-  estimated: 'Estimated',
+  curated: msg('Maker'),
+  estimated: msg('Estimated'),
 } as const;
 
 interface DataTrustPanelProps {
@@ -31,19 +33,29 @@ export default function DataTrustPanel({ dashboard }: DataTrustPanelProps) {
     <section className="border-t border-zinc-900">
       <div className="page-wrap-wide py-4">
         <ExpandableSection
-          title="Where each figure comes from"
+          title={t('Where each figure comes from')}
           summary={
             estimated
-              ? `${verified} from public records, ${estimated} estimated`
-              : `${verified} from public records`
+              ? t('{verified} from public records, {estimated} estimated', {
+                  verified,
+                  estimated,
+                })
+              : t('{verified} from public records', { verified })
           }
         >
           <p className="text-xs text-zinc-500 leading-relaxed mb-3">
-            Fuel economy and crash ratings come from EPA and NHTSA tests. Value and some performance
-            figures are modeled.{' '}
-            <Link to="/methodology" className="underline underline-offset-2 hover:text-zinc-300">
-              Methodology
-            </Link>
+            {rich(
+              t(
+                'Fuel economy and crash ratings come from EPA and NHTSA tests. Value and some performance figures are modeled. <0>Methodology</0>',
+              ),
+              [
+                (c) => (
+                  <Link to="/methodology" className="underline underline-offset-2 hover:text-zinc-300">
+                    {c}
+                  </Link>
+                ),
+              ],
+            )}
           </p>
           <ul className="divide-y divide-zinc-800">
             {entries.map((entry) => (
@@ -54,7 +66,9 @@ export default function DataTrustPanel({ dashboard }: DataTrustPanelProps) {
                 <span className="min-w-0 text-zinc-400">
                   <SpecLabel label={entry.label} glossaryKey={provenanceGlossaryKey(entry.key)} />
                 </span>
-                <span className="shrink-0 text-zinc-500">{SOURCE_LABEL[entry.source]}</span>
+                <span className="shrink-0 text-zinc-500">{entry.source === 'curated' || entry.source === 'estimated'
+                    ? t(SOURCE_LABEL[entry.source])
+                    : SOURCE_LABEL[entry.source]}</span>
               </li>
             ))}
           </ul>

@@ -10,6 +10,7 @@ import CarRecordsNote from '../components/CarRecordsNote';
 import { MAX_COMPARE as MAX_COMPARED } from '../utils/compareIds';
 import { differentiateCars } from '../utils/differentiateCars';
 import { displayVehicleTitle } from '../utils/trimLabel';
+import { t, tp } from '../i18n';
 
 export default function SharedGarage() {
   const [searchParams] = useSearchParams();
@@ -28,7 +29,7 @@ export default function SharedGarage() {
       .filter(Boolean);
 
     if (ids.length === 0) {
-      setError('This shared garage link is empty or invalid.');
+      setError(t('This shared garage link is empty or invalid.'));
       setLoading(false);
       return;
     }
@@ -39,14 +40,14 @@ export default function SharedGarage() {
       try {
         const results = await api.compareCars(ids);
         if (!results || results.length === 0) {
-          setError('None of the cars in this shared garage are on file.');
+          setError(t('None of the cars in this shared garage are on file.'));
           setCars([]);
         } else {
           setCars(results);
         }
       } catch (e) {
         console.error('Failed to load shared garage cars:', e);
-        setError('Unable to load this shared garage right now.');
+        setError(t('Unable to load this shared garage right now.'));
         setCars([]);
       } finally {
         setLoading(false);
@@ -88,7 +89,7 @@ export default function SharedGarage() {
 
   const saveAllToLocalGarage = () => {
     if (cars.length === 0) {
-      setSaveMessage('There are no cars to save from this shared garage.');
+      setSaveMessage(t('There are no cars to save from this shared garage.'));
       return;
     }
     try {
@@ -96,14 +97,14 @@ export default function SharedGarage() {
       navigate('/garage');
     } catch (e) {
       console.error('Failed to save shared garage to local store:', e);
-      setSaveMessage('Could not save these cars to your garage.');
+      setSaveMessage(t('Could not save these cars to your garage.'));
     }
   };
 
   useEffect(() => {
     if (!saveMessage) return;
-    const t = setTimeout(() => setSaveMessage(null), 2800);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setSaveMessage(null), 2800);
+    return () => clearTimeout(timer);
   }, [saveMessage]);
 
   const shortlistDiff = useMemo(() => differentiateCars(cars), [cars]);
@@ -118,16 +119,16 @@ export default function SharedGarage() {
   }, [cars, recordsById]);
 
   if (loading) {
-    return <LoadingScreen label="Loading shared garage" />;
+    return <LoadingScreen label={t('Loading shared garage')} />;
   }
 
   if (error) {
     return (
       <ErrorState
-        title="Shared garage unavailable"
+        title={t('Shared garage unavailable')}
         message={error}
         backTo="/home"
-        backLabel="Search cars"
+        backLabel={t('Search cars')}
       />
     );
   }
@@ -140,18 +141,26 @@ export default function SharedGarage() {
       <ToolPageHeader
         wide
         backTo="/"
-        backLabel="Home"
-        title="Cars shared with you"
-        subtitle={`${cars.length} ${cars.length === 1 ? 'car' : 'cars'} from someone’s CarInfo garage`}
+        backLabel={t('Home')}
+        title={t('Cars shared with you')}
+        subtitle={tp(
+          cars.length,
+          '{count} car from someone’s CarInfo garage',
+          '{count} cars from someone’s CarInfo garage',
+        )}
       />
 
       <div className="pt-8 pb-16 page-wrap-wide">
         {cars.length === 0 ? (
           <div className="max-w-xl py-16">
-            <h2 className="text-2xl font-bold tracking-tight mb-2">No cars in this garage</h2>
-            <p className="text-[15px] text-zinc-400 mb-6">This shared garage link holds no cars.</p>
+            <h2 className="text-2xl font-bold tracking-tight mb-2">
+              {t('No cars in this garage')}
+            </h2>
+            <p className="text-[15px] text-zinc-400 mb-6">
+              {t('This shared garage link holds no cars.')}
+            </p>
             <Link to="/home" className="btn-primary">
-              Search cars
+              {t('Search cars')}
             </Link>
           </div>
         ) : (
@@ -160,8 +169,10 @@ export default function SharedGarage() {
               <div className="mb-6 border border-amber-900/60 bg-zinc-950 px-4 py-3">
                 <p className="text-sm text-amber-100/90 font-medium mb-1">
                   {recallAlerts.length === 1
-                    ? 'One shared car has recalls in Canada'
-                    : `${recallAlerts.length} shared cars have recalls in Canada`}
+                    ? t('One shared car has recalls in Canada')
+                    : t('{count} shared cars have recalls in Canada', {
+                        count: recallAlerts.length,
+                      })}
                 </p>
                 <ul className="space-y-1">
                   {recallAlerts.map(({ car, recalls }) => (
@@ -172,7 +183,7 @@ export default function SharedGarage() {
                       >
                         {displayVehicleTitle(car)}
                       </Link>
-                      {`: ${recalls} ${recalls === 1 ? 'recall' : 'recalls'} — check yours by VIN`}
+                      {`: ${tp(recalls, '{count} recall — check yours by VIN', '{count} recalls — check yours by VIN')}`}
                     </li>
                   ))}
                 </ul>
@@ -181,7 +192,7 @@ export default function SharedGarage() {
 
             {shortlistDiff.axes.length > 0 && (
               <div className="mb-6 pb-5 border-b border-zinc-800">
-                <p className="text-xs text-zinc-500 mb-2">How these cars differ</p>
+                <p className="text-xs text-zinc-500 mb-2">{t('How these cars differ')}</p>
                 <ul className="space-y-2">
                   {shortlistDiff.axes.map((axis) => (
                     <li key={axis} className="text-base text-zinc-200 leading-snug">
@@ -196,12 +207,12 @@ export default function SharedGarage() {
               {cars.length > 1 && (
                 <Link to={`/compare?cars=${compareIds.join(',')}`} className="btn-primary">
                   {cars.length > MAX_COMPARED
-                    ? `Compare the first ${MAX_COMPARED}`
-                    : 'Compare them side by side'}
+                    ? t('Compare the first {n}', { n: MAX_COMPARED })
+                    : t('Compare them side by side')}
                 </Link>
               )}
               <button type="button" onClick={saveAllToLocalGarage} className="btn-secondary">
-                Save all to my garage
+                {t('Save all to my garage')}
               </button>
             </div>
             <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

@@ -1,4 +1,5 @@
 import type { CarFilter } from '../types/car.types';
+import { msg } from '../i18n';
 
 type ListKey = 'bodyStyle' | 'fuelType' | 'driveType' | 'transmission';
 
@@ -53,15 +54,15 @@ function rangeToggle(
  * that scrolled away with them.
  */
 export const QUICK_FILTERS: QuickFilter[] = [
-  listToggle('suv', 'SUV', 'bodyStyle', 'suv'),
-  listToggle('sedan', 'Sedan', 'bodyStyle', 'sedan'),
-  listToggle('truck', 'Pickup', 'bodyStyle', 'truck'),
-  listToggle('hybrid', 'Hybrid', 'fuelType', 'hybrid'),
-  listToggle('electric', 'Electric', 'fuelType', 'electric'),
-  rangeToggle('nhtsa-5', '5 crash-test stars', 'safety', { min: 5 }),
+  listToggle('suv', msg('SUV'), 'bodyStyle', 'suv'),
+  listToggle('sedan', msg('Sedan'), 'bodyStyle', 'sedan'),
+  listToggle('truck', msg('Pickup'), 'bodyStyle', 'truck'),
+  listToggle('hybrid', msg('Hybrid'), 'fuelType', 'hybrid'),
+  listToggle('electric', msg('Electric'), 'fuelType', 'electric'),
+  rangeToggle('nhtsa-5', msg('5 crash-test stars'), 'safety', { min: 5 }),
   {
     id: 'no-recalls',
-    label: 'No recalls in Canada',
+    label: msg('No recalls in Canada'),
     isOn: (filters) => filters.noRecalls === true,
     toggle: (filters) => {
       const out: CarFilter = { ...filters, noRecalls: true };
@@ -69,11 +70,11 @@ export const QUICK_FILTERS: QuickFilter[] = [
       return out;
     },
   },
-  listToggle('awd', 'AWD', 'driveType', 'AWD'),
-  rangeToggle('recent', '2020+', 'year', { min: 2020 }),
+  listToggle('awd', msg('AWD'), 'driveType', 'AWD'),
+  rangeToggle('recent', msg('2020+'), 'year', { min: 2020 }),
   {
     id: 'three-row',
-    label: 'Three rows',
+    label: msg('Three rows'),
     isOn: (filters) => filters.threeRow === true,
     toggle: (filters) => {
       const out: CarFilter = { ...filters, threeRow: true };
@@ -81,5 +82,5 @@ export const QUICK_FILTERS: QuickFilter[] = [
       return out;
     },
   },
-  listToggle('manual', 'Manual', 'transmission', 'manual'),
+  listToggle('manual', msg('Manual'), 'transmission', 'manual'),
 ];

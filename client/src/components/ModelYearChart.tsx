@@ -4,21 +4,33 @@ import type { ModelYearSummary } from '../types/car.types';
 import { generationParts } from '../utils/modelYearFacts';
 import { complaintPart } from '../utils/recalls';
 import { gridStep, labelStep } from '../utils/chartScale';
+import { t, tp } from '../i18n';
 
 function yearSentence(row: ModelYearSummary): string {
   const complaints =
     row.complaints != null
-      ? `${row.complaints.toLocaleString('en-CA')} owner ${row.complaints === 1 ? 'complaint' : 'complaints'} to NHTSA${
-          row.complaintPart && row.complaints > 0
-            ? `, most about ${complaintPart(row.complaintPart).toLowerCase()}`
-            : ''
-        }`
-      : 'No complaint count on file';
+      ? row.complaintPart && row.complaints > 0
+        ? tp(
+            row.complaints,
+            '{count} owner complaint to NHTSA, most about {part}',
+            '{count} owner complaints to NHTSA, most about {part}',
+            {
+              count: row.complaints.toLocaleString('en-CA'),
+              part: complaintPart(row.complaintPart).toLowerCase(),
+            },
+          )
+        : tp(
+            row.complaints,
+            '{count} owner complaint to NHTSA',
+            '{count} owner complaints to NHTSA',
+            { count: row.complaints.toLocaleString('en-CA') },
+          )
+      : t('No complaint count on file');
   const recalls =
     row.recalls != null
-      ? `${row.recalls} ${row.recalls === 1 ? 'recall' : 'recalls'} in Canada`
-      : 'no recall count on file';
-  return `${complaints}; ${recalls}`;
+      ? tp(row.recalls, '{count} recall in Canada', '{count} recalls in Canada')
+      : t('no recall count on file');
+  return t('{complaints}; {recalls}', { complaints, recalls });
 }
 
 /**
@@ -119,14 +131,14 @@ export default function ModelYearChart({
     <section className="mb-10" aria-labelledby="years-chart-title">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mb-4">
         <h2 id="years-chart-title" className="block-title">
-          Complaints and recalls, year by year
+          {t('Complaints and recalls, year by year')}
         </h2>
         <p className="text-xs text-zinc-500">
-          Point at, tap or slide across a year. Shading marks generations.
+          {t('Point at, tap or slide across a year. Shading marks generations.')}
         </p>
       </div>
       <p className="ml-9 sm:ml-11 mb-1 text-[11px] text-zinc-400" aria-hidden>
-        Owner complaints to NHTSA
+        {t('Owner complaints to NHTSA')}
       </p>
 
       <div className="flex">
@@ -181,7 +193,7 @@ export default function ModelYearChart({
           <div
             className="relative flex touch-pan-y"
             role="group"
-            aria-label={`${name}, by model year`}
+            aria-label={t('{name}, by model year', { name })}
             data-chart-years
             // A finger drawn across the chart steps through the years: a
             // phone's columns are too narrow to tap one by one.
@@ -218,7 +230,7 @@ export default function ModelYearChart({
                   type="button"
                   tabIndex={year === focusable ? 0 : -1}
                   aria-pressed={isActive}
-                  aria-label={`${year}: ${yearSentence(row)}`}
+                  aria-label={t('{year}: {sentence}', { year, sentence: yearSentence(row) })}
                   onPointerEnter={(event) => {
                     if (event.pointerType === 'mouse') setActive(year);
                   }}
@@ -264,7 +276,7 @@ export default function ModelYearChart({
             className={`absolute left-0 pointer-events-none text-[11px] text-zinc-400 top-28 sm:top-36 pt-1.5`}
             aria-hidden
           >
-            Recalls in Canada
+            {t('Recalls in Canada')}
           </p>
 
           {/* The years, a few named: round ones, fewer on a phone. */}
@@ -305,20 +317,21 @@ export default function ModelYearChart({
               to={shown.configurations >= 2 ? `${modelPath}/${shown.year}` : `/car/${shown.carId}`}
               className="shrink-0 inline-flex items-center min-h-[44px] sm:min-h-0 text-sm text-white underline underline-offset-4 decoration-zinc-600 hover:decoration-zinc-300"
             >
-              See the {shown.year} {name} →
+              {t('See the {year} {name} →', { year: shown.year, name })}
             </Link>
           </div>
         ) : (
           <p className="text-sm text-zinc-500">
             {worst != null
-              ? `Most complaints: ${worst}. Pick a year for its figures.`
-              : 'Pick a year for its figures.'}
+              ? t('Most complaints: {year}. Pick a year for its figures.', { year: worst })
+              : t('Pick a year for its figures.')}
           </p>
         )}
       </div>
       <p className="mt-2 ml-9 sm:ml-11 text-xs text-zinc-500 leading-relaxed max-w-2xl">
-        Counts from NHTSA’s complaint records and Transport Canada’s recall database, not adjusted
-        for how many of each year were sold. Newer years have had less time for owners to report.
+        {t(
+          'Counts from NHTSA’s complaint records and Transport Canada’s recall database, not adjusted for how many of each year were sold. Newer years have had less time for owners to report.',
+        )}
       </p>
     </section>
   );

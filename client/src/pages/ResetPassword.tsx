@@ -3,10 +3,11 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { AuthCard, AuthFormBody, Field, FormMessage, SubmitButton } from '../components/AuthForm';
 import { authClient, authErrorMessage } from '../services/authClient';
 import { useNoIndex, usePageMeta } from '../utils/pageMeta';
+import { t } from '../i18n';
 
 /** Where the emailed reset link lands, with ?token= (or ?error= when it is spent). */
 export default function ResetPassword() {
-  usePageMeta('Choose a new password', 'Choose a new CarInfo password.');
+  usePageMeta(t('Choose a new password'), t('Choose a new CarInfo password.'));
   useNoIndex();
   const [params] = useSearchParams();
   const token = params.get('token');
@@ -19,17 +20,17 @@ export default function ResetPassword() {
   if (!token || params.get('error')) {
     return (
       <AuthCard
-        title="This link has expired"
+        title={t('This link has expired')}
         footer={
           <p>
             <Link to="/forgot-password" className="text-white underline">
-              Send a new link
+              {t('Send a new link')}
             </Link>
           </p>
         }
       >
         <p className="text-sm text-zinc-300">
-          Reset links work once, for one hour. Ask for a new one.
+          {t('Reset links work once, for one hour. Ask for a new one.')}
         </p>
       </AuthCard>
     );
@@ -37,13 +38,13 @@ export default function ResetPassword() {
 
   if (done) {
     return (
-      <AuthCard title="Password changed">
+      <AuthCard title={t('Password changed')}>
         <div className="flex flex-col gap-4">
           <FormMessage tone="ok">
-            Your new password is set, and other devices have been signed out.
+            {t('Your new password is set, and other devices have been signed out.')}
           </FormMessage>
           <Link to="/sign-in" className="btn-primary w-full">
-            Sign in
+            {t('Sign in')}
           </Link>
         </div>
       </AuthCard>
@@ -52,7 +53,7 @@ export default function ResetPassword() {
 
   const submit = async () => {
     if (password !== confirm) {
-      setError('The two passwords are not the same.');
+      setError(t('The two passwords are not the same.'));
       return;
     }
     setError(null);
@@ -64,23 +65,23 @@ export default function ResetPassword() {
   };
 
   return (
-    <AuthCard title="Choose a new password">
+    <AuthCard title={t('Choose a new password')}>
       <AuthFormBody onSubmit={submit}>
         {error && <FormMessage>{error}</FormMessage>}
         <Field
-          label="New password"
+          label={t('New password')}
           type="password"
           name="new-password"
           autoComplete="new-password"
           required
           minLength={8}
           maxLength={128}
-          hint="At least 8 characters."
+          hint={t('At least 8 characters.')}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
         <Field
-          label="New password, again"
+          label={t('New password, again')}
           type="password"
           name="confirm-password"
           autoComplete="new-password"
@@ -88,7 +89,7 @@ export default function ResetPassword() {
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
         />
-        <SubmitButton busy={busy}>{busy ? 'Saving…' : 'Set new password'}</SubmitButton>
+        <SubmitButton busy={busy}>{busy ? t('Saving…') : t('Set new password')}</SubmitButton>
       </AuthFormBody>
     </AuthCard>
   );

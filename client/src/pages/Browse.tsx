@@ -16,27 +16,28 @@ import ShortlistCards from '../components/ShortlistCards';
 import BodyTypeIllustration from '../components/BodyTypeIllustration';
 import { searchQueryToParams } from '../utils/searchParams';
 import type { CarFilter } from '../types/car.types';
+import { msg, t } from '../i18n';
 
 /** Searches kept to a record: each says whose record it is. */
 const RECORD_LINKS: Array<{ label: string; note: string; filters: CarFilter }> = [
   {
-    label: 'Five crash-test stars',
-    note: 'NHTSA’s overall rating',
+    label: msg('Five crash-test stars'),
+    note: msg('NHTSA’s overall rating'),
     filters: { safety: { min: 5 } },
   },
   {
-    label: 'Collision warning standard',
-    note: 'As NHTSA lists it, not an option',
+    label: msg('Collision warning standard'),
+    note: msg('As NHTSA lists it, not an option'),
     filters: { safetyTech: { features: ['fcw'], standard: true } },
   },
   {
-    label: 'No recalls in Canada',
-    note: 'Model years 2019 to 2023, as Transport Canada lists them',
+    label: msg('No recalls in Canada'),
+    note: msg('Model years 2019 to 2023, as Transport Canada lists them'),
     filters: { noRecalls: true, year: { min: 2019, max: 2023 } },
   },
   {
-    label: 'Not on the most-stolen list',
-    note: 'Équité Association’s 10 most stolen in Canada, 2024',
+    label: msg('Not on the most-stolen list'),
+    note: msg('Équité Association’s 10 most stolen in Canada, 2024'),
     filters: { theftListed: false },
   },
 ];
@@ -54,13 +55,15 @@ export default function Browse() {
     <div className="bg-black text-white pb-12 sm:pb-16">
       <div className="page-wrap pt-8 sm:pt-10 pb-4">
         <PageHeader
-          title="Browse"
-          subtitle="Start from what you need the car for, its shape, its record, a year or a make."
+          title={t('Browse')}
+          subtitle={t(
+            'Start from what you need the car for, its shape, its record, a year or a make.',
+          )}
         />
       </div>
 
       <section className="page-wrap pb-10 sm:pb-12">
-        <h2 className="section-title mb-4">A situation</h2>
+        <h2 className="section-title mb-4">{t('A situation')}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {LIFESTYLE_PRESETS.map((preset) => (
             <Link
@@ -69,8 +72,12 @@ export default function Browse() {
               className="choice-tile group"
             >
               <span className="min-w-0">
-                <span className="block text-[15px] font-semibold text-white">{preset.label}</span>
-                <span className="block text-[13px] text-zinc-400 mt-0.5">{preset.description}</span>
+                <span className="block text-[15px] font-semibold text-white">
+                  {t(preset.label)}
+                </span>
+                <span className="block text-[13px] text-zinc-400 mt-0.5">
+                  {t(preset.description)}
+                </span>
               </span>
               <span className="text-zinc-500 group-hover:text-white shrink-0" aria-hidden>
                 →
@@ -82,9 +89,9 @@ export default function Browse() {
 
       <section className="border-t border-zinc-900">
         <div className="page-wrap section-y">
-          <h2 className="section-title mb-2">A body style</h2>
+          <h2 className="section-title mb-2">{t('A body style')}</h2>
           <p className="text-sm text-zinc-400 mb-6 md:mb-8">
-            Sedan, SUV, pickup and the rest, from every make.
+            {t('Sedan, SUV, pickup and the rest, from every make.')}
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-px bg-zinc-800">
             {BODY_TYPES.map((type) => (
@@ -98,8 +105,8 @@ export default function Browse() {
                   bodyType={type.id}
                   className="h-12 sm:h-14 w-full mb-3 transition-transform duration-500 ease-out group-hover:translate-x-2 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0"
                 />
-                <p className="font-semibold text-white capitalize">{type.label}</p>
-                <p className="text-xs text-zinc-500 mt-0.5 leading-snug">{type.description}</p>
+                <p className="font-semibold text-white capitalize">{t(type.label)}</p>
+                <p className="text-xs text-zinc-500 mt-0.5 leading-snug">{t(type.description)}</p>
               </Link>
             ))}
           </div>
@@ -108,9 +115,9 @@ export default function Browse() {
 
       <section className="border-t border-zinc-900">
         <div className="page-wrap section-y">
-          <h2 className="section-title mb-2">A class</h2>
+          <h2 className="section-title mb-2">{t('A class')}</h2>
           <p className="text-sm text-zinc-400 mb-6">
-            Cars of one size and purpose, the ones shoppers compare: a Camry with an Accord.
+            {t('Cars of one size and purpose, the ones shoppers compare: a Camry with an Accord.')}
           </p>
           <div className="flex flex-wrap gap-2">
             {CLASS_LINKS.map((item) => (
@@ -119,7 +126,7 @@ export default function Browse() {
                 to={`/home?${new URLSearchParams({ q: item.query }).toString()}`}
                 className="chip"
               >
-                {item.label}
+                {t(item.label)}
               </Link>
             ))}
           </div>
@@ -129,24 +136,26 @@ export default function Browse() {
       <section className="border-t border-zinc-900">
         <div className="page-wrap section-y grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
           <div id="record" className="scroll-mt-20">
-            <h2 className="section-title mb-2">A clean record</h2>
+            <h2 className="section-title mb-2">{t('A clean record')}</h2>
             <p className="text-sm text-zinc-400 mb-6">
-              From NHTSA, Transport Canada and Équité Association, not from us.
+              {t('From NHTSA, Transport Canada and Équité Association, not from us.')}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {RECORD_LINKS.map((item) => (
-                <Link key={item.label} to={filterLink(item.filters)} className="choice-tile">
+                <Link key={t(item.label)} to={filterLink(item.filters)} className="choice-tile">
                   <span className="min-w-0">
-                    <span className="block text-[15px] text-white">{item.label}</span>
-                    <span className="block text-[13px] text-zinc-400 mt-0.5">{item.note}</span>
+                    <span className="block text-[15px] text-white">{t(item.label)}</span>
+                    <span className="block text-[13px] text-zinc-400 mt-0.5">{t(item.note)}</span>
                   </span>
                 </Link>
               ))}
             </div>
           </div>
           <div>
-            <h2 className="section-title mb-2">A model year</h2>
-            <p className="text-sm text-zinc-400 mb-6">The newest, the last ten years, or older.</p>
+            <h2 className="section-title mb-2">{t('A model year')}</h2>
+            <p className="text-sm text-zinc-400 mb-6">
+              {t('The newest, the last ten years, or older.')}
+            </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {YEAR_BUCKETS.map((bucket) => (
                 <Link key={bucket.id} to={filterLink(bucket.filters)} className="choice-tile">
@@ -160,8 +169,10 @@ export default function Browse() {
 
       <section className="border-t border-zinc-900">
         <div className="page-wrap section-y">
-          <h2 className="section-title mb-2">A manufacturer</h2>
-          <p className="text-sm text-zinc-400 mb-6">If you already know the make you want.</p>
+          <h2 className="section-title mb-2">{t('A manufacturer')}</h2>
+          <p className="text-sm text-zinc-400 mb-6">
+            {t('If you already know the make you want.')}
+          </p>
           <div className="flex flex-wrap gap-2">
             {TOP_MAKES.map((make) => (
               <Link key={make} to={filterLink(makeFilter(make))} className="chip">
@@ -171,11 +182,11 @@ export default function Browse() {
           </div>
 
           <div className="mt-10">
-            <h3 className="text-base font-semibold text-white mb-3">Fuel</h3>
+            <h3 className="text-base font-semibold text-white mb-3">{t('Fuel')}</h3>
             <div className="flex flex-wrap gap-2">
               {FUEL_TYPES.map((fuel) => (
                 <Link key={fuel.id} to={filterLink(fuelTypeFilter(fuel.id))} className="chip">
-                  {fuel.label}
+                  {t(fuel.label)}
                 </Link>
               ))}
             </div>
@@ -185,9 +196,9 @@ export default function Browse() {
 
       <section id="shortlists" className="border-t border-zinc-900 scroll-mt-20">
         <div className="page-wrap section-y">
-          <h2 className="section-title mb-2">Shortlists</h2>
+          <h2 className="section-title mb-2">{t('Shortlists')}</h2>
           <p className="text-sm text-zinc-400 mb-6">
-            Ranked picks for common needs, one per model, with the rule each is ranked by.
+            {t('Ranked picks for common needs, one per model, with the rule each is ranked by.')}
           </p>
           <ShortlistCards columns={2} />
         </div>

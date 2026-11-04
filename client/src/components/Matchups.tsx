@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import * as api from '../services/api';
 import type { Matchup } from '../types/car.types';
+import { t } from '../i18n';
 
 /**
  * Rivals shoppers weigh against each other, a tap from side by side: the
@@ -59,7 +60,7 @@ export default function Matchups({
               </span>
               <span className="block text-[13px] text-zinc-400 mt-0.5">
                 {picking === matchup.label
-                  ? 'Loading…'
+                  ? t('Loading…')
                   : matchup.cars.map((car) => car.label).join(' · ')}
               </span>
             </span>

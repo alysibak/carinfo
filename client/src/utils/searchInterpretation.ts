@@ -1,14 +1,17 @@
-import { theftSentence } from '@carinfo/shared/theft';
+import { ordinal } from '@carinfo/shared/theft';
 import type { SearchInterpretation } from '../types/car.types';
-
-const cad = (value: number) =>
-  new Intl.NumberFormat('en-CA', {
-    style: 'currency',
-    currency: 'CAD',
-    maximumFractionDigits: 0,
-  }).format(value);
+import { locale, t } from '../i18n';
+import { fmtMoney, fmtNumber } from '../i18n/format';
 
 const LITRES_AT_1_MPG = 235.215;
+
+function joinAnd(parts: string[]): string {
+  if (parts.length <= 1) return parts[0] ?? '';
+  return t('{list} and {last}', {
+    list: parts.slice(0, -1).join(', '),
+    last: parts.at(-1)!,
+  });
+}
 
 /** "EPA combined rating of 30 MPG or better (7.8 L/100 km or less)." */
 function describeFuelEconomy(
@@ -17,44 +20,73 @@ function describeFuelEconomy(
 ): string {
   const { min, max, unit, basis = 'combined' } = bound;
   const litres = (mpg: number) => `${(LITRES_AT_1_MPG / mpg).toFixed(1)} L/100 km`;
-  const mpg = (litres: number, round: (n: number) => number) =>
-    `${round(LITRES_AT_1_MPG / litres)} MPG`;
+  const mpg = (litresVal: number, round: (n: number) => number) =>
+    `${round(LITRES_AT_1_MPG / litresVal)} MPG`;
+  const leftOut = evsLeftOut ? t('; electric cars are left out') : '';
   if (unit === 'L/100 km') {
-    // Ratings are whole MPG: 7 L/100 km or less is 34 MPG or better.
     const text =
       min != null && max != null
-        ? `${min} to ${max} L/100 km (${mpg(max, Math.ceil)} to ${mpg(min, Math.floor)})`
+        ? t('{min} to {max} L/100 km ({mpgMax} to {mpgMin})', {
+            min,
+            max,
+            mpgMax: mpg(max, Math.ceil),
+            mpgMin: mpg(min, Math.floor),
+          })
         : max != null
-          ? `${max} L/100 km or less (${mpg(max, Math.ceil)} or better)`
-          : `${min} L/100 km or more (${mpg(min!, Math.floor)} or worse)`;
-    return `EPA ${basis} fuel consumption of ${text}${evsLeftOut ? '; electric cars are left out' : ''}.`;
+          ? t('{max} L/100 km or less ({mpg} or better)', {
+              max,
+              mpg: mpg(max, Math.ceil),
+            })
+          : t('{min} L/100 km or more ({mpg} or worse)', {
+              min: min!,
+              mpg: mpg(min!, Math.floor),
+            });
+    return t('EPA {basis} fuel consumption of {text}{leftOut}.', { basis, text, leftOut });
   }
   const metric = unit === 'MPG';
   const text =
     min != null && max != null
-      ? `${min} to ${max} ${unit}${metric ? ` (${litres(min)} to ${litres(max)})` : ''}`
+      ? metric
+        ? t('{min} to {max} {unit} ({litresMin} to {litresMax})', {
+            min,
+            max,
+            unit,
+            litresMin: litres(min),
+            litresMax: litres(max),
+          })
+        : t('{min} to {max} {unit}', { min, max, unit })
       : min != null
-        ? `${min} ${unit} or better${metric ? ` (${litres(min)} or less)` : ''}`
-        : `${max} ${unit} or less${metric ? ` (${litres(max!)} or more)` : ''}`;
-  return `EPA ${basis} rating of ${text}${evsLeftOut ? '; electric cars are left out' : ''}.`;
+        ? metric
+          ? t('{min} {unit} or better ({litres} or less)', { min, unit, litres: litres(min) })
+          : t('{min} {unit} or better', { min, unit })
+        : metric
+          ? t('{max} {unit} or less ({litres} or more)', {
+              max: max!,
+              unit,
+              litres: litres(max!),
+            })
+          : t('{max} {unit} or less', { max: max!, unit });
+  return t('EPA {basis} rating of {text}{leftOut}.', { basis, text, leftOut });
 }
 
-/** "300 hp or more; cars with no rating on file are left out." */
 function describeHorsepower({ min, max }: NonNullable<SearchInterpretation['horsepower']>): string {
   const text =
     min != null && max != null
-      ? `${min} to ${max} hp`
+      ? t('{min} to {max} hp', { min, max })
       : min != null
-        ? `${min} hp or more`
-        : `${max} hp or less`;
-  return `${text}; cars with no rating on file are left out.`;
+        ? t('{min} hp or more', { min })
+        : t('{max} hp or less', { max: max! });
+  return t('{text}; cars with no rating on file are left out.', { text });
 }
 
-/**
- * What the search read into its query, as sentences for the results page:
- * trim words it set aside, a price limit, a "cheapest first" order. Without
- * them a search for "honda civic ex" showed every Civic with no word why.
- */
+function yearAskedText(asked: { min?: number; max?: number }): string {
+  if (asked.min != null && asked.max != null) {
+    return asked.min === asked.max ? `${asked.min}` : `${asked.min}–${asked.max}`;
+  }
+  if (asked.min != null) return t('{year} and newer', { year: asked.min });
+  return t('{year} and older', { year: asked.max! });
+}
+
 export function describeSearchInterpretation(
   interpretation: SearchInterpretation | undefined,
 ): string[] {
@@ -62,193 +94,291 @@ export function describeSearchInterpretation(
   const lines: string[] = [];
   if (interpretation.otherYears) {
     const { asked, onFile } = interpretation.otherYears;
-    const askedText =
-      asked.min != null && asked.max != null
-        ? asked.min === asked.max
-          ? `${asked.min}`
-          : `${asked.min}–${asked.max}`
-        : asked.min != null
-          ? `${asked.min} and newer`
-          : `${asked.max} and older`;
+    const askedText = yearAskedText(asked);
     const runs = onFile.map((r) => (r.min === r.max ? `${r.min}` : `${r.min}–${r.max}`));
-    const runText =
-      runs.length > 1 ? `${runs.slice(0, -1).join(', ')} and ${runs.at(-1)}` : (runs[0] ?? '');
-    lines.push(`None on file for ${askedText}. Showing the years that are: ${runText}.`);
+    lines.push(
+      t('None on file for {asked}. Showing the years that are: {years}.', {
+        asked: askedText,
+        years: joinAnd(runs),
+      }),
+    );
   }
   if (interpretation.similarTo) {
     lines.push(
-      `Rivals of the ${interpretation.similarTo.label}: the models shoppers compare it with, by class, size and price.`,
+      t('Rivals of the {label}: the models shoppers compare it with, by class, size and price.', {
+        label: interpretation.similarTo.label,
+      }),
     );
   }
   if (interpretation.ignored?.length) {
     lines.push(
-      `EPA records no trim levels, so “${interpretation.ignored.join(' ')}” was left out of the search.`,
+      t('EPA records no trim levels, so “{words}” was left out of the search.', {
+        words: interpretation.ignored.join(' '),
+      }),
     );
   }
   const price = interpretation.price;
   if (price?.min != null && price.max != null) {
-    lines.push(`Estimated value ${cad(price.min)} to ${cad(price.max)}.`);
+    lines.push(
+      t('Estimated value {min} to {max}.', {
+        min: fmtMoney(price.min),
+        max: fmtMoney(price.max),
+      }),
+    );
   } else if (price?.max != null) {
-    lines.push(`Estimated value under ${cad(price.max)}.`);
+    lines.push(t('Estimated value under {max}.', { max: fmtMoney(price.max) }));
   } else if (price?.min != null) {
-    lines.push(`Estimated value over ${cad(price.min)}.`);
+    lines.push(t('Estimated value over {min}.', { min: fmtMoney(price.min) }));
   }
   if (interpretation.fuelEconomy) {
     lines.push(describeFuelEconomy(interpretation.fuelEconomy, !!interpretation.gasMileage));
   }
   if (interpretation.horsepower) lines.push(describeHorsepower(interpretation.horsepower));
   if (interpretation.engineSize != null) {
-    lines.push(`${interpretation.engineSize.toFixed(1)}-litre engines only.`);
+    lines.push(t('{size}-litre engines only.', { size: interpretation.engineSize.toFixed(1) }));
   }
-  if (interpretation.engineFamily) lines.push(`Read as ${interpretation.engineFamily}.`);
-  if (interpretation.generation) lines.push(`Read as the ${interpretation.generation}.`);
+  if (interpretation.engineFamily) {
+    lines.push(t('Read as {family}.', { family: interpretation.engineFamily }));
+  }
+  if (interpretation.generation) {
+    lines.push(t('Read as the {generation}.', { generation: interpretation.generation }));
+  }
   if (interpretation.layouts?.length) {
-    const names = interpretation.layouts.join(' and ');
     lines.push(
-      `${names} engines only: EPA records a cylinder count, so the layout comes from the engine family.`,
+      t(
+        '{names} engines only: EPA records a cylinder count, so the layout comes from the engine family.',
+        { names: joinAnd(interpretation.layouts) },
+      ),
     );
   }
   const order = {
-    price: 'Cheapest first by estimated value',
-    fuelEconomy: 'Most fuel-efficient first',
-    horsepower: 'Most powerful first',
-    range: 'Longest EPA range first',
-    safety:
-      'Best NHTSA crash rating first, ties by its crash scores and the safety technology it lists; its ratings start with 2011 models',
-    runningCost:
-      'Lowest estimated yearly running cost first: fuel, insurance, upkeep and tires, at the chosen region’s baseline',
-    luggage:
-      'Most trunk or cargo space first, by EPA’s luggage volume; cars EPA gives none (pickups, most SUVs and vans) come last',
-    theft: 'Most stolen first, in Équité Association’s order',
+    price: () => t('Cheapest first by estimated value'),
+    fuelEconomy: () => t('Most fuel-efficient first'),
+    horsepower: () => t('Most powerful first'),
+    range: () => t('Longest EPA range first'),
+    safety: () =>
+      t(
+        'Best NHTSA crash rating first, ties by its crash scores and the safety technology it lists; its ratings start with 2011 models',
+      ),
+    runningCost: () =>
+      t(
+        'Lowest estimated yearly running cost first: fuel, insurance, upkeep and tires, at the chosen region’s baseline',
+      ),
+    luggage: () =>
+      t(
+        'Most trunk or cargo space first, by EPA’s luggage volume; cars EPA gives none (pickups, most SUVs and vans) come last',
+      ),
+    theft: () => t('Most stolen first, in Équité Association’s order'),
   } as const;
   if (interpretation.sortedBy) {
+    const base = order[interpretation.sortedBy]();
     lines.push(
       interpretation.recentFrom != null
-        ? `${order[interpretation.sortedBy]}, model years ${interpretation.recentFrom} and newer.`
-        : `${order[interpretation.sortedBy]}.`,
+        ? t('{order}, model years {year} and newer.', {
+            order: base,
+            year: interpretation.recentFrom,
+          })
+        : t('{order}.', { order: base }),
     );
   }
   if (interpretation.firstCar) {
     const { minYear, minStars, maxHp, minMpg, minWeightKg } = interpretation.firstCar;
     lines.push(
-      `Read as a first car, as the First car preset: ${minYear} or newer, ${minStars} or more NHTSA crash-test stars, ${minWeightKg.toLocaleString('en-CA')} kg or heavier (IIHS and Consumer Reports list no car under 2,750 lb for teens), ${maxHp} hp or less, ${(235.215 / minMpg).toFixed(1)} L/100 km or less.`,
+      t(
+        'Read as a first car, as the First car preset: {minYear} or newer, {minStars} or more NHTSA crash-test stars, {weight} kg or heavier (IIHS and Consumer Reports list no car under 2,750 lb for teens), {maxHp} hp or less, {litres} L/100 km or less.',
+        {
+          minYear,
+          minStars,
+          weight: fmtNumber(minWeightKg),
+          maxHp,
+          litres: (235.215 / minMpg).toFixed(1),
+        },
+      ),
     );
   }
   if (interpretation.automatedManual) {
     lines.push(
-      'Automated manuals only, as EPA files them: mostly dual-clutch gearboxes (PDK, DSG), some with a single clutch.',
+      t(
+        'Automated manuals only, as EPA files them: mostly dual-clutch gearboxes (PDK, DSG), some with a single clutch.',
+      ),
     );
   }
   if (interpretation.mildHybrid) {
     lines.push(
-      'Mild hybrids only: a 12-48 volt motor helps the engine but never drives the car, so they are listed by their fuel.',
+      t(
+        'Mild hybrids only: a 12-48 volt motor helps the engine but never drives the car, so they are listed by their fuel.',
+      ),
     );
   }
   if (interpretation.records) {
     lines.push(
-      'No source on file rates reliability. Each car’s page lists its model year’s recalls in Canada and owner complaints to NHTSA.',
+      t(
+        'No source on file rates reliability. Each car’s page lists its model year’s recalls in Canada and owner complaints to NHTSA.',
+      ),
     );
   }
   if (interpretation.theft) {
     const { least, year, model } = interpretation.theft;
-    lines.push(
-      model
-        ? model.rank
-          ? theftSentence(model.rank)
-          : `The ${model.label} is not among the 10 vehicles stolen most in Canada in ${year}, by Équité Association’s count, which does not make it safe from thieves.`
-        : least
-          ? `Left out: the 10 models Équité Association counts as stolen most in Canada in ${year}. No list ranks the least stolen, and a model off this one can still be a target.`
-          : `The models on Équité Association’s list of the most stolen in Canada in ${year}, in its order: a count, so models with many on the road rank higher.`,
-    );
+    if (model) {
+      if (model.rank) {
+        const rank = model.rank.rank;
+        if (rank === 1) {
+          lines.push(
+            t(
+              'The {model} was the most stolen vehicle in Canada in {year}, by Équité Association’s count.',
+              { model: model.rank.model, year: model.rank.year },
+            ),
+          );
+        } else {
+          const rankLabel = locale() === 'fr' ? `${rank}e` : ordinal(rank);
+          lines.push(
+            t(
+              'The {model} was the {rank} most stolen vehicle in Canada in {year}, by Équité Association’s count.',
+              { model: model.rank.model, rank: rankLabel, year: model.rank.year },
+            ),
+          );
+        }
+      } else {
+        lines.push(
+          t(
+            'The {label} is not among the 10 vehicles stolen most in Canada in {year}, by Équité Association’s count, which does not make it safe from thieves.',
+            { label: model.label, year },
+          ),
+        );
+      }
+    } else if (least) {
+      lines.push(
+        t(
+          'Left out: the 10 models Équité Association counts as stolen most in Canada in {year}. No list ranks the least stolen, and a model off this one can still be a target.',
+          { year },
+        ),
+      );
+    } else {
+      lines.push(
+        t(
+          'The models on Équité Association’s list of the most stolen in Canada in {year}, in its order: a count, so models with many on the road rank higher.',
+          { year },
+        ),
+      );
+    }
   }
   if (interpretation.safetyTech) {
-    const names = {
-      esc: 'stability control',
-      fcw: 'forward collision warning',
-      ldw: 'lane departure warning',
+    const names: Record<string, string> = {
+      esc: t('stability control'),
+      fcw: t('forward collision warning'),
+      ldw: t('lane departure warning'),
     };
     const { features, standard } = interpretation.safetyTech;
-    const listed = features.map((f) => names[f]).join(' and ');
+    const listed = joinAnd(features.map((f) => names[f]));
     lines.push(
       standard
-        ? `Cars NHTSA lists with ${listed} as standard on every version it tested (2011 on).`
-        : `Cars NHTSA lists with ${listed}, standard or optional (2011 on); cars it did not test are left out.`,
+        ? t('Cars NHTSA lists with {features} as standard on every version it tested (2011 on).', {
+            features: listed,
+          })
+        : t(
+            'Cars NHTSA lists with {features}, standard or optional (2011 on); cars it did not test are left out.',
+            { features: listed },
+          ),
     );
   }
   if (interpretation.snow) {
     lines.push(
-      'All- and four-wheel drive only, for snow: EPA records the drive, not the tires, which matter as much.',
+      t(
+        'All- and four-wheel drive only, for snow: EPA records the drive, not the tires, which matter as much.',
+      ),
     );
   }
   if (interpretation.rareFuelsLeftOut) {
     lines.push(
-      'Hydrogen and natural-gas cars are left out: they sell cheaply because there is almost nowhere in Canada to fill them.',
+      t(
+        'Hydrogen and natural-gas cars are left out: they sell cheaply because there is almost nowhere in Canada to fill them.',
+      ),
     );
   }
-  // A fuel-economy bound's own line says so.
   if (interpretation.gasMileage && !interpretation.fuelEconomy) {
-    lines.push('Electric cars are left out: their MPGe does not compare with MPG.');
+    lines.push(t('Electric cars are left out: their MPGe does not compare with MPG.'));
   }
   if (interpretation.minRangeMiles != null) {
     const km = Math.round(interpretation.minRangeMiles * 1.609);
     lines.push(
-      `EPA range of at least ${interpretation.minRangeMiles} miles (${km.toLocaleString('en-CA')} km).`,
+      t('EPA range of at least {miles} miles ({km} km).', {
+        miles: interpretation.minRangeMiles,
+        km: fmtNumber(km),
+      }),
     );
   }
   if (interpretation.newestFrom != null) {
-    lines.push(`Model years ${interpretation.newestFrom} and newer.`);
+    lines.push(t('Model years {year} and newer.', { year: interpretation.newestFrom }));
   }
   if (interpretation.twoRow) {
     lines.push(
-      'Two rows of seats: models sold with a third row are left out, by model, as EPA records no seating.',
+      t(
+        'Two rows of seats: models sold with a third row are left out, by model, as EPA records no seating.',
+      ),
     );
   }
   if (interpretation.twoSeater) {
-    lines.push("Two-seaters: EPA's two-seater class.");
+    lines.push(t("Two-seaters: EPA's two-seater class."));
   }
   if (interpretation.enginePosition) {
-    const kind = { front: 'Front', mid: 'Mid', rear: 'Rear' }[interpretation.enginePosition];
-    lines.push(`${kind}-engined cars, by model: EPA records no engine position.`);
+    lines.push(
+      interpretation.enginePosition === 'front'
+        ? t('Front-engined cars, by model: EPA records no engine position.')
+        : interpretation.enginePosition === 'mid'
+          ? t('Mid-engined cars, by model: EPA records no engine position.')
+          : t('Rear-engined cars, by model: EPA records no engine position.'),
+    );
   }
   if (interpretation.doors != null) {
     lines.push(
-      `${interpretation.doors}-door models: named so, or ${
-        interpretation.doors === 2
-          ? 'coupes and convertibles'
-          : interpretation.doors === 4
-            ? 'sedans'
-            : 'wagons'
-      }, as EPA records no doors.`,
+      interpretation.doors === 2
+        ? t('{doors}-door models: named so, or coupes and convertibles, as EPA records no doors.', {
+            doors: interpretation.doors,
+          })
+        : interpretation.doors === 4
+          ? t('{doors}-door models: named so, or sedans, as EPA records no doors.', {
+              doors: interpretation.doors,
+            })
+          : t('{doors}-door models: named so, or wagons, as EPA records no doors.', {
+              doors: interpretation.doors,
+            }),
     );
   }
   if (interpretation.threeRow) {
     lines.push(
-      'Minivans, passenger vans and SUVs sold with a third row, by model: EPA records no seating.',
+      t(
+        'Minivans, passenger vans and SUVs sold with a third row, by model: EPA records no seating.',
+      ),
     );
   }
   if (interpretation.unmeasured?.length) {
-    const words = interpretation.unmeasured.map((w) => `“${w}”`).join(' and ');
+    const words = joinAnd(interpretation.unmeasured.map((w) => `“${w}”`));
     lines.push(
-      `No data on file measures ${words}, so ${
-        interpretation.unmeasured.length > 1 ? 'they were' : 'it was'
-      } not used.`,
+      interpretation.unmeasured.length > 1
+        ? t('No data on file measures {words}, so they were not used.', { words })
+        : t('No data on file measures {words}, so it was not used.', { words }),
     );
-    // The nearest records to reliability, unless the records line says so already.
     if (
       !interpretation.records &&
       interpretation.unmeasured.some((w) => /^(?:reliable|dependable|quality)$/.test(w))
     ) {
       lines.push(
-        'For reliability, each car’s page lists its model year’s recalls in Canada and owner complaints to NHTSA, and each model’s page compares its years.',
+        t(
+          'For reliability, each car’s page lists its model year’s recalls in Canada and owner complaints to NHTSA, and each model’s page compares its years.',
+        ),
       );
     }
   }
   if (interpretation.vehicleClass) {
-    lines.push(`Showing ${interpretation.vehicleClass}, classed by model.`);
+    lines.push(
+      t('Showing {className}, classed by model.', { className: interpretation.vehicleClass }),
+    );
   }
   if (interpretation.compared?.length) {
     lines.push(
-      `Showing ${interpretation.compared.map((part) => `“${part}”`).join(' and ')} together.`,
+      t('Showing {parts} together.', {
+        parts: joinAnd(interpretation.compared.map((part) => `“${part}”`)),
+      }),
     );
   }
   return lines;

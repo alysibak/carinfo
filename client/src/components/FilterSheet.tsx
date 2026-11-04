@@ -2,6 +2,7 @@ import { useEffect, useId } from 'react';
 import { createPortal } from 'react-dom';
 import FilterSidebar from './FilterSidebar';
 import { useModalFocus } from '../hooks/useModalFocus';
+import { t } from '../i18n';
 
 /**
  * Every filter, full screen, on a phone or tablet: filters apply as they are
@@ -48,13 +49,13 @@ export default function FilterSheet({
     >
       <div className="flex items-center justify-between gap-4 px-4 sm:px-6 h-14 border-b border-zinc-800 shrink-0">
         <h2 id={titleId} className="text-lg font-bold tracking-tight">
-          Filters
+          {t('Filters')}
         </h2>
         <button
           type="button"
           onClick={onClose}
           className="-mr-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-zinc-400 hover:text-white"
-          aria-label="Close filters"
+          aria-label={t('Close filters')}
         >
           <svg
             className="w-6 h-6"
@@ -79,7 +80,11 @@ export default function FilterSheet({
 
       <div className="shrink-0 border-t border-zinc-800 px-4 sm:px-6 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         <button type="button" onClick={onClose} className="btn-primary w-full" aria-live="polite">
-          {updating ? 'Updating…' : resultLabel ? `Show ${resultLabel}` : 'Done'}
+          {updating
+            ? t('Updating…')
+            : resultLabel
+              ? t('Show {results}', { results: resultLabel })
+              : t('Done')}
         </button>
       </div>
     </div>,

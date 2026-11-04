@@ -1,4 +1,5 @@
 import type { ModelYearSummary } from '../types/car.types';
+import { t, tp } from '../i18n';
 import { bodyStyleLabel } from './bodyStyleLabel';
 import { rangeKm } from './efficiency';
 import { formatFuelTypeLabel } from './fuelDisplay';
@@ -6,7 +7,9 @@ import { formatFuelTypeLabel } from './fuelDisplay';
 /** "202–301 hp", "255 hp". */
 function powerText(power: ModelYearSummary['horsepower']): string | null {
   if (!power) return null;
-  return power.min === power.max ? `${power.min} hp` : `${power.min}–${power.max} hp`;
+  return power.min === power.max
+    ? t('{hp} hp', { hp: power.min })
+    : t('{min}–{max} hp', { min: power.min, max: power.max });
 }
 
 const BODY_ORDER = [
@@ -49,22 +52,26 @@ export function modelYearLines(row: ModelYearSummary): {
   const present = (facts: Array<string | null>) => facts.filter((fact): fact is string => !!fact);
   return {
     car: present([
-      row.combinedMpg ? `from ${(235.215 / row.combinedMpg).toFixed(1)} L/100 km` : null,
-      row.rangeMiles ? `up to ${rangeKm(row.rangeMiles)} km range` : null,
+      row.combinedMpg
+        ? t('from {lpk} L/100 km', { lpk: (235.215 / row.combinedMpg).toFixed(1) })
+        : null,
+      row.rangeMiles ? t('up to {km} km range', { km: rangeKm(row.rangeMiles) }) : null,
       powerText(row.horsepower),
     ]),
     records: present([
-      row.safetyStars ? `NHTSA ${row.safetyStars}/5` : null,
+      row.safetyStars ? t('NHTSA {stars}/5', { stars: row.safetyStars }) : null,
       row.recalls != null
-        ? `${row.recalls} ${row.recalls === 1 ? 'recall' : 'recalls'} in Canada`
+        ? tp(row.recalls, '{count} recall in Canada', '{count} recalls in Canada')
         : null,
       row.complaints != null
-        ? `${row.complaints.toLocaleString('en-CA')} ${row.complaints === 1 ? 'complaint' : 'complaints'} to NHTSA`
+        ? tp(row.complaints, '{count} complaint to NHTSA', '{count} complaints to NHTSA', {
+            count: row.complaints.toLocaleString('en-CA'),
+          })
         : null,
     ]),
     offered: present([
       offeredAs(row) || null,
-      `${row.configurations} ${row.configurations === 1 ? 'version' : 'versions'}`,
+      tp(row.configurations, '{count} version', '{count} versions'),
     ]),
   };
 }
@@ -85,9 +92,9 @@ export function modelYearCells(row: ModelYearSummary) {
   const none = '—';
   return {
     efficiency: row.combinedMpg
-      ? `${(235.215 / row.combinedMpg).toFixed(1)} L/100 km`
+      ? t('{lpk} L/100 km', { lpk: (235.215 / row.combinedMpg).toFixed(1) })
       : row.rangeMiles
-        ? `${rangeKm(row.rangeMiles)} km range`
+        ? t('{km} km range', { km: rangeKm(row.rangeMiles) })
         : none,
     power: powerText(row.horsepower) ?? none,
     safety: row.safetyStars ? `${row.safetyStars}/5` : none,
@@ -124,9 +131,9 @@ export function generationSummary(rows: ModelYearSummary[]): string[] {
       })
     : null;
   return [
-    `${rows.length} ${rows.length === 1 ? 'year' : 'years'}`,
-    mpg ? `from ${(235.215 / mpg).toFixed(1)} L/100 km` : null,
-    !mpg && range ? `up to ${rangeKm(range)} km range` : null,
+    tp(rows.length, '{count} year', '{count} years'),
+    mpg ? t('from {lpk} L/100 km', { lpk: (235.215 / mpg).toFixed(1) }) : null,
+    !mpg && range ? t('up to {km} km range', { km: rangeKm(range) }) : null,
     power,
   ].filter((fact): fact is string => !!fact);
 }

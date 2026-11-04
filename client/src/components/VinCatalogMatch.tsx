@@ -4,18 +4,15 @@ import { getCarDashboard, searchCars, type VinDecodeResult } from '../services/a
 import type { CarDashboard } from '../types/car.types';
 import { vinCatalogCar } from '../utils/vinMatch';
 import { beforeYouBuy } from '../utils/beforeYouBuy';
+import { locale, t } from '../i18n';
+import { rich } from '../i18n/rich';
 
 const CANADA_RECALLS = 'https://recalls-rappels.canada.ca/en';
+const CANADA_RECALLS_FR = 'https://recalls-rappels.canada.ca/fr';
 
 const linkClass =
   'text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500';
 
-/**
- * What the catalog has on the model year a VIN decodes to: its recalls in
- * Canada, owner complaints to NHTSA and NHTSA's crash rating for its drive,
- * with the car's page. A recall can cover only some cars of a model year, so
- * the VIN itself is to be checked with the maker or Transport Canada.
- */
 export default function VinCatalogMatch({ decoded }: { decoded: VinDecodeResult }) {
   const [dashboard, setDashboard] = useState<CarDashboard | null>(null);
   const [state, setState] = useState<'loading' | 'found' | 'none'>('loading');
@@ -54,7 +51,9 @@ export default function VinCatalogMatch({ decoded }: { decoded: VinDecodeResult 
 
   if (state === 'loading') {
     return (
-      <p className="mt-6 text-xs text-zinc-500">Looking for this model year in the catalog…</p>
+      <p className="mt-6 text-xs text-zinc-500">
+        {t('Looking for this model year in the catalog…')}
+      </p>
     );
   }
   if (state === 'none' || !dashboard) return null;
@@ -66,7 +65,9 @@ export default function VinCatalogMatch({ decoded }: { decoded: VinDecodeResult 
 
   return (
     <div className="mt-6 border border-zinc-800 bg-zinc-950 px-5 py-4">
-      <p className="text-sm font-semibold text-white">Before you buy: the {name}</p>
+      <p className="text-sm font-semibold text-white">
+        {t('Before you buy: the {name}', { name })}
+      </p>
       {items.length > 0 ? (
         <ul className="mt-2 space-y-1.5">
           {items.map((item) => (
@@ -79,28 +80,40 @@ export default function VinCatalogMatch({ decoded }: { decoded: VinDecodeResult 
         </ul>
       ) : (
         <p className="mt-2 text-sm text-zinc-400">
-          No recalls, complaints or crash ratings on file for this model year.
+          {t('No recalls, complaints or crash ratings on file for this model year.')}
         </p>
       )}
       {recalls && recalls.length > 0 && (
         <p className="text-xs text-zinc-500 mt-3 leading-relaxed">
-          A recall can cover only some cars of a model year. Enter this VIN on{' '}
-          <a href={CANADA_RECALLS} target="_blank" rel="noreferrer" className={linkClass}>
-            Transport Canada’s recall site
-          </a>{' '}
-          or the maker’s to see whether it is affected and fixed.
+          {rich(
+            t(
+              'A recall can cover only some cars of a model year. Enter this VIN on <0>Transport Canada’s recall site</0> or the maker’s to see whether it is affected and fixed.',
+            ),
+            [
+              (children) => (
+                <a
+                  href={locale() === 'fr' ? CANADA_RECALLS_FR : CANADA_RECALLS}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={linkClass}
+                >
+                  {children}
+                </a>
+              ),
+            ],
+          )}
         </p>
       )}
       <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-xs">
         <Link to={carPath} className={linkClass}>
-          Open the {name}
+          {t('Open the {name}', { name })}
         </Link>
         <Link to={`${carPath}/checklist`} className={linkClass}>
-          Checklist to take to the car
+          {t('Checklist to take to the car')}
         </Link>
         {modelPage && (
           <Link to={modelPage.path} className={linkClass}>
-            Every year of the {modelPage.label}
+            {t('Every year of the {label}', { label: modelPage.label })}
           </Link>
         )}
       </div>

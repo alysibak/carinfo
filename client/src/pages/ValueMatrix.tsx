@@ -19,6 +19,7 @@ import { engineLitres } from '../utils/fuelDisplay';
 import { DISPLAY_CURRENCY } from '../utils/currency';
 import { usePageMeta } from '../utils/pageMeta';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
+import { msg, t } from '../i18n';
 
 type AxisMode = 'mpg' | 'displacement' | 'co2';
 
@@ -45,8 +46,8 @@ interface MatrixPreset {
 const PRESETS: MatrixPreset[] = [
   {
     id: 'commuter',
-    title: 'Daily drivers',
-    description: 'Sedans and SUVs, by fuel use against estimated value.',
+    title: msg('Daily drivers'),
+    description: msg('Sedans and SUVs, by fuel use against estimated value.'),
     priceRange: [10000, 35000],
     bodyStyles: ['sedan', 'suv'],
     axisMode: 'mpg',
@@ -54,8 +55,8 @@ const PRESETS: MatrixPreset[] = [
   },
   {
     id: 'budget',
-    title: 'Under $20k',
-    description: 'Sedans, SUVs, coupes and wagons, by fuel use against estimated value.',
+    title: msg('Under $20k'),
+    description: msg('Sedans, SUVs, coupes and wagons, by fuel use against estimated value.'),
     priceRange: [2000, 20000],
     bodyStyles: ['sedan', 'suv', 'coupe', 'wagon'],
     axisMode: 'mpg',
@@ -63,8 +64,8 @@ const PRESETS: MatrixPreset[] = [
   },
   {
     id: 'trucks',
-    title: 'Pickups',
-    description: 'Pickups, by engine size against estimated value.',
+    title: msg('Pickups'),
+    description: msg('Pickups, by engine size against estimated value.'),
     priceRange: [15000, 65000],
     bodyStyles: ['truck'],
     axisMode: 'displacement',
@@ -72,8 +73,8 @@ const PRESETS: MatrixPreset[] = [
   },
   {
     id: 'recent',
-    title: '2018 and newer',
-    description: 'Every type from 2018 on, by fuel use against estimated value.',
+    title: msg('2018 and newer'),
+    description: msg('Every type from 2018 on, by fuel use against estimated value.'),
     priceRange: [18000, 80000],
     bodyStyles: [],
     axisMode: 'mpg',
@@ -139,7 +140,9 @@ function useChartHeight() {
 function MatrixLegend() {
   return (
     <div className="space-y-3">
-      <p className="text-xs text-zinc-500">X is estimated Ontario/CAD value. Y is EPA test data.</p>
+      <p className="text-xs text-zinc-500">
+        {t('X is estimated Ontario/CAD value. Y is EPA test data.')}
+      </p>
       <div className="flex flex-wrap gap-x-4 gap-y-2 justify-center sm:justify-start">
         {KNOWN_BODY_STYLES.map((style) => (
           <div key={style} className="flex items-center gap-2 text-xs text-zinc-400 capitalize">
@@ -159,7 +162,7 @@ function MatrixLegend() {
             <span className="w-3 h-3 rounded-full bg-white" />
             <span className="w-4 h-4 rounded-full bg-white" />
           </span>
-          Larger dot = newer year
+          {t('Larger dot = newer year')}
         </div>
       </div>
     </div>
@@ -168,8 +171,10 @@ function MatrixLegend() {
 
 export default function ValueMatrix() {
   usePageMeta(
-    'Value Chart',
-    'Scatter plot of Ontario/CAD estimates against EPA fuel economy, engine size, or emissions with source labels.',
+    t('Value Chart'),
+    t(
+      'Scatter plot of Ontario/CAD estimates against EPA fuel economy, engine size, or emissions with source labels.',
+    ),
   );
   const [phase, setPhase] = useState<ViewPhase>('choose');
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
@@ -237,7 +242,7 @@ export default function ValueMatrix() {
 
       setChartData(data);
     } catch {
-      setError('Unable to load chart data.');
+      setError(t('Unable to load chart data.'));
       setChartData([]);
       setDensityData(null);
       setTotalMatched(0);
@@ -269,11 +274,11 @@ export default function ValueMatrix() {
   const getYAxisLabel = () => {
     switch (axisMode) {
       case 'mpg':
-        return 'Fuel use (L/100 km)';
+        return t('Fuel use (L/100 km)');
       case 'displacement':
-        return 'Engine (L)';
+        return t('Engine (L)');
       case 'co2':
-        return 'CO₂ (g/km)';
+        return t('CO₂ (g/km)');
     }
   };
 
@@ -305,17 +310,17 @@ export default function ValueMatrix() {
         <p className="text-sm text-zinc-300 mb-3">{data.model}</p>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between gap-4 items-baseline">
-            <span className="text-zinc-400">Est. value</span>
+            <span className="text-zinc-400">{t('Est. value')}</span>
             <span className="font-bold text-white">
               ${data.price.toLocaleString()}
               {data.priceIsEstimated && (
-                <span className="ml-1.5 text-xs font-normal text-zinc-500">est.</span>
+                <span className="ml-1.5 text-xs font-normal text-zinc-500">{t('est.')}</span>
               )}
             </span>
           </div>
           <div className="flex justify-between gap-4 items-baseline">
             <span className="text-zinc-400">
-              {axisMode === 'mpg' ? 'Fuel use' : axisMode === 'co2' ? 'CO₂' : 'Engine'}
+              {axisMode === 'mpg' ? t('Fuel use') : axisMode === 'co2' ? t('CO₂') : t('Engine')}
             </span>
             <span className="font-bold text-white">
               {axisMode === 'mpg'
@@ -324,17 +329,17 @@ export default function ValueMatrix() {
                   ? `${Math.round(data.co2 / 1.609344)} g/km`
                   : engineLitres(data.displacement)}
               {data.ySource !== 'epa' && (
-                <span className="ml-1.5 text-xs font-normal text-zinc-500">est.</span>
+                <span className="ml-1.5 text-xs font-normal text-zinc-500">{t('est.')}</span>
               )}
             </span>
           </div>
           <div className="flex justify-between gap-6">
-            <span className="text-zinc-400">Type</span>
+            <span className="text-zinc-400">{t('Type')}</span>
             <span className="font-bold text-white capitalize">{data.bodyStyle}</span>
           </div>
         </div>
         <p className="mt-3 pt-3 border-t border-zinc-700 text-xs text-zinc-400 text-center">
-          Click dot for full dossier
+          {t('Click dot for full dossier')}
         </p>
       </div>
     );
@@ -346,11 +351,16 @@ export default function ValueMatrix() {
         <div className="page-wrap py-6 sm:py-8">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div className="min-w-0">
-              <h1 className="page-title">Value chart</h1>
+              <h1 className="page-title">{t('Value chart')}</h1>
               <p className="text-sm text-zinc-400 mt-1">
                 {phase === 'chart' && totalMatched > 0
-                  ? `${totalMatched.toLocaleString()} cars match. Each square counts the cars at that value and fuel use; pick one to see them.`
-                  : 'Estimated value against fuel use, for every car on file. Fuel use is EPA’s; values are our estimates.'}
+                  ? t(
+                      '{count} cars match. Each square counts the cars at that value and fuel use; pick one to see them.',
+                      { count: totalMatched.toLocaleString() },
+                    )
+                  : t(
+                      'Estimated value against fuel use, for every car on file. Fuel use is EPA’s; values are our estimates.',
+                    )}
               </p>
             </div>
             <AboutData compact />
@@ -364,11 +374,12 @@ export default function ValueMatrix() {
             <div className="max-w-3xl mx-auto">
               <div className="text-center mb-10">
                 <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-3">
-                  What do you want to compare?
+                  {t('What do you want to compare?')}
                 </h2>
                 <p className="text-base text-zinc-300 leading-relaxed">
-                  Pick a group of cars. The chart puts each by its estimated value and its fuel use;
-                  a brighter square holds more cars. Pick a square to see the cars in it.
+                  {t(
+                    'Pick a group of cars. The chart puts each by its estimated value and its fuel use; a brighter square holds more cars. Pick a square to see the cars in it.',
+                  )}
                 </p>
               </div>
 
@@ -381,12 +392,15 @@ export default function ValueMatrix() {
                     className="flex flex-col items-start text-left p-6 border border-zinc-700 bg-zinc-950 hover:border-white hover:bg-zinc-900 transition-colors group"
                   >
                     <p className="text-sm font-bold tracking-wide text-white mb-2 group-hover:underline underline-offset-4">
-                      {preset.title}
+                      {t(preset.title)}
                     </p>
-                    <p className="text-sm text-zinc-400 leading-relaxed">{preset.description}</p>
+                    <p className="text-sm text-zinc-400 leading-relaxed">{t(preset.description)}</p>
                     {/* "~350 cars" was the most dots drawn, not a count of cars. */}
                     <p className="text-xs text-zinc-400 mt-3">
-                      {`Estimated $${(preset.priceRange[0] / 1000).toFixed(0)}k–$${(preset.priceRange[1] / 1000).toFixed(0)}k`}
+                      {t('Estimated ${low}k–${high}k', {
+                        low: (preset.priceRange[0] / 1000).toFixed(0),
+                        high: (preset.priceRange[1] / 1000).toFixed(0),
+                      })}
                     </p>
                   </button>
                 ))}
@@ -400,7 +414,7 @@ export default function ValueMatrix() {
                 }}
                 className="w-full py-4 border border-zinc-600 text-sm text-zinc-300 hover:text-white hover:border-zinc-400 transition-colors"
               >
-                Custom filters: I&apos;ll choose everything myself
+                {t("Custom filters: I'll choose everything myself")}
               </button>
             </div>
           ) : (
@@ -411,13 +425,13 @@ export default function ValueMatrix() {
                   onClick={() => setPhase('choose')}
                   className="text-xs text-zinc-400 hover:text-white border border-zinc-700 px-4 py-2"
                 >
-                  ← Change focus
+                  {t('← Change focus')}
                 </button>
                 {activePresetId && (
                   <span className="text-xs text-zinc-400">
-                    View:{' '}
+                    {t('View:')}{' '}
                     <span className="text-white font-semibold">
-                      {PRESETS.find((p) => p.id === activePresetId)?.title ?? 'Custom'}
+                      {t(PRESETS.find((p) => p.id === activePresetId)?.title ?? 'Custom')}
                     </span>
                   </span>
                 )}
@@ -426,7 +440,7 @@ export default function ValueMatrix() {
               {/* Filters — compact, readable labels */}
               <div className="mb-6 p-5 border border-zinc-800 bg-zinc-950 space-y-5">
                 <div>
-                  <p className="text-xs font-bold text-zinc-300 mb-3">Y-axis metric</p>
+                  <p className="text-xs font-bold text-zinc-300 mb-3">{t('Y-axis metric')}</p>
                   <div className="flex flex-wrap gap-2">
                     {(['mpg', 'displacement', 'co2'] as AxisMode[]).map((mode) => (
                       <button
@@ -443,10 +457,10 @@ export default function ValueMatrix() {
                         }`}
                       >
                         {mode === 'mpg'
-                          ? 'Fuel economy'
+                          ? t('Fuel economy')
                           : mode === 'displacement'
-                            ? 'Engine size'
-                            : 'CO₂'}
+                            ? t('Engine size')
+                            : t('CO₂')}
                       </button>
                     ))}
                   </div>
@@ -454,7 +468,7 @@ export default function ValueMatrix() {
 
                 <div>
                   <p className="text-xs font-bold text-zinc-300 mb-3">
-                    Body style {selectedBodyStyles.size === 0 && '(all types)'}
+                    {t('Body style')} {selectedBodyStyles.size === 0 && t('(all types)')}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {KNOWN_BODY_STYLES.map((style) => {
@@ -489,15 +503,17 @@ export default function ValueMatrix() {
                       }}
                       className="px-3 py-2 text-xs border border-zinc-600 text-zinc-400 hover:text-white"
                     >
-                      All types
+                      {t('All types')}
                     </button>
                   </div>
                 </div>
 
                 <div>
                   <p className="text-xs font-bold text-zinc-300 mb-2">
-                    Est. value: ${(priceRange[0] / 1000).toFixed(0)}k - $
-                    {(priceRange[1] / 1000).toFixed(0)}k
+                    {t('Est. value: ${low}k - ${high}k', {
+                      low: (priceRange[0] / 1000).toFixed(0),
+                      high: (priceRange[1] / 1000).toFixed(0),
+                    })}
                   </p>
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                     <input
@@ -514,7 +530,7 @@ export default function ValueMatrix() {
                         ]);
                       }}
                       className="flex-1"
-                      aria-label="Minimum price"
+                      aria-label={t('Minimum price')}
                     />
                     <input
                       type="range"
@@ -530,7 +546,7 @@ export default function ValueMatrix() {
                         ]);
                       }}
                       className="flex-1"
-                      aria-label="Maximum price"
+                      aria-label={t('Maximum price')}
                     />
                   </div>
                 </div>
@@ -541,7 +557,7 @@ export default function ValueMatrix() {
                     onClick={() => setPointLimit(nextLimit)}
                     className="text-xs font-bold text-zinc-300 hover:text-white border border-dashed border-zinc-600 w-full py-3 hover:border-zinc-400 transition-colors"
                   >
-                    Show more cars (up to {nextLimit.toLocaleString()} dots)
+                    {t('Show more cars (up to {n} dots)', { n: nextLimit.toLocaleString() })}
                   </button>
                 )}
               </div>
@@ -550,7 +566,7 @@ export default function ValueMatrix() {
                 {viewMode !== 'market' && <MatrixLegend />}
                 {viewMode === 'market' && (
                   <p className="text-xs text-zinc-400">
-                    Cell tint follows the most common body style in that band
+                    {t('Cell tint follows the most common body style in that band')}
                   </p>
                 )}
                 <div className="flex rounded-none border border-zinc-700 overflow-hidden shrink-0">
@@ -563,7 +579,7 @@ export default function ValueMatrix() {
                         : 'text-zinc-400 hover:text-white'
                     }`}
                   >
-                    Every car
+                    {t('Every car')}
                   </button>
                   <button
                     type="button"
@@ -574,7 +590,7 @@ export default function ValueMatrix() {
                         : 'text-zinc-400 hover:text-white'
                     }`}
                   >
-                    A sample, one dot each
+                    {t('A sample, one dot each')}
                   </button>
                   <button
                     type="button"
@@ -585,7 +601,7 @@ export default function ValueMatrix() {
                         : 'text-zinc-400 hover:text-white'
                     }`}
                   >
-                    List
+                    {t('List')}
                   </button>
                 </div>
               </div>
@@ -603,7 +619,7 @@ export default function ValueMatrix() {
                     to={`/car/${hovered.id}`}
                     className="inline-block mt-3 text-xs text-white underline underline-offset-4 decoration-zinc-500"
                   >
-                    View details →
+                    {t('View details →')}
                   </Link>
                 </div>
               )}
@@ -614,7 +630,7 @@ export default function ValueMatrix() {
                   <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/70">
                     <div className="text-center">
                       <div className="inline-block w-10 h-10 border-2 border-zinc-600 border-t-zinc-400 mb-3 opacity-50" />
-                      <p className="text-xs text-zinc-300">Updating chart</p>
+                      <p className="text-xs text-zinc-300">{t('Updating chart')}</p>
                     </div>
                   </div>
                 )}
@@ -626,21 +642,21 @@ export default function ValueMatrix() {
                       onClick={loadChartData}
                       className="px-6 py-3 bg-accent text-accent-ink text-xs font-bold"
                     >
-                      Retry
+                      {t('Retry')}
                     </button>
                   </div>
                 ) : totalMatched === 0 && !loading ? (
                   <div className="py-24 text-center px-4">
-                    <p className="text-lg text-zinc-300 mb-2">No cars match these filters</p>
+                    <p className="text-lg text-zinc-300 mb-2">{t('No cars match these filters')}</p>
                     <p className="text-sm text-zinc-400 mb-6">
-                      Try widening the price range or adding body types.
+                      {t('Try widening the price range or adding body types.')}
                     </p>
                     <button
                       type="button"
                       onClick={() => setPhase('choose')}
                       className="px-6 py-3 border border-zinc-500 text-sm text-white"
                     >
-                      Pick a different focus
+                      {t('Pick a different focus')}
                     </button>
                   </div>
                 ) : viewMode === 'market' && densityData && densityData.cells.length > 0 ? (
@@ -690,7 +706,7 @@ export default function ValueMatrix() {
                         tick={{ fill: '#a1a1aa', fontSize: 11 }}
                         tickLine={{ stroke: '#52525b' }}
                         label={{
-                          value: `Est. value (${DISPLAY_CURRENCY})`,
+                          value: t('Est. value ({currency})', { currency: DISPLAY_CURRENCY }),
                           position: 'bottom',
                           offset: 28,
                           style: { fill: '#a1a1aa', fontSize: 11, fontWeight: 500 },
@@ -750,8 +766,8 @@ export default function ValueMatrix() {
 
               <p className="mt-3 text-xs text-zinc-400 text-center sm:text-left">
                 {viewMode === 'market'
-                  ? 'A brighter square holds more cars. Pick one to see them.'
-                  : 'Color = body style · size = model year · tap or click a dot for details'}
+                  ? t('A brighter square holds more cars. Pick one to see them.')
+                  : t('Color = body style · size = model year · tap or click a dot for details')}
               </p>
 
               {hovered && viewMode === 'chart' && (
@@ -770,7 +786,7 @@ export default function ValueMatrix() {
                       to={`/car/${hovered.id}`}
                       className="btn-secondary py-2! px-4! text-xs! shrink-0"
                     >
-                      View car
+                      {t('View car')}
                     </Link>
                   </div>
                 </div>
@@ -779,17 +795,17 @@ export default function ValueMatrix() {
               {totalMatched > 0 && (
                 <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-px bg-zinc-800 border border-zinc-800">
                   <div className="bg-zinc-950 p-5">
-                    <p className="text-xs font-bold text-zinc-400 mb-1">Cars that match</p>
+                    <p className="text-xs font-bold text-zinc-400 mb-1">{t('Cars that match')}</p>
                     <p className="text-2xl font-bold text-white">{totalMatched.toLocaleString()}</p>
                   </div>
                   <div className="bg-zinc-950 p-5">
-                    <p className="text-xs font-bold text-zinc-400 mb-1">Avg est. value</p>
+                    <p className="text-xs font-bold text-zinc-400 mb-1">{t('Avg est. value')}</p>
                     <p className="text-2xl font-bold text-white">
                       ${(avgPrice / 1000).toFixed(0)}k
                     </p>
                   </div>
                   <div className="bg-zinc-950 p-5">
-                    <p className="text-xs font-bold text-zinc-400 mb-1">Sample plotted</p>
+                    <p className="text-xs font-bold text-zinc-400 mb-1">{t('Sample plotted')}</p>
                     <p className="text-2xl font-bold text-white">
                       {chartData.length.toLocaleString()}
                     </p>
