@@ -33,6 +33,12 @@ const fr: Record<string, string> = {
   'Ranked picks for common situations, one per model, not every trim on file.':
     'Des choix classés pour des situations courantes, un par modèle, pas chaque finition au dossier.',
   'All {count} shortlists →': 'Les {count} listes sélectionnées →',
+  'Page not found': 'Page introuvable',
+  'This CarInfo page does not exist.': 'Cette page CarInfo n’existe pas.',
+  'The address may be mistyped, or the page has moved. Search for the car instead.':
+    'L’adresse est peut-être mal saisie, ou la page a déménagé. Cherchez plutôt le véhicule.',
+  'Start from what you need': 'Partez de ce dont vous avez besoin',
+  'Look up a VIN': 'Chercher un NIV',
 };
 
 export default fr;

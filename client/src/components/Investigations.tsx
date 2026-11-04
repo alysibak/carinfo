@@ -9,6 +9,7 @@ import {
 import { recallDate } from '../utils/recalls';
 import RecordRow from './RecordRow';
 import { Chevron, foldSummaryClass } from './ui';
+import { t, tp } from '../i18n';
 
 const NHTSA_LOOKUP = 'https://www.nhtsa.gov/recalls';
 
@@ -22,16 +23,15 @@ function InvestigationItem({ inv, forOther }: { inv: NhtsaInvestigation; forOthe
       flag={
         !inv.closed ? (
           <span className={forOther ? 'text-zinc-400 font-normal' : 'text-amber-300 font-normal'}>
-            {' '}
-            · open
+            {t(' · open')}
           </span>
         ) : null
       }
       meta={
         <>
           {recallDate(inv.opened)}
-          {inv.closed ? ` to ${recallDate(inv.closed)}` : ''}
-          {inv.recall ? ` · led to recall ${inv.recall}` : ''}
+          {inv.closed ? t(' to {date}', { date: recallDate(inv.closed) }) : ''}
+          {inv.recall ? t(' · led to recall {number}', { number: inv.recall }) : ''}
         </>
       }
     >
@@ -71,20 +71,27 @@ export default function Investigations({
       <details className="group/inv border-t border-zinc-800">
         <summary className={`${foldSummaryClass} gap-4 py-3`}>
           <span className="min-w-0">
-            <span className="block block-title">NHTSA investigations</span>
+            <span className="block block-title">{t('NHTSA investigations')}</span>
             <span className="block text-[13px] text-zinc-400 mt-0.5">
               {applies.length === 0
-                ? `None for this version of the ${name}`
-                : `${applies.length} possible ${applies.length === 1 ? 'defect' : 'defects'} looked into`}
-              {open ? `, ${open} still open` : ''}
-              {other.length ? ` · ${other.length} for other versions` : ''}
+                ? t('None for this version of the {name}', { name })
+                : tp(
+                    applies.length,
+                    '{count} possible defect looked into',
+                    '{count} possible defects looked into',
+                  )}
+              {open ? t(', {count} still open', { count: open }) : ''}
+              {other.length
+                ? t(' · {count} for other versions', { count: other.length })
+                : ''}
             </span>
           </span>
           <Chevron className="w-4 h-4 text-zinc-500 group-hover/inv:text-white group-open/inv:rotate-180" />
         </summary>
         <p className="text-[13px] text-zinc-400 mb-2 max-w-3xl">
-          NHTSA (U.S.) looks into owners’ reports; an investigation can lead to a recall, and is not
-          a finding that the defect exists.
+          {t(
+            'NHTSA (U.S.) looks into owners’ reports; an investigation can lead to a recall, and is not a finding that the defect exists.',
+          )}
         </p>
         {applies.length > 0 && (
           <ol className="grid grid-cols-1 md:grid-cols-2 gap-x-10">
@@ -98,7 +105,9 @@ export default function Investigations({
             <summary
               className={`${foldSummaryClass} py-2.5 text-[13px] text-zinc-400 hover:text-white`}
             >
-              {other.length} for other versions (diesel, hybrid or electric)
+              {t('{count} for other versions (diesel, hybrid or electric)', {
+                count: other.length,
+              })}
               <Chevron className="w-3.5 h-3.5 text-zinc-500 group-open/other:rotate-180" />
             </summary>
             <ol className="grid grid-cols-1 md:grid-cols-2 gap-x-10">
@@ -110,9 +119,9 @@ export default function Investigations({
         )}
         <p className="text-xs text-zinc-500 mt-3 mb-1">
           <a href={NHTSA_LOOKUP} target="_blank" rel="noreferrer" className={linkClass}>
-            Look one up on NHTSA by its number
+            {t('Look one up on NHTSA by its number')}
           </a>
-          {asOf ? `; as of ${recallDate(asOf)}.` : ''}
+          {asOf ? t('; as of {date}.', { date: recallDate(asOf) }) : ''}
         </p>
       </details>
     </div>

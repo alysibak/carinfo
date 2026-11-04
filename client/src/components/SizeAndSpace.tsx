@@ -15,6 +15,8 @@ import type { SpecGlossaryKey } from '../utils/specGlossary';
 import { typicalOf } from '../utils/keyFigures';
 import { SpecLabel } from './SpecExplain';
 import { Chevron, foldSummaryClass } from './ui';
+import { msg, t } from '../i18n';
+import { fmtNumber } from '../i18n/format';
 
 const CM_PER_FOOT = 30.48;
 
@@ -56,7 +58,10 @@ function Measure({
 /** "long, wide and tall". */
 function listWords(words: readonly string[]): string {
   if (words.length <= 1) return words[0] ?? '';
-  return `${words.slice(0, -1).join(', ')} and ${words.at(-1)}`;
+  return t('{list} and {last}', {
+    list: words.slice(0, -1).join(', '),
+    last: words.at(-1)!,
+  });
 }
 
 /** "compact SUVs", "sport compacts". */
@@ -94,26 +99,28 @@ function WillItFit({ size }: { size: NonNullable<CarDashboard['car']['size']> })
   const inputClass =
     'mt-1 w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-sm tabular-nums text-white focus:outline-hidden focus:border-zinc-500';
 
+  const unitOptions = [
+    ['m', msg('Metres')],
+    ['ft', msg('Feet')],
+  ] as const;
+
   return (
     <details className="mt-4 border-t border-zinc-900 group/fit">
       <summary className={`${foldSummaryClass} py-3 text-sm text-zinc-200 hover:text-white`}>
-        Will it fit your garage or spot?
+        {t('Will it fit your garage or spot?')}
         <Chevron className="w-3.5 h-3.5 text-zinc-500 group-open/fit:rotate-180" />
       </summary>
       <fieldset>
-        <legend className="sr-only">Will it fit your garage or spot?</legend>
-        <p className="text-xs text-zinc-400 mt-1 mb-3">Measure the space and enter it here.</p>
+        <legend className="sr-only">{t('Will it fit your garage or spot?')}</legend>
+        <p className="text-xs text-zinc-400 mt-1 mb-3">
+          {t('Measure the space and enter it here.')}
+        </p>
         <div
           role="radiogroup"
-          aria-label="Unit"
+          aria-label={t('Unit')}
           className="inline-flex border border-zinc-800 mb-3"
         >
-          {(
-            [
-              ['m', 'Metres'],
-              ['ft', 'Feet'],
-            ] as const
-          ).map(([value, text]) => (
+          {unitOptions.map(([value, text]) => (
             <label
               key={value}
               className={`inline-flex items-center min-h-9 px-3 text-xs cursor-pointer has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-zinc-300 ${
@@ -128,34 +135,34 @@ function WillItFit({ size }: { size: NonNullable<CarDashboard['car']['size']> })
                 onChange={() => switchUnit(value)}
                 className="sr-only"
               />
-              {text}
+              {t(text)}
             </label>
           ))}
         </div>
         <div className="grid grid-cols-2 gap-2">
           <label htmlFor={`${id}-length`} className="text-xs text-zinc-400">
-            Length ({unit})
+            {t('Length ({unit})', { unit })}
             <input
               id={`${id}-length`}
               type="number"
               inputMode="decimal"
               min={0}
               step={unit === 'm' ? 0.05 : 0.5}
-              placeholder={unit === 'm' ? 'e.g. 6' : 'e.g. 20'}
+              placeholder={unit === 'm' ? t('e.g. 6') : t('e.g. 20')}
               value={length}
               onChange={(e) => setLength(e.target.value)}
               className={inputClass}
             />
           </label>
           <label htmlFor={`${id}-width`} className="text-xs text-zinc-400">
-            Width ({unit})
+            {t('Width ({unit})', { unit })}
             <input
               id={`${id}-width`}
               type="number"
               inputMode="decimal"
               min={0}
               step={unit === 'm' ? 0.05 : 0.5}
-              placeholder={unit === 'm' ? 'e.g. 3' : 'e.g. 10'}
+              placeholder={unit === 'm' ? t('e.g. 3') : t('e.g. 10')}
               value={width}
               onChange={(e) => setWidth(e.target.value)}
               className={inputClass}
@@ -167,22 +174,25 @@ function WillItFit({ size }: { size: NonNullable<CarDashboard['car']['size']> })
             <span
               className={check.fits ? 'text-accent font-semibold' : 'text-amber-400 font-semibold'}
             >
-              {check.fits ? 'It fits' : 'It does not fit'}
+              {check.fits ? t('It fits') : t('It does not fit')}
             </span>
             <span className="text-zinc-300">
               {': '}
               {check.spareLengthCm >= 0
-                ? `${formatGap(check.spareLengthCm, unit)} to spare in length`
-                : `${formatGap(check.spareLengthCm, unit)} too long`}
+                ? t('{gap} to spare in length', {
+                    gap: formatGap(check.spareLengthCm, unit),
+                  })
+                : t('{gap} too long', { gap: formatGap(check.spareLengthCm, unit) })}
               {', '}
               {check.spareWidthCm >= 0
-                ? `${formatGap(check.spareWidthCm, unit)} in width`
-                : `${formatGap(check.spareWidthCm, unit)} too wide`}
-              {several ? ', for its longest and widest version' : ''}.
+                ? t('{gap} in width', { gap: formatGap(check.spareWidthCm, unit) })
+                : t('{gap} too wide', { gap: formatGap(check.spareWidthCm, unit) })}
+              {several ? t(', for its longest and widest version') : ''}.
             </span>
             <span className="block text-xs text-zinc-400 mt-1">
-              The width is the body without mirrors. Leave room to open the doors and walk around
-              it.
+              {t(
+                'The width is the body without mirrors. Leave room to open the doors and walk around it.',
+              )}
             </span>
           </p>
         )}
@@ -216,60 +226,66 @@ export default function SizeAndSpace({ dashboard }: { dashboard: CarDashboard })
   // same length as a typical compact SUV" three times over read as filler.
   const outside = size
     ? ([
-        ['length', size.lengthCm, 'long'],
-        ['width', size.widthCm, 'wide'],
-        ['height', size.heightCm, 'tall'],
-        ['weight', size.curbWeightKg, 'heavy'],
+        ['length', size.lengthCm, msg('long')],
+        ['width', size.widthCm, msg('wide')],
+        ['height', size.heightCm, msg('tall')],
+        ['weight', size.curbWeightKg, msg('heavy')],
       ] as const)
     : [];
   const against = new Map(outside.map(([measure, span]) => [measure, vs(measure, span)]));
-  const alike = outside
-    .filter(([measure]) => against.get(measure)?.startsWith('About'))
-    .map(([, , word]) => word);
+  const isAlike = (said: string | null | undefined) =>
+    !!said && (said.startsWith('About') || said.startsWith('À peu près'));
+  const alike = outside.filter(([measure]) => isAlike(against.get(measure))).map(([, , word]) => t(word));
   const differs = (measure: (typeof outside)[number][0]) => {
     const said = against.get(measure);
-    return said && !said.startsWith('About') ? said : null;
+    return said && !isAlike(said) ? said : null;
   };
   const several = (size?.measured.length ?? 0) > 1;
 
   return (
     <section id="size" className="border-b border-zinc-900 scroll-mt-32">
       <div className="page-wrap-wide section-y-tight">
-        <h2 className="block-title mb-1">Size and space</h2>
+        <h2 className="block-title mb-1">{t('Size and space')}</h2>
         {compared && (
           <p className="text-[13px] text-zinc-400 mb-3">
             {alike.length > 0 && (
               <span className="text-zinc-200">
-                About as {listWords(alike)} as {typicalOf(className!)}.{' '}
+                {t('About as {words} as {typical}. ', {
+                  words: listWords(alike),
+                  typical: typicalOf(className!),
+                })}
               </span>
             )}
-            Against the middle of other {classPlural(className!)}, {cls!.years.min}–{cls!.years.max}
-            .
+            {t('Against the middle of other {classPlural}, {min}–{max}.', {
+              classPlural: classPlural(className!),
+              min: cls!.years.min,
+              max: cls!.years.max,
+            })}
           </p>
         )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 md:gap-x-10 gap-y-6">
           {size && (
             <div className="min-w-0">
               <Measure
-                label="Length"
+                label={t('Length')}
                 value={formatMetres(size.lengthCm)}
                 alt={formatFeet(size.lengthCm)}
                 comparison={differs('length')}
               />
               <Measure
-                label="Width without mirrors"
+                label={t('Width without mirrors')}
                 value={formatMetres(size.widthCm)}
                 alt={formatFeet(size.widthCm)}
                 comparison={differs('width')}
               />
               <Measure
-                label="Height"
+                label={t('Height')}
                 value={formatMetres(size.heightCm)}
                 alt={formatFeet(size.heightCm)}
                 comparison={differs('height')}
               />
               <Measure
-                label="Weight"
+                label={t('Weight')}
                 value={formatKg(size.curbWeightKg)}
                 alt={formatLb(size.curbWeightKg)}
                 comparison={differs('weight')}
@@ -281,12 +297,12 @@ export default function SizeAndSpace({ dashboard }: { dashboard: CarDashboard })
             {luggage != null && (
               <Measure
                 label={luggageLabel(car.bodyStyle)}
-                value={`${litres(luggage).toLocaleString('en-CA')} L`}
-                alt={`${luggage} cu ft`}
+                value={t('{litres} L', { litres: fmtNumber(litres(luggage)) })}
+                alt={t('{cuFt} cu ft', { cuFt: luggage })}
                 comparison={
                   cls?.luggage && className
                     ? volumeVsClass(
-                        luggageLabel(car.bodyStyle) === 'Trunk' ? 'trunk' : 'cargo',
+                        luggageLabel(car.bodyStyle) === t('Trunk') ? 'trunk' : 'cargo',
                         cls.luggage,
                         className,
                       )
@@ -297,9 +313,9 @@ export default function SizeAndSpace({ dashboard }: { dashboard: CarDashboard })
             )}
             {passenger != null && (
               <Measure
-                label="Room for passengers"
-                value={`${litres(passenger).toLocaleString('en-CA')} L`}
-                alt={`${passenger} cu ft`}
+                label={t('Room for passengers')}
+                value={t('{litres} L', { litres: fmtNumber(litres(passenger)) })}
+                alt={t('{cuFt} cu ft', { cuFt: passenger })}
                 comparison={
                   cls?.passenger && className
                     ? volumeVsClass('passenger', cls.passenger, className)
@@ -312,10 +328,12 @@ export default function SizeAndSpace({ dashboard }: { dashboard: CarDashboard })
           </div>
         </div>
         <p className="text-xs text-zinc-500 mt-4">
-          {size && 'Outside: Transport Canada. '}
-          {(luggage || passenger) && 'Inside: EPA. '}
+          {size && t('Outside: Transport Canada. ')}
+          {(luggage || passenger) && t('Inside: EPA. ')}
           {several &&
-            `${size!.measured.length} versions measured; where they differ, both ends are shown.`}
+            t('{count} versions measured; where they differ, both ends are shown.', {
+              count: size!.measured.length,
+            })}
         </p>
       </div>
     </section>

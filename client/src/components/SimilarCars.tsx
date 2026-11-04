@@ -8,6 +8,7 @@ import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 import { displayModelLabel, displayVehicleTitle } from '../utils/trimLabel';
 import { useCarStore } from '../stores/carStore';
 import RatingStars from './RatingStars';
+import { t } from '../i18n';
 
 /** Nearby alternatives with plain-English trade-offs vs the car you're viewing. */
 export default function SimilarCars({ car }: { car: CarSpecs }) {
@@ -40,8 +41,8 @@ export default function SimilarCars({ car }: { car: CarSpecs }) {
   return (
     <section id="similar" className="border-t border-zinc-900 scroll-mt-32">
       <div className="page-wrap-wide section-y-tight">
-        <h2 className="block-title mb-1">Alternatives</h2>
-        <p className="text-xs text-zinc-500 mb-3">How each differs from this one.</p>
+        <h2 className="block-title mb-1">{t('Alternatives')}</h2>
+        <p className="text-xs text-zinc-500 mb-3">{t('How each differs from this one.')}</p>
 
         {cars == null ? (
           <div className="space-y-0 border-t border-zinc-900">
@@ -54,6 +55,9 @@ export default function SimilarCars({ car }: { car: CarSpecs }) {
             {cars.map((alt) => {
               const efficiency = efficiencyOf(alt);
               const inCompare = comparedCars.some((c) => c.id === alt.id);
+              const hp = alt.engine.horsepower
+                ? t('{hp} hp', { hp: alt.engine.horsepower })
+                : null;
               return (
                 <li key={alt.id} className="border-b border-zinc-900">
                   {/* A row each: the name, how it differs, and a small compare toggle. */}
@@ -74,7 +78,7 @@ export default function SimilarCars({ car }: { car: CarSpecs }) {
                             edges[alt.id]?.includes(efficiency?.unit ?? '\u0000')
                               ? null
                               : efficiency?.text,
-                            alt.engine.horsepower ? `${alt.engine.horsepower} hp` : null,
+                            hp,
                             bodyStyleLabel(alt.bodyStyle),
                             alt.driveType,
                           ]
@@ -84,7 +88,9 @@ export default function SimilarCars({ car }: { car: CarSpecs }) {
                         {(alt.safetyRating?.overall ?? 0) > 0 && (
                           <span className="inline-flex items-center gap-1">
                             <span className="sr-only">
-                              NHTSA {alt.safetyRating!.overall} out of 5 stars
+                              {t('NHTSA {stars} out of 5 stars', {
+                                stars: alt.safetyRating!.overall,
+                              })}
                             </span>
                             <RatingStars
                               stars={alt.safetyRating!.overall!}
@@ -98,10 +104,13 @@ export default function SimilarCars({ car }: { car: CarSpecs }) {
                       type="button"
                       onClick={() => addOrReplaceOldestInComparison(alt)}
                       aria-pressed={inCompare}
-                      aria-label={`${inCompare ? 'In compare' : 'Add to compare'}: ${alt.year} ${alt.make} ${displayModelLabel(alt)}`}
+                      aria-label={t('{action}: {name}', {
+                        action: inCompare ? t('In compare') : t('Add to compare'),
+                        name: `${alt.year} ${alt.make} ${displayModelLabel(alt)}`,
+                      })}
                       className={`chip shrink-0 min-h-[40px] ${inCompare ? 'chip-on' : ''}`}
                     >
-                      {inCompare ? '✓ Compare' : '+ Compare'}
+                      {inCompare ? t('✓ Compare') : t('+ Compare')}
                     </button>
                   </div>
                 </li>
@@ -115,7 +124,7 @@ export default function SimilarCars({ car }: { car: CarSpecs }) {
             to={`/home?q=${encodeURIComponent(`cars like ${displayVehicleTitle(car)}`.toLowerCase())}`}
             className="inline-flex items-center min-h-[40px] mt-3 text-sm text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
           >
-            More rivals of the {displayVehicleTitle(car)}
+            {t('More rivals of the {name}', { name: displayVehicleTitle(car) })}
           </Link>
         )}
       </div>

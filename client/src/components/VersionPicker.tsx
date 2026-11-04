@@ -9,6 +9,7 @@ import { efficiencyOf } from '../utils/efficiency';
 import { formatCarFuelLabel } from '../utils/fuelDisplay';
 import { displayConfigNotes, displayModelLabel, formatTransmissionLabel } from '../utils/trimLabel';
 import { Chevron } from './ui';
+import { t } from '../i18n';
 
 /** "2.0L 4-cyl · CVT · FWD": what tells one version from another. */
 function configOf(car: CarSpecs): string {
@@ -32,9 +33,11 @@ function VersionRow({ car, current, edge }: { car: CarSpecs; current?: boolean; 
         <span className="min-w-0 text-zinc-300">
           <span className="font-medium text-white">{displayModelLabel(car)}</span>
           {car.engine.horsepower ? (
-            <span className="text-zinc-400 tabular-nums"> · {car.engine.horsepower} hp</span>
+            <span className="text-zinc-400 tabular-nums">
+              {t(' · {hp} hp', { hp: car.engine.horsepower })}
+            </span>
           ) : null}
-          {current && <span className="text-accent font-medium"> · this one</span>}
+          {current && <span className="text-accent font-medium">{t(' · this one')}</span>}
         </span>
         {efficiency && (
           <span className="shrink-0 text-xs text-zinc-400 tabular-nums">{efficiency.text}</span>
@@ -134,15 +137,16 @@ export default function VersionPicker({
     >
       <summary className="inline-flex items-center gap-2 min-h-[44px] px-3 border border-zinc-700 hover:border-zinc-400 text-sm text-zinc-200 hover:text-white cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
         <span>
-          <span className="tabular-nums">{count}</span> versions in {car.year}
-          <span className="text-zinc-400"> · change version</span>
+          {t('{count} versions in {year}', { count, year: car.year })}
+          <span className="text-zinc-400">{t(' · change version')}</span>
         </span>
         <Chevron className="w-3.5 h-3.5 group-open/versions:rotate-180" />
       </summary>
       <div className="mt-2 border border-zinc-800 bg-black max-w-2xl">
         <p className="px-3 pt-2.5 pb-2 text-xs text-zinc-400 leading-relaxed border-b border-zinc-900">
-          EPA lists each engine, gearbox and drive, not trim names; each is named by what sets it
-          apart.
+          {t(
+            'EPA lists each engine, gearbox and drive, not trim names; each is named by what sets it apart.',
+          )}
           {modelPath && (
             <>
               {' '}
@@ -150,7 +154,7 @@ export default function VersionPicker({
                 to={`${modelPath}/${car.year}`}
                 className="text-zinc-200 underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-400"
               >
-                See them all on one page
+                {t('See them all on one page')}
               </Link>
               .
             </>
