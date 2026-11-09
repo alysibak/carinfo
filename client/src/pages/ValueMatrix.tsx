@@ -1,25 +1,16 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-  ScatterChart,
-  Scatter,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-  ZAxis,
-} from 'recharts';
 import * as api from '../services/api';
 import type { ChartDensityCell, ChartDensityResult, ChartPoint } from '../services/api';
 import AboutData from '../components/AboutData';
 import ValueMatrixHeatmap from '../components/ValueMatrixHeatmap';
+import ScatterPlot, { type ScatterPoint } from '../components/ScatterPlot';
 import { engineLitres } from '../utils/fuelDisplay';
 import { DISPLAY_CURRENCY } from '../utils/currency';
 import { usePageMeta } from '../utils/pageMeta';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 import { msg, t } from '../i18n';
+import { fmtNumber } from '../i18n/format';
 
 type AxisMode = 'mpg' | 'displacement' | 'co2';
 
@@ -293,15 +284,30 @@ export default function ValueMatrix() {
     [chartData],
   );
 
-  const CustomTooltip = ({
-    active,
-    payload,
-  }: {
-    active?: boolean;
-    payload?: Array<{ payload: ChartDataPoint }>;
-  }) => {
-    if (!active || !payload?.[0]) return null;
-    const data = payload[0].payload;
+  // Value across; up, the chosen measure in the units the site gives it
+  // (L/100 km, g/km, litres), so the ticks are round numbers of those; the
+  // dot's size by model year, newer larger, over the years shown (an area of
+  // 36 to 110 px²: measured from year 0, every dot had come out the same).
+  const plotPoints = useMemo(() => {
+    const years = chartData.map((car) => car.year);
+    const [oldest, newest] = [Math.min(...years), Math.max(...years)];
+    return chartData.map((car): ScatterPoint & { car: ChartDataPoint } => ({
+      id: car.id,
+      x: car.price,
+      y:
+        axisMode === 'mpg'
+          ? 235.215 / car.mpg
+          : axisMode === 'co2'
+            ? car.co2 / 1.609344
+            : car.displacement,
+      r: Math.sqrt((36 + ((car.year - oldest) / (newest - oldest || 1)) * 74) / Math.PI),
+      fill: car.color,
+      stroke: car.stroke,
+      car,
+    }));
+  }, [chartData, axisMode]);
+
+  const ChartTooltip = ({ data }: { data: ChartDataPoint }) => {
     return (
       <div className="bg-zinc-950 border border-zinc-600 p-4 max-w-xs">
         <p className="text-base font-bold text-white mb-0.5">
@@ -696,71 +702,22 @@ export default function ValueMatrix() {
                       ))}
                   </div>
                 ) : (
-                  <ResponsiveContainer width="100%" height={chartHeight}>
-                    <ScatterChart margin={{ top: 12, right: 12, bottom: 48, left: 44 }}>
-                      <CartesianGrid strokeDasharray="4 4" stroke="#3f3f46" strokeOpacity={0.8} />
-                      <XAxis
-                        type="number"
-                        dataKey="price"
-                        stroke="#71717a"
-                        tick={{ fill: '#a1a1aa', fontSize: 11 }}
-                        tickLine={{ stroke: '#52525b' }}
-                        label={{
-                          value: t('Est. value ({currency})', { currency: DISPLAY_CURRENCY }),
-                          position: 'bottom',
-                          offset: 28,
-                          style: { fill: '#a1a1aa', fontSize: 11, fontWeight: 500 },
-                        }}
-                        tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
-                      />
-                      <YAxis
-                        type="number"
-                        dataKey={axisMode}
-                        stroke="#71717a"
-                        tickFormatter={(v: number) =>
-                          axisMode === 'mpg'
-                            ? (235.215 / v).toFixed(1)
-                            : axisMode === 'co2'
-                              ? String(Math.round(v / 1.609344))
-                              : String(v)
-                        }
-                        tick={{ fill: '#a1a1aa', fontSize: 11 }}
-                        tickLine={{ stroke: '#52525b' }}
-                        label={{
-                          value: getYAxisLabel(),
-                          angle: -90,
-                          position: 'left',
-                          offset: 32,
-                          style: { fill: '#a1a1aa', fontSize: 11, fontWeight: 500 },
-                        }}
-                      />
-                      <ZAxis type="number" dataKey="year" range={[36, 110]} />
-                      <Tooltip
-                        content={<CustomTooltip />}
-                        cursor={{ stroke: '#71717a', strokeWidth: 1 }}
-                      />
-                      <Scatter
-                        data={chartData}
-                        onClick={(d) => d?.id && navigate(`/car/${d.id}`)}
-                        onMouseEnter={(d) => d && setHovered(d as ChartDataPoint)}
-                        onMouseLeave={() => setHovered(null)}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        {chartData.map((entry, index) => {
-                          const isHovered = hovered?.id === entry.id;
-                          return (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={entry.color}
-                              stroke={entry.stroke}
-                              strokeWidth={isHovered ? 3 : 2}
-                              fillOpacity={hovered && !isHovered ? 0.35 : 0.9}
-                            />
-                          );
-                        })}
-                      </Scatter>
-                    </ScatterChart>
-                  </ResponsiveContainer>
+                  <ScatterPlot
+                    points={plotPoints}
+                    height={chartHeight}
+                    label={t('{count} cars: estimated value against {measure}', {
+                      count: plotPoints.length,
+                      measure: getYAxisLabel(),
+                    })}
+                    xLabel={t('Est. value ({currency})', { currency: DISPLAY_CURRENCY })}
+                    yLabel={getYAxisLabel()}
+                    formatX={(v) => `$${(v / 1000).toFixed(0)}k`}
+                    formatY={(v) => fmtNumber(v)}
+                    tooltip={(point) => <ChartTooltip data={point.car} />}
+                    hoveredId={hovered?.id ?? null}
+                    onHover={(point) => setHovered(point?.car ?? null)}
+                    onSelect={(point) => navigate(`/car/${point.car.id}`)}
+                  />
                 )}
               </div>
 

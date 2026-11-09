@@ -595,6 +595,8 @@ const fr: Record<string, string> = {
     'Lecture des codes-barres. Mise en route du lecteur de texte…',
   'The VIN runs past the frame: move back or zoom out.':
     'Le NIV dépasse du cadre : reculez ou dézoomez.',
+  '{count} cars: estimated value against {measure}':
+    '{count} véhicules : valeur estimée selon {measure}',
 };
 
 export default fr;
