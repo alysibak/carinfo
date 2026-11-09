@@ -370,7 +370,7 @@ export default function VinDecoder() {
                   </p>
                 )}
 
-                {result.decodedClean && <VinCatalogMatch decoded={result} />}
+                <VinCatalogMatch decoded={result} />
 
                 <Subheading>{t('As built, by NHTSA’s decoder')}</Subheading>
                 <Row label={t('Engine')} value={engineSummary || undefined} />

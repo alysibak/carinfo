@@ -1,12 +1,14 @@
 import { type Request, type Response } from 'express';
 import { decodeVin } from '../services/nhtsa.service.js';
+import { catalogCarsForVin } from '../services/vin-match.service.js';
 
 // VIN charset excludes I, O, Q; allow '*' so NHTSA can decode partial VINs.
 const VIN_RE = /^[A-HJ-NPR-Z0-9*]{11,17}$/;
 
 /**
  * Decode a VIN via NHTSA's free vPIC database and return curated specs
- * (engine horsepower included when NHTSA has it).
+ * (engine horsepower included when NHTSA has it), with the versions in the
+ * catalog it fits.
  */
 export async function decodeVinHandler(req: Request, res: Response) {
   const raw = String(req.params.vin ?? '')
@@ -34,7 +36,8 @@ export async function decodeVinHandler(req: Request, res: Response) {
 
   try {
     const result = await decodeVin(raw, modelYear);
-    res.json({ success: true, data: result });
+    // The cars here the VIN is, for a link straight to its page (see vin-match.service).
+    res.json({ success: true, data: { ...result, catalog: catalogCarsForVin(result) } });
   } catch (error) {
     console.error(`VIN decode failed for ${raw}:`, error);
     res.status(502).json({

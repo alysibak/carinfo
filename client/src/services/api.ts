@@ -263,6 +263,16 @@ export interface VinDecodeResult {
   plantCountry?: string;
   plantCity?: string;
   manufacturer?: string;
+  /**
+   * The cars here the VIN is (server/src/services/vin-match.service.ts): one
+   * where the VIN tells the model year's versions apart, else the ones it
+   * fits; null where none of its model year is on file.
+   */
+  catalog?: {
+    cars: CarSpecs[];
+    /** What chose them: the VIN's engine, drive, body or gearbox, or only its model year. */
+    basis: 'version' | 'year';
+  } | null;
 }
 
 /** Decode a VIN against NHTSA's free vPIC database. */

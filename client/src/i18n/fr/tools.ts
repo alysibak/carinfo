@@ -193,8 +193,6 @@ const fr: Record<string, string> = {
   'Loading comparison': 'Chargement de la comparaison',
   'Loading shared garage': 'Chargement du garage partagé',
   'Longer electric range ({a} vs {b} km)': 'Plus longue autonomie électrique ({a} contre {b} km)',
-  'Looking for this model year in the catalog…':
-    'Recherche de cette année modèle dans le catalogue…',
   'Low density': 'Faible densité',
   'Lower NHTSA rating ({a}/5 vs {b}/5)': 'Cote NHTSA plus basse ({a}/5 contre {b}/5)',
   'Lowest fuel use': 'Plus faible consommation',
@@ -270,7 +268,6 @@ const fr: Record<string, string> = {
     'Un caractère était flou et a été fixé pour que la clé de contrôle concorde (marqué). Comparez-le avec le véhicule.',
   'One saved car has recalls in Canada': 'Un véhicule enregistré fait l’objet de rappels au Canada',
   'One shared car has recalls in Canada': 'Un véhicule partagé fait l’objet de rappels au Canada',
-  'Open the {name}': 'Ouvrir le {name}',
   'Opening compare': 'Ouverture de la comparaison',
   'Or a popular match-up': 'Ou une comparaison populaire',
   'Or start from': 'Ou commencer par',
@@ -597,6 +594,21 @@ const fr: Record<string, string> = {
     'Le NIV dépasse du cadre : reculez ou dézoomez.',
   '{count} cars: estimated value against {measure}':
     '{count} véhicules : valeur estimée selon {measure}',
+  'No car here matches this VIN closely enough to open its page. The searches below find its model.':
+    'Aucun véhicule ici ne correspond assez à ce NIV pour ouvrir sa page. Les recherches ci-dessous trouvent son modèle.',
+  'This car on CarInfo': 'Ce véhicule sur CarInfo',
+  'Which one is it?': 'Lequel est-ce ?',
+  'The only version of this model year on file.':
+    'La seule version de cette année modèle au dossier.',
+  'The version the VIN’s engine, drive and body match.':
+    'La version dont le moteur, le mode d’entraînement et la carrosserie correspondent au NIV.',
+  'The VIN names the model year but not the version: these are the {count} on file. Pick the one that matches the car.':
+    'Le NIV donne l’année modèle, mais pas la version : voici les {count} au dossier. Choisissez celle qui correspond au véhicule.',
+  'The VIN fits these {count} versions and does not say which. Pick the one that matches the car.':
+    'Le NIV correspond à ces {count} versions sans dire laquelle. Choisissez celle qui correspond au véhicule.',
+  'NHTSA flagged this VIN, so check the car against it.':
+    'La NHTSA a signalé ce NIV : vérifiez-le sur le véhicule.',
+  'Open this car’s page': 'Ouvrir la page de ce véhicule',
 };
 
 export default fr;
