@@ -38,6 +38,11 @@ function jsonShape(stampKey: string, countKeys: string[]) {
   };
 }
 
+/** A file of one record per key, with nothing to say when it was built. */
+function countOnly(text: string): Shape {
+  return { stamp: null, counts: { entries: sizeOf(JSON.parse(text)) } };
+}
+
 /** scripts/build-pump-prices.ts writes it; its months and cities are what matter. */
 export function pumpPricesShape(text: string): Shape {
   if (!text.includes('export const PUMP_PRICES')) throw new Error('no PUMP_PRICES');
@@ -58,12 +63,17 @@ export const SITE_FILES: { path: string; shape: (text: string) => Shape }[] = [
   { path: 'server/data/nhtsa-ratings.json', shape: jsonShape('fetchedAt', ['tests']) },
   { path: 'server/data/canadian-specs.json', shape: jsonShape('fetchedAt', ['vehicles']) },
   { path: 'server/src/config/pump-prices.ts', shape: pumpPricesShape },
+  // The EPA refresh's files (.github/workflows/epa-refresh.yml).
+  { path: 'server/data/cars.json', shape: jsonShape('lastUpdated', ['cars']) },
+  { path: 'server/data/epa-enrichment.json', shape: countOnly },
+  // The photo run's (.github/workflows/car-photos.yml).
+  { path: 'server/data/car-photos.json', shape: jsonShape('fetched', ['yearPhotos', 'images']) },
 ];
 
 /** Why the new file should not replace the old, or null where it may. */
 export function heldBackFor(old: Shape, next: Shape): string | null {
-  if (!next.stamp) return 'it says nothing of when it was built';
-  if (old.stamp && next.stamp < old.stamp)
+  if (old.stamp && !next.stamp) return 'it says nothing of when it was built';
+  if (old.stamp && next.stamp && next.stamp < old.stamp)
     return `it was built before the one there (${next.stamp} < ${old.stamp})`;
   for (const [name, count] of Object.entries(old.counts)) {
     const now = next.counts[name] ?? 0;

@@ -5,8 +5,10 @@ name: EPA refresh
 # NHTSA's ratings come from the Public data workflow (nhtsa-ratings.json),
 # matched to every car when the database is built. The data scripts download
 # from fueleconomy.gov and open.canada.ca, which GitHub's runners reach. When the
-# data changes, the result goes to the epa-refresh branch and a pull request
-# for review, never straight to main; otherwise no branch is made.
+# data changes, the result goes to the epa-refresh branch (with the report and
+# EPA's file, for a look) and the site's files go on main once they pass the
+# data checks and the tests (.github/actions/land-on-main); otherwise no
+# branch is made.
 #
 # Horsepower is left as committed: new cars take the site's maker ratings and
 # same-engine fills. A rebuild of horsepower-enrichment.json with today's
@@ -23,7 +25,6 @@ concurrency:
 
 permissions:
   contents: write
-  pull-requests: write
 
 defaults:
   run:
@@ -60,8 +61,13 @@ jobs:
       - name: Build enrichment
         run: npm run build-enrichment --workspace=server | tee -a epa-refresh-report.txt
 
-      # New cars can move counts the tests pin; the outcome goes in the
-      # commit message for the reviewer rather than stopping the refresh.
+      # The model-year constants (first, newest, newest full lineup) follow the
+      # data, so a new model year moves nothing by hand.
+      - name: Model-year constants
+        run: npx tsx server/scripts/update-model-years.ts | tee -a epa-refresh-report.txt
+
+      # The outcome goes in the branch's commit message; main takes the files
+      # only when they pass (below).
       - name: Tests
         id: tests
         continue-on-error: true
@@ -82,24 +88,19 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git checkout -B epa-refresh
-          git add epa-refresh-report.txt server/data/cars.json server/data/epa-enrichment.json
+          git add epa-refresh-report.txt server/data/cars.json server/data/epa-enrichment.json \
+            server/src/config/model-years.ts
           # EPA's file as read, so the refresh can be checked against it.
           git add -f server/data/raw/vehicles.csv.gz
           git commit -m "Refresh from EPA and NRCan ($(date -u +%F))" \
             -m "Tests: ${{ steps.tests.outcome }}. Report: epa-refresh-report.txt."
           git push -f origin epa-refresh
 
-      - name: Open a pull request
-        # A scheduled run's event carries no repository, so name the branch.
-        if: steps.push.outputs.changed == 'true' && github.ref_name == 'main'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if gh pr view epa-refresh --json state -q .state 2>/dev/null | grep -q OPEN; then
-            echo 'The epa-refresh pull request is already open, now with this run.'
-          else
-            gh pr create --base "$GITHUB_REF_NAME" --head epa-refresh \
-              --title 'Refresh from EPA and NRCan' \
-              --body 'New EPA listings, and the Canadian cars from NRCan (or updated figures for either). epa-refresh-report.txt names what was added and left out. Bump the model-year and count tests if they fail, and drop epa-refresh-report.txt and the vehicles.csv.gz before merging.' \
-              || echo '::warning::Could not open a pull request (Settings > Actions > General lets workflows create them); the epa-refresh branch has the refresh.'
-          fi
+      # The site reads main, so the files go there, checked (.github/actions/land-on-main).
+      - name: Put the site's files on main
+        if: steps.push.outputs.changed == 'true'
+        uses: ./.github/actions/land-on-main
+        with:
+          files: server/data/cars.json server/data/epa-enrichment.json server/src/config/model-years.ts
+          message: Refresh from EPA and NRCan
+          report: epa-refresh-report.txt

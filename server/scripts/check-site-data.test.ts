@@ -22,9 +22,11 @@ describe('checking the weekly data before it goes on main', () => {
     ).toBe('tests fell from 12749 to 9000');
   });
 
-  it('holds back a file older than the one there, or with no date', () => {
+  it('holds back a file older than the one there, or with no date where the old one has one', () => {
     expect(heldBackFor(shape('2026-11-03', {}), shape('2026-10-20', {}))).toMatch(/built before/);
     expect(heldBackFor(shape('2026-11-03', {}), shape(null, {}))).toMatch(/nothing of when/);
+    // A file that never carries a date is judged on its counts alone.
+    expect(heldBackFor(shape(null, { entries: 100 }), shape(null, { entries: 101 }))).toBeNull();
   });
 
   it('reads the pump prices file the build script writes', () => {
@@ -38,7 +40,7 @@ describe('checking the weekly data before it goes on main', () => {
     const { join } = await import('node:path');
     for (const { path, shape: read } of SITE_FILES) {
       const found = read(readFileSync(join(__dirname, '../..', path), 'utf8'));
-      expect(found.stamp, path).toBeTruthy();
+      if (!/epa-enrichment/.test(path)) expect(found.stamp, path).toBeTruthy();
       for (const count of Object.values(found.counts)) expect(count, path).toBeGreaterThan(0);
     }
   });

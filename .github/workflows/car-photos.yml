@@ -3,8 +3,8 @@ name: Car photos
 # Collects a photo of each car's own model year from Wikimedia Commons, with
 # its generation from Wikipedia (scripts/build-car-photos.ts), in
 # server/data/car-photos.json; GitHub's runners reach both. When the list changes, the
-# result goes to the car-photos branch and a pull request for review, never
-# straight to main; otherwise no branch is made.
+# result goes to the car-photos branch, for a look, and on main once it passes
+# the data checks (.github/actions/land-on-main); otherwise no branch is made.
 on:
   # A change to the collector collects again.
   push:
@@ -25,7 +25,6 @@ concurrency:
 
 permissions:
   contents: write
-  pull-requests: write
 
 defaults:
   run:
@@ -68,17 +67,13 @@ jobs:
           git commit -m "Collect car photos ($(date -u +%F))" -m "$(grep 'Done:' car-photos-report.txt || true)"
           git push -f origin car-photos
 
-      - name: Open a pull request
-        # A scheduled run's event carries no repository, so name the branch.
-        if: steps.push.outputs.changed == 'true' && github.ref_name == 'main'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if gh pr view car-photos --json state -q .state 2>/dev/null | grep -q OPEN; then
-            echo 'The car-photos pull request is already open, now with this run.'
-          else
-            gh pr create --base "$GITHUB_REF_NAME" --head car-photos \
-              --title 'Collect car photos' \
-              --body 'New or changed photos from Wikimedia Commons. The site shows a car only a photo of its own model year, make, model and body (server/scripts/lib/year-photos.ts).' \
-              || echo '::warning::Could not open a pull request (Settings > Actions > General lets workflows create them); the car-photos branch has the list.'
-          fi
+      # The site reads main, so the list goes there, checked: a run that lost
+      # photos (Commons' search came back empty for 36 makes' years once) stays
+      # on the branch (.github/actions/land-on-main, server/scripts/check-site-data.ts).
+      - name: Put the site's files on main
+        if: steps.push.outputs.changed == 'true'
+        uses: ./.github/actions/land-on-main
+        with:
+          files: server/data/car-photos.json
+          message: Collect car photos
+          report: car-photos-report.txt

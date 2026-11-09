@@ -13,7 +13,7 @@
  *
  * Usage: tsx scripts/build-car-photos.ts
  */
-import { readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import type { Car } from '../src/types/car.types.js';
@@ -114,6 +114,10 @@ function serialize(file: CarPhotoFile): string {
 
 async function main(): Promise<void> {
   const { cars } = JSON.parse(readFileSync(CARS_PATH, 'utf8')) as { cars: Car[] };
+  // The last run's file: a photo it had that this run's listing misses stays (step 7).
+  const previous = existsSync(OUT_PATH)
+    ? (JSON.parse(readFileSync(OUT_PATH, 'utf8')) as CarPhotoFile)
+    : null;
   // As build-runtime-db sees them, which is where the photos are matched.
   const unified = unifyModelSpelling(unifyMakeSpelling(cars));
   const get = wikiClient();
@@ -253,19 +257,32 @@ async function main(): Promise<void> {
       pairs.set(`${name}|${car.year}`, { name, year: car.year });
   }
   const named = new Map<string, string[]>();
+  const unlisted: string[] = [];
   let listed = 0;
   for (const [pair, { name, year }] of pairs) {
-    const found = await searchFileNames(
-      commons,
-      `intitle:"${year}" intitle:"${name}" filetype:bitmap`,
-      (file) => namedForYear(file, year),
-    );
+    let found: string[] = [];
+    try {
+      found = await searchFileNames(
+        commons,
+        `intitle:"${year}" intitle:"${name}" filetype:bitmap`,
+        (file) => namedForYear(file, year),
+      );
+    } catch (error) {
+      // Commons' search failed for this make and year, retries and all: its
+      // cars keep the last run's photos (step 7) rather than lose them.
+      unlisted.push(pair);
+      log(
+        `Commons could not list ${name} ${year}: ${error instanceof Error ? error.message : error}`,
+      );
+    }
     named.set(pair, found);
     listed += found.length;
     if (named.size % 200 === 0) log(`listed ${named.size} of ${pairs.size} makes and years...`);
   }
   log(
-    `${listed} photos on Commons named for a make's model year, over ${pairs.size} makes and years.`,
+    `${listed} photos on Commons named for a make's model year, over ${pairs.size} makes and years` +
+      (unlisted.length ? ` (${unlisted.length} could not be listed: ${unlisted.join(', ')})` : '') +
+      '.',
   );
   // Where each file that could be some car's was taken, and its licence.
   const generationsOnly = { queries, articles };
@@ -310,6 +327,36 @@ async function main(): Promise<void> {
     `${Object.keys(yearPhotos).length} cars have a photo of their own model year ` +
       `(${changeovers} cars are of a year their model changed generation: a photo from North America only).`,
   );
+
+  // 7. The last run's photos this run's listing did not see. Commons' search
+  // fails now and then, or comes back short (one run's came back empty for 36
+  // makes' model years, and 600 cars lost their photo for a month): a car
+  // whose photo was not among this run's candidates keeps it, once Commons
+  // says the file is still there with a licence. A photo that was listed and
+  // not chosen was rejected on purpose, and goes.
+  const current = new Set(unified.map((car) => car.id));
+  const listedFiles = new Set(candidateFiles);
+  const unseen = new Map<string, string>();
+  for (const [id, file] of Object.entries(previous?.yearPhotos ?? {})) {
+    if (yearPhotos[id] || listedFiles.has(file) || !current.has(id)) continue;
+    unseen.set(id, file);
+  }
+  if (unseen.size) {
+    const stillThere = await fetchImages(commons, [...new Set(unseen.values())], 'local');
+    let kept = 0;
+    for (const [id, file] of unseen) {
+      const image = stillThere.get(file);
+      if (!image) continue;
+      yearPhotos[id] = file;
+      images[file] = image;
+      kept++;
+    }
+    log(
+      `${kept} cars keep the last run's photo, which Commons did not list this run` +
+        (unseen.size > kept ? ` (${unseen.size - kept} more are gone from Commons)` : '') +
+        '.',
+    );
+  }
 
   const file: CarPhotoFile = {
     source:

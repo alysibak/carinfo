@@ -3,8 +3,11 @@ import {
   FIRST_MODEL_YEAR,
   LATEST_FULL_MODEL_YEAR,
   LATEST_MODEL_YEAR,
+  latestFullModelYearOf,
+  latestModelYearOf,
 } from '../config/model-years.js';
 import {
+  getAllCars,
   getCarById,
   getModelLinesByMake,
   getModelOverview,
@@ -259,15 +262,15 @@ describe('car.service natural language search', () => {
     expect(stats.totalModels).toBeLessThan(stats.totalCars / 10);
   });
 
-  it('calls a year "full" only while the next one is still partial', () => {
-    // Examples ("2026 Camry") and the newest-year chip use the full year. Once
-    // EPA has certified most of the next year's lineup, bump the constant.
-    const count = (year: number) =>
-      searchCars({ filters: { year: { min: year, max: year } }, limit: 1 }).total;
-    expect(count(LATEST_FULL_MODEL_YEAR)).toBeGreaterThan(1000);
-    if (LATEST_MODEL_YEAR > LATEST_FULL_MODEL_YEAR) {
-      expect(count(LATEST_MODEL_YEAR)).toBeLessThan(count(LATEST_FULL_MODEL_YEAR) / 2);
-    }
+  it('keeps the model-year constants in step with the cars on file', () => {
+    // Examples ("2026 Camry") and the newest-year chip use the full year.
+    // scripts/update-model-years.ts writes the constants from the data by the
+    // rule here, and the EPA refresh runs it; this holds them to it.
+    const counts = new Map<number, number>();
+    for (const car of getAllCars()) counts.set(car.year, (counts.get(car.year) ?? 0) + 1);
+    expect(LATEST_MODEL_YEAR).toBe(latestModelYearOf(counts));
+    expect(LATEST_FULL_MODEL_YEAR).toBe(latestFullModelYearOf(counts));
+    expect(Math.min(...counts.keys())).toBe(FIRST_MODEL_YEAR);
     expect(
       searchCars({ query: `${LATEST_FULL_MODEL_YEAR} camry`, limit: 1 }).total,
     ).toBeGreaterThan(0);
@@ -310,9 +313,11 @@ describe('car.service natural language search', () => {
   it('reaches current half-tons and roadsters by their familiar names', () => {
     const newest = (query: string) =>
       Math.max(...searchCars({ query, limit: 500 }).results.map((c) => c.year));
-    expect(newest('silverado 1500')).toBe(LATEST_FULL_MODEL_YEAR);
-    expect(newest('sierra 1500')).toBe(LATEST_FULL_MODEL_YEAR);
-    expect(newest('miata')).toBe(LATEST_FULL_MODEL_YEAR);
+    // At least the newest full year: EPA's early certifications can put a
+    // model's newest year past it (a 2027 Silverado in the 2026 lineup's year).
+    expect(newest('silverado 1500')).toBeGreaterThanOrEqual(LATEST_FULL_MODEL_YEAR);
+    expect(newest('sierra 1500')).toBeGreaterThanOrEqual(LATEST_FULL_MODEL_YEAR);
+    expect(newest('miata')).toBeGreaterThanOrEqual(LATEST_FULL_MODEL_YEAR);
   });
 
   it('ranks a model-name match above a trim-only match', () => {
@@ -676,7 +681,11 @@ describe('car.service natural language search', () => {
   it('lists the rivals of a car named after "like"', () => {
     const civic = searchCars({ query: 'cars like a civic', limit: 24 });
     // The base Civic, not the Si its first result was: rivals are compacts.
-    expect(civic.interpretation?.similarTo?.label).toBe(`${LATEST_FULL_MODEL_YEAR} Honda Civic`);
+    // The newest Civic on file, which EPA's early certifications can put past the full year.
+    expect(civic.interpretation?.similarTo?.label).toMatch(/^\d{4} Honda Civic$/);
+    expect(Number(civic.interpretation?.similarTo?.label.slice(0, 4))).toBeGreaterThanOrEqual(
+      LATEST_FULL_MODEL_YEAR,
+    );
     const makes = civic.results.map((c) => `${c.make} ${c.model}`);
     expect(makes.some((m) => /Toyota Corolla/.test(m))).toBe(true);
     expect(makes.some((m) => /Honda Civic/.test(m))).toBe(false);

@@ -1,0 +1,62 @@
+name: Put the site's files on main
+description: >-
+  The site reads main, so a data run's files go there, checked, or they never
+  reach it (one run's data waited on a review branch for two weeks). Each
+  file is held against main's by server/scripts/check-site-data.ts (one that
+  will not read, is older, or lost records stays main's), then the dataset
+  checks and the server tests run, and only then the push. Tried again on a
+  fresh main if main moved meanwhile. Pushed with the job's token, which
+  starts no CI run; Vercel deploys main as for any push.
+inputs:
+  files:
+    description: The files to put on main, space-separated paths from the repository root.
+    required: true
+  message:
+    description: The commit's subject; the run's date follows it in brackets.
+    required: true
+  report:
+    description: A report file whose "Done" lines make the commit's body, if any.
+    required: false
+    default: ''
+runs:
+  using: composite
+  steps:
+    - name: Put the files on main
+      shell: bash
+      env:
+        FILES: ${{ inputs.files }}
+        MESSAGE: ${{ inputs.message }}
+        REPORT: ${{ inputs.report }}
+      run: |
+        set -eo pipefail
+        # Kept aside: main's checkout takes away what only this run has.
+        rm -rf /tmp/site-data && mkdir -p /tmp/site-data
+        : > /tmp/site-data/report.txt
+        if [ -n "$REPORT" ] && [ -e "$REPORT" ]; then cp "$REPORT" /tmp/site-data/report.txt; fi
+        for path in $FILES; do
+          if [ -e "$path" ]; then install -D -m 644 "$path" "/tmp/site-data/$path"; fi
+        done
+        git config user.name 'github-actions[bot]'
+        git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+        for attempt in 1 2 3; do
+          git fetch --depth=1 origin main
+          git checkout -f -B main FETCH_HEAD
+          for path in $FILES; do
+            if [ -e "/tmp/site-data/$path" ]; then install -D -m 644 "/tmp/site-data/$path" "$path"; fi
+          done
+          npx tsx server/scripts/check-site-data.ts HEAD | tee -a "$GITHUB_STEP_SUMMARY"
+          if git diff --quiet -- $FILES; then
+            echo 'Main has this data already.' | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          (cd server && npm run build-runtime-db && npm run validate:data && npm test)
+          git add -- $FILES
+          git commit -m "$MESSAGE ($(date -u +%F))" -m "$(grep '^Done' /tmp/site-data/report.txt || true)"
+          if git push origin main; then
+            echo "Pushed to main: $MESSAGE" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          sleep $((attempt * 30))
+        done
+        echo '::error::Main moved three times while this run tried to push; run the workflow again.'
+        exit 1

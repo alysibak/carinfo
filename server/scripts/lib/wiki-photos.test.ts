@@ -210,6 +210,26 @@ describe('API', () => {
     expect(resolved.get('Subaru Impreza Outback Sport')).toBeNull();
   });
 
+  it('tries again after the API’s own error, and gives it up as an error, not an empty answer', async () => {
+    fetchMock
+      .mockResolvedValueOnce(json({ error: { code: 'search-backend-error', info: 'timed out' } }))
+      .mockResolvedValueOnce(
+        json({ query: { search: [{ title: 'File:2020 Toyota Camry.jpg' }] } }),
+      );
+    const once = await wikiClient(0, [0, 0])({ action: 'query', list: 'search' });
+    expect(once.query?.search?.map((r) => r.title)).toEqual(['File:2020 Toyota Camry.jpg']);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    fetchMock.mockReset();
+    fetchMock.mockImplementation(async () =>
+      json({ error: { code: 'search-backend-error', info: 'timed out' } }),
+    );
+    await expect(wikiClient(0, [0, 0])({ action: 'query', list: 'search' })).rejects.toThrow(
+      /search-backend-error: timed out/,
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
   it('keeps Commons photos with their credit, not Wikipedia’s own files', async () => {
     fetchMock.mockResolvedValueOnce(
       json({

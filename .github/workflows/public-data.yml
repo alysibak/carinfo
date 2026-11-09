@@ -178,39 +178,13 @@ jobs:
           git commit -m "Public data ($(date -u +%F))" -m "$(grep '^Done' public-data-report.txt || true)"
           git push -f origin public-data-files
 
-      # The site reads main, so its files go there, checked, or they never
-      # reach it (3 Nov's waited on public-data-files for two weeks). Pushed
-      # with the job's token, which starts no CI run; Vercel deploys main as
-      # for any push. Tried again on a fresh main if main moved meanwhile.
+      # The site reads main, so its files go there, checked (.github/actions/land-on-main).
       - name: Put the site's files on main
-        working-directory: .
-        run: |
-          files='server/data/recalls-canada.json server/data/complaints.json
+        uses: ./.github/actions/land-on-main
+        with:
+          files: >-
+            server/data/recalls-canada.json server/data/complaints.json
             server/data/investigations.json server/data/nhtsa-ratings.json
-            server/data/canadian-specs.json server/src/config/pump-prices.ts'
-          # Kept aside: main's checkout takes away what only public-data-files has.
-          rm -rf /tmp/site-data && mkdir -p /tmp/site-data
-          cp public-data-report.txt /tmp/site-data/report.txt
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          for path in $files; do
-            if [ -e "$path" ]; then install -D -m 644 "$path" "/tmp/site-data/$path"; fi
-          done
-          for attempt in 1 2 3; do
-            git fetch --depth=1 origin main
-            git checkout -f -B main FETCH_HEAD
-            for path in $files; do
-              if [ -e "/tmp/site-data/$path" ]; then install -D -m 644 "/tmp/site-data/$path" "$path"; fi
-            done
-            npx tsx server/scripts/check-site-data.ts HEAD | tee -a "$GITHUB_STEP_SUMMARY"
-            if git diff --quiet -- $files; then
-              echo 'Main has this data already.' | tee -a "$GITHUB_STEP_SUMMARY"
-              exit 0
-            fi
-            (cd server && npm run build-runtime-db && npm run validate:data && npm test)
-            git add -- $files
-            git commit -m "Public data ($(date -u +%F))" -m "$(grep '^Done' /tmp/site-data/report.txt || true)"
-            if git push origin main; then exit 0; fi
-            sleep $((attempt * 30))
-          done
-          exit 1
+            server/data/canadian-specs.json server/src/config/pump-prices.ts
+          message: Public data
+          report: public-data-report.txt

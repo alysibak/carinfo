@@ -65,14 +65,19 @@ export function wikiClient(
       const gap = last + pauseMs - Date.now();
       if (gap > 0) await wait(gap);
       last = Date.now();
+      let failure = 'Wikipedia stayed busy (maxlag)';
       try {
         const body = await fetchJson<WikiResponse>(`${api}?${query}`, TIMEOUT_MS);
-        if (body.error?.code !== 'maxlag') return body;
+        if (!body.error) return body;
+        // The API's own errors (a search backend that timed out, mostly) came
+        // back as answers, and a listing read them as "no files": a run lost
+        // the photos of 36 makes' model years. Tried again, then an error.
+        if (body.error.code !== 'maxlag') failure = `${body.error.code}: ${body.error.info}`;
       } catch (error) {
         const status = error instanceof HttpError ? error.status : 0;
         if (attempt >= retryMs.length || (status && status < 429 && status !== 408)) throw error;
       }
-      if (attempt >= retryMs.length) throw new Error('Wikipedia stayed busy (maxlag)');
+      if (attempt >= retryMs.length) throw new Error(failure);
       await wait(retryMs[attempt]);
     }
   };
