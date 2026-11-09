@@ -55,6 +55,18 @@ export interface CarSpecs {
   shoppingSegment?: ShoppingSegment;
   ownershipProfile?: OwnershipProfile;
 
+  /**
+   * Seating capacity from the maker (curated): standard, and seatsMax when a
+   * third row is optional. EPA publishes none.
+   */
+  seats?: number;
+  seatsMax?: number;
+  /**
+   * Maximum conventional towing capacity in pounds when properly equipped,
+   * from the maker (curated). EPA publishes none.
+   */
+  towingCapacityLb?: number;
+
   engine: {
     displacement?: number;
     horsepower?: number;
@@ -654,6 +666,25 @@ export interface ModelOverview {
   rivals: Array<{ make: string; name: string; path: string }>;
   /** Its place on Équité's list of Canada's most stolen vehicles, where it is on it. */
   theft?: TheftRank;
+}
+
+/**
+ * One model year of a family with several configurations: "/models/honda/civic/2024".
+ * Built on the same model-family keys as ModelOverview (not raw EPA carlines), so
+ * "Civic 4Dr" and "Civic 5Dr" share a page. Years with a single configuration stay
+ * on the car dossier instead.
+ */
+export interface ModelYearOverview {
+  make: string;
+  name: string;
+  /** "/models/honda/civic/2024" */
+  path: string;
+  /** "/models/honda/civic" */
+  modelPath: string;
+  year: number;
+  summary: ModelYearSummary;
+  /** Every configuration of that year, cheapest / base first. */
+  cars: Car[];
 }
 
 /** One of Canada's best sellers, with its model's newest year on file (config/popular-models.ts). */

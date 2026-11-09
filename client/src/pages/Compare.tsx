@@ -32,6 +32,8 @@ import { availabilityLabel, rolloverRiskText } from '../utils/safetyTech';
 import { complaintPart } from '../utils/recalls';
 import { ordinal } from '@carinfo/shared/theft';
 import { splitRecalls } from '@carinfo/shared/recall-scope';
+import { msg, t, tp } from '../i18n';
+import { rich } from '../i18n/rich';
 
 function isUnavailable(value: string | number): boolean {
   return value === UNAVAILABLE_LABEL;
@@ -60,28 +62,28 @@ interface SpecRow {
  * it burns, how it crashed, its record, its size, the car itself.
  */
 const ROW_GROUP: Record<string, string> = {
-  fuelUse: 'Fuel',
-  fuelCity: 'Fuel',
-  fuelHighway: 'Fuel',
-  range: 'Fuel',
-  co2: 'Fuel',
-  safety: 'Safety',
-  rolloverRisk: 'Safety',
-  fcw: 'Safety',
-  ldw: 'Safety',
-  recalls: 'Recalls, complaints and theft',
-  complaints: 'Recalls, complaints and theft',
-  complaintPart: 'Recalls, complaints and theft',
-  theft: 'Recalls, complaints and theft',
-  length: 'Size and space',
-  width: 'Size and space',
-  height: 'Size and space',
-  weight: 'Size and space',
-  luggage: 'Size and space',
-  passenger: 'Size and space',
+  fuelUse: msg('Fuel'),
+  fuelCity: msg('Fuel'),
+  fuelHighway: msg('Fuel'),
+  range: msg('Fuel'),
+  co2: msg('Fuel'),
+  safety: msg('Safety'),
+  rolloverRisk: msg('Safety'),
+  fcw: msg('Safety'),
+  ldw: msg('Safety'),
+  recalls: msg('Recalls, complaints and theft'),
+  complaints: msg('Recalls, complaints and theft'),
+  complaintPart: msg('Recalls, complaints and theft'),
+  theft: msg('Recalls, complaints and theft'),
+  length: msg('Size and space'),
+  width: msg('Size and space'),
+  height: msg('Size and space'),
+  weight: msg('Size and space'),
+  luggage: msg('Size and space'),
+  passenger: msg('Size and space'),
 };
 const groupOf = (key: string) =>
-  ESTIMATE_ROWS.has(key) ? 'Estimates' : (ROW_GROUP[key] ?? 'The car');
+  ESTIMATE_ROWS.has(key) ? msg('Estimates') : (ROW_GROUP[key] ?? msg('The car'));
 
 /**
  * Rows from the records first, then the estimates as a group of their own:
@@ -131,9 +133,9 @@ const rowRank = (key: string) => {
 
 const bodyLabel = (style: string) =>
   style === 'suv'
-    ? 'SUV'
+    ? t('SUV')
     : style === 'truck'
-      ? 'Pickup'
+      ? t('Pickup')
       : style.charAt(0).toUpperCase() + style.slice(1);
 
 function efficiencyRow(
@@ -162,10 +164,11 @@ function efficiencyRow(
 const ALL_SPECS: SpecRow[] = [
   {
     key: 'price',
-    label: 'Est. value',
+    label: msg('Est. value'),
     provenanceKey: 'price.msrp',
     getValue: (car, dash) => {
-      if (dash.ownership.unvalued) return `${dash.ownership.unvalued.label}: not valued`;
+      if (dash.ownership.unvalued)
+        return t('{label}: not valued', { label: dash.ownership.unvalued.label });
       const { low, high, mid } = dash.ownership.marketValue;
       if (low > 0 && high > 0) return formatMoneyRange(low, high);
       if (mid > 0) return formatMoneyShort(mid);
@@ -177,8 +180,8 @@ const ALL_SPECS: SpecRow[] = [
   },
   {
     key: 'running',
-    label: 'Yearly cost',
-    hint: 'Fuel, insurance, upkeep',
+    label: msg('Yearly cost'),
+    hint: msg('Fuel, insurance, upkeep'),
     provenanceKey: 'analytics.annualCost',
     getValue: (_car, dash) =>
       dash.annualRunningCost && !dash.ownership.unvalued
@@ -190,7 +193,7 @@ const ALL_SPECS: SpecRow[] = [
   },
   {
     key: 'energy',
-    label: 'Fuel a year',
+    label: msg('Fuel a year'),
     provenanceKey: 'analytics.annualCost',
     getValue: (_car, dash) =>
       dash.ownership.annualCost.energy != null && !dash.ownership.unvalued
@@ -202,8 +205,8 @@ const ALL_SPECS: SpecRow[] = [
   },
   {
     key: 'fiveYear',
-    label: '5-year cost',
-    hint: 'Running costs and value lost',
+    label: msg('5-year cost'),
+    hint: msg('Running costs and value lost'),
     provenanceKey: 'analytics.tco5Year',
     getValue: (_car, dash) =>
       dash.tco5Year && !dash.ownership.unvalued
@@ -212,12 +215,12 @@ const ALL_SPECS: SpecRow[] = [
     getNumeric: (_car, dash) => (dash.ownership.unvalued ? null : (dash.tco5Year?.mid ?? null)),
     higherIsBetter: false,
   },
-  efficiencyRow('fuelUse', 'Fuel use', 'combined'),
-  efficiencyRow('fuelCity', 'City', 'city'),
-  efficiencyRow('fuelHighway', 'Highway', 'highway'),
+  efficiencyRow('fuelUse', msg('Fuel use'), 'combined'),
+  efficiencyRow('fuelCity', msg('City'), 'city'),
+  efficiencyRow('fuelHighway', msg('Highway'), 'highway'),
   {
     key: 'range',
-    label: 'Range',
+    label: msg('Range'),
     provenanceKey: 'epa.rangeMiles',
     getValue: (car) =>
       car.epa?.rangeMiles ? `${rangeKm(car.epa.rangeMiles)} km` : UNAVAILABLE_LABEL,
@@ -228,7 +231,7 @@ const ALL_SPECS: SpecRow[] = [
   },
   {
     key: 'safety',
-    label: 'NHTSA rating',
+    label: msg('NHTSA rating'),
     provenanceKey: 'safetyRating.overall',
     getValue: (car) =>
       car.safetyRating?.overall != null && car.safetyRating.overall > 0
@@ -239,8 +242,8 @@ const ALL_SPECS: SpecRow[] = [
   },
   {
     key: 'rolloverRisk',
-    label: 'Rollover risk',
-    hint: 'NHTSA, single-vehicle crash',
+    label: msg('Rollover risk'),
+    hint: msg('NHTSA, single-vehicle crash'),
     getValue: (car) =>
       car.safetyRating?.rolloverRisk != null
         ? rolloverRiskText(car.safetyRating.rolloverRisk)
@@ -250,8 +253,8 @@ const ALL_SPECS: SpecRow[] = [
   },
   {
     key: 'fcw',
-    label: 'Collision warning',
-    hint: 'As NHTSA lists it',
+    label: msg('Collision warning'),
+    hint: msg('As NHTSA lists it'),
     // "Not listed" only of a car NHTSA lists at all.
     getValue: (car) =>
       car.safetyRating?.nhtsaIds?.length
@@ -260,8 +263,8 @@ const ALL_SPECS: SpecRow[] = [
   },
   {
     key: 'ldw',
-    label: 'Lane departure warning',
-    hint: 'As NHTSA lists it',
+    label: msg('Lane departure warning'),
+    hint: msg('As NHTSA lists it'),
     getValue: (car) =>
       car.safetyRating?.nhtsaIds?.length
         ? availabilityLabel(car.safetyTech?.ldw)
@@ -269,36 +272,36 @@ const ALL_SPECS: SpecRow[] = [
   },
   {
     key: 'length',
-    label: 'Length',
-    hint: 'Transport Canada',
+    label: msg('Length'),
+    hint: msg('Transport Canada'),
     getValue: (car) => (car.size ? formatMetres(car.size.lengthCm) : UNAVAILABLE_LABEL),
     getSub: (car) => (car.size ? formatFeet(car.size.lengthCm) : null),
   },
   {
     key: 'width',
-    label: 'Width',
-    hint: 'Transport Canada, without mirrors',
+    label: msg('Width'),
+    hint: msg('Transport Canada, without mirrors'),
     getValue: (car) => (car.size ? formatMetres(car.size.widthCm) : UNAVAILABLE_LABEL),
     getSub: (car) => (car.size ? formatFeet(car.size.widthCm) : null),
   },
   {
     key: 'height',
-    label: 'Height',
-    hint: 'Transport Canada',
+    label: msg('Height'),
+    hint: msg('Transport Canada'),
     getValue: (car) => (car.size ? formatMetres(car.size.heightCm) : UNAVAILABLE_LABEL),
     getSub: (car) => (car.size ? formatFeet(car.size.heightCm) : null),
   },
   {
     key: 'weight',
-    label: 'Weight',
-    hint: 'Transport Canada, empty',
+    label: msg('Weight'),
+    hint: msg('Transport Canada, empty'),
     getValue: (car) => (car.size ? formatKg(car.size.curbWeightKg) : UNAVAILABLE_LABEL),
     getSub: (car) => (car.size ? formatLb(car.size.curbWeightKg) : null),
   },
   {
     key: 'luggage',
-    label: 'Trunk or cargo',
-    hint: 'EPA, every seat up',
+    label: msg('Trunk or cargo'),
+    hint: msg('EPA, every seat up'),
     getValue: (car) =>
       car.epa?.luggageVolumeCuFt ? formatVolume(car.epa.luggageVolumeCuFt) : UNAVAILABLE_LABEL,
     getNumeric: (car) => car.epa?.luggageVolumeCuFt ?? null,
@@ -309,34 +312,66 @@ const ALL_SPECS: SpecRow[] = [
   },
   {
     key: 'passenger',
-    label: 'Room for passengers',
-    hint: 'EPA',
+    label: msg('Room for passengers'),
+    hint: msg('EPA'),
     getValue: (car) =>
       car.epa?.passengerVolumeCuFt ? formatVolume(car.epa.passengerVolumeCuFt) : UNAVAILABLE_LABEL,
     getNumeric: (car) => car.epa?.passengerVolumeCuFt ?? null,
     higherIsBetter: true,
   },
   {
+    key: 'seats',
+    label: msg('Seats'),
+    hint: msg('Maker'),
+    provenanceKey: 'seats',
+    getValue: (car) => {
+      if (car.seats == null) return UNAVAILABLE_LABEL;
+      if (car.seatsMax != null && car.seatsMax !== car.seats) {
+        return `${car.seats}–${car.seatsMax}`;
+      }
+      return String(car.seats);
+    },
+    getNumeric: (car) => car.seatsMax ?? car.seats ?? null,
+    higherIsBetter: true,
+  },
+  {
+    key: 'towing',
+    label: msg('Max towing'),
+    hint: msg('Maker, properly equipped'),
+    provenanceKey: 'towingCapacityLb',
+    getValue: (car) =>
+      car.towingCapacityLb != null
+        ? t('{lb} lb', { lb: car.towingCapacityLb.toLocaleString() })
+        : UNAVAILABLE_LABEL,
+    getNumeric: (car) => car.towingCapacityLb ?? null,
+    higherIsBetter: true,
+  },
+  {
     key: 'horsepower',
-    label: 'Power',
+    label: msg('Power'),
     provenanceKey: 'engine.horsepower',
     getValue: (car) =>
-      car.engine.horsepower != null ? `${car.engine.horsepower} hp` : UNAVAILABLE_LABEL,
+      car.engine.horsepower != null
+        ? t('{hp} hp', { hp: car.engine.horsepower })
+        : UNAVAILABLE_LABEL,
     getNumeric: (car) => car.engine.horsepower ?? null,
     higherIsBetter: true,
     bar: true,
   },
   {
     key: 'torque',
-    label: 'Torque',
+    label: msg('Torque'),
+    provenanceKey: 'engine.torque',
     getValue: (car) =>
-      car.engine.torque != null ? `${car.engine.torque} lb-ft` : UNAVAILABLE_LABEL,
+      car.engine.torque != null
+        ? t('{torque} lb-ft', { torque: car.engine.torque })
+        : UNAVAILABLE_LABEL,
     getNumeric: (car) => car.engine.torque ?? null,
     higherIsBetter: true,
   },
   {
     key: 'zeroToSixty',
-    label: '0–60 mph',
+    label: msg('0–60 mph'),
     provenanceKey: 'performance.zeroToSixty',
     getValue: (car, dash) => {
       if (dash.zeroToSixty) return `~${dash.zeroToSixty.value} s`;
@@ -349,23 +384,23 @@ const ALL_SPECS: SpecRow[] = [
   },
   {
     key: 'engine',
-    label: 'Engine',
+    label: msg('Engine'),
     getValue: (car) => formatEngineForDetail(car.engine),
   },
   {
     key: 'transmission',
-    label: 'Gearbox',
+    label: msg('Gearbox'),
     getValue: (car) => formatTransmissionLabel(car.transmission),
   },
-  { key: 'driveType', label: 'Drive', getValue: (car) => car.driveType },
-  { key: 'fuelType', label: 'Fuel', getValue: (car) => formatCarFuelLabel(car) },
-  { key: 'bodyStyle', label: 'Body', getValue: (car) => bodyLabel(car.bodyStyle) },
+  { key: 'driveType', label: msg('Drive'), getValue: (car) => car.driveType },
+  { key: 'fuelType', label: msg('Fuel'), getValue: (car) => formatCarFuelLabel(car) },
+  { key: 'bodyStyle', label: msg('Body'), getValue: (car) => bodyLabel(car.bodyStyle) },
   // Counts for the model year, not this configuration; not ranked, as a
   // count unadjusted for sales says little about one car against another.
   {
     key: 'recalls',
-    label: 'Recalls in Canada',
-    hint: 'Transport Canada, model year',
+    label: msg('Recalls in Canada'),
+    hint: msg('Transport Canada, model year'),
     getValue: (car, dash) =>
       dash.recalls
         ? String(
@@ -381,20 +416,20 @@ const ALL_SPECS: SpecRow[] = [
         fuelType: car.engine.fuelType,
         mildHybrid: car.engine.mildHybrid,
       });
-      return other.length ? `+${other.length} for other versions` : null;
+      return other.length ? t('+{n} for other versions', { n: other.length }) : null;
     },
   },
   {
     key: 'complaints',
-    label: 'Owner complaints',
-    hint: 'NHTSA, model year',
+    label: msg('Owner complaints'),
+    hint: msg('NHTSA, model year'),
     getValue: (_car, dash) =>
       dash.complaints ? dash.complaints.complaints.toLocaleString('en-CA') : UNAVAILABLE_LABEL,
   },
   {
     key: 'complaintPart',
-    label: 'Complained of most',
-    hint: 'NHTSA, by part',
+    label: msg('Complained of most'),
+    hint: msg('NHTSA, by part'),
     getValue: (_car, dash) => {
       const top = dash.complaints?.parts[0];
       return top
@@ -404,14 +439,16 @@ const ALL_SPECS: SpecRow[] = [
   },
   {
     key: 'theft',
-    label: 'Most stolen in Canada',
-    hint: 'Équité Association, top 10',
+    label: msg('Most stolen in Canada'),
+    hint: msg('Équité Association, top 10'),
     getValue: (_car, dash) =>
-      dash.theft ? `${ordinal(dash.theft.rank)} in ${dash.theft.year}` : 'Not in the top 10',
+      dash.theft
+        ? t('{rank} in {year}', { rank: ordinal(dash.theft.rank), year: dash.theft.year })
+        : t('Not in the top 10'),
   },
   {
     key: 'co2',
-    label: 'CO₂',
+    label: msg('CO₂'),
     provenanceKey: 'epa.co2',
     getValue: (car) =>
       car.epa?.co2 != null ? `${Math.round(car.epa.co2 / 1.609344)} g/km` : UNAVAILABLE_LABEL,
@@ -422,8 +459,8 @@ const ALL_SPECS: SpecRow[] = [
     key: 'country',
     // The make's home, not where this car was built: a Canadian RAV4 or
     // CR-V comes from Ontario.
-    label: 'Brand origin',
-    hint: 'Where the make is from, not where it was built',
+    label: msg('Brand origin'),
+    hint: msg('Where the make is from, not where it was built'),
     getValue: (car) => car.countryOfOrigin || UNAVAILABLE_LABEL,
   },
 ];
@@ -434,8 +471,10 @@ const CAR_COL = 'w-34 sm:w-auto';
 
 export default function Compare() {
   usePageMeta(
-    'Compare',
-    'Up to five cars side by side: fuel use, crash ratings, recalls in Canada, complaints and theft, from the public records.',
+    t('Compare'),
+    t(
+      'Up to five cars side by side: fuel use, crash ratings, recalls in Canada, complaints and theft, from the public records.',
+    ),
   );
   const [searchParams, setSearchParams] = useSearchParams();
   const {
@@ -471,7 +510,7 @@ export default function Compare() {
         if (!cancelled) replaceComparison(cars);
       })
       .catch(() => {
-        if (!cancelled) setLoadError('Could not load the cars in this compare link.');
+        if (!cancelled) setLoadError(t('Could not load the cars in this compare link.'));
       })
       .finally(() => {
         if (!cancelled) setUrlHydrated(true);
@@ -493,8 +532,8 @@ export default function Compare() {
 
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(() => setToast(null), 2000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setToast(null), 2000);
+    return () => clearTimeout(timer);
   }, [toast]);
 
   useEffect(() => {
@@ -510,7 +549,7 @@ export default function Compare() {
         if (!cancelled) setDashboards(rows);
       })
       .catch(() => {
-        if (!cancelled) setLoadError('Could not load full comparison data.');
+        if (!cancelled) setLoadError(t('Could not load full comparison data.'));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -542,7 +581,7 @@ export default function Compare() {
     try {
       replaceComparison(await api.compareCars(matchup.cars.map((car) => car.carId)));
     } catch {
-      setLoadError('Could not load those cars. Try again.');
+      setLoadError(t('Could not load those cars. Try again.'));
     } finally {
       setPicking(null);
     }
@@ -552,22 +591,23 @@ export default function Compare() {
   const diff = useMemo(() => differentiateCars(comparedCars), [comparedCars]);
 
   if (!urlHydrated && urlHasCars) {
-    return <LoadingScreen label="Loading comparison" />;
+    return <LoadingScreen label={t('Loading comparison')} />;
   }
 
   if (comparedCars.length === 0) {
     return (
       <div className="bg-black text-white">
         <div className="page-wrap section-y max-w-3xl">
-          <h1 className="page-title mb-3">Compare</h1>
+          <h1 className="page-title mb-3">{t('Compare')}</h1>
           <p className="text-[15px] text-zinc-300 mb-8 max-w-xl leading-relaxed">
-            Put up to five cars side by side: what each costs to buy and to run, what it burns, and
-            how NHTSA rated it. Add cars from any search result or car page.
+            {t(
+              'Put up to five cars side by side: what each costs to buy and to run, what it burns, and how NHTSA rated it. Add cars from any search result or car page.',
+            )}
           </p>
           <div className="mb-8 max-w-xl">
-            <AddCarSearch label="Start with a name" onAdd={addFound} />
+            <AddCarSearch label={t('Start with a name')} onAdd={addFound} />
           </div>
-          <h2 className="eyebrow mb-3">Or a popular match-up</h2>
+          <h2 className="eyebrow mb-3">{t('Or a popular match-up')}</h2>
           {loadError && (
             <p role="alert" className="text-sm text-red-300 mb-3">
               {loadError}
@@ -576,13 +616,13 @@ export default function Compare() {
           <div className="mb-8">
             <Matchups onPick={(matchup) => void pickMatchup(matchup)} picking={picking} />
           </div>
-          <h2 className="eyebrow mb-3">Or start from</h2>
+          <h2 className="eyebrow mb-3">{t('Or start from')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <Link to="/browse" className="choice-tile">
               <span>
-                <span className="block text-[15px] text-white">A situation</span>
+                <span className="block text-[15px] text-white">{t('A situation')}</span>
                 <span className="block text-[13px] text-zinc-400">
-                  Daily driver, family hauler, first car
+                  {t('Daily driver, family hauler, first car')}
                 </span>
               </span>
               <span aria-hidden className="text-zinc-500">
@@ -591,9 +631,9 @@ export default function Compare() {
             </Link>
             <Link to="/value-matrix" className="choice-tile">
               <span>
-                <span className="block text-[15px] text-white">The whole market</span>
+                <span className="block text-[15px] text-white">{t('The whole market')}</span>
                 <span className="block text-[13px] text-zinc-400">
-                  Value against fuel use, on one chart
+                  {t('Value against fuel use, on one chart')}
                 </span>
               </span>
               <span aria-hidden className="text-zinc-500">
@@ -667,9 +707,9 @@ export default function Compare() {
         <div className="page-wrap py-4 sm:py-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
-              <h1 className="display-text text-4xl sm:text-5xl pb-1">Compare</h1>
+              <h1 className="display-text text-4xl sm:text-5xl pb-1">{t('Compare')}</h1>
               <p className="text-sm text-zinc-400 mt-0.5">
-                {comparedCars.length} car{comparedCars.length !== 1 ? 's' : ''}
+                {tp(comparedCars.length, '{count} car', '{count} cars')}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -680,7 +720,7 @@ export default function Compare() {
                   onClick={() => setAdding((open) => !open)}
                   className="btn-primary min-h-[40px]! py-2!"
                 >
-                  + Add a car
+                  {t('+ Add a car')}
                 </button>
               )}
               <button
@@ -688,21 +728,21 @@ export default function Compare() {
                 onClick={async () => {
                   try {
                     await navigator.clipboard.writeText(window.location.href);
-                    setToast('Compare link copied');
+                    setToast(t('Compare link copied'));
                   } catch {
-                    setToast('Copy the URL from the address bar');
+                    setToast(t('Copy the URL from the address bar'));
                   }
                 }}
                 className="btn-secondary min-h-[40px]! py-2!"
               >
-                Copy link
+                {t('Copy link')}
               </button>
               <button
                 type="button"
                 onClick={clearComparison}
                 className="btn-ghost min-h-[40px] hover:text-red-300!"
               >
-                Clear all
+                {t('Clear all')}
               </button>
             </div>
           </div>
@@ -721,12 +761,12 @@ export default function Compare() {
 
       <div className="page-wrap section-y-tight pb-12 sm:pb-16">
         {loading ? (
-          <LoadingScreen label="Loading comparison" />
+          <LoadingScreen label={t('Loading comparison')} />
         ) : (
           <div className="max-w-7xl mx-auto min-w-0">
             {summary.length > 0 && (
               <section className="mb-6 sm:mb-8 pb-5 sm:pb-6 border-b border-zinc-800">
-                <h2 className="eyebrow mb-3">In short</h2>
+                <h2 className="eyebrow mb-3">{t('In short')}</h2>
                 {/* A card a car, side by side as the cars are below. */}
                 <ul
                   className={`grid grid-cols-1 gap-2 ${summary.length >= 3 ? 'md:grid-cols-3' : summary.length === 2 ? 'md:grid-cols-2' : ''}`}
@@ -740,7 +780,7 @@ export default function Compare() {
                       <p className="text-zinc-300 text-sm mt-1">{line.sentence}</p>
                       {line.watch && (
                         <p className="text-[13px] text-amber-300/90 mt-2 pt-2 border-t border-white/5">
-                          Watch for: {line.watch}
+                          {t('Watch for: {watch}', { watch: line.watch })}
                         </p>
                       )}
                     </li>
@@ -774,7 +814,7 @@ export default function Compare() {
                 <thead ref={tableHeadRef}>
                   <tr className="border-b border-zinc-700">
                     <th className="sticky left-0 z-10 bg-black px-3 sm:px-4 py-3 text-left align-bottom">
-                      <span className="sr-only">Spec</span>
+                      <span className="sr-only">{t('Spec')}</span>
                     </th>
                     {pairs.map(({ car }) => (
                       <th
@@ -797,16 +837,20 @@ export default function Compare() {
                         <div className="mt-1.5 flex flex-wrap items-center gap-x-3 sm:justify-center">
                           <CarPhotoButton
                             car={car}
-                            label="Photo"
+                            label={t('Photo')}
                             className="min-h-[36px] text-xs"
                           />
                           <button
                             type="button"
                             onClick={() => removeCarFromComparison(car.id)}
                             className="min-h-[36px] text-xs text-zinc-400 hover:text-red-300 transition-colors"
-                            aria-label={`Remove the ${car.year} ${car.make} ${displayModelLabel(car)}`}
+                            aria-label={t('Remove the {year} {make} {model}', {
+                              year: car.year,
+                              make: car.make,
+                              model: displayModelLabel(car),
+                            })}
                           >
-                            Remove
+                            {t('Remove')}
                           </button>
                         </div>
                       </th>
@@ -828,11 +872,11 @@ export default function Compare() {
                               className="sticky left-0 bg-black px-3 sm:px-4 pt-6 pb-2.5 text-left font-normal"
                             >
                               <span className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                                <span className="eyebrow">{group}</span>
+                                <span className="eyebrow">{t(group)}</span>
                                 {estimate && (
                                   <>
                                     <span className="text-xs text-zinc-500">
-                                      Model figures in CAD, not quotes
+                                      {t('Model figures in CAD, not quotes')}
                                     </span>
                                     <RegionSelect />
                                   </>
@@ -847,11 +891,11 @@ export default function Compare() {
                             className="sticky left-0 z-10 bg-black border-r border-zinc-800 px-3 sm:px-4 py-3 text-left font-normal align-top"
                           >
                             <span className="block text-[13px] text-zinc-300 leading-snug">
-                              {spec.label}
+                              {t(spec.label)}
                             </span>
                             {spec.hint && (
                               <span className="hidden sm:block text-xs text-zinc-500 mt-0.5">
-                                {spec.hint}
+                                {t(spec.hint)}
                               </span>
                             )}
                           </th>
@@ -881,7 +925,9 @@ export default function Compare() {
                                 }`}
                               >
                                 {missing ? (
-                                  <span className="text-xs text-zinc-500 italic">Not on file</span>
+                                  <span className="text-xs text-zinc-500 italic">
+                                    {t('Not on file')}
+                                  </span>
                                 ) : (
                                   <>
                                     <span
@@ -893,7 +939,7 @@ export default function Compare() {
                                     </span>
                                     {isBest && (
                                       <span className="ml-1.5 inline-block text-xs font-semibold text-accent align-middle">
-                                        Best
+                                        {t('Best')}
                                       </span>
                                     )}
                                     {spec.key === 'safety' && numeric != null && (
@@ -927,7 +973,7 @@ export default function Compare() {
                                       !ESTIMATE_ROWS.has(spec.key) &&
                                       !spec.isEstimatedRow && (
                                         <span className="block text-xs text-zinc-500 mt-0.5">
-                                          est.
+                                          {t('est.')}
                                         </span>
                                       )}
                                   </>
@@ -943,11 +989,22 @@ export default function Compare() {
               </table>
             </div>
             <p className="text-xs text-zinc-500 mt-4 leading-relaxed">
-              Values and costs are estimates in CAD for {regionName(region)}; fuel use and CO₂ are
-              EPA ratings, converted to litres and grams per kilometre.{' '}
-              <Link to="/methodology" className="underline underline-offset-2 hover:text-zinc-300">
-                How we estimate
-              </Link>
+              {rich(
+                t(
+                  'Values and costs are estimates in CAD for {region}; fuel use and CO₂ are EPA ratings, converted to litres and grams per kilometre. <0>How we estimate</0>',
+                  { region: t(regionName(region)) },
+                ),
+                [
+                  (c) => (
+                    <Link
+                      to="/methodology"
+                      className="underline underline-offset-2 hover:text-zinc-300"
+                    >
+                      {c}
+                    </Link>
+                  ),
+                ],
+              )}
             </p>
           </div>
         )}

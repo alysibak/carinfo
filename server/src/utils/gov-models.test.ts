@@ -44,10 +44,40 @@ describe('govModelIndex', () => {
     expect(match('RAM', '1500 QUAD', 2019)).toBe(match('RAM', '1500', 2019));
     expect(match('HONDA', 'CR-V ICE', 2026)).toBe('honda|cr-v');
     expect(match('MAZDA', 'MAZDA3 SEDAN', 2020)).toBe('mazda|3');
+    expect(match('MAZDA', 'MAZDA3 SEDAN ICE', 2026)).toBe('mazda|3');
     // The make twice, and Toyota's Scion brand.
     expect(match('RAM', 'RAM 1500', 2019)).toBe(match('RAM', '1500', 2019));
     expect(match('TOYOTA', 'SCION TC', 2012)).toBe(match('SCION', 'TC', 2012));
     // A Super Duty's cab leaves a heavy-duty truck, which the site does not list.
     expect(match('FORD', 'F-250 SUPER CREW', 2016)).toBeNull();
+  });
+
+  it('maps NHTSA aliases that name the same vehicle the site lists', () => {
+    // From 2017 Mini drops "Cooper" in the model field.
+    expect(match('MINI', 'HARDTOP', 2020)).toBe('mini|cooper');
+    expect(match('MINI', 'CLUBMAN', 2020)).toBe('mini|cooper');
+    expect(match('MINI', 'COUNTRYMAN', 2020)).toBe('mini|cooper');
+    expect(match('MINI', 'CONVERTIBLE', 2020)).toBe('mini|cooper');
+    // Maybach is a Mercedes-Benz line on the site; Q70L the long Q70.
+    expect(match('MERCEDES-MAYBACH', 'S-CLASS', 2018)).toBe('mercedes-benz|maybach s');
+    expect(match('INFINITI', 'Q70L', 2018)).toBe('infiniti|q70');
+    expect(match('LAND ROVER', 'RANGE ROVER (SWB)', 2018)).toBe('land rover|range rover');
+    // BMW XI = xDrive; GT = Gran Turismo; body after a series name.
+    expect(match('BMW', '650XI', 2015)).toBe('bmw|6 series');
+    expect(match('BMW', '535I GT', 2015)).toBe('bmw|5 series');
+    expect(match('BMW', '2 SERIES GRAN COUPE', 2022)).toBe('bmw|2 series');
+    expect(match('BMW', '4 SERIES COUPE', 2023)).toBe('bmw|4 series');
+    expect(match('VOLVO', 'S60I', 2016)).toBe('volvo|s60');
+    expect(match('JAGUAR', 'F-TYPE CONVERTIBLE', 2022)).toBe('jaguar|f-type');
+    expect(match('TESLA', 'MODEL S P90D', 2016)).toBe('tesla|model s');
+    expect(match('FORD', 'F-150 SUPER CREW DIESEL', 2019)).toBe('ford|f150');
+    expect(match('HONDA', 'FCX', 2014)).toBe('honda|fcx clarity');
+    expect(match('MERCEDES-BENZ', 'B-CLASS E-CELL', 2015)).toBe(
+      match('MERCEDES-BENZ', 'B-CLASS ELECTRIC DRIVE', 2015),
+    );
+    expect(match('MERCEDES-BENZ', 'B-CLASS E-CELL', 2015)).toBeTruthy();
+    // The full-size Promaster is not the Promaster City EPA lists.
+    expect(match('RAM', 'PROMASTER', 2018)).toBeNull();
+    expect(match('RAM', 'PROMASTER CITY', 2018)).toBe('ram|promaster');
   });
 });

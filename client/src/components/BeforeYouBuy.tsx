@@ -2,16 +2,17 @@ import { Link } from 'react-router-dom';
 import type { CarDashboard } from '../types/car.types';
 import { beforeYouBuy, type BeforeYouBuyItem } from '../utils/beforeYouBuy';
 import RatingStars from './RatingStars';
+import { msg, t, tp } from '../i18n';
 
 const TONE = {
   good: {
     box: 'border-accent/40 bg-accent/10 text-accent',
-    said: 'Clear: ',
+    said: msg('Clear: '),
     path: 'M4.5 10.5l3.5 3.5 7.5-8',
   },
   check: {
     box: 'border-amber-400/40 bg-amber-400/10 text-amber-300',
-    said: 'Worth checking: ',
+    said: msg('Worth checking: '),
     path: 'M10 4.5v7M10 15v.5',
   },
   info: {
@@ -57,10 +58,10 @@ export default function BeforeYouBuy({ dashboard }: { dashboard: CarDashboard })
       <div className="page-wrap-wide py-5">
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mb-3">
           <h2 id="before-you-buy" className="eyebrow">
-            Before you buy
+            {t('Before you buy')}
             {toCheck > 0 && (
               <span className="ml-2 normal-case tracking-normal font-medium text-amber-300">
-                · {toCheck} to check
+                · {tp(toCheck, '{count} to check', '{count} to check')}
               </span>
             )}
           </h2>
@@ -68,7 +69,7 @@ export default function BeforeYouBuy({ dashboard }: { dashboard: CarDashboard })
             to={`/car/${encodeURIComponent(dashboard.car.id)}/checklist`}
             className="inline-block py-1.5 text-xs text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
           >
-            Checklist to take to the car
+            {t('Checklist to take to the car')}
           </Link>
         </div>
         <ul className={`grid grid-cols-1 gap-2 ${cols}`}>
@@ -82,7 +83,9 @@ export default function BeforeYouBuy({ dashboard }: { dashboard: CarDashboard })
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[15px] font-semibold text-white leading-snug">
                     <span>
-                      <span className="sr-only">{TONE[item.tone].said}</span>
+                      {TONE[item.tone].said ? (
+                        <span className="sr-only">{t(TONE[item.tone].said)}</span>
+                      ) : null}
                       {item.headline}
                     </span>
                     {item.stars != null && <RatingStars stars={item.stars} className="w-3 h-3" />}

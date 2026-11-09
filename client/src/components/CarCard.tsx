@@ -35,6 +35,11 @@ interface CarCardProps {
   /** How many versions the card's model year has, when it stands for them. */
   versions?: number;
   /**
+   * "/models/honda/civic" when the results are one model with a page: the
+   * versions link then opens that year's landing page instead of #versions.
+   */
+  modelPath?: string;
+  /**
    * In a grid whose rows the cards share (see CARD_GRID): the name, the
    * figures and the buttons line up across a row though one name wraps.
    */
@@ -177,6 +182,7 @@ export default function CarCard({
   onRemove,
   showValue = false,
   versions,
+  modelPath,
   aligned = false,
   notes,
 }: CarCardProps) {
@@ -224,10 +230,11 @@ export default function CarCard({
     </Link>
   );
 
-  // The year's other versions, on the car page: "15 versions in 2018".
+  // The year's other versions: the model-year page when we know the family path,
+  // otherwise the car page's version list.
   const versionsLink = versions && versions > 1 && (
     <Link
-      to={`/car/${car.id}#versions`}
+      to={modelPath ? `${modelPath}/${car.year}` : `/car/${car.id}#versions`}
       className="relative z-10 inline-flex items-center min-h-[40px] text-[13px] text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500"
     >
       {versions} versions in {car.year}

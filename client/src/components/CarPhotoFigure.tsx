@@ -4,6 +4,7 @@ import CarPhotoButton from './CarPhotoButton';
 import PhotoGlow from './PhotoGlow';
 import { PAGE_PHOTO_SIZES } from '../utils/carImages';
 import { displayModelLabel } from '../utils/trimLabel';
+import { t } from '../i18n';
 
 type FigureCar = Pick<
   CarSpecs,
@@ -43,7 +44,7 @@ export default function CarPhotoFigure({
             glow ? 'border-white/10 shadow-[0_50px_100px_-40px_rgb(0_0_0/0.95)]' : 'border-zinc-900'
           }`}
         >
-          <CarPhotoButton car={car} variant="tile" mark="Larger" focusable>
+          <CarPhotoButton car={car} variant="tile" mark={t('Larger')} focusable>
             <CarImage car={car} eager markYear={false} sizes={PAGE_PHOTO_SIZES} />
           </CarPhotoButton>
         </div>
@@ -54,17 +55,24 @@ export default function CarPhotoFigure({
         {other ? (
           <>
             <span className="text-amber-200/90">
-              A {other.year} {name}, not a {car.year}:
+              {t('A {otherYear} {name}, not a {year}:', {
+                otherYear: other.year,
+                name,
+                year: car.year,
+              })}
             </span>{' '}
-            no photo of a {car.year} is on file. The same generation ({other.generation[0]}–
-            {other.generation[1]}).
+            {t('no photo of a {year} is on file. The same generation ({from}–{to}).', {
+              year: car.year,
+              from: other.generation[0],
+              to: other.generation[1],
+            })}
           </>
         ) : (
-          <>
-            A {car.year} {name}; trim and colour may differ.
-          </>
+          <>{t('A {year} {name}; trim and colour may differ.', { year: car.year, name })}</>
         )}{' '}
-        <span className="text-zinc-500">Photo: {car.photo?.credit}</span>
+        <span className="text-zinc-500">
+          {t('Photo: {credit}', { credit: car.photo?.credit ?? '' })}
+        </span>
       </figcaption>
     </figure>
   );

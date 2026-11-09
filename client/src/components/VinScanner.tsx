@@ -17,6 +17,7 @@ import { drawRegion, guideCrop, pixelsOf, videoPoint } from '../utils/vinFrame';
 import { PASSES } from '../utils/vinPixels';
 import { holdVinReader, readText, watchVinReader, type ReaderStage } from '../utils/vinReader';
 import { barcodeIn, prepareForReading, slantIn, stopVinWork } from '../utils/vinWork';
+import { t } from '../i18n';
 import {
   backLenses,
   clampZoom,
@@ -49,15 +50,17 @@ type Region = { x: number; y: number; width: number; height: number };
 function cameraErrorMessage(err: unknown): string {
   const name = (err as { name?: string })?.name;
   if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
-    return 'Camera access is blocked. Allow it for this site in your browser’s settings, or read a photo of the VIN below.';
+    return t(
+      'Camera access is blocked. Allow it for this site in your browser’s settings, or read a photo of the VIN below.',
+    );
   }
   if (name === 'NotFoundError' || name === 'OverconstrainedError') {
-    return 'No camera was found. Read a photo of the VIN below, or type it.';
+    return t('No camera was found. Read a photo of the VIN below, or type it.');
   }
   if (name === 'NotReadableError') {
-    return 'The camera is in use by another app. Close it and try again.';
+    return t('The camera is in use by another app. Close it and try again.');
   }
-  return 'The camera could not start. Read a photo of the VIN below, or type it.';
+  return t('The camera could not start. Read a photo of the VIN below, or type it.');
 }
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -99,8 +102,10 @@ function VinCells({ vin, changed }: { vin: string; changed: number[] }) {
   );
 }
 
-const LIGHT_NOTE =
-  'This browser can’t turn on the light from a web page. “Phone camera” below opens your camera, where its flash works.';
+const lightNote = () =>
+  t(
+    'This browser can’t turn on the light from a web page. “Phone camera” below opens your camera, where its flash works.',
+  );
 
 /** Icons, drawn in the current colour. */
 function Icon({
@@ -354,7 +359,7 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
     if (!video) return;
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
       setError(
-        'This browser cannot use the camera here. Read a photo of the VIN instead, or type it.',
+        t('This browser cannot use the camera here. Read a photo of the VIN instead, or type it.'),
       );
       return;
     }
@@ -546,7 +551,7 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
 
   const toggleLight = async () => {
     if (!canTorch) {
-      setNote(LIGHT_NOTE);
+      setNote(lightNote());
       return;
     }
     try {
@@ -557,7 +562,7 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
     } catch {
       setCanTorch(false);
       setTorch(false);
-      setNote(LIGHT_NOTE);
+      setNote(lightNote());
     }
   };
 
@@ -723,11 +728,13 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
           taken = true;
         } else {
           setNote(
-            'No VIN could be read in that photo. Fill the picture with the VIN, hold steady, and try again, or type it.',
+            t(
+              'No VIN could be read in that photo. Fill the picture with the VIN, hold steady, and try again, or type it.',
+            ),
           );
         }
       } catch {
-        setNote('That photo could not be read. Try another, or type the VIN.');
+        setNote(t('That photo could not be read. Try another, or type the VIN.'));
       } finally {
         bitmap?.close();
         setBusy(null);
@@ -758,11 +765,13 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
         taken = true;
       } else {
         setNote(
-          'No VIN could be read in this picture. Fill the frame with the VIN, hold steady, and try again.',
+          t(
+            'No VIN could be read in this picture. Fill the frame with the VIN, hold steady, and try again.',
+          ),
         );
       }
     } catch {
-      setNote('This picture could not be read. Try again, or read a photo instead.');
+      setNote(t('This picture could not be read. Try again, or read a photo instead.'));
     } finally {
       setBusy(null);
       if (!taken) pausedRef.current = false;
@@ -787,23 +796,23 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
   const troubleText =
     trouble === 'dark'
       ? canTorch && !torch
-        ? 'Too dark to read: turn on the light.'
-        : 'Too dark to read: use “Phone camera” below, with its flash.'
+        ? t('Too dark to read: turn on the light.')
+        : t('Too dark to read: use “Phone camera” below, with its flash.')
       : trouble === 'glare' && unread
-        ? 'If a reflection hides the VIN, tilt the phone a little.'
+        ? t('If a reflection hides the VIN, tilt the phone a little.')
         : null;
   const status =
     busy === 'photo'
-      ? 'Reading the photo…'
+      ? t('Reading the photo…')
       : busy === 'frame'
-        ? 'Reading this picture…'
+        ? t('Reading this picture…')
         : reader === 'loading'
           ? readerStage === 'setting up'
-            ? 'Reading barcodes. Setting up the text reader…'
-            : 'Reading barcodes. Downloading the text reader (about 7 MB the first time)…'
+            ? t('Reading barcodes. Setting up the text reader…')
+            : t('Reading barcodes. Downloading the text reader (about 7 MB the first time)…')
           : reader === 'failed'
-            ? 'Reading barcodes only: the text reader did not load.'
-            : (troubleText ?? 'Reading the barcode or the printed VIN…');
+            ? t('Reading barcodes only: the text reader did not load.')
+            : (troubleText ?? t('Reading the barcode or the printed VIN…'));
   const checks = found ? vinCheckDigitValid(found.vin) : false;
   // What went wrong with a photo or the light, else, once reading is slow,
   // what to try.
@@ -812,11 +821,12 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
   ) : (
     <ul className="text-[13px] text-zinc-300 leading-snug space-y-1 text-left">
       <li>
-        Hold the phone level with the VIN, a hand’s width away: closer, it can’t focus. Zoom in
-        rather than moving in.
+        {t(
+          'Hold the phone level with the VIN, a hand’s width away: closer, it can’t focus. Zoom in rather than moving in.',
+        )}
       </li>
-      {canFocus && <li>Tap the VIN to focus on it.</li>}
-      <li>Tilt it a little to lose the windshield’s glare, or read a photo instead.</li>
+      {canFocus && <li>{t('Tap the VIN to focus on it.')}</li>}
+      <li>{t('Tilt it a little to lose the windshield’s glare, or read a photo instead.')}</li>
     </ul>
   );
   const takeFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -829,7 +839,7 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Scan the VIN"
+      aria-label={t('Scan the VIN')}
       className="fixed inset-0 z-300 bg-black flex flex-col phone-sideways:flex-row"
       onDragOver={(e) => {
         if (!e.dataTransfer.types.includes('Files')) return;
@@ -881,12 +891,14 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
             type="button"
             onClick={onClose}
             autoFocus
-            aria-label="Close the camera"
+            aria-label={t('Close the camera')}
             className="w-11 h-11 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
           >
             <Icon name="close" />
           </button>
-          <p className="text-[15px] font-semibold text-white text-center truncate">Scan the VIN</p>
+          <p className="text-[15px] font-semibold text-white text-center truncate">
+            {t('Scan the VIN')}
+          </p>
           <div className="flex items-center">
             {lenses.length > 1 && (
               <button
@@ -895,8 +907,8 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
                 className="h-11 px-2.5 flex items-center gap-1.5 text-[13px] font-semibold text-white hover:bg-white/10 transition-colors"
               >
                 <Icon name="lens" className="w-5 h-5" />
-                <span className="sr-only">Switch lens, now </span>
-                {lens?.name ?? 'Lens'}
+                <span className="sr-only">{t('Switch lens, now ')}</span>
+                {lens?.name ?? t('Lens')}
               </button>
             )}
             <button
@@ -918,7 +930,9 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
                   className="absolute w-7 h-0.5 bg-current rotate-45 shadow-[0_0_0_1.5px_black]"
                 />
               )}
-              <span className="sr-only">{canTorch ? 'Light' : 'Light: not available here'}</span>
+              <span className="sr-only">
+                {canTorch ? t('Light') : t('Light: not available here')}
+              </span>
             </button>
           </div>
         </div>
@@ -929,7 +943,7 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
             {/* Above the dimming round the frame, on a plate of its own: over a
                 bright sticker, bare text was lost. */}
             <p className="relative z-10 mb-3 px-3 py-1.5 bg-black/75 text-[13px] text-white text-center phone-sideways:hidden">
-              Fit the VIN in the frame, as large as it will go
+              {t('Fit the VIN in the frame, as large as it will go')}
             </p>
             <div
               ref={guideRef}
@@ -965,7 +979,7 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
                 role="status"
                 className={`mt-0.5 text-xs ${troubleText && !busy && reader === 'ready' ? 'text-amber-200 font-semibold' : 'text-zinc-300'}`}
               >
-                {running || busy ? status : error ? '' : 'Starting the camera…'}
+                {running || busy ? status : error ? '' : t('Starting the camera…')}
               </p>
             </div>
           </div>
@@ -1000,7 +1014,7 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
                     active ? 'bg-white text-black' : 'bg-black/60 text-white border border-white/30'
                   }`}
                 >
-                  <span className="sr-only">Zoom </span>
+                  <span className="sr-only">{t('Zoom ')}</span>
                   {active && zoom !== step ? zoom.toFixed(1) : step}×
                 </button>
               );
@@ -1024,7 +1038,7 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
             className="min-h-11 flex flex-col items-center gap-1 pt-2 text-[12px] font-medium text-zinc-200 hover:text-white disabled:opacity-50 transition-colors"
           >
             <Icon name="photos" className="w-7 h-7" />
-            Your photos
+            {t('Your photos')}
           </button>
           <button
             type="button"
@@ -1040,7 +1054,7 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
               />
             </span>
             <span className="text-[12px] font-medium text-zinc-200">
-              {busy === 'frame' ? 'Reading…' : 'Read now'}
+              {busy === 'frame' ? t('Reading…') : t('Read now')}
             </span>
           </button>
           <button
@@ -1050,7 +1064,7 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
             className="min-h-11 flex flex-col items-center gap-1 pt-2 text-[12px] font-medium text-zinc-200 hover:text-white disabled:opacity-50 transition-colors"
           >
             <Icon name="camera" className="w-7 h-7" />
-            Phone camera
+            {t('Phone camera')}
           </button>
         </div>
         <div className="mt-1 flex flex-wrap items-center justify-center gap-x-3 text-[12px] text-zinc-400">
@@ -1059,10 +1073,10 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
             onClick={onClose}
             className="min-h-11 px-2 underline underline-offset-4 hover:text-white transition-colors"
           >
-            Type it instead
+            {t('Type it instead')}
           </button>
           <span className="hidden pointer-fine:inline phone-sideways:hidden">
-            or paste or drop a photo here
+            {t('or paste or drop a photo here')}
           </span>
         </div>
         <input
@@ -1088,7 +1102,9 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
 
       {dragging && (
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/85 border-2 border-dashed border-accent pointer-events-none">
-          <p className="text-base font-semibold text-white">Drop the photo to read its VIN</p>
+          <p className="text-base font-semibold text-white">
+            {t('Drop the photo to read its VIN')}
+          </p>
         </div>
       )}
 
@@ -1097,10 +1113,10 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
         <div className="absolute inset-x-0 bottom-0 z-20 border-t border-white/15 bg-zinc-950/95 backdrop-blur-xl px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] animate-pin-up">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-400 text-center">
             {found.source === 'barcode'
-              ? 'Read from the barcode'
+              ? t('Read from the barcode')
               : found.source === 'photo'
-                ? 'Read from the photo'
-                : 'Read from the print'}
+                ? t('Read from the photo')
+                : t('Read from the print')}
           </p>
           <div className="mt-3">
             <VinCells vin={found.vin} changed={found.changed} />
@@ -1113,16 +1129,26 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
             }`}
           >
             {!checks
-              ? 'Its check digit does not match. Some VINs from outside North America carry none; compare it with the car.'
+              ? t(
+                  'Its check digit does not match. Some VINs from outside North America carry none; compare it with the car.',
+                )
               : found.changed.length > 0
-                ? `${found.changed.length === 1 ? 'One character was' : 'Some characters were'} unclear and set so the check digit matches (marked). Compare it with the car.`
+                ? found.changed.length === 1
+                  ? t(
+                      'One character was unclear and set so the check digit matches (marked). Compare it with the car.',
+                    )
+                  : t(
+                      'Some characters were unclear and set so the check digit matches (marked). Compare it with the car.',
+                    )
                 : found.trimmed
-                  ? 'A mark beside it was read as a character and left out; its check digit matches. Compare it with the car.'
-                  : 'Its check digit matches. Compare it with the car once.'}
+                  ? t(
+                      'A mark beside it was read as a character and left out; its check digit matches. Compare it with the car.',
+                    )
+                  : t('Its check digit matches. Compare it with the car once.')}
           </p>
           <div className="mt-4 flex gap-2 max-w-md mx-auto">
             <button type="button" onClick={scanAgain} className="btn-secondary flex-1">
-              Scan again
+              {t('Scan again')}
             </button>
             <button
               ref={useRefButton}
@@ -1130,7 +1156,7 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
               onClick={() => onDetectedRef.current(found.vin)}
               className="btn-primary flex-1"
             >
-              Use this VIN
+              {t('Use this VIN')}
             </button>
           </div>
         </div>

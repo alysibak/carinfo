@@ -13,6 +13,8 @@ import {
 } from '../utils/recalls';
 import { powertrainNames, splitRecalls } from '@carinfo/shared/recall-scope';
 import type { CanadianRecall } from '../types/car.types';
+import { t, tp } from '../i18n';
+import { fmtNumber } from '../i18n/format';
 
 const CANADA_RECALLS = 'https://recalls-rappels.canada.ca/en';
 const NHTSA_LOOKUP = 'https://www.nhtsa.gov/recalls';
@@ -24,8 +26,12 @@ const linkClass =
 /** "The most of the Honda CR-V's 31 years on file." */
 function rankSentence(rank: { position: number; of: number }, model = 'model'): string {
   return rank.position === 1
-    ? `The most of the ${model}’s ${rank.of} years on file.`
-    : `${ordinal(rank.position)} most of the ${model}’s ${rank.of} years on file.`;
+    ? t('The most of the {model}’s {of} years on file.', { model, of: rank.of })
+    : t('{ordinal} most of the {model}’s {of} years on file.', {
+        ordinal: ordinal(rank.position),
+        model,
+        of: rank.of,
+      });
 }
 
 function RecallItem({ recall, forOther }: { recall: CanadianRecall; forOther?: string }) {
@@ -37,31 +43,37 @@ function RecallItem({ recall, forOther }: { recall: CanadianRecall; forOther?: s
   return (
     <RecordRow
       title={complaintPart(recall.system)}
-      flag={forOther ? <span className="text-zinc-400 font-normal"> · {forOther} only</span> : null}
+      flag={
+        forOther ? (
+          <span className="text-zinc-400 font-normal">
+            {t(' · {powertrain} only', { powertrain: forOther })}
+          </span>
+        ) : null
+      }
       lead={headline}
       meta={
         <>
           {recallDate(recall.date)}
-          {recall.units ? ` · ${recall.units.toLocaleString('en-CA')} in Canada` : ''}
+          {recall.units ? t(' · {count} in Canada', { count: fmtNumber(recall.units) }) : ''}
         </>
       }
     >
       {issue && <p>{issue}</p>}
       {notice.risk && (
         <p>
-          <span className="text-zinc-500">Risk: </span>
+          <span className="text-zinc-500">{t('Risk: ')}</span>
           {notice.risk}
         </p>
       )}
       {notice.remedy && (
         <p>
-          <span className="text-zinc-500">Remedy: </span>
+          <span className="text-zinc-500">{t('Remedy: ')}</span>
           {notice.remedy}
         </p>
       )}
       <p className="text-xs text-zinc-500">
-        Transport Canada recall {recall.number}
-        {recall.kind === 'compliance' ? ' · compliance' : ''}
+        {t('Transport Canada recall {number}', { number: recall.number })}
+        {recall.kind === 'compliance' ? t(' · compliance') : ''}
       </p>
     </RecordRow>
   );
@@ -98,11 +110,11 @@ export default function SafetyRecords({
       <div className="page-wrap-wide section-y-tight grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-10">
         {recalls && (
           <div className="min-w-0">
-            <CountHeading title="Recalls in Canada" count={applies.length} tone="warn" />
+            <CountHeading title={t('Recalls in Canada')} count={applies.length} tone="warn" />
             <p className="text-[13px] text-zinc-400 mt-1 mb-3">
               {applies.length > 0
-                ? 'Check the VIN with the maker to see if the work was done.'
-                : `None listed for this version of the ${name}.`}
+                ? t('Check the VIN with the maker to see if the work was done.')
+                : t('None listed for this version of the {name}.', { name })}
             </p>
             {shown.length > 0 && (
               <ol>
@@ -117,7 +129,7 @@ export default function SafetyRecords({
                 onClick={() => setShowAll((all) => !all)}
                 className={`mt-1 min-h-[44px] text-sm ${linkClass}`}
               >
-                {showAll ? 'Show fewer' : `Show all ${applies.length}`}
+                {showAll ? t('Show fewer') : t('Show all {count}', { count: applies.length })}
               </button>
             )}
             {others.length > 0 && (
@@ -126,9 +138,12 @@ export default function SafetyRecords({
                   className={`${foldSummaryClass} py-2.5 text-[13px] text-zinc-400 hover:text-white`}
                 >
                   <span>
-                    {others.length} more for{' '}
-                    {[...new Set(others.map((o) => powertrainNames(o.powertrains)))].join(' or ')}{' '}
-                    only
+                    {t('{count} more for {powertrains} only', {
+                      count: others.length,
+                      powertrains: [
+                        ...new Set(others.map((o) => powertrainNames(o.powertrains))),
+                      ].join(t(' or ')),
+                    })}
                   </span>
                   <Chevron className="w-3.5 h-3.5 text-zinc-500 group-open/other:rotate-180" />
                 </summary>
@@ -145,35 +160,35 @@ export default function SafetyRecords({
             )}
             <p className="text-xs text-zinc-500 mt-3 leading-relaxed">
               <a href={CANADA_RECALLS} target="_blank" rel="noreferrer" className={linkClass}>
-                Transport Canada
+                {t('Transport Canada')}
               </a>
               {dashboard.recordDates?.recalls &&
-                `, as of ${recallDate(dashboard.recordDates.recalls)}`}
-              . Contains information licensed under the Open Government Licence – Canada.
+                t(', as of {date}', { date: recallDate(dashboard.recordDates.recalls) })}
+              {t('. Contains information licensed under the Open Government Licence – Canada.')}
             </p>
           </div>
         )}
 
         {complaints && (
           <div className="min-w-0">
-            <CountHeading title="Owner complaints" count={complaints.complaints} />
+            <CountHeading title={t('Owner complaints')} count={complaints.complaints} />
             <p className="text-[13px] text-zinc-400 mt-1 mb-3">
               {complaints.complaints === 0
-                ? `None on file with NHTSA for the ${name}.`
+                ? t('None on file with NHTSA for the {name}.', { name })
                 : dashboard.complaintRank
                   ? rankSentence(dashboard.complaintRank, dashboard.modelPage?.label)
-                  : 'Most complained-about parts:'}
+                  : t('Most complained-about parts:')}
             </p>
             {complaints.complaints > 0 && (
               <>
                 {complaints.parts.length > 0 && (
-                  <ul className="space-y-2.5" aria-label="Parts complained of most">
+                  <ul className="space-y-2.5" aria-label={t('Parts complained of most')}>
                     {complaints.parts.map(([part, count]) => (
                       <li key={part}>
                         <div className="flex items-baseline justify-between gap-3 text-sm">
                           <span className="text-zinc-300 min-w-0">{complaintPart(part)}</span>
                           <span className="text-white font-semibold tabular-nums shrink-0">
-                            {count.toLocaleString('en-CA')}
+                            {fmtNumber(count)}
                           </span>
                         </div>
                         <div className="h-1 bg-zinc-900 mt-1" aria-hidden>
@@ -190,13 +205,21 @@ export default function SafetyRecords({
                   <p className="text-xs text-zinc-400 mt-4 tabular-nums">
                     {[
                       complaints.crashes > 0 &&
-                        `${complaints.crashes.toLocaleString('en-CA')} reporting a crash`,
+                        t('{count} reporting a crash', {
+                          count: fmtNumber(complaints.crashes),
+                        }),
                       complaints.fires > 0 &&
-                        `${complaints.fires.toLocaleString('en-CA')} reporting a fire`,
+                        t('{count} reporting a fire', {
+                          count: fmtNumber(complaints.fires),
+                        }),
                       complaints.injuries > 0 &&
-                        `${complaints.injuries.toLocaleString('en-CA')} ${complaints.injuries === 1 ? 'injury' : 'injuries'}`,
+                        tp(complaints.injuries, '{count} injury', '{count} injuries', {
+                          count: fmtNumber(complaints.injuries),
+                        }),
                       complaints.deaths > 0 &&
-                        `${complaints.deaths.toLocaleString('en-CA')} ${complaints.deaths === 1 ? 'death' : 'deaths'}`,
+                        tp(complaints.deaths, '{count} death', '{count} deaths', {
+                          count: fmtNumber(complaints.deaths),
+                        }),
                     ]
                       .filter(Boolean)
                       .join(' · ')}
@@ -205,13 +228,15 @@ export default function SafetyRecords({
               </>
             )}
             <p className="text-xs text-zinc-500 mt-4 leading-relaxed">
-              Owners’ reports to{' '}
+              {t('Owners’ reports to')}{' '}
               <a href={NHTSA_LOOKUP} target="_blank" rel="noreferrer" className={linkClass}>
                 NHTSA
               </a>{' '}
-              (U.S.), not confirmed defects, and not adjusted for how many were sold
+              {t('(U.S.), not confirmed defects, and not adjusted for how many were sold')}
               {dashboard.recordDates?.complaints &&
-                `; as of ${recallDate(dashboard.recordDates.complaints)}`}
+                t('; as of {date}', {
+                  date: recallDate(dashboard.recordDates.complaints),
+                })}
               .
             </p>
           </div>

@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { reportError } from '../utils/errorReporting';
 
 interface Props {
   children: ReactNode;
@@ -25,6 +26,7 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('[CarInfo] uncaught render error', error, info.componentStack);
+    reportError(error, 'boundary', { componentStack: info.componentStack });
   }
 
   render() {

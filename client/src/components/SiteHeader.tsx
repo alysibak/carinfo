@@ -7,6 +7,8 @@ import { useGarageStore } from '../stores/garageStore';
 import AuthHeaderSlot from './AuthHeaderSlot';
 import { useSlashToSearch } from '../hooks/useSlashToSearch';
 import { useMenuStore } from '../stores/menuStore';
+import LanguageSwitch from './LanguageSwitch';
+import { msg, t } from '../i18n';
 
 interface NavLinkItem {
   to: string;
@@ -18,11 +20,11 @@ interface NavLinkItem {
 // situation"). The value chart, which plots estimated values, is a secondary
 // link: the site leads with what EPA and NHTSA recorded.
 const NAV_LINKS: NavLinkItem[] = [
-  { to: '/home', label: 'Search' },
-  { to: '/browse', label: 'Browse' },
-  { to: '/compare', label: 'Compare' },
-  { to: '/vin', label: 'VIN' },
-  { to: '/garage', label: 'Garage' },
+  { to: '/home', label: msg('Search') },
+  { to: '/browse', label: msg('Browse') },
+  { to: '/compare', label: msg('Compare') },
+  { to: '/vin', label: msg('VIN') },
+  { to: '/garage', label: msg('Garage') },
 ];
 
 function Badge({ count }: { count: number }) {
@@ -133,7 +135,7 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
                 }`
               }
             >
-              {item.label}
+              {t(item.label)}
               <Badge count={badgeFor(item.to)} />
             </NavLink>
           ))}
@@ -141,6 +143,7 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
 
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {trailing}
+          <LanguageSwitch />
           <div className="hidden sm:block">
             <AuthHeaderSlot />
           </div>
@@ -149,7 +152,7 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
             // Upright, the tab bar's More opens the menu; sideways, there is no tab bar.
             className="hidden phone-sideways:inline-flex min-h-[44px] min-w-[44px] items-center justify-center -mr-1 text-zinc-400 hover:text-white transition-colors"
             aria-expanded={menuOpen}
-            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-label={menuOpen ? t('Close menu') : t('Open menu')}
             onClick={() => setMenuOpen(!menuOpen)}
           >
             {menuOpen ? (
@@ -219,7 +222,7 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
                 }`
               }
             >
-              {item.label}
+              {t(item.label)}
               <Badge count={badgeFor(item.to)} />
             </NavLink>
           ))}
@@ -236,14 +239,14 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
               onClick={() => setMenuOpen(false)}
               className="hover:text-white"
             >
-              Value chart
+              {t('Value chart')}
             </NavLink>
             <NavLink
               to="/methodology"
               onClick={() => setMenuOpen(false)}
               className="hover:text-white"
             >
-              Methodology
+              {t('Methodology')}
             </NavLink>
           </div>
         </nav>

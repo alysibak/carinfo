@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { gotoReady } from './load';
 
 /**
  * A mouse can tell what does something. Everything clickable shows the hand
@@ -12,8 +13,7 @@ const INTERACTIVE =
   'a[href], button, [role="button"], summary, select, input[type="checkbox"], input[type="radio"]';
 
 async function problems(page: Page, path: string): Promise<string[]> {
-  await page.goto(path);
-  await page.waitForLoadState('networkidle');
+  await gotoReady(page, path);
   await page.evaluate(() => document.querySelectorAll('details').forEach((d) => (d.open = true)));
   return page.evaluate((selector) => {
     const shown = (el: Element) => {
@@ -79,17 +79,24 @@ test.describe('what is clickable looks it', () => {
   test('every page shows the hand only over what does something', async ({ page }) => {
     const res = await page.request.get('/api/cars/search?q=civic&limit=1');
     const id = (await res.json()).data.results[0].id;
+    const modelRes = await page.request.get('/api/cars/models/honda/civic');
+    const year = (
+      (await modelRes.json()).data.years as { year: number; configurations: number }[]
+    ).find((row) => row.configurations >= 2)!.year;
     const failures: string[] = [];
     for (const path of [
       '/',
       '/home?q=toyota',
       `/car/${id}`,
       '/models/honda/civic',
+      `/models/honda/civic/${year}`,
       '/compare',
       '/browse',
       '/vin',
       '/garage',
       '/methodology',
+      '/privacy',
+      '/terms',
       '/no-such-page',
       '/models/toyota/hovercraft',
     ]) {

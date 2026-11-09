@@ -7,12 +7,14 @@ import { LoadingScreen } from './components/ui';
 import ErrorBoundary from './components/ErrorBoundary';
 import AuthProvider from './components/AuthProvider';
 import { useRecordVisit } from './hooks/useRecordVisit';
+import { msg } from './i18n';
 
 const Explore = lazy(() => import('./pages/Explore'));
 const VehicleGrid = lazy(() => import('./pages/VehicleGrid'));
 const CarDetail = lazy(() => import('./pages/CarDetail'));
 const CarChecklist = lazy(() => import('./pages/CarChecklist'));
 const ModelPage = lazy(() => import('./pages/ModelPage'));
+const ModelYearPage = lazy(() => import('./pages/ModelYearPage'));
 const Home = lazy(() => import('./pages/Home'));
 const Compare = lazy(() => import('./pages/Compare'));
 const Collection = lazy(() => import('./pages/Collection'));
@@ -23,6 +25,9 @@ const Browse = lazy(() => import('./pages/Browse'));
 const SharedGarage = lazy(() => import('./pages/SharedGarage'));
 const VinDecoder = lazy(() => import('./pages/VinDecoder'));
 const Methodology = lazy(() => import('./pages/Methodology'));
+const Privacy = lazy(() => import('./pages/Privacy'));
+const Terms = lazy(() => import('./pages/Terms'));
+const Unsubscribe = lazy(() => import('./pages/Unsubscribe'));
 const Account = lazy(() => import('./pages/Account'));
 const SignIn = lazy(() => import('./pages/SignIn'));
 const SignUp = lazy(() => import('./pages/SignUp'));
@@ -34,13 +39,13 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 
 /** What the tools behind a sign-in do, for the page that asks for one. */
 const GARAGE_GIVES = [
-  'Save cars from any page, and find them on any device you sign in on.',
-  'See each saved car’s recalls in Canada and its place on the theft list at a glance.',
-  'Compare saved cars side by side, or share the list with a link.',
+  msg('Save cars from any page, and find them on any device you sign in on.'),
+  msg('See how your shortlist differs, and which saved cars have recalls in Canada.'),
+  msg('Compare saved cars side by side, or share the list with a link.'),
 ];
 const VALUE_CHART_GIVES = [
-  'Every car’s estimated value against its fuel use, on one chart.',
-  'Pick a square to see the cars in it, and open any of them.',
+  msg('Every car’s estimated value against its fuel use, on one chart.'),
+  msg('Pick a square to see the cars in it, and open any of them.'),
 ];
 
 /** Outside the page frame, which has a loading boundary of its own (Layout). */
@@ -67,6 +72,7 @@ function App() {
                   <Route path="/vehicles/:category/:subcategory" element={<VehicleGrid />} />
                   <Route path="/car/:id" element={<CarDetail />} />
                   <Route path="/car/:id/checklist" element={<CarChecklist />} />
+                  <Route path="/models/:make/:model/:year" element={<ModelYearPage />} />
                   <Route path="/models/:make/:model" element={<ModelPage />} />
                   <Route path="/home" element={<Home />} />
                   {/* Open to visitors: the tools shoppers reach for first. */}
@@ -77,7 +83,7 @@ function App() {
                   <Route
                     path="/garage"
                     element={
-                      <RequireAccount tool="your garage" gives={GARAGE_GIVES}>
+                      <RequireAccount tool={msg('your garage')} gives={GARAGE_GIVES}>
                         <DreamGarage />
                       </RequireAccount>
                     }
@@ -88,13 +94,16 @@ function App() {
                   <Route
                     path="/value-matrix"
                     element={
-                      <RequireAccount tool="the Value chart" gives={VALUE_CHART_GIVES}>
+                      <RequireAccount tool={msg('the Value chart')} gives={VALUE_CHART_GIVES}>
                         <ValueMatrix />
                       </RequireAccount>
                     }
                   />
                   <Route path="/vin" element={<VinDecoder />} />
                   <Route path="/methodology" element={<Methodology />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/unsubscribe" element={<Unsubscribe />} />
                   <Route path="/account" element={<Account />} />
                   <Route path="/sign-in" element={<SignIn />} />
                   <Route path="/sign-up" element={<SignUp />} />

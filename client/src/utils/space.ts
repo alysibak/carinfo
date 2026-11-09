@@ -1,4 +1,6 @@
 import type { CarSpecs } from '../types/car.types';
+import { t } from '../i18n';
+import { fmtNumber } from '../i18n/format';
 
 const LITRES_PER_CUBIC_FOOT = 28.3168;
 
@@ -9,7 +11,10 @@ export function litres(cubicFeet: number): number {
 
 /** "425 L (15 cu ft)": litres first, with EPA's own figure beside it. */
 export function formatVolume(cubicFeet: number): string {
-  return `${litres(cubicFeet).toLocaleString('en-CA')} L (${cubicFeet} cu ft)`;
+  return t('{litres} L ({cuFt} cu ft)', {
+    litres: fmtNumber(litres(cubicFeet)),
+    cuFt: cubicFeet,
+  });
 }
 
 /**
@@ -20,6 +25,6 @@ export function formatVolume(cubicFeet: number): string {
  */
 export function luggageLabel(bodyStyle: CarSpecs['bodyStyle']): string {
   return bodyStyle === 'sedan' || bodyStyle === 'coupe' || bodyStyle === 'convertible'
-    ? 'Trunk'
-    : 'Cargo space, all seats up';
+    ? t('Trunk')
+    : t('Cargo space, all seats up');
 }

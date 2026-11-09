@@ -1,4 +1,5 @@
 import type { CarSpecs } from '../types/car.types';
+import { t } from '../i18n';
 import { efficiencyOf, rangeKm } from './efficiency';
 import { formatFuelBadge, usesMpge } from './fuelDisplay';
 import { litres } from './space';
@@ -75,9 +76,19 @@ const METRICS: MetricDef[] = [
     minAbsDelta: 2,
     minRelDelta: 0.06,
     labelBest: (car, value, peers) =>
-      `Uses the least fuel here (${fuelUse(car, value)} ${fuelUnit(car)}${peers ? ` vs ${peers}` : ''})`,
-    labelWorst: (car, value) => `Uses the most fuel here (${fuelUse(car, value)} ${fuelUnit(car)})`,
-    axisLabel: (spread) => `Fuel use runs ${spread}`,
+      peers
+        ? t('Uses the least fuel here ({use} vs {peers})', {
+            use: `${fuelUse(car, value)} ${fuelUnit(car)}`,
+            peers,
+          })
+        : t('Uses the least fuel here ({use})', {
+            use: `${fuelUse(car, value)} ${fuelUnit(car)}`,
+          }),
+    labelWorst: (car, value) =>
+      t('Uses the most fuel here ({use})', {
+        use: `${fuelUse(car, value)} ${fuelUnit(car)}`,
+      }),
+    axisLabel: (spread) => t('Fuel use runs {spread}', { spread }),
   },
   {
     key: 'hp',
@@ -86,9 +97,14 @@ const METRICS: MetricDef[] = [
     minAbsDelta: 25,
     minRelDelta: 0.12,
     labelBest: (_car, value, peers) =>
-      `The most power here (${Math.round(value)} hp${peers ? ` vs ${peers}` : ''})`,
-    labelWorst: (_car, value) => `The least power here (${Math.round(value)} hp)`,
-    axisLabel: (spread) => `Power runs ${spread}`,
+      peers
+        ? t('The most power here ({hp} hp vs {peers})', {
+            hp: Math.round(value),
+            peers,
+          })
+        : t('The most power here ({hp} hp)', { hp: Math.round(value) }),
+    labelWorst: (_car, value) => t('The least power here ({hp} hp)', { hp: Math.round(value) }),
+    axisLabel: (spread) => t('Power runs {spread}', { spread }),
   },
   {
     key: 'safety',
@@ -98,17 +114,17 @@ const METRICS: MetricDef[] = [
     },
     higherIsBetter: true,
     minAbsDelta: 1,
-    labelBest: (_car, value) => `The best NHTSA rating here (${value}/5)`,
-    axisLabel: (spread) => `NHTSA ratings run ${spread}`,
+    labelBest: (_car, value) => t('The best NHTSA rating here ({rating}/5)', { rating: value }),
+    axisLabel: (spread) => t('NHTSA ratings run {spread}', { spread }),
   },
   {
     key: 'year',
     get: (car) => car.year,
     higherIsBetter: true,
     minAbsDelta: 2,
-    labelBest: (car) => `The newest here (${car.year})`,
-    labelWorst: (car) => `The oldest here (${car.year})`,
-    axisLabel: (spread) => `Model years run ${spread}`,
+    labelBest: (car) => t('The newest here ({year})', { year: car.year }),
+    labelWorst: (car) => t('The oldest here ({year})', { year: car.year }),
+    axisLabel: (spread) => t('Model years run {spread}', { spread }),
   },
   {
     key: 'range',
@@ -120,8 +136,13 @@ const METRICS: MetricDef[] = [
     minAbsDelta: 20,
     minRelDelta: 0.1,
     labelBest: (_car, value, peers) =>
-      `The longest electric range (${rangeKm(value)} km${peers ? ` vs ${peers}` : ''})`,
-    axisLabel: (spread) => `Electric range runs ${spread}`,
+      peers
+        ? t('The longest electric range ({km} km vs {peers})', {
+            km: rangeKm(value),
+            peers,
+          })
+        : t('The longest electric range ({km} km)', { km: rangeKm(value) }),
+    axisLabel: (spread) => t('Electric range runs {spread}', { spread }),
   },
   {
     key: 'price',
@@ -130,9 +151,15 @@ const METRICS: MetricDef[] = [
     minAbsDelta: 1500,
     minRelDelta: 0.08,
     labelBest: (_car, value, peers) =>
-      `Costs the least to buy (est. ${formatMoneyShort(value)}${peers ? ` vs ${peers}` : ''})`,
-    labelWorst: (_car, value) => `Costs the most to buy (est. ${formatMoneyShort(value)})`,
-    axisLabel: (spread) => `Estimated values run ${spread}`,
+      peers
+        ? t('Costs the least to buy (est. {price} vs {peers})', {
+            price: formatMoneyShort(value),
+            peers,
+          })
+        : t('Costs the least to buy (est. {price})', { price: formatMoneyShort(value) }),
+    labelWorst: (_car, value) =>
+      t('Costs the most to buy (est. {price})', { price: formatMoneyShort(value) }),
+    axisLabel: (spread) => t('Estimated values run {spread}', { spread }),
   },
 ];
 
@@ -163,7 +190,9 @@ function categoricalEdge(car: CarSpecs, set: CarSpecs[]): string | null {
   if (fuels.size > 1) {
     const sameFuel = set.filter((c) => c.engine.fuelType === car.engine.fuelType);
     if (sameFuel.length === 1) {
-      return `The only ${formatFuelBadge(car.engine.fuelType).toLowerCase()} here`;
+      return t('The only {fuel} here', {
+        fuel: formatFuelBadge(car.engine.fuelType).toLowerCase(),
+      });
     }
   }
 
@@ -173,9 +202,12 @@ function categoricalEdge(car: CarSpecs, set: CarSpecs[]): string | null {
     const othersAwd = set.some(
       (c) => c.id !== car.id && (c.driveType === 'AWD' || c.driveType === '4WD'),
     );
-    if (awdish && !othersAwd) return `The only ${car.driveType} here: better in snow`;
+    if (awdish && !othersAwd)
+      return t('The only {drive} here: better in snow', { drive: car.driveType });
     if (!awdish && othersAwd && set.filter((c) => c.driveType === car.driveType).length === 1) {
-      return `${car.driveType} rather than AWD: lighter, and usually uses less fuel`;
+      return t('{drive} rather than AWD: lighter, and usually uses less fuel', {
+        drive: car.driveType,
+      });
     }
   }
 
@@ -184,8 +216,12 @@ function categoricalEdge(car: CarSpecs, set: CarSpecs[]): string | null {
     const alone = set.filter((c) => c.bodyStyle === car.bodyStyle).length === 1;
     if (alone) {
       const label =
-        car.bodyStyle === 'suv' ? 'SUV' : car.bodyStyle === 'truck' ? 'pickup' : car.bodyStyle;
-      return `The only ${label} here`;
+        car.bodyStyle === 'suv'
+          ? t('SUV')
+          : car.bodyStyle === 'truck'
+            ? t('pickup')
+            : car.bodyStyle;
+      return t('The only {label} here', { label });
     }
   }
 
@@ -270,11 +306,11 @@ function buildAxes(set: CarSpecs[]): string[] {
 
     const fmt =
       metric.key === 'hp'
-        ? (n: number) => `${Math.round(n)} hp`
+        ? (n: number) => t('{hp} hp', { hp: Math.round(n) })
         : metric.key === 'safety'
           ? (n: number) => `${n}/5`
           : metric.key === 'range'
-            ? (n: number) => `${rangeKm(n)} km`
+            ? (n: number) => t('{km} km', { km: rangeKm(n) })
             : (n: number) => String(n);
 
     const lo = Math.min(...values);
@@ -283,18 +319,19 @@ function buildAxes(set: CarSpecs[]): string[] {
   }
 
   const fuels = [...new Set(set.map((c) => formatFuelBadge(c.engine.fuelType)))];
-  if (fuels.length > 1) axes.unshift(`Different powertrains: ${fuels.join(', ')}`);
+  if (fuels.length > 1)
+    axes.unshift(t('Different powertrains: {fuels}', { fuels: fuels.join(', ') }));
 
   const bodies = [
     ...new Set(
       set
         .map((c) =>
-          c.bodyStyle === 'suv' ? 'SUV' : c.bodyStyle === 'truck' ? 'pickup' : c.bodyStyle,
+          c.bodyStyle === 'suv' ? t('SUV') : c.bodyStyle === 'truck' ? t('pickup') : c.bodyStyle,
         )
         .filter(Boolean),
     ),
   ];
-  if (bodies.length > 1) axes.push(`Different shapes: ${bodies.join(', ')}`);
+  if (bodies.length > 1) axes.push(t('Different shapes: {bodies}', { bodies: bodies.join(', ') }));
 
   return axes.slice(0, 3);
 }
@@ -308,8 +345,10 @@ function closeCallFallback(car: CarSpecs, set: CarSpecs[]): string {
     .slice(0, 2)
     .map((c) => `${c.make} ${displayModelLabel(c)}`);
   return similarNames.length > 0
-    ? `Close to the ${similarNames.join(' and the ')} on every figure on file`
-    : 'Close to the others on every figure on file';
+    ? t('Close to the {names} on every figure on file', {
+        names: similarNames.join(' and the '),
+      })
+    : t('Close to the others on every figure on file');
 }
 
 /**
@@ -323,7 +362,7 @@ export function differentiateCars(cars: CarSpecs[]): DiffResult {
   if (set.length === 1) {
     byCarId[set[0].id] = {
       carId: set[0].id,
-      edge: 'Your shortlist starts here — add another car to see trade-offs',
+      edge: t('Your shortlist starts here — add another car to see trade-offs'),
     };
     return { byCarId, axes: [] };
   }
@@ -337,7 +376,7 @@ export function differentiateCars(cars: CarSpecs[]): DiffResult {
   return { byCarId, axes: buildAxes(set) };
 }
 
-const POWERTRAIN: Record<string, string> = {
+const POWERTRAIN_KEY: Record<string, string> = {
   gasoline: 'gas',
   diesel: 'diesel',
   hybrid: 'hybrid',
@@ -347,13 +386,26 @@ const POWERTRAIN: Record<string, string> = {
   'natural gas': 'natural gas',
 };
 
+function powertrainWord(fuelType: string): string {
+  const key = POWERTRAIN_KEY[fuelType] ?? fuelType;
+  if (key === 'gas') return t('gas');
+  if (key === 'diesel') return t('diesel');
+  if (key === 'hybrid') return t('hybrid');
+  if (key === 'plug-in hybrid') return t('plug-in hybrid');
+  if (key === 'electric') return t('electric');
+  if (key === 'fuel cell') return t('fuel cell');
+  if (key === 'natural gas') return t('natural gas');
+  return key;
+}
+
 function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 function bodyNoun(style: string): string {
-  const label = style === 'suv' ? 'SUV' : style === 'truck' ? 'pickup' : style;
-  return `${/^[aeiou]|^SUV/i.test(label) ? 'an' : 'a'} ${label}`;
+  if (style === 'suv') return t('an SUV');
+  if (style === 'truck') return t('a pickup');
+  return /^[aeiou]/i.test(style) ? t('an {body}', { body: style }) : t('a {body}', { body: style });
 }
 
 const isAwd = (drive?: string) => drive === 'AWD' || drive === '4WD';
@@ -363,29 +415,45 @@ const isManual = (car: CarSpecs) => car.transmission?.type === 'manual';
 function kindDifference(anchor: CarSpecs, alt: CarSpecs): string | null {
   const fuel = alt.engine.fuelType;
   if (fuel !== anchor.engine.fuelType) {
-    const text = `${capitalize(POWERTRAIN[fuel] ?? fuel)}, not ${POWERTRAIN[anchor.engine.fuelType] ?? anchor.engine.fuelType}`;
+    const text = t('{alt}, not {anchor}', {
+      alt: capitalize(powertrainWord(fuel)),
+      anchor: powertrainWord(anchor.engine.fuelType),
+    });
     const a = alt.fuelEconomy.combined;
     const b = anchor.fuelEconomy.combined;
     return a && b && fuelUnit(alt) === fuelUnit(anchor)
-      ? `${text} (${fuelUse(alt, a)} vs ${fuelUse(anchor, b)} ${fuelUnit(alt)})`
+      ? t('{kind} ({a} vs {b} {unit})', {
+          kind: text,
+          a: fuelUse(alt, a),
+          b: fuelUse(anchor, b),
+          unit: fuelUnit(alt),
+        })
       : text;
   }
   if (alt.driveType && anchor.driveType && alt.driveType !== anchor.driveType) {
     if (isAwd(alt.driveType) && !isAwd(anchor.driveType)) {
-      return `${alt.driveType}, which this car lacks: better in snow`;
+      return t('{drive}, which this car lacks: better in snow', { drive: alt.driveType });
     }
     if (!isAwd(alt.driveType) && isAwd(anchor.driveType)) {
-      return `${alt.driveType}, not ${anchor.driveType}: usually lighter and more efficient`;
+      return t('{drive}, not {other}: usually lighter and more efficient', {
+        drive: alt.driveType,
+        other: anchor.driveType,
+      });
     }
     if (!isAwd(alt.driveType) && !isAwd(anchor.driveType)) {
-      return `${alt.driveType}, not ${anchor.driveType}`;
+      return t('{drive}, not {other}', { drive: alt.driveType, other: anchor.driveType });
     }
   }
   if (isManual(alt) !== isManual(anchor) && alt.transmission && anchor.transmission) {
-    return isManual(alt) ? 'Manual, not automatic' : 'Automatic, not manual';
+    return isManual(alt) ? t('Manual, not automatic') : t('Automatic, not manual');
   }
   if (alt.bodyStyle && anchor.bodyStyle && alt.bodyStyle !== anchor.bodyStyle) {
-    return capitalize(`${bodyNoun(alt.bodyStyle)}, not ${bodyNoun(anchor.bodyStyle)}`);
+    return capitalize(
+      t('{alt}, not {anchor}', {
+        alt: bodyNoun(alt.bodyStyle),
+        anchor: bodyNoun(anchor.bodyStyle),
+      }),
+    );
   }
   return null;
 }
@@ -407,7 +475,17 @@ const PAIR_METRICS: PairMetric[] = [
     minRel: 0.06,
     higherIsBetter: true,
     text: (better, a, b, car) =>
-      `${better ? 'Uses less fuel' : 'Uses more fuel'} (${fuelUse(car, a)} vs ${fuelUse(car, b)} ${fuelUnit(car)})`,
+      better
+        ? t('Uses less fuel ({a} vs {b} {unit})', {
+            a: fuelUse(car, a),
+            b: fuelUse(car, b),
+            unit: fuelUnit(car),
+          })
+        : t('Uses more fuel ({a} vs {b} {unit})', {
+            a: fuelUse(car, a),
+            b: fuelUse(car, b),
+            unit: fuelUnit(car),
+          }),
   },
   {
     get: (car) => car.engine.horsepower ?? null,
@@ -415,7 +493,9 @@ const PAIR_METRICS: PairMetric[] = [
     minRel: 0.12,
     higherIsBetter: true,
     text: (better, a, b) =>
-      `${better ? 'More power' : 'Less power'} (${Math.round(a)} vs ${Math.round(b)} hp)`,
+      better
+        ? t('More power ({a} vs {b} hp)', { a: Math.round(a), b: Math.round(b) })
+        : t('Less power ({a} vs {b} hp)', { a: Math.round(a), b: Math.round(b) }),
   },
   {
     get: (car) => {
@@ -425,7 +505,10 @@ const PAIR_METRICS: PairMetric[] = [
     minAbs: 1,
     minRel: 0,
     higherIsBetter: true,
-    text: (better, a, b) => `${better ? 'Better' : 'Lower'} NHTSA rating (${a}/5 vs ${b}/5)`,
+    text: (better, a, b) =>
+      better
+        ? t('Better NHTSA rating ({a}/5 vs {b}/5)', { a, b })
+        : t('Lower NHTSA rating ({a}/5 vs {b}/5)', { a, b }),
   },
   {
     get: (car) =>
@@ -436,7 +519,9 @@ const PAIR_METRICS: PairMetric[] = [
     minRel: 0.1,
     higherIsBetter: true,
     text: (better, a, b) =>
-      `${better ? 'Longer' : 'Shorter'} electric range (${rangeKm(a)} vs ${rangeKm(b)} km)`,
+      better
+        ? t('Longer electric range ({a} vs {b} km)', { a: rangeKm(a), b: rangeKm(b) })
+        : t('Shorter electric range ({a} vs {b} km)', { a: rangeKm(a), b: rangeKm(b) }),
   },
   {
     get: (car) => car.epa?.luggageVolumeCuFt ?? null,
@@ -444,7 +529,9 @@ const PAIR_METRICS: PairMetric[] = [
     minRel: 0.12,
     higherIsBetter: true,
     text: (better, a, b) =>
-      `${better ? 'Bigger' : 'Smaller'} trunk (${litres(a)} vs ${litres(b)} L)`,
+      better
+        ? t('Bigger trunk ({a} vs {b} L)', { a: litres(a), b: litres(b) })
+        : t('Smaller trunk ({a} vs {b} L)', { a: litres(a), b: litres(b) }),
   },
   {
     // A year apart says less than any measured difference.
@@ -453,7 +540,8 @@ const PAIR_METRICS: PairMetric[] = [
     minRel: 0,
     higherIsBetter: true,
     weight: 0.5,
-    text: (better, a, b) => `${better ? 'Newer' : 'Older'} (${a} vs ${b})`,
+    text: (better, a, b) =>
+      better ? t('Newer ({a} vs {b})', { a, b }) : t('Older ({a} vs {b})', { a, b }),
   },
 ];
 
@@ -492,10 +580,10 @@ function muchTheSame(anchor: CarSpecs, alt: CarSpecs): string {
   }
   const hpA = alt.engine.horsepower;
   const hpB = anchor.engine.horsepower;
-  if (hpA && hpB) figures.push(`${Math.round(hpA)} vs ${Math.round(hpB)} hp`);
+  if (hpA && hpB) figures.push(t('{a} vs {b} hp', { a: Math.round(hpA), b: Math.round(hpB) }));
   return figures.length
-    ? `Much the same on paper (${figures.join(', ')})`
-    : 'Close to this car on every spec on file';
+    ? t('Much the same on paper ({figures})', { figures: figures.join(', ') })
+    : t('Close to this car on every spec on file');
 }
 
 /**

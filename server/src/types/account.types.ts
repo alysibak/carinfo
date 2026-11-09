@@ -15,5 +15,7 @@ export interface AccountUser {
   email: string | null;
   plan: UserPlan;
   stripeCustomerId: string | null;
+  /** Emails when Transport Canada lists a new recall for a saved car. */
+  recallAlerts: boolean;
   createdAt: string;
 }

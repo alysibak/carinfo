@@ -1,5 +1,7 @@
 import type { CollectionRankBy } from '../config/collections';
 import type { CarSpecs } from '../types/car.types';
+import { t } from '../i18n';
+import { fmtNumber } from '../i18n/format';
 import { efficiencyOf, rangeKm } from './efficiency';
 
 /**
@@ -17,21 +19,23 @@ export function rankedFigure(
   const stars = car.safetyRating?.overall;
   switch (rankBy) {
     case 'range':
-      return car.epa?.rangeMiles ? `${rangeKm(car.epa.rangeMiles)} km range` : fuelUse;
+      return car.epa?.rangeMiles
+        ? t('{km} km range', { km: rangeKm(car.epa.rangeMiles) })
+        : fuelUse;
     case 'fun':
     case 'capability':
-      return car.engine.horsepower ? `${car.engine.horsepower} hp` : fuelUse;
+      return car.engine.horsepower ? t('{hp} hp', { hp: car.engine.horsepower }) : fuelUse;
     case 'luxury':
       return stars && stars > 0
-        ? `NHTSA ${stars}/5`
+        ? t('NHTSA {stars}/5', { stars })
         : car.engine.horsepower
-          ? `${car.engine.horsepower} hp`
+          ? t('{hp} hp', { hp: car.engine.horsepower })
           : fuelUse;
     case 'daily-driver':
-      return stars && stars > 0 ? `NHTSA ${stars}/5` : fuelUse;
+      return stars && stars > 0 ? t('NHTSA {stars}/5', { stars }) : fuelUse;
     case 'lightest': {
       const kg = car.size?.curbWeightKg[0];
-      return kg ? `${kg.toLocaleString('en-CA')} kg` : fuelUse;
+      return kg ? t('{kg} kg', { kg: fmtNumber(kg) }) : fuelUse;
     }
     case 'best-value':
     case 'efficiency':

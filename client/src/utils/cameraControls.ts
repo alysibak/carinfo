@@ -4,6 +4,8 @@
  * picture looks to a reader (too dark, glare, blurred), to say what to change.
  */
 
+import { t } from '../i18n';
+
 /**
  * How far the picture can be zoomed. The camera's own zoom (`own`) reads the
  * sensor's full detail, or moves to a longer lens; where the browser offers
@@ -56,14 +58,14 @@ export interface Lens {
 
 /** A lens's name from the browser's label for it. */
 function lensName(label: string, index: number): string {
-  if (/ultra\s*wide/i.test(label)) return 'Ultra wide';
-  if (/tele/i.test(label)) return 'Telephoto';
-  if (/triple/i.test(label)) return 'Triple';
-  if (/dual\s*wide/i.test(label)) return 'Dual wide';
-  if (/dual/i.test(label)) return 'Dual';
+  if (/ultra\s*wide/i.test(label)) return t('Ultra wide');
+  if (/tele/i.test(label)) return t('Telephoto');
+  if (/triple/i.test(label)) return t('Triple');
+  if (/dual\s*wide/i.test(label)) return t('Dual wide');
+  if (/dual/i.test(label)) return t('Dual');
   // An iPhone's main lens is its plain "Back Camera".
-  if (/^back camera$/i.test(label.trim())) return 'Main';
-  return `Camera ${index + 1}`;
+  if (/^back camera$/i.test(label.trim())) return t('Main');
+  return t('Camera {n}', { n: index + 1 });
 }
 
 /**
@@ -83,7 +85,7 @@ export function backLenses(
     name:
       back.length > 0
         ? lensName(device.label, index)
-        : device.label.trim() || `Camera ${index + 1}`,
+        : device.label.trim() || t('Camera {n}', { n: index + 1 }),
   }));
 }
 

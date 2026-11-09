@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { gotoReady } from './load';
 
 /**
  * Cumulative Layout Shift on the pages that load data after first paint.
@@ -22,8 +23,7 @@ async function measureCls(page: Page, path: string): Promise<number> {
       }
     }).observe({ type: 'layout-shift', buffered: true });
   });
-  await page.goto(path);
-  await page.waitForLoadState('networkidle');
+  await gotoReady(page, path);
   // Late-arriving content (suggestions, similar cars) shifts after idle, too.
   await page.waitForTimeout(1000);
   return page.evaluate(() => (window as unknown as { __cls: number }).__cls);
@@ -35,8 +35,17 @@ test.describe('layout stability (phone)', () => {
   test('data-driven pages stay under the CLS threshold', async ({ page }) => {
     const res = await page.request.get('/api/cars/search?q=civic&limit=1');
     const id = (await res.json()).data.results[0].id;
+    const modelRes = await page.request.get('/api/cars/models/honda/civic');
+    const year = (
+      (await modelRes.json()).data.years as { year: number; configurations: number }[]
+    ).find((row) => row.configurations >= 2)!.year;
 
-    for (const path of [`/car/${id}`, `/compare?cars=${id}`, '/home?q=toyota']) {
+    for (const path of [
+      `/car/${id}`,
+      `/compare?cars=${id}`,
+      '/home?q=toyota',
+      `/models/honda/civic/${year}`,
+    ]) {
       const cls = await measureCls(page, path);
       expect(cls, `CLS on ${path}`).toBeLessThan(GOOD_CLS);
     }

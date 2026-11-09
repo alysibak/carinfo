@@ -4,13 +4,19 @@ import {
   GarageLimitError,
   addGarageId,
   ensureUser,
+  exportSignInData,
   getGarageIds,
   getUser,
   isAccountsStorageReady,
+  listGarageItems,
+  listRecallNotices,
+  listRecallWatches,
   removeGarageId,
   setGarageIds,
+  setRecallAlerts,
 } from '../db/user-store.js';
-import { FREE_GARAGE_LIMIT, PRO_GARAGE_LIMIT } from '../types/account.types.js';
+import { FREE_GARAGE_LIMIT, PRO_GARAGE_LIMIT, type AccountUser } from '../types/account.types.js';
+import { startWatching } from '../services/recall-alerts.service.js';
 import { isAuthConfigured } from '../auth/auth.js';
 import { configuredProviders } from '../auth/providers.js';
 import { isEmailConfigured } from '../auth/email.js';
@@ -18,6 +24,20 @@ import { isBillingConfigured } from './billing.controller.js';
 
 /** Hard ceiling on one sync payload, checked before any database work. */
 const MAX_GARAGE_PAYLOAD = PRO_GARAGE_LIMIT;
+
+/**
+ * A car saved while alerts are on is watched from now: a recall listed later
+ * is emailed, the ones it already has are not. Saving must not fail over it;
+ * the daily run watches any car this missed.
+ */
+async function watchSavedCars(user: AccountUser, carIds: string[]): Promise<void> {
+  if (!user.recallAlerts || !carIds.length) return;
+  try {
+    await startWatching(user.id, carIds);
+  } catch (error) {
+    console.error('[me] watching saved cars failed:', error);
+  }
+}
 
 function storageUnavailable(res: Response): boolean {
   if (!isAccountsStorageReady()) {
@@ -135,6 +155,7 @@ export async function putMyGarage(req: Request, res: Response) {
 
     try {
       const ids = await setGarageIds(user.id, carIds, user.plan);
+      await watchSavedCars(user, ids);
       const cars = ids
         .map((id) => carService.getCarById(id))
         .filter((c): c is NonNullable<typeof c> => c != null);
@@ -183,6 +204,7 @@ export async function addMyGarageItem(req: Request, res: Response) {
 
     try {
       const ids = await addGarageId(user.id, carId, user.plan);
+      await watchSavedCars(user, [carId]);
       res.json({
         success: true,
         data: {
@@ -234,5 +256,92 @@ export async function removeMyGarageItem(req: Request, res: Response) {
   } catch (error) {
     console.error('[me] removeMyGarageItem failed:', error);
     res.status(500).json({ success: false, error: 'Failed to remove garage item' });
+  }
+}
+
+/**
+ * Recall alerts on or off. On needs email set up and a confirmed address, and
+ * starts watching the garage afresh: only recalls listed from now are sent.
+ */
+export async function putMyAlerts(req: Request, res: Response) {
+  try {
+    if (storageUnavailable(res)) return;
+    const auth = req.authUser!;
+    const enabled = req.body?.recallAlerts;
+    if (typeof enabled !== 'boolean') {
+      res.status(400).json({ success: false, error: 'recallAlerts must be true or false' });
+      return;
+    }
+    if (enabled && !isEmailConfigured()) {
+      res.status(503).json({
+        success: false,
+        error: 'Email is not set up on this site, so alerts cannot be sent.',
+        code: 'EMAIL_UNAVAILABLE',
+      });
+      return;
+    }
+    if (enabled && !auth.emailVerified) {
+      res.status(409).json({
+        success: false,
+        error: 'Confirm your email address first: alerts go only to a confirmed one.',
+        code: 'EMAIL_UNVERIFIED',
+      });
+      return;
+    }
+    const user = await ensureUser(auth.userId, auth.email);
+    await setRecallAlerts(user.id, enabled);
+    if (enabled) await startWatching(user.id, await getGarageIds(user.id), { reset: true });
+    res.json({ success: true, data: { recallAlerts: enabled } });
+  } catch (error) {
+    console.error('[me] putMyAlerts failed:', error);
+    res.status(500).json({ success: false, error: 'Failed to change recall alerts' });
+  }
+}
+
+/**
+ * Everything CarInfo keeps about the signed-in user, as a JSON download: the
+ * right of access and, in Quebec, of portability (Law 25).
+ */
+export async function getMyExport(req: Request, res: Response) {
+  try {
+    if (storageUnavailable(res)) return;
+    const auth = req.authUser!;
+    const user = await ensureUser(auth.userId, auth.email);
+    const [signIn, garage, watches, notices] = await Promise.all([
+      exportSignInData(user.id),
+      listGarageItems(user.id),
+      listRecallWatches(user.id),
+      listRecallNotices(user.id),
+    ]);
+    const name = (carId: string) => {
+      const car = carService.getCarById(carId);
+      return car ? `${car.year} ${car.make} ${car.model}` : null;
+    };
+    res.setHeader('Content-Disposition', 'attachment; filename="carinfo-account-data.json"');
+    res.json({
+      exportedAt: new Date().toISOString(),
+      account: {
+        id: user.id,
+        email: user.email,
+        plan: user.plan,
+        createdAt: user.createdAt,
+        stripeCustomer: user.stripeCustomerId,
+      },
+      signIn,
+      garage: garage.map((item) => ({ ...item, vehicle: name(item.carId) })),
+      recallAlerts: {
+        enabled: user.recallAlerts,
+        watching: watches.map((watch) => ({ ...watch, vehicle: name(watch.carId) })),
+        recalls: notices.map((notice) => ({
+          carId: notice.carId,
+          recallNumber: notice.recallNumber,
+          sentAt: notice.sentAt,
+          notedAt: notice.createdAt,
+        })),
+      },
+    });
+  } catch (error) {
+    console.error('[me] getMyExport failed:', error);
+    res.status(500).json({ success: false, error: 'Failed to export account data' });
   }
 }

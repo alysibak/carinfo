@@ -141,7 +141,8 @@ function AboutDataModal({ onClose }: { onClose: () => void }) {
           </p>
           <p>
             <span className="text-white font-semibold">Not included</span>: Live dealer listing
-            prices, torque or real 0-60 times. Photos are shown only where one of the same model
+            prices or instrumented 0-60 times. Torque, seats and towing appear when a maker page has
+            been transcribed (marked curated). Photos are shown only where one of the same model
             year is on file. We omit uncertain fields rather than invent them.
           </p>
         </div>

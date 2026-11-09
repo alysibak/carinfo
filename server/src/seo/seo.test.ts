@@ -220,8 +220,8 @@ describe('SEO routes', () => {
     const ld = jsonLdOf(res.text);
     expect(ld['@type']).toBe('CollectionPage');
     expect(ld.mainEntity.numberOfItems).toBeGreaterThan(25);
-    // Crawlable links to the year pages and to the rivals' model pages.
-    expect(res.text).toMatch(/<a href="\/car\/toyota-camry[^"]*">2024 Toyota Camry<\/a>/);
+    // Multi-config years link to the model-year page; rivals to their model pages.
+    expect(res.text).toContain('<a href="/models/toyota/camry/2024">2024 Toyota Camry</a>');
     expect(res.text).toContain('<a href="/models/honda/accord">Honda Accord</a>');
     expect(res.text).toContain('/models/toyota/camry');
     // The Camry is not on Équité's list of the most stolen.
@@ -240,6 +240,20 @@ describe('SEO routes', () => {
     const res = await request(app).get('/models/toyota/flying-car');
     expect(res.status).toBe(404);
     expect(res.text).toContain('<meta name="robots" content="noindex" data-ssr />');
+  });
+
+  it('serves a model-year page that lists each configuration', async () => {
+    const res = await request(app).get('/models/honda/civic/2024');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('<title>2024 Honda Civic | CarInfo</title>');
+    expect(res.text).toMatch(/configurations on file/);
+    expect(res.text).toContain('<a href="/models/honda/civic">');
+    expect(res.text).toMatch(/<a href="\/car\/honda-civic[^"]*">/);
+    const lonely = await request(app).get('/models/honda/civic/1995');
+    // A year with one configuration has no dedicated page.
+    if (lonely.status === 404) {
+      expect(lonely.text).toContain('<meta name="robots" content="noindex" data-ssr />');
+    }
   });
 
   it('serves the plain SPA shell for a compare with fewer than two known cars', async () => {

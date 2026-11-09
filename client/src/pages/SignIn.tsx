@@ -22,12 +22,14 @@ import {
   type SignInProvider,
 } from '../services/signInMethods';
 import { useNoIndex, usePageMeta } from '../utils/pageMeta';
+import { t } from '../i18n';
+import { rich } from '../i18n/rich';
 
 /** If a sign-in does not show up as a session by then, the browser did not keep the cookie. */
 const COOKIE_WAIT_MS = 6_000;
 
 export default function SignIn() {
-  usePageMeta('Sign in', 'Sign in to CarInfo.');
+  usePageMeta(t('Sign in'), t('Sign in to CarInfo.'));
   useNoIndex();
   const [params] = useSearchParams();
   const next = safeNext(params.get('next'), '/home');
@@ -53,7 +55,7 @@ export default function SignIn() {
     const timer = setTimeout(() => {
       setPending(null);
       setError(
-        'Signed in, but this browser did not keep the sign-in. Allow cookies for this site.',
+        t('Signed in, but this browser did not keep the sign-in. Allow cookies for this site.'),
       );
     }, COOKIE_WAIT_MS);
     return () => clearTimeout(timer);
@@ -90,20 +92,23 @@ export default function SignIn() {
 
   return (
     <AuthCard
-      title="Sign in"
-      intro="Your garage and the Value chart are free with an account."
+      title={t('Sign in')}
+      intro={t('Your garage and the Value chart are free with an account.')}
       footer={
         <>
           <p>
-            New to CarInfo?{' '}
-            <Link to={`/sign-up${withNext}`} className="text-white underline">
-              Create a free account
-            </Link>
+            {rich(t('New to CarInfo? <0>Create a free account</0>'), [
+              (children) => (
+                <Link to={`/sign-up${withNext}`} className="text-white underline">
+                  {children}
+                </Link>
+              ),
+            ])}
           </p>
           {codes && mode === 'password' && (
             <p>
               <Link to="/forgot-password" className="text-zinc-300 hover:text-white underline">
-                Forgot your password?
+                {t('Forgot your password?')}
               </Link>
             </p>
           )}
@@ -130,7 +135,7 @@ export default function SignIn() {
           <>
             <AuthFormBody onSubmit={submit}>
               <Field
-                label="Email"
+                label={t('Email')}
                 type="email"
                 name="email"
                 autoComplete="email"
@@ -139,7 +144,7 @@ export default function SignIn() {
                 onChange={(e) => setEmail(e.target.value)}
               />
               <Field
-                label="Password"
+                label={t('Password')}
                 type="password"
                 name="password"
                 autoComplete="current-password"
@@ -148,7 +153,7 @@ export default function SignIn() {
                 onChange={(e) => setPassword(e.target.value)}
               />
               <SubmitButton busy={busy}>
-                {pending === 'password' ? 'Signing in…' : 'Sign in'}
+                {pending === 'password' ? t('Signing in…') : t('Sign in')}
               </SubmitButton>
             </AuthFormBody>
             {codes && (
@@ -160,7 +165,7 @@ export default function SignIn() {
                 }}
                 className="btn-ghost self-center"
               >
-                No password? Email me a code
+                {t('No password? Email me a code')}
               </button>
             )}
           </>

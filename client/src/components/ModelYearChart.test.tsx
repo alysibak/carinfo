@@ -23,7 +23,7 @@ const YEARS = [year(2019, 902, 6), year(2018, 348, 3), year(2017, 321), year(201
 function renderChart() {
   return render(
     <MemoryRouter>
-      <ModelYearChart years={YEARS} name="Toyota RAV4" />
+      <ModelYearChart years={YEARS} name="Toyota RAV4" modelPath="/models/toyota/rav4" />
     </MemoryRouter>,
   );
 }
@@ -69,7 +69,7 @@ describe('ModelYearChart', () => {
     expect(screen.getByText('· 4th generation')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'See the 2018 Toyota RAV4 →' })).toHaveAttribute(
       'href',
-      '/car/rav4-2018',
+      '/models/toyota/rav4/2018',
     );
   });
 

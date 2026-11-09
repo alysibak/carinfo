@@ -3,6 +3,9 @@ import { bodyStyleLabel } from './bodyStyleLabel';
 import { formatFuelTypeLabel } from './fuelDisplay';
 import { filterFieldHasValue, isElectricOnlyBrowse } from './filterState';
 import { rangeKm } from './efficiency';
+import { BODY_TYPES, FUEL_TYPES } from '../config/browseTaxonomy';
+import { t } from '../i18n';
+import { fmtNumber } from '../i18n/format';
 
 const PAGE_SIZE = 36;
 
@@ -249,17 +252,26 @@ export function describeActiveFilters(filters: CarFilter = {}): { key: string; l
   filters.make?.forEach((m) => chips.push({ key: `make-${m}`, label: m }));
   filters.model?.forEach((m) => chips.push({ key: `model-${m}`, label: m }));
   filters.modelLine?.forEach((m) => chips.push({ key: `line-${m}`, label: m }));
-  filters.bodyStyle?.forEach((b) => chips.push({ key: `body-${b}`, label: bodyStyleLabel(b) }));
+  filters.bodyStyle?.forEach((b) => {
+    const labeled = BODY_TYPES.find((type) => type.id === b)?.label ?? bodyStyleLabel(b);
+    chips.push({ key: `body-${b}`, label: t(labeled) });
+  });
   // Every fuel but hydrogen (the First car situation's) is one chip, not five.
   const fuels = filters.fuelType ?? [];
   if (fuels.length >= 4 && !fuels.includes('hydrogen')) {
-    chips.push({ key: 'fuel-all', label: 'Any fuel but hydrogen' });
+    chips.push({ key: 'fuel-all', label: t('Any fuel but hydrogen') });
   } else {
-    fuels.forEach((f) => chips.push({ key: `fuel-${f}`, label: formatFuelTypeLabel(f) }));
+    fuels.forEach((f) => {
+      const labeled = FUEL_TYPES.find((type) => type.id === f)?.label ?? formatFuelTypeLabel(f);
+      chips.push({ key: `fuel-${f}`, label: t(labeled) });
+    });
   }
   filters.driveType?.forEach((d) => chips.push({ key: `drive-${d}`, label: d }));
-  filters.transmission?.forEach((t) =>
-    chips.push({ key: `trans-${t}`, label: t === 'cvt' ? 'CVT' : bodyStyleLabel(t) }),
+  filters.transmission?.forEach((gear) =>
+    chips.push({
+      key: `trans-${gear}`,
+      label: gear === 'cvt' ? 'CVT' : t(bodyStyleLabel(gear)),
+    }),
   );
   filters.countryOfOrigin?.forEach((c) => chips.push({ key: `country-${c}`, label: c }));
 
@@ -273,33 +285,37 @@ export function describeActiveFilters(filters: CarFilter = {}): { key: string; l
             ? `${min}`
             : `${min}–${max}`
           : min != null
-            ? `${min} or newer`
-            : `${max} or older`,
+            ? t('{year} or newer', { year: min })
+            : t('{year} or older', { year: max! }),
     });
   }
   if (filters.price?.min != null || filters.price?.max != null) {
     const { min, max } = filters.price;
     let label: string;
     if (min != null && max != null) {
-      label = `$${(min / 1000).toFixed(0)}k-$${(max / 1000).toFixed(0)}k`;
+      label = t('$${min}k-$${max}k', {
+        min: (min / 1000).toFixed(0),
+        max: (max / 1000).toFixed(0),
+      });
     } else if (max != null) {
-      label = `Under $${(max / 1000).toFixed(0)}k`;
+      label = t('Under $${amount}k', { amount: (max / 1000).toFixed(0) });
     } else {
-      label = `$${(min! / 1000).toFixed(0)}k+`;
+      label = t('$${amount}k+', { amount: (min! / 1000).toFixed(0) });
     }
     chips.push({ key: 'price', label });
   }
   if (filters.fuelEconomy?.min != null) {
-    // In L/100 km like the filter that set it; the API keeps EPA's MPG.
     const min = filters.fuelEconomy.min;
     chips.push({
       key: 'mpg',
-      // As the car pages round it: a 25 mpg car shows 9.4, and is in.
-      label: min >= 100 ? `${min}+ MPGe` : `${(235.215 / min).toFixed(1)} L/100 km or less`,
+      label:
+        min >= 100
+          ? t('{mpg}+ MPGe', { mpg: min })
+          : t('{litres} L/100 km or less', { litres: (235.215 / min).toFixed(1) }),
     });
   }
   if (filters.displacement?.min != null || filters.displacement?.max != null) {
-    chips.push({ key: 'disp', label: 'Engine size filter' });
+    chips.push({ key: 'disp', label: t('Engine size filter') });
   }
   if (filters.horsepower?.min != null || filters.horsepower?.max != null) {
     const { min, max } = filters.horsepower;
@@ -307,49 +323,57 @@ export function describeActiveFilters(filters: CarFilter = {}): { key: string; l
       key: 'hp',
       label:
         min != null && max != null
-          ? `${min}–${max} hp`
+          ? t('{min}–{max} hp', { min, max })
           : min != null
-            ? `${min}+ hp`
-            : `${max} hp or less`,
+            ? t('{min}+ hp', { min })
+            : t('{max} hp or less', { max: max! }),
     });
   }
   if (filters.safety?.min != null) {
     chips.push({
       key: 'nhtsa',
       label:
-        filters.safety.min >= 5 ? '5 crash-test stars' : `${filters.safety.min}+ crash-test stars`,
+        filters.safety.min >= 5
+          ? t('5 crash-test stars')
+          : t('{stars}+ crash-test stars', { stars: filters.safety.min }),
     });
   }
   if (filters.threeRow != null) {
-    chips.push({ key: 'rows', label: filters.threeRow ? 'Three rows' : 'Two rows' });
+    chips.push({
+      key: 'rows',
+      label: filters.threeRow ? t('Three rows') : t('Two rows'),
+    });
   }
   if (filters.rangeMiles?.min != null) {
-    chips.push({ key: 'range', label: `${rangeKm(filters.rangeMiles.min)}+ km range` });
+    chips.push({
+      key: 'range',
+      label: t('{km}+ km range', { km: rangeKm(filters.rangeMiles.min) }),
+    });
   }
   if (filters.safetyTech?.features.length) {
     chips.push({
       key: 'tech',
-      label: isFcwStandard(filters) ? 'Collision warning standard' : 'Safety features',
+      label: isFcwStandard(filters) ? t('Collision warning standard') : t('Safety features'),
     });
   }
-  if (filters.noRecalls) chips.push({ key: 'recalls', label: 'No recalls in Canada' });
+  if (filters.noRecalls) chips.push({ key: 'recalls', label: t('No recalls in Canada') });
   if (filters.curbWeightKg?.min != null || filters.curbWeightKg?.max != null) {
     const { min, max } = filters.curbWeightKg;
-    const kg = (n: number) => `${n.toLocaleString('en-CA')} kg`;
+    const kg = (n: number) => t('{n} kg', { n: fmtNumber(n) });
     chips.push({
       key: 'weight',
       label:
         min != null && max != null
-          ? `${kg(min)} to ${kg(max)}`
+          ? t('{min} to {max}', { min: kg(min), max: kg(max) })
           : min != null
-            ? `${kg(min)} or heavier`
-            : `${kg(max!)} or lighter`,
+            ? t('{weight} or heavier', { weight: kg(min) })
+            : t('{weight} or lighter', { weight: kg(max!) }),
     });
   }
   if (filters.theftListed != null) {
     chips.push({
       key: 'stolen',
-      label: filters.theftListed ? 'On the most-stolen list' : 'Not on the most-stolen list',
+      label: filters.theftListed ? t('On the most-stolen list') : t('Not on the most-stolen list'),
     });
   }
 

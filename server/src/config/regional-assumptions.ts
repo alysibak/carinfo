@@ -5,7 +5,17 @@
 
 import { PUMP_PRICES } from './pump-prices.js';
 
-export type RegionId = 'ontario' | 'british-columbia';
+export type RegionId =
+  | 'ontario'
+  | 'british-columbia'
+  | 'alberta'
+  | 'quebec'
+  | 'manitoba'
+  | 'saskatchewan'
+  | 'nova-scotia'
+  | 'new-brunswick'
+  | 'prince-edward-island'
+  | 'newfoundland-and-labrador';
 
 export interface InsuranceAssumptions {
   sedan: number;
@@ -114,7 +124,17 @@ export interface RegionalAssumptions {
 
 /** A region's pump prices from its city's row of Statistics Canada's table. */
 function pumpPricesOf(
-  place: 'Toronto, Ontario' | 'Vancouver, British Columbia',
+  place:
+    | 'Toronto, Ontario'
+    | 'Vancouver, British Columbia'
+    | 'Calgary, Alberta'
+    | 'Montréal, Quebec'
+    | 'Winnipeg, Manitoba'
+    | 'Regina, Saskatchewan'
+    | 'Halifax, Nova Scotia'
+    | 'Saint John, New Brunswick'
+    | 'Charlottetown and Summerside, Prince Edward Island'
+    | "St. John's, Newfoundland and Labrador",
 ): Pick<
   RegionalAssumptions,
   'gasPriceCadPerL' | 'dieselPriceCadPerL' | 'premiumOverRegularCadPerL' | 'pumpPrices'
@@ -262,6 +282,471 @@ export const REGIONAL_ASSUMPTIONS: Record<RegionId, RegionalAssumptions> = {
       electricMileFraction: 0.4,
     },
   },
+  alberta: {
+    id: 'alberta',
+    label: 'Alberta',
+    displayCurrency: 'CAD',
+    cadUsdExchangeRate: 1.38,
+    // Prairie pricing tracks Ontario more closely than Vancouver's.
+    vehiclePriceCadPerUsd: 1.2,
+    // Statistics Canada, Calgary, the last twelve months on file.
+    ...pumpPricesOf('Calgary, Alberta'),
+    // Deregulated residential blend (energy + delivery + riders); RRO/spot
+    // shoppers see $0.12–$0.28/kWh. Mid-tier planning rate ~20¢.
+    electricityRateCadPerKwh: 0.2,
+    // No public light-duty hydrogen network with a posted retail price.
+    hydrogenCadPerKg: null,
+    // Alberta drivers log more highway kilometres than the national average.
+    annualKm: 16000,
+    // Passenger-vehicle registration (registry agent) is about $94 a year
+    // for a standard plate; plate and renewal fees sit near that figure.
+    registrationCadPerYear: 94,
+    beaterValueThresholdCad: 8000,
+    // Private market (no crown insurer). Alberta's average premium has run
+    // above Ontario's in recent years; bases sit a little over Ontario's.
+    insurance: {
+      sedan: 2400,
+      suv: 2600,
+      truck: 2850,
+      coupe: 2650,
+      luxuryMultiplier: 1.5,
+      heavyEvTruck: 4200,
+      luxuryPerformance: 4000,
+      valueFactor: { fromValueCad: 30000, perThousandCad: 0.004, maxFactor: 1.5 },
+      premiumEvMultiplier: 1.27,
+      beaterMaxCad: 1450,
+      lowValueMaxCad: 1950,
+      lowValueThresholdCad: 11000,
+    },
+    maintenance: {
+      base: 900,
+      heavyEvTruck: 1500,
+      luxuryPerformance: 1900,
+      luxury: 1500,
+      exotic: 4000,
+      electric: 650,
+      hydrogen: 1300,
+      hybrid: 850,
+      ageIncrementPerYear: 55,
+      ageIncrementCapYears: 10,
+    },
+    tires: {
+      default: 650,
+      heavyEvTruck: 1900,
+      truck: 1200,
+      luxuryPerformance: 1500,
+      exotic: 2400,
+      suv: 950,
+      electric: 800,
+    },
+    phev: {
+      gasMileFraction: 0.7,
+      electricMileFraction: 0.3,
+    },
+  },
+  quebec: {
+    id: 'quebec',
+    label: 'Quebec',
+    displayCurrency: 'CAD',
+    cadUsdExchangeRate: 1.38,
+    vehiclePriceCadPerUsd: 1.22,
+    // Statistics Canada, Montréal, the last twelve months on file.
+    ...pumpPricesOf('Montréal, Quebec'),
+    // Hydro-Québec Rate D residential: ~7–11¢/kWh depending on tier and
+    // season; 8¢ is a blended home-charging planning rate.
+    electricityRateCadPerKwh: 0.08,
+    hydrogenCadPerKg: null,
+    annualKm: 14000,
+    // SAAQ driver's licence and vehicle registration together for a typical
+    // passenger car land near $230 a year (droits and plate).
+    registrationCadPerYear: 230,
+    beaterValueThresholdCad: 8000,
+    // SAAQ covers public liability; collision and comprehensive are private.
+    // The combined cost of a typical package sits below Ontario's.
+    insurance: {
+      sedan: 1550,
+      suv: 1700,
+      truck: 1850,
+      coupe: 1750,
+      luxuryMultiplier: 1.45,
+      heavyEvTruck: 3100,
+      luxuryPerformance: 3000,
+      valueFactor: { fromValueCad: 30000, perThousandCad: 0.004, maxFactor: 1.5 },
+      premiumEvMultiplier: 1.2,
+      beaterMaxCad: 950,
+      lowValueMaxCad: 1300,
+      lowValueThresholdCad: 11000,
+    },
+    maintenance: {
+      base: 920,
+      heavyEvTruck: 1520,
+      luxuryPerformance: 1920,
+      luxury: 1520,
+      exotic: 4050,
+      electric: 660,
+      hydrogen: 1320,
+      hybrid: 870,
+      ageIncrementPerYear: 55,
+      ageIncrementCapYears: 10,
+    },
+    tires: {
+      default: 680,
+      heavyEvTruck: 1920,
+      truck: 1220,
+      luxuryPerformance: 1520,
+      exotic: 2420,
+      suv: 980,
+      electric: 820,
+    },
+    phev: {
+      gasMileFraction: 0.55,
+      electricMileFraction: 0.45,
+    },
+  },
+  manitoba: {
+    id: 'manitoba',
+    label: 'Manitoba',
+    displayCurrency: 'CAD',
+    cadUsdExchangeRate: 1.38,
+    vehiclePriceCadPerUsd: 1.2,
+    // Statistics Canada, Winnipeg, the last twelve months on file.
+    ...pumpPricesOf('Winnipeg, Manitoba'),
+    // Manitoba Hydro residential energy charge, 9.970¢/kWh from 1 Jan 2026
+    // (PUB Order 1/26 / Hydro rate schedule).
+    electricityRateCadPerKwh: 0.0997,
+    hydrogenCadPerKg: null,
+    annualKm: 15000,
+    // MPI passenger-vehicle registration charge: $119/yr (separate from
+    // Autopac; collected together at renewal). Man. Reg. 42/2006.
+    registrationCadPerYear: 119,
+    beaterValueThresholdCad: 8000,
+    // MPI projected average Basic Autopac premium ~$1,264 for 2026/27
+    // (excludes optional Extension). Bases sit near that Basic figure.
+    insurance: {
+      sedan: 1300,
+      suv: 1450,
+      truck: 1600,
+      coupe: 1450,
+      luxuryMultiplier: 1.4,
+      heavyEvTruck: 3000,
+      luxuryPerformance: 2900,
+      valueFactor: { fromValueCad: 30000, perThousandCad: 0.004, maxFactor: 1.45 },
+      premiumEvMultiplier: 1.2,
+      beaterMaxCad: 900,
+      lowValueMaxCad: 1200,
+      lowValueThresholdCad: 11000,
+    },
+    maintenance: {
+      base: 900,
+      heavyEvTruck: 1500,
+      luxuryPerformance: 1900,
+      luxury: 1500,
+      exotic: 4000,
+      electric: 650,
+      hydrogen: 1300,
+      hybrid: 850,
+      ageIncrementPerYear: 55,
+      ageIncrementCapYears: 10,
+    },
+    tires: {
+      default: 650,
+      heavyEvTruck: 1900,
+      truck: 1200,
+      luxuryPerformance: 1500,
+      exotic: 2400,
+      suv: 950,
+      electric: 800,
+    },
+    phev: {
+      gasMileFraction: 0.65,
+      electricMileFraction: 0.35,
+    },
+  },
+  saskatchewan: {
+    id: 'saskatchewan',
+    label: 'Saskatchewan',
+    displayCurrency: 'CAD',
+    cadUsdExchangeRate: 1.38,
+    vehiclePriceCadPerUsd: 1.2,
+    // Statistics Canada, Regina, the last twelve months on file.
+    ...pumpPricesOf('Regina, Saskatchewan'),
+    // SaskPower residential energy charge 15.476¢/kWh from 1 Feb 2026.
+    electricityRateCadPerKwh: 0.15476,
+    hydrogenCadPerKg: null,
+    annualKm: 16000,
+    // SGI Class LV registration (GVW ≤5,000 kg, 1942 & newer): $68/yr;
+    // Auto Fund basic insurance is in the premium bases below.
+    registrationCadPerYear: 68,
+    beaterValueThresholdCad: 8000,
+    // AIRB 2024 cross-province comparison puts Saskatchewan near $1,545.
+    insurance: {
+      sedan: 1550,
+      suv: 1700,
+      truck: 1850,
+      coupe: 1700,
+      luxuryMultiplier: 1.45,
+      heavyEvTruck: 3200,
+      luxuryPerformance: 3100,
+      valueFactor: { fromValueCad: 30000, perThousandCad: 0.004, maxFactor: 1.45 },
+      premiumEvMultiplier: 1.22,
+      beaterMaxCad: 950,
+      lowValueMaxCad: 1300,
+      lowValueThresholdCad: 11000,
+    },
+    maintenance: {
+      base: 900,
+      heavyEvTruck: 1500,
+      luxuryPerformance: 1900,
+      luxury: 1500,
+      exotic: 4000,
+      electric: 650,
+      hydrogen: 1300,
+      hybrid: 850,
+      ageIncrementPerYear: 55,
+      ageIncrementCapYears: 10,
+    },
+    tires: {
+      default: 650,
+      heavyEvTruck: 1900,
+      truck: 1200,
+      luxuryPerformance: 1500,
+      exotic: 2400,
+      suv: 950,
+      electric: 800,
+    },
+    phev: {
+      gasMileFraction: 0.7,
+      electricMileFraction: 0.3,
+    },
+  },
+  'nova-scotia': {
+    id: 'nova-scotia',
+    label: 'Nova Scotia',
+    displayCurrency: 'CAD',
+    cadUsdExchangeRate: 1.38,
+    vehiclePriceCadPerUsd: 1.22,
+    // Statistics Canada, Halifax, the last twelve months on file.
+    ...pumpPricesOf('Halifax, Nova Scotia'),
+    // Nova Scotia Power domestic energy 19.128¢/kWh from 1 May 2026
+    // (base energy + FAM/DSM/storm riders on the customer-facing rate).
+    electricityRateCadPerKwh: 0.19128,
+    hydrogenCadPerKg: null,
+    annualKm: 14000,
+    // Registry of Motor Vehicles: $176.90 for a two-year 1,001–1,500 kg
+    // passenger permit → $88.45 a year.
+    registrationCadPerYear: 88,
+    beaterValueThresholdCad: 8000,
+    // GISA 2024 average earned premium ~$1,302 (private market).
+    insurance: {
+      sedan: 1300,
+      suv: 1450,
+      truck: 1600,
+      coupe: 1450,
+      luxuryMultiplier: 1.45,
+      heavyEvTruck: 3000,
+      luxuryPerformance: 2900,
+      valueFactor: { fromValueCad: 30000, perThousandCad: 0.004, maxFactor: 1.45 },
+      premiumEvMultiplier: 1.22,
+      beaterMaxCad: 900,
+      lowValueMaxCad: 1250,
+      lowValueThresholdCad: 11000,
+    },
+    maintenance: {
+      base: 920,
+      heavyEvTruck: 1520,
+      luxuryPerformance: 1920,
+      luxury: 1520,
+      exotic: 4050,
+      electric: 660,
+      hydrogen: 1320,
+      hybrid: 870,
+      ageIncrementPerYear: 55,
+      ageIncrementCapYears: 10,
+    },
+    tires: {
+      default: 680,
+      heavyEvTruck: 1920,
+      truck: 1220,
+      luxuryPerformance: 1520,
+      exotic: 2420,
+      suv: 980,
+      electric: 820,
+    },
+    phev: {
+      gasMileFraction: 0.65,
+      electricMileFraction: 0.35,
+    },
+  },
+  'new-brunswick': {
+    id: 'new-brunswick',
+    label: 'New Brunswick',
+    displayCurrency: 'CAD',
+    cadUsdExchangeRate: 1.38,
+    vehiclePriceCadPerUsd: 1.2,
+    // Statistics Canada, Saint John, the last twelve months on file.
+    ...pumpPricesOf('Saint John, New Brunswick'),
+    // NB Power residential energy 15.84¢/kWh from 14 Apr 2026
+    // (15.39¢ base + 0.45¢ variance account charge).
+    electricityRateCadPerKwh: 0.1584,
+    hydrogenCadPerKg: null,
+    annualKm: 14000,
+    // Service New Brunswick weight band for a ~1,500 kg car: $117/yr
+    // (fees as of Aug 2026).
+    registrationCadPerYear: 117,
+    beaterValueThresholdCad: 8000,
+    // GISA 2024 average earned premium ~$1,208.
+    insurance: {
+      sedan: 1200,
+      suv: 1350,
+      truck: 1500,
+      coupe: 1350,
+      luxuryMultiplier: 1.45,
+      heavyEvTruck: 2900,
+      luxuryPerformance: 2800,
+      valueFactor: { fromValueCad: 30000, perThousandCad: 0.004, maxFactor: 1.45 },
+      premiumEvMultiplier: 1.2,
+      beaterMaxCad: 850,
+      lowValueMaxCad: 1150,
+      lowValueThresholdCad: 11000,
+    },
+    maintenance: {
+      base: 920,
+      heavyEvTruck: 1520,
+      luxuryPerformance: 1920,
+      luxury: 1520,
+      exotic: 4050,
+      electric: 660,
+      hydrogen: 1320,
+      hybrid: 870,
+      ageIncrementPerYear: 55,
+      ageIncrementCapYears: 10,
+    },
+    tires: {
+      default: 680,
+      heavyEvTruck: 1920,
+      truck: 1220,
+      luxuryPerformance: 1520,
+      exotic: 2420,
+      suv: 980,
+      electric: 820,
+    },
+    phev: {
+      gasMileFraction: 0.65,
+      electricMileFraction: 0.35,
+    },
+  },
+  'prince-edward-island': {
+    id: 'prince-edward-island',
+    label: 'Prince Edward Island',
+    displayCurrency: 'CAD',
+    cadUsdExchangeRate: 1.38,
+    vehiclePriceCadPerUsd: 1.22,
+    // Statistics Canada, Charlottetown and Summerside, last twelve months.
+    ...pumpPricesOf('Charlottetown and Summerside, Prince Edward Island'),
+    // Maritime Electric first-block residential 17.84¢/kWh from 1 Aug 2026.
+    electricityRateCadPerKwh: 0.1784,
+    hydrogenCadPerKg: null,
+    annualKm: 13000,
+    // Highway Safety: $100/yr for a private passenger vehicle under 4,100 kg.
+    registrationCadPerYear: 100,
+    beaterValueThresholdCad: 7500,
+    // GISA 2024 average earned premium ~$1,018 — the lowest of the ten.
+    insurance: {
+      sedan: 1050,
+      suv: 1200,
+      truck: 1350,
+      coupe: 1200,
+      luxuryMultiplier: 1.4,
+      heavyEvTruck: 2700,
+      luxuryPerformance: 2600,
+      valueFactor: { fromValueCad: 30000, perThousandCad: 0.004, maxFactor: 1.4 },
+      premiumEvMultiplier: 1.18,
+      beaterMaxCad: 800,
+      lowValueMaxCad: 1050,
+      lowValueThresholdCad: 11000,
+    },
+    maintenance: {
+      base: 920,
+      heavyEvTruck: 1520,
+      luxuryPerformance: 1920,
+      luxury: 1520,
+      exotic: 4050,
+      electric: 660,
+      hydrogen: 1320,
+      hybrid: 870,
+      ageIncrementPerYear: 55,
+      ageIncrementCapYears: 10,
+    },
+    tires: {
+      default: 680,
+      heavyEvTruck: 1920,
+      truck: 1220,
+      luxuryPerformance: 1520,
+      exotic: 2420,
+      suv: 980,
+      electric: 820,
+    },
+    phev: {
+      gasMileFraction: 0.65,
+      electricMileFraction: 0.35,
+    },
+  },
+  'newfoundland-and-labrador': {
+    id: 'newfoundland-and-labrador',
+    label: 'Newfoundland and Labrador',
+    displayCurrency: 'CAD',
+    cadUsdExchangeRate: 1.38,
+    vehiclePriceCadPerUsd: 1.22,
+    // Statistics Canada, St. John's, the last twelve months on file.
+    ...pumpPricesOf("St. John's, Newfoundland and Labrador"),
+    // Newfoundland Power domestic energy 15.587¢/kWh from 1 Jul 2026.
+    electricityRateCadPerKwh: 0.15587,
+    hydrogenCadPerKg: null,
+    annualKm: 14000,
+    // Motor Registration Division: $90/yr passenger ($80 online).
+    registrationCadPerYear: 90,
+    beaterValueThresholdCad: 7500,
+    // GISA 2024 average earned premium ~$1,359.
+    insurance: {
+      sedan: 1350,
+      suv: 1500,
+      truck: 1650,
+      coupe: 1500,
+      luxuryMultiplier: 1.45,
+      heavyEvTruck: 3000,
+      luxuryPerformance: 2900,
+      valueFactor: { fromValueCad: 30000, perThousandCad: 0.004, maxFactor: 1.45 },
+      premiumEvMultiplier: 1.22,
+      beaterMaxCad: 900,
+      lowValueMaxCad: 1250,
+      lowValueThresholdCad: 11000,
+    },
+    maintenance: {
+      base: 950,
+      heavyEvTruck: 1550,
+      luxuryPerformance: 1950,
+      luxury: 1550,
+      exotic: 4100,
+      electric: 680,
+      hydrogen: 1350,
+      hybrid: 900,
+      ageIncrementPerYear: 55,
+      ageIncrementCapYears: 10,
+    },
+    tires: {
+      default: 700,
+      heavyEvTruck: 1950,
+      truck: 1250,
+      luxuryPerformance: 1550,
+      exotic: 2450,
+      suv: 1000,
+      electric: 850,
+    },
+    phev: {
+      gasMileFraction: 0.7,
+      electricMileFraction: 0.3,
+    },
+  },
 };
 
 export const DEFAULT_REGION: RegionId = 'ontario';
@@ -316,7 +801,8 @@ export function monthLabel(month: string): string {
  * (Statistics Canada; Sep 2026 alone, $1.84/L regular). Premium adds $0.31/L
  * for cars EPA rates on it. ~$0.155/kWh home electricity, ~15,000 km/yr."
  */
-export function formatOntarioEnergyAssumptionNote(
+/** Energy-price note for the chosen region (name kept for call-site clarity). */
+export function formatEnergyAssumptionNote(
   region: RegionalAssumptions = getRegionalAssumptions(),
 ): string {
   const { place, from, through, latest } = region.pumpPrices;
@@ -333,13 +819,28 @@ export function formatOntarioEnergyAssumptionNote(
   );
 }
 
-export function formatOntarioRegionNote(
-  region: RegionalAssumptions = getRegionalAssumptions(),
-): string {
+export function formatRegionNote(region: RegionalAssumptions = getRegionalAssumptions()): string {
   return `${region.label}-baseline estimates in ${region.displayCurrency}. Condition, mileage, and local demand still cause real variation`;
 }
 
+/** @deprecated Prefer formatEnergyAssumptionNote */
+export const formatOntarioEnergyAssumptionNote = formatEnergyAssumptionNote;
+/** @deprecated Prefer formatRegionNote */
+export const formatOntarioRegionNote = formatRegionNote;
+
 export function parseRegionId(raw: unknown): RegionId {
   if (raw === 'british-columbia' || raw === 'bc') return 'british-columbia';
+  if (raw === 'alberta' || raw === 'ab') return 'alberta';
+  if (raw === 'quebec' || raw === 'qc' || raw === 'québec') return 'quebec';
+  if (raw === 'manitoba' || raw === 'mb') return 'manitoba';
+  if (raw === 'saskatchewan' || raw === 'sk') return 'saskatchewan';
+  if (raw === 'nova-scotia' || raw === 'ns') return 'nova-scotia';
+  if (raw === 'new-brunswick' || raw === 'nb') return 'new-brunswick';
+  if (raw === 'prince-edward-island' || raw === 'pei' || raw === 'pe') {
+    return 'prince-edward-island';
+  }
+  if (raw === 'newfoundland-and-labrador' || raw === 'nl' || raw === 'newfoundland') {
+    return 'newfoundland-and-labrador';
+  }
   return DEFAULT_REGION;
 }

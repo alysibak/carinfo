@@ -8,6 +8,7 @@ import ToolPageHeader from '../components/ToolPageHeader';
 import PageShell, { PageBody } from '../components/PageShell';
 import { checklistSections, type ChecklistItem } from '../utils/checklist';
 import { usePageMeta } from '../utils/pageMeta';
+import { t } from '../i18n';
 
 type Status = 'loading' | 'ready' | 'missing' | 'error';
 
@@ -67,32 +68,37 @@ export default function CarChecklist() {
     ? `${car.year} ${dashboard?.modelPage?.label ?? `${car.make} ${car.model}`}`
     : undefined;
   usePageMeta(
-    name ? `Checklist: ${name}` : 'Checklist',
+    name ? t('Checklist: {name}', { name }) : t('Checklist'),
     name
-      ? `What to check when seeing a ${name}: its recalls in Canada, what owners complained of, NHTSA's ratings and investigations, and theft, from the public records.`
+      ? t(
+          'What to check when seeing a {name}: its recalls in Canada, what owners complained of, NHTSA’s ratings and investigations, and theft, from the public records.',
+          { name },
+        )
       : undefined,
   );
 
   const carPath = `/car/${encodeURIComponent(id)}`;
-  if (status === 'loading') return <LoadingScreen label="Loading the checklist" />;
+  if (status === 'loading') return <LoadingScreen label={t('Loading the checklist')} />;
   if (status === 'missing') {
     return (
       <ErrorState
-        title="Car not found"
-        message="No car with that address is on file. It may have been renamed: search for it by make, model and year."
+        title={t('Car not found')}
+        message={t(
+          'No car with that address is on file. It may have been renamed: search for it by make, model and year.',
+        )}
         backTo="/home"
-        backLabel="Search cars"
+        backLabel={t('Search cars')}
       />
     );
   }
   if (status === 'error' || !dashboard || !name) {
     return (
       <ErrorState
-        title="Checklist unavailable"
-        message="Could not load this car. Check your connection and try again."
+        title={t('Checklist unavailable')}
+        message={t('Could not load this car. Check your connection and try again.')}
         onRetry={() => setAttempt((n) => n + 1)}
         backTo={carPath}
-        backLabel="Back to the car"
+        backLabel={t('Back to the car')}
       />
     );
   }
@@ -100,19 +106,24 @@ export default function CarChecklist() {
   const sections = checklistSections(dashboard);
   return (
     <PageShell>
-      <ToolPageHeader backTo={carPath} backLabel="Car" title={`Checklist: ${name}`} />
+      <ToolPageHeader
+        backTo={carPath}
+        backLabel={t('Car')}
+        title={t('Checklist: {name}', { name })}
+      />
       <PageBody>
         <div className="max-w-3xl">
           <p className="text-sm text-zinc-400 leading-relaxed">
-            From the public records on file, to take when you see the car: keep it open on your
-            phone or print it. Ticks are for the visit and are not saved.
+            {t(
+              'From the public records on file, to take when you see the car: keep it open on your phone or print it. Ticks are for the visit and are not saved.',
+            )}
           </p>
           <div className="flex flex-wrap gap-2 mt-4 print:hidden">
             <button type="button" onClick={() => window.print()} className="chip chip-on">
-              Print
+              {t('Print')}
             </button>
             <Link to={carPath} className="chip">
-              The {name}’s page
+              {t('The {name}’s page', { name })}
             </Link>
           </div>
 
@@ -135,13 +146,14 @@ export default function CarChecklist() {
                   ))}
                 </ul>
               )}
-              <p className="text-xs text-zinc-500 mt-2">Source: {section.source}.</p>
+              <p className="text-xs text-zinc-500 mt-2">
+                {t('Source: {source}.', { source: section.source })}
+              </p>
             </section>
           ))}
           {/* On paper, where the records came from and where to find them again. */}
           <p className="hidden print:block text-xs mt-8">
-            {name} on CarInfo: {window.location.origin}
-            {carPath}
+            {t('{name} on CarInfo: {url}', { name, url: `${window.location.origin}${carPath}` })}
           </p>
         </div>
       </PageBody>
