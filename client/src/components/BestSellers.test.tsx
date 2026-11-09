@@ -39,7 +39,7 @@ describe('BestSellers', () => {
     expect(screen.getByText('138,470 sold')).toBeInTheDocument();
     // The sales count is the family's; the link is the F-150's page.
     const link = screen.getByRole('link', {
-      name: '1. Ford F-Series, 138,470 sold: every Ford F-150 year',
+      name: /^1\s*Ford F-Series\s*138,470 sold\s*Every Ford F-150 year$/,
     });
     expect(link).toHaveAttribute('href', '/models/ford/f-150');
     expect(screen.getByText('from 9.8 L/100 km')).toBeInTheDocument();

@@ -76,8 +76,9 @@ export default function BestSellers({
               <li key={model.path} className="snap-start shrink-0 w-[72%] sm:w-auto">
                 <Link
                   to={model.path}
-                  // One clear name, not the whole card read out.
-                  aria-label={`${model.rank}. ${model.sales}, ${model.sold.toLocaleString('en-CA')} sold: every ${model.label} year`}
+                  // Named by its rank, name, sales and where it goes, not the whole
+                  // card read out: the figures are hidden from that name. Not an
+                  // aria-label, which must hold the card's visible text.
                   className="spotlight group flex h-full flex-col border border-zinc-800 bg-zinc-950 p-4 @2xl:p-3.5 @5xl:p-4 transition-colors hover:border-zinc-600 focus-visible:border-zinc-400"
                 >
                   {/* The rank drawn in outline, large: a podium, not a list. */}
@@ -91,7 +92,10 @@ export default function BestSellers({
                     {model.sold.toLocaleString('en-CA')} sold
                   </p>
                   {/* A figure a line: "L/100 km" broke across lines in a narrow card. */}
-                  <dl className="mt-3 pt-3 border-t border-zinc-900 text-xs tabular-nums leading-relaxed">
+                  <dl
+                    aria-hidden
+                    className="mt-3 pt-3 border-t border-zinc-900 text-xs tabular-nums leading-relaxed"
+                  >
                     <dt className="text-zinc-500">{model.newest.year} model</dt>
                     {newestFacts(model.newest).map((fact) => (
                       <dd key={fact} className="text-zinc-300 whitespace-nowrap">
@@ -100,7 +104,8 @@ export default function BestSellers({
                     ))}
                   </dl>
                   <span className="mt-auto pt-3 text-[13px] text-zinc-300 group-hover:text-white transition-colors">
-                    Every year →
+                    Every <span className="sr-only">{model.label}</span> year
+                    <span aria-hidden> →</span>
                   </span>
                 </Link>
               </li>

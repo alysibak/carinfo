@@ -308,7 +308,6 @@ export default function SelectMenu({
         ref={triggerRef}
         type="button"
         id={listId}
-        aria-label={ariaLabel}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={open ? `${listId}-listbox` : undefined}
@@ -320,7 +319,12 @@ export default function SelectMenu({
           open ? 'border-zinc-500' : 'border-zinc-800 hover:border-zinc-600'
         } ${triggerClass}`}
       >
-        <span className="truncate min-w-0">{selected?.label ?? 'Select'}</span>
+        {/* What it sets, then what it is set to: named by an aria-label, the
+            button's name left out the value it shows. */}
+        <span className="truncate min-w-0">
+          {ariaLabel && <span className="sr-only">{ariaLabel}: </span>}
+          {selected?.label ?? 'Select'}
+        </span>
         <ChevronDown
           className={`shrink-0 text-zinc-500 transition-transform duration-150 ${open ? 'rotate-180' : ''}`}
         />

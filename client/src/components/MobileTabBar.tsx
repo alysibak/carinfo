@@ -45,7 +45,10 @@ const ICONS = {
 function Count({ count }: { count: number }) {
   if (count <= 0) return null;
   return (
-    <span className="absolute -top-1 -right-2.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-accent text-accent-ink text-[11px] font-bold tabular-nums leading-none">
+    <span
+      aria-hidden
+      className="absolute -top-1 -right-2.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-accent text-accent-ink text-[11px] font-bold tabular-nums leading-none"
+    >
       {count}
     </span>
   );
@@ -68,7 +71,6 @@ function Tab({
   return (
     <NavLink
       to={to}
-      aria-label={count > 0 ? `${label}, ${count}` : undefined}
       className={({ isActive }) =>
         `${TAB} ${isActive ? 'text-white' : 'text-zinc-500 hover:text-zinc-200'}`
       }
@@ -84,7 +86,12 @@ function Tab({
             {icon}
             <Count count={count} />
           </span>
-          {label}
+          {/* Named by what it shows, the count after the word: an aria-label put
+              the count first, and a name must hold the visible label. */}
+          <span>
+            {label}
+            {count > 0 && <span className="sr-only">, {count}</span>}
+          </span>
         </>
       )}
     </NavLink>
