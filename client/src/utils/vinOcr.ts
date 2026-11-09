@@ -203,6 +203,51 @@ export function withoutStrays(symbols: ReadSymbol[]): string[] {
   );
 }
 
+/** A word the reader read, and where it runs across the picture. */
+export interface ReadWord {
+  text: string;
+  x0: number;
+  x1: number;
+}
+
+/**
+ * Whether the picture's left or right edge runs through a word: its box
+ * comes within half a character of the edge. The camera reads a margin round
+ * its frame, so a VIN that fits the frame has room to spare; one this close
+ * to the edge of what was read runs past it.
+ */
+export function cutByEdge(word: ReadWord, width: number): boolean {
+  const chars = Math.max(1, word.text.replace(/\s/g, '').length);
+  const edge = Math.max(2, width * 0.003, (word.x1 - word.x0) / chars / 2);
+  return word.x0 <= edge || word.x1 >= width - edge;
+}
+
+/**
+ * A reader's lines without the words the picture's left or right edge cuts
+ * through (see cutByEdge), and whether one of those looked like part of a
+ * VIN. A VIN running past the frame was read short, then made up to 17 with
+ * characters the camera never saw until one checked out: a phone held close
+ * showed "GCM82633A004352" of 1HGCM82633A004352, and the scanner took
+ * HGCMS82055A004352.
+ */
+export function withinFrame(lines: ReadWord[][], width: number): { text: string; cut: boolean } {
+  let cut = false;
+  const kept = lines.map((words) =>
+    words
+      .filter((word) => {
+        if (!cutByEdge(word, width)) return true;
+        // Like a VIN: letters and digits as read (I and O made 1 and 0 would put a
+        // digit in any word).
+        const chars = word.text.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (chars.length >= 6 && /[0-9]/.test(chars) && /[A-Z]/.test(chars)) cut = true;
+        return false;
+      })
+      .map((word) => word.text)
+      .join(' '),
+  );
+  return { text: kept.filter(Boolean).join('\n'), cut };
+}
+
 /** Runs of whole neighbouring words, each as long as it can be up to `most` characters. */
 function wordRuns(words: string[], most: number): string[] {
   const runs: string[] = [];

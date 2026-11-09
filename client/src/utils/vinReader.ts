@@ -1,5 +1,5 @@
 import type { ImageLike, Worker } from 'tesseract.js';
-import { VIN_CHARS, type ReadSymbol } from './vinOcr';
+import { cutByEdge, VIN_CHARS, withinFrame, type ReadSymbol, type ReadWord } from './vinOcr';
 
 /**
  * The character reader the VIN scanner runs on camera frames and photos:
@@ -96,10 +96,23 @@ export function holdVinReader(): () => void {
   };
 }
 
-/** What the reader read in an image: its text, and the boxes of its longer words (see withoutStrays). */
+/** What the reader read in an image. */
 export interface PageRead {
+  /** Its text, without the words the picture's edge cuts through (see withinFrame). */
   text: string;
+  /** The boxes of its longer words, inside the picture (see withoutStrays). */
   boxed: ReadSymbol[][];
+  /** All it read, words at the edge too: what the camera shows it sees so far. */
+  seen: string;
+  /** Print like a VIN's runs past the picture's left or right edge. */
+  cut: boolean;
+}
+
+/** How wide a picture is: a canvas, or a PGM file (its header gives it). */
+function widthOf(image: HTMLCanvasElement | Uint8Array): number {
+  if (!(image instanceof Uint8Array)) return image.width;
+  const header = new TextDecoder().decode(image.subarray(0, 32)).split(/\s+/);
+  return header[0] === 'P5' ? Number(header[1]) || 0 : 0;
 }
 
 /** What the reader read in a picture: a canvas, or an image file's bytes (see vinPixels' toPgm). */
@@ -108,13 +121,22 @@ export async function readText(image: HTMLCanvasElement | Uint8Array): Promise<P
   // Its loader passes bytes it does not take for a file of its own straight
   // to its image library, which opens a PGM; its types name only Node's Buffer.
   const { data } = await worker.recognize(image as ImageLike, {}, { text: true, blocks: true });
+  const seen = data.text ?? '';
+  const width = widthOf(image);
+  const lines: ReadWord[][] = [];
   const boxed: ReadSymbol[][] = [];
   for (const block of data.blocks ?? []) {
     for (const paragraph of block.paragraphs) {
       for (const line of paragraph.lines) {
+        lines.push(line.words.map(({ text, bbox }) => ({ text, x0: bbox.x0, x1: bbox.x1 })));
         for (const word of line.words) {
           // Only words a VIN could be, as read or a character long.
           if (word.symbols.length < 17 || word.symbols.length > 18) continue;
+          if (
+            width > 0 &&
+            cutByEdge({ text: word.text, x0: word.bbox.x0, x1: word.bbox.x1 }, width)
+          )
+            continue;
           boxed.push(
             word.symbols.map(({ text, bbox }) => ({
               text,
@@ -128,5 +150,7 @@ export async function readText(image: HTMLCanvasElement | Uint8Array): Promise<P
       }
     }
   }
-  return { text: data.text ?? '', boxed };
+  if (width === 0 || lines.length === 0) return { text: seen, boxed, seen, cut: false };
+  const { text, cut } = withinFrame(lines, width);
+  return { text, boxed, seen, cut };
 }

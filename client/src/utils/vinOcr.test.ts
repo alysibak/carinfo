@@ -6,6 +6,7 @@ import {
   normalizeOcrText,
   VinTally,
   vinsFromText,
+  withinFrame,
   withoutStrays,
   type ReadSymbol,
 } from './vinOcr';
@@ -258,5 +259,37 @@ describe('withoutStrays', () => {
     const spans = evenly('1FTFW1ET9');
     spans[2] = ['T', 160, 300];
     expect(withoutStrays(boxes(spans))).toEqual([]);
+  });
+});
+
+describe('withinFrame', () => {
+  const word = (text: string, x0: number, x1: number) => ({ text, x0, x1 });
+
+  it('keeps lines whole inside the picture', () => {
+    expect(
+      withinFrame([[word('VIN', 40, 120), word('1HGCM82633A004352', 140, 1300)]], 1400),
+    ).toEqual({
+      text: 'VIN 1HGCM82633A004352',
+      cut: false,
+    });
+  });
+
+  it('leaves out a VIN the edge runs through, and says so', () => {
+    const read = withinFrame([[word('GCM82633A004352', 0, 1360)]], 1400);
+    expect(read).toEqual({ text: '', cut: true });
+    expect(vinsFromText(read.text)).toEqual([]);
+  });
+
+  it('keeps a VIN whole inside when only a neighbouring word is cut', () => {
+    const read = withinFrame(
+      [[word('1HGCM82633A004352', 60, 1100), word('MADE', 1200, 1399)]],
+      1400,
+    );
+    expect(read.text).toBe('1HGCM82633A004352');
+    expect(read.cut).toBe(false);
+  });
+
+  it('does not take a cut word of plain letters for a VIN', () => {
+    expect(withinFrame([[word('AMERICA', 1300, 1400)]], 1400).cut).toBe(false);
   });
 });

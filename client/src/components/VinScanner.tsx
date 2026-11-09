@@ -193,6 +193,10 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
   const [deviceId, setDeviceId] = useState<string | undefined>(undefined);
   const [lensId, setLensId] = useState<string | undefined>(undefined);
   const [trouble, setTrouble] = useState<Trouble | null>(null);
+  // The VIN runs past the frame's edge in most recent reads: say so, rather
+  // than read it short and guess the rest.
+  const [runsPast, setRunsPast] = useState(false);
+  const cutReads = useRef(0);
   const [dragging, setDragging] = useState(false);
 
   const trackRef = useRef<MediaStreamTrack | null>(null);
@@ -236,6 +240,8 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
     tallyRef.current.clear();
     troubleRef.current.clear();
     setTrouble(null);
+    cutReads.current = 0;
+    setRunsPast(false);
     scanStart.current = performance.now();
     setUnread(false);
     barcodeSeen.current.clear();
@@ -526,8 +532,10 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
           if (stopped || pausedRef.current) continue;
           const page = await readText(prepared.pgm);
           if (stopped || pausedRef.current) continue;
-          const partial = bestPartialRead(page.text);
+          const partial = bestPartialRead(page.seen);
           if (partial.length >= 4) setLive(partial);
+          cutReads.current = Math.max(0, Math.min(3, cutReads.current + (page.cut ? 1 : -1)));
+          setRunsPast(cutReads.current >= 2);
           const taken = tallyRef.current.add(vinsFromText(page.text, page.boxed));
           if (taken) accept({ ...taken, source: 'text' });
         } catch {
@@ -650,6 +658,8 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
     tallyRef.current.clear();
     troubleRef.current.clear();
     setTrouble(null);
+    cutReads.current = 0;
+    setRunsPast(false);
     setLive('');
     setDeviceId(next.deviceId);
   };
@@ -812,7 +822,10 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
             : t('Reading barcodes. Downloading the text reader (about 7 MB the first time)…')
           : reader === 'failed'
             ? t('Reading barcodes only: the text reader did not load.')
-            : (troubleText ?? t('Reading the barcode or the printed VIN…'));
+            : (troubleText ??
+              (runsPast
+                ? t('The VIN runs past the frame: move back or zoom out.')
+                : t('Reading the barcode or the printed VIN…')));
   const checks = found ? vinCheckDigitValid(found.vin) : false;
   // What went wrong with a photo or the light, else, once reading is slow,
   // what to try.
@@ -977,7 +990,7 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
               </p>
               <p
                 role="status"
-                className={`mt-0.5 text-xs ${troubleText && !busy && reader === 'ready' ? 'text-amber-200 font-semibold' : 'text-zinc-300'}`}
+                className={`mt-0.5 text-xs ${(troubleText || runsPast) && !busy && reader === 'ready' ? 'text-amber-200 font-semibold' : 'text-zinc-300'}`}
               >
                 {running || busy ? status : error ? '' : t('Starting the camera…')}
               </p>

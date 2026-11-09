@@ -593,6 +593,8 @@ const fr: Record<string, string> = {
     'Lecture des codes-barres. Téléchargement du lecteur de texte (environ 7 Mo la première fois)…',
   'Reading barcodes. Setting up the text reader…':
     'Lecture des codes-barres. Mise en route du lecteur de texte…',
+  'The VIN runs past the frame: move back or zoom out.':
+    'Le NIV dépasse du cadre : reculez ou dézoomez.',
 };
 
 export default fr;
