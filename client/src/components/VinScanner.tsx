@@ -5,8 +5,6 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from 'react';
-import { BrowserMultiFormatReader } from '@zxing/browser';
-import { BarcodeFormat, DecodeHintType } from '@zxing/library';
 import { extractVinFromScan, vinCheckDigitValid } from '../utils/vin';
 import {
   bestOfPasses,
@@ -15,8 +13,10 @@ import {
   vinsFromText,
   type VinRead,
 } from '../utils/vinOcr';
-import { drawRegion, guideCrop, strengthen, strokesOnly, videoPoint } from '../utils/vinFrame';
-import { readText, startVinReader, stopVinReader } from '../utils/vinReader';
+import { drawRegion, guideCrop, pixelsOf, videoPoint } from '../utils/vinFrame';
+import { PASSES } from '../utils/vinPixels';
+import { holdVinReader, readText, watchVinReader, type ReaderStage } from '../utils/vinReader';
+import { barcodeIn, prepareForReading, slantIn, stopVinWork } from '../utils/vinWork';
 import {
   backLenses,
   clampZoom,
@@ -35,25 +35,6 @@ interface VinScannerProps {
   onDetected: (vin: string) => void;
   onClose: () => void;
 }
-
-/** Formats VINs ship in: Code 39 on door stickers, Code 128 on some windshield
- * labels, Data Matrix / QR on newer plates, PDF417 on registration papers. */
-const NATIVE_FORMATS = ['code_39', 'code_128', 'data_matrix', 'qr_code', 'pdf417'];
-
-const ZXING_FORMATS = [
-  BarcodeFormat.CODE_39,
-  BarcodeFormat.CODE_128,
-  BarcodeFormat.DATA_MATRIX,
-  BarcodeFormat.QR_CODE,
-  BarcodeFormat.PDF_417,
-];
-
-type NativeDetectorConstructor = {
-  new (options?: { formats?: string[] }): {
-    detect(source: CanvasImageSource): Promise<Array<{ rawValue: string }>>;
-  };
-  getSupportedFormats(): Promise<string[]>;
-};
 
 type TrackCapabilities = MediaTrackCapabilities & {
   torch?: boolean;
@@ -80,54 +61,6 @@ function cameraErrorMessage(err: unknown): string {
 }
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-/**
- * Three ways to ready a picture for the character reader, taken in turn:
- * the whole of it in full contrast (a clean sticker); only its dark strokes
- * (print on a label, or on a bright plate under glare); only its light ones (a
- * VIN stamped light on a dark plate). Each reads VINs the others miss.
- */
-const PASSES: Array<(canvas: HTMLCanvasElement) => HTMLCanvasElement> = [
-  (canvas) => strengthen(canvas),
-  (canvas) => strokesOnly(canvas, false),
-  (canvas) => strokesOnly(canvas, true),
-];
-
-/** Barcode reading for a canvas: the browser's own reader where it reads Code 39, else zxing. */
-async function makeBarcodeReader(): Promise<(canvas: HTMLCanvasElement) => Promise<string | null>> {
-  const Ctor = (globalThis as { BarcodeDetector?: NativeDetectorConstructor }).BarcodeDetector;
-  if (Ctor) {
-    try {
-      const supported = await Ctor.getSupportedFormats();
-      const formats = NATIVE_FORMATS.filter((f) => supported.includes(f));
-      // Without Code 39 it would miss most door stickers.
-      if (formats.includes('code_39')) {
-        const detector = new Ctor({ formats });
-        return async (canvas) => {
-          try {
-            const [first] = await detector.detect(canvas);
-            return first?.rawValue ?? null;
-          } catch {
-            return null;
-          }
-        };
-      }
-    } catch {
-      // Fall through to zxing.
-    }
-  }
-  const hints = new Map();
-  hints.set(DecodeHintType.POSSIBLE_FORMATS, ZXING_FORMATS);
-  hints.set(DecodeHintType.TRY_HARDER, true);
-  const reader = new BrowserMultiFormatReader(hints);
-  return async (canvas) => {
-    try {
-      return reader.decodeFromCanvas(canvas).getText();
-    } catch {
-      return null;
-    }
-  };
-}
 
 /** The VIN in its three parts, a cell a character, the ones that were unclear marked. */
 function VinCells({ vin, changed }: { vin: string; changed: number[] }) {
@@ -238,8 +171,11 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
   const [error, setError] = useState<string | null>(null);
   const [found, setFound] = useState<Found | null>(null);
   const [live, setLive] = useState('');
-  const [reader, setReader] = useState<'loading' | 'ready' | 'failed'>('loading');
+  const [readerStage, setReaderStage] = useState<ReaderStage>('idle');
   const [slow, setSlow] = useState(false);
+  // A few seconds without a read: when advice about the picture is worth giving.
+  const [unread, setUnread] = useState(false);
+  const scanStart = useRef(0);
   const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState<'photo' | 'frame' | null>(null);
   const [canTorch, setCanTorch] = useState(false);
@@ -260,7 +196,6 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
   const tallyRef = useRef(new VinTally());
   const troubleRef = useRef(new TroubleWatch());
   const barcodeSeen = useRef(new Map<string, number>());
-  const barcodeRef = useRef<((canvas: HTMLCanvasElement) => Promise<string | null>) | null>(null);
   const rangeRef = useRef(range);
   const zoomRef = useRef(zoom);
   const zoomWanted = useRef<number | null>(null);
@@ -296,6 +231,8 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
     tallyRef.current.clear();
     troubleRef.current.clear();
     setTrouble(null);
+    scanStart.current = performance.now();
+    setUnread(false);
     barcodeSeen.current.clear();
     pausedRef.current = false;
     void videoRef.current?.play().catch(() => {});
@@ -395,21 +332,20 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
     };
   }, []);
 
-  // The two readers: barcodes at once, the character reader as it loads.
+  // The character reader, held while the camera is open (the VIN page may
+  // have loaded it already), and its stage followed; once the camera closes,
+  // the workers let go of.
   useEffect(() => {
-    let active = true;
-    void makeBarcodeReader().then((read) => {
-      if (active) barcodeRef.current = read;
-    });
-    startVinReader().then(
-      () => active && setReader('ready'),
-      () => active && setReader('failed'),
-    );
+    const release = holdVinReader();
+    const stopWatching = watchVinReader(setReaderStage);
     return () => {
-      active = false;
-      void stopVinReader();
+      stopWatching();
+      stopVinWork();
+      release();
     };
   }, []);
+  const reader =
+    readerStage === 'ready' ? 'ready' : readerStage === 'failed' ? 'failed' : 'loading';
 
   // The camera: the back one (or the lens chosen), as sharp as it gives,
   // focusing all the time.
@@ -519,10 +455,12 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
     };
 
     let tick = 0;
+    let barcodeBusy = false;
+    const barcodeCanvas = document.createElement('canvas');
     const barcodes = window.setInterval(async () => {
       const video = videoRef.current;
-      const read = barcodeRef.current;
-      if (pausedRef.current || !video || !read) return;
+      // One read at a time: a slow phone queued them up behind each other.
+      if (pausedRef.current || !video || barcodeBusy) return;
       tick += 1;
       // Mostly the guide, enlarged; now and then the whole picture.
       const region =
@@ -530,12 +468,20 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
           ? { x: 0, y: 0, width: video.videoWidth, height: video.videoHeight }
           : crop();
       if (!region) return;
-      const canvas = drawRegion(video, region, Math.min(1600, Math.max(900, region.width * 1.5)));
-      const text = await read(canvas);
-      if (!pausedRef.current) takeBarcode(text);
+      barcodeBusy = true;
+      try {
+        const width = Math.min(1600, Math.max(900, region.width * 1.5));
+        const text = await barcodeIn(pixelsOf(drawRegion(video, region, width, barcodeCanvas)));
+        if (!pausedRef.current) takeBarcode(text);
+      } catch {
+        // The worker stopped with the camera; or this frame would not read.
+      } finally {
+        barcodeBusy = false;
+      }
     }, 220);
 
     const slowTimer = window.setTimeout(() => setSlow(true), 10000);
+    scanStart.current = performance.now();
 
     // How the picture in the guide looks, four times a second: on a timer of
     // its own, as a dark picture's reads come slowly.
@@ -544,6 +490,7 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
       const video = videoRef.current;
       const region = crop();
       if (pausedRef.current || !video || !region) return;
+      setUnread(performance.now() - scanStart.current > 3000);
       const look = drawRegion(video, region, 320, lookCanvas)
         .getContext('2d', { willReadFrequently: true })
         ?.getImageData(0, 0, lookCanvas.width, lookCanvas.height);
@@ -551,8 +498,13 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
       setTrouble(troubleRef.current.add(troubleOf(frameLook(look.data, look.width, look.height))));
     }, 250);
 
+    const readCanvas = document.createElement('canvas');
     (async () => {
       let frame = 0;
+      // How far the VIN in the guide is turned from level, found on each
+      // frame and drawn out of the next: a VIN through a windshield is often
+      // seen at a slant.
+      let slant = 0;
       while (!stopped) {
         const region = crop();
         const video = videoRef.current;
@@ -560,10 +512,14 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
           await wait(250);
           continue;
         }
-        const canvas = PASSES[frame % PASSES.length](drawRegion(video, region, 1400));
+        const pixels = pixelsOf(drawRegion(video, region, 1400, readCanvas, slant));
+        const pass = frame % PASSES.length;
         frame += 1;
         try {
-          const page = await readText(canvas);
+          const prepared = await prepareForReading(pixels, pass);
+          slant = Math.max(-15, Math.min(15, slant + prepared.slant));
+          if (stopped || pausedRef.current) continue;
+          const page = await readText(prepared.pgm);
           if (stopped || pausedRef.current) continue;
           const partial = bestPartialRead(page.text);
           if (partial.length >= 4) setLive(partial);
@@ -700,16 +656,20 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
   const readStill = useCallback(
     async (source: CanvasImageSource, width: number, height: number, regions: Region[]) => {
       const whole = { x: 0, y: 0, width, height };
-      const code = await barcodeRef.current?.(drawRegion(source, whole, Math.min(2000, width)));
+      const code = await barcodeIn(pixelsOf(drawRegion(source, whole, Math.min(2000, width))));
       const vin = code ? extractVinFromScan(code) : null;
       if (vin) return { vin, changed: [], source: 'barcode' } as Found;
       const passes: VinRead[][] = [];
       for (const region of regions) {
-        for (const pass of PASSES) {
-          // As large as the live picture reads best, or a big photo's region
-          // brought down to what the reader handles quickly.
-          const size = Math.min(2000, Math.max(1400, region.width));
-          const page = await readText(pass(drawRegion(source, region, size)));
+        // As large as the live picture reads best, or a big photo's region
+        // brought down to what the reader handles quickly; turned level where
+        // the VIN runs at a slant, judged on a smaller copy.
+        const size = Math.min(2000, Math.max(1400, region.width));
+        const slant = await slantIn(pixelsOf(drawRegion(source, region, 480)));
+        for (let pass = 0; pass < PASSES.length; pass++) {
+          const pixels = pixelsOf(drawRegion(source, region, size, undefined, slant));
+          const prepared = await prepareForReading(pixels, pass);
+          const page = await readText(prepared.pgm);
           passes.push(vinsFromText(page.text, page.boxed));
           const best = bestOfPasses(passes);
           if (best?.sure) return { ...best.read, source: 'text' } as Found;
@@ -739,7 +699,14 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
       try {
         bitmap = await createImageBitmap(file);
         const { width, height } = bitmap;
-        // The middle first, where a VIN aimed at sits, read larger and alone.
+        // The middle first, where a VIN aimed at sits, read larger and alone:
+        // as close as the live guide, then wider, then the whole of it.
+        const centre = {
+          x: width * 0.2,
+          y: height * 0.36,
+          width: width * 0.6,
+          height: height * 0.28,
+        };
         const middle = {
           x: width * 0.05,
           y: height * 0.3,
@@ -747,6 +714,7 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
           height: height * 0.4,
         };
         const read = await readStill(bitmap, width, height, [
+          centre,
           middle,
           { x: 0, y: 0, width, height },
         ]);
@@ -821,8 +789,8 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
       ? canTorch && !torch
         ? 'Too dark to read: turn on the light.'
         : 'Too dark to read: use “Phone camera” below, with its flash.'
-      : trouble === 'glare'
-        ? 'A reflection lies on the VIN: tilt the phone a little.'
+      : trouble === 'glare' && unread
+        ? 'If a reflection hides the VIN, tilt the phone a little.'
         : null;
   const status =
     busy === 'photo'
@@ -830,11 +798,27 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
       : busy === 'frame'
         ? 'Reading this picture…'
         : reader === 'loading'
-          ? 'Reading barcodes. Getting the text reader ready…'
+          ? readerStage === 'setting up'
+            ? 'Reading barcodes. Setting up the text reader…'
+            : 'Reading barcodes. Downloading the text reader (about 7 MB the first time)…'
           : reader === 'failed'
             ? 'Reading barcodes only: the text reader did not load.'
             : (troubleText ?? 'Reading the barcode or the printed VIN…');
   const checks = found ? vinCheckDigitValid(found.vin) : false;
+  // What went wrong with a photo or the light, else, once reading is slow,
+  // what to try.
+  const hints = note ? (
+    <p className="text-[13px] text-amber-200 leading-snug">{note}</p>
+  ) : (
+    <ul className="text-[13px] text-zinc-300 leading-snug space-y-1 text-left">
+      <li>
+        Hold the phone level with the VIN, a hand’s width away: closer, it can’t focus. Zoom in
+        rather than moving in.
+      </li>
+      {canFocus && <li>Tap the VIN to focus on it.</li>}
+      <li>Tilt it a little to lose the windshield’s glare, or read a photo instead.</li>
+    </ul>
+  );
   const takeFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
@@ -846,7 +830,7 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
       role="dialog"
       aria-modal="true"
       aria-label="Scan the VIN"
-      className="fixed inset-0 z-300 bg-black flex flex-col"
+      className="fixed inset-0 z-300 bg-black flex flex-col phone-sideways:flex-row"
       onDragOver={(e) => {
         if (!e.dataTransfer.types.includes('Files')) return;
         e.preventDefault();
@@ -892,7 +876,7 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
         )}
 
         {/* Close, what this is, the lens and the light. */}
-        <div className="absolute top-0 inset-x-0 z-10 grid grid-cols-[auto_1fr_auto] items-center gap-2 px-2 pt-[max(env(safe-area-inset-top),0.5rem)] pb-3 bg-linear-to-b from-black/80 to-transparent">
+        <div className="absolute top-0 inset-x-0 z-10 grid grid-cols-[auto_1fr_auto] items-center gap-2 px-2 phone-sideways:pl-[max(env(safe-area-inset-left),0.5rem)] pt-[max(env(safe-area-inset-top),0.5rem)] pb-3 phone-sideways:pb-1 bg-linear-to-b from-black/80 to-transparent">
           <button
             type="button"
             onClick={onClose}
@@ -941,10 +925,10 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
 
         {/* The guide: read only inside it; dim outside. */}
         {!error && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center px-[5%] pointer-events-none">
+          <div className="absolute inset-0 flex flex-col items-center justify-center px-[5%] phone-sideways:px-20 phone-sideways:pt-10 pointer-events-none">
             {/* Above the dimming round the frame, on a plate of its own: over a
                 bright sticker, bare text was lost. */}
-            <p className="relative z-10 mb-3 px-3 py-1.5 bg-black/75 text-[13px] text-white text-center">
+            <p className="relative z-10 mb-3 px-3 py-1.5 bg-black/75 text-[13px] text-white text-center phone-sideways:hidden">
               Fit the VIN in the frame, as large as it will go
             </p>
             <div
@@ -970,7 +954,7 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
             </div>
             {/* What it reads so far, a dot a character still to come, and
                 what to change when the picture is the trouble. */}
-            <div className="relative z-10 mt-4 px-4 py-2 bg-black/80 text-center max-w-full">
+            <div className="relative z-10 mt-4 phone-sideways:mt-2 px-4 py-2 phone-sideways:py-1.5 bg-black/80 text-center max-w-full">
               <p
                 className="font-mono text-lg tracking-[0.14em] text-white tabular-nums"
                 aria-hidden
@@ -993,9 +977,17 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
           </div>
         )}
 
+        {/* Sideways, notes and tips over the picture: the side column is too
+            narrow to read them in. */}
+        {(note || (slow && !found)) && (
+          <div className="hidden phone-sideways:block absolute left-[max(env(safe-area-inset-left),0.75rem)] right-20 bottom-2 z-10 px-3 py-1.5 bg-black/80 [&_li]:text-xs [&_p]:text-xs [&_ul]:space-y-0.5">
+            {hints}
+          </div>
+        )}
+
         {/* Closer without moving closer: up close, a phone cannot focus. */}
         {running && !found && (
-          <div className="absolute bottom-3 inset-x-0 z-10 flex justify-center gap-2 pointer-events-none">
+          <div className="absolute bottom-3 inset-x-0 z-10 flex justify-center gap-2 pointer-events-none phone-sideways:inset-x-auto phone-sideways:right-3 phone-sideways:inset-y-0 phone-sideways:flex-col phone-sideways:pt-10">
             {steps.map((step) => {
               const active = activeStep === step;
               return (
@@ -1017,24 +1009,14 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
         )}
       </div>
 
-      <div className="shrink-0 bg-black border-t border-zinc-800 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]">
-        {note && (
-          <p className="text-[13px] text-amber-200 leading-snug mb-3 text-center max-w-md mx-auto">
-            {note}
-          </p>
-        )}
-        {slow && !note && !found && (
-          <ul className="text-[13px] text-zinc-300 leading-snug mb-3 space-y-1 max-w-md mx-auto">
-            <li>
-              Hold the phone level with the VIN, a hand’s width away: closer, it can’t focus. Zoom
-              in rather than moving in.
-            </li>
-            {canFocus && <li>Tap the VIN to focus on it.</li>}
-            <li>Tilt it a little to lose the windshield’s glare, or read a photo instead.</li>
-          </ul>
+      {/* Upright, along the bottom; sideways, a column down the right, as a
+          camera app has them. */}
+      <div className="shrink-0 bg-black border-t border-zinc-800 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] phone-sideways:w-32 phone-sideways:border-t-0 phone-sideways:border-l phone-sideways:flex phone-sideways:flex-col phone-sideways:justify-center phone-sideways:pl-2 phone-sideways:pr-[max(env(safe-area-inset-right),0.5rem)] phone-sideways:py-2">
+        {(note || (slow && !found)) && (
+          <div className="mb-3 max-w-md mx-auto text-center phone-sideways:hidden">{hints}</div>
         )}
         {/* As a camera app lays them out: photos, the shutter, the camera. */}
-        <div className="grid grid-cols-3 items-start max-w-md mx-auto">
+        <div className="grid grid-cols-3 items-start max-w-md mx-auto phone-sideways:grid-cols-1 phone-sideways:gap-2 phone-sideways:w-full">
           <button
             type="button"
             onClick={() => libraryInputRef.current?.click()}
@@ -1079,7 +1061,9 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
           >
             Type it instead
           </button>
-          <span className="hidden pointer-fine:inline">or paste or drop a photo here</span>
+          <span className="hidden pointer-fine:inline phone-sideways:hidden">
+            or paste or drop a photo here
+          </span>
         </div>
         <input
           ref={cameraInputRef}

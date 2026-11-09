@@ -91,7 +91,7 @@ export function backLenses(
 export interface FrameLook {
   /** Mean brightness, 0 to 255. */
   light: number;
-  /** Share of the picture blown out white. */
+  /** Share of the picture blown out white: a reflection, or a white label in bright light. */
   glare: number;
   /** Spread of brightness: print on its plate gives plenty, darkness little. */
   contrast: number;
@@ -124,20 +124,21 @@ export function frameLook(pixels: Uint8ClampedArray, width: number, height: numb
 export type Trouble = 'dark' | 'glare';
 
 /**
- * Set against crops of VINs on stickers and plates, clear, dimmed, darkened
- * and under a reflection. Darkened ones average under 30 with little spread
- * (under 15); a black plate's bright print spreads far more, and is no
- * trouble. Clear ones have nothing blown out; a reflection blows out a seventh
- * or so; a white label filling the frame, most of it, and is no reflection.
+ * Set against crops of VINs on stickers and plates, clear, brightened till
+ * their white blew out, darkened, and under a reflection. Darkened ones
+ * average under 32 with little spread (under 12); a black plate's bright print
+ * spreads far more, and is no trouble. A reflection blows out a seventh of the
+ * picture or so; but so does a white label in bright light, which no measure
+ * of the pixels tells from it. So the scanner says it only while the reader
+ * sees no line near a VIN's length: a label being read is no trouble.
  */
 const DARK_BELOW = 35;
 const DARK_SPREAD_BELOW = 18;
 const GLARE_ABOVE = 0.08;
-const GLARE_BELOW = 0.5;
 
 export function troubleOf(look: FrameLook): Trouble | null {
   if (look.light < DARK_BELOW && look.contrast < DARK_SPREAD_BELOW) return 'dark';
-  if (look.glare > GLARE_ABOVE && look.glare < GLARE_BELOW) return 'glare';
+  if (look.glare > GLARE_ABOVE) return 'glare';
   return null;
 }
 

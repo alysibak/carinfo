@@ -95,9 +95,11 @@ describe('frameLook and troubleOf', () => {
     expect(troubleOf(look)).toBe('glare');
   });
 
-  it('finds no reflection in a white label filling the picture', () => {
+  it('finds a white label filling the picture blown out too, which the scanner weighs', () => {
+    // No measure of pixels tells it from a reflection: the scanner says so
+    // only while nothing near a VIN's length is being read.
     const look = frameLook(pixels([255, 255, 255, 255, 255, 255, 255, 255, 20, 20]), 10, 1);
-    expect(troubleOf(look)).toBeNull();
+    expect(troubleOf(look)).toBe('glare');
   });
 
   it('finds nothing wrong with a clear picture', () => {

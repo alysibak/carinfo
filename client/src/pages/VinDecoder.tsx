@@ -5,10 +5,58 @@ import { searchQueryToParams } from '../utils/searchParams';
 import { usePageMeta } from '../utils/pageMeta';
 import VinCatalogMatch from '../components/VinCatalogMatch';
 import { cleanVinInput, vinCheckDigitValid } from '../utils/vin';
+import { holdVinReader } from '../utils/vinReader';
+import { recentVinEntry, useRecentVinStore } from '../stores/recentVinStore';
 
 const VinScanner = lazy(() => import('../components/VinScanner'));
 
 const SAMPLE_VIN = '1HGCM82633A004352'; // 2003 Honda Accord EX-V6
+
+/**
+ * The VINs looked up on this device, a tap away: someone walking a lot,
+ * scanning one car after another, goes back to any of them. Nothing shows
+ * until one has been looked up.
+ */
+function RecentVins({ exclude, onPick }: { exclude?: string; onPick: (vin: string) => void }) {
+  const vins = useRecentVinStore((state) => state.vins);
+  const clear = useRecentVinStore((state) => state.clear);
+  const shown = vins.filter((entry) => entry.vin !== exclude);
+  if (shown.length === 0) return null;
+  return (
+    <section aria-labelledby="recent-vins" className="mt-6 max-w-2xl">
+      <div className="flex items-center justify-between gap-4 mb-2">
+        <h2 id="recent-vins" className="text-xs text-zinc-400">
+          Looked up on this device
+        </h2>
+        <button
+          type="button"
+          onClick={clear}
+          className="inline-flex items-center min-h-[44px] min-w-[44px] justify-end -my-3 text-xs text-zinc-500 hover:text-white underline underline-offset-4 decoration-zinc-700"
+        >
+          Clear
+        </button>
+      </div>
+      <ul className="flex gap-2 overflow-x-auto overscroll-x-contain -mx-4 px-4 pb-1 sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible">
+        {shown.map((entry) => (
+          <li key={entry.vin} className="shrink-0">
+            <button
+              type="button"
+              onClick={() => onPick(entry.vin)}
+              className="min-h-11 px-3 py-2 text-left border border-zinc-800 bg-zinc-950 hover:border-zinc-500 hover:bg-zinc-900 transition-colors"
+            >
+              <span className="block text-[13px] font-semibold text-white">
+                {entry.title ?? 'Not named by the decoder'}
+              </span>
+              <span className="block font-mono text-xs tracking-wider text-zinc-400">
+                {entry.vin}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
 function Subheading({ children }: { children: React.ReactNode }) {
   return <p className="text-xs text-zinc-400 pt-5 pb-2 border-b border-zinc-900">{children}</p>;
@@ -86,6 +134,28 @@ export default function VinDecoder() {
   const [error, setError] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const [swapped, setSwapped] = useState(false);
+  const recordVin = useRecentVinStore((state) => state.record);
+
+  // The camera's text reader, loaded once the page has settled, so the first
+  // scan reads print at once instead of waiting on 7 MB. Not where the phone
+  // has asked to save data: there it loads when the camera opens.
+  useEffect(() => {
+    const saveData = (navigator as { connection?: { saveData?: boolean } }).connection?.saveData;
+    if (saveData) return;
+    let release: (() => void) | undefined;
+    const begin = () => {
+      release = holdVinReader();
+    };
+    const idle = 'requestIdleCallback' in window;
+    const handle = idle
+      ? window.requestIdleCallback(begin, { timeout: 4000 })
+      : window.setTimeout(begin, 2000);
+    return () => {
+      if (idle) window.cancelIdleCallback(handle);
+      else window.clearTimeout(handle);
+      release?.();
+    };
+  }, []);
 
   const enter = (raw: string) => {
     const cleaned = cleanVinInput(raw);
@@ -103,6 +173,7 @@ export default function VinDecoder() {
     try {
       const data = await decodeVin(v);
       setResult(data);
+      if (data.vin) recordVin(recentVinEntry(data));
     } catch (e: unknown) {
       setError(
         apiErrorMessage(e) ??
@@ -224,6 +295,14 @@ export default function VinDecoder() {
             printed VIN.
           </span>
         </div>
+
+        <RecentVins
+          exclude={result?.vin}
+          onPick={(picked) => {
+            enter(picked);
+            run(picked);
+          }}
+        />
 
         {scanning && (
           <Suspense fallback={null}>
