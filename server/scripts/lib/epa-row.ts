@@ -62,11 +62,11 @@ export function maxModelYear(now = new Date()): number {
  * EPA's "Special Purpose Vehicle" class (how it filed most SUVs, minivans and
  * some vans and chassis cabs through the 2000s) says nothing about the body,
  * so read it from the name. Hearses, limousines, livery, taxi and postal
- * conversions and incomplete chassis are left out: they are not cars anyone
- * shops for here.
+ * conversions, fleet-only "Municipal" trucks and incomplete chassis are left
+ * out: they are not cars anyone shops for here.
  */
 const SPECIALTY =
-  /\b(hearse|limo|livery|funeral|coachbuilder|federal coach|usps|us postal|taxi|mv-1|incomplete)\b/;
+  /\b(hearse|limo|livery|funeral|coachbuilder|federal coach|usps|us postal|taxi|mv-1|incomplete|municipal)\b/;
 const SPV_TRUCK = /\b(cab chassis|chassis cab|pickup)\b/;
 const SPV_MINIVAN =
   /\b(caravan|voyager|town (?:&|and) country|minivan|windstar|freestar|aerostar|villager|quest|odyssey|sienna|previa|mpv|silhouette|trans ?sport|montana|venture|monterey|sedona|entourage|routan|pacifica|uplander|relay|terraza)\b/;

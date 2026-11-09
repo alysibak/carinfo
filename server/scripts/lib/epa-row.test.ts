@@ -82,6 +82,7 @@ describe('EPA row mapping', () => {
       'Cadillac XTS Hearse',
       'Lincoln MKT Livery AWD',
       'Nissan NV200 NYC Taxi',
+      'GMC Sierra 4WD (Municipal)',
     ]) {
       expect(mapVClassToBodyStyle(sp, specialty), specialty).toBeNull();
     }
