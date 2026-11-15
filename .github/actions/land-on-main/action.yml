@@ -23,40 +23,11 @@ runs:
   steps:
     - name: Put the files on main
       shell: bash
+      # The job's default working directory (server/ in the data workflows)
+      # would apply here too; the script wants the repository root.
+      working-directory: ${{ github.workspace }}
       env:
         FILES: ${{ inputs.files }}
         MESSAGE: ${{ inputs.message }}
         REPORT: ${{ inputs.report }}
-      run: |
-        set -eo pipefail
-        # Kept aside: main's checkout takes away what only this run has.
-        rm -rf /tmp/site-data && mkdir -p /tmp/site-data
-        : > /tmp/site-data/report.txt
-        if [ -n "$REPORT" ] && [ -e "$REPORT" ]; then cp "$REPORT" /tmp/site-data/report.txt; fi
-        for path in $FILES; do
-          if [ -e "$path" ]; then install -D -m 644 "$path" "/tmp/site-data/$path"; fi
-        done
-        git config user.name 'github-actions[bot]'
-        git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-        for attempt in 1 2 3; do
-          git fetch --depth=1 origin main
-          git checkout -f -B main FETCH_HEAD
-          for path in $FILES; do
-            if [ -e "/tmp/site-data/$path" ]; then install -D -m 644 "/tmp/site-data/$path" "$path"; fi
-          done
-          npx tsx server/scripts/check-site-data.ts HEAD | tee -a "$GITHUB_STEP_SUMMARY"
-          if git diff --quiet -- $FILES; then
-            echo 'Main has this data already.' | tee -a "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-          (cd server && npm run build-runtime-db && npm run validate:data && npm test)
-          git add -- $FILES
-          git commit -m "$MESSAGE ($(date -u +%F))" -m "$(grep '^Done' /tmp/site-data/report.txt || true)"
-          if git push origin main; then
-            echo "Pushed to main: $MESSAGE" | tee -a "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-          sleep $((attempt * 30))
-        done
-        echo '::error::Main moved three times while this run tried to push; run the workflow again.'
-        exit 1
+      run: bash "${{ github.action_path }}/land.sh"
