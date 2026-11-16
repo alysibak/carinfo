@@ -269,7 +269,8 @@
           "maxTowingLb": 12100,
           "source": "https://media.ford.com/content/dam/fordmedia/North%20America/US/product/2021/f150/pdfs/2021-F-150-Technical-Specs.pdf"
         }
-      ]
+      ],
+      "modelMatch": "^f150"
     },
     {
       "make": "Ford",
@@ -315,7 +316,8 @@
           "torqueLbFt": 570,
           "source": "https://media.ford.com/content/dam/fordmedia/North%20America/US/product/2021/f150/pdfs/2021-F-150-Technical-Specs.pdf"
         }
-      ]
+      ],
+      "modelMatch": "^f150"
     },
     {
       "make": "Toyota",
@@ -468,7 +470,8 @@
           "maxTowingLb": 13300,
           "source": "https://www.chevrolet.com/trucks/silverado/1500"
         }
-      ]
+      ],
+      "modelMatch": "^silverado(?! ev)"
     },
     {
       "make": "Ram",
@@ -498,7 +501,8 @@
           "maxTowingLb": 12750,
           "source": "https://www.ramtrucks.com/ram-1500.html"
         }
-      ]
+      ],
+      "modelMatch": "^1500(?! classic)"
     },
     {
       "make": "Ram",
@@ -519,7 +523,8 @@
           "torqueLbFt": 410,
           "source": "https://www.ramtrucks.com/ram-1500.html"
         }
-      ]
+      ],
+      "modelMatch": "^1500(?! classic)"
     },
     {
       "make": "Mazda",
@@ -900,7 +905,8 @@
           "maxTowingLb": 13300,
           "source": "https://www.gmc.com/trucks/sierra/1500"
         }
-      ]
+      ],
+      "modelMatch": "^sierra(?! ev)"
     },
     {
       "make": "Ford",
@@ -3157,7 +3163,8 @@
           "torqueLbFt": 440,
           "source": "https://www.fromtheroad.ford.com/content/dam/fordmedia/us/en/library/2020/specs/2020-F-150-Technical-Specs.pdf"
         }
-      ]
+      ],
+      "modelMatch": "^f150"
     },
     {
       "make": "Ford",
