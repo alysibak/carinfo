@@ -5,9 +5,11 @@ import { modelFamilyName } from './fuzzy-search.js';
 
 /**
  * Manufacturer figures EPA does not publish: torque, seating and maximum
- * towing. Matched by make, model family, year and engine fingerprint
- * (displacement, cylinders, fuel, forced induction), not by EPA id — one
- * maker rating covers every gearbox of that engine.
+ * towing. Matched by make, model family (or a modelMatch expression on the
+ * EPA model name), year and engine fingerprint (displacement, cylinders,
+ * fuel, forced induction, and horsepower where one engine comes in several
+ * outputs), not by EPA id — one maker rating covers every gearbox of that
+ * engine.
  *
  * File: data/curated-maker-specs.json. Each entry names its source URL; the
  * figures carry provenance `curated`. Edit the file when adding models;
@@ -25,6 +27,15 @@ export interface CuratedEngineSpec {
   torqueLbFt?: number;
   /** Maximum conventional towing when properly equipped, lb. */
   maxTowingLb?: number;
+  /**
+   * EPA's rated horsepower, where one engine comes in several outputs with
+   * their own torque (the Civic's 1.5T: 180 hp in the EX, 200 in the Si).
+   * A car whose horsepower is not known does not match such an entry.
+   */
+  horsepower?: number;
+  /** Seating where it goes with the engine (the Civic Type R seats 4), over the model's. */
+  seats?: number;
+  seatsMax?: number;
   /** The maker page the figures were read from. */
   source: string;
 }
@@ -33,6 +44,13 @@ export interface CuratedModelSpec {
   make: string;
   /** Family name as shoppers know it ("RAV4", "F-150"), not the EPA carline. */
   model: string;
+  /**
+   * A regular expression (case-insensitive) the EPA model name must match,
+   * where the family name alone would not do: it takes in other cars
+   * ("^wrangler 2dr", when "Wrangler 4dr" is the same family) or misses some
+   * ("^atlas(?! cross)", when "Atlas 4motion" is another family).
+   */
+  modelMatch?: string;
   /** Inclusive model years this entry covers. */
   years: [number, number];
   /** Standard seating; with seatsMax when a third row is optional. */
@@ -57,8 +75,9 @@ export interface CuratedMatch {
   sources: string[];
 }
 
+/** Make and family, without the hyphens EPA leaves out ("F150" for the F-150). */
 function familyKey(make: string, model: string): string {
-  return `${make}|${modelFamilyName(model)}`.toLowerCase();
+  return `${make}|${modelFamilyName(model)}`.toLowerCase().replace(/-/g, '');
 }
 
 function forced(aspiration: Aspiration | undefined): boolean {
@@ -73,7 +92,8 @@ function close(a: number, b: number, tol = 0.05): boolean {
   return Math.abs(a - b) <= tol;
 }
 
-function engineMatches(car: Car, engine: CuratedEngineSpec): boolean {
+/** Whether this engine entry describes the car's engine. */
+export function curatedEngineMatches(car: Car, engine: CuratedEngineSpec): boolean {
   if (engine.fuel && engine.fuel !== car.engine.fuelType) return false;
   if (
     engine.cylinders != null &&
@@ -92,11 +112,14 @@ function engineMatches(car: Car, engine: CuratedEngineSpec): boolean {
   if (engine.forcedInduction != null && forced(car.engine.aspiration) !== engine.forcedInduction) {
     return false;
   }
+  if (engine.horsepower != null && car.engine.horsepower !== engine.horsepower) return false;
   return true;
 }
 
 let file: CuratedMakerSpecsFile | null | undefined;
 let byFamily: Map<string, CuratedModelSpec[]> | null = null;
+/** Entries with a modelMatch, by make, each with its compiled expression. */
+let byMake: Map<string, { entry: CuratedModelSpec; match: RegExp }[]> | null = null;
 
 function load(): CuratedMakerSpecsFile | null {
   if (file !== undefined) return file;
@@ -114,16 +137,39 @@ function load(): CuratedMakerSpecsFile | null {
   return file;
 }
 
-function index(): Map<string, CuratedModelSpec[]> {
-  if (byFamily) return byFamily;
+function index(): {
+  byFamily: Map<string, CuratedModelSpec[]>;
+  byMake: Map<string, { entry: CuratedModelSpec; match: RegExp }[]>;
+} {
+  if (byFamily && byMake) return { byFamily, byMake };
   byFamily = new Map();
+  byMake = new Map();
   for (const model of load()?.models ?? []) {
+    if (model.modelMatch) {
+      const key = model.make.toLowerCase();
+      const list = byMake.get(key) ?? [];
+      list.push({ entry: model, match: new RegExp(model.modelMatch, 'i') });
+      byMake.set(key, list);
+      continue;
+    }
     const key = familyKey(model.make, model.model);
     const list = byFamily.get(key) ?? [];
     list.push(model);
     byFamily.set(key, list);
   }
-  return byFamily;
+  return { byFamily, byMake };
+}
+
+/** The entries that name this car's make and model, in the file's order. */
+export function curatedEntriesFor(car: Car): CuratedModelSpec[] {
+  const { byFamily: families, byMake: makes } = index();
+  const found = families.get(familyKey(car.make, car.model)) ?? [];
+  const matched = (makes.get(car.make.toLowerCase()) ?? [])
+    .filter(({ match }) => match.test(car.model))
+    .map(({ entry }) => entry);
+  if (!matched.length) return found;
+  const models = load()?.models ?? [];
+  return [...found, ...matched].sort((a, b) => models.indexOf(a) - models.indexOf(b));
 }
 
 /**
@@ -135,6 +181,7 @@ export function __setCuratedMakerSpecsForTests(
 ): void {
   file = next;
   byFamily = null;
+  byMake = null;
 }
 
 /**
@@ -142,7 +189,7 @@ export function __setCuratedMakerSpecsForTests(
  * model entry; torque and towing from the engine that matches it.
  */
 export function curatedMakerSpecsFor(car: Car): CuratedMatch | null {
-  const candidates = (index().get(familyKey(car.make, car.model)) ?? []).filter(
+  const candidates = curatedEntriesFor(car).filter(
     (entry) => car.year >= entry.years[0] && car.year <= entry.years[1],
   );
   if (!candidates.length) return null;
@@ -151,18 +198,27 @@ export function curatedMakerSpecsFor(car: Car): CuratedMatch | null {
   const sources = new Set<string>();
   let seats: number | undefined;
   let seatsMax: number | undefined;
+  /** Set once an engine entry's own seating has been taken; a model's never replaces it. */
+  let engineSeats = false;
   let torqueLbFt: number | undefined;
   let maxTowingLb: number | undefined;
 
   for (const entry of candidates) {
-    if (entry.seats != null && seats == null) {
+    if (entry.seats != null && seats == null && !engineSeats) {
       seats = entry.seats;
       seatsMax = entry.seatsMax;
       provenance.seats = 'curated';
       if (entry.seatsSource) sources.add(entry.seatsSource);
     }
     for (const engine of entry.engines ?? []) {
-      if (!engineMatches(car, engine)) continue;
+      if (!curatedEngineMatches(car, engine)) continue;
+      if (engine.seats != null && !engineSeats) {
+        seats = engine.seats;
+        seatsMax = engine.seatsMax;
+        engineSeats = true;
+        provenance.seats = 'curated';
+        sources.add(engine.source);
+      }
       if (engine.torqueLbFt != null && torqueLbFt == null) {
         torqueLbFt = engine.torqueLbFt;
         provenance['engine.torque'] = 'curated';

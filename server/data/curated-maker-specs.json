@@ -1,6 +1,6 @@
 {
   "source": "Manufacturer press rooms and consumer spec sheets, transcribed by hand. Each engine and seating entry names the page it was read from.",
-  "updatedAt": "2026-11-09",
+  "updatedAt": "2026-11-15",
   "models": [
     {
       "make": "Toyota",
@@ -1188,6 +1188,2786 @@
           "forcedInduction": true,
           "torqueLbFt": 415,
           "source": "https://media.ford.com/content/dam/fordmedia/North%20America/US/product/2020/Explorer/2020-Explorer-Tech-Specs.pdf"
+        }
+      ]
+    },
+    {
+      "make": "Honda",
+      "model": "HR-V",
+      "years": [
+        2023,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.hondainfocenter.com/2024/HR-V/Feature-Guide/Specifications",
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 138,
+          "source": "https://www.hondainfocenter.com/2024/HR-V/Feature-Guide/Specifications"
+        }
+      ]
+    },
+    {
+      "make": "Honda",
+      "model": "Passport",
+      "years": [
+        2019,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.hondainfocenter.com/2024/Passport/Feature-Guide/Specifications/",
+      "engines": [
+        {
+          "displacementL": 3.5,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 262,
+          "maxTowingLb": 5000,
+          "source": "https://www.hondainfocenter.com/2024/Passport/Feature-Guide/Specifications/"
+        }
+      ]
+    },
+    {
+      "make": "Honda",
+      "model": "Accord",
+      "modelMatch": "^accord",
+      "years": [
+        2018,
+        2026
+      ],
+      "seats": 5,
+      "seatsSource": "https://hondanews.com/en-US/releases/release-e888887b6471c0aba407829ba719f11e-2024-honda-accord-specifications-features",
+      "engines": [
+        {
+          "displacementL": 1.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 192,
+          "source": "https://hondanews.com/en-US/releases/release-e888887b6471c0aba407829ba719f11e-2024-honda-accord-specifications-features"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 273,
+          "source": "https://www.truedelta.com/Honda-Accord/specs-108-2020"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "hybrid",
+          "forcedInduction": false,
+          "horsepower": 204,
+          "torqueLbFt": 247,
+          "source": "https://honda.ca/en/accord"
+        }
+      ]
+    },
+    {
+      "make": "Honda",
+      "model": "Civic",
+      "years": [
+        2022,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://autoblog.com/buy/2024-Honda-Civic/review/",
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "horsepower": 158,
+          "torqueLbFt": 138,
+          "source": "https://www.truedelta.com/Honda-Civic/specs-109-2024"
+        },
+        {
+          "displacementL": 1.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "horsepower": 180,
+          "torqueLbFt": 177,
+          "source": "https://www.truedelta.com/Honda-Civic/specs-109-2024"
+        },
+        {
+          "displacementL": 1.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "horsepower": 200,
+          "torqueLbFt": 192,
+          "source": "https://hondanews.com/en-US/releases/release-5003aaa39c009393f5d06d620f0936fc-2024-honda-civic-si-specifications-features"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "horsepower": 315,
+          "torqueLbFt": 310,
+          "seats": 4,
+          "source": "https://autoblog.com/buy/2024-Honda-Civic/review/"
+        }
+      ]
+    },
+    {
+      "make": "Honda",
+      "model": "Civic",
+      "years": [
+        2017,
+        2021
+      ],
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "horsepower": 158,
+          "torqueLbFt": 138,
+          "source": "https://www.truedelta.com/Honda-Civic/specs-109-2024"
+        }
+      ]
+    },
+    {
+      "make": "Honda",
+      "model": "CR-V",
+      "years": [
+        2017,
+        2022
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.kbb.com/honda/cr-v/2022/specs/",
+      "engines": [
+        {
+          "displacementL": 1.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 179,
+          "maxTowingLb": 1500,
+          "source": "https://www.honda.ca/Content/honda.ca/13f154a3-bb9f-4c15-a825-20eb4d784632/ModelPage_Downloads/2022%20CRV%20Spec%20EN.pdf"
+        }
+      ]
+    },
+    {
+      "make": "Acura",
+      "model": "RDX",
+      "years": [
+        2019,
+        2026
+      ],
+      "seats": 5,
+      "seatsSource": "https://acuranews.com/en-US/releases/release-cc39196e84787a20ec3cb086fb026dd8-2024-acura-rdx-specs-features",
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 280,
+          "source": "https://acuranews.com/en-US/releases/release-cc39196e84787a20ec3cb086fb026dd8-2024-acura-rdx-specs-features"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "maxTowingLb": 1500,
+          "source": "https://www.carmax.com/research/acura/rdx/2024"
+        }
+      ]
+    },
+    {
+      "make": "Acura",
+      "model": "MDX",
+      "years": [
+        2022,
+        2026
+      ],
+      "seats": 7,
+      "seatsSource": "https://acuranews.com/en-US/releases/2024-acura-mdx-mdx-type-s-specs-features",
+      "engines": [
+        {
+          "displacementL": 3.5,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 267,
+          "source": "https://acuranews.com/en-US/releases/2024-acura-mdx-mdx-type-s-specs-features"
+        },
+        {
+          "displacementL": 3.5,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "maxTowingLb": 5000,
+          "source": "https://www.iseecars.com/car/2024-acura-mdx-specs"
+        },
+        {
+          "displacementL": 3.0,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 354,
+          "source": "https://acuranews.com/en-US/releases/2024-acura-mdx-mdx-type-s-specs-features"
+        },
+        {
+          "displacementL": 3.0,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "maxTowingLb": 5000,
+          "source": "https://www.iseecars.com/car/2024-acura-mdx-specs"
+        }
+      ]
+    },
+    {
+      "make": "Acura",
+      "model": "TLX",
+      "years": [
+        2021,
+        2025
+      ],
+      "seats": 5,
+      "seatsSource": "https://acuranews.com/en-US/releases/2024-acura-tlx-tlx-type-s-specifications-features",
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 280,
+          "source": "https://acuranews.com/en-US/releases/2024-acura-tlx-tlx-type-s-specifications-features"
+        }
+      ]
+    },
+    {
+      "make": "Acura",
+      "model": "TLX Type-S",
+      "modelMatch": "^tlx type-s",
+      "years": [
+        2021,
+        2025
+      ],
+      "seats": 5,
+      "seatsSource": "https://acuranews.com/en-US/releases/2024-acura-tlx-tlx-type-s-specifications-features",
+      "engines": [
+        {
+          "displacementL": 3.0,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 354,
+          "source": "https://acuranews.com/en-US/releases/2024-acura-tlx-tlx-type-s-specifications-features"
+        }
+      ]
+    },
+    {
+      "make": "Toyota",
+      "model": "4Runner",
+      "years": [
+        2010,
+        2024
+      ],
+      "seats": 5,
+      "seatsMax": 7,
+      "seatsSource": "https://www.toyota.com/4runner/2024/4runner-features/",
+      "engines": [
+        {
+          "displacementL": 4.0,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 278,
+          "maxTowingLb": 5000,
+          "source": "https://www.cars.com/research/toyota-4runner-2024/specs/445549/"
+        }
+      ]
+    },
+    {
+      "make": "Toyota",
+      "model": "Sequoia",
+      "years": [
+        2023,
+        2026
+      ],
+      "seats": 7,
+      "seatsMax": 8,
+      "seatsSource": "https://www.cargurus.com/research/compare/2024-Toyota-Sequoia-vs-2024-Toyota-4Runner-c33049-c33192",
+      "engines": [
+        {
+          "displacementL": 3.4,
+          "cylinders": 6,
+          "fuel": "hybrid",
+          "forcedInduction": true,
+          "torqueLbFt": 583,
+          "maxTowingLb": 9520,
+          "source": "https://www.cargurus.com/research/2024-Toyota-Sequoia-c33049"
+        }
+      ]
+    },
+    {
+      "make": "Toyota",
+      "model": "Camry",
+      "modelMatch": "^camry",
+      "years": [
+        2018,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.cars.com/research/toyota-camry-2024/specs/440177/",
+      "engines": [
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 184,
+          "source": "https://www.truedelta.com/Toyota-Camry/specs-264"
+        },
+        {
+          "displacementL": 3.5,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 267,
+          "source": "https://www.truedelta.com/Toyota-Camry/specs-264"
+        },
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "hybrid",
+          "forcedInduction": false,
+          "torqueLbFt": 163,
+          "source": "https://www.truedelta.com/Toyota-Camry/specs-264"
+        }
+      ]
+    },
+    {
+      "make": "Toyota",
+      "model": "Corolla",
+      "modelMatch": "^corolla(?! cross)",
+      "years": [
+        2019,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.cars.com/research/toyota-corolla-2024/specs/442320/",
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 151,
+          "source": "https://www.kbb.com/toyota/corolla/2024/specs"
+        }
+      ]
+    },
+    {
+      "make": "Toyota",
+      "model": "Corolla Cross",
+      "years": [
+        2022,
+        2026
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.kbb.com/toyota/corolla-cross/2024/specs",
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "maxTowingLb": 1500,
+          "source": "https://www.kbb.com/toyota/corolla-cross/2024/specs"
+        }
+      ]
+    },
+    {
+      "make": "Toyota",
+      "model": "Land Cruiser",
+      "years": [
+        2024,
+        2027
+      ],
+      "engines": [
+        {
+          "displacementL": 2.4,
+          "cylinders": 4,
+          "fuel": "hybrid",
+          "forcedInduction": true,
+          "maxTowingLb": 6000,
+          "source": "https://pressroom.toyota.com/?p=91892"
+        }
+      ]
+    },
+    {
+      "make": "Lexus",
+      "model": "RX 350",
+      "years": [
+        2023,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.cars.com/research/lexus-rx_350-2024/specs/445265/",
+      "engines": [
+        {
+          "displacementL": 2.4,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 317,
+          "source": "https://www.kbb.com/lexus/rx/2024/specs"
+        },
+        {
+          "displacementL": 2.4,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "maxTowingLb": 3500,
+          "source": "https://www.carmax.com/research/lexus/rx-500h/2025"
+        }
+      ]
+    },
+    {
+      "make": "Lexus",
+      "model": "RX 350",
+      "years": [
+        2017,
+        2022
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.truecar.com/lexus/rx/2021/specs/",
+      "engines": [
+        {
+          "displacementL": 3.5,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 267,
+          "source": "https://www.truecar.com/lexus/rx/2021/specs/"
+        }
+      ]
+    },
+    {
+      "make": "Lexus",
+      "model": "RX 350h",
+      "years": [
+        2023,
+        2026
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.cars.com/research/lexus-rx_350-2024/specs/445265/",
+      "engines": [
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "hybrid",
+          "forcedInduction": false,
+          "maxTowingLb": 3500,
+          "source": "https://www.carmax.com/research/lexus/rx-500h/2025"
+        }
+      ]
+    },
+    {
+      "make": "Lexus",
+      "model": "RX 500h",
+      "years": [
+        2023,
+        2026
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.cars.com/research/lexus-rx_350-2024/specs/445265/",
+      "engines": [
+        {
+          "displacementL": 2.4,
+          "cylinders": 4,
+          "fuel": "hybrid",
+          "forcedInduction": true,
+          "maxTowingLb": 3500,
+          "source": "https://www.carmax.com/research/lexus/rx-500h/2025"
+        }
+      ]
+    },
+    {
+      "make": "Hyundai",
+      "model": "Elantra",
+      "modelMatch": "^elantra(?! (n|gt)\\b)",
+      "years": [
+        2021,
+        2026
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.garveyhyundai.com/static/dealer-25674/pdfs/2024-elantra-bro.pdf",
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 132,
+          "source": "https://www.garveyhyundai.com/static/dealer-25674/pdfs/2024-elantra-bro.pdf"
+        },
+        {
+          "displacementL": 1.6,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 195,
+          "source": "https://www.garveyhyundai.com/static/dealer-25674/pdfs/2024-elantra-bro.pdf"
+        },
+        {
+          "displacementL": 1.6,
+          "cylinders": 4,
+          "fuel": "hybrid",
+          "forcedInduction": false,
+          "torqueLbFt": 195,
+          "source": "https://www.garveyhyundai.com/static/dealer-25674/pdfs/2024-elantra-bro.pdf"
+        }
+      ]
+    },
+    {
+      "make": "Hyundai",
+      "model": "Kona",
+      "years": [
+        2018,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.garveyhyundai.com/static/dealer-25674/pdfs/2024-kona.pdf",
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 132,
+          "source": "https://www.garveyhyundai.com/static/dealer-25674/pdfs/2024-kona.pdf"
+        },
+        {
+          "displacementL": 1.6,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 195,
+          "source": "https://www.garveyhyundai.com/static/dealer-25674/pdfs/2024-kona.pdf"
+        }
+      ]
+    },
+    {
+      "make": "Hyundai",
+      "model": "Sonata",
+      "modelMatch": "^sonata",
+      "years": [
+        2020,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.edmunds.com/hyundai/sonata/2024/features-specs",
+      "engines": [
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 181,
+          "source": "https://www.edmunds.com/hyundai/sonata/2024/features-specs"
+        },
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 311,
+          "source": "https://www.edmunds.com/hyundai/sonata/2024/features-specs"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "hybrid",
+          "forcedInduction": false,
+          "torqueLbFt": 139,
+          "source": "https://www.edmunds.com/hyundai/sonata/2024/features-specs"
+        }
+      ]
+    },
+    {
+      "make": "Hyundai",
+      "model": "Santa Fe",
+      "years": [
+        2024,
+        2027
+      ],
+      "seats": 6,
+      "seatsMax": 7,
+      "seatsSource": "https://www.cars.com/articles/hyundai-unveils-u-s-market-specs-for-2024-santa-fe-474400",
+      "engines": [
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 311,
+          "source": "https://www.cars.com/articles/hyundai-unveils-u-s-market-specs-for-2024-santa-fe-474400"
+        },
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "maxTowingLb": 3500,
+          "source": "https://www.sphyundai.com/blog/2024-hyundai-suv-towing-guide/"
+        },
+        {
+          "displacementL": 1.6,
+          "cylinders": 4,
+          "fuel": "hybrid",
+          "forcedInduction": true,
+          "torqueLbFt": 271,
+          "source": "https://www.cars.com/articles/hyundai-unveils-u-s-market-specs-for-2024-santa-fe-474400"
+        },
+        {
+          "displacementL": 1.6,
+          "cylinders": 4,
+          "fuel": "hybrid",
+          "forcedInduction": true,
+          "maxTowingLb": 2000,
+          "source": "https://www.sphyundai.com/blog/2024-hyundai-suv-towing-guide/"
+        }
+      ]
+    },
+    {
+      "make": "Hyundai",
+      "model": "Santa Fe",
+      "years": [
+        2021,
+        2023
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.edmunds.com/hyundai/santa-fe/2022/features-specs",
+      "engines": [
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 181,
+          "source": "https://www.edmunds.com/hyundai/santa-fe/2022/features-specs"
+        },
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 311,
+          "source": "https://www.edmunds.com/hyundai/santa-fe/2022/features-specs"
+        }
+      ]
+    },
+    {
+      "make": "Hyundai",
+      "model": "Santa Cruz",
+      "modelMatch": "^santa cruz",
+      "years": [
+        2022,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://a3.myautoworld.com/wp-content/uploads/2021/07/2022-Santa-Cruz-Specifications.pdf",
+      "engines": [
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 181,
+          "maxTowingLb": 3500,
+          "source": "https://a3.myautoworld.com/wp-content/uploads/2021/07/2022-Santa-Cruz-Specifications.pdf"
+        },
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 311,
+          "maxTowingLb": 5000,
+          "source": "https://a3.myautoworld.com/wp-content/uploads/2021/07/2022-Santa-Cruz-Specifications.pdf"
+        }
+      ]
+    },
+    {
+      "make": "Kia",
+      "model": "K5",
+      "modelMatch": "^k5",
+      "years": [
+        2021,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.kianewscenter.com/news/kia-announces-2024-k5/s/3c95bc80-19fb-42f3-bb50-850b1dbee3f6",
+      "engines": [
+        {
+          "displacementL": 1.6,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 195,
+          "source": "https://www.kianewscenter.com/news/kia-announces-2024-k5/s/3c95bc80-19fb-42f3-bb50-850b1dbee3f6"
+        },
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 311,
+          "source": "https://www.kianewscenter.com/news/kia-announces-2024-k5/s/3c95bc80-19fb-42f3-bb50-850b1dbee3f6"
+        }
+      ]
+    },
+    {
+      "make": "Kia",
+      "model": "K4",
+      "modelMatch": "^k4",
+      "years": [
+        2025,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.motor1.com/news/713951/2025-kia-k4-engines-trims-specs/",
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 132,
+          "source": "https://www.motor1.com/news/713951/2025-kia-k4-engines-trims-specs/"
+        },
+        {
+          "displacementL": 1.6,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 195,
+          "source": "https://www.motor1.com/news/713951/2025-kia-k4-engines-trims-specs/"
+        }
+      ]
+    },
+    {
+      "make": "Kia",
+      "model": "Forte",
+      "modelMatch": "^forte(?! (5|koup)\\b)",
+      "years": [
+        2019,
+        2024
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.motor1.com/news/713951/2025-kia-k4-engines-trims-specs/",
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 132,
+          "source": "https://www.motor1.com/news/713951/2025-kia-k4-engines-trims-specs/"
+        },
+        {
+          "displacementL": 1.6,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 195,
+          "source": "https://www.motor1.com/news/713951/2025-kia-k4-engines-trims-specs/"
+        }
+      ]
+    },
+    {
+      "make": "Kia",
+      "model": "Seltos",
+      "years": [
+        2021,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.truecar.com/overview/kia/seltos/2024/",
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 132,
+          "source": "https://www.kbb.com/comparison/2024-hyundai-kona-vs-2024-kia-seltos"
+        },
+        {
+          "displacementL": 1.6,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 195,
+          "source": "https://www.kbb.com/comparison/2024-hyundai-kona-vs-2024-kia-seltos"
+        }
+      ]
+    },
+    {
+      "make": "Kia",
+      "model": "Sorento",
+      "modelMatch": "^sorento",
+      "years": [
+        2021,
+        2027
+      ],
+      "seats": 6,
+      "seatsMax": 7,
+      "seatsSource": "https://www.kbb.com/kia/sorento/2024/specs",
+      "engines": [
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 181,
+          "source": "https://www.kbb.com/kia/sorento/2024/specs"
+        },
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "maxTowingLb": 2000,
+          "source": "https://www.edmunds.com/kia/sorento/2024/st-402025212/features-specs"
+        },
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 311,
+          "source": "https://carsart.net/cars/kia/sorento/iv-facelift-2024/2500cc-t-gdi-281hp-dct"
+        },
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "maxTowingLb": 3500,
+          "source": "https://www.edmunds.com/kia/sorento/2024/st-402025210/features-specs"
+        },
+        {
+          "displacementL": 1.6,
+          "cylinders": 4,
+          "fuel": "hybrid",
+          "forcedInduction": true,
+          "maxTowingLb": 2000,
+          "source": "https://www.edmunds.com/kia/sorento-hybrid/2024/features-specs"
+        }
+      ]
+    },
+    {
+      "make": "Kia",
+      "model": "Carnival",
+      "years": [
+        2022,
+        2024
+      ],
+      "seats": 7,
+      "seatsMax": 8,
+      "seatsSource": "https://www.cars.com/research/kia-carnival-2024/specs/440919",
+      "engines": [
+        {
+          "displacementL": 3.5,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 262,
+          "source": "https://www.kiamedia.com/us/en/models/carnival/2024/specifications"
+        },
+        {
+          "displacementL": 3.5,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "maxTowingLb": 3500,
+          "source": "https://www.carvana.com/buy/2024-kia-carnival/"
+        }
+      ]
+    },
+    {
+      "make": "Kia",
+      "model": "Carnival",
+      "years": [
+        2025,
+        2027
+      ],
+      "seats": 7,
+      "seatsMax": 8,
+      "seatsSource": "https://www.cars.com/research/kia-carnival-2024/specs/440919",
+      "engines": [
+        {
+          "displacementL": 3.5,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "maxTowingLb": 3500,
+          "source": "https://www.carvana.com/buy/2024-kia-carnival/"
+        }
+      ]
+    },
+    {
+      "make": "Nissan",
+      "model": "Altima",
+      "modelMatch": "^altima",
+      "years": [
+        2019,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://usa.nissannews.com/en-US/releases/2024-nissan-altima-specifications",
+      "engines": [
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 180,
+          "source": "https://usa.nissannews.com/en-US/releases/2024-nissan-altima-specifications"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 273,
+          "source": "https://usa.nissannews.com/en-US/releases/2024-nissan-altima-specifications"
+        }
+      ]
+    },
+    {
+      "make": "Nissan",
+      "model": "Sentra",
+      "modelMatch": "^sentra(?! nismo)",
+      "years": [
+        2020,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://canada.nissannews.com/en-CA/releases/2024-nissan-sentra-press-kit",
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 146,
+          "source": "https://canada.nissannews.com/en-CA/releases/2024-nissan-sentra-press-kit"
+        }
+      ]
+    },
+    {
+      "make": "Nissan",
+      "model": "Kicks",
+      "modelMatch": "^kicks(?! play)",
+      "years": [
+        2025,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.iseecars.com/compare/nissan-sentra-vs-nissan-kicks",
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 140,
+          "source": "https://www.iseecars.com/compare/nissan-sentra-vs-nissan-kicks"
+        }
+      ]
+    },
+    {
+      "make": "Nissan",
+      "model": "Murano",
+      "years": [
+        2017,
+        2024
+      ],
+      "engines": [
+        {
+          "displacementL": 3.5,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 240,
+          "maxTowingLb": 1500,
+          "source": "https://www.jdpower.com/cars/new-car-previews/2025-nissan-murano-preview"
+        }
+      ]
+    },
+    {
+      "make": "Nissan",
+      "model": "Murano",
+      "years": [
+        2025,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://guideautoweb.com/en/makes/nissan/murano/2025/specifications/sv",
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 260,
+          "maxTowingLb": 1500,
+          "source": "https://www.wardsauto.com/news/engine-swap-boosts-torque-in-2025-nissan-murano/798737/"
+        }
+      ]
+    },
+    {
+      "make": "Nissan",
+      "model": "Pathfinder",
+      "modelMatch": "^pathfinder(?! 4wd rock creek)",
+      "years": [
+        2022,
+        2026
+      ],
+      "seats": 7,
+      "seatsMax": 8,
+      "seatsSource": "https://www.iseecars.com/car/2024-nissan-pathfinder-specs",
+      "engines": [
+        {
+          "displacementL": 3.5,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 259,
+          "source": "https://www.auto123.com/en/specs/nissan/pathfinder/nissan-pathfinder-2024-sl-4wd-440926/"
+        },
+        {
+          "displacementL": 3.5,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "maxTowingLb": 6000,
+          "source": "https://m.nissan.ca/en/suvs/pathfinder/versions-specs.html"
+        }
+      ]
+    },
+    {
+      "make": "Nissan",
+      "model": "Pathfinder Rock Creek",
+      "modelMatch": "^pathfinder 4wd rock creek",
+      "years": [
+        2023,
+        2026
+      ],
+      "seats": 7,
+      "seatsSource": "https://www.iseecars.com/car/2024-nissan-pathfinder-specs",
+      "engines": [
+        {
+          "displacementL": 3.5,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 270,
+          "source": "https://www.cargurus.com/research/2024-Nissan-Pathfinder-c32814"
+        },
+        {
+          "displacementL": 3.5,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "maxTowingLb": 6000,
+          "source": "https://m.nissan.ca/en/suvs/pathfinder/versions-specs.html"
+        }
+      ]
+    },
+    {
+      "make": "Nissan",
+      "model": "Armada",
+      "years": [
+        2021,
+        2024
+      ],
+      "engines": [
+        {
+          "displacementL": 5.6,
+          "cylinders": 8,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 413,
+          "maxTowingLb": 8500,
+          "source": "https://www.carwhere.com/nissan/armada"
+        }
+      ]
+    },
+    {
+      "make": "Nissan",
+      "model": "Armada",
+      "years": [
+        2025,
+        2027
+      ],
+      "seats": 7,
+      "seatsMax": 8,
+      "seatsSource": "https://www.carscoops.com/2024/09/2025-nissan-armada-drops-the-v8-gains-rugged-pro-4x-trim/",
+      "engines": [
+        {
+          "displacementL": 3.5,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 516,
+          "maxTowingLb": 8500,
+          "source": "https://www.nissanusa.com/vehicles/crossovers-suvs/2025-armada.html"
+        }
+      ]
+    },
+    {
+      "make": "Nissan",
+      "model": "Frontier",
+      "years": [
+        2022,
+        2023
+      ],
+      "seats": 4,
+      "seatsMax": 5,
+      "seatsSource": "https://www.nissanusa.com/content/dam/Nissan/us/vehicle-brochures/2024/2024-nissan-frontier-brochure-en.pdf",
+      "engines": [
+        {
+          "displacementL": 3.8,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 281,
+          "source": "https://carbuzz.com/cars/nissan/frontier"
+        }
+      ]
+    },
+    {
+      "make": "Nissan",
+      "model": "Frontier",
+      "years": [
+        2024,
+        2027
+      ],
+      "seats": 4,
+      "seatsMax": 5,
+      "seatsSource": "https://www.nissanusa.com/content/dam/Nissan/us/vehicle-brochures/2024/2024-nissan-frontier-brochure-en.pdf",
+      "engines": [
+        {
+          "displacementL": 3.8,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 281,
+          "maxTowingLb": 6640,
+          "source": "https://www.nissanusa.com/content/dam/Nissan/us/vehicle-brochures/2024/2024-nissan-frontier-brochure-en.pdf"
+        }
+      ]
+    },
+    {
+      "make": "Chevrolet",
+      "model": "Trax",
+      "years": [
+        2024,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.kbb.com/Chevrolet/Trax/2024",
+      "engines": [
+        {
+          "displacementL": 1.2,
+          "cylinders": 3,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 162,
+          "source": "https://news.chevrolet.com/newsroom.detail.html/Pages/news/us/en/2022/oct/1012-trax.html"
+        }
+      ]
+    },
+    {
+      "make": "Chevrolet",
+      "model": "Trailblazer",
+      "years": [
+        2021,
+        2027
+      ],
+      "engines": [
+        {
+          "displacementL": 1.2,
+          "cylinders": 3,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 162,
+          "source": "https://www.truedelta.com/Chevrolet-TrailBlazer-vs-Chevrolet-Equinox-specs-comparison,63-62"
+        },
+        {
+          "displacementL": 1.3,
+          "cylinders": 3,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 174,
+          "source": "https://www.truedelta.com/Chevrolet-TrailBlazer-vs-Chevrolet-Equinox-specs-comparison,63-62"
+        },
+        {
+          "displacementL": 1.3,
+          "cylinders": 3,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "maxTowingLb": 1000,
+          "source": "https://www.majorworldchevy.com/chevy-trailblazer-towing-capacity"
+        }
+      ]
+    },
+    {
+      "make": "Buick",
+      "model": "Encore GX",
+      "years": [
+        2020,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.truecar.com/overview/buick/encore-gx/2024/",
+      "engines": [
+        {
+          "displacementL": 1.2,
+          "cylinders": 3,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 162,
+          "source": "https://news.gm.com/home.detail.html/Pages/news/us/en/2023/feb/0216-encoregx.html"
+        },
+        {
+          "displacementL": 1.3,
+          "cylinders": 3,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 174,
+          "source": "https://news.gm.com/home.detail.html/Pages/news/us/en/2023/feb/0216-encoregx.html"
+        }
+      ]
+    },
+    {
+      "make": "Chevrolet",
+      "model": "Equinox",
+      "years": [
+        2018,
+        2024
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.kbb.com/chevrolet/equinox/2024/specs",
+      "engines": [
+        {
+          "displacementL": 1.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 203,
+          "source": "https://www.kbb.com/chevrolet/equinox/2024/specs"
+        },
+        {
+          "displacementL": 1.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "maxTowingLb": 1500,
+          "source": "https://towingspecs.com/chevrolet/equinox/2024/"
+        }
+      ]
+    },
+    {
+      "make": "GMC",
+      "model": "Terrain",
+      "years": [
+        2018,
+        2024
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.kbb.com/gmc/terrain/2024/specs",
+      "engines": [
+        {
+          "displacementL": 1.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 203,
+          "source": "https://www.cargurus.com/research/2024-GMC-Terrain-c33045"
+        }
+      ]
+    },
+    {
+      "make": "Chevrolet",
+      "model": "Blazer",
+      "years": [
+        2019,
+        2026
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.kbb.com/chevrolet/blazer/2024/specs",
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 258,
+          "source": "https://www.hendrickchevybuickgmcrichmond.com/manufacturer-information/chevy-blazer-towing-capacity/"
+        },
+        {
+          "displacementL": 3.6,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 270,
+          "maxTowingLb": 4500,
+          "source": "https://www.hendrickchevybuickgmcrichmond.com/manufacturer-information/chevy-blazer-towing-capacity/"
+        }
+      ]
+    },
+    {
+      "make": "Chevrolet",
+      "model": "Traverse",
+      "modelMatch": "^traverse(?! limited)",
+      "years": [
+        2024,
+        2027
+      ],
+      "seats": 7,
+      "seatsMax": 8,
+      "seatsSource": "https://www.iseecars.com/car/2024-chevrolet-traverse-specs",
+      "engines": [
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 326,
+          "maxTowingLb": 5000,
+          "source": "https://www.danvadenbrunswick.com/towing-capacity-2024-traverse-blog.html"
+        }
+      ]
+    },
+    {
+      "make": "GMC",
+      "model": "Acadia",
+      "years": [
+        2024,
+        2027
+      ],
+      "seats": 7,
+      "seatsSource": "https://www.kbb.com/gmc/acadia/2024/specs",
+      "engines": [
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 326,
+          "source": "https://gmauthority.com/blog/2023/09/2024-chevy-traverse-gets-revised-horsepower-and-torque-figures"
+        },
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "maxTowingLb": 5000,
+          "source": "https://www.kbb.com/gmc/acadia/2024/specs"
+        }
+      ]
+    },
+    {
+      "make": "GMC",
+      "model": "Acadia",
+      "years": [
+        2020,
+        2023
+      ],
+      "seats": 6,
+      "seatsMax": 7,
+      "seatsSource": "https://www.cargurus.com/research/2023-GMC-Acadia-c32294",
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 258,
+          "source": "https://www.kbb.com/gmc/acadia/2023/specs"
+        },
+        {
+          "displacementL": 3.6,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 271,
+          "maxTowingLb": 4000,
+          "source": "https://www.kbb.com/gmc/acadia/2023/specs"
+        }
+      ]
+    },
+    {
+      "make": "Chevrolet",
+      "model": "Colorado",
+      "modelMatch": "^colorado(?! zr2)",
+      "years": [
+        2024,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.apa.ca/en/?p=22894",
+      "engines": [
+        {
+          "displacementL": 2.7,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 430,
+          "source": "https://www.chevrolet.com/vehicles/2024/trucks/colorado/overview"
+        },
+        {
+          "displacementL": 2.7,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "maxTowingLb": 7700,
+          "source": "https://www.hendrickchevrolet.com/chevrolet-research/chevrolet-colorado-specs-performance/"
+        }
+      ]
+    },
+    {
+      "make": "Chevrolet",
+      "model": "Colorado ZR2",
+      "modelMatch": "^colorado zr2",
+      "years": [
+        2023,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.apa.ca/en/?p=22894",
+      "engines": [
+        {
+          "displacementL": 2.7,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 430,
+          "source": "https://www.chevrolet.com/vehicles/2024/trucks/colorado/overview"
+        },
+        {
+          "displacementL": 2.7,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "maxTowingLb": 6000,
+          "source": "https://www.hendrickchevrolet.com/chevrolet-research/chevrolet-colorado-specs-performance/"
+        }
+      ]
+    },
+    {
+      "make": "GMC",
+      "model": "Canyon",
+      "modelMatch": "^canyon",
+      "years": [
+        2023,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.cars.com/research/gmc-canyon-2024/specs/445821",
+      "engines": [
+        {
+          "displacementL": 2.7,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 430,
+          "source": "https://www.kbb.com/gmc/canyon/2024/specs"
+        },
+        {
+          "displacementL": 2.7,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "maxTowingLb": 7700,
+          "source": "https://compare.lithia.com/comparison/258635"
+        }
+      ]
+    },
+    {
+      "make": "Chevrolet",
+      "model": "Tahoe",
+      "years": [
+        2021,
+        2027
+      ],
+      "seats": 7,
+      "seatsMax": 8,
+      "seatsSource": "https://www.kbb.com/chevrolet/tahoe/2024/specs",
+      "engines": [
+        {
+          "displacementL": 5.3,
+          "cylinders": 8,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 383,
+          "source": "https://www.truedelta.com/Chevrolet-Tahoe/specs-61-2024"
+        },
+        {
+          "displacementL": 5.3,
+          "cylinders": 8,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "maxTowingLb": 8400,
+          "source": "https://www.iseecars.com/car/2024-chevrolet-tahoe-specs"
+        },
+        {
+          "displacementL": 6.2,
+          "cylinders": 8,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 460,
+          "source": "https://www.truedelta.com/Chevrolet-Tahoe/specs-61-2024"
+        },
+        {
+          "displacementL": 3.0,
+          "cylinders": 6,
+          "fuel": "diesel",
+          "forcedInduction": true,
+          "horsepower": 277,
+          "torqueLbFt": 460,
+          "source": "https://www.truedelta.com/Chevrolet-Tahoe/specs-61-2024"
+        }
+      ]
+    },
+    {
+      "make": "Chevrolet",
+      "model": "Suburban",
+      "years": [
+        2021,
+        2027
+      ],
+      "seats": 7,
+      "seatsMax": 8,
+      "seatsSource": "https://www.kbb.com/chevrolet/suburban/2024/specs/",
+      "engines": [
+        {
+          "displacementL": 5.3,
+          "cylinders": 8,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 383,
+          "maxTowingLb": 8300,
+          "source": "https://www.medlinchevrolet.com/research-suburban-engines-and-towing.html"
+        },
+        {
+          "displacementL": 6.2,
+          "cylinders": 8,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 460,
+          "maxTowingLb": 8200,
+          "source": "https://www.medlinchevrolet.com/research-suburban-engines-and-towing.html"
+        },
+        {
+          "displacementL": 3.0,
+          "cylinders": 6,
+          "fuel": "diesel",
+          "forcedInduction": true,
+          "horsepower": 277,
+          "torqueLbFt": 460,
+          "maxTowingLb": 8000,
+          "source": "https://www.medlinchevrolet.com/research-suburban-engines-and-towing.html"
+        }
+      ]
+    },
+    {
+      "make": "GMC",
+      "model": "Yukon",
+      "years": [
+        2021,
+        2027
+      ],
+      "seats": 7,
+      "seatsMax": 8,
+      "seatsSource": "https://www.edmunds.com/gmc/yukon/2024/features-specs",
+      "engines": [
+        {
+          "displacementL": 5.3,
+          "cylinders": 8,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 383,
+          "source": "https://www.automartusa.com/research-page/gmc/yukon/2024/specs/"
+        },
+        {
+          "displacementL": 6.2,
+          "cylinders": 8,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 460,
+          "source": "https://news.gm.com/home.detail.html/Pages/news/us/en/2024/aug/0819-yukon.html"
+        },
+        {
+          "displacementL": 3.0,
+          "cylinders": 6,
+          "fuel": "diesel",
+          "forcedInduction": true,
+          "horsepower": 277,
+          "torqueLbFt": 460,
+          "source": "https://www.jdpower.com/cars/2024/gmc/yukon/utility-4d-denali-4wd/specs"
+        },
+        {
+          "displacementL": 3.0,
+          "cylinders": 6,
+          "fuel": "diesel",
+          "forcedInduction": true,
+          "horsepower": 305,
+          "torqueLbFt": 495,
+          "source": "https://www.jdpower.com/cars/2025/gmc/yukon-xl/4wd-4dr-denali/specs"
+        }
+      ]
+    },
+    {
+      "make": "GMC",
+      "model": "Yukon XL",
+      "years": [
+        2021,
+        2027
+      ],
+      "seats": 7,
+      "seatsMax": 8,
+      "seatsSource": "https://www.edmunds.com/gmc/yukon/2024/features-specs",
+      "engines": [
+        {
+          "displacementL": 5.3,
+          "cylinders": 8,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 383,
+          "source": "https://www.automartusa.com/research-page/gmc/yukon/2024/specs/"
+        },
+        {
+          "displacementL": 6.2,
+          "cylinders": 8,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 460,
+          "source": "https://news.gm.com/home.detail.html/Pages/news/us/en/2024/aug/0819-yukon.html"
+        },
+        {
+          "displacementL": 3.0,
+          "cylinders": 6,
+          "fuel": "diesel",
+          "forcedInduction": true,
+          "horsepower": 277,
+          "torqueLbFt": 460,
+          "source": "https://www.jdpower.com/cars/2024/gmc/yukon/utility-4d-denali-4wd/specs"
+        },
+        {
+          "displacementL": 3.0,
+          "cylinders": 6,
+          "fuel": "diesel",
+          "forcedInduction": true,
+          "horsepower": 305,
+          "torqueLbFt": 495,
+          "source": "https://www.jdpower.com/cars/2025/gmc/yukon-xl/4wd-4dr-denali/specs"
+        }
+      ]
+    },
+    {
+      "make": "Cadillac",
+      "model": "Escalade",
+      "years": [
+        2021,
+        2027
+      ],
+      "engines": [
+        {
+          "displacementL": 6.2,
+          "cylinders": 8,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 460,
+          "source": "https://www.iseecars.com/car/2024-cadillac-escalade-specs"
+        },
+        {
+          "displacementL": 6.2,
+          "cylinders": 8,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "maxTowingLb": 8000,
+          "source": "https://towingspecs.com/cadillac/escalade/2024/"
+        },
+        {
+          "displacementL": 3.0,
+          "cylinders": 6,
+          "fuel": "diesel",
+          "forcedInduction": true,
+          "horsepower": 277,
+          "torqueLbFt": 460,
+          "source": "https://www.jdpower.com/cars/2024/gmc/yukon/utility-4d-denali-4wd/specs"
+        }
+      ]
+    },
+    {
+      "make": "Cadillac",
+      "model": "XT6",
+      "years": [
+        2020,
+        2025
+      ],
+      "seats": 7,
+      "seatsSource": "https://www.iseecars.com/car/2024-cadillac-xt6-specs",
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 258,
+          "source": "https://www.iseecars.com/car/2024-cadillac-xt6-specs"
+        },
+        {
+          "displacementL": 3.6,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 271,
+          "source": "https://www.iseecars.com/car/2024-cadillac-xt6-specs"
+        },
+        {
+          "displacementL": 3.6,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "maxTowingLb": 4000,
+          "source": "https://towingspecs.com/compare/cadillac-xt5-vs-cadillac-xt6/towing/"
+        }
+      ]
+    },
+    {
+      "make": "Chevrolet",
+      "model": "Camaro",
+      "years": [
+        2017,
+        2024
+      ],
+      "seats": 4,
+      "seatsSource": "https://manuals.plus/m/018ba73cb6c78e04e4aed40c28cfae3ba4d7dd04c9bfaedfea5f778d86d3b4b0",
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 295,
+          "source": "https://www.truedelta.com/Chevrolet-Camaro/specs-499-2023&r=4"
+        },
+        {
+          "displacementL": 3.6,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 284,
+          "source": "https://www.truedelta.com/Chevrolet-Camaro/specs-499-2023&r=4"
+        },
+        {
+          "displacementL": 6.2,
+          "cylinders": 8,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 455,
+          "source": "https://www.truedelta.com/Chevrolet-Camaro/specs-499-2023&r=4"
+        }
+      ]
+    },
+    {
+      "make": "Ford",
+      "model": "Mustang",
+      "modelMatch": "^mustang(?! mach-e)",
+      "years": [
+        2024,
+        2026
+      ],
+      "seats": 4,
+      "seatsSource": "https://www.cars.com/research/ford-mustang-2024/specs",
+      "engines": [
+        {
+          "displacementL": 2.3,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 350,
+          "source": "https://www.cars.com/research/ford-mustang-2024/specs"
+        },
+        {
+          "displacementL": 5.0,
+          "cylinders": 8,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "horsepower": 480,
+          "torqueLbFt": 415,
+          "source": "https://www.cjponyparts.com/resources/news/s650-mustang"
+        },
+        {
+          "displacementL": 5.0,
+          "cylinders": 8,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "horsepower": 500,
+          "torqueLbFt": 418,
+          "source": "https://www.edmunds.com/ford/mustang/2024/dark-horse/features-specs"
+        }
+      ]
+    },
+    {
+      "make": "Ford",
+      "model": "Bronco",
+      "modelMatch": "^bronco(?! sport)",
+      "years": [
+        2021,
+        2026
+      ],
+      "seats": 4,
+      "seatsMax": 5,
+      "seatsSource": "https://www.ford.com/suvs/bronco/2025/",
+      "engines": [
+        {
+          "displacementL": 2.3,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "maxTowingLb": 3500,
+          "source": "https://www.ford.com/suvs/bronco/2025/"
+        },
+        {
+          "displacementL": 2.7,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "maxTowingLb": 3500,
+          "source": "https://www.ford.com/suvs/bronco/2025/"
+        },
+        {
+          "displacementL": 3.0,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 440,
+          "maxTowingLb": 4500,
+          "source": "https://www.ford.com/suvs/bronco/2025/"
+        }
+      ]
+    },
+    {
+      "make": "Ford",
+      "model": "Bronco Sport",
+      "modelMatch": "^bronco sport",
+      "years": [
+        2021,
+        2026
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.kbb.com/ford/bronco-sport/2024/specs",
+      "engines": [
+        {
+          "displacementL": 1.5,
+          "cylinders": 3,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 190,
+          "maxTowingLb": 2000,
+          "source": "https://www.louisburgford.com/research/bronco-sport-engines-and-towing.htm"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "maxTowingLb": 2200,
+          "source": "https://www.louisburgford.com/research/bronco-sport-engines-and-towing.htm"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "horsepower": 250,
+          "torqueLbFt": 277,
+          "source": "https://www.louisburgford.com/research/bronco-sport-engines-and-towing.htm"
+        }
+      ]
+    },
+    {
+      "make": "Ford",
+      "model": "F-150",
+      "years": [
+        2018,
+        2020
+      ],
+      "seats": 3,
+      "seatsMax": 6,
+      "seatsSource": "https://www.fromtheroad.ford.com/content/dam/fordmedia/us/en/library/2020/specs/2020-F-150-Technical-Specs.pdf",
+      "engines": [
+        {
+          "displacementL": 3.5,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "horsepower": 375,
+          "torqueLbFt": 470,
+          "source": "https://www.fromtheroad.ford.com/content/dam/fordmedia/us/en/library/2020/specs/2020-F-150-Technical-Specs.pdf"
+        },
+        {
+          "displacementL": 3.5,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "horsepower": 375,
+          "maxTowingLb": 13200,
+          "source": "https://www.akinsford.com/blog/?p=5703"
+        },
+        {
+          "displacementL": 3.5,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "horsepower": 450,
+          "torqueLbFt": 510,
+          "source": "https://www.fromtheroad.ford.com/content/dam/fordmedia/us/en/library/2020/specs/2020-F-150-Technical-Specs.pdf"
+        },
+        {
+          "displacementL": 3.0,
+          "cylinders": 6,
+          "fuel": "diesel",
+          "forcedInduction": true,
+          "torqueLbFt": 440,
+          "source": "https://www.fromtheroad.ford.com/content/dam/fordmedia/us/en/library/2020/specs/2020-F-150-Technical-Specs.pdf"
+        }
+      ]
+    },
+    {
+      "make": "Ford",
+      "model": "Expedition",
+      "modelMatch": "^expedition",
+      "years": [
+        2022,
+        2024
+      ],
+      "seats": 7,
+      "seatsMax": 8,
+      "seatsSource": "https://www.iseecars.com/car/2024-ford-expedition-specs"
+    },
+    {
+      "make": "Jeep",
+      "model": "Grand Cherokee",
+      "years": [
+        2022,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.carmax.com/research/jeep/grand-cherokee/2024",
+      "engines": [
+        {
+          "displacementL": 3.6,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 260,
+          "source": "https://news.motorworldgroup.com/article/2024-jeep-grand-cherokee-review"
+        },
+        {
+          "displacementL": 3.6,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "maxTowingLb": 6200,
+          "source": "https://jeep.com/grand-cherokee/faq.html"
+        }
+      ]
+    },
+    {
+      "make": "Jeep",
+      "model": "Grand Cherokee L",
+      "years": [
+        2021,
+        2027
+      ],
+      "seats": 6,
+      "seatsMax": 7,
+      "seatsSource": "https://jeep.com/grand-cherokee/faq.html",
+      "engines": [
+        {
+          "displacementL": 3.6,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 260,
+          "source": "https://news.motorworldgroup.com/article/2024-jeep-grand-cherokee-review"
+        },
+        {
+          "displacementL": 3.6,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "maxTowingLb": 6200,
+          "source": "https://jeep.com/grand-cherokee/faq.html"
+        },
+        {
+          "displacementL": 5.7,
+          "cylinders": 8,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "maxTowingLb": 7200,
+          "source": "https://jeep.com/grand-cherokee/faq.html"
+        }
+      ]
+    },
+    {
+      "make": "Jeep",
+      "model": "Grand Cherokee 4xe",
+      "years": [
+        2022,
+        2026
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.carmax.com/research/jeep/grand-cherokee/2024",
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "plug-in hybrid",
+          "forcedInduction": true,
+          "torqueLbFt": 470,
+          "source": "https://news.motorworldgroup.com/article/2024-jeep-grand-cherokee-review"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "plug-in hybrid",
+          "forcedInduction": true,
+          "maxTowingLb": 6000,
+          "source": "https://jeep.com/grand-cherokee/faq.html"
+        }
+      ]
+    },
+    {
+      "make": "Jeep",
+      "model": "Wrangler 2-door",
+      "modelMatch": "^wrangler 2dr",
+      "years": [
+        2021,
+        2027
+      ],
+      "seats": 4,
+      "seatsSource": "https://www.autopadre.com/seating-capacity/jeep-wrangler/2024-willys-66510",
+      "engines": [
+        {
+          "displacementL": 3.6,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 260,
+          "source": "https://gearjunkie.com/product/2024-jeep-wrangler"
+        },
+        {
+          "displacementL": 3.6,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "maxTowingLb": 2000,
+          "source": "https://www.edmunds.com/jeep/wrangler/2024/st-401960659/features-specs"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 295,
+          "source": "https://gearjunkie.com/product/2024-jeep-wrangler"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "maxTowingLb": 2000,
+          "source": "https://www.edmunds.com/jeep/wrangler/2024/st-401960659/features-specs"
+        }
+      ]
+    },
+    {
+      "make": "Jeep",
+      "model": "Wrangler 2-door",
+      "modelMatch": "^wrangler 4wd$",
+      "years": [
+        2018,
+        2020
+      ],
+      "seats": 4,
+      "seatsSource": "https://www.autopadre.com/seating-capacity/jeep-wrangler/2024-willys-66510",
+      "engines": [
+        {
+          "displacementL": 3.6,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 260,
+          "source": "https://gearjunkie.com/product/2024-jeep-wrangler"
+        },
+        {
+          "displacementL": 3.6,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "maxTowingLb": 2000,
+          "source": "https://www.edmunds.com/jeep/wrangler/2024/st-401960659/features-specs"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 295,
+          "source": "https://gearjunkie.com/product/2024-jeep-wrangler"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "maxTowingLb": 2000,
+          "source": "https://www.edmunds.com/jeep/wrangler/2024/st-401960659/features-specs"
+        }
+      ]
+    },
+    {
+      "make": "Jeep",
+      "model": "Wrangler 4-door",
+      "modelMatch": "^wrangler (rubic(on)? )?4dr",
+      "years": [
+        2021,
+        2023
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.truecar.com/overview/jeep/wrangler/2024/",
+      "engines": [
+        {
+          "displacementL": 3.6,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 260,
+          "source": "https://gearjunkie.com/product/2024-jeep-wrangler"
+        },
+        {
+          "displacementL": 3.6,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "maxTowingLb": 3500,
+          "source": "https://www.kbb.com/jeep/wrangler-4-door/2024/specs"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 295,
+          "source": "https://gearjunkie.com/product/2024-jeep-wrangler"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "maxTowingLb": 3500,
+          "source": "https://www.kbb.com/jeep/wrangler-4-door/2024/specs"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "plug-in hybrid",
+          "forcedInduction": true,
+          "torqueLbFt": 470,
+          "source": "https://gearjunkie.com/product/2024-jeep-wrangler"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "plug-in hybrid",
+          "forcedInduction": true,
+          "maxTowingLb": 3500,
+          "source": "https://www.santacruzdodge.dealerinspire.com/?p=30915"
+        }
+      ]
+    },
+    {
+      "make": "Jeep",
+      "model": "Wrangler 4-door",
+      "modelMatch": "^wrangler (rubic(on)? )?4dr",
+      "years": [
+        2024,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.truecar.com/overview/jeep/wrangler/2024/",
+      "engines": [
+        {
+          "displacementL": 3.6,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 260,
+          "source": "https://gearjunkie.com/product/2024-jeep-wrangler"
+        },
+        {
+          "displacementL": 3.6,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "maxTowingLb": 5000,
+          "source": "https://towratings.net/detail/2024/jeep/wrangler-4-door"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 295,
+          "source": "https://gearjunkie.com/product/2024-jeep-wrangler"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "maxTowingLb": 3500,
+          "source": "https://www.kbb.com/jeep/wrangler-4-door/2024/specs"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "plug-in hybrid",
+          "forcedInduction": true,
+          "torqueLbFt": 470,
+          "source": "https://gearjunkie.com/product/2024-jeep-wrangler"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "plug-in hybrid",
+          "forcedInduction": true,
+          "maxTowingLb": 3500,
+          "source": "https://www.santacruzdodge.dealerinspire.com/?p=30915"
+        }
+      ]
+    },
+    {
+      "make": "Jeep",
+      "model": "Wrangler Unlimited",
+      "modelMatch": "^wrangler unlimited",
+      "years": [
+        2018,
+        2020
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.truecar.com/overview/jeep/wrangler/2024/",
+      "engines": [
+        {
+          "displacementL": 3.6,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 260,
+          "source": "https://gearjunkie.com/product/2024-jeep-wrangler"
+        },
+        {
+          "displacementL": 3.6,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "maxTowingLb": 3500,
+          "source": "https://www.kbb.com/jeep/wrangler-4-door/2024/specs"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 295,
+          "source": "https://gearjunkie.com/product/2024-jeep-wrangler"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "maxTowingLb": 3500,
+          "source": "https://www.kbb.com/jeep/wrangler-4-door/2024/specs"
+        }
+      ]
+    },
+    {
+      "make": "Dodge",
+      "model": "Durango",
+      "years": [
+        2018,
+        2027
+      ],
+      "seats": 6,
+      "seatsMax": 7,
+      "seatsSource": "https://www.kbb.com/dodge/durango/2024/",
+      "engines": [
+        {
+          "displacementL": 3.6,
+          "cylinders": 6,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 260,
+          "maxTowingLb": 6200,
+          "source": "https://www.autonationusa.com/research/articles/buyers-guides/2024/dodge-durango.htm"
+        },
+        {
+          "displacementL": 5.7,
+          "cylinders": 8,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 390,
+          "maxTowingLb": 7400,
+          "source": "https://www.autonationusa.com/research/articles/buyers-guides/2024/dodge-durango.htm"
+        }
+      ]
+    },
+    {
+      "make": "Subaru",
+      "model": "Crosstrek",
+      "years": [
+        2024,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.kbb.com/subaru/crosstrek/2024/specs",
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 145,
+          "source": "https://motorillustrated.com/subaru/crosstrek/2024-subaru-crosstrek/"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "maxTowingLb": 1500,
+          "source": "https://www.edmunds.com/subaru/crosstrek/2024/st-401980419/features-specs"
+        },
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 178,
+          "source": "https://motorillustrated.com/subaru/crosstrek/2024-subaru-crosstrek/"
+        },
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "maxTowingLb": 1500,
+          "source": "https://www.edmunds.com/subaru/crosstrek/2024/st-401980419/features-specs"
+        }
+      ]
+    },
+    {
+      "make": "Subaru",
+      "model": "Crosstrek Wilderness",
+      "years": [
+        2024,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.kbb.com/subaru/crosstrek/2024/specs",
+      "engines": [
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 178,
+          "source": "https://motorillustrated.com/subaru/crosstrek/2024-subaru-crosstrek/"
+        },
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "maxTowingLb": 3500,
+          "source": "https://autos.yahoo.com/2024-subaru-crosstrek-2-5-130000959.html"
+        }
+      ]
+    },
+    {
+      "make": "Subaru",
+      "model": "Legacy",
+      "years": [
+        2020,
+        2025
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.truecar.com/overview/subaru/legacy/2024/",
+      "engines": [
+        {
+          "displacementL": 2.4,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 277,
+          "source": "https://www.subaru.com/vehicles/legacy/features.html"
+        }
+      ]
+    },
+    {
+      "make": "Subaru",
+      "model": "WRX",
+      "years": [
+        2022,
+        2026
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.cargurus.com/research/2024-Subaru-WRX-c33188",
+      "engines": [
+        {
+          "displacementL": 2.4,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 258,
+          "source": "https://www.automoblog.net/wp-content/uploads/2024/01/2024-Subaru-WRX-Spec-Sheet.pdf"
+        }
+      ]
+    },
+    {
+      "make": "Subaru",
+      "model": "Ascent",
+      "modelMatch": "^ascent",
+      "years": [
+        2019,
+        2027
+      ],
+      "seats": 7,
+      "seatsMax": 8,
+      "seatsSource": "https://www.cargurus.com/Cars/2024-Subaru-Ascent-Reviews-c33177",
+      "engines": [
+        {
+          "displacementL": 2.4,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 277,
+          "source": "https://compare.elkgrovesubaru.com/comparison/251623"
+        },
+        {
+          "displacementL": 2.4,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "maxTowingLb": 5000,
+          "source": "https://www.granitesubaru.com/2024-subaru-ascent-vs-2024-nissan-pathfinder.htm"
+        }
+      ]
+    },
+    {
+      "make": "Mazda",
+      "model": "3",
+      "years": [
+        2019,
+        2026
+      ],
+      "seats": 5,
+      "seatsSource": "https://mazda.ca/en/vehicles/Mazda3/specifications",
+      "engines": [
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 186,
+          "source": "https://mazda.ca/en/vehicles/Mazda3/specifications"
+        },
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 320,
+          "source": "https://mazda.ca/en/vehicles/Mazda3/specifications"
+        }
+      ]
+    },
+    {
+      "make": "Mazda",
+      "model": "CX-30",
+      "years": [
+        2020,
+        2026
+      ],
+      "seats": 5,
+      "seatsSource": "https://news.mazdausa.com/download/2024+CX-30+Spec+Deck.pdf",
+      "engines": [
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 186,
+          "source": "https://news.mazdausa.com/download/2024+CX-30+Spec+Deck.pdf"
+        },
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 320,
+          "source": "https://news.mazdausa.com/download/2024+CX-30+Spec+Deck.pdf"
+        }
+      ]
+    },
+    {
+      "make": "Mazda",
+      "model": "CX-50",
+      "years": [
+        2023,
+        2026
+      ],
+      "seats": 5,
+      "seatsSource": "https://news.mazdausa.com/download/24MY+CX-50+Spec+Deck.pdf",
+      "engines": [
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 186,
+          "maxTowingLb": 2000,
+          "source": "https://news.mazdausa.com/download/24MY+CX-50+Spec+Deck.pdf"
+        },
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 320,
+          "maxTowingLb": 3500,
+          "source": "https://news.mazdausa.com/download/24MY+CX-50+Spec+Deck.pdf"
+        }
+      ]
+    },
+    {
+      "make": "Volkswagen",
+      "model": "Jetta",
+      "modelMatch": "^jetta",
+      "years": [
+        2019,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.cars.com/research/volkswagen-jetta-2024/specs",
+      "engines": [
+        {
+          "displacementL": 1.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 184,
+          "source": "https://www.cars.com/research/volkswagen-jetta-2024/specs"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 258,
+          "source": "https://specs2.auto123.com/en/specs/volkswagen/jetta-gli/volkswagen-jetta-gli-2024-dsg-446923"
+        }
+      ]
+    },
+    {
+      "make": "Volkswagen",
+      "model": "Taos",
+      "modelMatch": "^taos",
+      "years": [
+        2022,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.iseecars.com/car/2024-volkswagen-taos-specs",
+      "engines": [
+        {
+          "displacementL": 1.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 184,
+          "source": "https://www.cargurus.com/Cars/articles/2024-volkswagen-taos-pricing-specs-release-date"
+        }
+      ]
+    },
+    {
+      "make": "Volkswagen",
+      "model": "Tiguan",
+      "modelMatch": "^tiguan",
+      "years": [
+        2018,
+        2024
+      ],
+      "seats": 5,
+      "seatsMax": 7,
+      "seatsSource": "https://www.iseecars.com/car/2024-volkswagen-tiguan-specs",
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 221,
+          "maxTowingLb": 1500,
+          "source": "https://vwmidtowntoronto.com/en/news/view/how-much-can-you-tow-with-a-2024-volkswagen-suv-here-are-the-towing-specs/129845"
+        }
+      ]
+    },
+    {
+      "make": "Volkswagen",
+      "model": "Atlas",
+      "modelMatch": "^atlas(?! cross)",
+      "years": [
+        2024,
+        2027
+      ],
+      "seats": 7,
+      "seatsSource": "https://www.kbb.com/volkswagen/atlas/2024/specs",
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 273,
+          "source": "https://www.carscoops.com/2023/07/first-drive-the-redesigned-2024-volkswagen-atlas-family-hits-its-mark-by-aiming-for-average/"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "maxTowingLb": 5000,
+          "source": "https://www.lindsayvolkswagen.com/blog/2024-volkswagen-atlas-overview"
+        }
+      ]
+    },
+    {
+      "make": "Volkswagen",
+      "model": "Atlas Cross Sport",
+      "modelMatch": "^atlas cross sport",
+      "years": [
+        2024,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.kbb.com/volkswagen/atlas-cross-sport/2024/specs/",
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "torqueLbFt": 273,
+          "source": "https://www.carscoops.com/2023/07/first-drive-the-redesigned-2024-volkswagen-atlas-family-hits-its-mark-by-aiming-for-average/"
+        },
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": true,
+          "maxTowingLb": 5000,
+          "source": "https://www.lindsayvolkswagen.com/blog/2024-volkswagen-atlas-overview"
+        }
+      ]
+    },
+    {
+      "make": "Mitsubishi",
+      "model": "Outlander",
+      "years": [
+        2022,
+        2025
+      ],
+      "seats": 7,
+      "seatsSource": "https://www.kbb.com/mitsubishi/outlander/2024/specs",
+      "engines": [
+        {
+          "displacementL": 2.5,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 181,
+          "source": "https://www.kbb.com/mitsubishi/outlander/2024/specs"
+        }
+      ]
+    },
+    {
+      "make": "Mitsubishi",
+      "model": "RVR",
+      "years": [
+        2018,
+        2026
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.kbb.com/mitsubishi/outlander-sport/2024/specs",
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 145,
+          "source": "https://www.kbb.com/mitsubishi/outlander-sport/2024/specs"
+        }
+      ]
+    },
+    {
+      "make": "Mitsubishi",
+      "model": "Outlander Sport",
+      "years": [
+        2018,
+        2027
+      ],
+      "seats": 5,
+      "seatsSource": "https://www.kbb.com/mitsubishi/outlander-sport/2024/specs",
+      "engines": [
+        {
+          "displacementL": 2.0,
+          "cylinders": 4,
+          "fuel": "gasoline",
+          "forcedInduction": false,
+          "torqueLbFt": 145,
+          "source": "https://www.kbb.com/mitsubishi/outlander-sport/2024/specs"
         }
       ]
     }
