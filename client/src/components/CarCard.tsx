@@ -15,6 +15,9 @@ import VehiclePlaceholder from './VehiclePlaceholder';
 import { StatusToast } from './ui';
 import RatingStars from './RatingStars';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
+import { estimateAnnualEnergyCost } from '@carinfo/shared/energy-cost';
+import { getRegionalAssumptions, type RegionId } from '@carinfo/config/regional-assumptions';
+import { regionName, useRegionStore } from '../stores/regionStore';
 
 export type CarCardLayout = 'grid' | 'list';
 
@@ -94,6 +97,22 @@ function figuresFor(car: CarSpecs): Figure[] {
     stars: stars && stars > 0 ? stars : undefined,
   });
   return figures;
+}
+
+/**
+ * "~$1,900/yr fuel in Ontario (est.)": what the car burns at the visitor's
+ * region's prices and yearly distance, the figure most people compare on.
+ */
+function energyLine(car: CarSpecs, region: RegionId): string | null {
+  const energy = estimateAnnualEnergyCost(car, {}, getRegionalAssumptions(region));
+  if (!energy || !(energy.annualCad > 0)) return null;
+  const amount = new Intl.NumberFormat('en-CA', {
+    style: 'currency',
+    currency: 'CAD',
+    maximumFractionDigits: 0,
+  }).format(Math.round(energy.annualCad / 10) * 10);
+  const what = car.engine.fuelType === 'electric' ? 'charging' : 'fuel';
+  return `~${amount}/yr ${what} in ${regionName(region)} (est.)`;
 }
 
 /** "Est. value ~$35k", or nothing for a car the site does not value. */
@@ -219,6 +238,8 @@ export default function CarCard({
     .filter(Boolean)
     .join(' · ');
   const figures = figuresFor(car);
+  const region = useRegionStore((state) => state.region);
+  const energy = energyLine(car, region);
   const estValue = showValue ? estimatedValue(car) : null;
 
   const titleLink = (
@@ -300,6 +321,7 @@ export default function CarCard({
             )}
             {listStats.join(' · ')}
             {estValue && <span className="text-zinc-500"> · {estValue.toLowerCase()}</span>}
+            {energy && <span className="text-zinc-500"> · {energy}</span>}
           </p>
           {reasonLine && <div className="mt-1">{reasonLine}</div>}
           {versionsLink && <div className="-mb-2">{versionsLink}</div>}
@@ -367,6 +389,7 @@ export default function CarCard({
 
       <div className="p-3 pt-2.5 flex flex-col gap-2 flex-1">
         {estValue && <p className="text-xs text-zinc-500">{estValue}</p>}
+        {energy && <p className="text-xs text-zinc-500">{energy}</p>}
         {reasonLine}
         {/* Above the link stretched over the card, so its own links work. */}
         {notes && <div className="relative z-10">{notes}</div>}

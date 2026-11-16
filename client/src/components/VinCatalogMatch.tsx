@@ -8,6 +8,7 @@ import { vinChoiceNotes } from '../utils/vinChoices';
 import { beforeYouBuy } from '../utils/beforeYouBuy';
 import { useRegionStore } from '../stores/regionStore';
 import ListingCheck from './ListingCheck';
+import { formatCurrency } from '../utils/dataValue';
 import { locale, t } from '../i18n';
 import { rich } from '../i18n/rich';
 
@@ -68,8 +69,41 @@ export default function VinCatalogMatch({ decoded }: { decoded: VinDecodeResult 
     ? beforeYouBuy(dashboard).filter((item) => one || item.key !== 'safety')
     : [];
 
+  const value = dashboard && !dashboard.ownership.unvalued ? dashboard.ownership.marketValue : null;
+  const running = dashboard?.annualRunningCost?.mid;
+  const recallCount = dashboard?.recalls?.length ?? 0;
+  const chip = 'border px-2.5 py-1 text-sm tabular-nums';
+
   return (
     <section aria-labelledby="vin-catalog" className="mt-6">
+      {one && dashboard && (
+        // The answer first, in three facts: what is open against it, what it
+        // is worth here, what it costs to run. The detail follows.
+        <ul className="mb-4 flex flex-wrap gap-2" aria-label={t('At a glance')}>
+          <li
+            className={`${chip} ${
+              recallCount > 0
+                ? 'border-amber-500/40 bg-amber-500/10 text-amber-200'
+                : 'border-zinc-800 bg-zinc-950 text-zinc-300'
+            }`}
+          >
+            {t('Recalls on file: {count}', { count: recallCount })}
+          </li>
+          {value && (
+            <li className={`${chip} border-zinc-800 bg-zinc-950 text-zinc-300`}>
+              {t('Est. value {low} to {high}', {
+                low: formatCurrency(value.low),
+                high: formatCurrency(value.high),
+              })}
+            </li>
+          )}
+          {running != null && running > 0 && (
+            <li className={`${chip} border-zinc-800 bg-zinc-950 text-zinc-300`}>
+              {t('About {amount} a year to run', { amount: formatCurrency(running) })}
+            </li>
+          )}
+        </ul>
+      )}
       <h3 id="vin-catalog" className="text-lg font-semibold text-white">
         {one ? t('This car on CarInfo') : t('Which one is it?')}
       </h3>

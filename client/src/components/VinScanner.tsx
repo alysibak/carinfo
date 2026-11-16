@@ -972,7 +972,17 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
               ).map((corner) => (
                 <span
                   key={corner}
-                  className={`absolute w-6 h-6 ${corner} ${found ? 'border-accent' : 'border-white'}`}
+                  // White while the reader sets up, pulsing while it looks, amber
+                  // when the picture itself is the trouble, the accent once read.
+                  className={`absolute w-6 h-6 ${corner} ${
+                    found
+                      ? 'border-accent'
+                      : trouble
+                        ? 'border-amber-400'
+                        : readerStage === 'ready'
+                          ? 'border-white animate-pulse'
+                          : 'border-white'
+                  }`}
                 />
               ))}
               {running && !found && !busy && (

@@ -60,10 +60,6 @@ function RecentVins({ exclude, onPick }: { exclude?: string; onPick: (vin: strin
   );
 }
 
-function Subheading({ children }: { children: React.ReactNode }) {
-  return <p className="text-xs text-zinc-400 pt-5 pb-2 border-b border-zinc-900">{children}</p>;
-}
-
 function Row({ label, value }: { label: string; value: string | number | undefined }) {
   if (value == null || value === '') return null;
   return (
@@ -379,55 +375,64 @@ export default function VinDecoder() {
 
                 <VinCatalogMatch decoded={result} />
 
-                <Subheading>{t('As built, by NHTSA’s decoder')}</Subheading>
-                <Row label={t('Engine')} value={engineSummary || undefined} />
-                <Row
-                  label={t('Power')}
-                  value={
-                    eng?.hp != null
-                      ? t('{hp} hp{kw}{fromKw}', {
-                          hp: eng.hp,
-                          kw: eng.kw != null ? t(' ({kw} kW)', { kw: eng.kw }) : '',
-                          fromKw: eng.hpFromKw ? t(', from NHTSA’s kW figure') : '',
-                        })
-                      : undefined
-                  }
-                />
-                <Row
-                  label={t('Turbo')}
-                  value={eng?.turbo == null ? undefined : eng.turbo ? t('Yes') : t('No')}
-                />
-                <Row label={t('Fuel')} value={fuelLabel} />
-                <Row label={t('Engine model')} value={eng?.model} />
-                <Row label={t('Drive type')} value={result.driveType} />
-                <Row
-                  label={t('Transmission')}
-                  value={
-                    [
-                      result.transmission,
-                      result.transmissionSpeeds ? `${result.transmissionSpeeds}-spd` : '',
-                    ]
-                      .filter(Boolean)
-                      .join(' ') || undefined
-                  }
-                />
+                <details className="group">
+                  <summary className="cursor-pointer list-none flex items-center justify-between gap-3 text-xs text-zinc-400 pt-5 pb-2 border-b border-zinc-900">
+                    <span>{t('As built, by NHTSA’s decoder')}</span>
+                    <span className="text-zinc-500">
+                      <span className="group-open:hidden">{t('Show')}</span>
+                      <span className="hidden group-open:inline">{t('Hide')}</span>
+                    </span>
+                  </summary>
+                  <Row label={t('Engine')} value={engineSummary || undefined} />
+                  <Row
+                    label={t('Power')}
+                    value={
+                      eng?.hp != null
+                        ? t('{hp} hp{kw}{fromKw}', {
+                            hp: eng.hp,
+                            kw: eng.kw != null ? t(' ({kw} kW)', { kw: eng.kw }) : '',
+                            fromKw: eng.hpFromKw ? t(', from NHTSA’s kW figure') : '',
+                          })
+                        : undefined
+                    }
+                  />
+                  <Row
+                    label={t('Turbo')}
+                    value={eng?.turbo == null ? undefined : eng.turbo ? t('Yes') : t('No')}
+                  />
+                  <Row label={t('Fuel')} value={fuelLabel} />
+                  <Row label={t('Engine model')} value={eng?.model} />
+                  <Row label={t('Drive type')} value={result.driveType} />
+                  <Row
+                    label={t('Transmission')}
+                    value={
+                      [
+                        result.transmission,
+                        result.transmissionSpeeds ? `${result.transmissionSpeeds}-spd` : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ') || undefined
+                    }
+                  />
 
-                <Row label={t('Body class')} value={result.bodyClass} />
-                <Row label={t('Vehicle type')} value={result.vehicleType} />
-                <Row label={t('Doors')} value={result.doors} />
-                <Row label={t('Manufacturer')} value={result.manufacturer} />
-                <Row
-                  label={t('Assembled in')}
-                  value={
-                    [result.plantCity, result.plantCountry].filter(Boolean).join(', ') || undefined
-                  }
-                />
+                  <Row label={t('Body class')} value={result.bodyClass} />
+                  <Row label={t('Vehicle type')} value={result.vehicleType} />
+                  <Row label={t('Doors')} value={result.doors} />
+                  <Row label={t('Manufacturer')} value={result.manufacturer} />
+                  <Row
+                    label={t('Assembled in')}
+                    value={
+                      [result.plantCity, result.plantCountry].filter(Boolean).join(', ') ||
+                      undefined
+                    }
+                  />
 
-                <p className="text-xs text-zinc-400 leading-relaxed pt-5 mt-2 border-t border-zinc-900">
-                  {t(
-                    'Source: NHTSA’s VIN decoder (vPIC), read live. A field is shown only where NHTSA has it on record.',
-                  )}
-                </p>
+                  <p className="text-xs text-zinc-400 leading-relaxed pt-5 mt-2 border-t border-zinc-900">
+                    {t(
+                      'Source: NHTSA’s VIN decoder (vPIC), read live. A field is shown only where NHTSA has it on record.',
+                    )}
+                  </p>
+                </details>
               </>
             ) : (
               <div className="border border-zinc-800 bg-zinc-950 px-5 py-4 text-sm text-zinc-300 leading-relaxed">

@@ -1,5 +1,11 @@
 /** Compare, the garage and a shared garage, model and model-year pages, the VIN decoder and the value chart. English text to French (fr-CA). */
 const fr: Record<string, string> = {
+  'At a glance': 'En un coup d’œil',
+  'Recalls on file: {count}': 'Rappels au dossier : {count}',
+  'Est. value {low} to {high}': 'Valeur estimée de {low} à {high}',
+  'About {amount} a year to run': 'Environ {amount} par année à l’usage',
+  Show: 'Afficher',
+  Hide: 'Masquer',
   'Check a listing': 'Vérifier une annonce',
   'Its asking price and odometer, against what is on file for this car.':
     'Son prix demandé et son kilométrage, comparés à ce que nous avons sur ce véhicule.',
