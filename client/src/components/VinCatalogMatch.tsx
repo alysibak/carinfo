@@ -6,6 +6,8 @@ import CarCard from './CarCard';
 import { differentiateCars } from '../utils/differentiateCars';
 import { vinChoiceNotes } from '../utils/vinChoices';
 import { beforeYouBuy } from '../utils/beforeYouBuy';
+import { useRegionStore } from '../stores/regionStore';
+import ListingCheck from './ListingCheck';
 import { locale, t } from '../i18n';
 import { rich } from '../i18n/rich';
 
@@ -25,13 +27,14 @@ const linkClass =
 export default function VinCatalogMatch({ decoded }: { decoded: VinDecodeResult }) {
   const cars = useMemo(() => decoded.catalog?.cars ?? [], [decoded]);
   const lead = cars[0];
+  const region = useRegionStore((s) => s.region);
   const [dashboard, setDashboard] = useState<CarDashboard | null>(null);
 
   useEffect(() => {
     setDashboard(null);
     if (!lead) return;
     let live = true;
-    getCarDashboard(lead.id)
+    getCarDashboard(lead.id, region)
       .then((data) => {
         if (live) setDashboard(data);
       })
@@ -39,7 +42,7 @@ export default function VinCatalogMatch({ decoded }: { decoded: VinDecodeResult 
     return () => {
       live = false;
     };
-  }, [lead]);
+  }, [lead, region]);
 
   // What tells the versions apart; the trade-offs between them where nothing on file does.
   const notes = useMemo(() => vinChoiceNotes(cars), [cars]);
@@ -95,6 +98,7 @@ export default function VinCatalogMatch({ decoded }: { decoded: VinDecodeResult 
           <Link to={carPath} className="btn-primary mt-3 w-full sm:w-auto">
             {t('Open this car’s page')}
           </Link>
+          {dashboard && <ListingCheck car={lead} dashboard={dashboard} />}
         </>
       ) : (
         // Two across at most: the result is narrower than a results page.

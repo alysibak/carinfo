@@ -1,5 +1,29 @@
 /** Compare, the garage and a shared garage, model and model-year pages, the VIN decoder and the value chart. English text to French (fr-CA). */
 const fr: Record<string, string> = {
+  'Check a listing': 'Vérifier une annonce',
+  'Its asking price and odometer, against what is on file for this car.':
+    'Son prix demandé et son kilométrage, comparés à ce que nous avons sur ce véhicule.',
+  'Its odometer against the distance typical for its age; no value is estimated for this car.':
+    'Son kilométrage comparé à la distance habituelle pour son âge; aucune valeur n’est estimée pour ce véhicule.',
+  'Asking price': 'Prix demandé',
+  Odometer: 'Kilométrage',
+  'Within our estimated value for this car in {region}: {low} to {high}.':
+    'Dans notre valeur estimée pour ce véhicule en {region} : de {low} à {high}.',
+  '{amount} above our estimated value in {region} ({low} to {high}).':
+    '{amount} au-dessus de notre valeur estimée en {region} (de {low} à {high}).',
+  '{amount} below our estimated value in {region} ({low} to {high}): worth asking why.':
+    '{amount} sous notre valeur estimée en {region} (de {low} à {high}) : demandez pourquoi.',
+  'About {perYear} km a year, close to the {typical} km typical in {region}.':
+    'Environ {perYear} km par année, près des {typical} km habituels en {region}.',
+  'About {perYear} km a year, well above the {typical} km typical in {region}: expect more wear.':
+    'Environ {perYear} km par année, bien au-dessus des {typical} km habituels en {region} : attendez-vous à plus d’usure.',
+  'About {perYear} km a year, well below the {typical} km typical in {region}: ask how it was used.':
+    'Environ {perYear} km par année, bien en dessous des {typical} km habituels en {region} : demandez comment il a servi.',
+  'Estimates from this car’s page, not an appraisal. Have the car inspected before paying.':
+    'Des estimations tirées de la page du véhicule, pas une évaluation. Faites inspecter le véhicule avant de payer.',
+  'Copy this link': 'Copiez ce lien',
+  'Link copied': 'Lien copié',
+  'Share this result': 'Partager ce résultat',
   ' ({kw} kW)': ' ({kw} kW)',
   ' Busiest area: {area}, {count} cars.': ' Zone la plus dense : {area}, {count} véhicules.',
   ' · saved to your account': ' · enregistré dans votre compte',
@@ -187,7 +211,6 @@ const fr: Record<string, string> = {
   'Less power ({a} vs {b} hp)': 'Moins de puissance ({a} contre {b} ch)',
   Light: 'Lampe',
   'Light: not available here': 'Lampe : non disponible ici',
-  'Link copied': 'Lien copié',
   'Link copied to clipboard': 'Lien copié dans le presse-papiers',
   List: 'Liste',
   'Loading comparison': 'Chargement de la comparaison',

@@ -4,6 +4,7 @@ import { apiErrorMessage, decodeVin, type VinDecodeResult } from '../services/ap
 import { searchQueryToParams } from '../utils/searchParams';
 import { usePageMeta } from '../utils/pageMeta';
 import VinCatalogMatch from '../components/VinCatalogMatch';
+import ShareResult from '../components/ShareResult';
 import { cleanVinInput, vinCheckDigitValid } from '../utils/vin';
 import { holdVinReader } from '../utils/vinReader';
 import { recentVinEntry, useRecentVinStore } from '../stores/recentVinStore';
@@ -359,6 +360,12 @@ export default function VinDecoder() {
                     </p>
                   )}
                   <p className="font-mono text-xs text-zinc-400 mt-2">{result.vin}</p>
+                  <div className="mt-3">
+                    <ShareResult
+                      vin={result.vin}
+                      title={`${result.year} ${result.make} ${result.model}`}
+                    />
+                  </div>
                 </div>
 
                 {!result.decodedClean && (
