@@ -1,0 +1,122 @@
+Archive:  FLAT_RCL_PRE_2010.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+ 83786548  2026-11-17 08:02   FLAT_RCL_PRE_2010.txt
+---------                     -------
+ 83786548                     1 file
+Archive:  FLAT_RCL_POST_2010.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+313864373  2026-11-17 08:02   FLAT_RCL_POST_2010.txt
+---------                     -------
+313864373                     1 file
+Wrote nhtsa-recalls.json
+Done: 20453 recall campaigns over 57095 make, model and year listings
+Archive:  FLAT_CMPL.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+1622918532  2026-11-17 10:12   FLAT_CMPL.txt
+---------                     -------
+1622918532                     1 file
+Wrote nhtsa-complaints.json
+Done: complaints for 26548 make, model and year listings
+Archive:  FLAT_INV.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+390693669  2026-11-17 06:05   FLAT_INV.txt
+---------                     -------
+390693669                     1 file
+Wrote nhtsa-investigations.json
+Done: 2051 NHTSA investigations over 10212 make, model and year listings
+Transport Canada recalls: Vehicle Recalls Database (1ec92326-47ef-4110-b7ca-959fab03f96d)
+  vrdb_full_monthly.csv: 204.1 MB
+Done: Transport Canada recall files
+Wrote fuel-prices.json
+Done: 1750 prices, 2024-10–2026-10
+Done: 7 NRCan files
+  Failed: Error: GET https://vpic.nhtsa.dot.gov/api/vehicles/GetCanadianVehicleSpecifications/?year=1995&make=Acura&units=Metric&format=json answered 503
+  Failed: Error: GET https://vpic.nhtsa.dot.gov/api/vehicles/GetCanadianVehicleSpecifications/?year=1996&make=Acura&units=Metric&format=json answered 503
+  Failed: Error: GET https://vpic.nhtsa.dot.gov/api/vehicles/GetCanadianVehicleSpecifications/?year=1997&make=Acura&units=Metric&format=json answered 503
+  Failed: Error: GET https://vpic.nhtsa.dot.gov/api/vehicles/GetCanadianVehicleSpecifications/?year=1998&make=Acura&units=Metric&format=json answered 503
+  Failed: Error: GET https://vpic.nhtsa.dot.gov/api/vehicles/GetCanadianVehicleSpecifications/?year=1999&make=Acura&units=Metric&format=json answered 503
+  Failed: Error: GET https://vpic.nhtsa.dot.gov/api/vehicles/GetCanadianVehicleSpecifications/?year=2000&make=Acura&units=Metric&format=json answered 503
+  Failed: Error: GET https://vpic.nhtsa.dot.gov/api/vehicles/GetCanadianVehicleSpecifications/?year=2001&make=Acura&units=Metric&format=json answered 503
+  Failed: Error: GET https://vpic.nhtsa.dot.gov/api/vehicles/GetCanadianVehicleSpecifications/?year=2002&make=Acura&units=Metric&format=json answered 503
+  Failed: Error: GET https://vpic.nhtsa.dot.gov/api/vehicles/GetCanadianVehicleSpecifications/?year=2003&make=Acura&units=Metric&format=json answered 503
+  Failed: Error: GET https://vpic.nhtsa.dot.gov/api/vehicles/GetCanadianVehicleSpecifications/?year=2004&make=Acura&units=Metric&format=json answered 503
+  500 of 3036
+  1000 of 3036
+  1500 of 3036
+  2000 of 3036
+  2500 of 3036
+  3000 of 3036
+Wrote canadian-specs.json
+Done: 27391 Canadian vehicle specifications for 92 makes (20 requests failed)
+NHTSA rates model years 2011–2027
+  500 of 651
+8523 rated models
+  500 of 8523
+  Failed: Error: GET https://api.nhtsa.gov/SafetyRatings/modelyear/2012/make/SUBARU/model/IMPREZA%20WRX%2FSTI answered 400
+  1000 of 8523
+  Failed: Error: GET https://api.nhtsa.gov/SafetyRatings/modelyear/2013/make/SUBARU/model/IMPREZA%20WRX%2FSTI answered 400
+  1500 of 8523
+  Failed: Error: GET https://api.nhtsa.gov/SafetyRatings/modelyear/2014/make/SUBARU/model/IMPREZA%20WRX%2FSTI answered 400
+  2000 of 8523
+  2500 of 8523
+  3000 of 8523
+  3500 of 8523
+  4000 of 8523
+  4500 of 8523
+  5000 of 8523
+  5500 of 8523
+  6000 of 8523
+  6500 of 8523
+  Failed: Error: GET https://api.nhtsa.gov/SafetyRatings/modelyear/2024/make/DODGE/model/HORNET%20R%2FT%20EAWD answered 400
+  7000 of 8523
+  Failed: Error: GET https://api.nhtsa.gov/SafetyRatings/modelyear/2024/make/PORSCHE/model/911%20S%2FT answered 400
+  Failed: Error: GET https://api.nhtsa.gov/SafetyRatings/modelyear/2025/make/DODGE/model/HORNET%20R%2FT%20EAWD answered 400
+  7500 of 8523
+  8000 of 8523
+  Failed: Error: GET https://api.nhtsa.gov/SafetyRatings/modelyear/2026/make/TOYOTA/model/TUNDRA%20HYBRID%20W%2F%20ISODYNAMIC%20PERFORMANCE%20SEAT answered 400
+  8500 of 8523
+  Failed: Error: GET https://api.nhtsa.gov/SafetyRatings/modelyear/2027/make/TOYOTA/model/TUNDRA%20HYBRID%20W%2F%20ISODYNAMIC%20PERFORMANCE%20SEAT answered 400
+12931 rated vehicles
+  500 of 12931
+  1000 of 12931
+  1500 of 12931
+  2000 of 12931
+  2500 of 12931
+  3000 of 12931
+  3500 of 12931
+  4000 of 12931
+  4500 of 12931
+  5000 of 12931
+  5500 of 12931
+  6000 of 12931
+  6500 of 12931
+  7000 of 12931
+  7500 of 12931
+  8000 of 12931
+  8500 of 12931
+  9000 of 12931
+  9500 of 12931
+  10000 of 12931
+  10500 of 12931
+  11000 of 12931
+  11500 of 12931
+  12000 of 12931
+  12500 of 12931
+Wrote nhtsa-ratings.json
+Done: 12931 NHTSA-rated vehicles, 2011–2027 (8 requests failed)
+[car.service] Loaded ready DB: 37,152 cars in 0.3s
+Canadian recalls: 5834 recalls over 6679 model years (38842 of 43523 passenger rows matched to the site's models)
+  Most often unmatched: RAM 3500 (256), RAM 2500 (247), FORD F-250 SUPER DUTY (218), FORD F-350 SUPER DUTY (211), FORD F-450 SUPER DUTY (171), RAM 4500 (159), RAM 5500 (157), FORD F-550 SUPER DUTY (132), FORD E350 (112), MERCEDES-BENZ SPRINTER (107), CHEVROLET SILVERADO HD (102), RAM PROMASTER (102), GMC SIERRA HD (101), RAM 1500 (74), FORD F-450 CHASSIS CAB (56), FORD E450 (55), FORD F-350 CHASSIS CAB (55), FORD F-350 (49), MAZDA B SERIES (49), FORD F-600 (44), FORD F-550 CHASSIS CAB (43), MERCEDES-BENZ GT CLASS (40), RANGE ROVER EVOQUE (40), FORD ECONOLINE (35), HUMMER H2 (35)
+NHTSA complaints: 1381048 of 1490378 matched to the site's models (92.7%), 8018 model years
+  Most often unmatched: FORD F-250 SD (6550), DODGE RAM 2500 (5632), RAM 2500 (5182), FORD F-350 SD (3654), CHEVROLET SILVERADO 2500 (3088), DODGE RAM 3500 (2981), FORD F-350 (2579), FORD F-250 (2473), RAM 3500 (2371), GMC SIERRA 2500 (1728), FORD EXCURSION (1146), DODGE DART (1081), CHEVROLET SILVERADO 3500 (1078), SATURN LS (1076), CHEVROLET SILVERADO (1000), CHEVROLET SILVERADO 1500 (926), SUBARU OUTBACK (926), FORD E-350 (861), CHRYSLER 300 (825), SUBARU WRX (688), RAM PROMASTER (662), HONDA GL1800 (626), GMC SIERRA 3500 (592), OLDSMOBILE 88 (551), MAZDA B-SERIES TRUCK (541)
+NHTSA investigations: 1354 over 3837 model years (5222 of 10212 make, model and year listings matched)
+  Most often unmatched: FORD F-250 SD (25), FORD F-350 SD (25), VOLVO VN (22), FORD F-350 (22), FREIGHTLINER CASCADIA (21), FREIGHTLINER COLUMBIA (21), WESTERN STAR 5700 (21), FORD F-450 SD (21), FORD F-550 SD (21), VOLVO VNL (20), VOLVO VNM (20), MCI D4000 (20), MCI D4500 (20), MCI D4505 (18), PREVOST H3-45 (18), DODGE RAM 3500 (17), FREIGHTLINER CENTURY (17), WESTERN STAR 4700 (17), WESTERN STAR 4900 (17), WESTERN STAR 6900 (17), VOLVO VHD (17), FORD ECONOLINE (17), FORD F-250 (17), FORD E-450 (17), MCI D4005 (17)
+[car.service] Loaded ready DB: 37,152 cars in 0.3s
+NHTSA ratings: 12897 tested vehicles (11471 matched to the site's models); 18041 of 21083 cars from 2011 on described by a test, 10120 with an overall rating
+Pump prices: 19 cities, 2025-11 to 2026-10; Toronto regular $1.599/L
+[car.service] Loaded ready DB: 37,152 cars in 0.3s
+Canadian specifications: 25984 measured vehicles by model year (1118 rows with a missing or implausible measure left out); 29342 of 37152 cars sized

@@ -1,0 +1,388 @@
+{
+  "url": "https://vpic.nhtsa.dot.gov/api/vehicles/GetCanadianVehicleSpecifications/?year=2015&make=Acura&units=Metric&format=json",
+  "Count": 8,
+  "Message": "Results returned successfully",
+  "Results": [
+    {
+      "Specs": [
+        {
+          "Name": "Make",
+          "Value": "ACURA"
+        },
+        {
+          "Name": "Model",
+          "Value": "ILX 4DR SEDAN/HYBRID"
+        },
+        {
+          "Name": "MYR",
+          "Value": "12"
+        },
+        {
+          "Name": "OL",
+          "Value": "455"
+        },
+        {
+          "Name": "OW",
+          "Value": "180"
+        },
+        {
+          "Name": "OH",
+          "Value": "141"
+        },
+        {
+          "Name": "WB",
+          "Value": "267"
+        },
+        {
+          "Name": "CW",
+          "Value": "1356"
+        },
+        {
+          "Name": "A",
+          "Value": "121"
+        },
+        {
+          "Name": "B",
+          "Value": "51"
+        },
+        {
+          "Name": "C",
+          "Value": "30"
+        },
+        {
+          "Name": "D",
+          "Value": "79"
+        },
+        {
+          "Name": "E",
+          "Value": "114"
+        },
+        {
+          "Name": "F",
+          "Value": "96"
+        },
+        {
+          "Name": "G",
+          "Value": "91"
+        },
+        {
+          "Name": "TWF",
+          "Value": "151"
+        },
+        {
+          "Name": "TWR",
+          "Value": "152"
+        },
+        {
+          "Name": "WD",
+          "Value": "60/40"
+        }
+      ]
+    },
+    {
+      "Specs": [
+        {
+          "Name": "Make",
+          "Value": "ACURA"
+        },
+        {
+          "Name": "Model",
+          "Value": "MDX 4DR SUV AWD/TECH/ELITE"
+        },
+        {
+          "Name": "MYR",
+          "Value": "14"
+        },
+        {
+          "Name": "OL",
+          "Value": "492"
+        },
+        {
+          "Name": "OW",
+          "Value": "196"
+        },
+        {
+          "Name": "OH",
+          "Value": "171"
+        },
+        {
+          "Name": "WB",
+          "Value": "282"
+        },
+        {
+          "Name": "CW",
+          "Value": "1970"
+        },
+        {
+          "Name": "A",
+          "Value": "118"
+        },
+        {
+          "Name": "B",
+          "Value": "186"
+        },
+        {
+          "Name": "C",
+          "Value": "40"
+        },
+        {
+          "Name": "D",
+          "Value": "89"
+        },
+        {
+          "Name": "E",
+          "Value": "120"
+        },
+        {
+          "Name": "F",
+          "Value": "98"
+        },
+        {
+          "Name": "G",
+          "Value": "111"
+        },
+        {
+          "Name": "TWF",
+          "Value": "169"
+        },
+        {
+          "Name": "TWR",
+          "Value": "168"
+        },
+        {
+          "Name": "WD",
+          "Value": "58/42"
+        }
+      ]
+    },
+    {
+      "Specs": [
+        {
+          "Name": "Make",
+          "Value": "ACURA"
+        },
+        {
+          "Name": "Model",
+          "Value": "RDX 4DR SUV AWD/TECH PACKAGE"
+        },
+        {
+          "Name": "MYR",
+          "Value": "12"
+        },
+        {
+          "Name": "OL",
+          "Value": "466"
+        },
+        {
+          "Name": "OW",
+          "Value": "187"
+        },
+        {
+          "Name": "OH",
+          "Value": "169"
+        },
+        {
+          "Name": "WB",
+          "Value": "268"
+        },
+        {
+          "Name": "CW",
+          "Value": "1749"
+        },
+        {
+          "Name": "A",
+          "Value": "129"
+        },
+        {
+          "Name": "B",
+          "Value": "158"
+        },
+        {
+          "Name": "C",
+          "Value": "36"
+        },
+        {
+          "Name": "D",
+          "Value": "86"
+        },
+        {
+          "Name": "E",
+          "Value": "123"
+        },
+        {
+          "Name": "F",
+          "Value": "99"
+        },
+        {
+          "Name": "G",
+          "Value": "99"
+        },
+        {
+          "Name": "TWF",
+          "Value": "160"
+        },
+        {
+          "Name": "TWR",
+          "Value": "161"
+        },
+        {
+          "Name": "WD",
+          "Value": "59/41"
+        }
+      ]
+    },
+    {
+      "Specs": [
+        {
+          "Name": "Make",
+          "Value": "ACURA"
+        },
+        {
+          "Name": "Model",
+          "Value": "RLX 4DR SEDAN"
+        },
+        {
+          "Name": "MYR",
+          "Value": "13"
+        },
+        {
+          "Name": "OL",
+          "Value": "499"
+        },
+        {
+          "Name": "OW",
+          "Value": "190"
+        },
+        {
+          "Name": "OH",
+          "Value": "146"
+        },
+        {
+          "Name": "WB",
+          "Value": "285"
+        },
+        {
+          "Name": "CW",
+          "Value": "1788"
+        },
+        {
+          "Name": "A",
+          "Value": "133"
+        },
+        {
+          "Name": "B",
+          "Value": "56"
+        },
+        {
+          "Name": "C",
+          "Value": "37"
+        },
+        {
+          "Name": "D",
+          "Value": "80"
+        },
+        {
+          "Name": "E",
+          "Value": "113"
+        },
+        {
+          "Name": "F",
+          "Value": "100"
+        },
+        {
+          "Name": "G",
+          "Value": "114"
+        },
+        {
+          "Name": "TWF",
+          "Value": "163"
+        },
+        {
+          "Name": "TWR",
+          "Value": "163"
+        },
+        {
+          "Name": "WD",
+          "Value": "61/39"
+        }
+      ]
+    },
+    {
+      "Specs": [
+        {
+          "Name": "Make",
+          "Value": "ACURA"
+        },
+        {
+          "Name": "Model",
+          "Value": "RLX 4DR SEDAN - SPORT HYBRID"
+        },
+        {
+          "Name": "MYR",
+          "Value": "13"
+        },
+        {
+          "Name": "OL",
+          "Value": "499"
+        },
+        {
+          "Name": "OW",
+          "Value": "190"
+        },
+        {
+          "Name": "OH",
+          "Value": "146"
+        },
+        {
+          "Name": "WB",
+          "Value": "285"
+        },
+        {
+          "Name": "CW",
+          "Value": "1980"
+        },
+        {
+          "Name": "A",
+          "Value": "133"
+        },
+        {
+          "Name": "B",
+          "Value": "56"
+        },
+        {
+          "Name": "C",
+          "Value": "37"
+        },
+        {
+          "Name": "D",
+          "Value": "80"
+        },
+        {
+          "Name": "E",
+          "Value": "113"
+        },
+        {
+          "Name": "F",
+          "Value": "100"
+        },
+        {
+          "Name": "G",
+          "Value": "114"
+        },
+        {
+          "Name": "TWF",
+          "Value": "163"
+        },
+        {
+          "Name": "TWR",
+          "Value": "163"
+        },
+        {
+          "Name": "WD",
+          "Value": "57/43"
+        }
+      ]
+    }
+  ],
+  "SearchCriteria": "Year: 2015; Make: Acura; Units: Metric"
+}

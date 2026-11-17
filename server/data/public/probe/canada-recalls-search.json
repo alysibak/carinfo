@@ -1,0 +1,260 @@
+[
+  {
+    "id": "1ec92326-47ef-4110-b7ca-959fab03f96d",
+    "title": "Vehicle Recalls Database",
+    "organization": "Transport Canada | Transports Canada",
+    "resources": [
+      {
+        "name": "Dataset",
+        "format": "CSV",
+        "url": "https://opendatatc.tc.canada.ca/vrdb_full_monthly.csv"
+      },
+      {
+        "name": "Data Dictionary",
+        "format": "TXT",
+        "url": "https://opendatatc.blob.core.windows.net/opendatatc/recalls_variables.txt"
+      },
+      {
+        "name": "Data Dictionary",
+        "format": "TXT",
+        "url": "https://opendatatc.blob.core.windows.net/opendatatc/recalls_variables.txt"
+      },
+      {
+        "name": "Dataset",
+        "format": "XML",
+        "url": "https://opendatatc.tc.canada.ca/vrdb_full_monthly.xml"
+      },
+      {
+        "name": "Vehicle Recalls API",
+        "format": "JSON",
+        "url": "http://data.tc.gc.ca/v1.3/api/eng/vehicle-recall-database/recall?format=json"
+      },
+      {
+        "name": "Vehicle Recalls API",
+        "format": "XML",
+        "url": "http://data.tc.gc.ca/v1.3/api/eng/vehicle-recall-database/recall?format=XML"
+      },
+      {
+        "name": "API Guide",
+        "format": "DOCX",
+        "url": "https://open.canada.ca/data/dataset/1ec92326-47ef-4110-b7ca-959fab03f96d/resource/651cd076-d18c-49af-bd35-bfc89377e5cf/download/vehicle-recall-database-api-documentation.docx",
+        "size": 65387
+      },
+      {
+        "name": "API Guide",
+        "format": "DOCX",
+        "url": "https://open.canada.ca/data/dataset/1ec92326-47ef-4110-b7ca-959fab03f96d/resource/a9e168d8-919c-4a4b-a9b8-11b10dddae9d/download/vehicle-recall-database-api-documentation-french.docx",
+        "size": 66556
+      }
+    ]
+  },
+  {
+    "id": "1991fef6-9dfe-40e2-a0c6-19c60ddf4a02",
+    "title": "Vehicle Recalls- Last 60 Days",
+    "organization": "Transport Canada | Transports Canada",
+    "resources": [
+      {
+        "name": "Dataset",
+        "format": "CSV",
+        "url": "https://opendatatc.tc.canada.ca/vrdb_60days_daily.csv"
+      },
+      {
+        "name": "Data Dictionary",
+        "format": "TXT",
+        "url": "https://opendatatc.blob.core.windows.net/opendatatc/recalls_variables.txt"
+      },
+      {
+        "name": "Data Dictionary",
+        "format": "TXT",
+        "url": "https://opendatatc.blob.core.windows.net/opendatatc/recalls_variables.txt"
+      },
+      {
+        "name": "Dataset",
+        "format": "XML",
+        "url": "https://opendatatc.tc.canada.ca/vrdb_60days_daily.xml"
+      },
+      {
+        "name": "Test Dataset",
+        "format": "CSV",
+        "url": "https://open.canada.ca/data/dataset/1991fef6-9dfe-40e2-a0c6-19c60ddf4a02/resource/0230f847-b1cd-4528-8584-b4b02ba9d76a/download/vrdb_60days_daily.csv",
+        "size": 11754171
+      }
+    ]
+  },
+  {
+    "id": "d38de914-c94c-429b-8ab1-8776c31643e3",
+    "title": "Recalls and Safety Alerts",
+    "organization": "Health Canada | Santé Canada",
+    "resources": [
+      {
+        "name": "Recalls & Safety Alerts",
+        "format": "JSON",
+        "url": "https://recalls-rappels.canada.ca/sites/default/files/opendata-donneesouvertes/HCRSAMOpenData.json"
+      },
+      {
+        "name": "Recalls & Safety Alerts",
+        "format": "JSON",
+        "url": "https://recalls-rappels.canada.ca/sites/default/files/opendata-donneesouvertes/SCRSAMDonneesOuvertes.json"
+      },
+      {
+        "name": "Recalls and Safety Alerts",
+        "format": "CSV",
+        "url": "https://recalls-rappels.canada.ca/sites/default/files/opendata-donneesouvertes/HCRSAMOpenData.csv"
+      },
+      {
+        "name": "Recalls and Safety Alerts",
+        "format": "CSV",
+        "url": "https://recalls-rappels.canada.ca/sites/default/files/opendata-donneesouvertes/SCRSAMDonneesOuvertes.csv"
+      }
+    ]
+  },
+  {
+    "id": "71bfc122-cd4c-4526-92e7-b5bd8572c3ab",
+    "title": "Companies Registered with Transport Canada to affix the National Safety Mark",
+    "organization": "Transport Canada | Transports Canada",
+    "resources": [
+      {
+        "name": "Vehicle Manufacturers Registered with Transport Canada",
+        "format": "XML",
+        "url": "https://opendatatc.tc.canada.ca/VMRTCDaily.xml"
+      },
+      {
+        "name": "Vehicle Manufacturers Registered with Transport Canada",
+        "format": "CSV",
+        "url": "https://opendatatc.tc.canada.ca/VMRTCDaily.csv"
+      },
+      {
+        "name": "VMRTC Metadata",
+        "format": "TXT",
+        "url": "https://opendatatc.blob.core.windows.net/opendatatc/CAFS_VMRTC_METADATA.TXT"
+      }
+    ]
+  },
+  {
+    "id": "ac3c4832-1e39-485b-a900-1d056bbe222f",
+    "title": "Rail transportation safety issue investigation report R20H0082",
+    "organization": "Transportation Safety Board of Canada | Bureau de la sécurité des transports du Canada",
+    "resources": [
+      {
+        "name": "Investigation report R20H0082",
+        "format": "HTML",
+        "url": "https://www.tsb.gc.ca/eng/rapports-reports/rail/etudes-studies/r20h0082/r20h0082.html"
+      },
+      {
+        "name": "Investigation report R20H0082",
+        "format": "HTML",
+        "url": "https://www.tsb.gc.ca/fra/rapports-reports/rail/etudes-studies/r20h0082/r20h0082.html"
+      }
+    ]
+  },
+  {
+    "id": "bf653fa6-4651-416b-8991-045fb8a3da49",
+    "title": "Motor Vehicle Fatalities with Distraction Involvement",
+    "organization": "Government of British Columbia | Gouvernment de la Colombie-Britannique",
+    "resources": [
+      {
+        "name": "motor-vehicle-fatalities-with-distraction-involvement",
+        "format": "XLSX",
+        "url": "https://catalogue.data.gov.bc.ca/dataset/bf653fa6-4651-416b-8991-045fb8a3da49/resource/2db60a87-8ed4-4efd-9bcd-6feffebae7f7/download/motor-vehicle-fatalities-with-distraction-involvement.xlsx"
+      },
+      {
+        "name": "motor-vehicle-fatalities-with-distraction-involvement",
+        "format": "CSV",
+        "url": "https://catalogue.data.gov.bc.ca/dataset/bf653fa6-4651-416b-8991-045fb8a3da49/resource/18d1772b-3596-490b-9079-7ef4f565a8c3/download/motor-vehicle-fatalities-with-distraction-involvement.csv"
+      },
+      {
+        "name": "Original metadata (https://catalogue.data.gov.bc.ca)",
+        "format": "HTML",
+        "url": "https://catalogue.data.gov.bc.ca/dataset/motor-vehicle-fatalities-with-distraction-involvement"
+      }
+    ]
+  },
+  {
+    "id": "640aa193-3c74-4f87-b1c5-215a2d158b71",
+    "title": "Motor Vehicle Fatalities by Month",
+    "organization": "Government of British Columbia | Gouvernment de la Colombie-Britannique",
+    "resources": [
+      {
+        "name": "motor-vehicle-fatalities-by-month",
+        "format": "XLSX",
+        "url": "https://catalogue.data.gov.bc.ca/dataset/640aa193-3c74-4f87-b1c5-215a2d158b71/resource/3c3ad9ab-b0d0-4950-9513-a474334bc3ad/download/motor-vehicle-fatalities-by-month.xlsx"
+      },
+      {
+        "name": "motor-vehicle-fatalities-by-month",
+        "format": "CSV",
+        "url": "https://catalogue.data.gov.bc.ca/dataset/640aa193-3c74-4f87-b1c5-215a2d158b71/resource/9e59fb7e-de9d-46f9-a3e0-0db1fbd3f03d/download/motor-vehicle-fatalities-by-month.csv"
+      },
+      {
+        "name": "Original metadata (https://catalogue.data.gov.bc.ca)",
+        "format": "HTML",
+        "url": "https://catalogue.data.gov.bc.ca/dataset/motor-vehicle-fatalities-by-month"
+      }
+    ]
+  },
+  {
+    "id": "546debd7-1f13-40fb-9153-07b25b3cc01b",
+    "title": "Motor Vehicle Fatalities by Road User Type",
+    "organization": "Government of British Columbia | Gouvernment de la Colombie-Britannique",
+    "resources": [
+      {
+        "name": "motor-vehicle-fatalities-by-road-user-type",
+        "format": "XLSX",
+        "url": "https://catalogue.data.gov.bc.ca/dataset/546debd7-1f13-40fb-9153-07b25b3cc01b/resource/5bc22ee9-c29a-464a-8556-456d1b1f58fa/download/motor-vehicle-fatalities-by-road-user-type.xlsx"
+      },
+      {
+        "name": "motor-vehicle-fatalities-by-road-user-type",
+        "format": "CSV",
+        "url": "https://catalogue.data.gov.bc.ca/dataset/546debd7-1f13-40fb-9153-07b25b3cc01b/resource/834a8f81-9ac4-4ab9-9b1b-0c76452afe70/download/motor-vehicle-fatalities-by-road-user-type.csv"
+      },
+      {
+        "name": "Original metadata (https://catalogue.data.gov.bc.ca)",
+        "format": "HTML",
+        "url": "https://catalogue.data.gov.bc.ca/dataset/motor-vehicle-fatalities-by-role"
+      }
+    ]
+  },
+  {
+    "id": "459c4ded-4687-485e-aa10-f957fabefdd1",
+    "title": "Motor Vehicle Fatalities with Alcohol and/or Drug Involvement",
+    "organization": "Government of British Columbia | Gouvernment de la Colombie-Britannique",
+    "resources": [
+      {
+        "name": "motor-vehicle-fatalities-with-alcohol-and-or-drug-involvement",
+        "format": "XLSX",
+        "url": "https://catalogue.data.gov.bc.ca/dataset/459c4ded-4687-485e-aa10-f957fabefdd1/resource/a8e7a17c-c6a3-4ef2-9f4b-2aa9b22f64ea/download/motor-vehicle-fatalities-with-alcohol-and-or-drug-involvement.xlsx"
+      },
+      {
+        "name": "motor-vehicle-fatalities-with-alcohol-and-or-drug-involvement",
+        "format": "CSV",
+        "url": "https://catalogue.data.gov.bc.ca/dataset/459c4ded-4687-485e-aa10-f957fabefdd1/resource/b7d71c80-81d3-4c6f-a913-9d68f3c49d8e/download/motor-vehicle-fatalities-with-alcohol-and-or-drug-involvement.csv"
+      },
+      {
+        "name": "Original metadata (https://catalogue.data.gov.bc.ca)",
+        "format": "HTML",
+        "url": "https://catalogue.data.gov.bc.ca/dataset/motor-vehicle-fatalities-with-alcohol-and-or-drug-involvement"
+      }
+    ]
+  },
+  {
+    "id": "23937c1c-f1e0-497c-a34f-c2c6ce15e775",
+    "title": "Motor Vehicle Fatalities with Speeding Involvement",
+    "organization": "Government of British Columbia | Gouvernment de la Colombie-Britannique",
+    "resources": [
+      {
+        "name": "motor-vehicle-fatalities-with-speeding-involvement",
+        "format": "XLSX",
+        "url": "https://catalogue.data.gov.bc.ca/dataset/23937c1c-f1e0-497c-a34f-c2c6ce15e775/resource/5325a2ff-5448-4269-b421-0346e90a31b4/download/motor-vehicle-fatalities-with-speeding-involvement.xlsx"
+      },
+      {
+        "name": "motor-vehicle-fatalities-with-speeding-involvement",
+        "format": "CSV",
+        "url": "https://catalogue.data.gov.bc.ca/dataset/23937c1c-f1e0-497c-a34f-c2c6ce15e775/resource/de1b175c-2725-403a-ba33-6b57f868f38e/download/motor-vehicle-fatalities-with-speeding-involvement.csv"
+      },
+      {
+        "name": "Original metadata (https://catalogue.data.gov.bc.ca)",
+        "format": "HTML",
+        "url": "https://catalogue.data.gov.bc.ca/dataset/motor-vehicle-fatalities-with-speeding-involvement"
+      }
+    ]
+  }
+]
