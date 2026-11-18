@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import BrandMark from './BrandMark';
 import LanguageSwitch from './LanguageSwitch';
+import DisplaySettings from './DisplaySettings';
 import { regionName, useRegionStore } from '../stores/regionStore';
 import { locale, msg, t } from '../i18n';
 import { rich } from '../i18n/rich';
@@ -86,6 +87,9 @@ export default function SiteFooter() {
             </li>
           </ul>
         </nav>
+      </div>
+      <div className="page-wrap pb-4">
+        <DisplaySettings />
       </div>
       <div className="page-wrap pb-8">
         <div className="pt-5 border-t border-zinc-900 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 text-xs text-zinc-500 leading-relaxed">

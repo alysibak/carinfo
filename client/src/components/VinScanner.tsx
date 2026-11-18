@@ -853,7 +853,7 @@ export default function VinScanner({ onDetected, onClose }: VinScannerProps) {
       role="dialog"
       aria-modal="true"
       aria-label={t('Scan the VIN')}
-      className="fixed inset-0 z-300 bg-black flex flex-col phone-sideways:flex-row"
+      className="theme-dark fixed inset-0 z-300 bg-black flex flex-col phone-sideways:flex-row"
       onDragOver={(e) => {
         if (!e.dataTransfer.types.includes('Files')) return;
         e.preventDefault();

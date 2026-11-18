@@ -23,8 +23,8 @@ describe('MobileTabBar', () => {
   });
 
   it('marks the page you are on', () => {
-    renderBar('/browse');
-    expect(screen.getByRole('link', { name: 'Browse' })).toHaveAttribute('aria-current', 'page');
+    renderBar('/vin');
+    expect(screen.getByRole('link', { name: 'Scan' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Search' })).not.toHaveAttribute('aria-current');
   });
 
@@ -41,7 +41,7 @@ describe('MobileTabBar', () => {
     expect(useMenuStore.getState().open).toBe(true);
     expect(more).toHaveAttribute('aria-expanded', 'true');
     // A tab taken while the menu is open closes it.
-    fireEvent.click(screen.getByRole('link', { name: 'Browse' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Scan' }));
     expect(useMenuStore.getState().open).toBe(false);
   });
 });

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import * as api from '../services/api';
 import { isHttpError } from '../services/http';
 import type { ModelYearOverview } from '../types/car.types';
-import { BackLink, ErrorState } from '../components/ui';
+import { ErrorState } from '../components/ui';
 import ModelPageSkeleton from '../components/ModelPageSkeleton';
 import PageShell, { PageBody } from '../components/PageShell';
 import CarCard from '../components/CarCard';
@@ -12,6 +12,7 @@ import { usePageMeta } from '../utils/pageMeta';
 import { differentiateCars } from '../utils/differentiateCars';
 import { modelYearKey, takePrefetched } from '../utils/prefetch';
 import { t } from '../i18n';
+import Breadcrumbs from '../components/Breadcrumbs';
 
 type Status = 'loading' | 'ready' | 'missing' | 'error';
 
@@ -105,7 +106,13 @@ export default function ModelYearPage() {
   return (
     <PageShell>
       <PageBody>
-        <BackLink to={overview.modelPath} label={`${overview.make} ${overview.name}`} />
+        <Breadcrumbs
+          items={[
+            { label: overview.make, to: `/home?make=${encodeURIComponent(overview.make)}` },
+            { label: overview.name, to: overview.modelPath },
+            { label: String(overview.year) },
+          ]}
+        />
         <h1 className="page-title mt-4 mb-2">{name}</h1>
         <p className="text-sm text-zinc-400 mb-6 max-w-2xl leading-relaxed">
           {t('{count} configurations on file', { count: overview.summary.configurations })}

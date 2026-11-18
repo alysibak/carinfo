@@ -19,7 +19,7 @@
   --color-zinc-200: #e4e4e7;
   --color-zinc-300: #d4d4d8;
   --color-zinc-400: #a1a1aa;
-  --color-zinc-500: #71717a;
+  --color-zinc-500: #7f7f88;
   --color-zinc-600: #52525b;
   --color-zinc-700: #3f3f46;
   --color-zinc-800: #2c2c30;
@@ -981,4 +981,100 @@ html {
   textarea {
     font-size: 16px !important;
   }
+}
+
+/*
+ * Light theme (src/stores/displayStore.ts). The neutral scale turned over, so
+ * every panel, border and line of text the dark design draws comes out light
+ * without a second set of classes; the accent and warning colours darkened to
+ * read on white. Dark stays the default.
+ */
+:root[data-theme='light'] {
+  color-scheme: light;
+  --color-black: #f4f4f6;
+  --color-white: #141416;
+  --color-zinc-50: #141416;
+  --color-zinc-100: #1a1a1d;
+  --color-zinc-200: #2c2c30;
+  --color-zinc-300: #3a3a41;
+  --color-zinc-400: #4d4d55;
+  --color-zinc-500: #63636c;
+  --color-zinc-600: #8b8b94;
+  --color-zinc-700: #b8b8c0;
+  --color-zinc-800: #d9d9de;
+  --color-zinc-900: #e8e8ec;
+  --color-zinc-950: #ffffff;
+  --color-accent: #047857;
+  --color-accent-hover: #065f46;
+  --color-accent-strong: #065f46;
+  --color-accent-ink: #ffffff;
+  --color-amber-100: #78350f;
+  --color-amber-200: #92400e;
+  --color-amber-300: #a14a0b;
+  --color-amber-400: #b45309;
+  --color-red-300: #b91c1c;
+  --color-red-400: #b91c1c;
+  --surface: #f4f4f6;
+  --surface-raised: #ffffff;
+  --text-primary: #141416;
+  --text-secondary: #3a3a41;
+  --text-muted: #63636c;
+  --border-default: #d0d0d6;
+  --border-subtle: #e4e4e8;
+}
+
+:root[data-theme='light'] ::selection {
+  color: #141416;
+}
+
+/* What stays dark in either theme: the camera's picture and a photo's stage. */
+.theme-dark {
+  color-scheme: dark;
+  --color-black: #0c0c0e;
+  --color-white: #eaeaec;
+  --color-zinc-50: #fafafa;
+  --color-zinc-100: #f4f4f5;
+  --color-zinc-200: #e4e4e7;
+  --color-zinc-300: #d4d4d8;
+  --color-zinc-400: #a1a1aa;
+  --color-zinc-500: #7f7f88;
+  --color-zinc-600: #52525b;
+  --color-zinc-700: #3f3f46;
+  --color-zinc-800: #2c2c30;
+  --color-zinc-900: #1a1a1d;
+  --color-zinc-950: #141416;
+  --color-accent: #34d399;
+  --color-accent-hover: #6ee7b7;
+  --color-accent-strong: #10b981;
+  --color-accent-ink: #03150e;
+  --color-amber-100: #fef3c7;
+  --color-amber-200: #fde68a;
+  --color-amber-300: #fcd34d;
+  --color-amber-400: #fbbf24;
+  --color-red-300: #fca5a5;
+  --color-red-400: #f87171;
+  --surface: #0c0c0e;
+  --surface-raised: #141416;
+  --text-primary: #eaeaec;
+  --text-secondary: #c4c4c9;
+  --text-muted: #8f8f98;
+  --border-default: #35353b;
+  --border-subtle: #242428;
+}
+
+/* Larger text (displayStore): every rem-sized size and space grows with it. */
+:root[data-text='large'] {
+  font-size: 112.5%;
+}
+
+/* Figures line up in columns and do not shift as they change. */
+body {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The headline's light fading down, turned over for the light theme. */
+:root[data-theme='light'] .display-text:not(.theme-dark .display-text) {
+  background: linear-gradient(180deg, #141416 0%, #141416 50%, #52525b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
 }

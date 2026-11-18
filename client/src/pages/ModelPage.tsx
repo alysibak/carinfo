@@ -23,6 +23,7 @@ import { complaintPart } from '../utils/recalls';
 import { theftSentence } from '@carinfo/shared/theft';
 import { modelKey, takePrefetched } from '../utils/prefetch';
 import { t, tp } from '../i18n';
+import Breadcrumbs from '../components/Breadcrumbs';
 import { rich } from '../i18n/rich';
 
 type Status = 'loading' | 'ready' | 'missing' | 'error';
@@ -380,7 +381,9 @@ export default function ModelPage() {
     <PageShell>
       {/* The head of the page in the car's own colours, as on a car's page:
           the name large on the left, the car larger on the right. */}
-      <div className="relative isolate overflow-x-clip border-b border-zinc-900">
+      <div
+        className={`relative isolate overflow-x-clip border-b border-zinc-900 ${hasPhoto ? 'theme-dark bg-black text-white' : ''}`}
+      >
         {hasPhoto && (
           <div aria-hidden className="absolute inset-0 -z-10 pointer-events-none">
             <PhotoGlow
@@ -407,6 +410,13 @@ export default function ModelPage() {
               </div>
             )}
             <div className="min-w-0">
+              <Breadcrumbs
+                className="mb-2"
+                items={[
+                  { label: overview.make, to: `/home?make=${encodeURIComponent(overview.make)}` },
+                  { label: overview.name },
+                ]}
+              />
               <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
                 {[
                   yearSpan(overview.first, overview.last),

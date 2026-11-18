@@ -129,7 +129,7 @@ export default function Collection() {
         <p className="text-sm text-zinc-400 mb-2 max-w-xl leading-relaxed">
           {t(collection.description)}
         </p>
-        <p className="text-xs text-zinc-600 mb-8">
+        <p className="text-xs text-zinc-500 mb-8">
           {t('{count} ranked picks', { count: cars.length })}
           {moreInSearch > 0
             ? t(' · {count}+ more in Search', { count: fmtNumber(moreInSearch) })
@@ -174,7 +174,7 @@ export default function Collection() {
                       to={`/car/${car.id}`}
                       className="flex items-start sm:items-center gap-3 sm:gap-4 py-3.5 -mx-2 px-2 group hover:bg-zinc-950 transition-colors"
                     >
-                      <span className="w-7 shrink-0 text-xs tabular-nums text-zinc-600 pt-0.5">
+                      <span className="w-7 shrink-0 text-xs tabular-nums text-zinc-500 pt-0.5">
                         {i + 1}
                       </span>
                       <div className="min-w-0 flex-1">

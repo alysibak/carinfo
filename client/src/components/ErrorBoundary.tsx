@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { reportError } from '../utils/errorReporting';
+import { t } from '../i18n';
 
 interface Props {
   children: ReactNode;
@@ -36,10 +37,11 @@ export default class ErrorBoundary extends Component<Props, State> {
     return (
       <div className="min-h-[50vh] bg-black text-white flex items-center justify-center px-6">
         <div className="text-center max-w-md">
-          <h1 className="page-title mb-3">Something went wrong</h1>
+          <h1 className="page-title mb-3">{t('Something went wrong')}</h1>
           <p className="text-sm text-zinc-400 leading-relaxed mb-8">
-            This page hit an unexpected error. Your garage and compare list on this device are
-            unchanged. Try again, or go back to search.
+            {t(
+              'This page hit an unexpected error. Your garage and compare list on this device are unchanged. Try again, or go back to search.',
+            )}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <button
@@ -47,10 +49,10 @@ export default class ErrorBoundary extends Component<Props, State> {
               className="btn-primary"
               onClick={() => this.setState({ error: null })}
             >
-              Try again
+              {t('Try again')}
             </button>
             <Link to="/home" className="btn-secondary">
-              Search
+              {t('Search')}
             </Link>
           </div>
         </div>

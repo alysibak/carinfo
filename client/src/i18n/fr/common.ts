@@ -1,5 +1,14 @@
 /** Site chrome: header, menus, footer, shared components, error and loading states, provinces, body styles and fuels. English text to French (fr-CA). */
 const fr: Record<string, string> = {
+  Theme: 'Thème',
+  Dark: 'Sombre',
+  Light: 'Clair',
+  'Match device': 'Comme l’appareil',
+  'Text size': 'Taille du texte',
+  Standard: 'Standard',
+  Larger: 'Plus grand',
+  Breadcrumb: 'Fil d’Ariane',
+  Scan: 'Scanner',
   'Close menu': 'Fermer le menu',
   'Open menu': 'Ouvrir le menu',
   'Value chart': 'Graphique des valeurs',

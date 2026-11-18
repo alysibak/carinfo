@@ -516,7 +516,7 @@ function SpecGroupBlock({ group }: { group: SpecGroup }) {
                   }`}
                 />
                 {spec.provenanceSource === 'estimated' && (
-                  <span className="text-xs text-zinc-600">{t('est.')}</span>
+                  <span className="text-xs text-zinc-500">{t('est.')}</span>
                 )}
               </div>
             </div>

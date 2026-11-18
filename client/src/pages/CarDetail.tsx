@@ -47,6 +47,7 @@ import CarPageSkeleton from '../components/CarPageSkeleton';
 import { recentEntry, useRecentStore } from '../stores/recentStore';
 import { dashboardKey, takePrefetched } from '../utils/prefetch';
 import { msg, t } from '../i18n';
+import Breadcrumbs from '../components/Breadcrumbs';
 import { fmtNumber } from '../i18n/format';
 
 function Subheading({ children }: { children: React.ReactNode }) {
@@ -543,7 +544,9 @@ export default function CarDetail() {
         </div>
       )}
 
-      <section className="relative isolate border-b border-zinc-900 overflow-x-clip">
+      <section
+        className={`relative isolate border-b border-zinc-900 overflow-x-clip ${hasPhoto ? 'theme-dark bg-black text-white' : ''}`}
+      >
         {/* The car's colours flooding the head of its page: its own photo,
             blurred to light, dark behind the name and fading to black below. */}
         {hasPhoto && (
@@ -565,6 +568,19 @@ export default function CarDetail() {
           >
             <span aria-hidden>←</span> {t('Back')}
           </button>
+          {dashboard.modelPage && (
+            <Breadcrumbs
+              className="mb-1"
+              items={[
+                { label: car.make, to: `/home?make=${encodeURIComponent(car.make)}` },
+                {
+                  label: dashboard.modelPage.label.replace(new RegExp(`^${car.make}\\s+`, 'i'), ''),
+                  to: dashboard.modelPage.path,
+                },
+                { label: String(car.year), to: `${dashboard.modelPage.path}/${car.year}` },
+              ]}
+            />
+          )}
 
           {/* A stage: the name large on the left, the car larger on the right;
               on a phone the photo runs edge to edge above the name. */}
