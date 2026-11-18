@@ -3,6 +3,24 @@ import { Link } from 'react-router-dom';
 import * as api from '../services/api';
 import type { BestSellers as BestSellerList } from '../types/car.types';
 import { rangeKm } from '../utils/efficiency';
+import { getRegionalAssumptions, type RegionId } from '@carinfo/config/regional-assumptions';
+import { regionName, useRegionStore } from '../stores/regionStore';
+import { carPhotoSources } from '../utils/carImages';
+import { t } from '../i18n';
+
+/**
+ * "from ~$1,280/yr fuel in Ontario (est.)": the thriftiest version of the
+ * newest year at the region's pump price and yearly distance.
+ */
+function fuelCostLine(mpg: number | undefined, region: RegionId) {
+  if (!mpg || mpg <= 0) return null;
+  const { annualKm, gasPriceCadPerL } = getRegionalAssumptions(region);
+  const annual = Math.round(((annualKm / 100) * (235.215 / mpg) * gasPriceCadPerL) / 10) * 10;
+  return t('from ~{amount}/yr fuel in {region} (est.)', {
+    amount: `$${annual.toLocaleString('en-CA')}`,
+    region: regionName(region),
+  });
+}
 
 /** The model's newest year on file, a figure a line: "from 5.5 L/100 km", "NHTSA 5/5". */
 function newestFacts(newest: BestSellerList['models'][number]['newest']): string[] {
@@ -28,6 +46,7 @@ export default function BestSellers({
   headingLevel?: 'h1' | 'h2';
 }) {
   const [data, setData] = useState<BestSellerList | null>(null);
+  const region = useRegionStore((state) => state.region);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -79,33 +98,69 @@ export default function BestSellers({
                   // Named by its rank, name, sales and where it goes, not the whole
                   // card read out: the figures are hidden from that name. Not an
                   // aria-label, which must hold the card's visible text.
-                  className="spotlight group flex h-full flex-col border border-zinc-800 bg-zinc-950 p-4 @2xl:p-3.5 @5xl:p-4 transition-colors hover:border-zinc-600 focus-visible:border-zinc-400"
+                  className="spotlight group flex h-full flex-col border border-zinc-800 bg-zinc-950 transition-colors hover:border-zinc-600 focus-visible:border-zinc-400 overflow-hidden"
                 >
-                  {/* The rank drawn in outline, large: a podium, not a list. */}
-                  <span className="text-5xl font-bold leading-none tabular-nums tracking-[-0.04em] text-transparent [-webkit-text-stroke:1px_rgb(255_255_255/0.3)] group-hover:[-webkit-text-stroke:1px_rgb(255_255_255/0.75)] transition-[-webkit-text-stroke] duration-300">
-                    {model.rank}
-                  </span>
-                  <h3 className="mt-3 text-[15px] font-semibold text-white leading-snug">
-                    {model.sales}
-                  </h3>
-                  <p className="text-[13px] text-zinc-300 tabular-nums">
-                    {model.sold.toLocaleString('en-CA')} sold
-                  </p>
-                  {/* A figure a line: "L/100 km" broke across lines in a narrow card. */}
-                  <dl
-                    aria-hidden
-                    className="mt-3 pt-3 border-t border-zinc-900 text-xs tabular-nums leading-relaxed"
-                  >
-                    <dt className="text-zinc-500">{model.newest.year} model</dt>
-                    {newestFacts(model.newest).map((fact) => (
-                      <dd key={fact} className="text-zinc-300 whitespace-nowrap">
-                        {fact}
-                      </dd>
-                    ))}
-                  </dl>
-                  <span className="mt-auto pt-3 text-[13px] text-zinc-300 group-hover:text-white transition-colors">
-                    Every <span className="sr-only">{model.label}</span> year
-                    <span aria-hidden> →</span>
+                  {/* The car itself across the top, its credit on it (the photos
+                      are CC BY-SA), the rank over the corner: a podium. */}
+                  {carPhotoSources(model.photo).length > 0 ? (
+                    <span className="theme-dark relative block aspect-[16/10] bg-zinc-900 overflow-hidden">
+                      <img
+                        src={carPhotoSources(model.photo).at(-1)}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transition-none"
+                      />
+                      <span
+                        aria-hidden
+                        className="absolute inset-0 bg-linear-to-t from-black/80 via-black/10 to-black/40"
+                      />
+                      <span className="absolute top-2 left-3 text-4xl font-bold leading-none tracking-[-0.04em] text-white/90">
+                        {model.rank}
+                      </span>
+                      <span
+                        aria-hidden
+                        className="absolute bottom-1 right-2 left-2 text-right text-[10px] leading-tight text-zinc-300 line-clamp-1"
+                      >
+                        {t('Photo: {credit}', { credit: model.photo?.credit ?? '' })}
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="px-4 pt-4 text-5xl font-bold leading-none tabular-nums tracking-[-0.04em] text-transparent [-webkit-text-stroke:1px_color-mix(in_oklab,var(--color-white)_30%,transparent)] group-hover:[-webkit-text-stroke:1px_color-mix(in_oklab,var(--color-white)_75%,transparent)] transition-[-webkit-text-stroke] duration-300">
+                      {model.rank}
+                    </span>
+                  )}
+                  <span className="flex flex-1 flex-col p-4 pt-3 @2xl:p-3.5 @5xl:p-4">
+                    <h3 className="text-[15px] font-semibold text-white leading-snug">
+                      {model.sales}
+                    </h3>
+                    <p className="text-[13px] text-zinc-300 tabular-nums">
+                      {model.sold.toLocaleString('en-CA')} sold
+                    </p>
+                    {/* A figure a line: "L/100 km" broke across lines in a narrow card. */}
+                    <dl
+                      aria-hidden
+                      className="mt-3 pt-3 border-t border-zinc-900 text-xs tabular-nums leading-relaxed"
+                    >
+                      <dt className="text-zinc-500">{model.newest.year} model</dt>
+                      {newestFacts(model.newest).map((fact) => (
+                        <dd key={fact} className="text-zinc-300 whitespace-nowrap">
+                          {fact}
+                        </dd>
+                      ))}
+                    </dl>
+                    {fuelCostLine(model.newest.combinedMpg, region) && (
+                      <span aria-hidden className="mt-2 block text-xs text-zinc-400">
+                        {fuelCostLine(model.newest.combinedMpg, region)}
+                      </span>
+                    )}
+                    <span className="mt-auto pt-3 text-[13px] text-zinc-300 group-hover:text-white transition-colors">
+                      Every <span className="sr-only">{model.label}</span> year
+                      <span aria-hidden> →</span>
+                    </span>
                   </span>
                 </Link>
               </li>

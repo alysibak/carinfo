@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, lazy, Suspense, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { apiErrorMessage, decodeVin, type VinDecodeResult } from '../services/api';
 import { searchQueryToParams } from '../utils/searchParams';
@@ -19,9 +19,73 @@ const SAMPLE_VIN = '1HGCM82633A004352'; // 2003 Honda Accord EX-V6
  * scanning one car after another, goes back to any of them. Nothing shows
  * until one has been looked up.
  */
+/** A VIN looked up before: a tap opens it again, a swipe left or the × forgets it. */
+function RecentVinRow({
+  entry,
+  onPick,
+  onRemove,
+}: {
+  entry: { vin: string; title: string | null };
+  onPick: () => void;
+  onRemove: () => void;
+}) {
+  const [shift, setShift] = useState(0);
+  const start = useRef<number | null>(null);
+  const moved = useRef(false);
+  const end = () => {
+    if (shift < -80) onRemove();
+    setShift(0);
+    start.current = null;
+  };
+  return (
+    <li
+      className="flex items-stretch touch-pan-y"
+      style={shift ? { transform: `translateX(${shift}px)` } : undefined}
+      onPointerDown={(e) => {
+        if (e.pointerType === 'mouse') return;
+        start.current = e.clientX;
+        moved.current = false;
+      }}
+      onPointerMove={(e) => {
+        if (start.current == null) return;
+        const dx = Math.min(0, e.clientX - start.current);
+        if (dx < -8) moved.current = true;
+        setShift(dx);
+      }}
+      onPointerUp={end}
+      onPointerCancel={() => {
+        setShift(0);
+        start.current = null;
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => {
+          if (!moved.current) onPick();
+        }}
+        className="flex-1 min-w-0 min-h-11 px-1 py-2.5 text-left hover:bg-zinc-950 active:bg-zinc-900 transition-colors"
+      >
+        <span className="block text-[13px] font-semibold text-white truncate">
+          {entry.title ?? t('Not named by the decoder')}
+        </span>
+        <span className="block font-mono text-xs tracking-wider text-zinc-400">{entry.vin}</span>
+      </button>
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={t('Forget {vin}', { vin: entry.vin })}
+        className="shrink-0 min-w-11 min-h-11 inline-flex items-center justify-center text-zinc-500 hover:text-white active:bg-zinc-900"
+      >
+        <span aria-hidden>×</span>
+      </button>
+    </li>
+  );
+}
+
 function RecentVins({ exclude, onPick }: { exclude?: string; onPick: (vin: string) => void }) {
   const vins = useRecentVinStore((state) => state.vins);
   const clear = useRecentVinStore((state) => state.clear);
+  const remove = useRecentVinStore((state) => state.remove);
   const shown = vins.filter((entry) => entry.vin !== exclude);
   if (shown.length === 0) return null;
   return (
@@ -38,22 +102,14 @@ function RecentVins({ exclude, onPick }: { exclude?: string; onPick: (vin: strin
           {t('Clear')}
         </button>
       </div>
-      <ul className="flex gap-2 overflow-x-auto overscroll-x-contain -mx-4 px-4 pb-1 sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible">
+      <ul className="divide-y divide-zinc-900 border-y border-zinc-900">
         {shown.map((entry) => (
-          <li key={entry.vin} className="shrink-0">
-            <button
-              type="button"
-              onClick={() => onPick(entry.vin)}
-              className="min-h-11 px-3 py-2 text-left border border-zinc-800 bg-zinc-950 hover:border-zinc-500 hover:bg-zinc-900 transition-colors"
-            >
-              <span className="block text-[13px] font-semibold text-white">
-                {entry.title ?? t('Not named by the decoder')}
-              </span>
-              <span className="block font-mono text-xs tracking-wider text-zinc-400">
-                {entry.vin}
-              </span>
-            </button>
-          </li>
+          <RecentVinRow
+            key={entry.vin}
+            entry={entry}
+            onPick={() => onPick(entry.vin)}
+            onRemove={() => remove(entry.vin)}
+          />
         ))}
       </ul>
     </section>

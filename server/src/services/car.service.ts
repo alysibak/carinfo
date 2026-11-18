@@ -1448,7 +1448,10 @@ export function getBestSellers(): BestSellers {
     const overview = getModelOverview(make, model);
     if (!overview) return [];
     const { rank, sales, sold, label, path } = entry;
-    return [{ rank, sales, sold, label, path, newest: overview.years[0] }];
+    const photo = overview.lead?.photo;
+    return [
+      { rank, sales, sold, label, path, newest: overview.years[0], ...(photo ? { photo } : {}) },
+    ];
   });
   const value: BestSellers = {
     year: CANADA_BEST_SELLERS.year,

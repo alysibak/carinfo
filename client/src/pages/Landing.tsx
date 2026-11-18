@@ -20,6 +20,7 @@ import MobileTabBar from '../components/MobileTabBar';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { useCarStore } from '../stores/carStore';
 import { msg, t } from '../i18n';
+import { useLastSearchStore } from '../stores/lastSearchStore';
 
 const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/i;
 
@@ -54,6 +55,8 @@ const START_POINTS = [
 ];
 
 export default function Landing() {
+  const lastSearch = useLastSearchStore((state) => state.search);
+  const lastSearchLabel = useLastSearchStore((state) => state.label);
   usePageMeta(
     t('Compare cars with facts you can check'),
     t(
@@ -145,6 +148,14 @@ export default function Landing() {
                 />
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
                   <span className="text-zinc-400">{t('A 17-character VIN works too.')}</span>
+                  {lastSearch && lastSearchLabel && (
+                    <Link
+                      to={`/home${lastSearch}`}
+                      className="text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-600 min-h-[44px] inline-flex items-center"
+                    >
+                      {t('Your last search: {label}', { label: lastSearchLabel })}
+                    </Link>
+                  )}
                   <Link
                     to="/browse"
                     className="text-white font-medium underline underline-offset-4 decoration-zinc-500 hover:decoration-white min-h-[44px] inline-flex items-center"

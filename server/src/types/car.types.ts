@@ -697,6 +697,8 @@ export interface BestSeller {
   label: string;
   path: string;
   newest: ModelYearSummary;
+  /** The newest year's base configuration's photo, where Commons has one. */
+  photo?: CarPhoto;
 }
 
 export interface BestSellers {

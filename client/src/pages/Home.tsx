@@ -33,6 +33,75 @@ import { matchReasons } from '../utils/matchReasons';
 import { useResultsView } from '../hooks/useResultsView';
 import { t, tp } from '../i18n';
 import { fmtNumber } from '../i18n/format';
+import { getSearchSuggestions, type SearchSuggestion } from '../services/api';
+import { useLastSearchStore } from '../stores/lastSearchStore';
+
+/** The order a sort is in, said as what comes first: "Thriftiest first". */
+function sortOrderWords(field: string, order: 'asc' | 'desc', ev: boolean): string {
+  const high = order === 'desc';
+  switch (field) {
+    case 'fuelEconomy':
+      // Sorted on EPA's MPG (MPGe for an EV): highest first is the thriftiest.
+      return ev
+        ? high
+          ? t('Most efficient first')
+          : t('Least efficient first')
+        : high
+          ? t('Thriftiest first')
+          : t('Thirstiest first');
+    case 'range':
+      return high ? t('Longest range first') : t('Shortest range first');
+    case 'safety':
+      return high ? t('Best rated first') : t('Lowest rated first');
+    case 'luggage':
+      return high ? t('Most space first') : t('Least space first');
+    case 'weight':
+      return high ? t('Heaviest first') : t('Lightest first');
+    case 'horsepower':
+      return high ? t('Most powerful first') : t('Least powerful first');
+    case 'year':
+      return high ? t('Newest first') : t('Oldest first');
+    case 'make':
+    case 'model':
+      return high ? t('Z to A') : t('A to Z');
+    case 'price':
+      return high ? t('Dearest first') : t('Cheapest first');
+    case 'runningCost':
+      return high ? t('Costliest to run first') : t('Cheapest to run first');
+    default:
+      return high ? t('High to low') : t('Low to high');
+  }
+}
+
+/** For a search that found nothing: the closest names on file, a tap each. */
+function DidYouMean({ query }: { query: string }) {
+  const [options, setOptions] = useState<SearchSuggestion[]>([]);
+  useEffect(() => {
+    const controller = new AbortController();
+    getSearchSuggestions(query, 4, { signal: controller.signal })
+      .then((found) => setOptions(found))
+      .catch(() => setOptions([]));
+    return () => controller.abort();
+  }, [query]);
+  const shown = options
+    .filter((option) => option.query.trim().toLowerCase() !== query.toLowerCase())
+    .slice(0, 3);
+  if (!shown.length) return null;
+  return (
+    <div className="mb-5">
+      <p className="text-sm text-zinc-300 mb-2">{t('Did you mean:')}</p>
+      <ul className="flex flex-wrap gap-2">
+        {shown.map((option) => (
+          <li key={option.id}>
+            <Link to={`/home?q=${encodeURIComponent(option.query)}`} className="chip">
+              {option.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/i;
 
@@ -297,6 +366,16 @@ export default function Home() {
   const activeFilterCount = countActiveFilterFields(searchQuery.filters);
   // An empty result names what narrowed it: "with Diesel and SUV".
   const filtersOn = activeFilterChips.length > 0;
+  const rememberSearch = useLastSearchStore((state) => state.remember);
+  // A search that found cars, kept so the home page can offer it back.
+  useEffect(() => {
+    if (!searchResults || searchResults.total === 0) return;
+    const label = [searchText.trim(), ...activeFilterChips.map((chip) => chip.label)]
+      .filter(Boolean)
+      .join(' · ');
+    if (label) rememberSearch(window.location.search, label);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per result set
+  }, [searchResults]);
   const filterNames =
     activeFilterChips.length === 1
       ? activeFilterChips[0].label
@@ -669,13 +748,17 @@ export default function Home() {
                           <button
                             type="button"
                             onClick={() => handleSortChange(sortField)}
-                            className="min-h-[42px] min-w-[42px] px-2 text-zinc-400 hover:text-white transition-colors shrink-0"
+                            className="min-h-[42px] min-w-[42px] px-2 text-sm whitespace-nowrap text-zinc-400 hover:text-white transition-colors shrink-0"
                             title={t('Sort {direction}', {
                               direction: sortOrder === 'asc' ? t('descending') : t('ascending'),
                             })}
-                            aria-label={t('Toggle sort direction')}
                           >
-                            {sortOrder === 'asc' ? '↑' : '↓'}
+                            {sortOrderWords(
+                              sortField,
+                              sortOrder === 'asc' ? 'asc' : 'desc',
+                              isEvBrowse,
+                            )}
+                            <span aria-hidden> {sortOrder === 'asc' ? '↑' : '↓'}</span>
                           </button>
                         )}
                         <div
@@ -820,6 +903,9 @@ export default function Home() {
                               'Try a different spelling, or the make and model, like “Toyota RAV4”.',
                             )}
                     </p>
+                    {!filtersOn && !yearCoverage && searchText.trim() && (
+                      <DidYouMean query={searchText.trim()} />
+                    )}
                     {filtersOn && !yearCoverage && searchText.trim() && (
                       <button
                         type="button"

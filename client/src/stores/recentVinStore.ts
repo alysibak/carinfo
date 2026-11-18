@@ -16,6 +16,7 @@ interface RecentVinStore {
   vins: RecentVin[];
   /** Puts the VIN first, once. */
   record: (entry: RecentVin) => void;
+  remove: (vin: string) => void;
   clear: () => void;
 }
 
@@ -32,6 +33,7 @@ export const useRecentVinStore = create<RecentVinStore>()(
         set((state) => ({
           vins: [entry, ...state.vins.filter((v) => v.vin !== entry.vin)].slice(0, MAX_RECENT_VINS),
         })),
+      remove: (vin) => set((state) => ({ vins: state.vins.filter((v) => v.vin !== vin) })),
       clear: () => set({ vins: [] }),
     }),
     { name: 'carinfo-recent-vins', version: 1 },

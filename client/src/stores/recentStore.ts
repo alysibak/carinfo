@@ -15,6 +15,8 @@ export interface RecentCar {
   title: string;
   /** What sets the version apart: "Sedan · CVT · FWD". */
   detail: string | null;
+  /** Its photo's small size, where Commons has one; the car's page credits it. */
+  photo?: string;
 }
 
 /** The newest few; older ones drop off. */
@@ -63,5 +65,11 @@ export function recentEntry(car: CarSpecs): RecentCar {
       seen.add(key);
       return true;
     });
-  return { id: car.id, title: displayVehicleTitle(car), detail: parts.join(' · ') || null };
+  const photo = car.photo?.src;
+  return {
+    id: car.id,
+    title: displayVehicleTitle(car),
+    detail: parts.join(' · ') || null,
+    ...(photo ? { photo } : {}),
+  };
 }
