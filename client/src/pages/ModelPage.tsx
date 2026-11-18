@@ -1,11 +1,12 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import * as api from '../services/api';
 import { isHttpError } from '../services/http';
 import type { ModelOverview, ModelYearSummary } from '../types/car.types';
 import { BackLink, Chevron, ErrorState, foldSummaryClass } from '../components/ui';
 import ModelPageSkeleton from '../components/ModelPageSkeleton';
 import ModelYearChart from '../components/ModelYearChart';
+import PinnedCarBar from '../components/PinnedCarBar';
 import PageShell, { PageBody } from '../components/PageShell';
 import CarPhotoFigure from '../components/CarPhotoFigure';
 import PhotoGlow from '../components/PhotoGlow';
@@ -208,6 +209,19 @@ export default function ModelPage() {
   const [overview, setOverview] = useState<ModelOverview | null>(null);
   const [status, setStatus] = useState<Status>('loading');
   const [attempt, setAttempt] = useState(0);
+  // The model's name and its newest year pinned once the head scrolls away.
+  const headFacts = useRef<HTMLParagraphElement>(null);
+  const [pinned, setPinned] = useState(false);
+  useEffect(() => {
+    const el = headFacts.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setPinned(!entry.isIntersecting && entry.boundingClientRect.top < 0),
+      { threshold: 0 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [overview]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -451,7 +465,7 @@ export default function ModelPage() {
                   {newest.year} {name}
                 </Link>
               </p>
-              <p className="text-sm text-zinc-400 mt-1 tabular-nums">
+              <p ref={headFacts} className="text-sm text-zinc-400 mt-1 tabular-nums">
                 <Facts facts={modelYearFacts(newest).slice(0, 4)} />
               </p>
               {records}
@@ -537,6 +551,20 @@ export default function ModelPage() {
           )}
         </p>
       </PageBody>
+      {pinned && (
+        <PinnedCarBar
+          title={name!}
+          figures={modelYearFacts(newest).slice(0, 2).join(' · ') || null}
+          shareUrl={`${window.location.origin}${overview.path}`}
+          action={{
+            label: t('See the {year}', { year: newest.year }),
+            to:
+              newest.configurations >= 2
+                ? `${overview.path}/${newest.year}`
+                : `/car/${newest.carId}`,
+          }}
+        />
+      )}
     </PageShell>
   );
 }

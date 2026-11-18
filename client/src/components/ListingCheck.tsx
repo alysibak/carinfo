@@ -99,7 +99,10 @@ export default function ListingCheck({
     : null;
 
   return (
-    <div className="mt-6 border border-zinc-800 bg-zinc-950 px-5 py-4">
+    <div
+      id="check-listing"
+      className="mt-6 border border-zinc-800 bg-zinc-950 px-5 py-4 scroll-mt-24"
+    >
       <p className="text-sm font-semibold text-white">{t('Check a listing')}</p>
       <p className="mt-1 text-sm text-zinc-400 leading-relaxed">
         {value

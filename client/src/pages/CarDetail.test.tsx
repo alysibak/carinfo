@@ -9,6 +9,7 @@ vi.mock('../services/api', () => ({
   getCarDashboard: vi.fn(),
   getSimilarCars: vi.fn(async () => []),
   getSiblingConfigs: vi.fn(async () => []),
+  searchCars: vi.fn(async () => ({ results: [], total: 0, hasMore: false })),
 }));
 
 vi.mock('../hooks/useAccountStatus', () => ({

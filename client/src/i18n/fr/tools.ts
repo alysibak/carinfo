@@ -1,5 +1,7 @@
 /** Compare, the garage and a shared garage, model and model-year pages, the VIN decoder and the value chart. English text to French (fr-CA). */
 const fr: Record<string, string> = {
+  'See the {year}': 'Voir le {year}',
+  'Or type it:': 'Ou tapez-le :',
   'At a glance': 'En un coup d’œil',
   'Recalls on file: {count}': 'Rappels au dossier : {count}',
   'Est. value {low} to {high}': 'Valeur estimée de {low} à {high}',

@@ -111,11 +111,15 @@ export default function KeyFigures({
   if (figures.length === 0) return null;
   const cls = dashboard.classComparison;
   const lgCols =
-    figures.length >= 4
-      ? 'lg:grid-cols-4'
-      : figures.length === 3
-        ? 'lg:grid-cols-3'
-        : 'lg:grid-cols-2';
+    figures.length >= 6
+      ? 'lg:grid-cols-3'
+      : figures.length === 5
+        ? 'lg:grid-cols-5'
+        : figures.length === 4
+          ? 'lg:grid-cols-4'
+          : figures.length === 3
+            ? 'lg:grid-cols-3'
+            : 'lg:grid-cols-2';
 
   return (
     <div>

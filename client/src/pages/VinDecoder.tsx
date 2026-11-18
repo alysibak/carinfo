@@ -283,6 +283,16 @@ export default function VinDecoder() {
           )}
         </p>
 
+        {/* On a phone the camera comes first: the VIN is on the car in front of you. */}
+        <button
+          type="button"
+          onClick={() => setScanning(true)}
+          className="sm:hidden btn-primary w-full mb-2"
+        >
+          {t('Scan the VIN with the camera')}
+        </button>
+        <p className="sm:hidden text-xs text-zinc-400 mb-2">{t('Or type it:')}</p>
+
         {/* The input drops its own outline, so the frame shows where focus is. */}
         <div className="flex flex-col sm:flex-row border border-zinc-700 focus-within:border-zinc-300 transition-colors rounded-none max-w-2xl min-w-0">
           {/* Large and spaced: a VIN is checked a character at a time against the car. */}
@@ -303,7 +313,7 @@ export default function VinDecoder() {
               type="button"
               onClick={() => setScanning(true)}
               aria-label={t('Scan the VIN with the camera')}
-              className="h-12 sm:h-14 px-4 flex items-center gap-2 bg-zinc-950 text-[15px] font-semibold text-zinc-200 hover:text-white hover:bg-zinc-900 rounded-none transition-colors"
+              className="hidden sm:flex h-12 sm:h-14 px-4 items-center gap-2 bg-zinc-950 text-[15px] font-semibold text-zinc-200 hover:text-white hover:bg-zinc-900 rounded-none transition-colors"
             >
               <svg
                 className="w-6 h-6"
@@ -412,11 +422,19 @@ export default function VinDecoder() {
                     </p>
                   )}
                   <p className="font-mono text-xs text-zinc-400 mt-2">{result.vin}</p>
-                  <div className="mt-3">
+                  <div className="mt-3 flex flex-wrap gap-2">
                     <ShareResult
                       vin={result.vin}
                       title={`${result.year} ${result.make} ${result.model}`}
                     />
+                    {/* A misread is one tap from a second try. */}
+                    <button
+                      type="button"
+                      onClick={() => setScanning(true)}
+                      className="btn-secondary text-sm"
+                    >
+                      {t('Scan again')}
+                    </button>
                   </div>
                 </div>
 

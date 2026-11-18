@@ -1,4 +1,4 @@
-import { Link, useLocation, useParams, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import * as api from '../services/api';
 import { isHttpError } from '../services/http';
@@ -48,6 +48,7 @@ import { recentEntry, useRecentStore } from '../stores/recentStore';
 import { dashboardKey, takePrefetched } from '../utils/prefetch';
 import { msg, t } from '../i18n';
 import Breadcrumbs from '../components/Breadcrumbs';
+import NearPrice from '../components/NearPrice';
 import { fmtNumber } from '../i18n/format';
 
 function Subheading({ children }: { children: React.ReactNode }) {
@@ -208,6 +209,10 @@ export default function CarDetail() {
   const [showTCO, setShowTCO] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [pinned, setPinned] = useState(false);
+  const [vinParams] = useSearchParams();
+  const fromVin = /^[A-HJ-NPR-Z0-9]{11,17}$/i.test(vinParams.get('vin') ?? '')
+    ? vinParams.get('vin')!.toUpperCase()
+    : null;
   const statsRef = useRef<HTMLDivElement>(null);
   const { addOrReplaceOldestInComparison, comparedCars } = useCarStore();
   const addToGarage = useGarageStore((s) => s.add);
@@ -568,6 +573,14 @@ export default function CarDetail() {
           >
             <span aria-hidden>←</span> {t('Back')}
           </button>
+          {fromVin && (
+            <p className="mb-2 text-xs text-zinc-300 leading-relaxed max-w-2xl border-l-2 border-accent/60 pl-3">
+              {t(
+                'Matched from VIN {vin}. Check the badge and the window sticker against this version; the VIN does not always say which trim it is.',
+                { vin: fromVin },
+              )}
+            </p>
+          )}
           {dashboard.modelPage && (
             <Breadcrumbs
               className="mb-1"
@@ -669,7 +682,12 @@ export default function CarDetail() {
           figures={
             keyFigures
               .filter(
-                (figure) => !figure.missing && figure.id !== 'engine' && figure.id !== 'fuelCost',
+                (figure) =>
+                  !figure.missing &&
+                  figure.id !== 'engine' &&
+                  figure.id !== 'fuelCost' &&
+                  figure.id !== 'seats' &&
+                  figure.id !== 'towing',
               )
               .map((figure) =>
                 figure.id === 'safety'
@@ -681,6 +699,8 @@ export default function CarDetail() {
           inCompare={isInCompare}
           onCompare={handleAddToComparison}
           onGarage={handleAddToGarage}
+          shareUrl={`${window.location.origin}/car/${encodeURIComponent(car.id)}`}
+          checklistPath={`/car/${encodeURIComponent(car.id)}/checklist`}
         />
       )}
 
@@ -982,6 +1002,7 @@ export default function CarDetail() {
       <DataTrustPanel dashboard={dashboard} />
 
       <SimilarCars car={car} />
+      <NearPrice car={car} />
 
       <div className="page-wrap-wide">
         <RecentlyViewed exclude={car.id} className="section-y-tight border-t border-zinc-900" />

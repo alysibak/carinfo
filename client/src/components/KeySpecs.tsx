@@ -26,6 +26,8 @@ interface SpecRow {
 }
 
 interface SpecGroup {
+  /** Stable for links: "fuel" for #specs-fuel. */
+  id?: string;
   title: string;
   rows: SpecRow[];
 }
@@ -469,14 +471,14 @@ function buildSpecGroups(dashboard: CarDashboard): SpecGroup[] {
   }
 
   return [
-    { title: t('Powertrain'), rows: powertrain },
-    { title: t('Vehicle'), rows: vehicle },
-    { title: t('Size and space'), rows: space },
-    { title: t('Market'), rows: market },
-    { title: t('Fuel economy'), rows: fuel },
-    { title: t('Crash safety'), rows: safety },
-    { title: t('Performance'), rows: performance },
-    { title: t('Emissions'), rows: environment },
+    { id: 'powertrain', title: t('Powertrain'), rows: powertrain },
+    { id: 'vehicle', title: t('Vehicle'), rows: vehicle },
+    { id: 'space', title: t('Size and space'), rows: space },
+    { id: 'market', title: t('Market'), rows: market },
+    { id: 'fuel', title: t('Fuel economy'), rows: fuel },
+    { id: 'safety', title: t('Crash safety'), rows: safety },
+    { id: 'performance', title: t('Performance'), rows: performance },
+    { id: 'emissions', title: t('Emissions'), rows: environment },
   ].filter((g) => g.rows.length > 0);
 }
 
@@ -488,7 +490,7 @@ const INLINE_VALUE_MAX_CHARS = 24;
 
 function SpecGroupBlock({ group }: { group: SpecGroup }) {
   return (
-    <div className="min-w-0">
+    <div id={group.id ? `specs-${group.id}` : undefined} className="min-w-0 scroll-mt-32">
       <p className={`${TIER3_LABEL} mb-2`}>{group.title}</p>
       <div className="flex flex-col border-t border-zinc-800">
         {group.rows.map((spec) => {
@@ -547,12 +549,15 @@ export default function KeySpecs({
 
   if (groups.length === 0) return null;
   const rowCount = groups.reduce((sum, group) => sum + group.rows.length, 0);
+  const opensOnHash =
+    typeof window !== 'undefined' && /^#specs(-[a-z]+)?$/.test(window.location.hash);
 
   return (
     <section id="specs" className="border-t border-zinc-900 scroll-mt-32">
       <div className="page-wrap-wide section-y-tight">
         {/* Folded: the figures above are the ones most people need. */}
-        <details className="group/specs">
+        {/* Open where a link points into it: "#specs-fuel" lands on that group. */}
+        <details className="group/specs" open={opensOnHash || undefined}>
           <summary className={`${foldSummaryClass} gap-4`}>
             <span className="min-w-0">
               <h2 className="block-title">{heading}</h2>

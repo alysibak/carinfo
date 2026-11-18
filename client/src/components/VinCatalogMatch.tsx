@@ -60,7 +60,7 @@ export default function VinCatalogMatch({ decoded }: { decoded: VinDecodeResult 
   }
 
   const one = cars.length === 1;
-  const carPath = `/car/${encodeURIComponent(lead.id)}`;
+  const carPath = `/car/${encodeURIComponent(lead.id)}?vin=${encodeURIComponent(decoded.vin)}`;
   const modelPage = dashboard?.modelPage;
   const name = `${lead.year} ${modelPage?.label ?? `${lead.make} ${lead.model}`}`;
   // With several versions, only what holds for all of them: the model year's
@@ -80,26 +80,45 @@ export default function VinCatalogMatch({ decoded }: { decoded: VinDecodeResult 
         // The answer first, in three facts: what is open against it, what it
         // is worth here, what it costs to run. The detail follows.
         <ul className="mb-4 flex flex-wrap gap-2" aria-label={t('At a glance')}>
-          <li
-            className={`${chip} ${
-              recallCount > 0
-                ? 'border-amber-500/40 bg-amber-500/10 text-amber-200'
-                : 'border-zinc-800 bg-zinc-950 text-zinc-300'
-            }`}
-          >
-            {t('Recalls on file: {count}', { count: recallCount })}
+          <li>
+            <Link
+              to={`${carPath}#recalls`}
+              className={`${chip} inline-flex items-center hover:border-zinc-500 ${
+                recallCount > 0
+                  ? 'border-amber-500/40 bg-amber-500/10 text-amber-200'
+                  : 'border-zinc-800 bg-zinc-950 text-zinc-300'
+              }`}
+            >
+              {t('Recalls on file: {count}', { count: recallCount })}
+            </Link>
           </li>
           {value && (
-            <li className={`${chip} border-zinc-800 bg-zinc-950 text-zinc-300`}>
-              {t('Est. value {low} to {high}', {
-                low: formatCurrency(value.low),
-                high: formatCurrency(value.high),
-              })}
+            <li>
+              <a
+                href="#check-listing"
+                onClick={(e) => {
+                  e.preventDefault();
+                  const box = document.getElementById('check-listing');
+                  box?.scrollIntoView({ block: 'center' });
+                  box?.querySelector('input')?.focus({ preventScroll: true });
+                }}
+                className={`${chip} inline-flex items-center border-zinc-800 bg-zinc-950 text-zinc-300 hover:border-zinc-500`}
+              >
+                {t('Est. value {low} to {high}', {
+                  low: formatCurrency(value.low),
+                  high: formatCurrency(value.high),
+                })}
+              </a>
             </li>
           )}
           {running != null && running > 0 && (
-            <li className={`${chip} border-zinc-800 bg-zinc-950 text-zinc-300`}>
-              {t('About {amount} a year to run', { amount: formatCurrency(running) })}
+            <li>
+              <Link
+                to={`${carPath}#costs`}
+                className={`${chip} inline-flex items-center border-zinc-800 bg-zinc-950 text-zinc-300 hover:border-zinc-500`}
+              >
+                {t('About {amount} a year to run', { amount: formatCurrency(running) })}
+              </Link>
             </li>
           )}
         </ul>

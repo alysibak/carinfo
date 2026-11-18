@@ -9,7 +9,7 @@ import { t } from '../i18n';
 export type Tone = 'better' | 'worse' | 'neutral';
 
 export interface KeyFigure {
-  id: 'fuel' | 'range' | 'energy' | 'fuelCost' | 'safety' | 'power' | 'engine';
+  id: 'fuel' | 'range' | 'energy' | 'fuelCost' | 'safety' | 'power' | 'seats' | 'towing' | 'engine';
   label: string;
   /** The figure, large: "7.6", "5", "200", "1.5L I4 Turbo". */
   value: string;
@@ -230,6 +230,30 @@ export function buildKeyFigures(
     });
   }
 
+  // What a family asks next: how many it seats, what it tows. The maker's figures.
+  if (hasNumericValue(car.seats)) {
+    figures.push({
+      id: 'seats',
+      label: t('Seats'),
+      value:
+        car.seatsMax != null && car.seatsMax !== car.seats
+          ? `${car.seats}–${car.seatsMax}`
+          : String(car.seats),
+      detail: t('From the maker'),
+      source: car.provenance?.seats ?? 'curated',
+    });
+  }
+  if (hasNumericValue(car.towingCapacityLb)) {
+    figures.push({
+      id: 'towing',
+      label: t('Tows up to'),
+      value: car.towingCapacityLb!.toLocaleString('en-CA'),
+      unit: t('lb'),
+      detail: t('Properly equipped, from the maker'),
+      source: car.provenance?.towingCapacityLb ?? 'curated',
+    });
+  }
+
   if (fuelCost) {
     figures.push({
       id: 'fuelCost',
@@ -257,8 +281,8 @@ export function buildKeyFigures(
   // What it uses, what that costs a year, how it crashed, its power: an EV's
   // energy use per 100 km and a car's engine where there is room.
   const order: KeyFigure['id'][] = fuelCost
-    ? ['range', 'fuel', 'fuelCost', 'safety', 'power', 'energy', 'engine']
-    : ['range', 'energy', 'fuel', 'safety', 'power', 'engine'];
+    ? ['range', 'fuel', 'fuelCost', 'safety', 'power', 'seats', 'towing', 'energy', 'engine']
+    : ['range', 'energy', 'fuel', 'safety', 'power', 'seats', 'towing', 'engine'];
   return figures
     .filter((figure) => order.includes(figure.id))
     .sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))

@@ -1,5 +1,16 @@
 /** A car's page and its sections, and the before-you-buy checklist. English text to French (fr-CA). */
 const fr: Record<string, string> = {
+  Share: 'Partager',
+  'From the maker': 'Selon le constructeur',
+  'Tows up to': 'Remorque jusqu’à',
+  lb: 'lb',
+  'Properly equipped, from the maker': 'Bien équipé, selon le constructeur',
+  'Matched from VIN {vin}. Check the badge and the window sticker against this version; the VIN does not always say which trim it is.':
+    'Associé au NIV {vin}. Comparez l’écusson et l’étiquette de la vitre à cette version; le NIV ne dit pas toujours de quelle version il s’agit.',
+  'Near this price': 'Près de ce prix',
+  'Other {body} from {from} to {to} within a tenth of this one’s estimated price.':
+    'Autres {body} de {from} à {to}, à un dixième près du prix estimé de celui-ci.',
+  cars: 'véhicules',
   'Gas-mode fuel use': 'Consommation en mode essence',
   ' ({count} more are for {powertrains} alone)':
     ' ({count} de plus concernent seulement {powertrains})',

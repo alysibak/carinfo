@@ -91,7 +91,7 @@ describe('VinDecoder', () => {
     expect(screen.getByRole('heading', { name: 'This car on CarInfo' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open this car’s page' })).toHaveAttribute(
       'href',
-      '/car/accord-30-auto',
+      '/car/accord-30-auto?vin=1HGCM82633A004352',
     );
   });
 
