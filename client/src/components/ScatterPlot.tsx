@@ -37,7 +37,7 @@ interface ScatterPlotProps<P extends ScatterPoint> {
 const PAD = { top: 12, right: 16, bottom: 50, left: 72 };
 
 /** The width of the element, kept up to date as it resizes. */
-function useWidth<T extends HTMLElement>(): [React.RefObject<T>, number] {
+function useWidth<T extends HTMLElement>(): [React.RefObject<T | null>, number] {
   const ref = useRef<T>(null);
   const [width, setWidth] = useState(0);
   useEffect(() => {

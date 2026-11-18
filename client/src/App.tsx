@@ -1,9 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
-import Landing from './pages/Landing';
 import Layout from './components/Layout';
 import ScrollToTop from './components/ScrollToTop';
-import { LoadingScreen } from './components/ui';
+import { LoadingScreen } from './components/LoadingScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 import AuthProvider from './components/AuthProvider';
 import { useRecordVisit } from './hooks/useRecordVisit';
@@ -15,6 +14,10 @@ const CarDetail = lazy(() => import('./pages/CarDetail'));
 const CarChecklist = lazy(() => import('./pages/CarChecklist'));
 const ModelPage = lazy(() => import('./pages/ModelPage'));
 const ModelYearPage = lazy(() => import('./pages/ModelYearPage'));
+// Its own chunk like every page: a visit that starts on a car page from a
+// search does not download the landing page first. A visit to / asks for it
+// as the app starts.
+const Landing = lazy(() => import('./pages/Landing'));
 const Home = lazy(() => import('./pages/Home'));
 const Compare = lazy(() => import('./pages/Compare'));
 const Collection = lazy(() => import('./pages/Collection'));

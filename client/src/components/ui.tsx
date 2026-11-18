@@ -54,33 +54,9 @@ export function BackLink({ to, label = 'Back' }: { to: string; label?: string })
   );
 }
 
-/**
- * Waiting on data, said once and quietly: what is loading, over the same
- * sliver of the accent that crosses under the header while a page's code
- * loads, the site's one sign of waiting.
- */
-export function LoadingScreen({ label = 'Loading' }: { label?: string }) {
-  // The page's shape while it loads, so nothing jumps when it arrives.
-  return (
-    <div className="min-h-[40vh] bg-black page-wrap section-y" role="status" aria-live="polite">
-      <span className="sr-only">{label}</span>
-      <div aria-hidden className="animate-pulse motion-reduce:animate-none">
-        <div className="h-3 w-24 bg-zinc-900" />
-        <div className="mt-4 h-9 w-2/3 max-w-md bg-zinc-900" />
-        <div className="mt-4 space-y-2 max-w-2xl">
-          <div className="h-3 w-full bg-zinc-900" />
-          <div className="h-3 w-11/12 bg-zinc-900" />
-          <div className="h-3 w-3/5 bg-zinc-900" />
-        </div>
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="h-28 border border-zinc-900 bg-zinc-950" />
-          <div className="hidden sm:block h-28 border border-zinc-900 bg-zinc-950" />
-          <div className="hidden sm:block h-28 border border-zinc-900 bg-zinc-950" />
-        </div>
-      </div>
-    </div>
-  );
-}
+// Its own module, so the app's first load, which shows it while a page's code
+// arrives, does not carry everything else here.
+export { LoadingScreen } from './LoadingScreen';
 
 /**
  * A page that could not be shown, with a way on that says where it goes: a

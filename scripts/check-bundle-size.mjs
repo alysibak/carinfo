@@ -19,11 +19,12 @@ const DIST = resolve(process.cwd(), 'client', 'dist');
 const ASSETS = join(DIST, 'assets');
 
 const budgetArg = process.argv.find((a) => a.startsWith('--budget-kb='));
-// The entry chunk is ~95 KB gzip with crash reporting and the English/French
-// switch (the French dictionary itself loads only for French readers); it was
-// ~103 KB before axios gave way to fetch. The budget leaves headroom for
-// normal growth while still catching a whole SDK or HTTP library landing on
-// the critical path.
+// The entry chunk is ~98 KB gzip on React 19, whose react-dom is ~23 KB
+// larger than 18's; the landing page, footer, compare tray and regional
+// figures left the entry to make room. It holds crash reporting and the
+// English/French switch (the French dictionary itself loads only for French
+// readers). The budget leaves headroom for normal growth while still
+// catching a whole SDK or HTTP library landing on the critical path.
 const BUDGET_KB = budgetArg ? Number(budgetArg.split('=')[1]) : 100;
 
 function gzipKb(path) {

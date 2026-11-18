@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-import { getRegionalAssumptions, type RegionId } from '@carinfo/config/regional-assumptions';
+import type { RegionId } from '@carinfo/config/regional-assumptions';
+import { REGION_NAMES } from '@carinfo/config/regions';
 import { msg } from '../i18n';
 
 /** Same union the API accepts; defined once in server/src/config. */
@@ -27,7 +28,7 @@ export const REGION_OPTIONS: { id: ClientRegionId; label: string }[] = [
 
 /** The chosen region's full name ("British Columbia"), for prose. */
 export function regionName(region: ClientRegionId): string {
-  return getRegionalAssumptions(region).label;
+  return REGION_NAMES[region] ?? REGION_NAMES.ontario;
 }
 
 export const useRegionStore = create<RegionStore>()(

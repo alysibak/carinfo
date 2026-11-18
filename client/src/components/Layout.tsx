@@ -1,12 +1,17 @@
-import { Suspense } from 'react';
+import { Suspense, lazy } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import SiteHeader from './SiteHeader';
-import CompareTray from './CompareTray';
 import MobileTabBar from './MobileTabBar';
-import SiteFooter from './SiteFooter';
+import ErrorBoundary from './ErrorBoundary';
 import { useCarStore } from '../stores/carStore';
 import { useOnline } from '../hooks/useOnline';
 import { t } from '../i18n';
+
+// Not on the first load: the footer starts below the fold (main is a screen
+// tall), and the tray shows only once a car is being compared. Neither moves
+// anything on screen as it arrives.
+const SiteFooter = lazy(() => import('./SiteFooter'));
+const CompareTray = lazy(() => import('./CompareTray'));
 
 export default function Layout() {
   const location = useLocation();
@@ -48,9 +53,19 @@ export default function Layout() {
         </Suspense>
       </main>
 
-      <SiteFooter />
-
-      <CompareTray />
+      {/* Each on its own: the tray's code arriving never blanks the footer. */}
+      <ErrorBoundary fallback={null}>
+        <Suspense fallback={null}>
+          <SiteFooter />
+        </Suspense>
+      </ErrorBoundary>
+      {compareCount > 0 && (
+        <ErrorBoundary fallback={null}>
+          <Suspense fallback={null}>
+            <CompareTray />
+          </Suspense>
+        </ErrorBoundary>
+      )}
       <MobileTabBar />
     </div>
   );

@@ -5,7 +5,7 @@ import Privacy from './Privacy';
 import Terms from './Terms';
 import { legalDate } from '../utils/legal';
 
-function renderPage(page: JSX.Element) {
+function renderPage(page: React.JSX.Element) {
   return render(<MemoryRouter>{page}</MemoryRouter>);
 }
 
