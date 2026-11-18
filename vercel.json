@@ -57,6 +57,10 @@
     {
       "path": "/api/cron/recall-alerts",
       "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/cron/crash-digest",
+      "schedule": "20 13 * * *"
     }
   ],
   "headers": [

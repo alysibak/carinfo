@@ -105,3 +105,20 @@ CREATE TABLE IF NOT EXISTS site_stats (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 INSERT INTO site_stats (id, visits) VALUES (1, 0) ON CONFLICT (id) DO NOTHING;
+
+-- Browser crash reports (services/client-errors.service.ts): one row per kind
+-- of crash, counted, with the page and browser it last happened on; reported
+-- is the count the last daily digest covered. No IP address, no account. A
+-- kind unseen for four weeks is deleted.
+CREATE TABLE IF NOT EXISTS client_errors (
+  fingerprint TEXT PRIMARY KEY,
+  source TEXT NOT NULL,
+  message TEXT NOT NULL,
+  path TEXT NOT NULL,
+  stack TEXT,
+  user_agent TEXT,
+  count INTEGER NOT NULL DEFAULT 1,
+  reported INTEGER NOT NULL DEFAULT 0,
+  first_seen TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_seen TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

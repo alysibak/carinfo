@@ -1,6 +1,12 @@
 import request from 'supertest';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import app from '../app.js';
+import { recordClientError } from '../services/client-errors.service.js';
+
+vi.mock('../services/client-errors.service.js', () => ({
+  recordClientError: vi.fn(async () => {}),
+  runCrashDigest: vi.fn(),
+}));
 import { parseClientError } from './client-error.js';
 
 const report = {
@@ -50,6 +56,20 @@ describe('POST /api/client-errors', () => {
     expect(line).toBeDefined();
     expect(JSON.parse(line!)).toMatchObject({ level: 'error', path: report.path });
     expect(line).not.toContain('203.0.113.9');
+  });
+
+  it('counts the report for the daily digest, and answers even when that fails', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(recordClientError).mockClear();
+    vi.mocked(recordClientError).mockRejectedValueOnce(new Error('database down'));
+    const res = await request(app)
+      .post('/api/client-errors')
+      .set('Content-Type', 'text/plain')
+      .send(JSON.stringify(report));
+    expect(res.status).toBe(204);
+    expect(recordClientError).toHaveBeenCalledWith(
+      expect.objectContaining({ source: 'boundary', path: report.path, message: report.message }),
+    );
   });
 
   it('rejects a malformed report', async () => {

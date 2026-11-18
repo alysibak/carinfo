@@ -4,6 +4,7 @@ import { isAccountsStorageReady, setRecallAlerts } from '../db/user-store.js';
 import { noStore } from '../middleware/cache.js';
 import { writeLimiter } from '../middleware/security.js';
 import { runRecallAlerts } from '../services/recall-alerts.service.js';
+import { runCrashDigest } from '../services/client-errors.service.js';
 import { verifyUnsubscribeToken } from '../utils/unsubscribe-token.js';
 
 /**
@@ -40,21 +41,26 @@ function bearerMatches(header: string | undefined, secret: string): boolean {
 }
 
 /**
- * Vercel Cron's daily call (vercel.json), which sends CRON_SECRET as a bearer
- * token. Without CRON_SECRET the endpoint stays shut.
+ * Vercel Cron's daily calls (vercel.json), which send CRON_SECRET as a bearer
+ * token. Without CRON_SECRET the endpoints stay shut.
  */
 export const cronRouter = Router();
 
-cronRouter.get('/recall-alerts', noStore, async (req: Request, res: Response) => {
+function cronAllowed(req: Request, res: Response): boolean {
   const secret = process.env.CRON_SECRET?.trim();
   if (!secret) {
     res.status(503).json({ success: false, error: 'CRON_SECRET is not set' });
-    return;
+    return false;
   }
   if (!bearerMatches(req.get('authorization'), secret)) {
     res.status(401).json({ success: false, error: 'Unauthorized' });
-    return;
+    return false;
   }
+  return true;
+}
+
+cronRouter.get('/recall-alerts', noStore, async (req: Request, res: Response) => {
+  if (!cronAllowed(req, res)) return;
   try {
     const run = await runRecallAlerts();
     console.log(JSON.stringify({ level: 'info', msg: 'recall alerts run', ...run }));
@@ -62,5 +68,18 @@ cronRouter.get('/recall-alerts', noStore, async (req: Request, res: Response) =>
   } catch (error) {
     console.error('[cron] recall alerts failed:', error);
     res.status(500).json({ success: false, error: 'Recall alerts run failed' });
+  }
+});
+
+/** The day's browser crash reports, emailed to CRASH_REPORTS_TO (services/client-errors.service.ts). */
+cronRouter.get('/crash-digest', noStore, async (req: Request, res: Response) => {
+  if (!cronAllowed(req, res)) return;
+  try {
+    const run = await runCrashDigest();
+    console.log(JSON.stringify({ level: 'info', msg: 'crash digest run', ...run }));
+    res.json({ success: true, data: run });
+  } catch (error) {
+    console.error('[cron] crash digest failed:', error);
+    res.status(500).json({ success: false, error: 'Crash digest run failed' });
   }
 });
