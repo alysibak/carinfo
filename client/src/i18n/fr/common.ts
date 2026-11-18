@@ -1,5 +1,25 @@
 /** Site chrome: header, menus, footer, shared components, error and loading states, provinces, body styles and fuels. English text to French (fr-CA). */
 const fr: Record<string, string> = {
+  '{count} row that reads the same is hidden.': '{count} rangée identique est masquée.',
+  '{count} row reads the same for every car.':
+    '{count} rangée est identique pour tous les véhicules.',
+  ' (pump prices to {month})': ' (prix à la pompe jusqu’en {month})',
+  'Measured by the U.S. EPA and published on FuelEconomy.gov.':
+    'Mesuré par l’EPA des États-Unis et publié sur FuelEconomy.gov.',
+  'From Natural Resources Canada’s fuel consumption ratings, for a car EPA never rated.':
+    'Tiré des cotes de consommation de carburant de Ressources naturelles Canada, pour un véhicule que l’EPA n’a jamais coté.',
+  'From NHTSA, the U.S. road safety agency.':
+    'De la NHTSA, l’agence de sécurité routière des États-Unis.',
+  'Our estimate from the records on file: not a quote or an appraisal.':
+    'Notre estimation d’après les dossiers : ni une soumission ni une évaluation.',
+  'The maker’s published figure, read from its own pages.':
+    'Le chiffre publié par le constructeur, lu sur ses propres pages.',
+  'Only what differs': 'Seulement les différences',
+  '{count} rows that read the same are hidden.': '{count} rangées identiques sont masquées.',
+  '{count} rows read the same for every car.':
+    '{count} rangées sont identiques pour tous les véhicules.',
+  'Clear {field}': 'Effacer {field}',
+  'Clear the VIN': 'Effacer le NIV',
   Theme: 'Thème',
   Dark: 'Sombre',
   Light: 'Clair',

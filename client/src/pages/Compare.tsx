@@ -491,6 +491,7 @@ export default function Compare() {
   const [picking, setPicking] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [onlyDifferences, setOnlyDifferences] = useState(false);
   const tableScrollRef = useRef<HTMLDivElement>(null);
   const tableHeadRef = useRef<HTMLTableSectionElement>(null);
   const region = useRegionStore((s) => s.region);
@@ -651,13 +652,22 @@ export default function Compare() {
     dashboard: dashboardById.get(car.id),
   }));
 
-  const specs = [...ALL_SPECS]
+  const shownSpecs = [...ALL_SPECS]
     .sort((a, b) => rowRank(a.key) - rowRank(b.key))
     .filter((spec) =>
       pairs.some(
         ({ car, dashboard }) => dashboard && !isUnavailable(spec.getValue(car, dashboard)),
       ),
     );
+  // Rows where every car reads the same say nothing about choosing between them.
+  const differs = (spec: SpecRow) =>
+    new Set(
+      pairs.map(({ car, dashboard }) =>
+        dashboard ? String(spec.getValue(car, dashboard)).trim().toLowerCase() : '…',
+      ),
+    ).size > 1;
+  const sameCount = pairs.length > 1 ? shownSpecs.filter((spec) => !differs(spec)).length : 0;
+  const specs = onlyDifferences && sameCount > 0 ? shownSpecs.filter(differs) : shownSpecs;
 
   const bestByRow = new Map<string, number>();
   const barMaxByRow = new Map<string, number>();
@@ -793,6 +803,33 @@ export default function Compare() {
             )}
             {/* A phone shows the label column and two cars at once; more scroll sideways
                 with the labels pinned. It used to cut the second car off mid-word. */}
+            {sameCount > 0 && (
+              <div className="flex flex-wrap items-center gap-3 mb-3">
+                <button
+                  type="button"
+                  aria-pressed={onlyDifferences}
+                  onClick={() => setOnlyDifferences((v) => !v)}
+                  className={`chip ${onlyDifferences ? 'chip-on' : ''}`}
+                >
+                  {t('Only what differs')}
+                </button>
+                <span className="text-xs text-zinc-500">
+                  {onlyDifferences
+                    ? tp(
+                        sameCount,
+                        '{count} row that reads the same is hidden.',
+                        '{count} rows that read the same are hidden.',
+                        { count: sameCount },
+                      )
+                    : tp(
+                        sameCount,
+                        '{count} row reads the same for every car.',
+                        '{count} rows read the same for every car.',
+                        { count: sameCount },
+                      )}
+                </span>
+              </div>
+            )}
             <CompareNamesBar
               cars={pairs.map(({ car }) => car)}
               headRef={tableHeadRef}

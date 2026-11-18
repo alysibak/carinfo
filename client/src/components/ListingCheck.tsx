@@ -1,10 +1,10 @@
-import { useId, useMemo, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import { getRegionalAssumptions } from '@carinfo/config/regional-assumptions';
 import type { CarDashboard, CarSpecs } from '../types/car.types';
 import { regionName, useRegionStore } from '../stores/regionStore';
 import { listingVerdict } from '../utils/listingCheck';
 import { formatCurrency } from '../utils/dataValue';
-import { locale, t } from '../i18n';
+import { intlLocale, locale, t } from '../i18n';
 
 const inputClass =
   'w-full bg-zinc-900 border border-zinc-700 px-3 py-2 text-base text-white placeholder-zinc-500 focus:border-zinc-400 focus:outline-none';
@@ -12,6 +12,63 @@ const inputClass =
 function digits(text: string): number | null {
   const n = Number(text.replace(/[^\d]/g, ''));
   return text.trim() && Number.isFinite(n) ? n : null;
+}
+
+/** "23400" as typed reads back "23,400": a long number checked at a glance. */
+function grouped(text: string): string {
+  const n = digits(text);
+  return n == null ? '' : n.toLocaleString(intlLocale());
+}
+
+/** A number field with its own clear button. */
+function NumberField({
+  id,
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+}) {
+  const input = useRef<HTMLInputElement>(null);
+  // The clear button sits outside the label, so the field is named "Odometer"
+  // alone, not "Odometer Clear Odometer".
+  return (
+    <div>
+      <label className="block text-xs text-zinc-400" htmlFor={id}>
+        {label}
+      </label>
+      <div className="relative mt-1">
+        <input
+          ref={input}
+          id={id}
+          className={`${inputClass} pr-10`}
+          inputMode="numeric"
+          autoComplete="off"
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(grouped(e.target.value))}
+        />
+        {value && (
+          <button
+            type="button"
+            onClick={() => {
+              onChange('');
+              input.current?.focus();
+            }}
+            aria-label={t('Clear {field}', { field: label })}
+            className="absolute inset-y-0 right-0 w-10 inline-flex items-center justify-center text-zinc-500 hover:text-white"
+          >
+            <span aria-hidden>×</span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -113,29 +170,21 @@ export default function ListingCheck({
       </p>
       <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md">
         {value && (
-          <label className="block text-xs text-zinc-400" htmlFor={`${id}-price`}>
-            {t('Asking price')}
-            <input
-              id={`${id}-price`}
-              className={`${inputClass} mt-1`}
-              inputMode="numeric"
-              placeholder="$"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-            />
-          </label>
-        )}
-        <label className="block text-xs text-zinc-400" htmlFor={`${id}-km`}>
-          {t('Odometer')}
-          <input
-            id={`${id}-km`}
-            className={`${inputClass} mt-1`}
-            inputMode="numeric"
-            placeholder="km"
-            value={km}
-            onChange={(e) => setKm(e.target.value)}
+          <NumberField
+            id={`${id}-price`}
+            label={t('Asking price')}
+            value={price}
+            onChange={setPrice}
+            placeholder="$"
           />
-        </label>
+        )}
+        <NumberField
+          id={`${id}-km`}
+          label={t('Odometer')}
+          value={km}
+          onChange={setKm}
+          placeholder="km"
+        />
       </div>
       {(priceLine || kmLine) && (
         <ul className="mt-3 space-y-1.5" aria-live="polite">

@@ -51,7 +51,7 @@ function FigureCell({ figure, wide }: { figure: KeyFigure; wide: boolean }) {
           <span>{figure.label}</span>
           {figure.glossaryKey && <SpecExplain glossaryKey={figure.glossaryKey} />}
         </p>
-        {figure.source && <ProvenanceChip source={figure.source} className="shrink-0" />}
+        {figure.source && <ProvenanceChip source={figure.source} className="shrink-0" explain />}
       </div>
       <p className="mt-2.5 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 min-w-0">
         <span

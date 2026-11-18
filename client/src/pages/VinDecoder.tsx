@@ -217,6 +217,7 @@ export default function VinDecoder() {
     };
   }, []);
 
+  const vinInput = useRef<HTMLInputElement>(null);
   const enter = (raw: string) => {
     const cleaned = cleanVinInput(raw);
     setVin(cleaned.vin);
@@ -296,18 +297,34 @@ export default function VinDecoder() {
         {/* The input drops its own outline, so the frame shows where focus is. */}
         <div className="flex flex-col sm:flex-row border border-zinc-700 focus-within:border-zinc-300 transition-colors rounded-none max-w-2xl min-w-0">
           {/* Large and spaced: a VIN is checked a character at a time against the car. */}
-          <input
-            value={vin}
-            onChange={(e) => enter(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && run(vin)}
-            aria-label={t('Vehicle identification number (VIN)')}
-            aria-describedby="vin-progress"
-            placeholder={t('17 characters')}
-            autoComplete="off"
-            autoCapitalize="characters"
-            spellCheck={false}
-            className="w-full sm:w-auto sm:flex-1 min-w-0 h-14 bg-zinc-950 border-0 px-3 sm:px-4 text-lg sm:text-xl font-mono tracking-[0.12em] text-white placeholder:text-zinc-500 placeholder:tracking-normal placeholder:font-sans placeholder:text-base focus:outline-hidden rounded-none"
-          />
+          <div className="relative flex sm:flex-1 min-w-0">
+            <input
+              ref={vinInput}
+              value={vin}
+              onChange={(e) => enter(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && run(vin)}
+              aria-label={t('Vehicle identification number (VIN)')}
+              aria-describedby="vin-progress"
+              placeholder={t('17 characters')}
+              autoComplete="off"
+              autoCapitalize="characters"
+              spellCheck={false}
+              className="w-full min-w-0 h-14 bg-zinc-950 border-0 pl-3 sm:pl-4 pr-11 text-lg sm:text-xl font-mono tracking-[0.12em] text-white placeholder:text-zinc-500 placeholder:tracking-normal placeholder:font-sans placeholder:text-base focus:outline-hidden rounded-none"
+            />
+            {vin && (
+              <button
+                type="button"
+                onClick={() => {
+                  enter('');
+                  vinInput.current?.focus();
+                }}
+                aria-label={t('Clear the VIN')}
+                className="absolute inset-y-0 right-0 w-11 inline-flex items-center justify-center text-lg text-zinc-500 hover:text-white"
+              >
+                <span aria-hidden>×</span>
+              </button>
+            )}
+          </div>
           <div className="flex border-t sm:border-t-0 sm:border-l border-zinc-700 shrink-0">
             <button
               type="button"

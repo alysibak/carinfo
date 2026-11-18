@@ -8,6 +8,7 @@ import { hasNumericValue } from '../utils/dataValue';
 import { currencySectionNote } from '../utils/currency';
 import { formatMoney, formatMoneyRange } from '../utils/money';
 import { getRegionalAssumptions, monthLabel } from '@carinfo/config/regional-assumptions';
+import { PUMP_PRICES } from '@carinfo/config/pump-prices';
 import { useCarStore } from '../stores/carStore';
 import { useGarageStore } from '../stores/garageStore';
 import { regionName, useRegionStore } from '../stores/regionStore';
@@ -409,7 +410,16 @@ export default function CarDetail() {
                       price: regional.gasPriceCadPerL.toFixed(2),
                       distance,
                     });
-    return { amount: annualCost.energy, basis, electric: fuel === 'electric' };
+    // Pump prices are a year's average to a month: say which, beside the price.
+    const pumpPriced =
+      fuel !== 'electric' &&
+      fuel !== 'hydrogen' &&
+      fuel !== 'plug-in hybrid' &&
+      fuel !== 'natural gas';
+    const dated = pumpPriced
+      ? `${basis}${t(' (pump prices to {month})', { month: monthLabel(PUMP_PRICES.through) })}`
+      : basis;
+    return { amount: annualCost.energy, basis: dated, electric: fuel === 'electric' };
   })();
   const isInCompare = comparedCars.some((c) => c.id === car.id);
   const title = displayVehicleTitle(car);
