@@ -36,6 +36,10 @@ export default defineConfig({
         extends: true,
         root: './client',
         plugins: [react()],
+        // As client/vitest.config.ts: the VIN text reader's folder, named at build.
+        define: {
+          __OCR_BASE__: JSON.stringify('/ocr/test'),
+        },
         resolve: {
           alias: {
             '@carinfo/config/regional-assumptions': path.join(configDir, 'regional-assumptions.ts'),
