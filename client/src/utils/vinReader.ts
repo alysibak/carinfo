@@ -5,8 +5,8 @@ import { cutByEdge, VIN_CHARS, withinFrame, type ReadSymbol, type ReadWord } fro
  * The character reader the VIN scanner runs on camera frames and photos:
  * Tesseract, in a worker of its own so the camera never stutters, served from
  * the site (see vite.config.ts) and told to read only the characters a VIN
- * uses. Its first start fetches about 7 MB; the browser keeps the letters'
- * data for next time.
+ * uses. Its first start fetches about 7 MB, kept for next time, and for use
+ * with no signal (client/service-worker.js).
  *
  * Shared: the VIN page holds it while open, loading it before the camera is
  * asked for, and the camera holds it while it runs (see holdVinReader). It is
@@ -40,9 +40,9 @@ export function startVinReader(): Promise<Worker> {
     reached('downloading');
     const { createWorker, OEM, PSM } = await import('tesseract.js');
     const worker = await createWorker('eng', OEM.LSTM_ONLY, {
-      workerPath: '/ocr/worker.min.js',
-      corePath: '/ocr',
-      langPath: '/ocr',
+      workerPath: `${__OCR_BASE__}/worker.min.js`,
+      corePath: __OCR_BASE__,
+      langPath: __OCR_BASE__,
       workerBlobURL: false,
       // Its files are in; what is left is setting it up.
       logger: (message: { status: string }) => {

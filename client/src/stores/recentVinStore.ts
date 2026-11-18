@@ -7,6 +7,8 @@ export interface RecentVin {
   vin: string;
   /** "2003 Honda Accord", as the decoder gave it; null when it named nothing. */
   title: string | null;
+  /** Saved with no connection: looked up once there is one. */
+  pending?: boolean;
 }
 
 /** The newest few: a lot walked in an afternoon, not a record. */
@@ -16,6 +18,10 @@ interface RecentVinStore {
   vins: RecentVin[];
   /** Puts the VIN first, once. */
   record: (entry: RecentVin) => void;
+  /** Saved with no connection: first in the list, to look up later unless it was looked up before. */
+  keep: (vin: string) => void;
+  /** A saved VIN's lookup came back: its name, where it is in the list. */
+  settle: (vin: string, title: string | null) => void;
   remove: (vin: string) => void;
   clear: () => void;
 }
@@ -32,6 +38,18 @@ export const useRecentVinStore = create<RecentVinStore>()(
       record: (entry) =>
         set((state) => ({
           vins: [entry, ...state.vins.filter((v) => v.vin !== entry.vin)].slice(0, MAX_RECENT_VINS),
+        })),
+      keep: (vin) =>
+        set((state) => {
+          const known = state.vins.find((v) => v.vin === vin);
+          const entry = known && !known.pending ? known : { vin, title: null, pending: true };
+          return {
+            vins: [entry, ...state.vins.filter((v) => v.vin !== vin)].slice(0, MAX_RECENT_VINS),
+          };
+        }),
+      settle: (vin, title) =>
+        set((state) => ({
+          vins: state.vins.map((v) => (v.vin === vin && v.pending ? { vin, title } : v)),
         })),
       remove: (vin) => set((state) => ({ vins: state.vins.filter((v) => v.vin !== vin) })),
       clear: () => set({ vins: [] }),

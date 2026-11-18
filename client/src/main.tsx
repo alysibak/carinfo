@@ -32,6 +32,8 @@ if (import.meta.env.PROD) {
     'load',
     () => {
       import('./utils/analytics').then((m) => m.installAnalytics()).catch(() => {});
+      // The VIN page and its camera, kept for use with no signal (service-worker.js).
+      if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
     },
     { once: true },
   );

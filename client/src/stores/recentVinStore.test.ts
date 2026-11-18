@@ -22,6 +22,36 @@ describe('useRecentVinStore', () => {
     }
     expect(useRecentVinStore.getState().vins).toHaveLength(MAX_RECENT_VINS);
   });
+
+  it('keeps a VIN saved with no connection first, to look up later', () => {
+    const { record, keep } = useRecentVinStore.getState();
+    record({ vin: VIN, title: '2003 HONDA Accord' });
+    keep('5YJ3E1EA7KF317283');
+    expect(useRecentVinStore.getState().vins).toEqual([
+      { vin: '5YJ3E1EA7KF317283', title: null, pending: true },
+      { vin: VIN, title: '2003 HONDA Accord' },
+    ]);
+  });
+
+  it('does not set a VIN looked up before back to waiting', () => {
+    const { record, keep } = useRecentVinStore.getState();
+    record({ vin: VIN, title: '2003 HONDA Accord' });
+    record({ vin: '5YJ3E1EA7KF317283', title: '2019 TESLA Model 3' });
+    keep(VIN);
+    expect(useRecentVinStore.getState().vins[0]).toEqual({ vin: VIN, title: '2003 HONDA Accord' });
+  });
+
+  it('names a saved VIN in its place once its lookup comes back', () => {
+    const { record, keep, settle } = useRecentVinStore.getState();
+    keep(VIN);
+    record({ vin: '5YJ3E1EA7KF317283', title: '2019 TESLA Model 3' });
+    settle(VIN, '2003 HONDA Accord');
+    settle('5YJ3E1EA7KF317283', null);
+    expect(useRecentVinStore.getState().vins).toEqual([
+      { vin: '5YJ3E1EA7KF317283', title: '2019 TESLA Model 3' },
+      { vin: VIN, title: '2003 HONDA Accord' },
+    ]);
+  });
 });
 
 describe('recentVinEntry', () => {

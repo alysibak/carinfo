@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { cleanVinInput, extractVinFromScan, isLikelyVin, vinCheckDigitValid } from './vin';
+import {
+  cleanVinInput,
+  extractVinFromScan,
+  isLikelyVin,
+  vinCheckDigitValid,
+  vinModelYear,
+} from './vin';
 
 // 2003 Honda Accord — the VIN page's own sample, known check-digit-valid.
 const VALID_VIN = '1HGCM82633A004352';
@@ -76,5 +82,20 @@ describe('cleanVinInput', () => {
 
   it('stops at 17 characters', () => {
     expect(cleanVinInput('1HGCM82633A004352999').vin).toBe('1HGCM82633A004352');
+  });
+});
+
+describe('vinModelYear', () => {
+  it('reads the year from the 10th character, the cycle from the 7th', () => {
+    // A digit in position 7: the 1980 to 2009 cycle.
+    expect(vinModelYear('1HGCM82633A004352')).toBe(2003);
+    // A letter in position 7: 2010 on.
+    expect(vinModelYear('5YJ3E1EA7KF317283')).toBe(2019);
+    expect(vinModelYear('2HGFE2F59TH000001')).toBe(2026);
+  });
+
+  it('gives nothing where the 10th character is not a year code', () => {
+    expect(vinModelYear('1HGCM8263UA004352')).toBeNull();
+    expect(vinModelYear('1HGCM8263')).toBeNull();
   });
 });

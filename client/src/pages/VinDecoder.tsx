@@ -1,18 +1,27 @@
 import { useState, useEffect, lazy, Suspense, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { apiErrorMessage, decodeVin, type VinDecodeResult } from '../services/api';
+import { isHttpError } from '../services/http';
 import { searchQueryToParams } from '../utils/searchParams';
 import { usePageMeta } from '../utils/pageMeta';
 import VinCatalogMatch from '../components/VinCatalogMatch';
 import ShareResult from '../components/ShareResult';
+import OfflineVinCard from '../components/OfflineVinCard';
+import { useOnline } from '../hooks/useOnline';
 import { cleanVinInput, vinCheckDigitValid } from '../utils/vin';
 import { holdVinReader } from '../utils/vinReader';
+import { keepVinPageOffline } from '../utils/keepOffline';
 import { recentVinEntry, useRecentVinStore } from '../stores/recentVinStore';
 import { msg, t } from '../i18n';
 
 const VinScanner = lazy(() => import('../components/VinScanner'));
 
 const SAMPLE_VIN = '1HGCM82633A004352'; // 2003 Honda Accord EX-V6
+
+/** No answer about the VIN: no connection, none in time, or NHTSA's decoder down (502). */
+function unreachable(error: unknown): boolean {
+  return !isHttpError(error) || error.status === 0 || error.status >= 500;
+}
 
 /**
  * The VINs looked up on this device, a tap away: someone walking a lot,
@@ -25,7 +34,7 @@ function RecentVinRow({
   onPick,
   onRemove,
 }: {
-  entry: { vin: string; title: string | null };
+  entry: { vin: string; title: string | null; pending?: boolean };
   onPick: () => void;
   onRemove: () => void;
 }) {
@@ -66,7 +75,9 @@ function RecentVinRow({
         className="flex-1 min-w-0 min-h-11 px-1 py-2.5 text-left hover:bg-zinc-950 active:bg-zinc-900 transition-colors"
       >
         <span className="block text-[13px] font-semibold text-white truncate">
-          {entry.title ?? t('Not named by the decoder')}
+          {entry.pending
+            ? t('Waiting for a connection to look it up')
+            : (entry.title ?? t('Not named by the decoder'))}
         </span>
         <span className="block font-mono text-xs tracking-wider text-zinc-400">{entry.vin}</span>
       </button>
@@ -195,6 +206,14 @@ export default function VinDecoder() {
   const [scanning, setScanning] = useState(false);
   const [swapped, setSwapped] = useState(false);
   const recordVin = useRecentVinStore((state) => state.record);
+  const keepVin = useRecentVinStore((state) => state.keep);
+  const settleVin = useRecentVinStore((state) => state.settle);
+  const online = useOnline();
+  // A VIN the lookup could not be reached for, kept on this phone meanwhile.
+  const [savedVin, setSavedVin] = useState<string | null>(null);
+  const savedTitle = useRecentVinStore(
+    (state) => state.vins.find((entry) => entry.vin === savedVin)?.title ?? null,
+  );
 
   // The camera's text reader, loaded once the page has settled, so the first
   // scan reads print at once instead of waiting on 7 MB. Not where the phone
@@ -205,6 +224,8 @@ export default function VinDecoder() {
     let release: (() => void) | undefined;
     const begin = () => {
       release = holdVinReader();
+      // Its code too, so a phone that opened it once reads VINs with no signal.
+      keepVinPageOffline();
     };
     const idle = 'requestIdleCallback' in window;
     const handle = idle
@@ -225,17 +246,28 @@ export default function VinDecoder() {
     setSwapped((was) => cleaned.vin !== '' && (was || cleaned.swapped));
   };
 
+  const saveForLater = (v: string) => {
+    keepVin(v);
+    setSavedVin(v);
+  };
+
   const run = async (raw: string) => {
     const v = raw.trim().toUpperCase();
     if (!v) return;
-    setLoading(true);
     setError(null);
     setResult(null);
+    setSavedVin(null);
+    // No connection, as on a lot with no signal: kept to look up once there is one.
+    if (!navigator.onLine) return saveForLater(v);
+    setLoading(true);
     try {
       const data = await decodeVin(v);
       setResult(data);
       if (data.vin) recordVin(recentVinEntry(data));
     } catch (e: unknown) {
+      if (unreachable(e)) return saveForLater(v);
+      // The decoder answered: it has nothing for this VIN.
+      settleVin(v, null);
       setError(
         apiErrorMessage(e) ??
           t('VIN not found in NHTSA records. Check the 17-character code and try again.'),
@@ -244,6 +276,31 @@ export default function VinDecoder() {
       setLoading(false);
     }
   };
+
+  // On opening, and when the connection comes back: the VIN on screen in full,
+  // then each VIN saved meanwhile, quietly, one at a time.
+  useEffect(() => {
+    if (!online) return;
+    let stopped = false;
+    void (async () => {
+      if (savedVin) await run(savedVin);
+      for (const entry of useRecentVinStore.getState().vins) {
+        if (stopped) return;
+        if (!entry.pending || entry.vin === savedVin) continue;
+        try {
+          settleVin(entry.vin, recentVinEntry(await decodeVin(entry.vin)).title);
+        } catch (e: unknown) {
+          // Still no answer: next time.
+          if (unreachable(e)) return;
+          settleVin(entry.vin, null);
+        }
+      }
+    })();
+    return () => {
+      stopped = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- on opening, and each time the connection returns
+  }, [online]);
 
   useEffect(() => {
     const fromUrl = cleanVinInput(searchParams.get('vin') ?? '').vin;
@@ -283,6 +340,17 @@ export default function VinDecoder() {
             'NHTSA’s decoder covers cars sold in the U.S., and most sold in Canada. A field it leaves out is not on file, not missing from the car.',
           )}
         </p>
+
+        {!online && (
+          <p
+            role="status"
+            className="mb-3 max-w-2xl border border-amber-900/60 bg-zinc-950 px-4 py-2.5 text-sm text-amber-200"
+          >
+            {t(
+              'No connection. The camera still reads VINs, and each one is kept on this phone to look up once you are back online.',
+            )}
+          </p>
+        )}
 
         {/* On a phone the camera comes first: the VIN is on the car in front of you. */}
         <button
@@ -385,7 +453,7 @@ export default function VinDecoder() {
         </div>
 
         <RecentVins
-          exclude={result?.vin}
+          exclude={result?.vin ?? savedVin ?? undefined}
           onPick={(picked) => {
             enter(picked);
             run(picked);
@@ -405,7 +473,7 @@ export default function VinDecoder() {
           </Suspense>
         )}
 
-        {!result && !error && !loading && (
+        {!result && !error && !loading && !savedVin && (
           // What a VIN gives, before one is entered: the page was a lone field.
           <ol className="mt-12 max-w-2xl grid gap-px bg-zinc-900 border border-zinc-900 sm:grid-cols-3">
             {VIN_GIVES.map((item, index) => (
@@ -422,6 +490,15 @@ export default function VinDecoder() {
           <div className="mt-8 max-w-2xl border border-zinc-800 bg-zinc-950 px-5 py-4 text-sm text-zinc-300">
             {error}
           </div>
+        )}
+
+        {savedVin && (
+          <OfflineVinCard
+            vin={savedVin}
+            title={savedTitle}
+            online={online}
+            onRetry={() => run(savedVin)}
+          />
         )}
 
         {result && (

@@ -1,5 +1,27 @@
 /** Compare, the garage and a shared garage, model and model-year pages, the VIN decoder and the value chart. English text to French (fr-CA). */
 const fr: Record<string, string> = {
+  'No connection. The VIN page and its camera still work.':
+    'Aucune connexion. La recherche par NIV et sa caméra fonctionnent quand même.',
+  'Open it': 'L’ouvrir',
+  'No connection': 'Aucune connexion',
+  'This page needs a connection to load. The VIN page and its camera work without one.':
+    'Cette page a besoin d’une connexion pour se charger. La recherche par NIV et sa caméra fonctionnent sans.',
+  'VIN page': 'Recherche par NIV',
+  'Saved: the lookup could not be reached': 'Enregistré : la recherche n’a pas pu aboutir',
+  'Saved on this phone': 'Enregistré sur ce téléphone',
+  'Looked up before as {title}': 'Déjà recherché : {title}',
+  'Model year, from its 10th character': 'Année modèle, d’après son 10e caractère',
+  'Check digit, its 9th character': 'Chiffre de contrôle, son 9e caractère',
+  'Matches: the VIN reads right': 'Concorde : le NIV est bien lu',
+  'Does not match: check each character against the car':
+    'Ne concorde pas : vérifiez chaque caractère sur le véhicule',
+  'Try again now, or it is looked up the next time this page opens.':
+    'Réessayez maintenant, ou la recherche se fera à la prochaine ouverture de cette page.',
+  'It is looked up by itself once there is a connection. Scan or type the next one meanwhile.':
+    'La recherche se fera d’elle-même dès qu’il y aura une connexion. Balayez ou tapez le suivant en attendant.',
+  'Waiting for a connection to look it up': 'En attente d’une connexion pour la recherche',
+  'No connection. The camera still reads VINs, and each one is kept on this phone to look up once you are back online.':
+    'Aucune connexion. La caméra lit quand même les NIV, et chacun est gardé sur ce téléphone pour être recherché dès votre retour en ligne.',
   'See the {year}': 'Voir le {year}',
   'Or type it:': 'Ou tapez-le :',
   'At a glance': 'En un coup d’œil',

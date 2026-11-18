@@ -9,3 +9,6 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+/** Where the VIN scanner's text reader is served, named for its version (vite.config.ts). */
+declare const __OCR_BASE__: string;

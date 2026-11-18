@@ -1,8 +1,9 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import VinDecoder from './VinDecoder';
 import * as api from '../services/api';
+import { useRecentVinStore } from '../stores/recentVinStore';
 import type { CarSpecs } from '../types/car.types';
 
 vi.mock('../services/api', () => ({
@@ -44,6 +45,7 @@ async function decode() {
 
 describe('VinDecoder', () => {
   beforeEach(() => {
+    useRecentVinStore.getState().clear();
     vi.mocked(api.decodeVin).mockReset();
     vi.mocked(api.decodeVin).mockResolvedValue({
       vin: '1HGCM82633A004352',
@@ -130,5 +132,44 @@ describe('VinDecoder', () => {
     });
     await decode();
     expect(screen.getByText(/No car here matches this VIN closely enough/)).toBeInTheDocument();
+  });
+
+  it('keeps a VIN with no connection, says what it gives by itself, and looks it up once back', async () => {
+    const onLine = vi.spyOn(window.navigator, 'onLine', 'get').mockReturnValue(false);
+    try {
+      render(
+        <MemoryRouter>
+          <VinDecoder />
+        </MemoryRouter>,
+      );
+      expect(screen.getByText(/The camera still reads VINs/)).toBeInTheDocument();
+      fireEvent.change(screen.getByRole('textbox', { name: /vehicle identification number/i }), {
+        target: { value: '1HGCM82633A004352' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: /^Decode$/i }));
+
+      expect(await screen.findByText('Saved on this phone')).toBeInTheDocument();
+      expect(screen.getByText('2003')).toBeInTheDocument();
+      expect(screen.getByText('Matches: the VIN reads right')).toBeInTheDocument();
+      expect(api.decodeVin).not.toHaveBeenCalled();
+      expect(useRecentVinStore.getState().vins[0]).toEqual({
+        vin: '1HGCM82633A004352',
+        title: null,
+        pending: true,
+      });
+
+      onLine.mockReturnValue(true);
+      act(() => {
+        window.dispatchEvent(new Event('online'));
+      });
+      await screen.findByText(/As built, by NHTSA/i);
+      expect(api.decodeVin).toHaveBeenCalledWith('1HGCM82633A004352');
+      expect(useRecentVinStore.getState().vins[0]).toEqual({
+        vin: '1HGCM82633A004352',
+        title: '2003 HONDA Accord',
+      });
+    } finally {
+      onLine.mockRestore();
+    }
   });
 });

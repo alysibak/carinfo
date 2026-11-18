@@ -153,6 +153,12 @@ export default tseslint.config(
     },
   },
 
+  // ─── The service worker (built into /sw.js by client/vite.config.ts) ──────────
+  {
+    files: ['client/service-worker.js'],
+    languageOptions: { globals: { ...globals.serviceworker } },
+  },
+
   // ─── Config and build scripts ───────────────────────────────────────────────
   {
     files: [

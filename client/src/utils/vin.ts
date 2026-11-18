@@ -101,3 +101,19 @@ export function cleanVinInput(raw: string): { vin: string; swapped: boolean } {
   const vin = plain.replace(/[IOQ]/g, (c) => (c === 'I' ? '1' : '0'));
   return { vin, swapped: vin !== plain };
 }
+
+/** The 10th character's year codes, 1980 (A) to 2009 (9); the cycle repeats from 2010. */
+const YEAR_CODES = 'ABCDEFGHJKLMNPRSTVWXY123456789';
+
+/**
+ * The model year a VIN's 10th character gives (49 CFR 565.15), worked out on
+ * the phone, so it is there with no connection. The code repeats every 30
+ * years; for cars and light trucks from 2010 on a letter in position 7 marks
+ * the later cycle (2010 to 2039), a digit the earlier one (1980 to 2009).
+ */
+export function vinModelYear(vin: string): number | null {
+  if (vin.length < 10) return null;
+  const index = YEAR_CODES.indexOf(vin.charAt(9).toUpperCase());
+  if (index < 0) return null;
+  return 1980 + index + (/[A-Z]/i.test(vin.charAt(6)) ? 30 : 0);
+}
