@@ -1,5 +1,12 @@
 /** Compare, the garage and a shared garage, model and model-year pages, the VIN decoder and the value chart. English text to French (fr-CA). */
 const fr: Record<string, string> = {
+  'Financed: about {payment} a month for {months} months, {interest} in interest.':
+    'Financé : environ {payment} par mois sur {months} mois, {interest} d’intérêts.',
+  'Financed: enter a rate to see the payment.': 'Financé : entrez un taux pour voir le paiement.',
+  '{months} mo': '{months} mois',
+  Rate: 'Taux',
+  'On the whole asking price, before tax and fees. Use the rate you are offered.':
+    'Sur tout le prix demandé, avant taxes et frais. Utilisez le taux qu’on vous offre.',
   'No connection. The VIN page and its camera still work.':
     'Aucune connexion. La recherche par NIV et sa caméra fonctionnent quand même.',
   'Open it': 'L’ouvrir',

@@ -96,9 +96,12 @@ export function defaultTcoInputs(
     // The dossier's figure excludes financing, so the calculator starts as cash.
     financed: false,
     downPayment: 0,
-    loanRate: 0.0599,
+    loanRate: DEFAULT_LOAN_RATE,
   };
 }
+
+/** The loan rate the calculators start at, as a fraction; each says to use the rate offered. */
+export const DEFAULT_LOAN_RATE = 0.0599;
 
 /**
  * Standard amortized payment. A 0% rate is a real offer (manufacturer

@@ -30,4 +30,22 @@ describe('ListingCheck', () => {
     expect(price).toHaveFocus();
     expect(screen.queryByRole('button', { name: 'Clear Asking price' })).toBeNull();
   });
+
+  it('quotes the asking price as a monthly payment, by term and rate', () => {
+    render(<ListingCheck car={car} dashboard={dashboard} />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Asking price' }), {
+      target: { value: '25000' },
+    });
+    // 25,000 at 5.99% over 72 months.
+    expect(
+      screen.getByText(/about \$414 a month for 72 months, \$4,823 in interest/),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '84 mo' }));
+    expect(screen.getByRole('button', { name: '84 mo' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText(/for 84 months/)).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('textbox', { name: /^Rate/ }), { target: { value: '0' } });
+    expect(
+      screen.getByText(/about \$298 a month for 84 months, \$0 in interest/),
+    ).toBeInTheDocument();
+  });
 });

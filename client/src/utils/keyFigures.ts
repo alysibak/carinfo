@@ -6,6 +6,14 @@ import { formatTransmissionLabel } from './trimLabel';
 import { formatMoney } from './money';
 import { t } from '../i18n';
 
+/**
+ * The share of its rated range an EV kept at −7 °C (20 °F) with the heater on:
+ * AAA's 2019 test of five EVs measured 41% less on average (12% less without
+ * the heater). A planning figure for a Canadian winter day; newer cars with a
+ * heat pump often lose less.
+ */
+export const WINTER_RANGE_SHARE = 0.59;
+
 export type Tone = 'better' | 'worse' | 'neutral';
 
 export interface KeyFigure {
@@ -137,12 +145,17 @@ export function buildKeyFigures(
     car.provenance?.['fuelEconomy.combined'] === 'nrcan' ? 'nrcan' : 'epa';
 
   if (isEv && hasNumericValue(rangeMiles)) {
+    const km = rangeKm(rangeMiles!);
     figures.push({
       id: 'range',
       label: recordSource === 'epa' ? t('EPA range') : t('Range'),
-      value: String(rangeKm(rangeMiles!)),
+      value: String(km),
       unit: 'km',
-      detail: t('On a full charge'),
+      // A cold day's range for planning: AAA's measured average loss (see the
+      // glossary's range entry, which says where it is from).
+      detail: t('Full charge; about {km} km at −7 °C, heat on', {
+        km: Math.round(km * WINTER_RANGE_SHARE),
+      }),
       source: recordSource,
       glossaryKey: 'range',
     });

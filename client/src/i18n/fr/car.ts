@@ -1,5 +1,9 @@
 /** A car's page and its sections, and the before-you-buy checklist. English text to French (fr-CA). */
 const fr: Record<string, string> = {
+  'Full charge; about {km} km at −7 °C, heat on':
+    'Pleine charge; environ {km} km à −7 °C, chauffage allumé',
+  'Real range varies with cold, speed and hills. In AAA’s 2019 test of five EVs at −7 °C, range fell 41% on average with the heater on and 12% without: the winter figure here takes off 41%. Newer EVs with a heat pump often lose less.':
+    'L’autonomie réelle varie avec le froid, la vitesse et les côtes. Dans l’essai d’AAA de 2019 sur cinq VÉ à −7 °C, l’autonomie a baissé de 41 % en moyenne avec le chauffage et de 12 % sans : le chiffre d’hiver ici retranche 41 %. Les VÉ récents avec thermopompe perdent souvent moins.',
   Share: 'Partager',
   'From the maker': 'Selon le constructeur',
   'Tows up to': 'Remorque jusqu’à',

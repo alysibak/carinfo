@@ -171,7 +171,9 @@ export const SPEC_GLOSSARY: Record<SpecGlossaryKey, SpecGlossaryEntry> = {
   epaRange: {
     plain: msg('EPA-tested distance on a full charge'),
     what: msg('How far this EV can drive on a full battery in EPA testing.'),
-    why: msg('Real range varies with cold weather, speed, and hills. Use it to compare models.'),
+    why: msg(
+      'Real range varies with cold, speed and hills. In AAA’s 2019 test of five EVs at −7 °C, range fell 41% on average with the heater on and 12% without: the winter figure here takes off 41%. Newer EVs with a heat pump often lose less.',
+    ),
   },
   co2: {
     plain: msg('Tailpipe emissions per kilometre'),

@@ -4,6 +4,7 @@ import type { CarDashboard, CarSpecs } from '../types/car.types';
 import { regionName, useRegionStore } from '../stores/regionStore';
 import { listingVerdict } from '../utils/listingCheck';
 import { formatCurrency } from '../utils/dataValue';
+import { DEFAULT_LOAN_RATE, monthlyPayment } from '../utils/tco';
 import { intlLocale, locale, t } from '../i18n';
 
 const inputClass =
@@ -18,6 +19,72 @@ function digits(text: string): number | null {
 function grouped(text: string): string {
   const n = digits(text);
   return n == null ? '' : n.toLocaleString(intlLocale());
+}
+
+/** Loan terms a dealer offers; 84 months is common now, and costs the most. */
+const LOAN_TERMS = [48, 60, 72, 84];
+
+/**
+ * The asking price as a monthly payment, the way a dealer quotes it, with the
+ * interest a longer term adds. On the whole price, before tax and fees.
+ */
+/** "$414": in a sentence, without the currency code the other lines carry. */
+function dollars(amount: number): string {
+  return '$' + Math.round(amount).toLocaleString('en-CA');
+}
+
+function LoanLine({ asking }: { asking: number }) {
+  const [months, setMonths] = useState(72);
+  const [rateText, setRateText] = useState((DEFAULT_LOAN_RATE * 100).toFixed(2));
+  const rateId = useId();
+  const rate = Number(rateText.replace(',', '.'));
+  const valid = rateText.trim() !== '' && Number.isFinite(rate) && rate >= 0 && rate < 50;
+  const payment = valid ? monthlyPayment(asking, rate / 100, months) : 0;
+  const interest = Math.max(0, payment * months - asking);
+  return (
+    <div className="mt-4 border-t border-zinc-900 pt-3">
+      <p className="text-sm text-zinc-200 leading-relaxed" aria-live="polite">
+        {valid
+          ? t('Financed: about {payment} a month for {months} months, {interest} in interest.', {
+              payment: dollars(payment),
+              months,
+              interest: dollars(interest),
+            })
+          : t('Financed: enter a rate to see the payment.')}
+      </p>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        {LOAN_TERMS.map((term) => (
+          <button
+            key={term}
+            type="button"
+            aria-pressed={months === term}
+            onClick={() => setMonths(term)}
+            className={`chip ${months === term ? 'chip-on' : ''}`}
+          >
+            {t('{months} mo', { months: term })}
+          </button>
+        ))}
+        <label
+          htmlFor={rateId}
+          className="ml-1 inline-flex items-center gap-1.5 text-xs text-zinc-400"
+        >
+          {t('Rate')}
+          <input
+            id={rateId}
+            inputMode="decimal"
+            autoComplete="off"
+            value={rateText}
+            onChange={(e) => setRateText(e.target.value)}
+            className="w-16 bg-zinc-900 border border-zinc-700 px-2 py-1.5 text-sm text-white focus:border-zinc-400 focus:outline-none"
+          />
+          %
+        </label>
+      </div>
+      <p className="mt-1.5 text-xs text-zinc-500">
+        {t('On the whole asking price, before tax and fees. Use the rate you are offered.')}
+      </p>
+    </div>
+  );
 }
 
 /** A number field with its own clear button. */
@@ -192,6 +259,7 @@ export default function ListingCheck({
           {kmLine && <li className="text-sm text-zinc-200 leading-relaxed">{kmLine}</li>}
         </ul>
       )}
+      {(digits(price) ?? 0) > 0 && <LoanLine asking={digits(price) ?? 0} />}
       <p className="mt-3 text-xs text-zinc-500 leading-relaxed">
         {t(
           'Estimates from this car’s page, not an appraisal. Have the car inspected before paying.',

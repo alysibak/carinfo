@@ -103,6 +103,10 @@ describe('buildKeyFigures', () => {
     };
     const figures = buildKeyFigures(ev);
     expect(figures.map((f) => f.id)).toEqual(['range', 'energy', 'safety', 'power']);
+    // 330 miles is 531 km; a −7 °C day with the heat on keeps 59% of it.
+    expect(figures.find((f) => f.id === 'range')?.detail).toBe(
+      'Full charge; about 313 km at −7 °C, heat on',
+    );
     expect(figures.find((f) => f.id === 'range')).toMatchObject({
       value: '531',
       unit: 'km',
