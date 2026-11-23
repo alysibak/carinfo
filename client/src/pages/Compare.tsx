@@ -13,6 +13,8 @@ import {
 import { efficiencyOf, rangeKm } from '../utils/efficiency';
 import { formatMoney, formatMoneyRange, formatMoneyShort } from '../utils/money';
 import { summarizeComparison } from '../utils/compareSummary';
+import { fuelSavingBetween } from '../utils/payback';
+import { savingSentence } from '../utils/paybackText';
 import { fieldProvenanceSource } from '../utils/dataTrust';
 import CarImage from '../components/CarImage';
 import CarPhotoButton from '../components/CarPhotoButton';
@@ -698,6 +700,9 @@ export default function Compare() {
   }
 
   const summary = loading ? [] : summarizeComparison(pairs);
+  // Two cars: what the thriftier one saves in fuel, a year and over five.
+  const saving =
+    !loading && pairs.length === 2 ? fuelSavingBetween(pairs[0].car, pairs[1].car, region) : null;
 
   function resolveProvenance(dashboard: CarDashboard, spec: SpecRow) {
     if (!spec.provenanceKey) return null;
@@ -798,6 +803,11 @@ export default function Compare() {
                 </ul>
                 {diff.axes.length > 0 && (
                   <p className="text-[13px] text-zinc-400 mt-4">{diff.axes.join(' · ')}</p>
+                )}
+                {saving && (
+                  <p className="text-sm text-zinc-300 mt-3 leading-relaxed max-w-3xl">
+                    {savingSentence(saving, t(regionName(region)), null)}
+                  </p>
                 )}
               </section>
             )}

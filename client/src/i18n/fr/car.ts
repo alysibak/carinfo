@@ -1,5 +1,28 @@
 /** A car's page and its sections, and the before-you-buy checklist. English text to French (fr-CA). */
 const fr: Record<string, string> = {
+  '{model} hybrid': '{model} hybride',
+  '{a} against {b} L/100 km': '{a} contre {b} L/100 km',
+  'The {efficient} would save about {saving} a year on fuel over this one in {region}{usage}: {total} over {years} years.':
+    '{efficient} économiserait environ {saving} de carburant par an par rapport à celui-ci{usage} (prix : {region}) : {total} sur {years} ans.',
+  'This one saves about {saving} a year on fuel over the {base} in {region}{usage}: {total} over {years} years.':
+    'Celui-ci économise environ {saving} de carburant par an par rapport à {base}{usage} (prix : {region}) : {total} sur {years} ans.',
+  'The {efficient} costs about {saving} a year less to fuel than the {base} in {region}{usage}: {total} over {years} years.':
+    '{efficient} coûte environ {saving} de moins par an en carburant que {base}{usage} (prix : {region}) : {total} sur {years} ans.',
+  'On fuel alone, the hybrid is worth paying up to about {total} more if you keep it {years} years.':
+    'Côté carburant seulement, l’hybride vaut jusqu’à environ {total} de plus si vous le gardez {years} ans.',
+  'Price difference you are quoted': 'Écart de prix qu’on vous propose',
+  'At no extra price, it pays for itself from the first tank.':
+    'Sans écart de prix, il est rentable dès le premier plein.',
+  'At {gap} more, it takes more than {horizon} years to pay for itself on fuel alone.':
+    'À {gap} de plus, il faut plus de {horizon} ans pour le rentabiliser en carburant seulement.',
+  'At {gap} more, it pays for itself in about {years} year.':
+    'À {gap} de plus, il est rentabilisé en environ {years} an.',
+  'At {gap} more, it pays for itself in about {years} years.':
+    'À {gap} de plus, il est rentabilisé en environ {years} ans.',
+  'EPA fuel use at {region} pump prices and {km} km a year. Resale value, insurance and upkeep can tip it either way.':
+    'Consommation EPA, prix à la pompe ({region}) et {km} km par an. La valeur de revente, l’assurance et l’entretien peuvent faire pencher la balance.',
+  'Hybrid or gas?': 'Hybride ou essence?',
+  'Compare the two': 'Comparer les deux',
   'Full charge; about {km} km at −7 °C, heat on':
     'Pleine charge; environ {km} km à −7 °C, chauffage allumé',
   'Real range varies with cold, speed and hills. In AAA’s 2019 test of five EVs at −7 °C, range fell 41% on average with the heater on and 12% without: the winter figure here takes off 41%. Newer EVs with a heat pump often lose less.':

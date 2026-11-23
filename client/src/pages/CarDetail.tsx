@@ -25,6 +25,7 @@ import PinnedCarBar from '../components/PinnedCarBar';
 import KeySpecs from '../components/KeySpecs';
 import SimilarCars from '../components/SimilarCars';
 import VersionPicker from '../components/VersionPicker';
+import HybridPayback from '../components/HybridPayback';
 import DataTrustPanel from '../components/DataTrustPanel';
 import { DataRow } from '../components/DataValue';
 import { buildKeyFigures, buildSpecLine } from '../utils/keyFigures';
@@ -994,6 +995,7 @@ export default function CarDetail() {
             <button type="button" onClick={() => setShowTCO(true)} className="btn-secondary mt-4">
               {t('Work out my own costs')}
             </button>
+            <HybridPayback car={car} />
           </div>
         </section>
       )}

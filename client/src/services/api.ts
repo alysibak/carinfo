@@ -167,8 +167,19 @@ export async function getCarRecords(id: string): Promise<CarRecordsSummary> {
 }
 
 /** Same year/make/model EPA configs (other trims/transmissions). */
+// One request a car: the version list and the hybrid payback both ask.
+const siblingRequests = new Map<string, Promise<CarSpecs[]>>();
+
 export async function getSiblingConfigs(id: string, limit = 24): Promise<CarSpecs[]> {
-  return api.get(`${carPath(id)}/siblings?limit=${limit}`);
+  const key = `${id}:${limit}`;
+  let request = siblingRequests.get(key);
+  if (!request) {
+    request = api.get<CarSpecs[]>(`${carPath(id)}/siblings?limit=${limit}`);
+    siblingRequests.set(key, request);
+    // A failed request is asked again next time.
+    request.catch(() => siblingRequests.delete(key));
+  }
+  return request;
 }
 
 /**
