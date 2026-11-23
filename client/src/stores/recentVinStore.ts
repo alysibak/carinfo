@@ -9,6 +9,8 @@ export interface RecentVin {
   title: string | null;
   /** Saved with no connection: looked up once there is one. */
   pending?: boolean;
+  /** The car on CarInfo it matched: the scanned cars go to Compare together. */
+  carId?: string;
 }
 
 /** The newest few: a lot walked in an afternoon, not a record. */
@@ -20,8 +22,8 @@ interface RecentVinStore {
   record: (entry: RecentVin) => void;
   /** Saved with no connection: first in the list, to look up later unless it was looked up before. */
   keep: (vin: string) => void;
-  /** A saved VIN's lookup came back: its name, where it is in the list. */
-  settle: (vin: string, title: string | null) => void;
+  /** A saved VIN's lookup came back: its name and car, where it is in the list. */
+  settle: (vin: string, found: Pick<RecentVin, 'title' | 'carId'> | null) => void;
   remove: (vin: string) => void;
   clear: () => void;
 }
@@ -47,9 +49,11 @@ export const useRecentVinStore = create<RecentVinStore>()(
             vins: [entry, ...state.vins.filter((v) => v.vin !== vin)].slice(0, MAX_RECENT_VINS),
           };
         }),
-      settle: (vin, title) =>
+      settle: (vin, found) =>
         set((state) => ({
-          vins: state.vins.map((v) => (v.vin === vin && v.pending ? { vin, title } : v)),
+          vins: state.vins.map((v) =>
+            v.vin === vin && v.pending ? { vin, ...(found ?? { title: null }) } : v,
+          ),
         })),
       remove: (vin) => set((state) => ({ vins: state.vins.filter((v) => v.vin !== vin) })),
       clear: () => set({ vins: [] }),
@@ -61,5 +65,6 @@ export const useRecentVinStore = create<RecentVinStore>()(
 /** A decoded VIN as the recent list keeps it. */
 export function recentVinEntry(result: VinDecodeResult): RecentVin {
   const title = [result.year, result.make, result.model].filter(Boolean).join(' ');
-  return { vin: result.vin, title: title || null };
+  const carId = result.catalog?.cars?.[0]?.id;
+  return { vin: result.vin, title: title || null, ...(carId ? { carId } : {}) };
 }

@@ -45,7 +45,7 @@ describe('useRecentVinStore', () => {
     const { record, keep, settle } = useRecentVinStore.getState();
     keep(VIN);
     record({ vin: '5YJ3E1EA7KF317283', title: '2019 TESLA Model 3' });
-    settle(VIN, '2003 HONDA Accord');
+    settle(VIN, { title: '2003 HONDA Accord' });
     settle('5YJ3E1EA7KF317283', null);
     expect(useRecentVinStore.getState().vins).toEqual([
       { vin: '5YJ3E1EA7KF317283', title: '2019 TESLA Model 3' },
@@ -71,5 +71,20 @@ describe('recentVinEntry', () => {
 
   it('names nothing when the decoder named nothing', () => {
     expect(recentVinEntry(result({})).title).toBeNull();
+  });
+});
+
+describe('recentVinEntry and the car it matched', () => {
+  it('keeps the car on CarInfo the VIN matched, so scanned cars can be compared', () => {
+    const entry = recentVinEntry({
+      vin: VIN,
+      year: 2003,
+      make: 'HONDA',
+      model: 'Accord',
+      decodedClean: true,
+      engine: {},
+      catalog: { cars: [{ id: 'accord-30-auto' }, { id: 'accord-24-auto' }] },
+    } as unknown as VinDecodeResult);
+    expect(entry).toEqual({ vin: VIN, title: '2003 HONDA Accord', carId: 'accord-30-auto' });
   });
 });

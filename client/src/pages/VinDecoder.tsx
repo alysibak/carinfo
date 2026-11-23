@@ -12,6 +12,7 @@ import { cleanVinInput, vinCheckDigitValid } from '../utils/vin';
 import { holdVinReader } from '../utils/vinReader';
 import { keepVinPageOffline } from '../utils/keepOffline';
 import { recentVinEntry, useRecentVinStore } from '../stores/recentVinStore';
+import { formatCompareIds, MAX_COMPARE } from '../utils/compareIds';
 import { msg, t } from '../i18n';
 
 const VinScanner = lazy(() => import('../components/VinScanner'));
@@ -98,6 +99,9 @@ function RecentVins({ exclude, onPick }: { exclude?: string; onPick: (vin: strin
   const clear = useRecentVinStore((state) => state.clear);
   const remove = useRecentVinStore((state) => state.remove);
   const shown = vins.filter((entry) => entry.vin !== exclude);
+  // The cars these VINs matched, newest first and each once: walking a lot,
+  // the ones looked at go side by side. The one on screen counts too.
+  const carIds = [...new Set(vins.flatMap((entry) => (entry.carId ? [entry.carId] : [])))];
   if (shown.length === 0) return null;
   return (
     <section aria-labelledby="recent-vins" className="mt-6 max-w-2xl">
@@ -123,6 +127,16 @@ function RecentVins({ exclude, onPick }: { exclude?: string; onPick: (vin: strin
           />
         ))}
       </ul>
+      {carIds.length > 1 && (
+        <Link
+          to={`/compare?cars=${formatCompareIds(carIds)}`}
+          className="btn-secondary mt-3 text-sm inline-flex"
+        >
+          {t('Compare these {count} cars side by side', {
+            count: Math.min(carIds.length, MAX_COMPARE),
+          })}
+        </Link>
+      )}
     </section>
   );
 }
@@ -288,7 +302,7 @@ export default function VinDecoder() {
         if (stopped) return;
         if (!entry.pending || entry.vin === savedVin) continue;
         try {
-          settleVin(entry.vin, recentVinEntry(await decodeVin(entry.vin)).title);
+          settleVin(entry.vin, recentVinEntry(await decodeVin(entry.vin)));
         } catch (e: unknown) {
           // Still no answer: next time.
           if (unreachable(e)) return;

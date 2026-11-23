@@ -1,5 +1,6 @@
 /** Compare, the garage and a shared garage, model and model-year pages, the VIN decoder and the value chart. English text to French (fr-CA). */
 const fr: Record<string, string> = {
+  'Compare these {count} cars side by side': 'Comparer ces {count} véhicules côte à côte',
   'Financed: about {payment} a month for {months} months, {interest} in interest.':
     'Financé : environ {payment} par mois sur {months} mois, {interest} d’intérêts.',
   'Financed: enter a rate to see the payment.': 'Financé : entrez un taux pour voir le paiement.',

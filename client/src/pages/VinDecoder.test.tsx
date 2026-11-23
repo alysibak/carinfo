@@ -172,4 +172,23 @@ describe('VinDecoder', () => {
       onLine.mockRestore();
     }
   });
+
+  it('puts the cars scanned side by side', () => {
+    useRecentVinStore.setState({
+      vins: [
+        { vin: '1HGCM82633A004352', title: '2003 HONDA Accord', carId: 'accord-30-auto' },
+        { vin: '5YJ3E1EA7KF317283', title: '2019 TESLA Model 3', carId: 'model-3-lr' },
+        { vin: '2HGFE2F59TH000001', title: null },
+      ],
+    });
+    render(
+      <MemoryRouter>
+        <VinDecoder />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('link', { name: 'Compare these 2 cars side by side' })).toHaveAttribute(
+      'href',
+      '/compare?cars=accord-30-auto,model-3-lr',
+    );
+  });
 });
