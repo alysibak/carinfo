@@ -5,6 +5,7 @@ import { isHttpError } from '../services/http';
 import { searchQueryToParams } from '../utils/searchParams';
 import { usePageMeta } from '../utils/pageMeta';
 import VinCatalogMatch from '../components/VinCatalogMatch';
+import PrivateSaleChecks from '../components/PrivateSaleChecks';
 import ShareResult from '../components/ShareResult';
 import OfflineVinCard from '../components/OfflineVinCard';
 import { useOnline } from '../hooks/useOnline';
@@ -556,6 +557,8 @@ export default function VinDecoder() {
                 )}
 
                 <VinCatalogMatch decoded={result} />
+
+                <PrivateSaleChecks />
 
                 <details className="group">
                   <summary className="cursor-pointer list-none flex items-center justify-between gap-3 text-xs text-zinc-400 pt-5 pb-2 border-b border-zinc-900">

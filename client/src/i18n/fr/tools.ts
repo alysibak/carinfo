@@ -1,5 +1,40 @@
 /** Compare, the garage and a shared garage, model and model-year pages, the VIN decoder and the value chart. English text to French (fr-CA). */
 const fr: Record<string, string> = {
+  'The seller must give you a Used Vehicle Information Package: it lists the registered owners and any lien on the car.':
+    'Le vendeur doit vous remettre la trousse d’information sur les véhicules d’occasion : elle indique les propriétaires inscrits et tout privilège sur le véhicule.',
+  'Search the Register of Personal and Movable Real Rights (RDPRM) by VIN, for a fee: it shows whether the car secures a loan.':
+    'Faites une recherche par NIV au Registre des droits personnels et réels mobiliers (RDPRM), moyennant des frais : elle indique si le véhicule garantit un prêt.',
+  'Search the Personal Property Registry by VIN for a lien, for a fee.':
+    'Cherchez un privilège par NIV au Registre des biens personnels, moyennant des frais.',
+  'Any registry agent can search for liens by VIN; a vehicle information report also shows how many liens are registered in Alberta.':
+    'Tout agent d’immatriculation peut chercher les privilèges par NIV; un rapport d’information sur le véhicule indique aussi combien de privilèges sont inscrits en Alberta.',
+  'Search the Personal Property Registry by VIN for a lien.':
+    'Cherchez un privilège par NIV au Registre des biens personnels.',
+  'Search the Personal Property Registry, run by Teranet Manitoba, by VIN for a lien.':
+    'Cherchez un privilège par NIV au Registre des biens personnels, géré par Teranet Manitoba.',
+  'Lien Check searches the Personal Property Registry by VIN.':
+    'Lien Check cherche les privilèges par NIV au Registre des biens personnels.',
+  'Lien Check, the Atlantic provinces’ search, finds a lien by VIN: choose Prince Edward Island as the province.':
+    'Lien Check, la recherche des provinces de l’Atlantique, trouve un privilège par NIV : choisissez l’Île-du-Prince-Édouard comme province.',
+  'Lien Check, the Atlantic provinces’ search, finds a lien by VIN: choose New Brunswick as the province.':
+    'Lien Check, la recherche des provinces de l’Atlantique, trouve un privilège par NIV : choisissez le Nouveau-Brunswick comme province.',
+  'The VIN on the dashboard, on the driver’s door label and on the ownership papers all match.':
+    'Le NIV du tableau de bord, de l’étiquette de la portière du conducteur et des papiers d’immatriculation concordent.',
+  'The name on the ownership matches the seller’s photo ID.':
+    'Le nom sur le certificat d’immatriculation correspond à la pièce d’identité avec photo du vendeur.',
+  'A mechanic you choose has inspected it.': 'Un mécanicien de votre choix l’a inspecté.',
+  'A bill of sale with both names, the VIN, the price and the date, signed by you both.':
+    'Un contrat de vente avec les deux noms, le NIV, le prix et la date, signé par vous deux.',
+  'Payment by bank draft or transfer at the bank, not cash.':
+    'Paiement par traite bancaire ou virement à la banque, pas en argent comptant.',
+  'Buying from a private seller? Check before you pay':
+    'Achat d’un particulier? À vérifier avant de payer',
+  'No money owed on it: in': 'Aucune somme due sur le véhicule — province :',
+  'How, on {source}': 'Comment, sur {source}',
+  'A lien can follow the car to you: the lender may take it back.':
+    'Un privilège peut suivre le véhicule jusqu’à vous : le prêteur peut le reprendre.',
+  'Financial Consumer Agency of Canada':
+    'Agence de la consommation en matière financière du Canada',
   'Compare these {count} cars side by side': 'Comparer ces {count} véhicules côte à côte',
   'Financed: about {payment} a month for {months} months, {interest} in interest.':
     'Financé : environ {payment} par mois sur {months} mois, {interest} d’intérêts.',
