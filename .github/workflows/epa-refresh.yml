@@ -64,7 +64,8 @@ jobs:
       # The model-year constants (first, newest, newest full lineup) follow the
       # data, so a new model year moves nothing by hand.
       - name: Model-year constants
-        run: npx tsx server/scripts/update-model-years.ts | tee -a epa-refresh-report.txt
+        # tsx is the server workspace's; its bin is linked there, not at the root.
+        run: (cd server && npx tsx scripts/update-model-years.ts) | tee -a epa-refresh-report.txt
 
       # The outcome goes in the branch's commit message; main takes the files
       # only when they pass (below).
