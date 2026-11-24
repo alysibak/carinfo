@@ -129,6 +129,26 @@ export function getMatchups(_req: Request, res: Response, next: NextFunction) {
   }
 }
 
+/** Every make with model pages, A to Z: /api/cars/make-index */
+export function getMakeIndex(_req: Request, res: Response, next: NextFunction) {
+  try {
+    res.json({ success: true, data: carService.getMakeIndex() });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** A make's models, on sale first: /api/cars/makes/toyota/overview */
+export function getMakeOverview(req: Request, res: Response, next: NextFunction) {
+  try {
+    const overview = carService.getMakeOverview(req.params.make);
+    if (!overview) throw new HttpError(404, 'That make is not on file');
+    res.json({ success: true, data: overview });
+  } catch (error) {
+    next(error);
+  }
+}
+
 /**
  * Two models side by side: /api/cars/vs/toyota-rav4-vs-honda-cr-v
  */

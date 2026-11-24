@@ -10,11 +10,11 @@ import {
   presetToSearchQuery,
   bodyTypeFilter,
   fuelTypeFilter,
-  makeFilter,
 } from '../config/browseTaxonomy';
 import ShortlistCards from '../components/ShortlistCards';
 import BodyTypeIllustration from '../components/BodyTypeIllustration';
 import { searchQueryToParams } from '../utils/searchParams';
+import { makePath } from '@carinfo/shared/make-path';
 import type { CarFilter } from '../types/car.types';
 import { msg, t } from '../i18n';
 
@@ -191,10 +191,16 @@ export default function Browse() {
           </p>
           <div className="flex flex-wrap gap-2">
             {TOP_MAKES.map((make) => (
-              <Link key={make} to={filterLink(makeFilter(make))} className="chip">
+              <Link key={make} to={makePath(make)} className="chip">
                 {make}
               </Link>
             ))}
+            <Link
+              to="/makes"
+              className="chip inline-flex text-white underline underline-offset-4 decoration-zinc-600"
+            >
+              {t('Every make, A to Z →')}
+            </Link>
           </div>
 
           <div className="mt-10">

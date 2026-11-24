@@ -10,6 +10,9 @@ import type {
   SearchQuery,
   SearchResults,
   VsPage,
+  MakeIndexEntry,
+  MakeModel,
+  MakeOverview,
 } from '../types/car.types.js';
 import { readFileSync } from 'fs';
 import { computeEvScore } from '../utils/ev-scoring.js';
@@ -41,6 +44,7 @@ import {
   MATCHUPS,
 } from '../config/popular-models.js';
 import { modelSlug, vsPath, vsSplits } from '../shared/vs-path.js';
+import { makePath } from '../shared/make-path.js';
 import { mpgToLPer100Km } from '../config/regional-assumptions.js';
 import { TRIM_QUERY_FORMS } from '../utils/performance-trims.js';
 import { extractQueryModifiers, withoutFigures } from '../utils/search-modifiers.js';
@@ -1314,6 +1318,91 @@ export function getModelLinesByMake(make: string): ModelLineSummary[] {
     }))
     .sort((a, b) => b.last - a.last || a.name.localeCompare(b.name));
 }
+
+const onSaleSince = () => LATEST_FULL_MODEL_YEAR - 1;
+
+/** Every make with model pages, A to Z, with how many models and how many on sale. */
+export function getMakeIndex(): MakeIndexEntry[] {
+  ensureDatabase();
+  const byMake = new Map<string, MakeIndexEntry>();
+  for (const family of modelPages().byPath.values()) {
+    const entry = byMake.get(family.make) ?? {
+      make: family.make,
+      path: makePath(family.make),
+      models: 0,
+      onSale: 0,
+    };
+    entry.models += 1;
+    if (family.last >= onSaleSince()) entry.onSale += 1;
+    byMake.set(family.make, entry);
+  }
+  return [...byMake.values()].sort((a, b) => a.make.localeCompare(b.make));
+}
+
+/**
+ * A make's page: each model with a page, on sale first (best known first),
+ * as its newest year on file reads: body, fuel, the thriftiest version's
+ * fuel use or the longest range, and a photo where Commons has one.
+ */
+export function getMakeOverview(makeSlug: string): MakeOverview | null {
+  ensureDatabase();
+  const slug = urlSlug(makeSlug);
+  const pages = modelPages();
+  if (makeOverviewCache?.source !== pages) makeOverviewCache = { source: pages, value: new Map() };
+  const cached = makeOverviewCache.value.get(slug);
+  if (cached !== undefined) return cached;
+
+  const families = [...pages.byPath].filter(([, family]) => urlSlug(family.make) === slug);
+  let value: MakeOverview | null = null;
+  if (families.length) {
+    const models = families
+      .map(([path, family]): MakeModel & { prominence: number } => {
+        const newest = (pages.carsByKey.get(family.key) ?? []).filter(
+          (car) => car.year === family.last,
+        );
+        // As the model page's year rows count them.
+        const burners = newest.filter(
+          (car) => car.engine.fuelType !== 'electric' && (car.fuelEconomy?.combined ?? 0) > 0,
+        );
+        const electric = newest.filter(
+          (car) => car.engine.fuelType === 'electric' && (car.epa?.rangeMiles ?? 0) > 0,
+        );
+        const combinedMpg = burners.length
+          ? Math.max(...burners.map((car) => car.fuelEconomy!.combined!))
+          : undefined;
+        const rangeMiles = electric.length
+          ? Math.max(...electric.map((car) => car.epa!.rangeMiles!))
+          : undefined;
+        const photo = newest.find((car) => car.photo)?.photo;
+        return {
+          name: family.name,
+          path,
+          first: family.first,
+          last: family.last,
+          onSale: family.last >= onSaleSince(),
+          bodyStyles: [...new Set(newest.map((car) => car.bodyStyle))],
+          fuelTypes: [...new Set(newest.map((car) => car.engine.fuelType))],
+          ...(combinedMpg ? { combinedMpg } : {}),
+          ...(rangeMiles ? { rangeMiles } : {}),
+          ...(photo ? { photo } : {}),
+          prominence: familyProminence(family),
+        };
+      })
+      .sort((a, b) => b.prominence - a.prominence || a.name.localeCompare(b.name))
+      .map(({ prominence: _prominence, ...model }) => model);
+    value = {
+      make: families[0][1].make,
+      path: `/makes/${slug}`,
+      first: Math.min(...families.map(([, family]) => family.first)),
+      last: Math.max(...families.map(([, family]) => family.last)),
+      models,
+    };
+  }
+  makeOverviewCache.value.set(slug, value);
+  return value;
+}
+let makeOverviewCache: { source: ModelPages; value: Map<string, MakeOverview | null> } | null =
+  null;
 
 /** Every model page, for the sitemap, the models on sale first. */
 export function getModelPages(): Array<{ path: string; label: string; last: number }> {

@@ -6,6 +6,7 @@ import { loadTemplate, renderShell } from './html-shell.js';
 import { vehicleName, vehicleSeo, type PageSeo } from './vehicle-seo.js';
 import { modelSeo, modelYearSeo } from './model-seo.js';
 import { vsSeo } from './vs-seo.js';
+import { makeIndexSeo, makeSeo } from './make-seo.js';
 
 /**
  * Server-rendered HTML shells for the pages people share and search engines
@@ -154,6 +155,35 @@ router.get('/compare', (req, res) => {
     // the index but let unfurlers use the tags above.
     noindex: true,
   });
+});
+
+router.get('/makes', (req, res) => {
+  send(req, res, makeIndexSeo(carService.getMakeIndex()));
+});
+
+router.get('/makes/:make', (req, res) => {
+  const overview = carService.getMakeOverview(req.params.make);
+  if (!overview) {
+    send(
+      req,
+      res,
+      {
+        title: 'Make not found',
+        description: 'This make is not in the CarInfo database.',
+        canonicalPath: req.path,
+        ogType: 'website',
+        noindex: true,
+      },
+      404,
+    );
+    return;
+  }
+  // "/makes/Toyota" and a trailing slash lead to the one address.
+  if (req.path !== overview.path) {
+    res.redirect(301, overview.path);
+    return;
+  }
+  send(req, res, makeSeo(overview));
 });
 
 router.get('/compare/:pair', (req, res) => {

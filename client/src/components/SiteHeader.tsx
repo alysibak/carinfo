@@ -22,6 +22,7 @@ interface NavLinkItem {
 const NAV_LINKS: NavLinkItem[] = [
   { to: '/home', label: msg('Search') },
   { to: '/browse', label: msg('Browse') },
+  { to: '/makes', label: msg('Makes') },
   { to: '/compare', label: msg('Compare') },
   { to: '/vin', label: msg('VIN') },
   { to: '/garage', label: msg('Garage') },
@@ -234,6 +235,9 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
             </div>
           </div>
           <div className="py-4 flex flex-col gap-3 text-sm text-zinc-400">
+            <NavLink to="/find" onClick={() => setMenuOpen(false)} className="hover:text-white">
+              {t('Find a car in 3 questions')}
+            </NavLink>
             <NavLink
               to="/value-matrix"
               onClick={() => setMenuOpen(false)}

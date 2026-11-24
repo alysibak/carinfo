@@ -19,6 +19,7 @@ import {
   getModelYearPages,
   getStatistics,
   getVsPages,
+  getMakeIndex,
 } from '../src/services/car.service.js';
 import {
   URLS_PER_SITEMAP,
@@ -66,6 +67,14 @@ const pages: SitemapEntry[] = [
     path: `/collection/${id}`,
     changefreq: 'monthly',
     priority: 0.7,
+  })),
+  // Every make, and each make's models.
+  { path: '/makes', changefreq: 'monthly', priority: 0.7 },
+  ...getMakeIndex().map((make): SitemapEntry => ({
+    path: make.path,
+    lastmod: lastUpdated,
+    changefreq: 'monthly',
+    priority: make.onSale > 0 ? 0.7 : 0.5,
   })),
   // The popular match-ups head to head: "rav4 vs cr-v" is how people search.
   ...getVsPages().map((page): SitemapEntry => ({

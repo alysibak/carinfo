@@ -2,6 +2,8 @@ import type {
   BestSellers,
   Matchup,
   VsPage,
+  MakeIndexEntry,
+  MakeOverview,
   CarRecordsSummary,
   CarDashboard,
   CarSpecs,
@@ -83,6 +85,16 @@ export async function getBestSellers(options?: RequestOptions): Promise<BestSell
  */
 export async function getMatchups(options?: RequestOptions): Promise<Matchup[]> {
   return api.get('/cars/matchups', options);
+}
+
+/** Every make with model pages, A to Z. */
+export async function getMakeIndex(): Promise<MakeIndexEntry[]> {
+  return api.get('/cars/make-index');
+}
+
+/** A make's models, on sale first: "toyota". */
+export async function getMakeOverview(make: string): Promise<MakeOverview> {
+  return api.get(`/cars/makes/${encodeURIComponent(make)}/overview`);
 }
 
 /** Two models head to head: "toyota-rav4-vs-honda-cr-v". */

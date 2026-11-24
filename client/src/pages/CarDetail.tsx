@@ -22,6 +22,7 @@ import { carPhotoSources } from '../utils/carImages';
 import KeyFigures from '../components/KeyFigures';
 import RegionSelect from '../components/RegionSelect';
 import TripCost from '../components/TripCost';
+import { makePath } from '@carinfo/shared/make-path';
 import PinnedCarBar from '../components/PinnedCarBar';
 import KeySpecs from '../components/KeySpecs';
 import SimilarCars from '../components/SimilarCars';
@@ -602,7 +603,7 @@ export default function CarDetail() {
             <Breadcrumbs
               className="mb-1"
               items={[
-                { label: car.make, to: `/home?make=${encodeURIComponent(car.make)}` },
+                { label: car.make, to: makePath(car.make) },
                 {
                   label: dashboard.modelPage.label.replace(new RegExp(`^${car.make}\\s+`, 'i'), ''),
                   to: dashboard.modelPage.path,

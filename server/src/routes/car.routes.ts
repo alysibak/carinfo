@@ -16,6 +16,9 @@ router.get('/makes', cacheData, carController.getMakes);
 // Get models by make
 router.get('/makes/:make/models', cacheData, carController.getModelsByMake);
 router.get('/makes/:make/lines', cacheData, carController.getModelLinesByMake);
+// A make's page and the A–Z list of makes
+router.get('/makes/:make/overview', cacheData, carController.getMakeOverview);
+router.get('/make-index', cacheData, carController.getMakeIndex);
 
 // One model year with several configurations (before the all-years route)
 router.get('/models/:make/:model/:year', cacheData, carController.getModelYearOverview);

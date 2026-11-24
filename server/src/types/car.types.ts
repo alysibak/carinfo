@@ -714,6 +714,40 @@ export interface Matchup {
   cars: Array<{ label: string; carId: string }>;
 }
 
+/** A make's page, "/makes/toyota": its models, on sale first. */
+export interface MakeOverview {
+  make: string;
+  path: string;
+  first: number;
+  last: number;
+  models: MakeModel[];
+}
+
+/** One model on its make's page, as its newest year on file reads. */
+export interface MakeModel {
+  name: string;
+  path: string;
+  first: number;
+  last: number;
+  /** Its newest year is current (this year's or last year's). */
+  onSale: boolean;
+  bodyStyles: BodyStyle[];
+  fuelTypes: FuelType[];
+  /** EPA combined MPG of the newest year's thriftiest version that burns fuel. */
+  combinedMpg?: number;
+  /** EPA range of the newest year's longest-range electric version. */
+  rangeMiles?: number;
+  photo?: CarPhoto;
+}
+
+/** A make in the A–Z list. */
+export interface MakeIndexEntry {
+  make: string;
+  path: string;
+  models: number;
+  onSale: number;
+}
+
 /** Two models side by side, at "/compare/toyota-rav4-vs-honda-cr-v". */
 export interface VsPage {
   /** Its address; a popular match-up's pair in the match-up's order. */

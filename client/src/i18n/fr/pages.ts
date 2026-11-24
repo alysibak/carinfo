@@ -1,5 +1,39 @@
 /** The landing page, methodology and the not-found page. English text to French (fr-CA). */
 const fr: Record<string, string> = {
+  // Makes, A to Z, and a make's page
+  Makes: 'Marques',
+  'Every make, A to Z': 'Toutes les marques, de A à Z',
+  'Every make, A to Z →': 'Toutes les marques, de A à Z →',
+  'Every make with models on file since 1995: open one to see its models, year by year.':
+    'Toutes les marques dont des modèles sont au dossier depuis 1995 : ouvrez-en une pour voir ses modèles, année par année.',
+  'Open a make to see its models, the ones on sale first.':
+    'Ouvrez une marque pour voir ses modèles, ceux en vente d’abord.',
+  'Could not load the makes. Try again.': 'Impossible de charger les marques. Réessayez.',
+  'Selling models now': 'Avec des modèles en vente',
+  'Earlier models only': 'Anciens modèles seulement',
+  '{models} · {onSale} on sale': '{models} · {onSale} en vente',
+  '{count} model': '{count} modèle',
+  '{count} models': '{count} modèles',
+  '{make}: every model on file': '{make} : tous les modèles au dossier',
+  '{count} {make} models from {first} to {last}: fuel use, crash ratings and recalls in Canada, year by year.':
+    '{count} modèles {make} de {first} à {last} : consommation, cotes de sécurité et rappels au Canada, année par année.',
+  '{count} model on file': '{count} modèle au dossier',
+  '{count} models on file': '{count} modèles au dossier',
+  '{count} on sale': '{count} en vente',
+  SUVs: 'VUS',
+  Cars: 'Voitures',
+  Vans: 'Fourgonnettes',
+  'Hybrid or electric': 'Hybride ou électrique',
+  All: 'Tous',
+  'On sale': 'En vente',
+  'Earlier models': 'Modèles antérieurs',
+  'Make not found': 'Marque introuvable',
+  'No make by that name is on file.': 'Aucune marque de ce nom n’est au dossier.',
+  'Every make': 'Toutes les marques',
+  'Make unavailable': 'Marque indisponible',
+  'Could not load this make. Check your connection and try again.':
+    'Impossible de charger cette marque. Vérifiez votre connexion et réessayez.',
+  'Search every {make} version, with filters': 'Chercher toutes les versions {make}, avec filtres',
   // Landing
   'Skip to content': 'Aller au contenu',
   'Public records, in plain words': 'Des documents publics, en mots simples',

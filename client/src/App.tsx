@@ -26,6 +26,8 @@ const BattleMode = lazy(() => import('./pages/BattleMode'));
 const ValueMatrix = lazy(() => import('./pages/ValueMatrix'));
 const Browse = lazy(() => import('./pages/Browse'));
 const Find = lazy(() => import('./pages/Find'));
+const MakesIndex = lazy(() => import('./pages/MakesIndex'));
+const MakePage = lazy(() => import('./pages/MakePage'));
 const SharedGarage = lazy(() => import('./pages/SharedGarage'));
 const VinDecoder = lazy(() => import('./pages/VinDecoder'));
 const Methodology = lazy(() => import('./pages/Methodology'));
@@ -76,6 +78,8 @@ function App() {
                   <Route path="/vehicles/:category/:subcategory" element={<VehicleGrid />} />
                   <Route path="/car/:id" element={<CarDetail />} />
                   <Route path="/car/:id/checklist" element={<CarChecklist />} />
+                  <Route path="/makes" element={<MakesIndex />} />
+                  <Route path="/makes/:make" element={<MakePage />} />
                   <Route path="/models/:make/:model/:year" element={<ModelYearPage />} />
                   <Route path="/models/:make/:model" element={<ModelPage />} />
                   <Route path="/home" element={<Home />} />

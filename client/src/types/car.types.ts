@@ -49,6 +49,9 @@ export type {
   TcoRange,
   TheftRank,
   VsPage,
+  MakeIndexEntry,
+  MakeModel,
+  MakeOverview,
   VehicleCategory,
   VehicleSize,
 } from '@carinfo/types/car.types';

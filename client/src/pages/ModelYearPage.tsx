@@ -1,4 +1,5 @@
 import { Link, useParams } from 'react-router-dom';
+import { makePath } from '@carinfo/shared/make-path';
 import { useEffect, useMemo, useState } from 'react';
 import * as api from '../services/api';
 import { isHttpError } from '../services/http';
@@ -108,7 +109,7 @@ export default function ModelYearPage() {
       <PageBody>
         <Breadcrumbs
           items={[
-            { label: overview.make, to: `/home?make=${encodeURIComponent(overview.make)}` },
+            { label: overview.make, to: makePath(overview.make) },
             { label: overview.name, to: overview.modelPath },
             { label: String(overview.year) },
           ]}

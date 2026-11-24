@@ -23,6 +23,7 @@ import { usePageMeta } from '../utils/pageMeta';
 import { complaintPart } from '../utils/recalls';
 import { theftSentence } from '@carinfo/shared/theft';
 import { vsPath } from '@carinfo/shared/vs-path';
+import { makePath } from '@carinfo/shared/make-path';
 import { modelKey, takePrefetched } from '../utils/prefetch';
 import { t, tp } from '../i18n';
 import Breadcrumbs from '../components/Breadcrumbs';
@@ -428,7 +429,7 @@ export default function ModelPage() {
               <Breadcrumbs
                 className="mb-2"
                 items={[
-                  { label: overview.make, to: `/home?make=${encodeURIComponent(overview.make)}` },
+                  { label: overview.make, to: makePath(overview.make) },
                   { label: overview.name },
                 ]}
               />
