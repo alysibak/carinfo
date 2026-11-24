@@ -18,3 +18,16 @@ export const REGION_NAMES: Record<RegionId, string> = {
   'prince-edward-island': 'Prince Edward Island',
   'newfoundland-and-labrador': 'Newfoundland and Labrador',
 };
+
+/** A yearly distance worth taking as someone's own, km. */
+export const OWN_KM_RANGE = { min: 1000, max: 100_000 } as const;
+
+/** 1,000 to 100,000 km: what the client may set and the server takes. */
+export function plausibleAnnualKm(km: unknown): km is number {
+  return (
+    typeof km === 'number' &&
+    Number.isFinite(km) &&
+    km >= OWN_KM_RANGE.min &&
+    km <= OWN_KM_RANGE.max
+  );
+}

@@ -1,5 +1,6 @@
 import { estimateAnnualEnergyCost } from '@carinfo/shared/energy-cost';
-import { getRegionalAssumptions, type RegionId } from '@carinfo/config/regional-assumptions';
+import type { RegionId } from '@carinfo/config/regional-assumptions';
+import { costAssumptions } from './costAssumptions';
 import type { CarSpecs } from '../types/car.types';
 
 /**
@@ -24,14 +25,20 @@ export interface FuelSaving {
   yearlySaving: number;
 }
 
-function annualEnergy(car: CarSpecs, region: RegionId): number | null {
-  return estimateAnnualEnergyCost(car, {}, getRegionalAssumptions(region))?.annualCad ?? null;
+function annualEnergy(car: CarSpecs, region: RegionId, ownKm: number | null): number | null {
+  return estimateAnnualEnergyCost(car, {}, costAssumptions(region, ownKm))?.annualCad ?? null;
 }
 
 /** Which of two cars costs less to fuel, and by how much a year; null under $50, the estimates' own error. */
-export function fuelSavingBetween(a: CarSpecs, b: CarSpecs, region: RegionId): FuelSaving | null {
-  const costA = annualEnergy(a, region);
-  const costB = annualEnergy(b, region);
+export function fuelSavingBetween(
+  a: CarSpecs,
+  b: CarSpecs,
+  region: RegionId,
+  /** The visitor's own yearly distance, km, when they set one. */
+  ownKm: number | null = null,
+): FuelSaving | null {
+  const costA = annualEnergy(a, region, ownKm);
+  const costB = annualEnergy(b, region, ownKm);
   if (costA == null || costB == null) return null;
   const yearlySaving = Math.abs(costA - costB);
   if (yearlySaving < 50) return null;
@@ -44,10 +51,15 @@ const isHybrid = (car: CarSpecs) => car.engine.fuelType === 'hybrid';
 const isGasoline = (car: CarSpecs) => car.engine.fuelType === 'gasoline' && !car.engine.mildHybrid;
 
 /** Of these, the cheapest to fuel; those with the given drive first, where there are any. */
-function thriftiest(cars: CarSpecs[], drive: string, region: RegionId): CarSpecs | undefined {
+function thriftiest(
+  cars: CarSpecs[],
+  drive: string,
+  region: RegionId,
+  ownKm: number | null,
+): CarSpecs | undefined {
   const sameDrive = cars.filter((car) => car.driveType === drive);
   return (sameDrive.length ? sameDrive : cars)
-    .map((car) => ({ car, cost: annualEnergy(car, region) }))
+    .map((car) => ({ car, cost: annualEnergy(car, region, ownKm) }))
     .filter((row): row is { car: CarSpecs; cost: number } => row.cost != null)
     .sort((x, y) => x.cost - y.cost)[0]?.car;
 }
@@ -61,17 +73,19 @@ export function hybridSaving(
   car: CarSpecs,
   siblings: CarSpecs[],
   region: RegionId,
+  ownKm: number | null = null,
 ): FuelSaving | null {
   const others = siblings.filter(
     (other) => other.id !== car.id && other.bodyStyle === car.bodyStyle,
   );
+  const pick = (cars: CarSpecs[]) => thriftiest(cars, car.driveType, region, ownKm);
   const pair = isGasoline(car)
-    ? { base: car, efficient: thriftiest(others.filter(isHybrid), car.driveType, region) }
+    ? { base: car, efficient: pick(others.filter(isHybrid)) }
     : isHybrid(car)
-      ? { efficient: car, base: thriftiest(others.filter(isGasoline), car.driveType, region) }
+      ? { efficient: car, base: pick(others.filter(isGasoline)) }
       : null;
   if (!pair?.efficient || !pair.base) return null;
-  const saving = fuelSavingBetween(pair.efficient, pair.base, region);
+  const saving = fuelSavingBetween(pair.efficient, pair.base, region, ownKm);
   // Only where the hybrid is the thriftier one, as it should be.
   return saving && saving.efficient.id === pair.efficient.id ? saving : null;
 }

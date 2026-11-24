@@ -25,7 +25,12 @@ import { nhtsaRatingsDate, nhtsaTestsFor } from '../utils/nhtsa-ratings.js';
 import { theftRankOf } from '../config/most-stolen.js';
 import { splitRecalls } from '../shared/recall-scope.js';
 
-export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard | null {
+export function getCarDashboard(
+  id: string,
+  regionId?: RegionId,
+  /** The visitor's own yearly distance, km; the region's average without it. */
+  annualKm?: number,
+): CarDashboard | null {
   const car = carService.getCarById(id);
   if (!car) return null;
 
@@ -45,7 +50,7 @@ export function getCarDashboard(id: string, regionId?: RegionId): CarDashboard |
   const pool = carService.getCarsByBodyStyle(car.bodyStyle);
   const segmentPool = pool.length > 0 ? pool : carService.getAllCars();
   const segment = getSegment(carForSegment, segmentPool);
-  const ownership = computeOwnershipEconomics(car, segment, regionId);
+  const ownership = computeOwnershipEconomics(car, segment, regionId, annualKm);
   const zeroToSixty = predictZeroToSixty(car);
 
   const displayCar = {

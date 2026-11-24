@@ -310,12 +310,13 @@ function buildDerivedComparison(
   annual: AnnualCostBreakdown,
   dep5Mid: number,
   car: CarSpecs,
+  annualMiles: number = ANNUAL_MILES,
 ): DerivedComparisonMetric | null {
   if (annual.total == null && car.engine.fuelType === 'hydrogen') return null;
 
   const fuelCpm = fuelCostPerMile(car);
   const annualAllIn = (annual.total ?? 0) + dep5Mid / 5;
-  const effectiveCpm = Math.round((annualAllIn / ANNUAL_MILES) * 100) / 100;
+  const effectiveCpm = Math.round((annualAllIn / annualMiles) * 100) / 100;
 
   return {
     fuelCostPerMile: fuelCpm,
@@ -397,8 +398,11 @@ export function computeOwnershipEconomics(
   car: CarSpecs,
   _segment: CarSpecs[],
   regionId?: RegionId,
+  /** The visitor's own yearly distance, km: it moves the fuel cost, nothing time-based. */
+  annualKm?: number,
 ): OwnershipEconomics {
-  const region = getRegionalAssumptions(regionId);
+  const regional = getRegionalAssumptions(regionId);
+  const region = annualKm ? { ...regional, annualKm } : regional;
   const annualMiles = annualKmToMiles(region.annualKm);
   const unvalued = unvaluedReason(car);
   let market = estimateMarketValue(car, region);
@@ -409,6 +413,7 @@ export function computeOwnershipEconomics(
     annualCost,
     resaleImpact.estimatedLoss5Year.mid,
     car,
+    annualMiles,
   );
   const tco5Year = estimateTco5Year(
     car,

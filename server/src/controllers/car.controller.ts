@@ -4,6 +4,7 @@ import * as carService from '../services/car.service.js';
 import * as dashboardService from '../services/dashboard.service.js';
 import * as collectionsService from '../services/collections.service.js';
 import { parseRegionId } from '../config/regional-assumptions.js';
+import { plausibleAnnualKm } from '../config/regions.js';
 import { normalizeSearchQuery, parseSearchQueryString } from '../utils/search-validation.js';
 
 /** Compare is bounded because each id costs a full dashboard computation. */
@@ -207,7 +208,13 @@ export function getCarDashboard(req: Request, res: Response, next: NextFunction)
   try {
     const { id } = req.params;
     const region = parseRegionId(req.query.region);
-    const dashboard = dashboardService.getCarDashboard(id, region);
+    // The visitor's own yearly distance, when they set one; else the region's.
+    const km = Number(req.query.km);
+    const dashboard = dashboardService.getCarDashboard(
+      id,
+      region,
+      plausibleAnnualKm(km) ? Math.round(km) : undefined,
+    );
 
     if (!dashboard) throw new HttpError(404, 'Car not found');
 

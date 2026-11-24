@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useModalFocus } from '../hooks/useModalFocus';
 import { getRegionalAssumptions } from '@carinfo/config/regional-assumptions';
 import { useRegionStore } from '../stores/regionStore';
+import { useCostAssumptions } from '../utils/costAssumptions';
 
 const DISMISSED_KEY = 'carinfo-about-data-dismissed';
 
@@ -97,7 +98,7 @@ export default function AboutData({ compact = false }: { compact?: boolean }) {
 
 function AboutDataModal({ onClose }: { onClose: () => void }) {
   const containerRef = useModalFocus(true, onClose);
-  const region = getRegionalAssumptions(useRegionStore((s) => s.region));
+  const region = useCostAssumptions();
 
   return (
     <div

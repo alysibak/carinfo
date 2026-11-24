@@ -10,6 +10,7 @@ import { DISPLAY_CURRENCY } from '../utils/currency';
 import { usesMpge } from '../utils/fuelDisplay';
 import { useModalFocus } from '../hooks/useModalFocus';
 import { computeTco, defaultTcoInputs, type TcoInputs } from '../utils/tco';
+import { useRegionStore } from '../stores/regionStore';
 import { t } from '../i18n';
 import { fmtMoney } from '../i18n/format';
 
@@ -95,10 +96,11 @@ function Row({ label, value, strong }: { label: string; value: string; strong?: 
 }
 
 export default function TCOCalculator({ car, ownership, region, onClose }: TCOCalculatorProps) {
+  const ownKm = useRegionStore((s) => s.annualKm);
   const titleId = useId();
   const defaults = useMemo(
-    () => defaultTcoInputs(car, ownership, region),
-    [car, ownership, region],
+    () => defaultTcoInputs(car, ownership, region, ownKm),
+    [car, ownership, region, ownKm],
   );
   const [inputs, setInputs] = useState<TcoInputs>(defaults);
   const regionCity = getRegionalAssumptions(region).pumpPrices.place;

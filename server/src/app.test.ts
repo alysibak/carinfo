@@ -250,6 +250,23 @@ describe('cars API', () => {
     );
   });
 
+  it('works fuel out on the visitor’s own yearly distance, and only fuel', async () => {
+    const at = async (query: string) =>
+      (await request(app).get(`/api/cars/${sampleId}/dashboard?region=ontario${query}`)).body.data
+        .ownership;
+    const average = await at('');
+    const double = await at(`&km=${2 * 15000}`);
+    expect(double.assumptions.annualKm).toBe('~30,000 km / year');
+    expect(double.annualCost.energy).toBeCloseTo(2 * average.annualCost.energy, -1);
+    // Insurance and upkeep are by the year, not the kilometre.
+    expect(double.annualCost.insurance).toBe(average.annualCost.insurance);
+    expect(double.marketValue.mid).toBe(average.marketValue.mid);
+    // Out of range or not a number: the region's average.
+    for (const km of ['50', '500000', 'lots']) {
+      expect((await at(`&km=${km}`)).annualCost.energy).toBe(average.annualCost.energy);
+    }
+  });
+
   it('serves similar vehicles and sibling configurations', async () => {
     const similar = await request(app).get(`/api/cars/${sampleId}/similar?limit=4`);
     expect(similar.body.data.length).toBeLessThanOrEqual(4);

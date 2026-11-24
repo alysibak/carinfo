@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 import type { RegionId } from '@carinfo/config/regional-assumptions';
-import { REGION_NAMES } from '@carinfo/config/regions';
+import { plausibleAnnualKm, REGION_NAMES } from '@carinfo/config/regions';
 import { msg } from '../i18n';
 
 /** Same union the API accepts; defined once in server/src/config. */
@@ -10,8 +10,13 @@ export type ClientRegionId = RegionId;
 
 interface RegionStore {
   region: ClientRegionId;
+  /** The visitor's own yearly distance, km; null for the region's average. */
+  annualKm: number | null;
   setRegion: (region: ClientRegionId) => void;
+  setAnnualKm: (km: number | null) => void;
 }
+
+export { plausibleAnnualKm };
 
 export const REGION_OPTIONS: { id: ClientRegionId; label: string }[] = [
   { id: 'ontario', label: msg('Ontario') },
@@ -35,7 +40,9 @@ export const useRegionStore = create<RegionStore>()(
   persist(
     (set) => ({
       region: 'ontario',
+      annualKm: null,
       setRegion: (region) => set({ region }),
+      setAnnualKm: (km) => set({ annualKm: plausibleAnnualKm(km) ? Math.round(km) : null }),
     }),
     { name: 'carinfo-region' },
   ),

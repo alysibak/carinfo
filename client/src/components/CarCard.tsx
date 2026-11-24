@@ -16,7 +16,8 @@ import { StatusToast } from './ui';
 import RatingStars from './RatingStars';
 import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 import { estimateAnnualEnergyCost } from '@carinfo/shared/energy-cost';
-import { getRegionalAssumptions, type RegionId } from '@carinfo/config/regional-assumptions';
+import type { RegionId } from '@carinfo/config/regional-assumptions';
+import { costAssumptions } from '../utils/costAssumptions';
 import { regionName, useRegionStore } from '../stores/regionStore';
 
 export type CarCardLayout = 'grid' | 'list';
@@ -103,8 +104,8 @@ function figuresFor(car: CarSpecs): Figure[] {
  * "~$1,900/yr fuel in Ontario (est.)": what the car burns at the visitor's
  * region's prices and yearly distance, the figure most people compare on.
  */
-function energyLine(car: CarSpecs, region: RegionId): string | null {
-  const energy = estimateAnnualEnergyCost(car, {}, getRegionalAssumptions(region));
+function energyLine(car: CarSpecs, region: RegionId, ownKm: number | null): string | null {
+  const energy = estimateAnnualEnergyCost(car, {}, costAssumptions(region, ownKm));
   if (!energy || !(energy.annualCad > 0)) return null;
   const amount = new Intl.NumberFormat('en-CA', {
     style: 'currency',
@@ -239,7 +240,8 @@ export default function CarCard({
     .join(' · ');
   const figures = figuresFor(car);
   const region = useRegionStore((state) => state.region);
-  const energy = energyLine(car, region);
+  const ownKm = useRegionStore((state) => state.annualKm);
+  const energy = energyLine(car, region, ownKm);
   const estValue = showValue ? estimatedValue(car) : null;
 
   const titleLink = (

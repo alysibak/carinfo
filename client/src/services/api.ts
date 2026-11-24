@@ -150,9 +150,17 @@ export async function getCarById(id: string): Promise<CarSpecs> {
   return api.get(carPath(id));
 }
 
-export async function getCarDashboard(id: string, region?: string): Promise<CarDashboard> {
-  const params = region ? `?region=${encodeURIComponent(region)}` : '';
-  return api.get(`${carPath(id)}/dashboard${params}`);
+export async function getCarDashboard(
+  id: string,
+  region?: string,
+  /** The visitor's own yearly distance, km, when they set one. */
+  annualKm?: number | null,
+): Promise<CarDashboard> {
+  const params = new URLSearchParams();
+  if (region) params.set('region', region);
+  if (annualKm) params.set('km', String(annualKm));
+  const query = params.toString();
+  return api.get(`${carPath(id)}/dashboard${query ? `?${query}` : ''}`);
 }
 
 /**

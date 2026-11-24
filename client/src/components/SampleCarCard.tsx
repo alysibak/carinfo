@@ -18,12 +18,13 @@ import RatingStars from './RatingStars';
  */
 export default function SampleCarCard({ car }: { car: CarSpecs }) {
   const region = useRegionStore((s) => s.region);
+  const ownKm = useRegionStore((s) => s.annualKm);
   const [dashboard, setDashboard] = useState<CarDashboard | null>(null);
 
   useEffect(() => {
     let active = true;
     api
-      .getCarDashboard(car.id, region)
+      .getCarDashboard(car.id, region, ownKm)
       .then((d) => {
         if (active) setDashboard(d);
       })
@@ -31,7 +32,7 @@ export default function SampleCarCard({ car }: { car: CarSpecs }) {
     return () => {
       active = false;
     };
-  }, [car.id, region]);
+  }, [car.id, region, ownKm]);
 
   // What it uses, how it crashed, its power: the engine is in the name's line.
   const stats = dashboard

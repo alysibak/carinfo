@@ -512,6 +512,7 @@ export default function Compare() {
   const tableScrollRef = useRef<HTMLDivElement>(null);
   const tableHeadRef = useRef<HTMLTableSectionElement>(null);
   const region = useRegionStore((s) => s.region);
+  const ownKm = useRegionStore((s) => s.annualKm);
 
   const comparedIds = useMemo(() => comparedCars.map((c) => c.id).join(','), [comparedCars]);
 
@@ -597,7 +598,7 @@ export default function Compare() {
     let cancelled = false;
     setLoading(true);
     setLoadError(null);
-    Promise.all(comparedCars.map((c) => api.getCarDashboard(c.id, region)))
+    Promise.all(comparedCars.map((c) => api.getCarDashboard(c.id, region, ownKm)))
       .then((rows) => {
         if (!cancelled) setDashboards(rows);
       })
@@ -610,7 +611,7 @@ export default function Compare() {
     return () => {
       cancelled = true;
     };
-  }, [comparedIds, comparedCars, region]);
+  }, [comparedIds, comparedCars, region, ownKm]);
 
   const dashboardById = useMemo(() => {
     const map = new Map<string, CarDashboard>();
@@ -752,7 +753,9 @@ export default function Compare() {
   const summary = loading ? [] : summarizeComparison(pairs);
   // Two cars: what the thriftier one saves in fuel, a year and over five.
   const saving =
-    !loading && pairs.length === 2 ? fuelSavingBetween(pairs[0].car, pairs[1].car, region) : null;
+    !loading && pairs.length === 2
+      ? fuelSavingBetween(pairs[0].car, pairs[1].car, region, ownKm)
+      : null;
 
   function resolveProvenance(dashboard: CarDashboard, spec: SpecRow) {
     if (!spec.provenanceKey) return null;

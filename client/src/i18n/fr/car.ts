@@ -1,5 +1,20 @@
 /** A car's page and its sections, and the before-you-buy checklist. English text to French (fr-CA). */
 const fr: Record<string, string> = {
+  'A trip in this car': 'Un trajet dans cette voiture',
+  Trip: 'Trajet',
+  'Your own distance, km': 'Votre propre distance, en km',
+  'Type a distance in kilometres.': 'Entrez une distance en kilomètres.',
+  'About {cost} in gas for {km} km.': 'Environ {cost} d’essence pour {km} km.',
+  'About {cost} in premium gas for {km} km.': 'Environ {cost} d’essence super pour {km} km.',
+  'About {cost} in diesel for {km} km.': 'Environ {cost} de diesel pour {km} km.',
+  'About {cost} in hydrogen for {km} km.': 'Environ {cost} d’hydrogène pour {km} km.',
+  'About {cost} in fuel for {km} km.': 'Environ {cost} de carburant pour {km} km.',
+  'About {cost} in gas for {km} km: on a long trip, the charge covers only the start.':
+    'Environ {cost} d’essence pour {km} km : sur un long trajet, la charge ne couvre que le début.',
+  'About {cost} in electricity for {km} km, at home charging rates; fast chargers on the road cost more.':
+    'Environ {cost} d’électricité pour {km} km, au tarif de la recharge à domicile; les bornes rapides sur la route coûtent plus cher.',
+  'One way, on EPA’s highway rating at the prices above; road distances are approximate.':
+    'Aller simple, selon la cote sur route de l’EPA aux prix ci-dessus; les distances routières sont approximatives.',
   '{model} hybrid': '{model} hybride',
   '{a} against {b} L/100 km': '{a} contre {b} L/100 km',
   'The {efficient} would save about {saving} a year on fuel over this one in {region}{usage}: {total} over {years} years.':

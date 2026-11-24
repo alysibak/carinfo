@@ -47,7 +47,11 @@ describe('Compare provenance', () => {
     );
 
     await waitFor(() => {
-      expect(api.getCarDashboard).toHaveBeenCalledWith(trustDashboard.car.id, expect.any(String));
+      expect(api.getCarDashboard).toHaveBeenCalledWith(
+        trustDashboard.car.id,
+        expect.any(String),
+        null,
+      );
     });
 
     await waitFor(() => {
@@ -82,7 +86,11 @@ describe('Compare provenance', () => {
     ).not.toThrow();
 
     await waitFor(() => {
-      expect(api.getCarDashboard).toHaveBeenCalledWith(trustDashboard.car.id, expect.any(String));
+      expect(api.getCarDashboard).toHaveBeenCalledWith(
+        trustDashboard.car.id,
+        expect.any(String),
+        null,
+      );
     });
   });
 });

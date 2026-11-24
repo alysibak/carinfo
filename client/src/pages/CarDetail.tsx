@@ -21,6 +21,7 @@ import PhotoGlow from '../components/PhotoGlow';
 import { carPhotoSources } from '../utils/carImages';
 import KeyFigures from '../components/KeyFigures';
 import RegionSelect from '../components/RegionSelect';
+import TripCost from '../components/TripCost';
 import PinnedCarBar from '../components/PinnedCarBar';
 import KeySpecs from '../components/KeySpecs';
 import SimilarCars from '../components/SimilarCars';
@@ -48,6 +49,7 @@ import RecentlyViewed from '../components/RecentlyViewed';
 import CarPageSkeleton from '../components/CarPageSkeleton';
 import { recentEntry, useRecentStore } from '../stores/recentStore';
 import { dashboardKey, takePrefetched } from '../utils/prefetch';
+import { costAssumptions } from '../utils/costAssumptions';
 import { msg, t } from '../i18n';
 import Breadcrumbs from '../components/Breadcrumbs';
 import NearPrice from '../components/NearPrice';
@@ -219,6 +221,7 @@ export default function CarDetail() {
   const { addOrReplaceOldestInComparison, comparedCars } = useCarStore();
   const addToGarage = useGarageStore((s) => s.add);
   const region = useRegionStore((s) => s.region);
+  const ownKm = useRegionStore((s) => s.annualKm);
   const navigate = useNavigate();
   const { hash } = useLocation();
   const recordView = useRecentStore((s) => s.record);
@@ -228,8 +231,11 @@ export default function CarDetail() {
     setDashboard(null);
     setError(null);
     setLoading(true);
-    const region = useRegionStore.getState().region;
-    (takePrefetched<CarDashboard>(dashboardKey(id, region)) ?? api.getCarDashboard(id, region))
+    const { region, annualKm } = useRegionStore.getState();
+    (
+      takePrefetched<CarDashboard>(dashboardKey(id, region, annualKm)) ??
+      api.getCarDashboard(id, region, annualKm)
+    )
       .then(setDashboard)
       .catch((err) => {
         if (isHttpError(err) && err.status === 404) {
@@ -239,7 +245,7 @@ export default function CarDetail() {
         }
       })
       .finally(() => setLoading(false));
-  }, [id, region, attempt]);
+  }, [id, region, ownKm, attempt]);
 
   // On this device's recent list, for picking up where they left off.
   useEffect(() => {
@@ -322,7 +328,7 @@ export default function CarDetail() {
   // How the yearly fuel figure was reached, in a line: EPA's rating, the
   // pump or plug price where the viewer is, and the distance.
   const fuelCostNote = (() => {
-    const regional = getRegionalAssumptions(region);
+    const regional = costAssumptions(region, ownKm);
     const { place, from, through } = regional.pumpPrices;
     const city = place.split(',')[0];
     const distance = t('{km} km a year', { km: fmtNumber(regional.annualKm) });
@@ -376,7 +382,7 @@ export default function CarDetail() {
   // The same in a few words, under the yearly figure at the top of the page.
   const fuelCostFigure = (() => {
     if (annualCost.energy == null || ownership.unvalued) return undefined;
-    const regional = getRegionalAssumptions(region);
+    const regional = costAssumptions(region, ownKm);
     const distance = t('{km} km a year', { km: fmtNumber(regional.annualKm) });
     const fuel = car.engine.fuelType;
     const premium = car.epa?.premiumFuel === true;
@@ -811,6 +817,7 @@ export default function CarDetail() {
                   pairLayout
                 />
                 <p className="text-xs text-zinc-500 leading-relaxed mt-1">{fuelCostNote}</p>
+                <TripCost car={car} />
               </div>
             ) : (
               isHydrogen && (

@@ -27,7 +27,8 @@ export function takePrefetched<T>(key: string): Promise<T> | undefined {
   return request as Promise<T> | undefined;
 }
 
-export const dashboardKey = (id: string, region: string) => `dashboard:${id}:${region}`;
+export const dashboardKey = (id: string, region: string, annualKm?: number | null) =>
+  `dashboard:${id}:${region}${annualKm ? `:${annualKm}` : ''}`;
 export const modelKey = (make: string, model: string) => `model:${make}/${model}`;
 export const modelYearKey = (make: string, model: string, year: number) =>
   `model-year:${make}/${model}/${year}`;
@@ -76,10 +77,10 @@ export function prefetchForPath(pathname: string): void {
     const car = /^\/car\/([^/]+)\/?$/.exec(pathname);
     if (car) {
       const id = decodeURIComponent(car[1]);
-      const region = useRegionStore.getState().region;
+      const { region, annualKm } = useRegionStore.getState();
       preconnect(PHOTO_ORIGIN);
-      prefetch(dashboardKey(id, region), () =>
-        api.getCarDashboard(id, region).then((found) => {
+      prefetch(dashboardKey(id, region, annualKm), () =>
+        api.getCarDashboard(id, region, annualKm).then((found) => {
           whenSafe(() => preloadPhoto(found.car.photo));
           return found;
         }),

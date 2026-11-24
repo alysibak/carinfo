@@ -29,13 +29,14 @@ export default function VinCatalogMatch({ decoded }: { decoded: VinDecodeResult 
   const cars = useMemo(() => decoded.catalog?.cars ?? [], [decoded]);
   const lead = cars[0];
   const region = useRegionStore((s) => s.region);
+  const ownKm = useRegionStore((s) => s.annualKm);
   const [dashboard, setDashboard] = useState<CarDashboard | null>(null);
 
   useEffect(() => {
     setDashboard(null);
     if (!lead) return;
     let live = true;
-    getCarDashboard(lead.id, region)
+    getCarDashboard(lead.id, region, ownKm)
       .then((data) => {
         if (live) setDashboard(data);
       })
@@ -43,7 +44,7 @@ export default function VinCatalogMatch({ decoded }: { decoded: VinDecodeResult 
     return () => {
       live = false;
     };
-  }, [lead, region]);
+  }, [lead, region, ownKm]);
 
   // What tells the versions apart; the trade-offs between them where nothing on file does.
   const notes = useMemo(() => vinChoiceNotes(cars), [cars]);

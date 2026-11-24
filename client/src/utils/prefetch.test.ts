@@ -15,7 +15,7 @@ describe('prefetchForPath', () => {
     prefetchForPath('/car/honda-civic-2022');
     prefetchForPath('/car/honda-civic-2022');
     expect(api.getCarDashboard).toHaveBeenCalledTimes(1);
-    expect(api.getCarDashboard).toHaveBeenCalledWith('honda-civic-2022', 'ontario');
+    expect(api.getCarDashboard).toHaveBeenCalledWith('honda-civic-2022', 'ontario', null);
 
     const taken = takePrefetched(dashboardKey('honda-civic-2022', 'ontario'));
     await expect(taken).resolves.toEqual({ car: { photo: undefined } });
@@ -43,5 +43,13 @@ describe('prefetchForPath', () => {
     expect(api.getCarDashboard).not.toHaveBeenCalled();
     expect(api.getModelOverview).not.toHaveBeenCalled();
     expect(api.getModelYearOverview).not.toHaveBeenCalled();
+  });
+});
+
+describe('dashboardKey', () => {
+  it('keeps a page on its own yearly distance apart from the region’s average', () => {
+    expect(dashboardKey('a', 'ontario')).toBe('dashboard:a:ontario');
+    expect(dashboardKey('a', 'ontario', null)).toBe('dashboard:a:ontario');
+    expect(dashboardKey('a', 'ontario', 25000)).toBe('dashboard:a:ontario:25000');
   });
 });

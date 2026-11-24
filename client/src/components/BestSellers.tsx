@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import * as api from '../services/api';
 import type { BestSellers as BestSellerList } from '../types/car.types';
 import { rangeKm } from '../utils/efficiency';
-import { getRegionalAssumptions, type RegionId } from '@carinfo/config/regional-assumptions';
+import type { RegionId } from '@carinfo/config/regional-assumptions';
+import { costAssumptions } from '../utils/costAssumptions';
 import { regionName, useRegionStore } from '../stores/regionStore';
 import { carPhotoSources } from '../utils/carImages';
 import { t } from '../i18n';
@@ -12,9 +13,9 @@ import { t } from '../i18n';
  * "from ~$1,280/yr fuel in Ontario (est.)": the thriftiest version of the
  * newest year at the region's pump price and yearly distance.
  */
-function fuelCostLine(mpg: number | undefined, region: RegionId) {
+function fuelCostLine(mpg: number | undefined, region: RegionId, ownKm: number | null) {
   if (!mpg || mpg <= 0) return null;
-  const { annualKm, gasPriceCadPerL } = getRegionalAssumptions(region);
+  const { annualKm, gasPriceCadPerL } = costAssumptions(region, ownKm);
   const annual = Math.round(((annualKm / 100) * (235.215 / mpg) * gasPriceCadPerL) / 10) * 10;
   return t('from ~{amount}/yr fuel in {region} (est.)', {
     amount: `$${annual.toLocaleString('en-CA')}`,
@@ -47,6 +48,7 @@ export default function BestSellers({
 }) {
   const [data, setData] = useState<BestSellerList | null>(null);
   const region = useRegionStore((state) => state.region);
+  const ownKm = useRegionStore((state) => state.annualKm);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -152,9 +154,9 @@ export default function BestSellers({
                         </dd>
                       ))}
                     </dl>
-                    {fuelCostLine(model.newest.combinedMpg, region) && (
+                    {fuelCostLine(model.newest.combinedMpg, region, ownKm) && (
                       <span aria-hidden className="mt-2 block text-xs text-zinc-400">
-                        {fuelCostLine(model.newest.combinedMpg, region)}
+                        {fuelCostLine(model.newest.combinedMpg, region, ownKm)}
                       </span>
                     )}
                     <span className="mt-auto pt-3 text-[13px] text-zinc-300 group-hover:text-white transition-colors">

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { getRegionalAssumptions } from '../config/regional-assumptions.js';
 import type { Car } from '../types/car.types.js';
-import { estimateAnnualEnergyCost } from './energy-cost.js';
+import { estimateAnnualEnergyCost, tripCostPerKm } from './energy-cost.js';
 
 const ONTARIO = getRegionalAssumptions('ontario');
 
@@ -92,5 +92,26 @@ describe('estimateAnnualEnergyCost', () => {
   it('says "unknown" for natural gas without an EPA cost rather than guessing', () => {
     const cng = car({ engine: { fuelType: 'natural gas' }, epa: {} });
     expect(estimateAnnualEnergyCost(cng, {}, ONTARIO)).toBeNull();
+  });
+});
+
+describe('tripCostPerKm', () => {
+  const gas = car({ fuelEconomy: { city: 30, highway: 40, combined: 33 }, epa: {} });
+
+  it('prices a long drive on the highway rating', () => {
+    const highway = tripCostPerKm(gas, ONTARIO)!.perKmCad;
+    const combined = estimateAnnualEnergyCost(gas, {}, ONTARIO)!.perKmCad;
+    expect(highway / combined).toBeCloseTo(33 / 40, 2);
+  });
+
+  it('counts a plug-in hybrid’s trip on gasoline', () => {
+    const phev = car({
+      engine: { fuelType: 'plug-in hybrid' },
+      fuelEconomy: { city: 30, highway: 40, combined: 33 },
+      epa: { phev: { gasMpg: 40, electricMpge: 110 } },
+    });
+    const trip = tripCostPerKm(phev, ONTARIO)!;
+    expect(trip.basis).toBe('gasoline');
+    expect(trip.perKmCad).toBeCloseTo(tripCostPerKm(gas, ONTARIO)!.perKmCad, 3);
   });
 });

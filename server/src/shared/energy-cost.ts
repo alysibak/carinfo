@@ -154,3 +154,28 @@ export function estimateAnnualEnergyCost(
 
   return result(epaAnnualCostCad(car, region), 'epa-annual-cost');
 }
+
+/**
+ * A long drive's fuel or electricity, CAD a km: on EPA's highway rating
+ * where there is one, at the same prices as the yearly figure. A plug-in
+ * hybrid is counted on gasoline: its charge covers only the start of a trip.
+ */
+export function tripCostPerKm(
+  car: CarSpecs,
+  region: RegionalAssumptions = getRegionalAssumptions(),
+): { perKmCad: number; basis: EnergyCostBasis } | null {
+  if (!(region.annualKm > 0)) return null;
+  const highway = car.fuelEconomy?.highway;
+  if (inferEffectiveFuelType(car) === 'plug-in hybrid') {
+    const gasMpg = car.epa?.phev?.gasMpg ?? highway ?? car.fuelEconomy?.combined;
+    if (gasMpg == null || !(gasMpg > 0)) return null;
+    const annual = gasolineAnnualCad(Math.round(gasMpg), region, car.epa?.premiumFuel === true);
+    return { perKmCad: annual / region.annualKm, basis: 'gasoline' };
+  }
+  const onHighway =
+    highway != null && highway > 0
+      ? { ...car, fuelEconomy: { ...car.fuelEconomy, combined: highway } }
+      : car;
+  const estimate = estimateAnnualEnergyCost(onHighway, {}, region);
+  return estimate ? { perKmCad: estimate.perKmCad, basis: estimate.basis } : null;
+}

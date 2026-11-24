@@ -1,10 +1,10 @@
 import { useEffect, useId, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getRegionalAssumptions } from '@carinfo/config/regional-assumptions';
 import * as api from '../services/api';
 import type { CarSpecs } from '../types/car.types';
 import { regionName, useRegionStore } from '../stores/regionStore';
 import { hybridSaving, SAVING_YEARS } from '../utils/payback';
+import { costAssumptions } from '../utils/costAssumptions';
 import { paybackSentence, savingSentence } from '../utils/paybackText';
 import { t } from '../i18n';
 
@@ -16,6 +16,7 @@ import { t } from '../i18n';
  */
 export default function HybridPayback({ car }: { car: CarSpecs }) {
   const region = useRegionStore((state) => state.region);
+  const ownKm = useRegionStore((state) => state.annualKm);
   const [siblings, setSiblings] = useState<CarSpecs[] | null>(null);
   const [gapText, setGapText] = useState('');
   const gapId = useId();
@@ -36,10 +37,10 @@ export default function HybridPayback({ car }: { car: CarSpecs }) {
     };
   }, [car.id]);
 
-  const saving = siblings ? hybridSaving(car, siblings, region) : null;
+  const saving = siblings ? hybridSaving(car, siblings, region, ownKm) : null;
   if (!saving) return null;
   const gap = Number(gapText.replace(/[^\d]/g, ''));
-  const km = getRegionalAssumptions(region).annualKm.toLocaleString('en-CA');
+  const km = costAssumptions(region, ownKm).annualKm.toLocaleString('en-CA');
   return (
     <div className="mt-6 border-t border-zinc-900 pt-5 max-w-2xl">
       <h3 className="text-sm font-semibold text-white">{t('Hybrid or gas?')}</h3>

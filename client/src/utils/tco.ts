@@ -4,6 +4,7 @@ import {
   type EnergyPriceInputs,
 } from '@carinfo/shared/energy-cost';
 import { getRegionalAssumptions, type RegionId } from '@carinfo/config/regional-assumptions';
+import { costAssumptions } from './costAssumptions';
 import type { CarSpecs, OwnershipEconomics } from '../types/car.types';
 
 /**
@@ -78,9 +79,11 @@ export function defaultTcoInputs(
   car: CarSpecs,
   ownership: OwnershipEconomics | null | undefined,
   region: RegionId,
+  /** The visitor's own yearly distance, km, when they set one. */
+  ownKm: number | null = null,
 ): TcoInputs {
   const annual = ownership?.annualCost;
-  const assumptions = getRegionalAssumptions(region);
+  const assumptions = costAssumptions(region, ownKm);
   return {
     region,
     annualKm: assumptions.annualKm,
