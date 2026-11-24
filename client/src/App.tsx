@@ -25,6 +25,7 @@ const DreamGarage = lazy(() => import('./pages/DreamGarage'));
 const BattleMode = lazy(() => import('./pages/BattleMode'));
 const ValueMatrix = lazy(() => import('./pages/ValueMatrix'));
 const Browse = lazy(() => import('./pages/Browse'));
+const Find = lazy(() => import('./pages/Find'));
 const SharedGarage = lazy(() => import('./pages/SharedGarage'));
 const VinDecoder = lazy(() => import('./pages/VinDecoder'));
 const Methodology = lazy(() => import('./pages/Methodology'));
@@ -82,8 +83,10 @@ function App() {
                   <Route path="/compare" element={<Compare />} />
                   <Route path="/compare/:pair" element={<Compare />} />
                   <Route path="/collection/:collectionId" element={<Collection />} />
-                  {/* The 3-question quiz is gone: its answers were price bands on an estimate. */}
-                  <Route path="/smart-search" element={<Navigate to="/browse" replace />} />
+                  {/* Three questions on what the records hold, in place of the old quiz,
+                      whose answers were price bands on an estimate. */}
+                  <Route path="/find" element={<Find />} />
+                  <Route path="/smart-search" element={<Navigate to="/find" replace />} />
                   <Route
                     path="/garage"
                     element={

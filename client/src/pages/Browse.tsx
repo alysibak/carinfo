@@ -62,6 +62,22 @@ export default function Browse() {
         />
       </div>
 
+      <section className="page-wrap pb-8">
+        <Link to="/find" className="choice-tile group border-accent/60">
+          <span className="min-w-0">
+            <span className="block text-[15px] font-semibold text-white">
+              {t('Not sure where to start? Answer 3 questions')}
+            </span>
+            <span className="block text-[13px] text-zinc-400 mt-0.5">
+              {t('What it carries, what it runs on, how new: see how many models fit as you go.')}
+            </span>
+          </span>
+          <span className="text-accent shrink-0" aria-hidden>
+            →
+          </span>
+        </Link>
+      </section>
+
       <section className="page-wrap pb-10 sm:pb-12">
         <h2 className="section-title mb-4">{t('A situation')}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

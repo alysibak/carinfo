@@ -1,5 +1,36 @@
 /** Search, browse, explore, collections and filters, and the search's own explanations. English text to French (fr-CA). */
 const fr: Record<string, string> = {
+  'Find a car in 3 questions': 'Trouver une voiture en 3 questions',
+  'What it carries, what it runs on and how new: answer what you know and see the models that fit, from EPA, NHTSA and Transport Canada records.':
+    'Ce qu’elle transporte, son énergie et son année\u00a0: répondez à ce que vous savez et voyez les modèles qui conviennent, d’après les données de l’EPA, de la NHTSA et de Transports Canada.',
+  'Answer what you know and skip the rest. We don’t ask your budget: every price on file is an estimate, so a budget would sort cars on our guesses.':
+    'Répondez à ce que vous savez et passez le reste. Nous ne demandons pas votre budget\u00a0: tous les prix au dossier sont des estimations, et un budget trierait les voitures selon nos approximations.',
+  'What will it carry?': 'Que transportera-t-elle\u00a0?',
+  'What should it run on?': 'Avec quelle énergie\u00a0?',
+  'How new?': 'De quelle année\u00a0?',
+  'Must-haves': 'Indispensables',
+  '(optional)': '(facultatif)',
+  'Up to 5 people': 'Jusqu’à 5 personnes',
+  'Two rows of seats': 'Deux rangées de sièges',
+  '6 to 8 people': '6 à 8 personnes',
+  'Three rows: minivans and big SUVs': 'Trois rangées\u00a0: fourgonnettes et grands VUS',
+  'A load or a trailer': 'Une charge ou une remorque',
+  'Two, for fun': 'Deux, pour le plaisir',
+  'Coupes and convertibles': 'Coupés et décapotables',
+  'Gas or diesel': 'Essence ou diesel',
+  'All- or four-wheel drive': 'Traction intégrale ou 4x4',
+  '{from} to {to}': '{from} à {to}',
+  'Counting…': 'Calcul…',
+  'No model fits all of these. Take one away.':
+    'Aucun modèle ne répond à tout cela. Retirez un critère.',
+  '{count} model fits': '{count} modèle convient',
+  '{count} models fit': '{count} modèles conviennent',
+  'Start over': 'Recommencer',
+  'Show them': 'Les voir',
+  'Not sure where to start? Answer 3 questions':
+    'Vous ne savez pas par où commencer\u00a0? Répondez à 3 questions',
+  'What it carries, what it runs on, how new: see how many models fit as you go.':
+    'Ce qu’elle transporte, son énergie, son année\u00a0: voyez combien de modèles conviennent au fur et à mesure.',
   'from ~{amount}/yr fuel in {region} (est.)':
     'à partir d’environ {amount}/an en carburant en {region} (est.)',
   'Forget {vin}': 'Oublier {vin}',

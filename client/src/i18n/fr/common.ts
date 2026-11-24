@@ -3,7 +3,7 @@ const fr: Record<string, string> = {
   driving: 'en roulant',
   'km a year': 'km par an',
   'Use the {region} average': 'Revenir à la moyenne ({region})',
-  '({region} average)': '(moyenne : {region})',
+  '({region} average)': '(moyenne\u00a0: {region})',
   '{count} row that reads the same is hidden.': '{count} rangée identique est masquée.',
   '{count} row reads the same for every car.':
     '{count} rangée est identique pour tous les véhicules.',

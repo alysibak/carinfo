@@ -10,7 +10,7 @@ const fr: Record<string, string> = {
   'About {cost} in hydrogen for {km} km.': 'Environ {cost} d’hydrogène pour {km} km.',
   'About {cost} in fuel for {km} km.': 'Environ {cost} de carburant pour {km} km.',
   'About {cost} in gas for {km} km: on a long trip, the charge covers only the start.':
-    'Environ {cost} d’essence pour {km} km : sur un long trajet, la charge ne couvre que le début.',
+    'Environ {cost} d’essence pour {km} km\u00a0: sur un long trajet, la charge ne couvre que le début.',
   'About {cost} in electricity for {km} km, at home charging rates; fast chargers on the road cost more.':
     'Environ {cost} d’électricité pour {km} km, au tarif de la recharge à domicile; les bornes rapides sur la route coûtent plus cher.',
   'One way, on EPA’s highway rating at the prices above; road distances are approximate.':

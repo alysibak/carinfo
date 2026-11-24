@@ -29,8 +29,8 @@ const START_POINTS = [
   { label: msg('I know the car'), note: msg('Search its make, model or year'), to: '/home' },
   {
     label: msg('I’m still deciding'),
-    note: msg('Start from what you need it for: commuting, a family, a first car'),
-    to: '/browse',
+    note: msg('Three questions: what it carries, what it runs on, how new'),
+    to: '/find',
   },
   {
     label: msg('Safety first'),
@@ -67,10 +67,10 @@ export default function Landing() {
   const [heroCar, setHeroCar] = useState<CarSpecs | null>(null);
   const navigate = useNavigate();
 
-  // Links to the old 3-question quiz land on Browse, where its choices now live.
+  // Links to the old 3-question quiz land on its successor.
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('quiz') === '1') {
-      navigate('/browse', { replace: true });
+      navigate('/find', { replace: true });
     }
   }, [navigate]);
   const compareCount = useCarStore((s) => s.comparedCars.length);
@@ -157,10 +157,10 @@ export default function Landing() {
                     </Link>
                   )}
                   <Link
-                    to="/browse"
+                    to="/find"
                     className="text-white font-medium underline underline-offset-4 decoration-zinc-500 hover:decoration-white min-h-[44px] inline-flex items-center"
                   >
-                    {t('Not sure yet? Start from what you need →')}
+                    {t('Not sure yet? Answer 3 questions →')}
                   </Link>
                 </div>
               </div>

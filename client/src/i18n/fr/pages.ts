@@ -10,14 +10,13 @@ const fr: Record<string, string> = {
     'Consommation et autonomie selon les essais officiels de l’EPA, et étoiles d’essais de collision de la NHTSA, en litres et en kilomètres. Chaque chiffre indique d’où il vient, et tout ce que nous estimons, comme la valeur d’un véhicule, est marqué comme une estimation.',
   'Make, model, or VIN': 'Marque, modèle ou NIV',
   'A 17-character VIN works too.': 'Un NIV de 17 caractères fonctionne aussi.',
-  'Not sure yet? Start from what you need →':
-    'Pas encore sûr\u00a0? Partez de ce dont vous avez besoin →',
+  'Not sure yet? Answer 3 questions →': 'Pas encore sûr\u00a0? Répondez à 3 questions →',
   'How do you want to start?': 'Comment voulez-vous commencer\u00a0?',
   'I know the car': 'Je connais le véhicule',
   'Search its make, model or year': 'Recherchez sa marque, son modèle ou son année',
   'I’m still deciding': 'Je n’ai pas encore décidé',
-  'Start from what you need it for: commuting, a family, a first car':
-    'Partez de l’usage prévu\u00a0: les déplacements, une famille, une première voiture',
+  'Three questions: what it carries, what it runs on, how new':
+    'Trois questions\u00a0: ce qu’elle transporte, son énergie, son année',
   'Safety first': 'La sécurité d’abord',
   'Five crash-test stars, collision warning, no recalls':
     'Cinq étoiles aux essais de collision, avertissement de collision, aucun rappel',
