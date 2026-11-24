@@ -1,6 +1,7 @@
 import type {
   BestSellers,
   Matchup,
+  VsPage,
   CarRecordsSummary,
   CarDashboard,
   CarSpecs,
@@ -82,6 +83,11 @@ export async function getBestSellers(options?: RequestOptions): Promise<BestSell
  */
 export async function getMatchups(options?: RequestOptions): Promise<Matchup[]> {
   return api.get('/cars/matchups', options);
+}
+
+/** Two models head to head: "toyota-rav4-vs-honda-cr-v". */
+export async function getVsPage(pair: string): Promise<VsPage> {
+  return api.get(`/cars/vs/${encodeURIComponent(pair)}`);
 }
 
 /**

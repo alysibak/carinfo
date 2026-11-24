@@ -22,6 +22,7 @@ import {
 import { usePageMeta } from '../utils/pageMeta';
 import { complaintPart } from '../utils/recalls';
 import { theftSentence } from '@carinfo/shared/theft';
+import { vsPath } from '@carinfo/shared/vs-path';
 import { modelKey, takePrefetched } from '../utils/prefetch';
 import { t, tp } from '../i18n';
 import Breadcrumbs from '../components/Breadcrumbs';
@@ -486,6 +487,16 @@ export default function ModelPage() {
                 <li key={rival.path}>
                   <Link to={rival.path} className="chip inline-flex">
                     {rival.make} {rival.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <h3 className="mt-4 mb-2 text-xs text-zinc-400">{t('Side by side')}</h3>
+            <ul className="flex flex-wrap gap-2">
+              {overview.rivals.map((rival) => (
+                <li key={rival.path}>
+                  <Link to={vsPath(overview.path, rival.path)} className="chip inline-flex">
+                    {t('vs {model}', { model: `${rival.make} ${rival.name}` })}
                   </Link>
                 </li>
               ))}

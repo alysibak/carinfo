@@ -15,7 +15,7 @@ const span = (from: number, to: number) => (from === to ? `${from}` : `${from}�
  * "from 4.6 L/100 km, 202–301 hp, NHTSA 5/5, 4 recalls in Canada, 1,775
  * owner complaints to NHTSA, most about engine", as the page's row reads.
  */
-function yearFacts(row: ModelYearSummary): string {
+export function yearFacts(row: ModelYearSummary): string {
   const { horsepower } = row;
   return [
     row.combinedMpg && `from ${(235.215 / row.combinedMpg).toFixed(1)} L/100 km`,
@@ -39,7 +39,11 @@ function yearFacts(row: ModelYearSummary): string {
  * Title and description mirror what ModelPage's usePageMeta sets once the SPA
  * loads, so a crawler and a visitor see the same page.
  */
-export function modelSeo(overview: ModelOverview): PageSeo {
+export function modelSeo(
+  overview: ModelOverview,
+  /** The popular match-ups it is in, side by side. */
+  vs: Array<{ label: string; path: string }> = [],
+): PageSeo {
   const name = `${overview.make} ${overview.name}`;
   const years = span(overview.first, overview.last);
   const title = `${name}: every year, ${years}`;
@@ -81,7 +85,7 @@ export function modelSeo(overview: ModelOverview): PageSeo {
     ogType: 'website',
     jsonLd,
     ...(photo ? { image: photo } : {}),
-    bodyHtml: modelSummaryHtml(overview, name, years),
+    bodyHtml: modelSummaryHtml(overview, name, years, vs),
   };
 }
 
@@ -90,7 +94,12 @@ export function modelSeo(overview: ModelOverview): PageSeo {
  * what a crawler follows to reach the 37,000 car pages from a thousand.
  * React replaces it when the app mounts.
  */
-function modelSummaryHtml(overview: ModelOverview, name: string, years: string): string {
+function modelSummaryHtml(
+  overview: ModelOverview,
+  name: string,
+  years: string,
+  vs: Array<{ label: string; path: string }>,
+): string {
   const groups: Array<{ label?: string; rows: ModelYearSummary[] }> = [];
   for (const row of overview.years) {
     const group = groups.at(-1);
@@ -125,6 +134,11 @@ function modelSummaryHtml(overview: ModelOverview, name: string, years: string):
         )
         .join('')}</ul>`
     : '';
+  const sideBySide = vs.length
+    ? `<h2>Side by side</h2><ul>${vs
+        .map((pair) => `<li><a href="${escapeHtml(pair.path)}">${escapeHtml(pair.label)}</a></li>`)
+        .join('')}</ul>`
+    : '';
   // As ModelPage says it: Équité's ranking, with its page for the counts.
   const place = overview.theft;
   const theft = place
@@ -138,6 +152,7 @@ function modelSummaryHtml(overview: ModelOverview, name: string, years: string):
     theft +
     sections +
     rivals +
+    sideBySide +
     `<p><a href="/">CarInfo</a> · <a href="/methodology">How this data is sourced</a></p>` +
     `</main>`
   );

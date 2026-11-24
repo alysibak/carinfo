@@ -93,6 +93,11 @@ describe('ModelPage', () => {
       'href',
       '/models/honda/accord',
     );
+    // And each rival head to head.
+    expect(screen.getByRole('link', { name: 'vs Honda Accord' })).toHaveAttribute(
+      'href',
+      '/compare/toyota-camry-vs-honda-accord',
+    );
     // What changed from the year before, under its year.
     expect(screen.getByText('Gasoline dropped')).toBeVisible();
     // A table per generation, a column a figure down the years.

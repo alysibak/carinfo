@@ -18,6 +18,7 @@ import {
   getModelPages,
   getModelYearPages,
   getStatistics,
+  getVsPages,
 } from '../src/services/car.service.js';
 import {
   URLS_PER_SITEMAP,
@@ -63,6 +64,13 @@ const pages: SitemapEntry[] = [
   { path: '/terms', changefreq: 'yearly', priority: 0.2 },
   ...Object.keys(COLLECTIONS).map((id): SitemapEntry => ({
     path: `/collection/${id}`,
+    changefreq: 'monthly',
+    priority: 0.7,
+  })),
+  // The popular match-ups head to head: "rav4 vs cr-v" is how people search.
+  ...getVsPages().map((page): SitemapEntry => ({
+    path: page.path,
+    lastmod: lastUpdated,
     changefreq: 'monthly',
     priority: 0.7,
   })),

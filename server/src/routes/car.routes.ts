@@ -25,6 +25,8 @@ router.get('/models/:make/:model', cacheData, carController.getModelOverview);
 // Canada's best sellers, with their newest year on file.
 router.get('/popular', cacheData, carController.getBestSellers);
 router.get('/matchups', cacheData, carController.getMatchups);
+// Two models side by side: "toyota-rav4-vs-honda-cr-v"
+router.get('/vs/:pair', cacheData, carController.getVsPage);
 
 // Search cars with filters
 router.post('/search', searchLimiter(), carController.searchCars);

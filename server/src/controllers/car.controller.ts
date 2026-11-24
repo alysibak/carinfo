@@ -129,6 +129,19 @@ export function getMatchups(_req: Request, res: Response, next: NextFunction) {
 }
 
 /**
+ * Two models side by side: /api/cars/vs/toyota-rav4-vs-honda-cr-v
+ */
+export function getVsPage(req: Request, res: Response, next: NextFunction) {
+  try {
+    const page = carService.getVsPage(req.params.pair);
+    if (!page) throw new HttpError(404, 'Those two models are not on file');
+    res.json({ success: true, data: page });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
  * Canada's best sellers with their newest year on file: /api/cars/popular
  */
 export function getBestSellers(_req: Request, res: Response, next: NextFunction) {

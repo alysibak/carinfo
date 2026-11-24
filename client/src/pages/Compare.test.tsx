@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import Compare from './Compare';
 import { trustDashboard } from '../test/fixtures';
@@ -11,6 +11,7 @@ vi.mock('../services/api', () => ({
   getCarDashboard: vi.fn(),
   compareCars: vi.fn(),
   getMatchups: vi.fn(async () => []),
+  getVsPage: vi.fn(),
 }));
 
 function mockCompareStore(comparedCars: (typeof trustDashboard.car)[]) {
@@ -148,5 +149,84 @@ describe('Compare match-ups', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Compact cars/ }));
     expect(api.compareCars).toHaveBeenCalledWith(['civic-2026', 'corolla-2026']);
     await waitFor(() => expect(store.replaceComparison).toHaveBeenCalledWith([trustDashboard.car]));
+  });
+});
+
+describe('Compare head to head', () => {
+  const vsPage = {
+    path: '/compare/toyota-rav4-vs-honda-cr-v',
+    label: 'Toyota RAV4 vs Honda CR-V',
+    curated: true,
+    year: 2026,
+    cars: [
+      { label: 'Toyota RAV4', carId: 'rav4-2026', year: 2026, modelPath: '/models/toyota/rav4' },
+      { label: 'Honda CR-V', carId: 'crv-2026', year: 2026, modelPath: '/models/honda/cr-v' },
+    ],
+    related: [{ label: 'Toyota RAV4 vs Mazda CX-5', path: '/compare/toyota-rav4-vs-mazda-cx-5' }],
+  } as unknown as Awaited<ReturnType<typeof api.getVsPage>>;
+  const rav4 = { ...trustDashboard.car, id: 'rav4-2026' };
+  const crv = { ...trustDashboard.car, id: 'crv-2026' };
+
+  function Where() {
+    const location = useLocation();
+    return <p data-testid="where">{location.pathname + location.search}</p>;
+  }
+
+  function renderAt(path: string) {
+    return render(
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route path="/compare" element={<Compare />} />
+          <Route path="/compare/:pair" element={<Compare />} />
+        </Routes>
+        <Where />
+      </MemoryRouter>,
+    );
+  }
+
+  beforeEach(() => {
+    vi.mocked(api.getVsPage).mockResolvedValue(vsPage);
+    vi.mocked(api.compareCars).mockResolvedValue([rav4, crv]);
+    vi.mocked(api.getCarDashboard).mockResolvedValue(trustDashboard);
+  });
+
+  it('loads a match-up’s two cars under its name, in its own order', async () => {
+    // As the store reads once they are in.
+    const store = mockCompareStore([rav4, crv]);
+    renderAt('/compare/honda-cr-v-vs-toyota-rav4');
+    await waitFor(() => expect(store.replaceComparison).toHaveBeenCalledWith([rav4, crv]));
+    expect(api.getVsPage).toHaveBeenCalledWith('honda-cr-v-vs-toyota-rav4');
+    expect(api.compareCars).toHaveBeenCalledWith(['rav4-2026', 'crv-2026']);
+    // The other order leads to the match-up's own address.
+    await waitFor(() =>
+      expect(screen.getByTestId('where')).toHaveTextContent('/compare/toyota-rav4-vs-honda-cr-v'),
+    );
+  });
+
+  it('titles the page with the pair and links the other match-ups', async () => {
+    mockCompareStore([rav4, crv]);
+    renderAt('/compare/toyota-rav4-vs-honda-cr-v');
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Toyota RAV4 vs Honda CR-V' }),
+    ).toBeVisible();
+    expect(document.title).toBe('Toyota RAV4 vs Honda CR-V (2026) | CarInfo');
+    expect(screen.getByText('The 2026 models, side by side')).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Toyota RAV4 vs Mazda CX-5' })).toHaveAttribute(
+      'href',
+      '/compare/toyota-rav4-vs-mazda-cx-5',
+    );
+    expect(screen.getByTestId('where')).toHaveTextContent('/compare/toyota-rav4-vs-honda-cr-v');
+  });
+
+  it('becomes a list of one’s own once a car is added', async () => {
+    const extra = { ...trustDashboard.car, id: 'cx5-2026' };
+    mockCompareStore([rav4, crv, extra]);
+    renderAt('/compare/toyota-rav4-vs-honda-cr-v');
+    await waitFor(() =>
+      expect(screen.getByTestId('where')).toHaveTextContent(
+        '/compare?cars=rav4-2026,crv-2026,cx5-2026',
+      ),
+    );
+    expect(screen.queryByRole('heading', { name: 'Toyota RAV4 vs Honda CR-V' })).toBeNull();
   });
 });

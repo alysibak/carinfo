@@ -1,5 +1,12 @@
 /** Compare, the garage and a shared garage, model and model-year pages, the VIN decoder and the value chart. English text to French (fr-CA). */
 const fr: Record<string, string> = {
+  'Side by side': 'Côte à côte',
+  'vs {model}': 'vs {model}',
+  '{first} and {second} side by side: fuel use, NHTSA crash ratings, recalls in Canada, owner complaints and running costs, from public records.':
+    '{first} et {second} côte à côte : consommation, cotes de sécurité de la NHTSA, rappels au Canada, plaintes des propriétaires et coûts d’utilisation, d’après les registres publics.',
+  'Could not load these two models.': 'Impossible de charger ces deux modèles.',
+  'The {year} models, side by side': 'Les modèles {year}, côte à côte',
+  'More match-ups': 'Autres duels',
   'The seller must give you a Used Vehicle Information Package: it lists the registered owners and any lien on the car.':
     'Le vendeur doit vous remettre la trousse d’information sur les véhicules d’occasion : elle indique les propriétaires inscrits et tout privilège sur le véhicule.',
   'Search the Register of Personal and Movable Real Rights (RDPRM) by VIN, for a fee: it shows whether the car secures a loan.':

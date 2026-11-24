@@ -1,7 +1,7 @@
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useCarStore } from '../stores/carStore';
-import type { CarDashboard, CarSpecs, Matchup } from '../types/car.types';
+import type { CarDashboard, CarSpecs, Matchup, VsPage } from '../types/car.types';
 import * as api from '../services/api';
 import { formatEngineForDetail, UNAVAILABLE_LABEL } from '../utils/dataValue';
 import { formatCarFuelLabel } from '../utils/fuelDisplay';
@@ -34,6 +34,7 @@ import { availabilityLabel, rolloverRiskText } from '../utils/safetyTech';
 import { complaintPart } from '../utils/recalls';
 import { ordinal } from '@carinfo/shared/theft';
 import { splitRecalls } from '@carinfo/shared/recall-scope';
+import { vsTitle } from '@carinfo/shared/vs-path';
 import { msg, t, tp } from '../i18n';
 import { rich } from '../i18n/rich';
 
@@ -472,11 +473,25 @@ const LABEL_COL = 'w-23 sm:w-40';
 const CAR_COL = 'w-34 sm:w-auto';
 
 export default function Compare() {
+  // "/compare/toyota-rav4-vs-honda-cr-v": two models head to head.
+  const { pair } = useParams<{ pair?: string }>();
+  const navigate = useNavigate();
+  const [loadedVs, setVs] = useState<VsPage | null>(null);
+  const vs = pair ? loadedVs : null;
+  const loadedPair = useRef<string | null>(null);
   usePageMeta(
-    t('Compare'),
-    t(
-      'Up to five cars side by side: fuel use, crash ratings, recalls in Canada, complaints and theft, from the public records.',
-    ),
+    vs ? vsTitle(vs) : t('Compare'),
+    vs
+      ? t(
+          '{first} and {second} side by side: fuel use, NHTSA crash ratings, recalls in Canada, owner complaints and running costs, from public records.',
+          {
+            first: `${vs.cars[0].year} ${vs.cars[0].label}`,
+            second: `${vs.cars[1].year} ${vs.cars[1].label}`,
+          },
+        )
+      : t(
+          'Up to five cars side by side: fuel use, crash ratings, recalls in Canada, complaints and theft, from the public records.',
+        ),
   );
   const [searchParams, setSearchParams] = useSearchParams();
   const {
@@ -501,12 +516,40 @@ export default function Compare() {
   const comparedIds = useMemo(() => comparedCars.map((c) => c.id).join(','), [comparedCars]);
 
   useEffect(() => {
+    let cancelled = false;
+    if (pair) {
+      if (loadedPair.current === pair.toLowerCase()) return;
+      setUrlHydrated(false);
+      setLoadError(null);
+      api
+        .getVsPage(pair)
+        .then(async (page) => {
+          const cars = await api.compareCars(page.cars.map((car) => car.carId));
+          if (cancelled) return;
+          loadedPair.current = page.path.slice('/compare/'.length);
+          setVs(page);
+          replaceComparison(cars);
+          // One address per pair: the match-up's own order.
+          if (page.path !== `/compare/${pair}`) navigate(page.path, { replace: true });
+        })
+        .catch(() => {
+          if (!cancelled) setLoadError(t('Could not load these two models.'));
+        })
+        .finally(() => {
+          if (!cancelled) setUrlHydrated(true);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }
+    // Leaving a match-up for its edited list: the cars are already here.
+    const fromVs = loadedPair.current != null;
+    loadedPair.current = null;
     const urlIds = parseCompareIds(searchParams.get('cars'));
-    if (urlIds.length === 0) {
+    if (urlIds.length === 0 || (fromVs && formatCompareIds(urlIds) === comparedIds)) {
       setUrlHydrated(true);
       return;
     }
-    let cancelled = false;
     api
       .compareCars(urlIds)
       .then((cars) => {
@@ -521,17 +564,24 @@ export default function Compare() {
     return () => {
       cancelled = true;
     };
-    // Hydrate from the URL once per mount. Store changes write back below.
+    // Hydrate from the URL once per mount, or per match-up. Store changes
+    // write back below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pair]);
 
   useEffect(() => {
     if (!urlHydrated) return;
     const next = formatCompareIds(comparedCars.map((c) => c.id));
+    if (pair) {
+      // A car added to or taken from a match-up makes it a list of one's own.
+      if (!vs || next === formatCompareIds(vs.cars.map((car) => car.carId))) return;
+      navigate(next ? `/compare?cars=${next}` : '/compare', { replace: true });
+      return;
+    }
     const current = searchParams.get('cars') || '';
     if (next === current) return;
     setSearchParams(next ? { cars: next } : {}, { replace: true });
-  }, [comparedCars, urlHydrated, searchParams, setSearchParams]);
+  }, [comparedCars, urlHydrated, searchParams, setSearchParams, pair, vs, navigate]);
 
   useEffect(() => {
     if (!toast) return;
@@ -593,7 +643,7 @@ export default function Compare() {
   // Must run before any early return — Rules of Hooks.
   const diff = useMemo(() => differentiateCars(comparedCars), [comparedCars]);
 
-  if (!urlHydrated && urlHasCars) {
+  if (!urlHydrated && (urlHasCars || pair)) {
     return <LoadingScreen label={t('Loading comparison')} />;
   }
 
@@ -722,9 +772,15 @@ export default function Compare() {
         <div className="page-wrap py-4 sm:py-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
-              <h1 className="display-text text-4xl sm:text-5xl pb-1">{t('Compare')}</h1>
+              <h1
+                className={`display-text pb-1 ${vs ? 'text-3xl sm:text-5xl' : 'text-4xl sm:text-5xl'}`}
+              >
+                {vs ? vs.label : t('Compare')}
+              </h1>
               <p className="text-sm text-zinc-400 mt-0.5">
-                {tp(comparedCars.length, '{count} car', '{count} cars')}
+                {vs?.year
+                  ? t('The {year} models, side by side', { year: vs.year })
+                  : tp(comparedCars.length, '{count} car', '{count} cars')}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -1054,6 +1110,22 @@ export default function Compare() {
               )}
             </p>
           </div>
+        )}
+        {vs && vs.related.length > 0 && (
+          <nav aria-labelledby="more-matchups" className="mt-10">
+            <h2 id="more-matchups" className="eyebrow mb-3">
+              {t('More match-ups')}
+            </h2>
+            <ul className="flex flex-wrap gap-2">
+              {vs.related.map((other) => (
+                <li key={other.path}>
+                  <Link to={other.path} className="chip inline-flex">
+                    {other.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
         )}
       </div>
     </div>

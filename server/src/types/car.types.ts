@@ -714,6 +714,28 @@ export interface Matchup {
   cars: Array<{ label: string; carId: string }>;
 }
 
+/** Two models side by side, at "/compare/toyota-rav4-vs-honda-cr-v". */
+export interface VsPage {
+  /** Its address; a popular match-up's pair in the match-up's order. */
+  path: string;
+  /** "Toyota RAV4 vs Honda CR-V" */
+  label: string;
+  /** A pair from the popular match-ups: the ones search engines may index. */
+  curated: boolean;
+  /** The model year both are shown in, when they have one in common. */
+  year: number | null;
+  /** Each on the version its model page opens that year. */
+  cars: Array<{
+    label: string;
+    carId: string;
+    year: number;
+    modelPath: string;
+    summary: ModelYearSummary;
+  }>;
+  /** The other pairs of its match-up. */
+  related: Array<{ label: string; path: string }>;
+}
+
 export interface OwnershipAssumptions {
   annualKm: string;
   annualMiles: number;

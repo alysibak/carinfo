@@ -5,6 +5,7 @@ import type { Car } from '../types/car.types.js';
 import { loadTemplate, renderShell } from './html-shell.js';
 import { vehicleName, vehicleSeo, type PageSeo } from './vehicle-seo.js';
 import { modelSeo, modelYearSeo } from './model-seo.js';
+import { vsSeo } from './vs-seo.js';
 
 /**
  * Server-rendered HTML shells for the pages people share and search engines
@@ -117,7 +118,8 @@ router.get('/models/:make/:model', (req, res) => {
     );
     return;
   }
-  send(req, res, modelSeo(overview));
+  const vs = carService.getVsPages().filter((pair) => pair.modelPaths.includes(overview.path));
+  send(req, res, modelSeo(overview, vs));
 });
 
 router.get('/compare', (req, res) => {
@@ -152,6 +154,32 @@ router.get('/compare', (req, res) => {
     // the index but let unfurlers use the tags above.
     noindex: true,
   });
+});
+
+router.get('/compare/:pair', (req, res) => {
+  const page = carService.getVsPage(req.params.pair);
+  if (!page) {
+    send(
+      req,
+      res,
+      {
+        title: 'Comparison not found',
+        description: 'One of these models is not in the CarInfo database.',
+        canonicalPath: req.path,
+        ogType: 'website',
+        noindex: true,
+      },
+      404,
+    );
+    return;
+  }
+  // One address per pair: "honda-cr-v-vs-toyota-rav4" and capitals or a
+  // trailing slash lead to the match-up's own.
+  if (req.path !== page.path) {
+    res.redirect(301, page.path);
+    return;
+  }
+  send(req, res, vsSeo(page));
 });
 
 export default router;

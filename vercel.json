@@ -41,6 +41,14 @@
       "destination": "/api/index"
     },
     {
+      "source": "/compare/([^/]+)",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/compare/([^/]+)/",
+      "destination": "/api/index"
+    },
+    {
       "source": "/((?!assets/)(?!.*\\.[a-zA-Z0-9]{2,5}$).*)",
       "destination": "/index.html"
     }

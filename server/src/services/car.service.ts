@@ -9,6 +9,7 @@ import type {
   ModelYearSummary,
   SearchQuery,
   SearchResults,
+  VsPage,
 } from '../types/car.types.js';
 import { readFileSync } from 'fs';
 import { computeEvScore } from '../utils/ev-scoring.js';
@@ -35,6 +36,7 @@ import { type RuntimeDatabaseFile, unpackRuntimeDatabase } from './runtime-db.js
 import { LATEST_FULL_MODEL_YEAR } from '../config/model-years.js';
 import { FIRST_CAR } from '../config/first-car.js';
 import { BEST_SELLERS as CANADA_BEST_SELLERS, MATCHUPS } from '../config/popular-models.js';
+import { modelSlug, vsPath, vsSplits } from '../shared/vs-path.js';
 import { mpgToLPer100Km } from '../config/regional-assumptions.js';
 import { TRIM_QUERY_FORMS } from '../utils/performance-trims.js';
 import { extractQueryModifiers, withoutFigures } from '../utils/search-modifiers.js';
@@ -1477,10 +1479,7 @@ export function getMatchups(): Matchup[] {
       return getModelOverview(make, model);
     });
     if (overviews.some((overview) => !overview)) return [];
-    const years = overviews.map((overview) => new Set(overview!.years.map((row) => row.year)));
-    const year = [...years[0]]
-      .filter((y) => y <= LATEST_FULL_MODEL_YEAR && years.every((set) => set.has(y)))
-      .sort((a, b) => b - a)[0];
+    const year = newestSharedYear(overviews as ModelOverview[]);
     if (!year) return [];
     return [
       {
@@ -1497,6 +1496,120 @@ export function getMatchups(): Matchup[] {
   return value;
 }
 let matchupCache: { source: Car[]; value: Matchup[] } | null = null;
+
+/** The newest full model year every one of the models has, if they share one. */
+function newestSharedYear(overviews: ModelOverview[]): number | undefined {
+  const years = overviews.map((overview) => new Set(overview.years.map((row) => row.year)));
+  return [...years[0]]
+    .filter((y) => y <= LATEST_FULL_MODEL_YEAR && years.every((set) => set.has(y)))
+    .sort((a, b) => b - a)[0];
+}
+
+/** Every pair within each match-up, in the match-up's order. */
+function curatedPairs(): Array<{ label: string; paths: [string, string] }> {
+  return MATCHUPS.flatMap(({ label, paths }) =>
+    paths.flatMap((first, i) =>
+      paths.slice(i + 1).map((second) => ({ label, paths: [first, second] as [string, string] })),
+    ),
+  );
+}
+
+/** "toyota-rav4" → "/models/toyota/rav4", for every model page. */
+function modelPathBySlug(): Map<string, string> {
+  const pages = modelPages();
+  if (vsSlugCache?.source === pages) return vsSlugCache.value;
+  const value = new Map([...pages.byPath.keys()].map((path) => [modelSlug(path), path]));
+  vsSlugCache = { source: pages, value };
+  return value;
+}
+let vsSlugCache: { source: ModelPages; value: Map<string, string> } | null = null;
+
+function overviewAt(modelPath: string): ModelOverview | null {
+  const [, , make, model] = modelPath.split('/');
+  return getModelOverview(make, model);
+}
+
+/**
+ * Two models side by side, "toyota-rav4-vs-honda-cr-v": the newest full
+ * model year both have (else each one's newest), on the version each model
+ * page opens. Any two models with pages resolve; the match-ups' pairs are
+ * the curated ones, kept in the match-up's order whichever way they are asked.
+ */
+export function getVsPage(pair: string): VsPage | null {
+  ensureDatabase();
+  const key = pair.toLowerCase();
+  // The page's server render and the app's request for it come together.
+  if (vsCache?.source !== cachedCars || vsCache.value.size >= 500) {
+    vsCache = { source: cachedCars, value: new Map() };
+  }
+  if (vsCache.value.has(key)) return vsCache.value.get(key)!;
+  const page = buildVsPage(key);
+  vsCache.value.set(key, page);
+  return page;
+}
+let vsCache: { source: Car[]; value: Map<string, VsPage | null> } | null = null;
+
+function buildVsPage(pair: string): VsPage | null {
+  const bySlug = modelPathBySlug();
+  const asked = vsSplits(pair)
+    .map(([a, b]) => [bySlug.get(a), bySlug.get(b)])
+    .find((paths): paths is [string, string] => !!paths[0] && !!paths[1]);
+  if (!asked || asked[0] === asked[1]) return null;
+  const pairs = curatedPairs();
+  const curated = pairs.find(({ paths }) => paths.includes(asked[0]) && paths.includes(asked[1]));
+  const paths = curated?.paths ?? asked;
+  const overviews = paths.map(overviewAt);
+  if (!overviews[0] || !overviews[1]) return null;
+  const both = overviews as [ModelOverview, ModelOverview];
+
+  const year = newestSharedYear(both) ?? null;
+  const rowOf = (overview: ModelOverview): ModelYearSummary =>
+    (year != null && overview.years.find((row) => row.year === year)) ||
+    overview.years.find((row) => row.year <= LATEST_FULL_MODEL_YEAR) ||
+    overview.years[overview.years.length - 1];
+  const labelOf = (overview: ModelOverview) => `${overview.make} ${overview.name}`;
+
+  return {
+    path: vsPath(paths[0], paths[1]),
+    label: `${labelOf(both[0])} vs ${labelOf(both[1])}`,
+    curated: !!curated,
+    year,
+    cars: both.map((overview) => {
+      const row = rowOf(overview);
+      return {
+        label: labelOf(overview),
+        carId: row.carId,
+        year: row.year,
+        modelPath: overview.path,
+        summary: row,
+      };
+    }),
+    related: curated
+      ? pairs
+          .filter((other) => other.label === curated.label && other !== curated)
+          .flatMap((other) => {
+            const label = pairLabel(other.paths);
+            return label ? [{ label, path: vsPath(...other.paths) }] : [];
+          })
+      : [],
+  };
+}
+
+/** "Toyota RAV4 vs Mazda CX-5", when both models have pages. */
+function pairLabel([first, second]: [string, string]): string | null {
+  const pages = modelPages();
+  const [a, b] = [first, second].map((path) => pages.byPath.get(path));
+  return a && b ? `${a.make} ${a.name} vs ${b.make} ${b.name}` : null;
+}
+
+/** The match-ups' pairs whose models have pages: for the sitemap and the model pages. */
+export function getVsPages(): Array<{ label: string; path: string; modelPaths: [string, string] }> {
+  ensureDatabase();
+  return curatedPairs().flatMap(({ paths }) => {
+    const label = pairLabel(paths);
+    return label ? [{ label, path: vsPath(...paths), modelPaths: paths }] : [];
+  });
+}
 
 /**
  * A model across every year on file, for its page: "/models/toyota/camry".

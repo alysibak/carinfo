@@ -48,6 +48,7 @@ export type {
   TcoEstimate,
   TcoRange,
   TheftRank,
+  VsPage,
   VehicleCategory,
   VehicleSize,
 } from '@carinfo/types/car.types';

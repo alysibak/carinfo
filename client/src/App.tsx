@@ -80,6 +80,7 @@ function App() {
                   <Route path="/home" element={<Home />} />
                   {/* Open to visitors: the tools shoppers reach for first. */}
                   <Route path="/compare" element={<Compare />} />
+                  <Route path="/compare/:pair" element={<Compare />} />
                   <Route path="/collection/:collectionId" element={<Collection />} />
                   {/* The 3-question quiz is gone: its answers were price bands on an estimate. */}
                   <Route path="/smart-search" element={<Navigate to="/browse" replace />} />

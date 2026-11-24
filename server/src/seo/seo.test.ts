@@ -256,6 +256,57 @@ describe('SEO routes', () => {
     }
   });
 
+  it('serves a match-up head to head, indexed, with both cars and the other pairs', async () => {
+    process.env.SITE_URL = 'https://carinfo.example';
+    const res = await request(app).get('/compare/toyota-rav4-vs-honda-cr-v');
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/<title>Toyota RAV4 vs Honda CR-V \(20\d\d\) \| CarInfo<\/title>/);
+    expect(res.text).not.toContain('content="noindex"');
+    expect(res.text).toContain(
+      '<link rel="canonical" href="https://carinfo.example/compare/toyota-rav4-vs-honda-cr-v"',
+    );
+    expect(res.text).toMatch(/<h2><a href="\/car\/toyota-rav4[^"]*">20\d\d Toyota RAV4<\/a><\/h2>/);
+    expect(res.text).toContain('<a href="/models/honda/cr-v">Every year of the Honda CR-V</a>');
+    expect(res.text).toContain(
+      '<a href="/compare/toyota-rav4-vs-mazda-cx-5">Toyota RAV4 vs Mazda CX-5</a>',
+    );
+    expect(jsonLdOf(res.text).mainEntity.numberOfItems).toBe(2);
+  });
+
+  it('sends the other order, capitals or a trailing slash to the one address', async () => {
+    for (const url of [
+      '/compare/honda-cr-v-vs-toyota-rav4',
+      '/compare/Toyota-RAV4-vs-Honda-CR-V',
+      '/compare/toyota-rav4-vs-honda-cr-v/',
+    ]) {
+      const res = await request(app).get(url);
+      expect(res.status, url).toBe(301);
+      expect(res.headers.location, url).toBe('/compare/toyota-rav4-vs-honda-cr-v');
+    }
+  });
+
+  it('serves any two models, kept out of the index, and 404s a model not on file', async () => {
+    const pair = await request(app).get('/compare/toyota-camry-vs-honda-civic');
+    expect(pair.status).toBe(200);
+    expect(pair.text).toContain('Toyota Camry vs Honda Civic');
+    expect(pair.text).toContain('content="noindex"');
+    for (const url of [
+      '/compare/toyota-camry-vs-flying-car',
+      '/compare/toyota-camry-vs-toyota-camry',
+    ]) {
+      const res = await request(app).get(url);
+      expect(res.status, url).toBe(404);
+      expect(res.text, url).toContain('<meta name="robots" content="noindex" data-ssr />');
+    }
+  });
+
+  it('links a model page to the match-ups it is in', async () => {
+    const res = await request(app).get('/models/honda/cr-v');
+    expect(res.text).toContain(
+      '<a href="/compare/toyota-rav4-vs-honda-cr-v">Toyota RAV4 vs Honda CR-V</a>',
+    );
+  });
+
   it('serves the plain SPA shell for a compare with fewer than two known cars', async () => {
     // On Vercel /compare is rewritten to the function; this must not 404.
     for (const url of ['/compare', '/compare?cars=nope', `/compare?cars=${sample.id}`]) {
