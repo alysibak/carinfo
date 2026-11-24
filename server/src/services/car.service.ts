@@ -35,7 +35,11 @@ import { withRunningCosts } from '../utils/running-cost.js';
 import { type RuntimeDatabaseFile, unpackRuntimeDatabase } from './runtime-db.js';
 import { LATEST_FULL_MODEL_YEAR } from '../config/model-years.js';
 import { FIRST_CAR } from '../config/first-car.js';
-import { BEST_SELLERS as CANADA_BEST_SELLERS, MATCHUPS } from '../config/popular-models.js';
+import {
+  BEST_SELLERS as CANADA_BEST_SELLERS,
+  HEAD_TO_HEAD,
+  MATCHUPS,
+} from '../config/popular-models.js';
 import { modelSlug, vsPath, vsSplits } from '../shared/vs-path.js';
 import { mpgToLPer100Km } from '../config/regional-assumptions.js';
 import { TRIM_QUERY_FORMS } from '../utils/performance-trims.js';
@@ -1505,14 +1509,25 @@ function newestSharedYear(overviews: ModelOverview[]): number | undefined {
     .sort((a, b) => b - a)[0];
 }
 
-/** Every pair within each match-up, in the match-up's order. */
-function curatedPairs(): Array<{ label: string; paths: [string, string] }> {
-  return MATCHUPS.flatMap(({ label, paths }) =>
-    paths.flatMap((first, i) =>
-      paths.slice(i + 1).map((second) => ({ label, paths: [first, second] as [string, string] })),
-    ),
-  );
+interface CuratedPair {
+  /** The match-up it comes from, if any. */
+  label?: string;
+  paths: [string, string];
 }
+
+/** Every pair within each match-up, in the match-up's order, then the other head-to-heads. */
+function curatedPairs(): CuratedPair[] {
+  curatedPairList ??= [
+    ...MATCHUPS.flatMap(({ label, paths }) =>
+      paths.flatMap((first, i) =>
+        paths.slice(i + 1).map((second): CuratedPair => ({ label, paths: [first, second] })),
+      ),
+    ),
+    ...HEAD_TO_HEAD.map(([first, second]): CuratedPair => ({ paths: [first, second] })),
+  ];
+  return curatedPairList;
+}
+let curatedPairList: CuratedPair[] | undefined;
 
 /** "toyota-rav4" → "/models/toyota/rav4", for every model page. */
 function modelPathBySlug(): Map<string, string> {
@@ -1584,15 +1599,25 @@ function buildVsPage(pair: string): VsPage | null {
         summary: row,
       };
     }),
-    related: curated
-      ? pairs
-          .filter((other) => other.label === curated.label && other !== curated)
-          .flatMap((other) => {
-            const label = pairLabel(other.paths);
-            return label ? [{ label, path: vsPath(...other.paths) }] : [];
-          })
-      : [],
+    related: relatedPairs(pairs, curated, paths),
   };
+}
+
+/** Popular pairs with either model in them: its own match-up's first. */
+function relatedPairs(
+  pairs: CuratedPair[],
+  self: CuratedPair | undefined,
+  paths: [string, string],
+): VsPage['related'] {
+  const sameSet = (pair: CuratedPair) => Number(!!self?.label && pair.label === self.label);
+  return pairs
+    .filter((pair) => pair !== self && pair.paths.some((path) => paths.includes(path)))
+    .sort((a, b) => sameSet(b) - sameSet(a))
+    .flatMap((pair) => {
+      const label = pairLabel(pair.paths);
+      return label ? [{ label, path: vsPath(...pair.paths) }] : [];
+    })
+    .slice(0, 6);
 }
 
 /** "Toyota RAV4 vs Mazda CX-5", when both models have pages. */

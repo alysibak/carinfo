@@ -732,7 +732,7 @@ export interface VsPage {
     modelPath: string;
     summary: ModelYearSummary;
   }>;
-  /** The other pairs of its match-up. */
+  /** Popular pairs with either model in them, its own match-up's first. */
   related: Array<{ label: string; path: string }>;
 }
 
