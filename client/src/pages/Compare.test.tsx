@@ -167,8 +167,20 @@ describe('Compare head to head', () => {
     curated: true,
     year: 2026,
     cars: [
-      { label: 'Toyota RAV4', carId: 'rav4-2026', year: 2026, modelPath: '/models/toyota/rav4' },
-      { label: 'Honda CR-V', carId: 'crv-2026', year: 2026, modelPath: '/models/honda/cr-v' },
+      {
+        label: 'Toyota RAV4',
+        carId: 'rav4-2026',
+        year: 2026,
+        modelPath: '/models/toyota/rav4',
+        summary: { combinedMpg: 42.8, safetyStars: 5 },
+      },
+      {
+        label: 'Honda CR-V',
+        carId: 'crv-2026',
+        year: 2026,
+        modelPath: '/models/honda/cr-v',
+        summary: { combinedMpg: 30.2, safetyStars: 5 },
+      },
     ],
     related: [{ label: 'Toyota RAV4 vs Mazda CX-5', path: '/compare/toyota-rav4-vs-mazda-cx-5' }],
   } as unknown as Awaited<ReturnType<typeof api.getVsPage>>;
@@ -212,12 +224,19 @@ describe('Compare head to head', () => {
   });
 
   it('titles the page with the pair and links the other match-ups', async () => {
+    // The shell's description tag, which the page fills.
+    const meta = document.createElement('meta');
+    meta.name = 'description';
+    document.head.appendChild(meta);
     mockCompareStore([rav4, crv]);
     renderAt('/compare/toyota-rav4-vs-honda-cr-v');
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Toyota RAV4 vs Honda CR-V' }),
     ).toBeVisible();
     expect(document.title).toBe('Toyota RAV4 vs Honda CR-V (2026) | CarInfo');
+    expect(document.querySelector('meta[name="description"]')?.getAttribute('content')).toMatch(
+      /^The Toyota RAV4 uses less fuel: from 5\.5 L\/100 km, against 7\.8/,
+    );
     expect(screen.getByText('The 2026 models, side by side')).toBeVisible();
     expect(screen.getByRole('link', { name: 'Toyota RAV4 vs Mazda CX-5' })).toHaveAttribute(
       'href',

@@ -271,6 +271,11 @@ describe('SEO routes', () => {
       '<a href="/compare/toyota-rav4-vs-mazda-cx-5">Toyota RAV4 vs Mazda CX-5</a>',
     );
     expect(jsonLdOf(res.text).mainEntity.numberOfItems).toBe(2);
+    // How they differ, in sentences, leading the description too.
+    expect(res.text).toContain('<h2>How they differ</h2>');
+    expect(res.text).toMatch(
+      /<meta name="description" content="The Toyota RAV4 uses less fuel: from \d/,
+    );
   });
 
   it('sends the other order, capitals or a trailing slash to the one address', async () => {

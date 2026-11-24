@@ -1597,6 +1597,7 @@ function buildVsPage(pair: string): VsPage | null {
         year: row.year,
         modelPath: overview.path,
         summary: row,
+        ...(overview.theft ? { theft: overview.theft } : {}),
       };
     }),
     related: relatedPairs(pairs, curated, paths),

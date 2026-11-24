@@ -731,6 +731,8 @@ export interface VsPage {
     year: number;
     modelPath: string;
     summary: ModelYearSummary;
+    /** Its place on Équité's list of the most stolen, when it has one. */
+    theft?: TheftRank;
   }>;
   /** Popular pairs with either model in them, its own match-up's first. */
   related: Array<{ label: string; path: string }>;

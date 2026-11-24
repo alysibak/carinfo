@@ -35,7 +35,8 @@ import { complaintPart } from '../utils/recalls';
 import { ordinal } from '@carinfo/shared/theft';
 import { splitRecalls } from '@carinfo/shared/recall-scope';
 import { vsTitle } from '@carinfo/shared/vs-path';
-import { msg, t, tp } from '../i18n';
+import { vsDescription } from '@carinfo/shared/vs-differences';
+import { locale, msg, t, tp } from '../i18n';
 import { rich } from '../i18n/rich';
 
 function isUnavailable(value: string | number): boolean {
@@ -479,16 +480,22 @@ export default function Compare() {
   const [loadedVs, setVs] = useState<VsPage | null>(null);
   const vs = pair ? loadedVs : null;
   const loadedPair = useRef<string | null>(null);
+  const vsLine = vs
+    ? t(
+        '{first} and {second} side by side: fuel use, NHTSA crash ratings, recalls in Canada, owner complaints and running costs, from public records.',
+        {
+          first: `${vs.cars[0].year} ${vs.cars[0].label}`,
+          second: `${vs.cars[1].year} ${vs.cars[1].label}`,
+        },
+      )
+    : '';
   usePageMeta(
     vs ? vsTitle(vs) : t('Compare'),
     vs
-      ? t(
-          '{first} and {second} side by side: fuel use, NHTSA crash ratings, recalls in Canada, owner complaints and running costs, from public records.',
-          {
-            first: `${vs.cars[0].year} ${vs.cars[0].label}`,
-            second: `${vs.cars[1].year} ${vs.cars[1].label}`,
-          },
-        )
+      ? // In English, the differences that lead, as the server rendered them for search engines.
+        locale() === 'en'
+        ? vsDescription([vs.cars[0], vs.cars[1]], vsLine)
+        : vsLine
       : t(
           'Up to five cars side by side: fuel use, crash ratings, recalls in Canada, complaints and theft, from the public records.',
         ),

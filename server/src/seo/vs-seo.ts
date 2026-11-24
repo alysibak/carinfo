@@ -4,6 +4,7 @@ import { absoluteUrl } from './site.js';
 import { yearFacts } from './model-seo.js';
 import type { PageSeo } from './vehicle-seo.js';
 import { vsTitle } from '../shared/vs-path.js';
+import { vsDescription, vsDifferences } from '../shared/vs-differences.js';
 
 /**
  * Two models side by side. Title and description mirror what the Compare
@@ -13,7 +14,13 @@ import { vsTitle } from '../shared/vs-path.js';
 export function vsSeo(page: VsPage): PageSeo {
   const title = vsTitle(page);
   const [first, second] = page.cars.map((car) => `${car.year} ${car.label}`);
-  const description = `${first} and ${second} side by side: fuel use, NHTSA crash ratings, recalls in Canada, owner complaints and running costs, from public records.`;
+  const sides = [page.cars[0], page.cars[1]] as const;
+  // As the app says it once loaded: the differences that lead, else the plain line.
+  const description = vsDescription(
+    [...sides],
+    `${first} and ${second} side by side: fuel use, NHTSA crash ratings, recalls in Canada, owner complaints and running costs, from public records.`,
+  );
+  const differences = vsDifferences([...sides]);
   const url = absoluteUrl(page.path);
 
   const jsonLd: Record<string, unknown> = {
@@ -65,7 +72,12 @@ export function vsSeo(page: VsPage): PageSeo {
     bodyHtml:
       `<main class="seo-prerender">` +
       `<h1>${escapeHtml(page.label)}</h1>` +
-      `<p>${escapeHtml(description)}</p>` +
+      `<p>${escapeHtml(`${first} and ${second}, side by side.`)}</p>` +
+      (differences.length
+        ? `<h2>How they differ</h2><ul>${differences
+            .map((line) => `<li>${escapeHtml(line)}</li>`)
+            .join('')}</ul>`
+        : '') +
       cars +
       `<p>EPA ratings and NHTSA stars; Transport Canada's recalls and NHTSA's owner complaints for the model year, not adjusted for sales.</p>` +
       related +
