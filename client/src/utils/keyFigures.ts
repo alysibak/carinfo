@@ -279,7 +279,9 @@ export function buildKeyFigures(
 
   // An EV has shown range and energy use; for the rest, the engine rounds out four.
   if (!isEv && figures.length < 4) {
-    const engine = formatEngineForDetail(car.engine);
+    // A fuel cell in a word that fits the tile, not "Hydrogen Fuel Cell System".
+    const engine =
+      car.engine.fuelType === 'hydrogen' ? t('Fuel cell') : formatEngineForDetail(car.engine);
     if (engine !== 'Not on file') {
       figures.push({
         id: 'engine',

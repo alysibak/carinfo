@@ -61,6 +61,29 @@ describe('beforeYouBuy', () => {
     expect(items[2].stars).toBe(5);
   });
 
+  it('names each part briefly where a sentence lists several', () => {
+    const items = beforeYouBuy(
+      dashboard({
+        recalls: undefined,
+        complaints: {
+          complaints: 1200,
+          crashes: 0,
+          fires: 0,
+          injuries: 0,
+          deaths: 0,
+          parts: [
+            ['ELECTRICAL SYSTEM', 300],
+            ['POWER TRAIN', 250],
+            ['ENGINE AND ENGINE COOLING', 200],
+          ],
+        },
+      }),
+    );
+    expect(items[0].detail).toBe(
+      'Most about the electrical system, transmission and engine. Worth a look on a test drive.',
+    );
+  });
+
   it('says only what is on file', () => {
     // No matched records and no rating: nothing to say.
     expect(

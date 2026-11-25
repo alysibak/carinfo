@@ -68,6 +68,7 @@ const fr: Record<string, string> = {
     'Autres {body} de {from} à {to}, à un dixième près du prix estimé de celui-ci.',
   cars: 'véhicules',
   sedans: 'berlines',
+  'Fuel cell': 'Pile à combustible',
   pickups: 'camionnettes',
   hatchbacks: 'voitures à hayon',
   coupes: 'coupés',

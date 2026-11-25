@@ -6,6 +6,21 @@ import { ordinal, theftPlace } from '@carinfo/shared/theft';
 import { t, tp } from '../i18n';
 import { fmtNumber } from '../i18n/format';
 
+/**
+ * A part's name in a sentence of several: "the electrical system,
+ * transmission and engine", not "…, transmission and drivetrain and engine
+ * and cooling". The list under it names each in full.
+ */
+const SHORT_PARTS: Record<string, string> = {
+  'transmission and drivetrain': 'transmission',
+  'engine and cooling': 'engine',
+  'fuel and propulsion system': 'fuel system',
+  'accelerator and cruise control': 'accelerator',
+  'body and frame': 'body',
+  'visibility and wipers': 'wipers',
+  'latches, locks and linkages': 'locks',
+};
+
 export interface BeforeYouBuyItem {
   key: 'recalls' | 'complaints' | 'investigation' | 'safety' | 'theft';
   text: string;
@@ -98,7 +113,10 @@ export function beforeYouBuy(dashboard: CarDashboard): BeforeYouBuyItem[] {
   }
 
   if (complaints && complaints.complaints > 0 && complaints.parts.length) {
-    const parts = complaints.parts.slice(0, 3).map(([part]) => complaintPart(part).toLowerCase());
+    const parts = complaints.parts
+      .slice(0, 3)
+      .map(([part]) => complaintPart(part).toLowerCase())
+      .map((part) => SHORT_PARTS[part] ?? part);
     const most =
       complaintRank?.position === 1 && modelPage
         ? t(', the most of any {model} year on file', { model: modelPage.label })
