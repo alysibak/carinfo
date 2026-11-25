@@ -66,6 +66,9 @@ export function finderFilters(answers: FinderAnswers): CarFilter {
   }
   const years = HOW_NEW.find((option) => option.id === answers.howNew);
   if (years) filters.year = { min: years.from, ...(years.to ? { max: years.to } : {}) };
+  // Skipped, any of the three: fifteen years at most. Cheapest to run first
+  // led with a 2000 Insight and a 2001 Prius.
+  else filters.year = { min: HOW_NEW[HOW_NEW.length - 1].from };
   const must = new Set(answers.must);
   if (must.has('awd')) filters.driveType = ['AWD', '4WD'];
   if (must.has('stars')) filters.safety = { min: 5 };

@@ -22,7 +22,8 @@ describe('finder', () => {
       noRecalls: true,
       theftListed: false,
     });
-    expect(finderFilters({ must: [] })).toEqual({});
+    // Age skipped: any of the three answers, fifteen years at most.
+    expect(finderFilters({ must: [] })).toEqual({ year: { min: 2010 } });
   });
 
   it('lists one row per model, cheapest to run first, an EV farthest first', () => {

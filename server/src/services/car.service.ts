@@ -3570,7 +3570,8 @@ function singlePassFilter(cars: Car[], query: SearchQuery, allowFuzzy = true): C
     if (engineFamily && !engineFamily.test(car)) continue;
     if (aspirationSet && !aspirationSet.has(car.engine.aspiration ?? '')) continue;
     if (threeRow && !isThreeRow(car)) continue;
-    if (twoRow && isThreeRow(car)) continue;
+    // Two rows: not a three-row model, nor a two-seater (a first Insight read "Two rows").
+    if (twoRow && (isThreeRow(car) || car.epa?.vClass === 'Two Seaters')) continue;
     if (twoSeater && car.epa?.vClass !== 'Two Seaters') continue;
     if (positionWanted && enginePosition(car) !== positionWanted) continue;
     if (doors != null && doorCount(car) !== doors) continue;

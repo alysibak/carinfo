@@ -764,12 +764,16 @@ export default function Home() {
                               direction: sortOrder === 'asc' ? t('descending') : t('ascending'),
                             })}
                           >
-                            {sortOrderWords(
-                              sortField,
-                              sortOrder === 'asc' ? 'asc' : 'desc',
-                              isEvBrowse,
-                            )}
-                            <span aria-hidden> {sortOrder === 'asc' ? '↑' : '↓'}</span>
+                            {/* On a phone the arrow alone, so the menu beside it
+                                has room to say what it sorts by. */}
+                            <span className="sr-only sm:not-sr-only">
+                              {sortOrderWords(
+                                sortField,
+                                sortOrder === 'asc' ? 'asc' : 'desc',
+                                isEvBrowse,
+                              )}{' '}
+                            </span>
+                            <span aria-hidden>{sortOrder === 'asc' ? '↑' : '↓'}</span>
                           </button>
                         )}
                         <div

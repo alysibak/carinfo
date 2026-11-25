@@ -942,6 +942,13 @@ describe('car.service natural language search', () => {
     const fiveSeats = searchCars({ query: '5 seater suv', limit: 300 });
     expect(fiveSeats.total).toBeGreaterThan(50);
     expect(fiveSeats.results.map((c) => c.model)).not.toContain('Telluride FWD');
+    // Two rows leave out two-seaters too: the first Insight has one.
+    const twoRows = searchCars({
+      filters: { threeRow: false, year: { min: 2000, max: 2001 }, fuelType: ['hybrid'] },
+      limit: 50,
+    });
+    expect(twoRows.results.some((c) => c.epa?.vClass === 'Two Seaters')).toBe(false);
+    expect(twoRows.results.map((c) => c.model)).toContain('Prius');
     const twoDoors = searchCars({ query: 'two door', limit: 300 });
     expect(twoDoors.total).toBeGreaterThan(50);
     expect(twoDoors.results.every((c) => c.bodyStyle !== 'sedan')).toBe(true);
