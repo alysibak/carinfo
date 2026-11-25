@@ -258,6 +258,7 @@ const fr: Record<string, string> = {
   'Luxury, a few years old': 'Luxe, quelques années',
   Make: 'Marque',
   'Make, model, year or VIN': 'Marque, modèle, année ou NIV',
+  'Best known first': 'Les plus connus d’abord',
   Manual: 'Manuelle',
   Max: 'Max.',
   'Maximum {label}': '{label} maximum',

@@ -282,7 +282,7 @@ export default function Home() {
       collapseByModel,
       sort: text
         ? { field: 'relevance', order: 'desc' }
-        : (searchQuery.sort ?? { field: 'year', order: 'desc' }),
+        : (searchQuery.sort ?? { field: 'relevance', order: 'desc' }),
       offset: 0,
     });
   };
@@ -400,7 +400,7 @@ export default function Home() {
   // Wide screens have the filters beside the results; this row then only
   // carries what is switched on.
   const rowHasDesktopContent = activeFilterChips.length > 0 || hasSearched;
-  const sortField = searchQuery.sort?.field ?? 'year';
+  const sortField = searchQuery.sort?.field ?? 'relevance';
   // Cards name a car's estimated value only where the search is about price.
   const priceAsked =
     sortField === 'price' ||
@@ -594,7 +594,7 @@ export default function Home() {
                             pushSearch({
                               query: item.query,
                               filters: item.filters as CarFilter,
-                              sort: item.sort ?? { field: 'year', order: 'desc' },
+                              sort: item.sort ?? { field: 'relevance', order: 'desc' },
                               limit: pageSize,
                               offset: 0,
                             });
@@ -732,9 +732,12 @@ export default function Home() {
                           value={sortField}
                           onChange={handleSortChange}
                           options={[
-                            ...(searchText || sortField === 'relevance'
-                              ? [{ value: 'relevance', label: t('Best match') }]
-                              : []),
+                            // Words typed: the best match to them; filters alone:
+                            // the best-known models first.
+                            {
+                              value: 'relevance',
+                              label: searchText.trim() ? t('Best match') : t('Best known first'),
+                            },
                             // What EPA and NHTSA recorded first; the estimates last, and named so.
                             {
                               value: 'fuelEconomy',
@@ -961,7 +964,7 @@ export default function Home() {
                         setSearchQuery({
                           query: '',
                           filters: {},
-                          sort: { field: 'year', order: 'desc' },
+                          sort: { field: 'relevance', order: 'desc' },
                           limit: pageSize,
                           offset: 0,
                         });

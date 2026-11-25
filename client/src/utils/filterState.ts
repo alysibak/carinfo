@@ -83,7 +83,7 @@ export function sortForFilters(
   if (currentSort?.field === 'evScore') {
     return { field: 'range', order: 'desc' };
   }
-  return currentSort ?? { field: 'year', order: 'desc' };
+  return currentSort ?? { field: 'relevance', order: 'desc' };
 }
 
 export function toggleRangeBucket(

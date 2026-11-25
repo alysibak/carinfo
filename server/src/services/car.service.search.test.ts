@@ -1209,6 +1209,19 @@ describe('car.service model pages', () => {
     expect(getModelOverview('toyota', 'flying-car')).toBeNull();
   });
 
+  it('leads a browse by filters alone with the best-known models', () => {
+    const suvs = searchCars({
+      filters: { bodyStyle: ['suv'] },
+      sort: { field: 'relevance', order: 'desc' },
+      collapseByModel: true,
+      limit: 5,
+    });
+    const names = suvs.results.map((car) => `${car.make} ${car.model.split(' ')[0]}`);
+    // Newest first led with a 2027 Lotus; best known, the RAV4 and CR-V.
+    expect(names).toContain('Toyota RAV4');
+    expect(names).toContain('Honda CR-V');
+  });
+
   it('names models of two words in full, and keeps one model across a rename', () => {
     const page = (make: string, model: string) => {
       const found = getModelOverview(make, model);

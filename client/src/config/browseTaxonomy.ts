@@ -29,6 +29,8 @@ export interface BucketOption {
  * How people shop, on the records: each says its rule in its description.
  * None is bounded by the site's estimated value, which is a guess at a price.
  */
+// None sets an order: the best-known models lead, a 2027 Lotus or a Lucid
+// Air did when newest or thriftiest came first.
 export const LIFESTYLE_PRESETS: BrowsePreset[] = [
   {
     id: 'daily-driver',
@@ -39,7 +41,6 @@ export const LIFESTYLE_PRESETS: BrowsePreset[] = [
       fuelEconomy: { min: 30 },
       year: { min: 2020 },
     },
-    sort: { field: 'fuelEconomy', order: 'desc' },
   },
   {
     id: 'first-car',
@@ -54,7 +55,6 @@ export const LIFESTYLE_PRESETS: BrowsePreset[] = [
       year: { min: FIRST_CAR.minYear },
       fuelType: [...FIRST_CAR.fuelTypes],
     },
-    sort: { field: 'safety', order: 'desc' },
   },
   {
     id: 'family',
@@ -63,14 +63,12 @@ export const LIFESTYLE_PRESETS: BrowsePreset[] = [
     // Every SUV and wagon used to qualify, down to a two-door Wrangler.
     query: 'third row',
     filters: {},
-    sort: { field: 'year', order: 'desc' },
   },
   {
     id: 'commuter',
     label: msg('Long commute'),
     description: msg('5.9 L/100 km or less'),
     filters: { fuelEconomy: { min: 40 } },
-    sort: { field: 'fuelEconomy', order: 'desc' },
   },
   {
     id: 'work-truck',
@@ -78,7 +76,6 @@ export const LIFESTYLE_PRESETS: BrowsePreset[] = [
     description: msg('Full-size four-wheel-drive pickups'),
     query: 'full size truck',
     filters: { bodyStyle: ['truck'], driveType: ['AWD', '4WD'] },
-    sort: { field: 'year', order: 'desc' },
   },
   {
     id: 'weekend',
@@ -87,14 +84,12 @@ export const LIFESTYLE_PRESETS: BrowsePreset[] = [
     // Any coupe over 3 litres took in a CL600 and left out every Miata.
     query: 'sports car',
     filters: {},
-    sort: { field: 'year', order: 'desc' },
   },
   {
     id: 'eco',
     label: msg('Go electric'),
     description: msg('Electric, hybrid and plug-in, 2018 on'),
     filters: { fuelType: ['electric', 'hybrid', 'plug-in hybrid'], year: { min: 2018 } },
-    sort: { field: 'year', order: 'desc' },
   },
   {
     id: 'luxury-value',
@@ -103,7 +98,6 @@ export const LIFESTYLE_PRESETS: BrowsePreset[] = [
     // Eight makes by name missed Genesis, Volvo, Porsche, Jaguar and Land Rover.
     query: 'luxury',
     filters: { year: { min: 2018, max: 2023 } },
-    sort: { field: 'year', order: 'desc' },
   },
 ];
 
@@ -280,7 +274,7 @@ export function presetToSearchQuery(preset: BrowsePreset | BucketOption): Search
   return {
     ...('query' in preset && preset.query ? { query: preset.query } : {}),
     filters: preset.filters,
-    sort: 'sort' in preset && preset.sort ? preset.sort : { field: 'year', order: 'desc' },
+    sort: 'sort' in preset && preset.sort ? preset.sort : { field: 'relevance', order: 'desc' },
     limit: 36,
     offset: 0,
   };
@@ -289,7 +283,7 @@ export function presetToSearchQuery(preset: BrowsePreset | BucketOption): Search
 export function filtersToSearchQuery(filters: CarFilter, sort?: SearchQuery['sort']): SearchQuery {
   return {
     filters,
-    sort: sort ?? { field: 'year', order: 'desc' },
+    sort: sort ?? { field: 'relevance', order: 'desc' },
     limit: 36,
     offset: 0,
   };

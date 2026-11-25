@@ -52,7 +52,7 @@ export const useCarStore = create<CarStore>()(
       searchQuery: {
         query: '',
         filters: {},
-        sort: { field: 'year', order: 'desc' },
+        sort: { field: 'relevance', order: 'desc' },
         collapseByModel: true,
         limit: 36,
         offset: 0,

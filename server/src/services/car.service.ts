@@ -890,9 +890,10 @@ function runSearch(query: SearchQuery): SearchResults {
     );
   } else if (sortField && sortField !== 'relevance') {
     sortResultsInPlace(candidates, sortField, sortOrder);
-  } else if (wantRelevance && originalText && byFame) {
-    // Every result matches "electric suv" alike: the best-known models on sale
-    // first, each by its newest year. Newest first led with a VinFast.
+  } else if (wantRelevance && byFame) {
+    // Every result matches "electric suv", or the filters alone, alike: the
+    // best-known models on sale first, each by its newest year. Newest first
+    // led "electric suv" with a VinFast, and SUVs with a 2027 Lotus.
     const known = prominenceAmong(candidates);
     candidates.sort((a, b) => (known.get(b) ?? 0) - (known.get(a) ?? 0) || b.year - a.year);
   } else {

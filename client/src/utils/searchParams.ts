@@ -41,7 +41,8 @@ export function defaultSortForQuery(
   if (isElectricOnlyBrowse(filters)) {
     return { field: 'range', order: 'desc' };
   }
-  return { field: 'year', order: 'desc' };
+  // The best-known models first: newest first led SUVs with a 2027 Lotus.
+  return { field: 'relevance', order: 'desc' };
 }
 
 /**
