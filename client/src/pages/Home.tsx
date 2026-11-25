@@ -4,6 +4,7 @@ import { useCarStore } from '../stores/carStore';
 import FilterSidebar from '../components/FilterSidebar';
 import FilterSheet from '../components/FilterSheet';
 import CarCard, { CARD_GRID } from '../components/CarCard';
+import SearchModelYears from '../components/SearchModelYears';
 import SearchBar from '../components/SearchBar';
 import SelectMenu from '../components/SelectMenu';
 import PageShell, { PageBody } from '../components/PageShell';
@@ -364,6 +365,16 @@ export default function Home() {
 
   const activeFilterChips = describeActiveFilters(searchQuery.filters);
   const activeFilterCount = countActiveFilterFields(searchQuery.filters);
+  // "civic": every year of one model, a row each. Its generations and years
+  // go above the rows (the server sends them where the search found every
+  // year of it), on the first page, unless recalls were asked for.
+  const modelYears =
+    !searchError &&
+    searchResults?.onePerModel === false &&
+    !searchResults.interpretation?.records &&
+    currentPage === 1
+      ? searchResults.modelYears
+      : undefined;
   // An empty result names what narrowed it: "with Diesel and SUV".
   const filtersOn = activeFilterChips.length > 0;
   const rememberSearch = useLastSearchStore((state) => state.remember);
@@ -813,6 +824,9 @@ export default function Home() {
                   </div>
                 ) : searchResults && searchResults.results.length > 0 ? (
                   <>
+                    {modelYears && (
+                      <SearchModelYears model={modelYears} found={searchResults.models} />
+                    )}
                     {view === 'list' ? (
                       <div className="border-t border-zinc-900 -mx-3 sm:mx-0">
                         {searchResults.results.map((car) => (
@@ -821,7 +835,10 @@ export default function Home() {
                             car={car}
                             showValue={priceAsked}
                             versions={searchResults.versions?.[car.id]}
-                            modelPath={searchResults.interpretation?.modelPage?.path}
+                            modelPath={
+                              searchResults.modelPaths?.[car.id] ??
+                              searchResults.interpretation?.modelPage?.path
+                            }
                             layout="list"
                             reasons={matchReasons(
                               car,
@@ -840,7 +857,10 @@ export default function Home() {
                             car={car}
                             showValue={priceAsked}
                             versions={searchResults.versions?.[car.id]}
-                            modelPath={searchResults.interpretation?.modelPage?.path}
+                            modelPath={
+                              searchResults.modelPaths?.[car.id] ??
+                              searchResults.interpretation?.modelPage?.path
+                            }
                             reasons={matchReasons(
                               car,
                               searchQuery.filters,

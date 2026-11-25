@@ -11,6 +11,8 @@ const fr: Record<string, string> = {
   '{count} versions: pick what matters to you':
     '{count} versions : choisissez ce qui compte pour vous',
   'Choose a year': 'Choisir une année',
+  'Choose a year of the {label}': 'Choisir une année du {label}',
+  'Also found': 'Également trouvés',
   Years: 'Années',
   'A trip in this car': 'Un trajet dans cette voiture',
   Trip: 'Trajet',

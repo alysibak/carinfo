@@ -87,6 +87,8 @@ test.describe('what is clickable looks it', () => {
     for (const path of [
       '/',
       '/home?q=toyota',
+      // A model's years to choose from above the rows, and the other models found.
+      '/home?q=f-150',
       `/car/${id}`,
       '/models/honda/civic',
       `/models/honda/civic/${year}`,

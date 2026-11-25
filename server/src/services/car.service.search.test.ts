@@ -1202,6 +1202,42 @@ describe('car.service model pages', () => {
     expect(getModelOverview('toyota', 'flying-car')).toBeNull();
   });
 
+  it('names the models a search found, and the years of one it found every year of', () => {
+    const civic = searchCars({ query: 'civic', collapseByModel: 'auto', limit: 5 });
+    expect(civic.models).toEqual([
+      expect.objectContaining({ label: 'Honda Civic', path: '/models/honda/civic' }),
+    ]);
+    // The same years, base cars and generations as the model's page.
+    expect(civic.modelYears?.years).toEqual(
+      getModelOverview('honda', 'civic')!.years.map(
+        ({ year, carId, configurations, generation }) => ({
+          year,
+          carId,
+          configurations,
+          ...(generation ? { generation } : {}),
+        }),
+      ),
+    );
+    for (const car of civic.results) expect(civic.modelPaths?.[car.id]).toBe('/models/honda/civic');
+
+    // "f-150" is the F-150 first, then the F-150 Lightning.
+    const f150 = searchCars({ query: 'f-150', collapseByModel: 'auto', limit: 5 });
+    expect(f150.models?.slice(0, 2).map((model) => model.label)).toEqual([
+      'Ford F-150',
+      'Ford F-150 Lightning',
+    ]);
+    expect(f150.modelYears?.path).toBe('/models/ford/f-150');
+
+    // Narrower than the model: the rows say it, not every year.
+    for (const query of ['civic hybrid', '2018 civic', '2015-2020 civic']) {
+      expect(searchCars({ query, collapseByModel: 'auto', limit: 5 }).modelYears).toBeUndefined();
+    }
+    // A make, one row per model, names none.
+    expect(
+      searchCars({ query: 'honda', collapseByModel: 'auto', limit: 5 }).models,
+    ).toBeUndefined();
+  });
+
   it('leads a model page with the newest photo on file when its newest year has none', () => {
     const rav4 = getModelOverview('toyota', 'rav4')!;
     expect(rav4.lead.photo).toBeDefined();

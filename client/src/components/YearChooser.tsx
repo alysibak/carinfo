@@ -1,14 +1,14 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { ModelOverview, ModelYearSummary } from '../types/car.types';
+import type { ModelYearChoice } from '../types/car.types';
 import { generationParts } from '../utils/modelYearFacts';
 import { t, tp } from '../i18n';
 
 const span = (from: number, to: number) => (from === to ? `${from}` : `${from}–${to}`);
 
 /** Runs of years in one generation, newest first, as the page's tables group them. */
-function generationsOf(years: ModelYearSummary[]) {
-  const groups: Array<{ label?: string; rows: ModelYearSummary[] }> = [];
+function generationsOf(years: ModelYearChoice[]) {
+  const groups: Array<{ label?: string; rows: ModelYearChoice[] }> = [];
   for (const row of years) {
     const group = groups.at(-1);
     if (group && group.label === row.generation) group.rows.push(row);
@@ -22,7 +22,18 @@ function generationsOf(years: ModelYearSummary[]) {
  * then the year, which opens that year's versions (or its one car). A model
  * with thirty years and six generations was a long scroll through tables.
  */
-export default function YearChooser({ overview }: { overview: ModelOverview }) {
+export default function YearChooser({
+  overview,
+  heading,
+  className = 'mb-8',
+}: {
+  /** The model's page and its years, newest first: a model page's overview will do. */
+  overview: { path: string; years: ModelYearChoice[] };
+  /** "Choose a year" on the model's own page; search results name the model. */
+  heading?: string;
+  className?: string;
+}) {
+  const headingId = useId();
   const groups = generationsOf(overview.years);
   const named = groups.length > 1 && groups.some((group) => group.label);
   const [chosen, setChosen] = useState(0);
@@ -30,15 +41,15 @@ export default function YearChooser({ overview }: { overview: ModelOverview }) {
   const rows = group ? group.rows : overview.years;
   const parts = group?.label ? generationParts(group.label) : null;
 
-  const yearLink = (row: ModelYearSummary) =>
+  const yearLink = (row: ModelYearChoice) =>
     row.configurations >= 2
       ? `${overview.path}/${row.year}`
       : `/car/${encodeURIComponent(row.carId)}`;
 
   return (
-    <section aria-labelledby="choose-year" className="mb-8">
-      <h2 id="choose-year" className="block-title mb-3">
-        {t('Choose a year')}
+    <section aria-labelledby={headingId} className={className}>
+      <h2 id={headingId} className="block-title mb-3">
+        {heading ?? t('Choose a year')}
       </h2>
       {named && (
         <div className="mb-3" role="group" aria-label={t('Generation')}>

@@ -494,7 +494,38 @@ export interface SearchResults {
   onePerModel?: boolean;
   /** How many versions of its model year each collapsed row stands for, by car id, where more than one. */
   versions?: Record<string, number>;
+  /**
+   * The models a search by year found, the most relevant first, each with its
+   * page and the years found: "f-150" is the F-150's thirty-odd years and the
+   * F-150 Lightning's four. Left out when it found many models.
+   */
+  models?: FoundModel[];
+  /** Each collapsed row's model page, by car id, where it has one. */
+  modelPaths?: Record<string, string>;
+  /**
+   * "civic": a model the search found every year of, with those years as its
+   * page's year chooser has them, so the chooser shows above the rows.
+   */
+  modelYears?: { label: string; path: string; years: ModelYearChoice[] };
 }
+
+/** A model a search found, with the years of it found. */
+export interface FoundModel {
+  label: string;
+  path: string;
+  from: number;
+  to: number;
+  /** How many model years of it were found. */
+  years: number;
+  /** How many model years of it are on file. */
+  onFile: number;
+}
+
+/** A model year as a year chooser offers it: its base car, versions and generation. */
+export type ModelYearChoice = Pick<
+  ModelYearSummary,
+  'year' | 'carId' | 'configurations' | 'generation'
+>;
 
 /**
  * Transport Canada's measurements of a car, each as [least, most] across the

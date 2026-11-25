@@ -4,7 +4,9 @@ import type {
   BestSellers,
   Matchup,
   Car,
+  FoundModel,
   ModelOverview,
+  ModelYearChoice,
   ModelYearOverview,
   ModelYearSummary,
   SearchQuery,
@@ -925,11 +927,31 @@ function runSearch(query: SearchQuery): SearchResults {
           }),
         )
       : {};
+  // Where each row's year and model are: its versions are a tap away.
+  const paths =
+    collapse != null
+      ? Object.fromEntries(
+          page.flatMap((car) => {
+            const found = modelPageOf(car);
+            return found ? [[car.id, found.path]] : [];
+          }),
+        )
+      : {};
+  const models = collapse === false ? modelsFound(candidates) : undefined;
+  // The first model found whole, every year on file, beyond a year or two:
+  // "civic" has its years to choose from; "civic hybrid" and "2018 civic" not.
+  const whole = models?.find((model) => model.years >= 3 && model.years === model.onFile);
+  const wholeYears = whole && modelYearChoices(whole.path);
   const results: SearchResults = {
     results: page,
     total,
     hasMore: offset + limit < total,
     ...(Object.keys(counts).length ? { versions: counts } : {}),
+    ...(Object.keys(paths).length ? { modelPaths: paths } : {}),
+    ...(models ? { models } : {}),
+    ...(whole && wholeYears
+      ? { modelYears: { label: whole.label, path: whole.path, years: wholeYears } }
+      : {}),
     ...(enriched.interpretation ? { interpretation: enriched.interpretation } : {}),
     ...(collapse != null ? { onePerModel: collapse } : {}),
   };
@@ -941,6 +963,75 @@ function runSearch(query: SearchQuery): SearchResults {
     if (before || after) results.yearCoverage = { min: covered.min, max: covered.max };
   }
   return results;
+}
+
+/** More models than this found by year is a broad search, not a model or two. */
+const MAX_MODELS_FOUND = 6;
+
+/**
+ * The models found, the most relevant first, with the years of each:
+ * "f-150" finds the F-150 and the F-150 Lightning (and two tuners' F150s).
+ * Undefined for a broad search, or where none has a page.
+ */
+function modelsFound(cars: Car[]): FoundModel[] | undefined {
+  const lines = new Map<string, string | null>();
+  const models = new Map<string, { label: string; path: string; years: Set<number> }>();
+  for (const car of cars) {
+    const key = modelLineKey(car);
+    let path = lines.get(key);
+    if (path === undefined) {
+      if (lines.size === MAX_MODELS_FOUND) return undefined;
+      const found = modelPageOf(car);
+      path = found?.path ?? null;
+      lines.set(key, path);
+      if (found && !models.has(found.path)) models.set(found.path, { ...found, years: new Set() });
+    }
+    if (path) models.get(path)!.years.add(car.year);
+  }
+  if (!models.size) return undefined;
+  return [...models.values()].map(({ label, path, years }) => ({
+    label,
+    path,
+    from: Math.min(...years),
+    to: Math.max(...years),
+    years: years.size,
+    onFile: modelPageCarsByYear(path)?.size ?? years.size,
+  }));
+}
+
+/** A model page's cars by model year, newest first. */
+function modelPageCarsByYear(path: string): Map<number, Car[]> | null {
+  const pages = modelPages();
+  const family = pages.byPath.get(path);
+  const cars = family && pages.carsByKey.get(family.key);
+  if (!cars?.length) return null;
+  const byYear = new Map<number, Car[]>();
+  for (const car of [...cars].sort((a, b) => b.year - a.year)) {
+    const list = byYear.get(car.year);
+    if (list) list.push(car);
+    else byYear.set(car.year, [car]);
+  }
+  return byYear;
+}
+
+/**
+ * A model's years, newest first, as its page's year chooser has them: the
+ * same base car, number of versions and generation as its year rows.
+ */
+export function modelYearChoices(path: string): ModelYearChoice[] | null {
+  ensureDatabase();
+  const byYear = modelPageCarsByYear(path);
+  if (!byYear) return null;
+  return [...byYear].map(([year, cars]) => {
+    const base = baseOf(cars);
+    const generation = generationOf(base);
+    return {
+      year,
+      carId: base.id,
+      configurations: cars.length,
+      ...(generation ? { generation } : {}),
+    };
+  });
 }
 
 /**
