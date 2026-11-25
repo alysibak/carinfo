@@ -443,7 +443,7 @@ export default function Home() {
             loading={isSearching}
             size="default"
             showButton={false}
-            placeholder={t('Make, model, year or VIN, e.g. 2024 Toyota Camry')}
+            placeholder={t('Make, model, year or VIN')}
             siteSearch
             // Arrived by "/" from another page: straight into the box.
             autoFocus={!!(state as { focusSearch?: boolean } | null)?.focusSearch}

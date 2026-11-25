@@ -246,7 +246,7 @@ describe('SEO routes', () => {
     const res = await request(app).get('/models/honda/civic/2024');
     expect(res.status).toBe(200);
     expect(res.text).toContain('<title>2024 Honda Civic | CarInfo</title>');
-    expect(res.text).toMatch(/configurations on file/);
+    expect(res.text).toMatch(/versions on file/);
     expect(res.text).toContain('<a href="/models/honda/civic">');
     expect(res.text).toMatch(/<a href="\/car\/honda-civic[^"]*">/);
     const lonely = await request(app).get('/models/honda/civic/1995');

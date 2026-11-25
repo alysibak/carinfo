@@ -132,6 +132,19 @@ describe('buildSpecLine', () => {
     expect(buildSpecLine(trustDashboard, true)[0]).toMatch(/cylinder|L /);
   });
 
+  it('names no gearbox for an electric car', () => {
+    const ev = {
+      ...trustDashboard,
+      car: {
+        ...trustDashboard.car,
+        engine: { ...trustDashboard.car.engine, fuelType: 'electric' as const },
+        transmission: { type: 'automatic' as const, description: 'Automatic (A1)' },
+        driveType: 'RWD' as const,
+      },
+    };
+    expect(buildSpecLine(ev)).toEqual(['RWD']);
+  });
+
   it('keeps a 0–60 time that is on record', () => {
     const measured = {
       ...trustDashboard,

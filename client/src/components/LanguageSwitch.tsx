@@ -4,7 +4,14 @@ import { useLocaleStore } from '../i18n/store';
  * EN / FR. Names the other language in that language, the way a bilingual
  * Canadian site does ("Français" on the English page).
  */
-export default function LanguageSwitch({ className = '' }: { className?: string }) {
+export default function LanguageSwitch({
+  className = '',
+  full = false,
+}: {
+  className?: string;
+  /** The language's name at every width: the footer has room, the header on a phone not. */
+  full?: boolean;
+}) {
   const current = useLocaleStore((s) => s.locale);
   const setLocale = useLocaleStore((s) => s.setLocale);
   const next = current === 'fr' ? 'en' : 'fr';
@@ -15,11 +22,17 @@ export default function LanguageSwitch({ className = '' }: { className?: string 
       onClick={() => void setLocale(next)}
       className={`inline-flex items-center min-h-[44px] px-2 text-sm text-zinc-400 hover:text-white transition-colors ${className}`}
     >
-      <span aria-hidden="true" className="sm:hidden">
-        {next.toUpperCase()}
-      </span>
-      <span className="hidden sm:inline">{next === 'fr' ? 'Français' : 'English'}</span>
-      <span className="sr-only sm:hidden">{next === 'fr' ? 'Français' : 'English'}</span>
+      {full ? (
+        <span>{next === 'fr' ? 'Français' : 'English'}</span>
+      ) : (
+        <>
+          <span aria-hidden="true" className="sm:hidden">
+            {next.toUpperCase()}
+          </span>
+          <span className="hidden sm:inline">{next === 'fr' ? 'Français' : 'English'}</span>
+          <span className="sr-only sm:hidden">{next === 'fr' ? 'Français' : 'English'}</span>
+        </>
+      )}
     </button>
   );
 }

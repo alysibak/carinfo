@@ -318,7 +318,9 @@ export function buildSpecLine(
     const engine = formatEngineForDetail(car.engine);
     if (engine !== 'Not on file') parts.push(engine);
   }
-  if (car.transmission?.type) parts.push(formatTransmissionLabel(car.transmission));
+  // An electric car's one gear is not a gearbox worth naming: EPA's "Automatic (A1)".
+  if (car.transmission?.type && car.engine.fuelType !== 'electric')
+    parts.push(formatTransmissionLabel(car.transmission));
   if (car.driveType) parts.push(car.driveType);
   if (dashboard.zeroToSixty?.method === 'actual') {
     parts.push(t('0–60 mph {seconds} s', { seconds: dashboard.zeroToSixty.value.toFixed(1) }));

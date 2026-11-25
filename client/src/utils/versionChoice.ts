@@ -118,10 +118,27 @@ export function versionValues(cars: CarSpecs[]): Map<string, Partial<Record<Choi
   );
 }
 
+/** How a choice splits the versions, as sets of ids: two splits alike say the same. */
+function splitBy(cars: CarSpecs[], values: ReturnType<typeof versionValues>, id: ChoiceId) {
+  const groups = new Map<string, string[]>();
+  for (const car of cars) {
+    const value = values.get(car.id)?.[id] ?? '';
+    groups.set(value, [...(groups.get(value) ?? []), car.id]);
+  }
+  return [...groups.values()]
+    .map((ids) => ids.join(','))
+    .sort()
+    .join('|');
+}
+
 /** The choices that tell this year's versions apart: those with two values or more. */
 export function versionChoices(cars: CarSpecs[]): Choice[] {
   const values = versionValues(cars);
+  // The doors say nothing the body has not where every sedan has four and
+  // every hatchback five.
+  const doorsSayBody = splitBy(cars, values, 'doors') === splitBy(cars, values, 'body');
   return CHOICE_IDS.flatMap((id): Choice[] => {
+    if (id === 'doors' && doorsSayBody) return [];
     const seen = new Set<string>();
     for (const car of cars) {
       const value = values.get(car.id)?.[id];

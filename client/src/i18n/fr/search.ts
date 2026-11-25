@@ -257,8 +257,7 @@ const fr: Record<string, string> = {
   'Luxury SUVs': 'VUS de luxe',
   'Luxury, a few years old': 'Luxe, quelques années',
   Make: 'Marque',
-  'Make, model, year or VIN, e.g. 2024 Toyota Camry':
-    'Marque, modèle, année ou NIV, p. ex. Toyota Camry 2024',
+  'Make, model, year or VIN': 'Marque, modèle, année ou NIV',
   Manual: 'Manuelle',
   Max: 'Max.',
   'Maximum {label}': '{label} maximum',

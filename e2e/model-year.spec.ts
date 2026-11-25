@@ -26,7 +26,7 @@ test.describe('Model year', () => {
     await expect(page.getByRole('heading', { level: 1, name: `${year} Honda Civic` })).toBeVisible({
       timeout: 30_000,
     });
-    await expect(page.getByText(`${configurations} configurations on file`)).toBeVisible();
+    await expect(page.getByText(`${configurations} versions on file`)).toBeVisible();
     await expect(page.getByText('How the versions differ')).toBeVisible();
 
     await page.locator('a[href^="/car/"]').first().click();

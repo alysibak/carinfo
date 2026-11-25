@@ -633,6 +633,8 @@ const fr: Record<string, string> = {
   '{count} configurations of the {year} {make} {model}: fuel use, power, crash ratings and estimated value side by side.':
     '{count} configurations du {year} {make} {model} : consommation, puissance, cotes de sécurité et valeur estimée côte à côte.',
   '{count} configurations on file': '{count} configurations au dossier',
+  '{count} version on file': '{count} version au dossier',
+  '{count} versions on file': '{count} versions au dossier',
   '{count} model year on file': '{count} année modèle au dossier',
   '{count} model years on file': '{count} années modèle au dossier',
   '{count} owner complaint to NHTSA': '{count} plainte de propriétaire à la NHTSA',

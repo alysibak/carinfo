@@ -67,6 +67,14 @@ const fr: Record<string, string> = {
   'Other {body} from {from} to {to} within a tenth of this one’s estimated price.':
     'Autres {body} de {from} à {to}, à un dixième près du prix estimé de celui-ci.',
   cars: 'véhicules',
+  sedans: 'berlines',
+  pickups: 'camionnettes',
+  hatchbacks: 'voitures à hayon',
+  coupes: 'coupés',
+  convertibles: 'décapotables',
+  wagons: 'familiales',
+  minivans: 'fourgonnettes',
+  vans: 'fourgons',
   'Gas-mode fuel use': 'Consommation en mode essence',
   ' ({count} more are for {powertrains} alone)':
     ' ({count} de plus concernent seulement {powertrains})',
@@ -737,6 +745,12 @@ const fr: Record<string, string> = {
   'The most of the {model}’s {of} years on file.': 'Le plus des {of} années du {model} au dossier.',
   '{ordinal} most of the {model}’s {of} years on file.':
     '{ordinal}e plus élevé des {of} années du {model} au dossier.',
+  'The fewest of the {model}’s {of} years on file.':
+    'Le moins des {of} années du {model} au dossier.',
+  'Fewer than {count} of the {model}’s {of} years on file.':
+    'Moins que {count} des {of} années du {model} au dossier.',
+  'A recent year has had less time for complaints.':
+    'Une année récente a eu moins de temps pour recevoir des plaintes.',
   ' · {powertrain} only': ' · {powertrain} seulement',
   ' · {count} in Canada': ' · {count} au Canada',
   'Risk: ': 'Risque : ',

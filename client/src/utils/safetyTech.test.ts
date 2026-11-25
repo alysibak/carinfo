@@ -6,6 +6,13 @@ describe('safetyTech', () => {
     expect(testedLabel('2018 Toyota Tacoma PU/CC 4WD')).toBe(
       '2018 Toyota Tacoma crew cab pickup 4WD',
     );
+    // The cab once, where NHTSA's name already says it.
+    expect(testedLabel('2018 Ford F-150 Regular Cab PU/RC 4x2')).toBe(
+      '2018 Ford F-150 Regular Cab pickup 4x2',
+    );
+    expect(testedLabel('2018 Ford F-150 Super Crew PU/CC 4x2')).toBe(
+      '2018 Ford F-150 Super Crew pickup 4x2',
+    );
     expect(testedLabel('2011 Toyota Camry 4 DR FWD Early Release')).toBe(
       '2011 Toyota Camry 4-door FWD Early Release',
     );

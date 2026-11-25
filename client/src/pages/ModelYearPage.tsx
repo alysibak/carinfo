@@ -12,7 +12,7 @@ import { modelYearFacts } from '../utils/modelYearFacts';
 import { usePageMeta } from '../utils/pageMeta';
 import { differentiateCars } from '../utils/differentiateCars';
 import { modelYearKey, takePrefetched } from '../utils/prefetch';
-import { t } from '../i18n';
+import { t, tp } from '../i18n';
 import Breadcrumbs from '../components/Breadcrumbs';
 import VersionChooser from '../components/VersionChooser';
 import { CHOICE_IDS, matchVersions, type Picks } from '../utils/versionChoice';
@@ -123,7 +123,7 @@ export default function ModelYearPage() {
     );
   }
 
-  const facts = modelYearFacts(overview.summary);
+  const facts = modelYearFacts(overview.summary, { versions: false });
 
   return (
     <PageShell>
@@ -137,7 +137,11 @@ export default function ModelYearPage() {
         />
         <h1 className="page-title mt-4 mb-2">{name}</h1>
         <p className="text-sm text-zinc-400 mb-6 max-w-2xl leading-relaxed">
-          {t('{count} configurations on file', { count: overview.summary.configurations })}
+          {tp(
+            overview.summary.configurations,
+            '{count} version on file',
+            '{count} versions on file',
+          )}
           {facts.length ? ` · ${facts.join(' · ')}` : ''}.
         </p>
 

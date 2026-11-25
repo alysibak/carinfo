@@ -2,9 +2,21 @@ import { useEffect, useState } from 'react';
 import { searchCars } from '../services/api';
 import type { CarSpecs } from '../types/car.types';
 import CarCard, { CARD_GRID } from './CarCard';
-import { bodyStyleLabel } from '../utils/bodyStyleLabel';
 import { modelFamily } from '../utils/nearPrice';
-import { t } from '../i18n';
+import { msg, t } from '../i18n';
+
+/** "Other sedans", not "Other sedan". */
+const BODY_PLURALS: Record<string, string> = {
+  sedan: msg('sedans'),
+  suv: msg('SUVs'),
+  truck: msg('pickups'),
+  hatchback: msg('hatchbacks'),
+  coupe: msg('coupes'),
+  convertible: msg('convertibles'),
+  wagon: msg('wagons'),
+  minivan: msg('minivans'),
+  van: msg('vans'),
+};
 
 /**
  * Other cars of the same kind and age a shopper could have for about the same
@@ -49,7 +61,7 @@ export default function NearPrice({ car }: { car: CarSpecs }) {
       </h2>
       <p className="text-sm text-zinc-400 mb-4 max-w-2xl">
         {t('Other {body} from {from} to {to} within a tenth of this one’s estimated price.', {
-          body: car.bodyStyle ? bodyStyleLabel(car.bodyStyle).toLowerCase() : t('cars'),
+          body: t(BODY_PLURALS[car.bodyStyle ?? ''] ?? 'cars'),
           from: car.year - 1,
           to: car.year + 1,
         })}

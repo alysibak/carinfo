@@ -304,18 +304,18 @@ function buildAxes(set: CarSpecs[]): string[] {
       continue;
     }
 
-    const fmt =
-      metric.key === 'hp'
-        ? (n: number) => t('{hp} hp', { hp: Math.round(n) })
-        : metric.key === 'safety'
-          ? (n: number) => `${n}/5`
-          : metric.key === 'range'
-            ? (n: number) => t('{km} km', { km: rangeKm(n) })
-            : (n: number) => String(n);
-
+    // The unit once, after both ends: "158–315 hp", not "158 hp–315 hp".
     const lo = Math.min(...values);
     const hi = Math.max(...values);
-    axes.push(metric.axisLabel(`${fmt(lo)}–${fmt(hi)}`));
+    const span =
+      metric.key === 'hp'
+        ? t('{hp} hp', { hp: `${Math.round(lo)}–${Math.round(hi)}` })
+        : metric.key === 'safety'
+          ? `${lo}/5–${hi}/5`
+          : metric.key === 'range'
+            ? t('{km} km', { km: `${rangeKm(lo)}–${rangeKm(hi)}` })
+            : `${lo}–${hi}`;
+    axes.push(metric.axisLabel(span));
   }
 
   const fuels = [...new Set(set.map((c) => formatFuelBadge(c.engine.fuelType)))];

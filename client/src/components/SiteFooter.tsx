@@ -83,7 +83,7 @@ export default function SiteFooter() {
               </li>
             ))}
             <li>
-              <LanguageSwitch className="!px-0 !min-h-[36px]" />
+              <LanguageSwitch full className="!px-0 !min-h-[36px]" />
             </li>
           </ul>
         </nav>

@@ -76,10 +76,17 @@ export function modelYearLines(row: ModelYearSummary): {
   };
 }
 
-/** The same figures as one list, for a line of text. */
-export function modelYearFacts(row: ModelYearSummary): string[] {
+/**
+ * The same figures as one list, for a line of text; without the number of
+ * versions where the line says it already ("12 versions on file · …").
+ */
+export function modelYearFacts(
+  row: ModelYearSummary,
+  { versions = true }: { versions?: boolean } = {},
+): string[] {
   const { car, records, offered } = modelYearLines(row);
-  return [...car, ...records, ...offered];
+  // The number of versions is always the last of "offered".
+  return [...car, ...records, ...(versions ? offered : offered.slice(0, -1))];
 }
 
 /** "1995–2026", "2026" for one year. */

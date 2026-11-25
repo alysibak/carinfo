@@ -215,7 +215,7 @@ export function modelYearSeo(overview: ModelYearOverview): PageSeo {
     bodyHtml:
       `<main class="seo-prerender">` +
       `<h1>${escapeHtml(name)}</h1>` +
-      `<p>${escapeHtml(`${overview.summary.configurations} configurations on file.`)} ` +
+      `<p>${escapeHtml(`${overview.summary.configurations} ${overview.summary.configurations === 1 ? 'version' : 'versions'} on file.`)} ` +
       `<a href="${escapeHtml(overview.modelPath)}">Every year of the ${escapeHtml(`${overview.make} ${overview.name}`)}</a>.</p>` +
       `<ul>${list}</ul>` +
       `<p><a href="/">CarInfo</a> · <a href="/methodology">How this data is sourced</a></p>` +

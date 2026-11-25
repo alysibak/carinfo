@@ -14,11 +14,25 @@ export function rolloverRiskText(risk: number): string {
   return `${Math.round(risk * 100)}%`;
 }
 
+/**
+ * A pickup's cab in words, unless NHTSA's name has said it: "F-150 Regular
+ * Cab PU/RC" read "F-150 Regular Cab regular cab pickup", "F-150 Super Crew
+ * PU/CC" "Super Crew crew cab pickup".
+ */
+const cabPickup =
+  (words: string) =>
+  (...args: Array<string | number>): string => {
+    const [offset, text] = args.slice(-2) as [number, string];
+    return /\b(?:cab|crew|crewmax|supercrew|supercab)\b/i.test(text.slice(0, offset))
+      ? t('pickup')
+      : t(words);
+  };
+
 /** NHTSA's body codes, in words. */
 const BODY_CODES: Array<[RegExp, string | ((match: string, ...groups: string[]) => string)]> = [
-  [/\bPU\/CC\b/i, () => t('crew cab pickup')],
-  [/\bPU\/EC\b/i, () => t('extended cab pickup')],
-  [/\bPU\/RC\b/i, () => t('regular cab pickup')],
+  [/\bPU\/CC\b/i, cabPickup('crew cab pickup')],
+  [/\bPU\/EC\b/i, cabPickup('extended cab pickup')],
+  [/\bPU\/RC\b/i, cabPickup('regular cab pickup')],
   [/\b([2-5]) DR\b/i, (_m, n) => t('{n}-door', { n })],
   [/\b([35]) HB\b/i, (_m, n) => t('{n}-door hatchback', { n })],
   [/\bSW\b/, () => t('wagon')],

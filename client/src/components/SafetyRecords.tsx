@@ -23,15 +23,36 @@ const SHOWN = 3;
 const linkClass =
   'text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500';
 
-/** "The most of the Honda CR-V's 31 years on file." */
-function rankSentence(rank: { position: number; of: number }, model = 'model'): string {
-  return rank.position === 1
-    ? t('The most of the {model}’s {of} years on file.', { model, of: rank.of })
-    : t('{ordinal} most of the {model}’s {of} years on file.', {
-        ordinal: ordinal(rank.position),
-        model,
-        of: rank.of,
-      });
+/**
+ * Where a year stands among its model's by complaints: "The most of the Honda
+ * CR-V's 31 years on file", "3rd most of…", or from the middle down, "Fewer
+ * than 29 of the Honda Civic's 33 years on file". A recent year has had less
+ * time for owners to complain, which is said.
+ */
+function rankSentence(
+  rank: { position: number; of: number },
+  model = 'model',
+  year?: number,
+): string {
+  const { position, of } = rank;
+  const where =
+    position === 1
+      ? t('The most of the {model}’s {of} years on file.', { model, of })
+      : position === of
+        ? t('The fewest of the {model}’s {of} years on file.', { model, of })
+        : position <= of / 2
+          ? t('{ordinal} most of the {model}’s {of} years on file.', {
+              ordinal: ordinal(position),
+              model,
+              of,
+            })
+          : t('Fewer than {count} of the {model}’s {of} years on file.', {
+              count: position - 1,
+              model,
+              of,
+            });
+  const recent = year != null && year >= new Date().getFullYear() - 2 && position > 1;
+  return recent ? `${where} ${t('A recent year has had less time for complaints.')}` : where;
 }
 
 function RecallItem({ recall, forOther }: { recall: CanadianRecall; forOther?: string }) {
@@ -176,7 +197,7 @@ export default function SafetyRecords({
               {complaints.complaints === 0
                 ? t('None on file with NHTSA for the {name}.', { name })
                 : dashboard.complaintRank
-                  ? rankSentence(dashboard.complaintRank, dashboard.modelPage?.label)
+                  ? rankSentence(dashboard.complaintRank, dashboard.modelPage?.label, car.year)
                   : t('Most complained-about parts:')}
             </p>
             {complaints.complaints > 0 && (

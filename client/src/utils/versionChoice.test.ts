@@ -66,4 +66,13 @@ describe('version choices', () => {
     expect(matchVersions(wrangler, { doors: '2' }).map((c) => c.id)).toEqual(['2dr']);
     expect(matchVersions(wrangler, { gearbox: 'Automatic' }).map((c) => c.id)).toEqual(['4dr']);
   });
+
+  it('asks the doors only where the body does not already say them', () => {
+    // Every Civic sedan has four doors, every hatchback five.
+    const civic = [
+      car('sedan', 'Civic 4Dr', { bodyStyle: 'sedan' }),
+      car('hatch', 'Civic 5Dr', { bodyStyle: 'hatchback' }),
+    ];
+    expect(versionChoices(civic).map((c) => c.id)).toEqual(['body']);
+  });
 });
