@@ -168,11 +168,27 @@ export async function getCarDashboard(
   /** The visitor's own yearly distance, km, when they set one. */
   annualKm?: number | null,
 ): Promise<CarDashboard> {
+  return api.get(`${carPath(id)}/dashboard${dashboardQuery(region, annualKm)}`);
+}
+
+/** The region, then the visitor's own distance: how a car's page data is asked for. */
+function dashboardQuery(region?: string, annualKm?: number | null): string {
   const params = new URLSearchParams();
   if (region) params.set('region', region);
   if (annualKm) params.set('km', String(annualKm));
   const query = params.toString();
-  return api.get(`${carPath(id)}/dashboard${query ? `?${query}` : ''}`);
+  return query ? `?${query}` : '';
+}
+
+/**
+ * What a saved car's page and the garage read, as the browser asks for them:
+ * the addresses the service worker keeps for use with no signal.
+ */
+export function savedCarUrls(id: string, region: string, annualKm: number | null): string[] {
+  return [
+    `${API_BASE_URL}${carPath(id)}/dashboard${dashboardQuery(region, annualKm)}`,
+    `${API_BASE_URL}${carPath(id)}/records`,
+  ];
 }
 
 /**

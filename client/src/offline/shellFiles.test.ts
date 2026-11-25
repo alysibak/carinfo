@@ -17,7 +17,12 @@ describe('shellFiles', () => {
     chunk('assets/index-a.js', {
       isEntry: true,
       imports: ['assets/vendor-b.js'],
-      dynamicImports: ['assets/Compare-c.js', 'assets/VinDecoder-d.js'],
+      dynamicImports: [
+        'assets/Compare-c.js',
+        'assets/VinDecoder-d.js',
+        'assets/DreamGarage-m.js',
+        'assets/CarDetail-n.js',
+      ],
       viteMetadata: { importedCss: new Set(['assets/index-a.css']) },
     }),
     chunk('assets/vendor-b.js'),
@@ -38,6 +43,16 @@ describe('shellFiles', () => {
     asset('assets/archivo-latin-ext-400-normal-i.woff2'),
     asset('assets/archivo-latin-400-normal-j.woff'),
     asset('index.html'),
+    chunk('assets/DreamGarage-m.js', {
+      facadeModuleId: '/app/src/pages/DreamGarage.tsx',
+      imports: ['assets/index-a.js', 'assets/CarCard-l.js'],
+    }),
+    chunk('assets/CarDetail-n.js', {
+      facadeModuleId: '/app/src/pages/CarDetail.tsx',
+      imports: ['assets/index-a.js'],
+      dynamicImports: ['assets/TCOCalculator-o.js'],
+    }),
+    chunk('assets/TCOCalculator-o.js'),
   ]);
 
   it('keeps the shell: the entry, its imports, styles and Latin fonts', () => {
@@ -62,5 +77,14 @@ describe('shellFiles', () => {
   it('does not take the other pages in through the entry', () => {
     const { shell, vin } = shellFiles(bundle);
     expect([...shell, ...vin]).not.toContain('/assets/Compare-c.js');
+  });
+
+  it('keeps the garage and the car page saved cars open, with what they load', () => {
+    expect(shellFiles(bundle).garage).toEqual([
+      '/assets/CarCard-l.js',
+      '/assets/CarDetail-n.js',
+      '/assets/DreamGarage-m.js',
+      '/assets/TCOCalculator-o.js',
+    ]);
   });
 });

@@ -12,13 +12,20 @@
  *   tab opened before an update still loads its pages.
  * - The text reader (/ocr/<version>/, about 7 MB): stored once the VIN page
  *   has read it; only this build's version is kept.
- * - The API: never touched. The page says when it cannot be reached.
+ * - Saved cars: once someone has saved a car, the garage's and the car
+ *   page's code, and each saved car's page data and records as the app lists
+ *   them, refreshed whenever the list changes. Those answers stand in only
+ *   when the network fails; the network's are always used when it answers.
+ * - The rest of the API: never touched. The page says when it cannot be reached.
  */
-const BUILD = { version: 'dev', shell: [], vin: [], ocr: '/ocr' };
+const BUILD = { version: 'dev', shell: [], vin: [], garage: [], ocr: '/ocr' };
 
 const SHELL = `carinfo-shell-${BUILD.version}`;
 const READER = 'carinfo-ocr';
 const VERSIONS = 'carinfo-versions';
+const DATA = 'carinfo-saved-cars';
+/** A saved car's page data or records: what its page and the garage ask for. */
+const SAVED_CAR_DATA = /^\/api\/cars\/[^/]+\/(dashboard|records)$/;
 const PAGE_WAIT_MS = 4000;
 // The page asks for its script and styles with an Origin header the install
 // did not send; a server that varies on it would make a stored copy miss.
@@ -58,22 +65,41 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// The VIN page, on opening: keep its code, camera included, for a lot with no signal.
 self.addEventListener('message', (event) => {
-  if (event.data?.type !== 'keep-vin-page') return;
-  event.waitUntil(
-    caches.open(SHELL).then(async (cache) => {
-      for (const file of BUILD.vin)
-        if (!(await caches.match(file, ANY_VARY))) await cache.add(file);
-    }),
-  );
+  // The VIN page, on opening: keep its code, camera included, for a lot with no signal.
+  if (event.data?.type === 'keep-vin-page') event.waitUntil(keepFiles(BUILD.vin));
+  // The saved cars, as the list changes: the pages' code, and each car's data
+  // fetched now, dropping cars no longer saved.
+  if (event.data?.type === 'keep-garage') event.waitUntil(keepGarage(event.data.data ?? []));
 });
+
+async function keepFiles(files) {
+  const cache = await caches.open(SHELL);
+  for (const file of files) if (!(await caches.match(file, ANY_VARY))) await cache.add(file);
+}
+
+async function keepGarage(urls) {
+  const wanted = urls.filter((url) => SAVED_CAR_DATA.test(new URL(url, self.location).pathname));
+  const data = await caches.open(DATA);
+  const keep = new Set(wanted.map((url) => new URL(url, self.location).href));
+  for (const request of await data.keys()) if (!keep.has(request.url)) await data.delete(request);
+  if (!wanted.length) return;
+  await keepFiles(BUILD.garage).catch(() => {});
+  for (const url of wanted) {
+    const response = await fetch(url).catch(() => null);
+    if (response?.status === 200) await data.put(url, response);
+  }
+}
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith('/api/')) {
+    if (SAVED_CAR_DATA.test(url.pathname)) event.respondWith(savedCarData(request, event));
+    return;
+  }
   if (request.mode === 'navigate') event.respondWith(page(request));
   else if (url.pathname.startsWith(`${BUILD.ocr}/`))
     event.respondWith(kept(request, READER, event));
@@ -101,6 +127,33 @@ async function kept(request, cacheName, event) {
     event.waitUntil(caches.open(cacheName).then((cache) => cache.put(request, copy)));
   }
   return response;
+}
+
+/**
+ * The network's answer, which also refreshes a saved car's stored copy; with
+ * no network, the stored copy: for this region and distance if it has one,
+ * else the car's under another, better than nothing on a lot.
+ */
+async function savedCarData(request, event) {
+  try {
+    const response = await fetch(request);
+    if (response.status === 200) {
+      const copy = response.clone();
+      event.waitUntil(
+        caches.open(DATA).then(async (data) => {
+          if (await data.match(request, ANY_VARY)) await data.put(request, copy);
+        }),
+      );
+    }
+    return response;
+  } catch (error) {
+    const data = await caches.open(DATA);
+    const stored =
+      (await data.match(request, ANY_VARY)) ??
+      (await data.match(request, { ...ANY_VARY, ignoreSearch: true }));
+    if (stored) return stored;
+    throw error;
+  }
 }
 
 /** The shell's own files from the store, anything else from the network. */

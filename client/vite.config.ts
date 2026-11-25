@@ -94,12 +94,13 @@ function serviceWorker(): Plugin {
       const files = shellFiles(bundle as unknown as Record<string, BundleFile>);
       const shell = ['/index.html', ...PUBLIC_SHELL, ...files.shell];
       const content = createHash('sha256');
-      for (const file of [...shell, ...files.vin])
+      for (const file of [...shell, ...files.vin, ...files.garage])
         content.update(file).update(fs.readFileSync(path.join(outDir, file)));
       const build = {
         version: content.digest('hex').slice(0, 12),
         shell,
         vin: files.vin,
+        garage: files.garage,
         ocr: OCR_BASE,
       };
       const template = fs.readFileSync(path.resolve(__dirname, 'service-worker.js'), 'utf8');

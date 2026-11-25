@@ -6,8 +6,21 @@
  * without one.
  */
 export function keepVinPageOffline(): void {
-  if (!('serviceWorker' in navigator)) return;
+  post({ type: 'keep-vin-page' });
+}
+
+/**
+ * Asks the service worker to keep the garage's and the car page's code, and
+ * these saved cars' data (dropping any car no longer listed), so the garage
+ * and its cars open with no signal.
+ */
+export function keepGarageOffline(urls: string[]): void {
+  post({ type: 'keep-garage', data: urls });
+}
+
+function post(message: { type: string; data?: unknown }): void {
+  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
   navigator.serviceWorker.ready
-    .then((registration) => registration.active?.postMessage({ type: 'keep-vin-page' }))
+    .then((registration) => registration.active?.postMessage(message))
     .catch(() => {});
 }

@@ -5,6 +5,7 @@ import MobileTabBar from './MobileTabBar';
 import ErrorBoundary from './ErrorBoundary';
 import { useCarStore } from '../stores/carStore';
 import { useOnline } from '../hooks/useOnline';
+import { useKeepGarageOffline } from '../hooks/useKeepGarageOffline';
 import { t } from '../i18n';
 
 // Not on the first load: the footer starts below the fold (main is a screen
@@ -17,6 +18,8 @@ export default function Layout() {
   const location = useLocation();
   const compareCount = useCarStore((s) => s.comparedCars.length);
   const online = useOnline();
+  // Saved cars open with no signal: the service worker is told which to keep.
+  useKeepGarageOffline();
   // Room at the foot for the compare tray on a wide screen, and for the tab
   // bar where it shows instead.
   const trayPad =
@@ -78,7 +81,7 @@ function OfflineBar() {
       role="status"
       className="border-b border-amber-900/60 bg-zinc-950 px-4 py-2 text-center text-sm text-amber-200"
     >
-      {t('No connection. The VIN page and its camera still work.')}{' '}
+      {t('No connection. The VIN page, its camera and your saved cars still work.')}{' '}
       <Link to="/vin" className="font-semibold underline underline-offset-4">
         {t('Open it')}
       </Link>

@@ -50,8 +50,8 @@ const fr: Record<string, string> = {
   Rate: 'Taux',
   'On the whole asking price, before tax and fees. Use the rate you are offered.':
     'Sur tout le prix demandé, avant taxes et frais. Utilisez le taux qu’on vous offre.',
-  'No connection. The VIN page and its camera still work.':
-    'Aucune connexion. La recherche par NIV et sa caméra fonctionnent quand même.',
+  'No connection. The VIN page, its camera and your saved cars still work.':
+    'Aucune connexion. La recherche par NIV, sa caméra et vos voitures enregistrées fonctionnent quand même.',
   'Open it': 'L’ouvrir',
   'No connection': 'Aucune connexion',
   'This page needs a connection to load. The VIN page and its camera work without one.':
