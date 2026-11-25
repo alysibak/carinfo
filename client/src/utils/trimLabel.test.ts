@@ -106,6 +106,39 @@ describe('displayVehicleTitle / model family', () => {
     expect(displayModelLabel(car('Optima (2006 New Model)'))).toBe('Optima (2006 New Model)');
   });
 
+  it('names the F-150 as its badge does, its test set-ups under the name', () => {
+    const car = (model: string) => ({
+      ...mazda3,
+      make: 'Toyota',
+      model,
+    });
+    const ford = (model: string) => ({ ...car(model), make: 'Ford', year: 2018 });
+    expect(displayVehicleTitle(ford('F150 Pickup 2WD'))).toBe('2018 Ford F-150');
+    expect(displayModelLabel(ford('F150 RAPTOR 4WD'))).toBe('F-150 Raptor');
+    const setup = ford('F150 2WD FFV BASE PAYLOAD LT');
+    expect(displayModelLabel(setup)).toBe('F-150');
+    expect(displayConfigNotes(setup)).toEqual(['LT tires', 'Flex fuel (E85)']);
+    const heavy = ford('F150 5.0L 2WD FFV GVWR>7599 LBS PAYLOAD PACKAGE');
+    expect(displayVehicleTitle(heavy)).toBe('2018 Ford F-150');
+    expect(displayConfigNotes(heavy)).toEqual([
+      'GVWR over 7,599 lb',
+      'Payload package',
+      'Flex fuel (E85)',
+    ]);
+    // EPA's other test notes: stop-start, test modes, a charger's rating.
+    expect(displayModelLabel(car('Elantra non-ISG'))).toBe('Elantra');
+    expect(displayModelLabel(car('Corolla (1-mode TM)'))).toBe('Corolla');
+    expect(displayModelLabel(car('Corolla (1-mode transmission)'))).toBe('Corolla');
+    expect(displayModelLabel(car('TZ 450e 11kW  (20 inch Wheels)'))).toBe('TZ 450e');
+    expect(displayConfigNotes(car('TZ 450e 11kW  (20 inch Wheels)'))).toContain(
+      '11 kW onboard charger',
+    );
+    // A battery's kWh stays: it is the version.
+    expect(displayModelLabel(car('ID.4 Pro 82kWh'))).toBe('ID.4 Pro 82kWh');
+    // "LT" alone is a Chevrolet trim, not tires.
+    expect(displayModelLabel(car('Silverado LT 4WD'))).toBe('Silverado LT');
+  });
+
   it('labels EPA AV-S gearboxes as CVTs', () => {
     expect(formatTransmissionLabel({ type: 'automatic', description: 'Automatic (AV-S7)' })).toBe(
       'CVT',

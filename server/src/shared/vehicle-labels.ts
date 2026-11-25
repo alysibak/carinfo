@@ -58,9 +58,30 @@ const CONFIG_NOTES: Array<{ pattern: RegExp; note: (hit: RegExpExecArray) => str
   { pattern: /\s+(\d{2})in$/i, note: (hit) => `${hit[1]}-inch wheels` },
   { pattern: /\s+A\/S$/i, note: () => 'All-season tires' },
   { pattern: /\s*\(?\bwith sport mode\b\)?/i, note: () => 'Sport mode' },
+  // A bare charger rating: "TZ 450e 11kW (20 inch Wheels)". Not kWh, a battery.
+  {
+    pattern: /\s+(\d{1,2}(?:\.\d)?)\s?kW\b(?!h)/i,
+    note: (hit) => `${hit[1]} kW onboard charger`,
+  },
   // EPA test annotations, and stop-start or driver monitoring every car has.
-  { pattern: /\s*\(\d-mode(?: tm)?\)/i, note: () => null },
+  { pattern: /\s*\(\d-mode(?: tm| transmission)?\)/i, note: () => null },
   { pattern: /\s+w\/\s*(?:stop-start|start-stop|dms)\b/i, note: () => null },
+  { pattern: /\s+(?:non-)?ISG\b/i, note: () => null },
+  // The F-150's test set-ups: "F150 2WD FFV BASE PAYLOAD LT TIRE", "F150 5.0L
+  // 2WD FFV GVWR>7599 LBS PAYLOAD PACKAGE". The weight class and tires tell
+  // set-ups apart; "base payload" is the standard one.
+  {
+    pattern: /\s+GVWR\s*([<>])=?\s*(\d{4,5})\s*LBS?\b/i,
+    note: (hit) =>
+      `GVWR ${hit[1] === '>' ? 'over' : 'up to'} ${Number(hit[2]).toLocaleString('en-US')} lb`,
+  },
+  {
+    pattern: /\s+(?:BASE\s+)?PAYLOAD(\s+PACKAGE)?(\s+LT(?:\s+TIRES?)?)?\b/i,
+    note: (hit) => (hit[2] ? 'LT tires' : hit[1] ? 'Payload package' : null),
+  },
+  { pattern: /\s+LT\s+TIRES?\b/i, note: () => 'LT tires' },
+  // Flex fuel, bare or in brackets: "Taurus FWD FFV", "Crown Victoria (FFV)".
+  { pattern: /\s*\(?\bFFV\b\)?/i, note: () => 'Flex fuel (E85)' },
 ];
 
 function takeConfigNotes(model: string): { rest: string; notes: string[] } {
@@ -111,6 +132,13 @@ function clientCanonicalizeModel(car: ModelCar): string {
     if (/civic.*si|\bsi\b/.test(h) && /civic/.test(h)) return 'Civic Si';
     if (/civic.*hatch|hatch.*civic/.test(h)) return 'Civic Hatchback';
   }
+  // EPA's "F150 Pickup" is the F-150 on the badge, its "RAPTOR" a Raptor.
+  if (car.make === 'Ford' && /^f150\b/i.test(car.model.trim())) {
+    return car.model
+      .trim()
+      .replace(/^f150(?:\s+pickup)?/i, 'F-150')
+      .replace(/\bRAPTOR\b/, 'Raptor');
+  }
   if (car.make === 'Mini' && /\bcooper s\b/.test(h)) return 'Cooper S';
   if (car.make === 'Subaru' && /\bwrx\b|\bsti\b/.test(h)) {
     return car.model.match(/WRX|STI/i)?.[0] ?? car.model;
@@ -146,7 +174,7 @@ function baseModelLabel(car: ModelCar): string {
  * Ferrari FF, all one word of a name, keeps it.)
  */
 const MODEL_CONFIG_SUFFIX =
-  /^(?:\d+-door|\d+dr|\d+wd|awd|fwd|rwd|4x4|4x2|di|automatic|manual|cvt|auto|s\d+|er\d+|sr|pro|platinum|hybrid|phev|hev|mhev|bev|ff|fr|ffv|si|type|trd|xse|xle|le|se|ex|lx|base|payload|lt)$/i;
+  /^(?:\d+-door|\d+dr|\d+wd|awd|fwd|rwd|4x4|4x2|di|automatic|manual|cvt|auto|s\d+|er\d+|sr|pro|platinum|hybrid|phev|hev|mhev|bev|ff|fr|ffv|si|type|trd|xse|xle|le|se|ex|lx|base|payload|lt|\d\.\dl)$/i;
 
 /**
  * Shopper-facing model family — "3 4-Door 2WD" → "3", "Model 3" → "Model 3".
