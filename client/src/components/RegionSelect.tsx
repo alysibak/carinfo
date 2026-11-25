@@ -73,7 +73,7 @@ export default function RegionSelect({ className = '' }: { className?: string })
           onKeyDown={(e) => {
             if (e.key === 'Enter') e.currentTarget.blur();
           }}
-          className="w-[5.5rem] bg-black border border-zinc-700 hover:border-zinc-400 text-zinc-200 text-[13px] px-2 py-1.5 min-h-[36px] tabular-nums focus:outline-hidden focus:border-accent"
+          className="w-[5.5rem] bg-black border border-zinc-700 text-zinc-200 text-[13px] px-2 py-1.5 min-h-[36px] tabular-nums focus:outline-hidden focus:border-accent"
         />
         <span>{t('km a year')}</span>
       </span>
