@@ -78,6 +78,6 @@ describe('govModelIndex', () => {
     expect(match('MERCEDES-BENZ', 'B-CLASS E-CELL', 2015)).toBeTruthy();
     // The full-size Promaster is not the Promaster City EPA lists.
     expect(match('RAM', 'PROMASTER', 2018)).toBeNull();
-    expect(match('RAM', 'PROMASTER CITY', 2018)).toBe('ram|promaster');
+    expect(match('RAM', 'PROMASTER CITY', 2018)).toBe('ram|promaster city');
   });
 });

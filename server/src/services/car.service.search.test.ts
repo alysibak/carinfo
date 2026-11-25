@@ -1202,6 +1202,24 @@ describe('car.service model pages', () => {
     expect(getModelOverview('toyota', 'flying-car')).toBeNull();
   });
 
+  it('names models of two words in full, and keeps one model across a rename', () => {
+    const page = (make: string, model: string) => {
+      const found = getModelOverview(make, model);
+      return found && modelPageOf(getCarById(found.years[0].carId)!)?.label;
+    };
+    expect(page('toyota', 'fj-cruiser')).toBe('Toyota FJ Cruiser');
+    expect(page('ford', 'crown-victoria')).toBe('Ford Crown Victoria');
+    expect(page('chrysler', 'pt-cruiser')).toBe('Chrysler PT Cruiser');
+    expect(page('lincoln', 'town-car')).toBe('Lincoln Town Car');
+    expect(page('bentley', 'flying-spur')).toBe('Bentley Flying Spur');
+    expect(getModelOverview('toyota', 'fj')).toBeNull();
+    // The XV Crosstrek's years open the Crosstrek's, their records with them.
+    const crosstrek = getModelOverview('subaru', 'crosstrek')!;
+    expect(crosstrek.years.at(-1)!.year).toBe(2013);
+    expect(crosstrek.years.find((row) => row.year === 2014)!.complaints).toBeGreaterThan(0);
+    expect(getModelOverview('subaru', 'xv')).toBeNull();
+  });
+
   it('names the models a search found, and the years of one it found every year of', () => {
     const civic = searchCars({ query: 'civic', collapseByModel: 'auto', limit: 5 });
     expect(civic.models).toEqual([

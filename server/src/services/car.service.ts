@@ -1090,7 +1090,7 @@ const SUBMODEL_KEYS: Record<string, Array<[RegExp, string]>> = {
   ],
   ford: [
     [
-      /^(mustang mach-e|bronco sport|explorer sport(?: trac)?|taurus x|transit connect|f-150 lightning)\b/,
+      /^(mustang mach-e|bronco sport|explorer sport(?: trac)?|taurus x|transit connect|f-150 lightning|crown victoria|five hundred)\b/,
       '$1',
     ],
   ],
@@ -1104,18 +1104,37 @@ const SUBMODEL_KEYS: Record<string, Array<[RegExp, string]>> = {
   hyundai: [[/^(santa \w+|ioniq \d|genesis coupe)\b/, '$1']],
   mitsubishi: [[/^(eclipse cross|outlander sport|montero sport)\b/, '$1']],
   nissan: [[/^rogue sport\b/, 'rogue sport']],
-  toyota: [[/^(camry solara|corolla cross|corolla im|prius [cv]|gr [\w-]+)\b/, '$1']],
+  toyota: [[/^(camry solara|corolla cross|corolla im|prius [cv]|gr [\w-]+|fj cruiser)\b/, '$1']],
   vinfast: [[/^vf ?(\d)\b/, 'vf $1']],
   'land rover': [
     [/^discovery sport\b/, 'discovery sport'],
     // EPA's plain "Evoque" of 2020-21 is the Range Rover Evoque.
     [/^evoque\b/, 'range rover evoque'],
   ],
-  volkswagen: [[/^atlas cross sport\b/, 'atlas cross sport']],
+  volkswagen: [[/^(atlas cross sport|id\. buzz)\b/, '$1']],
   buick: [[/^encore gx\b/, 'encore gx']],
-  chevrolet: [[/^(blazer ev|equinox ev|silverado ev|bolt euv)\b/, '$1']],
+  chevrolet: [[/^(blazer ev|equinox ev|silverado ev|bolt euv|city express)\b/, '$1']],
   gmc: [[/^sierra ev\b/, 'sierra ev']],
   genesis: [[/^electrified (\w+)/, 'electrified $1']],
+  // Names of two words or more, which the first word alone cut short: a
+  // "Flying", a "Town", an "FJ".
+  bentley: [[/^flying spur\b/, 'flying spur']],
+  'rolls-royce': [[/^flying spur\b/, 'flying spur']],
+  chrysler: [[/^(town and country|pt cruiser)\b/, '$1']],
+  lincoln: [[/^town car\b/, 'town car']],
+  jaguar: [[/^vanden plas\b/, 'vanden plas']],
+  ram: [[/^promaster city\b/, 'promaster city']],
+  morgan: [[/^plus (four|six|eight)\b/, 'plus $1']],
+  'aston martin': [[/^(v8|v12) vantage\b/, '$1 vantage']],
+  ferrari: [[/^(612 scaglietti|849 testarossa|daytona sp3|f60 america)\b/, '$1']],
+  mazda: [[/^speed ?(\d)\b/, 'speed $1']],
+  // One model across a rename: the John Cooper Works became the JCW, the XV
+  // Crosstrek the Crosstrek, the B9 Tribeca the Tribeca.
+  mini: [[/^(?:john cooper works|jcw)\b/, 'john cooper works']],
+  subaru: [
+    [/^(?:xv )?crosstrek\b/, 'crosstrek'],
+    [/^(?:b9 )?tribeca\b/, 'tribeca'],
+  ],
 };
 
 const lineKeys = new Map<string, string>();
@@ -1211,7 +1230,15 @@ const MERCEDES_CLASS =
   /^(a|b|c|e|g|r|s|cl|cla|cle|clk|cls|gl|gla|glb|glc|gle|glk|gls|ml|sl|slc|slk)$/;
 
 /** Families EPA spells otherwise than the badge: "F150 Pickup 2WD" is the F-150. */
-const FAMILY_NAMES: Record<string, string> = { 'ford|f150': 'F-150' };
+const FAMILY_NAMES: Record<string, string> = {
+  'ford|f150': 'F-150',
+  'ram|promaster city': 'ProMaster City',
+  'mazda|speed 3': 'Mazdaspeed3',
+  'mazda|speed 6': 'Mazdaspeed6',
+  'mini|john cooper works': 'John Cooper Works',
+  'subaru|crosstrek': 'Crosstrek',
+  'subaru|tribeca': 'Tribeca',
+};
 
 /** Every model family, keyed as collapsed results are: "toyota|camry". */
 function modelFamilies(): Map<string, ModelFamily> {

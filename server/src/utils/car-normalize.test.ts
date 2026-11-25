@@ -114,6 +114,8 @@ describe('unifyMakeSpelling', () => {
     expect(unifyMakeSpelling(cars).map((c) => c.make)).toEqual(['MINI', 'MINI', 'MINI', 'Mazda']);
     // Untouched listings are the same objects.
     expect(unifyMakeSpelling(cars)[3]).toBe(cars[3]);
+    // A maker's own capitals where EPA has others.
+    expect(unifyMakeSpelling([{ make: 'Vinfast' }])[0].make).toBe('VinFast');
   });
 });
 

@@ -107,6 +107,9 @@ function correctDriveType(car: Car): Car {
  * One spelling per make, the one most listings use. EPA filed a 2026 MINI as
  * "Mini", which listed it as a make of its own.
  */
+/** Makes EPA capitalizes otherwise than the maker does: "Vinfast" is VinFast. */
+const MAKE_CASE: Record<string, string> = { vinfast: 'VinFast' };
+
 export function unifyMakeSpelling<T extends { make: string }>(cars: T[]): T[] {
   const spellings = new Map<string, Map<string, number>>();
   for (const car of cars) {
@@ -119,7 +122,8 @@ export function unifyMakeSpelling<T extends { make: string }>(cars: T[]): T[] {
     [...spellings].map(([key, counts]) => [key, [...counts].sort((a, b) => b[1] - a[1])[0][0]]),
   );
   return cars.map((car) => {
-    const make = canonical.get(car.make.toLowerCase()) ?? car.make;
+    const make =
+      MAKE_CASE[car.make.toLowerCase()] ?? canonical.get(car.make.toLowerCase()) ?? car.make;
     return make === car.make ? car : { ...car, make };
   });
 }
