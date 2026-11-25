@@ -1,5 +1,5 @@
 import { Link, useLocation, useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as api from '../services/api';
 import { isHttpError } from '../services/http';
 import type { CarDashboard, CarSpecs } from '../types/car.types';
@@ -46,6 +46,7 @@ import BeforeYouBuy from '../components/BeforeYouBuy';
 import TheftRecord from '../components/TheftRecord';
 import SizeAndSpace from '../components/SizeAndSpace';
 import OnThisPage from '../components/OnThisPage';
+import { usePageSections } from '../hooks/usePageSections';
 import RecentlyViewed from '../components/RecentlyViewed';
 import CarPageSkeleton from '../components/CarPageSkeleton';
 import { recentEntry, useRecentStore } from '../stores/recentStore';
@@ -218,11 +219,15 @@ export default function CarDetail() {
   const fromVin = /^[A-HJ-NPR-Z0-9]{11,17}$/i.test(vinParams.get('vin') ?? '')
     ? vinParams.get('vin')!.toUpperCase()
     : null;
-  const statsRef = useRef<HTMLDivElement>(null);
+  // The figures' block as mounted now: a callback ref, since the block can be
+  // replaced while the page loads, and a watcher on the old one never fired.
+  const [statsEl, setStatsEl] = useState<HTMLDivElement | null>(null);
   const { addOrReplaceOldestInComparison, comparedCars } = useCarStore();
   const addToGarage = useGarageStore((s) => s.add);
   const region = useRegionStore((s) => s.region);
   const ownKm = useRegionStore((s) => s.annualKm);
+  // The page's sections as they appear, for the links under the figures and in the pinned bar.
+  const sections = usePageSections(id ?? '');
   const navigate = useNavigate();
   const { hash } = useLocation();
   const recordView = useRecentStore((s) => s.record);
@@ -268,15 +273,17 @@ export default function CarDetail() {
 
   // Pin the car's name and actions under the header once its figures scroll away.
   useEffect(() => {
-    const el = statsRef.current;
-    if (!el || typeof IntersectionObserver === 'undefined') return;
+    if (!statsEl || typeof IntersectionObserver === 'undefined') return;
+    // The watched area runs far below the screen, so the figures count as "in"
+    // until they pass its top edge: a jump past them (a link to a section, a
+    // restored scroll) pins the bar too, not only a scroll through them.
     const observer = new IntersectionObserver(
       ([entry]) => setPinned(!entry.isIntersecting && entry.boundingClientRect.top < 0),
-      { threshold: 0 },
+      { threshold: 0, rootMargin: '0px 0px 100000px 0px' },
     );
-    observer.observe(el);
+    observer.observe(statsEl);
     return () => observer.disconnect();
-  }, [dashboard]);
+  }, [statsEl]);
 
   // The page's name is the one in its heading: the tab said "Civic 4Dr" while
   // the page said "Civic Si".
@@ -687,15 +694,16 @@ export default function CarDetail() {
             </div>
           </div>
 
-          <div ref={statsRef} className="mt-6 sm:mt-8">
+          <div ref={setStatsEl} className="mt-6 sm:mt-8">
             <KeyFigures dashboard={dashboard} fuelCost={fuelCostFigure} />
-            <OnThisPage pageKey={car.id} />
+            <OnThisPage sections={sections} />
           </div>
         </div>
       </section>
 
       {pinned && (
         <PinnedCarBar
+          sections={sections}
           title={title}
           figures={
             keyFigures

@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import ShareButton from './ShareButton';
 import { HEADER_SLOT_ID } from './SiteHeader';
+import { SectionChips } from './OnThisPage';
+import { useCurrentSection, type PageSection } from '../hooks/usePageSections';
 /**
  * A slim bar under the site header once the car page's figures scroll away:
  * the car, what it is worth and costs a year, and the two things a reader
@@ -17,6 +19,7 @@ export default function PinnedCarBar({
   shareUrl,
   checklistPath,
   action,
+  sections = [],
 }: {
   title: string;
   figures: string | null;
@@ -30,7 +33,11 @@ export default function PinnedCarBar({
   checklistPath?: string;
   /** A page's one next step where it has no compare: "See the 2026". */
   action?: { label: string; to: string };
+  /** The page's sections, a tap away however far down the reader is. */
+  sections?: PageSection[];
 }) {
+  const jump = sections.length >= 3;
+  const current = useCurrentSection(jump ? sections : []);
   // On a wide screen, hung from the site header, so header and bar move
   // together: fixed under it, a Mac's bounce at the end of a page moved the
   // header and not the bar, and the page showed through between them.
@@ -87,9 +94,27 @@ export default function PinnedCarBar({
           </Link>
         )}
       </div>
+      {jump && (
+        <nav
+          aria-label={t('On this page')}
+          className="page-wrap-wide pb-2 -mt-1 flex items-center gap-1.5 overflow-x-auto scrollbar-none"
+        >
+          <SectionChips sections={sections} small current={current} />
+        </nav>
+      )}
     </div>
   );
-  // On a phone, at the foot of the screen over the tab bar, under the thumb.
+  // On a phone the actions sit at the foot of the screen, under the thumb, and
+  // the sections in a slim strip under the header.
+  const strip = jump && (
+    <nav
+      aria-label={t('On this page')}
+      className="hidden tabbar-shown:flex fixed inset-x-0 z-40 border-b border-zinc-800 bg-black/90 backdrop-blur-md animate-pin-in px-4 py-1.5 gap-1.5 overflow-x-auto scrollbar-none overscroll-x-contain [@media(max-height:500px)]:hidden"
+      style={{ top: 'var(--header-height)' }}
+    >
+      <SectionChips sections={sections} small current={current} />
+    </nav>
+  );
   const bottom = (
     <div
       className="hidden tabbar-shown:block fixed inset-x-0 z-40 border-t border-white/10 bg-black/95 backdrop-blur-xl animate-pin-up"
@@ -140,6 +165,7 @@ export default function PinnedCarBar({
   return (
     <>
       {slot ? createPortal(top, slot) : top}
+      {strip}
       {bottom}
     </>
   );
