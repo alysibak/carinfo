@@ -292,7 +292,9 @@ export function canonicalizeDisplayModel(car: CarSpecs): string {
     const lumped = /golf\s*(?:iii\s*)?\/\s*gti/.test(epaModel);
     if (/\bgti\b/.test(epaModel) && !lumped) return 'Golf GTI';
     if (/^(?:new )?golf\b/.test(epaModel) || lumped) return 'Golf';
-    if (/\bgti\b|golf-gti/.test(h)) return disp >= 1.95 ? 'Golf GTI' : 'Golf';
+    // The GTI is the 2.0 turbo; the 1.8 and the 2.5 five-cylinder are Golfs.
+    if (/golf|gti/.test(epaModel) && /\bgti\b|golf-gti/.test(h))
+      return disp >= 1.95 && disp <= 2.05 ? 'Golf GTI' : 'Golf';
   }
 
   if (make === 'Honda') {

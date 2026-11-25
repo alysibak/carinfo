@@ -106,6 +106,19 @@ describe('displayVehicleTitle / model family', () => {
     expect(displayModelLabel(car('Optima (2006 New Model)'))).toBe('Optima (2006 New Model)');
   });
 
+  it('tells a Golf TDI and a 2.5 Golf from a GTI, which EPA files alike', () => {
+    const vw = (model: string, fuelType: 'diesel' | 'gasoline', displacement: number) => ({
+      year: 2013,
+      make: 'Volkswagen',
+      model,
+      trim: 'golf-gti-automatic-s6',
+      engine: { fuelType, displacement },
+    });
+    expect(displayVehicleTitle(vw('Golf', 'diesel', 2))).toBe('2013 Volkswagen Golf TDI');
+    expect(displayVehicleTitle(vw('Golf', 'gasoline', 2.5))).toBe('2013 Volkswagen Golf');
+    expect(displayVehicleTitle(vw('Golf GTI', 'gasoline', 2))).toBe('2013 Volkswagen Golf GTI');
+  });
+
   it('names the F-150 as its badge does, its test set-ups under the name', () => {
     const car = (model: string) => ({
       ...mazda3,

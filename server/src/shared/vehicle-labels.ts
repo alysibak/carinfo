@@ -125,7 +125,17 @@ function clientCanonicalizeModel(car: ModelCar): string {
     if (/sportwagen|sport wagen/.test(h)) return 'Golf SportWagen';
     if (/e-golf|e golf/.test(h)) return 'e-Golf';
     if (/golf r|\bgolf-r\b/.test(h)) return 'Golf R';
-    if (/\bgti\b|golf-gti/.test(h)) return disp >= 1.95 ? 'Golf GTI' : 'Golf';
+    // As the server's canonicalizeDisplayModel: EPA files the Golf and the GTI
+    // under one base model, so every trim slug reads "golf-gti" and only EPA's
+    // model name tells them apart. A diesel Golf is a TDI.
+    const epaModel = car.model.trim().toLowerCase();
+    const lumped = /golf\s*(?:iii\s*)?\/\s*gti/.test(epaModel);
+    if (/\bgti\b/.test(epaModel) && !lumped) return 'Golf GTI';
+    if (lumped || /^(?:new )?golf$/.test(epaModel))
+      return car.engine?.fuelType === 'diesel' ? 'Golf TDI' : 'Golf';
+    // The GTI is the 2.0 turbo; the 1.8 and the 2.5 five-cylinder are Golfs.
+    if (/golf|gti/.test(epaModel) && /golf-gti/.test(h))
+      return disp >= 1.95 && disp <= 2.05 ? 'Golf GTI' : 'Golf';
   }
   if (car.make === 'Honda') {
     if (/civic.*type r|type r.*civic/.test(h)) return 'Civic Type R';
