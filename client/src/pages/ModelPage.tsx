@@ -7,6 +7,7 @@ import { BackLink, Chevron, ErrorState, foldSummaryClass } from '../components/u
 import ModelPageSkeleton from '../components/ModelPageSkeleton';
 import ModelYearChart from '../components/ModelYearChart';
 import PinnedCarBar from '../components/PinnedCarBar';
+import YearChooser from '../components/YearChooser';
 import PageShell, { PageBody } from '../components/PageShell';
 import CarPhotoFigure from '../components/CarPhotoFigure';
 import PhotoGlow from '../components/PhotoGlow';
@@ -470,6 +471,10 @@ export default function ModelPage() {
               <p ref={headFacts} className="text-sm text-zinc-400 mt-1 tabular-nums">
                 <Facts facts={modelYearFacts(newest).slice(0, 4)} />
               </p>
+              {/* Any year two taps from the top: its generation, then the year. */}
+              <div className="mt-6">
+                <YearChooser overview={overview} />
+              </div>
               {records}
             </div>
           </div>

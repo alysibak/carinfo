@@ -9,6 +9,8 @@ import { efficiencyOf } from '../utils/efficiency';
 import { formatCarFuelLabel } from '../utils/fuelDisplay';
 import { displayConfigNotes, displayModelLabel, formatTransmissionLabel } from '../utils/trimLabel';
 import { Chevron } from './ui';
+import VersionChooser from './VersionChooser';
+import { matchVersions, type Picks } from '../utils/versionChoice';
 import { t } from '../i18n';
 
 /** "2.0L 4-cyl · CVT · FWD": what tells one version from another. */
@@ -82,12 +84,14 @@ export default function VersionPicker({
   const { hash } = useLocation();
   const [siblings, setSiblings] = useState<CarSpecs[] | null>(null);
   const [open, setOpen] = useState(false);
+  const [picks, setPicks] = useState<Picks>({});
   const ref = useRef<HTMLDetailsElement>(null);
 
   useEffect(() => {
     let active = true;
     setSiblings(null);
     setOpen(false);
+    setPicks({});
     api
       .getSiblingConfigs(car.id, 48)
       .then((rows) => {
@@ -113,16 +117,20 @@ export default function VersionPicker({
     [car, siblings],
   );
 
+  // Every version of the year, this one first; with many, picked down by what differs.
+  const all = useMemo(() => [car, ...(siblings ?? [])], [car, siblings]);
+  const visible = useMemo(() => matchVersions(all, picks), [all, picks]);
+
   // Grouped by body when the year has more than one: sedans, then coupes.
   const groups = useMemo(() => {
-    const out = new Map<string, CarSpecs[]>([[car.bodyStyle, [car]]]);
-    for (const sib of siblings ?? []) {
-      const group = out.get(sib.bodyStyle);
-      if (group) group.push(sib);
-      else out.set(sib.bodyStyle, [sib]);
+    const out = new Map<string, CarSpecs[]>();
+    for (const version of visible) {
+      const group = out.get(version.bodyStyle);
+      if (group) group.push(version);
+      else out.set(version.bodyStyle, [version]);
     }
     return [...out];
-  }, [car, siblings]);
+  }, [visible]);
 
   if (!siblings?.length) return null;
   const count = siblings.length + 1;
@@ -160,6 +168,11 @@ export default function VersionPicker({
             </>
           )}
         </p>
+        {count >= 5 && (
+          <div className="px-3 py-3 border-b border-zinc-900">
+            <VersionChooser cars={all} picks={picks} onChange={setPicks} shown={visible.length} />
+          </div>
+        )}
         <div className="max-h-[22rem] overflow-y-auto overscroll-contain">
           {groups.map(([body, cars]) => (
             <div key={body}>

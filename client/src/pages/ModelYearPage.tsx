@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { makePath } from '@carinfo/shared/make-path';
 import { useEffect, useMemo, useState } from 'react';
 import * as api from '../services/api';
@@ -14,6 +14,8 @@ import { differentiateCars } from '../utils/differentiateCars';
 import { modelYearKey, takePrefetched } from '../utils/prefetch';
 import { t } from '../i18n';
 import Breadcrumbs from '../components/Breadcrumbs';
+import VersionChooser from '../components/VersionChooser';
+import { CHOICE_IDS, matchVersions, type Picks } from '../utils/versionChoice';
 
 type Status = 'loading' | 'ready' | 'missing' | 'error';
 
@@ -60,6 +62,25 @@ export default function ModelYearPage() {
   }, [make, model, year, attempt]);
 
   const diff = useMemo(() => (overview ? differentiateCars(overview.cars) : null), [overview]);
+
+  // The versions picked down to, kept in the address so Back and a shared link keep them.
+  const [params, setParams] = useSearchParams();
+  const picks = useMemo<Picks>(
+    () =>
+      Object.fromEntries(
+        CHOICE_IDS.flatMap((id) => (params.get(id) ? [[id, params.get(id)!]] : [])),
+      ),
+    [params],
+  );
+  const shown = useMemo(
+    () => (overview ? matchVersions(overview.cars, picks) : []),
+    [overview, picks],
+  );
+  const pick = (next: Picks) => {
+    const out = new URLSearchParams();
+    for (const id of CHOICE_IDS) if (next[id]) out.set(id, next[id]!);
+    setParams(out, { replace: true });
+  };
 
   const name = overview ? `${overview.year} ${overview.make} ${overview.name}` : t('Model year');
   usePageMeta(
@@ -133,8 +154,22 @@ export default function ModelYearPage() {
           </div>
         )}
 
+        {overview.cars.length >= 4 && (
+          <section aria-labelledby="choose-version" className="mb-6 pb-6 border-b border-zinc-800">
+            <h2 id="choose-version" className="text-base font-semibold text-white mb-3">
+              {t('Find your version')}
+            </h2>
+            <VersionChooser
+              cars={overview.cars}
+              picks={picks}
+              onChange={pick}
+              shown={shown.length}
+            />
+          </section>
+        )}
+
         <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {overview.cars.map((car) => (
+          {shown.map((car) => (
             <li key={car.id}>
               <CarCard
                 car={car}

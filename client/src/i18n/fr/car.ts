@@ -1,5 +1,17 @@
 /** A car's page and its sections, and the before-you-buy checklist. English text to French (fr-CA). */
 const fr: Record<string, string> = {
+  'Find your version': 'Trouvez votre version',
+  'Runs on': 'Énergie',
+  Edition: 'Édition',
+  '{count}-door': '{count} portes',
+  '{count} version fits': '{count} version convient',
+  '{count} versions fit': '{count} versions conviennent',
+  '{count} version: pick what matters to you':
+    '{count} version : choisissez ce qui compte pour vous',
+  '{count} versions: pick what matters to you':
+    '{count} versions : choisissez ce qui compte pour vous',
+  'Choose a year': 'Choisir une année',
+  Years: 'Années',
   'A trip in this car': 'Un trajet dans cette voiture',
   Trip: 'Trajet',
   'Your own distance, km': 'Votre propre distance, en km',

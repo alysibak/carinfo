@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import ModelYearPage from './ModelYearPage';
 import * as api from '../services/api';
@@ -86,5 +86,48 @@ describe('ModelYearPage', () => {
       'href',
       '/models/honda/civic',
     );
+  });
+
+  it('finds a version among many by what tells them apart, keeping the picks in the address', async () => {
+    const version = (id: string, fuelType: 'gasoline' | 'hybrid', driveType: 'FWD' | 'AWD') => ({
+      ...gas,
+      id,
+      model: 'Civic 4Dr',
+      engine: { ...gas.engine, fuelType },
+      driveType,
+    });
+    const many: ModelYearOverview = {
+      ...overview,
+      summary: { ...overview.summary, configurations: 4 },
+      cars: [
+        version('gas-fwd', 'gasoline', 'FWD'),
+        version('gas-awd', 'gasoline', 'AWD'),
+        version('hybrid-fwd', 'hybrid', 'FWD'),
+        version('hybrid-awd', 'hybrid', 'AWD'),
+      ],
+    };
+    vi.mocked(api.getModelYearOverview).mockResolvedValue(many);
+    function Where() {
+      const location = useLocation();
+      return <p data-testid="where">{location.search}</p>;
+    }
+    render(
+      <MemoryRouter initialEntries={['/models/honda/civic/2024']}>
+        <Routes>
+          <Route path="/models/:make/:model/:year" element={<ModelYearPage />} />
+        </Routes>
+        <Where />
+      </MemoryRouter>,
+    );
+    expect(await screen.findByRole('heading', { name: 'Find your version' })).toBeVisible();
+    expect(screen.getAllByRole('link', { name: /Civic/ }).length).toBeGreaterThanOrEqual(4);
+
+    fireEvent.click(screen.getByRole('button', { name: /^Hybrid/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^AWD/ }));
+    expect(screen.getByText('1 version fits')).toBeVisible();
+    expect(screen.getByTestId('where')).toHaveTextContent('?power=Hybrid&drive=AWD');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+    expect(screen.getByTestId('where')).toBeEmptyDOMElement();
   });
 });
