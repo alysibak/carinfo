@@ -32,10 +32,25 @@ import { usePageMeta } from '../utils/pageMeta';
 import { describeSearchInterpretation } from '../utils/searchInterpretation';
 import { matchReasons } from '../utils/matchReasons';
 import { useResultsView } from '../hooks/useResultsView';
-import { t, tp } from '../i18n';
+import { msg, t, tp } from '../i18n';
 import { fmtNumber } from '../i18n/format';
 import { getSearchSuggestions, type SearchSuggestion } from '../services/api';
 import { useLastSearchStore } from '../stores/lastSearchStore';
+
+/** Where to look when the name is not known yet, before the lists below. */
+const FIND_WAYS = [
+  {
+    to: '/find',
+    label: msg('Answer 3 questions'),
+    note: msg('What it carries, what it runs on, how new'),
+  },
+  { to: '/makes', label: msg('Every make, A to Z'), note: msg('Then its models, on sale first') },
+  {
+    to: '/browse',
+    label: msg('Browse'),
+    note: msg('By situation, body, class, year or fuel'),
+  },
+];
 
 /** The order a sort is in, said as what comes first: "Thriftiest first". */
 function sortOrderWords(field: string, order: 'asc' | 'desc', ev: boolean): string {
@@ -553,11 +568,29 @@ export default function Home() {
           <div className="min-w-0">
             {!hasSearched && !isSearching ? (
               <>
-                <div className="mb-10">
-                  <BestSellers headingLevel="h1" />
-                </div>
+                {/* The ways to find a car, at the top: these were under More on a phone. */}
+                <h1 className="section-title mb-4">{t('Find a car')}</h1>
+                <ul className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-10">
+                  {FIND_WAYS.map((way) => (
+                    <li key={way.to}>
+                      <Link to={way.to} className="choice-tile h-full">
+                        <span className="min-w-0">
+                          <span className="block text-[15px] font-semibold text-white">
+                            {t(way.label)}
+                          </span>
+                          <span className="block text-[13px] text-zinc-400 mt-0.5">
+                            {t(way.note)}
+                          </span>
+                        </span>
+                        <span aria-hidden className="text-zinc-500 shrink-0">
+                          →
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
                 <RecentlyViewed className="mb-10" />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 pt-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 pt-1 mb-12">
                   <div>
                     <h2 className="text-xl font-bold tracking-tight mb-1">
                       {t('I know the name')}
@@ -613,6 +646,7 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
+                <BestSellers />
               </>
             ) : (
               <>

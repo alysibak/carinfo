@@ -47,6 +47,16 @@ const fr: Record<string, string> = {
   'Not sure yet? Answer 3 questions →': 'Pas encore sûr\u00a0? Répondez à 3 questions →',
   'How do you want to start?': 'Comment voulez-vous commencer\u00a0?',
   'I know the car': 'Je connais le véhicule',
+  'Type it in the search box, or pick it from every make, A to Z':
+    'Tapez-le dans la boîte de recherche, ou choisissez-le parmi toutes les marques, de A à Z',
+  'Help me choose': 'Aidez-moi à choisir',
+  'By situation, body or year': 'Par situation, carrosserie ou année',
+  'I’m looking at one for sale': 'J’en regarde un à vendre',
+  'Scan or type its VIN: what it is, and its recalls, complaints and crash rating':
+    'Balayez ou tapez son NIV : ce que c’est, et ses rappels, plaintes et cote de sécurité',
+  'Where to start': 'Par où commencer',
+  'Any car or truck since 1995: its recalls in Canada, owners’ complaints, crash ratings, fuel use and what it costs to run where you live. Every figure says where it came from.':
+    'Toute voiture ou camionnette depuis 1995 : ses rappels au Canada, les plaintes des propriétaires, ses cotes de sécurité, sa consommation et ce qu’elle coûte à utiliser chez vous. Chaque chiffre indique d’où il vient.',
   'Search its make, model or year': 'Recherchez sa marque, son modèle ou son année',
   'I’m still deciding': 'Je n’ai pas encore décidé',
   'Three questions: what it carries, what it runs on, how new':

@@ -259,6 +259,11 @@ const fr: Record<string, string> = {
   Make: 'Marque',
   'Make, model, year or VIN': 'Marque, modèle, année ou NIV',
   'Best known first': 'Les plus connus d’abord',
+  'Answer 3 questions': 'Répondre à 3 questions',
+  'What it carries, what it runs on, how new': 'Ce qu’il transporte, son énergie, son année',
+  'Then its models, on sale first': 'Puis ses modèles, ceux en vente d’abord',
+  'By situation, body, class, year or fuel':
+    'Par situation, carrosserie, catégorie, année ou énergie',
   Manual: 'Manuelle',
   Max: 'Max.',
   'Maximum {label}': '{label} maximum',
