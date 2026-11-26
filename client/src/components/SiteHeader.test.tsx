@@ -17,7 +17,7 @@ function openMenu() {
 }
 
 describe('SiteHeader mobile menu', () => {
-  // The menu's state is shared with the tab bar's More, so it outlives a render.
+  // The menu's state lives in a store, so it outlives a render.
   beforeEach(() => useMenuStore.setState({ open: false }));
 
   it('renders the panel outside <header>, which is a fixed-position containing block', () => {

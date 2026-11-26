@@ -9,6 +9,12 @@ const ICON = 'w-6 h-6';
 const STROKE = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.6 } as const;
 
 const ICONS = {
+  home: (
+    <svg viewBox="0 0 24 24" className={ICON} {...STROKE} aria-hidden>
+      <path d="M4 10.5L12 4l8 6.5V20H4z" strokeLinejoin="round" />
+      <path d="M10 20v-5.5h4V20" strokeLinejoin="round" />
+    </svg>
+  ),
   search: (
     <svg viewBox="0 0 24 24" className={ICON} {...STROKE} aria-hidden>
       <circle cx="10.5" cy="10.5" r="6.5" />
@@ -37,11 +43,6 @@ const ICONS = {
       <path d="M7.5 20v-6h9v6M7.5 17h9" />
     </svg>
   ),
-  more: (
-    <svg viewBox="0 0 24 24" className={ICON} {...STROKE} aria-hidden>
-      <path d="M4.5 7h15M4.5 12h15M4.5 17h15" strokeLinecap="round" />
-    </svg>
-  ),
 };
 
 function Count({ count }: { count: number }) {
@@ -64,15 +65,19 @@ function Tab({
   label,
   icon,
   count = 0,
+  end = false,
 }: {
   to: string;
   label: string;
   icon: ReactNode;
   count?: number;
+  /** Lit on this page alone, not every page under it: Home is "/". */
+  end?: boolean;
 }) {
   return (
     <NavLink
       to={to}
+      end={end}
       className={({ isActive }) =>
         `${TAB} active:bg-white/5 ${isActive ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'}`
       }
@@ -102,31 +107,34 @@ function Tab({
 
 /**
  * The site's places along the foot of a phone's screen, where a thumb rests:
- * the menu button in the top corner was a stretch for one hand. Shown on
- * phones and tablets held upright; on a wide screen the header's links do the
- * same, and on a phone held sideways (too short for a bar) the header's menu.
+ * home, search, the camera, compare and the garage. Browse, the makes and the
+ * three questions open from Home and Search, where a shopper who does not
+ * know the car yet looks; they sat under a More. Shown on phones and tablets
+ * held upright; on a wide screen the header's links do the same, and on a
+ * phone held sideways (too short for a bar) the header's menu.
  */
 export default function MobileTabBar() {
   const compared = useCarStore((s) => s.comparedCars.length);
   const saved = useGarageStore((s) => s.cars.length);
-  const menuOpen = useMenuStore((s) => s.open);
-  const toggleMenu = useMenuStore((s) => s.toggle);
   const setMenuOpen = useMenuStore((s) => s.setOpen);
   return (
     <nav
       aria-label="Main"
       className="tabbar-shown:block hidden fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-black/95 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]"
       onClick={(e) => {
-        // A tab other than More closes the menu on its way.
+        // A tab closes the header's menu, left open from a phone held sideways.
         if ((e.target as Element).closest('a')) setMenuOpen(false);
       }}
     >
       <ul className="grid grid-cols-5 h-[3.6rem] max-w-xl mx-auto">
         <li>
+          <Tab to="/" end label={t('Home')} icon={ICONS.home} />
+        </li>
+        <li>
           <Tab to="/home" label={t('Search')} icon={ICONS.search} />
         </li>
         <li>
-          {/* The camera is what a phone is for here; Browse is under More. */}
+          {/* The camera is what a phone is for here. */}
           <Tab to="/vin" label={t('Scan')} icon={ICONS.scan} />
         </li>
         <li>
@@ -134,17 +142,6 @@ export default function MobileTabBar() {
         </li>
         <li>
           <Tab to="/garage" label={t('Garage')} icon={ICONS.garage} count={saved} />
-        </li>
-        <li>
-          <button
-            type="button"
-            aria-expanded={menuOpen}
-            onClick={toggleMenu}
-            className={`${TAB} w-full ${menuOpen ? 'text-white' : 'text-zinc-500 hover:text-zinc-200'}`}
-          >
-            {ICONS.more}
-            More
-          </button>
         </li>
       </ul>
     </nav>

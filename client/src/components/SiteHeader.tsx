@@ -145,12 +145,11 @@ export default function SiteHeader({ trailing, transparentUntilScroll = false }:
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {trailing}
           <LanguageSwitch />
-          <div className="hidden sm:block">
-            <AuthHeaderSlot />
-          </div>
+          {/* On a phone too: the account was reached through the tab bar's More. */}
+          <AuthHeaderSlot />
           <button
             type="button"
-            // Upright, the tab bar's More opens the menu; sideways, there is no tab bar.
+            // Sideways a phone has no tab bar: the menu holds its places.
             className="hidden phone-sideways:inline-flex min-h-[44px] min-w-[44px] items-center justify-center -mr-1 text-zinc-400 hover:text-white transition-colors"
             aria-expanded={menuOpen}
             aria-label={menuOpen ? t('Close menu') : t('Open menu')}

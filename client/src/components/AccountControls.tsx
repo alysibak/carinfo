@@ -26,7 +26,8 @@ export default function AccountControls({ onNavigate }: { onNavigate?: () => voi
         <Link
           to={`/sign-up${next}`}
           onClick={onNavigate}
-          className="inline-flex items-center min-h-[36px] text-sm font-semibold bg-accent text-accent-ink px-3.5 hover:bg-accent-hover transition duration-150 active:scale-[0.97]"
+          // On a phone's header, "Sign in" alone: its page offers signing up.
+          className="hidden sm:inline-flex items-center min-h-[36px] text-sm font-semibold bg-accent text-accent-ink px-3.5 hover:bg-accent-hover transition duration-150 active:scale-[0.97]"
         >
           Sign up
         </Link>
@@ -54,7 +55,8 @@ export default function AccountControls({ onNavigate }: { onNavigate?: () => voi
           onNavigate?.();
           void signOut();
         }}
-        className="inline-flex items-center min-h-[44px] text-sm text-zinc-400 hover:text-white transition-colors px-2"
+        // Signing out is on the account page too; a phone's header keeps the name.
+        className="hidden sm:inline-flex items-center min-h-[44px] text-sm text-zinc-400 hover:text-white transition-colors px-2"
       >
         Sign out
       </button>

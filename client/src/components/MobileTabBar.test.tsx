@@ -34,13 +34,19 @@ describe('MobileTabBar', () => {
     expect(screen.getByRole('link', { name: 'Compare, 2' })).toHaveAttribute('href', '/compare');
   });
 
-  it('opens and closes the site menu from More', () => {
+  it('leads with Home, lit on the home page alone', () => {
+    renderBar('/');
+    expect(screen.getByRole('link', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: 'Search' })).not.toHaveAttribute('aria-current');
+    // Every path starts with "/": Home must not light on the others.
+    renderBar('/garage');
+    expect(screen.getAllByRole('link', { name: 'Home' })[1]).not.toHaveAttribute('aria-current');
+    expect(screen.queryByRole('button', { name: 'More' })).toBeNull();
+  });
+
+  it('closes the header’s menu, left open sideways, when a tab is taken', () => {
+    useMenuStore.setState({ open: true });
     renderBar();
-    const more = screen.getByRole('button', { name: 'More' });
-    fireEvent.click(more);
-    expect(useMenuStore.getState().open).toBe(true);
-    expect(more).toHaveAttribute('aria-expanded', 'true');
-    // A tab taken while the menu is open closes it.
     fireEvent.click(screen.getByRole('link', { name: 'Scan' }));
     expect(useMenuStore.getState().open).toBe(false);
   });
