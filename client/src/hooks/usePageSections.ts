@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
 import { msg, t } from '../i18n';
 
-/** The car page's sections, in page order, by the ids they render with. */
+/**
+ * The car page's chapters, in page order, by the ids they render with: five
+ * parts rather than fifteen sections (components/PageChapter.tsx).
+ */
 const SECTIONS: Array<[id: string, label: string]> = [
-  ['safety', msg('Crash tests')],
-  ['recalls', msg('Recalls and complaints')],
-  ['theft', msg('Theft')],
-  ['size', msg('Size and space')],
-  ['costs', msg('Running costs')],
-  ['specs', msg('More specs')],
-  ['similar', msg('Alternatives')],
+  ['chapter-safety', msg('Safety')],
+  ['chapter-problems', msg('Problems')],
+  ['chapter-costs', msg('Costs')],
+  ['chapter-specs', msg('Size and specs')],
+  ['chapter-alternatives', msg('Alternatives')],
 ];
 
 export interface PageSection {
@@ -18,15 +19,18 @@ export interface PageSection {
 }
 
 /**
- * The sections on the page now, in order: a car with no crash test has
- * none, and alternatives load after the rest.
+ * The chapters on the page now, in order: a car with no crash test has no
+ * Safety, and alternatives load after the rest.
  */
 export function usePageSections(pageKey: string): PageSection[] {
   const [present, setPresent] = useState<string[]>([]);
 
   useEffect(() => {
     const check = () => {
-      const found = SECTIONS.map(([id]) => id).filter((id) => document.getElementById(id));
+      // A chapter counts where one of its sections rendered.
+      const found = SECTIONS.map(([id]) => id).filter((id) =>
+        document.getElementById(id)?.querySelector('section'),
+      );
       setPresent((prev) => (prev.join() === found.join() ? prev : found));
     };
     check();

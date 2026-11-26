@@ -43,9 +43,9 @@ export function SectionChips({
 }
 
 /**
- * Links to the car page's sections, under its key figures: on a phone the
- * page runs to ten screens. The pinned bar carries the same links once the
- * figures scroll away.
+ * Links to the car page's chapters, under its verdict: on a phone the page
+ * runs to ten screens. The pinned bar carries the same links once these
+ * scroll away.
  */
 export default function OnThisPage({ sections }: { sections: PageSection[] }) {
   if (sections.length < 3) return null;

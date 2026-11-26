@@ -1,4 +1,4 @@
-import { Link, useLocation, useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import * as api from '../services/api';
 import { isHttpError } from '../services/http';
@@ -46,6 +46,7 @@ import BeforeYouBuy from '../components/BeforeYouBuy';
 import TheftRecord from '../components/TheftRecord';
 import SizeAndSpace from '../components/SizeAndSpace';
 import OnThisPage from '../components/OnThisPage';
+import PageChapter from '../components/PageChapter';
 import { usePageSections } from '../hooks/usePageSections';
 import RecentlyViewed from '../components/RecentlyViewed';
 import CarPageSkeleton from '../components/CarPageSkeleton';
@@ -219,16 +220,16 @@ export default function CarDetail() {
   const fromVin = /^[A-HJ-NPR-Z0-9]{11,17}$/i.test(vinParams.get('vin') ?? '')
     ? vinParams.get('vin')!.toUpperCase()
     : null;
-  // The figures' block as mounted now: a callback ref, since the block can be
-  // replaced while the page loads, and a watcher on the old one never fired.
-  const [statsEl, setStatsEl] = useState<HTMLDivElement | null>(null);
+  // The chapter links under the verdict, as mounted now: a callback ref, since
+  // the block can be replaced while the page loads, and a watcher on the old
+  // one never fired.
+  const [chaptersEl, setChaptersEl] = useState<HTMLDivElement | null>(null);
   const { addOrReplaceOldestInComparison, comparedCars } = useCarStore();
   const addToGarage = useGarageStore((s) => s.add);
   const region = useRegionStore((s) => s.region);
   const ownKm = useRegionStore((s) => s.annualKm);
   // The page's sections as they appear, for the links under the figures and in the pinned bar.
   const sections = usePageSections(id ?? '');
-  const navigate = useNavigate();
   const { hash } = useLocation();
   const recordView = useRecentStore((s) => s.record);
 
@@ -271,19 +272,21 @@ export default function CarDetail() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  // Pin the car's name and actions under the header once its figures scroll away.
+  // Pin the car's name and actions under the header once the chapter links
+  // scroll away: the bar carries the same links, and pinned any sooner it
+  // showed a second row of them over the first.
   useEffect(() => {
-    if (!statsEl || typeof IntersectionObserver === 'undefined') return;
-    // The watched area runs far below the screen, so the figures count as "in"
+    if (!chaptersEl || typeof IntersectionObserver === 'undefined') return;
+    // The watched area runs far below the screen, so the links count as "in"
     // until they pass its top edge: a jump past them (a link to a section, a
     // restored scroll) pins the bar too, not only a scroll through them.
     const observer = new IntersectionObserver(
       ([entry]) => setPinned(!entry.isIntersecting && entry.boundingClientRect.top < 0),
       { threshold: 0, rootMargin: '0px 0px 100000px 0px' },
     );
-    observer.observe(statsEl);
+    observer.observe(chaptersEl);
     return () => observer.disconnect();
-  }, [statsEl]);
+  }, [chaptersEl]);
 
   // The page's name is the one in its heading: the tab said "Civic 4Dr" while
   // the page said "Civic Si".
@@ -590,14 +593,7 @@ export default function CarDetail() {
             <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_45%,#0c0c0e_100%)]" />
           </div>
         )}
-        <div className="page-wrap-wide pt-2 pb-6 sm:pb-8">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="text-sm text-zinc-400 hover:text-white transition-colors min-h-[44px] inline-flex items-center gap-1.5"
-          >
-            <span aria-hidden>←</span> {t('Back')}
-          </button>
+        <div className="page-wrap-wide pt-3 pb-6 sm:pb-8">
           {fromVin && (
             <p className="mb-2 text-xs text-zinc-300 leading-relaxed max-w-2xl border-l-2 border-accent/60 pl-3">
               {t(
@@ -620,25 +616,22 @@ export default function CarDetail() {
             />
           )}
 
-          {/* A stage: the name large on the left, the car larger on the right;
-              on a phone the photo runs edge to edge above the name. */}
+          {/* A stage: the name large on the left, the car larger on the right.
+              On a phone the name comes first, then the car, then what to do. */}
           <div
             className={`mt-1 grid min-w-0 ${
               hasPhoto
-                ? 'grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-y-6 gap-x-12 items-center lg:min-h-[30rem]'
+                ? 'grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-y-5 gap-x-12 lg:min-h-[30rem]'
                 : 'grid-cols-[5.5rem_1fr] sm:grid-cols-[9rem_1fr] gap-x-4 sm:gap-x-6 gap-y-4 items-center sm:items-start'
             }`}
           >
-            {hasPhoto ? (
-              <div className="order-first lg:order-last -mx-4 sm:mx-0 min-w-0">
-                <CarPhotoFigure car={car} glow stage />
-              </div>
-            ) : (
-              <div className="h-14 sm:h-20 overflow-hidden">
-                <VehiclePlaceholder car={car} compact hideCaption />
-              </div>
-            )}
-            <div className="min-w-0">
+            <div
+              className={
+                hasPhoto
+                  ? 'min-w-0 lg:col-start-1 lg:row-start-1 lg:self-end'
+                  : 'min-w-0 col-start-2 row-start-1'
+              }
+            >
               <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
                 {(() => {
                   // "Electric SUV" already says SUV and electric: no "SUV · Electric SUV · Electric".
@@ -668,17 +661,24 @@ export default function CarDetail() {
               {specLine.length > 0 && (
                 <p className="text-sm text-zinc-400 mt-2 tabular-nums">{specLine.join(' · ')}</p>
               )}
-              {dashboard.modelPage && (
-                <p className="mt-1 text-sm">
-                  <Link
-                    to={dashboard.modelPage.path}
-                    className="inline-block py-1.5 text-zinc-300 hover:text-white underline underline-offset-4 decoration-zinc-600 hover:decoration-zinc-300"
-                  >
-                    {t('Every year of the {name}', { name: dashboard.modelPage.label })}
-                  </Link>
-                </p>
-              )}
-              <div className="mt-5 flex flex-wrap gap-2">
+            </div>
+            {hasPhoto ? (
+              <div className="-mx-4 sm:mx-0 min-w-0 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:self-center">
+                <CarPhotoFigure car={car} glow stage />
+              </div>
+            ) : (
+              <div className="h-14 sm:h-20 overflow-hidden col-start-1 row-start-1">
+                <VehiclePlaceholder car={car} compact hideCaption />
+              </div>
+            )}
+            <div
+              className={
+                hasPhoto
+                  ? 'min-w-0 lg:col-start-1 lg:row-start-2 lg:self-start'
+                  : 'min-w-0 col-start-2'
+              }
+            >
+              <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={handleAddToComparison}
@@ -694,9 +694,8 @@ export default function CarDetail() {
             </div>
           </div>
 
-          <div ref={setStatsEl} className="mt-6 sm:mt-8">
+          <div className="mt-6 sm:mt-8">
             <KeyFigures dashboard={dashboard} fuelCost={fuelCostFigure} />
-            <OnThisPage sections={sections} />
           </div>
         </div>
       </section>
@@ -732,305 +731,326 @@ export default function CarDetail() {
 
       <BeforeYouBuy dashboard={dashboard} />
 
-      <CrashTests dashboard={dashboard} car={car} />
+      {/* The page's chapters, a tap away under the verdict. */}
+      <div ref={setChaptersEl} className="page-wrap-wide pb-2">
+        <OnThisPage sections={sections} />
+      </div>
 
-      {/* Recalls and complaints are the model year's, not this configuration's. */}
-      <SafetyRecords
-        dashboard={dashboard}
-        name={`${car.year} ${dashboard.modelPage?.label ?? `${car.make} ${car.model}`}`}
-      />
+      <PageChapter id="chapter-safety" label={t('Safety')}>
+        <CrashTests dashboard={dashboard} car={car} />
+      </PageChapter>
 
-      {dashboard.theft && <TheftRecord theft={dashboard.theft} />}
+      <PageChapter id="chapter-problems" label={t('Problems')}>
+        {/* Recalls and complaints are the model year's, not this configuration's. */}
+        <SafetyRecords
+          dashboard={dashboard}
+          name={`${car.year} ${dashboard.modelPage?.label ?? `${car.make} ${car.model}`}`}
+        />
 
-      {showEnergySection && (
-        <section className="border-b border-zinc-900">
-          <div className="page-wrap-wide section-y-tight">
-            <div className="max-w-xl">
-              <div className="min-w-0">
-                <h2 className="block-title mb-1">
-                  {isPhev
-                    ? t('Electric and gas modes')
-                    : hasEvExtras && hasCityHwy
-                      ? t('Energy use')
-                      : hasEvExtras
-                        ? t('Charging')
-                        : t('City and highway')}
-                </h2>
-                {isPhev && (
-                  <p className="text-[13px] text-zinc-400 mb-3">
-                    {t('The figure above is gas mode, not a blend.')}
-                  </p>
-                )}
-                {isPhev && phev ? (
-                  <PhevDualModeBlock modes={phev} />
-                ) : (
-                  <>
-                    <FuelBar label={t('City')} efficiency={efficiencyOf(car, 'city')} />
-                    <FuelBar label={t('Highway')} efficiency={efficiencyOf(car, 'highway')} />
-                  </>
-                )}
-                {hasEvExtras && (
-                  <>
-                    {hasNumericValue(evCharge?.kWhPer100Mi) && (
-                      <DataRow
-                        label={t('Consumption')}
-                        value={formatKwhPer100KmFromMi(evCharge!.kWhPer100Mi!)}
-                        glossaryKey="kwhPer100mi"
-                      />
-                    )}
-                    {hasNumericValue(evCharge?.charge240Hours) && (
-                      <DataRow
-                        label={t('Home charge (240V)')}
-                        value={`~${evCharge!.charge240Hours} h`}
-                        glossaryKey="charge240"
-                      />
-                    )}
-                    {hasNumericValue(evCharge?.charge120Hours ?? car.epa?.charge120Hours) && (
-                      <DataRow
-                        label={t('Home charge (120V)')}
-                        value={`~${evCharge?.charge120Hours ?? car.epa!.charge120Hours} h`}
-                        glossaryKey="charge120"
-                      />
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
+        {dashboard.theft && <TheftRecord theft={dashboard.theft} />}
+      </PageChapter>
 
-      <SizeAndSpace dashboard={dashboard} />
-
-      {showOwnership && (
-        <section id="costs" className="border-b border-zinc-900 scroll-mt-32">
-          <div className="page-wrap-wide section-y-tight">
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
-              <div className="min-w-0">
-                <h2 className="block-title mb-1">{t('Running costs')}</h2>
-                <p className="text-xs text-zinc-500 leading-relaxed max-w-2xl">
-                  {t('In Canadian dollars.')}
-                </p>
-              </div>
-              <RegionSelect />
-            </div>
-
-            {annualCost.energy != null ? (
+      <PageChapter id="chapter-costs" label={t('Costs')}>
+        {showEnergySection && (
+          <section className="border-b border-zinc-900">
+            <div className="page-wrap-wide section-y-tight">
               <div className="max-w-xl">
-                <DataRow
-                  label={
-                    car.engine.fuelType === 'electric' ? t('Electricity a year') : t('Fuel a year')
-                  }
-                  value={formatMoney(annualCost.energy)}
-                  valueTier={1}
-                  pairLayout
-                />
-                <p className="text-xs text-zinc-500 leading-relaxed mt-1">{fuelCostNote}</p>
-                <TripCost car={car} />
-              </div>
-            ) : (
-              isHydrogen && (
-                <p className="text-sm text-zinc-400">
-                  {t('Fuel is left out: there is no posted hydrogen price for {region}.', {
-                    region: regionName(region),
-                  })}
-                </p>
-              )
-            )}
-
-            <details className="mt-5 border-t border-zinc-900 pt-1 group/est">
-              <summary
-                className={`${foldSummaryClass} py-3 text-sm text-zinc-200 hover:text-white`}
-              >
-                {t('Value, insurance, upkeep and resale: rougher estimates')}
-                <Chevron className="w-3.5 h-3.5 text-zinc-500 group-open/est:rotate-180" />
-              </summary>
-              <div className="pt-2">
-                <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2 mb-4">
-                  <p className="text-xs text-zinc-500 leading-relaxed max-w-2xl">
-                    {currencySectionNote(regionName(region))}
-                  </p>
-                  <ValuationLinks
-                    compact
-                    assumptions={assumptions}
-                    derivedComparison={derivedComparison}
-                    warnings={warnings}
-                    practicalityNote={practicalityNote}
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 md:gap-x-10 gap-y-5 md:gap-y-6">
-                  <div className="min-w-0">
-                    {hasMarketValue && (
-                      <DataRow
-                        label={t('Est. value range')}
-                        value={formatMoneyRange(marketValue.low, marketValue.high)}
-                        valueTier={1}
-                        pairLayout
-                      />
-                    )}
-                    {marketValue.batteryHealth && (
-                      <>
+                <div className="min-w-0">
+                  <h2 className="block-title mb-1">
+                    {isPhev
+                      ? t('Electric and gas modes')
+                      : hasEvExtras && hasCityHwy
+                        ? t('Energy use')
+                        : hasEvExtras
+                          ? t('Charging')
+                          : t('City and highway')}
+                  </h2>
+                  {isPhev && (
+                    <p className="text-[13px] text-zinc-400 mb-3">
+                      {t('The figure above is gas mode, not a blend.')}
+                    </p>
+                  )}
+                  {isPhev && phev ? (
+                    <PhevDualModeBlock modes={phev} />
+                  ) : (
+                    <>
+                      <FuelBar label={t('City')} efficiency={efficiencyOf(car, 'city')} />
+                      <FuelBar label={t('Highway')} efficiency={efficiencyOf(car, 'highway')} />
+                    </>
+                  )}
+                  {hasEvExtras && (
+                    <>
+                      {hasNumericValue(evCharge?.kWhPer100Mi) && (
                         <DataRow
-                          label={t('Battery health')}
-                          value={marketValue.batteryHealth.label}
-                          valueTier={2}
-                          pairLayout
-                        />
-                        <DataRow
-                          label={t('Pack note')}
-                          value={marketValue.batteryHealth.chemistryNote}
-                          valueTier={2}
-                          pairLayout
-                        />
-                      </>
-                    )}
-                    {marketValue.conditionBands?.map((band) => (
-                      <DataRow
-                        key={band.label}
-                        label={band.label}
-                        value={formatMoneyRange(band.low, band.high)}
-                        valueTier={2}
-                        pairLayout
-                      />
-                    ))}
-
-                    {hasEconomics ? (
-                      <>
-                        <Subheading>{t('Yearly cost')}</Subheading>
-                        {annualCost.energy != null ? (
-                          <DataRow
-                            label={t('Fuel / energy')}
-                            value={formatMoney(annualCost.energy)}
-                            valueTier={2}
-                            pairLayout
-                          />
-                        ) : (
-                          isHydrogen && (
-                            <DataRow
-                              label={t('Fuel / energy')}
-                              value={t('Not included (no posted hydrogen price)')}
-                              valueTier={2}
-                              pairLayout
-                            />
-                          )
-                        )}
-                        <DataRow
-                          label={t('Insurance')}
-                          value={formatMoney(annualCost.insurance)}
-                          valueTier={2}
-                          pairLayout
-                        />
-                        <DataRow
-                          label={t('Maintenance')}
-                          value={formatMoney(annualCost.maintenance)}
-                          valueTier={2}
-                          pairLayout
-                        />
-                        <DataRow
-                          label={t('Tires')}
-                          value={formatMoney(annualCost.tires)}
-                          valueTier={2}
-                          pairLayout
-                        />
-                        <DataRow
-                          label={t('Registration')}
-                          value={
-                            annualCost.registration === 0
-                              ? t('No renewal fee')
-                              : formatMoney(annualCost.registration)
-                          }
-                          valueTier={2}
-                          pairLayout
-                        />
-                        <DataRow
-                          label={t('Total per year')}
-                          value={
-                            annualCost.totalLow != null && annualCost.totalHigh != null
-                              ? formatMoneyRange(annualCost.totalLow, annualCost.totalHigh)
-                              : formatMoney(annualCost.total!)
-                          }
-                          valueTier={1}
-                          pairLayout
-                          total
-                        />
-                        <AnnualCostStackBar annualCost={annualCost} />
-                      </>
-                    ) : (
-                      <p className="text-sm text-zinc-500 leading-relaxed">
-                        {isHydrogen
-                          ? t(
-                              'Running-cost breakdown is not modeled for this configuration (hydrogen fuel costs vary too widely).',
-                            )
-                          : t('Running-cost breakdown is not modeled for this configuration.')}
-                      </p>
-                    )}
-                  </div>
-
-                  {hasEconomics && (
-                    <div className="min-w-0">
-                      <Subheading>{t('After five years')}</Subheading>
-                      <p className="text-xs text-zinc-500 leading-relaxed py-1 mb-1">
-                        {resaleImpact.note}
-                      </p>
-                      <DataRow
-                        label={t('Projected resale')}
-                        value={formatMoneyRange(
-                          resaleImpact.projectedResale5Year.low,
-                          resaleImpact.projectedResale5Year.high,
-                        )}
-                        valueTier={2}
-                        pairLayout
-                      />
-                      <DataRow
-                        label={t('Value lost')}
-                        value={formatMoneyRange(
-                          resaleImpact.estimatedLoss5Year.low,
-                          resaleImpact.estimatedLoss5Year.high,
-                        )}
-                        valueTier={2}
-                        pairLayout
-                      />
-                      {ownership.tco5Year && (
-                        <DataRow
-                          label={
-                            ownership.tco5Year.mode === 'operating'
-                              ? t('Annual running cost')
-                              : t('5-year total')
-                          }
-                          value={formatMoneyRange(ownership.tco5Year.low, ownership.tco5Year.high)}
-                          valueTier={2}
-                          pairLayout
+                          label={t('Consumption')}
+                          value={formatKwhPer100KmFromMi(evCharge!.kWhPer100Mi!)}
+                          glossaryKey="kwhPer100mi"
                         />
                       )}
-                    </div>
+                      {hasNumericValue(evCharge?.charge240Hours) && (
+                        <DataRow
+                          label={t('Home charge (240V)')}
+                          value={`~${evCharge!.charge240Hours} h`}
+                          glossaryKey="charge240"
+                        />
+                      )}
+                      {hasNumericValue(evCharge?.charge120Hours ?? car.epa?.charge120Hours) && (
+                        <DataRow
+                          label={t('Home charge (120V)')}
+                          value={`~${evCharge?.charge120Hours ?? car.epa!.charge120Hours} h`}
+                          glossaryKey="charge120"
+                        />
+                      )}
+                    </>
                   )}
                 </div>
               </div>
-            </details>
+            </div>
+          </section>
+        )}
 
-            <button type="button" onClick={() => setShowTCO(true)} className="btn-secondary mt-4">
-              {t('Work out my own costs')}
-            </button>
-            <HybridPayback car={car} />
-          </div>
-        </section>
-      )}
+        {showOwnership && (
+          <section id="costs" className="border-b border-zinc-900 scroll-mt-32">
+            <div className="page-wrap-wide section-y-tight">
+              <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
+                <div className="min-w-0">
+                  <h2 className="block-title mb-1">{t('Running costs')}</h2>
+                  <p className="text-xs text-zinc-500 leading-relaxed max-w-2xl">
+                    {t('In Canadian dollars.')}
+                  </p>
+                </div>
+                <RegionSelect />
+              </div>
 
-      {unvalued && (
-        <section className="border-b border-zinc-900">
-          <div className="page-wrap-wide section-y-tight">
-            <h2 className="block-title mb-1">{t('Value and costs')}</h2>
-            <p className="text-sm text-zinc-400 leading-relaxed max-w-2xl">{unvalued.note}</p>
-          </div>
-        </section>
-      )}
+              {annualCost.energy != null ? (
+                <div className="max-w-xl">
+                  <DataRow
+                    label={
+                      car.engine.fuelType === 'electric'
+                        ? t('Electricity a year')
+                        : t('Fuel a year')
+                    }
+                    value={formatMoney(annualCost.energy)}
+                    valueTier={1}
+                    pairLayout
+                  />
+                  <p className="text-xs text-zinc-500 leading-relaxed mt-1">{fuelCostNote}</p>
+                  <TripCost car={car} />
+                </div>
+              ) : (
+                isHydrogen && (
+                  <p className="text-sm text-zinc-400">
+                    {t('Fuel is left out: there is no posted hydrogen price for {region}.', {
+                      region: regionName(region),
+                    })}
+                  </p>
+                )
+              )}
 
-      <KeySpecs dashboard={dashboard} omitKeys={specOmitKeys} heading={t('More specs')} />
+              <details className="mt-5 border-t border-zinc-900 pt-1 group/est">
+                <summary
+                  className={`${foldSummaryClass} py-3 text-sm text-zinc-200 hover:text-white`}
+                >
+                  {t('Value, insurance, upkeep and resale: rougher estimates')}
+                  <Chevron className="w-3.5 h-3.5 text-zinc-500 group-open/est:rotate-180" />
+                </summary>
+                <div className="pt-2">
+                  <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2 mb-4">
+                    <p className="text-xs text-zinc-500 leading-relaxed max-w-2xl">
+                      {currencySectionNote(regionName(region))}
+                    </p>
+                    <ValuationLinks
+                      compact
+                      assumptions={assumptions}
+                      derivedComparison={derivedComparison}
+                      warnings={warnings}
+                      practicalityNote={practicalityNote}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 md:gap-x-10 gap-y-5 md:gap-y-6">
+                    <div className="min-w-0">
+                      {hasMarketValue && (
+                        <DataRow
+                          label={t('Est. value range')}
+                          value={formatMoneyRange(marketValue.low, marketValue.high)}
+                          valueTier={1}
+                          pairLayout
+                        />
+                      )}
+                      {marketValue.batteryHealth && (
+                        <>
+                          <DataRow
+                            label={t('Battery health')}
+                            value={marketValue.batteryHealth.label}
+                            valueTier={2}
+                            pairLayout
+                          />
+                          <DataRow
+                            label={t('Pack note')}
+                            value={marketValue.batteryHealth.chemistryNote}
+                            valueTier={2}
+                            pairLayout
+                          />
+                        </>
+                      )}
+                      {marketValue.conditionBands?.map((band) => (
+                        <DataRow
+                          key={band.label}
+                          label={band.label}
+                          value={formatMoneyRange(band.low, band.high)}
+                          valueTier={2}
+                          pairLayout
+                        />
+                      ))}
 
-      <DataTrustPanel dashboard={dashboard} />
+                      {hasEconomics ? (
+                        <>
+                          <Subheading>{t('Yearly cost')}</Subheading>
+                          {annualCost.energy != null ? (
+                            <DataRow
+                              label={t('Fuel / energy')}
+                              value={formatMoney(annualCost.energy)}
+                              valueTier={2}
+                              pairLayout
+                            />
+                          ) : (
+                            isHydrogen && (
+                              <DataRow
+                                label={t('Fuel / energy')}
+                                value={t('Not included (no posted hydrogen price)')}
+                                valueTier={2}
+                                pairLayout
+                              />
+                            )
+                          )}
+                          <DataRow
+                            label={t('Insurance')}
+                            value={formatMoney(annualCost.insurance)}
+                            valueTier={2}
+                            pairLayout
+                          />
+                          <DataRow
+                            label={t('Maintenance')}
+                            value={formatMoney(annualCost.maintenance)}
+                            valueTier={2}
+                            pairLayout
+                          />
+                          <DataRow
+                            label={t('Tires')}
+                            value={formatMoney(annualCost.tires)}
+                            valueTier={2}
+                            pairLayout
+                          />
+                          <DataRow
+                            label={t('Registration')}
+                            value={
+                              annualCost.registration === 0
+                                ? t('No renewal fee')
+                                : formatMoney(annualCost.registration)
+                            }
+                            valueTier={2}
+                            pairLayout
+                          />
+                          <DataRow
+                            label={t('Total per year')}
+                            value={
+                              annualCost.totalLow != null && annualCost.totalHigh != null
+                                ? formatMoneyRange(annualCost.totalLow, annualCost.totalHigh)
+                                : formatMoney(annualCost.total!)
+                            }
+                            valueTier={1}
+                            pairLayout
+                            total
+                          />
+                          <AnnualCostStackBar annualCost={annualCost} />
+                        </>
+                      ) : (
+                        <p className="text-sm text-zinc-500 leading-relaxed">
+                          {isHydrogen
+                            ? t(
+                                'Running-cost breakdown is not modeled for this configuration (hydrogen fuel costs vary too widely).',
+                              )
+                            : t('Running-cost breakdown is not modeled for this configuration.')}
+                        </p>
+                      )}
+                    </div>
 
-      <SimilarCars car={car} />
-      <NearPrice car={car} />
+                    {hasEconomics && (
+                      <div className="min-w-0">
+                        <Subheading>{t('After five years')}</Subheading>
+                        <p className="text-xs text-zinc-500 leading-relaxed py-1 mb-1">
+                          {resaleImpact.note}
+                        </p>
+                        <DataRow
+                          label={t('Projected resale')}
+                          value={formatMoneyRange(
+                            resaleImpact.projectedResale5Year.low,
+                            resaleImpact.projectedResale5Year.high,
+                          )}
+                          valueTier={2}
+                          pairLayout
+                        />
+                        <DataRow
+                          label={t('Value lost')}
+                          value={formatMoneyRange(
+                            resaleImpact.estimatedLoss5Year.low,
+                            resaleImpact.estimatedLoss5Year.high,
+                          )}
+                          valueTier={2}
+                          pairLayout
+                        />
+                        {ownership.tco5Year && (
+                          <DataRow
+                            label={
+                              ownership.tco5Year.mode === 'operating'
+                                ? t('Annual running cost')
+                                : t('5-year total')
+                            }
+                            value={formatMoneyRange(
+                              ownership.tco5Year.low,
+                              ownership.tco5Year.high,
+                            )}
+                            valueTier={2}
+                            pairLayout
+                          />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </details>
+
+              <button type="button" onClick={() => setShowTCO(true)} className="btn-secondary mt-4">
+                {t('Work out my own costs')}
+              </button>
+              <HybridPayback car={car} />
+            </div>
+          </section>
+        )}
+
+        {unvalued && (
+          <section className="border-b border-zinc-900">
+            <div className="page-wrap-wide section-y-tight">
+              <h2 className="block-title mb-1">{t('Value and costs')}</h2>
+              <p className="text-sm text-zinc-400 leading-relaxed max-w-2xl">{unvalued.note}</p>
+            </div>
+          </section>
+        )}
+      </PageChapter>
+
+      <PageChapter id="chapter-specs" label={t('Size and specs')}>
+        <SizeAndSpace dashboard={dashboard} />
+
+        <KeySpecs dashboard={dashboard} omitKeys={specOmitKeys} heading={t('More specs')} />
+
+        <DataTrustPanel dashboard={dashboard} />
+      </PageChapter>
+
+      {/* Its first heading says "Alternatives" already. */}
+      <PageChapter id="chapter-alternatives" label={t('Alternatives')} showLabel={false}>
+        <SimilarCars car={car} />
+        <NearPrice car={car} />
+      </PageChapter>
 
       <div className="page-wrap-wide">
         <RecentlyViewed exclude={car.id} className="section-y-tight border-t border-zinc-900" />

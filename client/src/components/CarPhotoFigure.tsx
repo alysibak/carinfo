@@ -40,7 +40,8 @@ export default function CarPhotoFigure({
           />
         )}
         <div
-          className={`aspect-3/2 overflow-hidden ${stage ? 'sm:border' : 'border'} ${
+          // On a phone's car page, a shorter frame: the name and figures come sooner.
+          className={`${stage ? 'aspect-2/1 sm:aspect-3/2 sm:border' : 'aspect-3/2 border'} overflow-hidden ${
             glow ? 'border-white/10 shadow-[0_50px_100px_-40px_rgb(0_0_0/0.95)]' : 'border-zinc-900'
           }`}
         >
