@@ -1,0 +1,388 @@
+{
+  "url": "https://vpic.nhtsa.dot.gov/api/vehicles/GetCanadianVehicleSpecifications/?year=1995&make=Acura&units=Metric&format=json",
+  "Count": 5,
+  "Message": "Results returned successfully",
+  "Results": [
+    {
+      "Specs": [
+        {
+          "Name": "Make",
+          "Value": "ACURA"
+        },
+        {
+          "Name": "Model",
+          "Value": "INTEGRA 2DR COUPE RS/LS/GS-R"
+        },
+        {
+          "Name": "MYR",
+          "Value": "94"
+        },
+        {
+          "Name": "OL",
+          "Value": "438"
+        },
+        {
+          "Name": "OW",
+          "Value": "171"
+        },
+        {
+          "Name": "OH",
+          "Value": "134"
+        },
+        {
+          "Name": "WB",
+          "Value": "257"
+        },
+        {
+          "Name": "CW",
+          "Value": "1147"
+        },
+        {
+          "Name": "A",
+          "Value": "125"
+        },
+        {
+          "Name": "B",
+          "Value": "137"
+        },
+        {
+          "Name": "C",
+          "Value": "36"
+        },
+        {
+          "Name": "D",
+          "Value": "71"
+        },
+        {
+          "Name": "E",
+          "Value": "105"
+        },
+        {
+          "Name": "F",
+          "Value": "92"
+        },
+        {
+          "Name": "G",
+          "Value": "90"
+        },
+        {
+          "Name": "TWF",
+          "Value": "147"
+        },
+        {
+          "Name": "TWR",
+          "Value": "145"
+        },
+        {
+          "Name": "WD",
+          "Value": "64/36"
+        }
+      ]
+    },
+    {
+      "Specs": [
+        {
+          "Name": "Make",
+          "Value": "ACURA"
+        },
+        {
+          "Name": "Model",
+          "Value": "INTEGRA 4DR SEDAN RS/LS"
+        },
+        {
+          "Name": "MYR",
+          "Value": "94"
+        },
+        {
+          "Name": "OL",
+          "Value": "453"
+        },
+        {
+          "Name": "OW",
+          "Value": "171"
+        },
+        {
+          "Name": "OH",
+          "Value": "137"
+        },
+        {
+          "Name": "WB",
+          "Value": "262"
+        },
+        {
+          "Name": "CW",
+          "Value": "1187"
+        },
+        {
+          "Name": "A",
+          "Value": "125"
+        },
+        {
+          "Name": "B",
+          "Value": "50"
+        },
+        {
+          "Name": "C",
+          "Value": "37"
+        },
+        {
+          "Name": "D",
+          "Value": "72"
+        },
+        {
+          "Name": "E",
+          "Value": "109"
+        },
+        {
+          "Name": "F",
+          "Value": "92"
+        },
+        {
+          "Name": "G",
+          "Value": "97"
+        },
+        {
+          "Name": "TWF",
+          "Value": "147"
+        },
+        {
+          "Name": "TWR",
+          "Value": "146"
+        },
+        {
+          "Name": "WD",
+          "Value": "62/38"
+        }
+      ]
+    },
+    {
+      "Specs": [
+        {
+          "Name": "Make",
+          "Value": "ACURA"
+        },
+        {
+          "Name": "Model",
+          "Value": "LEGEND L/LS 4DR SEDAN"
+        },
+        {
+          "Name": "MYR",
+          "Value": "91"
+        },
+        {
+          "Name": "OL",
+          "Value": "495"
+        },
+        {
+          "Name": "OW",
+          "Value": "181"
+        },
+        {
+          "Name": "OH",
+          "Value": "140"
+        },
+        {
+          "Name": "WB",
+          "Value": "291"
+        },
+        {
+          "Name": "CW",
+          "Value": "1567"
+        },
+        {
+          "Name": "A",
+          "Value": "142"
+        },
+        {
+          "Name": "B",
+          "Value": "69"
+        },
+        {
+          "Name": "C",
+          "Value": "39"
+        },
+        {
+          "Name": "D",
+          "Value": "69"
+        },
+        {
+          "Name": "E",
+          "Value": "103"
+        },
+        {
+          "Name": "F",
+          "Value": "93"
+        },
+        {
+          "Name": "G",
+          "Value": "112"
+        },
+        {
+          "Name": "TWF",
+          "Value": "155"
+        },
+        {
+          "Name": "TWR",
+          "Value": "153"
+        },
+        {
+          "Name": "WD",
+          "Value": "60/40"
+        }
+      ]
+    },
+    {
+      "Specs": [
+        {
+          "Name": "Make",
+          "Value": "ACURA"
+        },
+        {
+          "Name": "Model",
+          "Value": "LEGEND LS 2DR COUPE"
+        },
+        {
+          "Name": "MYR",
+          "Value": "91"
+        },
+        {
+          "Name": "OL",
+          "Value": "489"
+        },
+        {
+          "Name": "OW",
+          "Value": "181"
+        },
+        {
+          "Name": "OH",
+          "Value": "136"
+        },
+        {
+          "Name": "WB",
+          "Value": "283"
+        },
+        {
+          "Name": "CW",
+          "Value": "1573"
+        },
+        {
+          "Name": "A",
+          "Value": "147"
+        },
+        {
+          "Name": "B",
+          "Value": "68"
+        },
+        {
+          "Name": "C",
+          "Value": "36"
+        },
+        {
+          "Name": "D",
+          "Value": "73"
+        },
+        {
+          "Name": "E",
+          "Value": "112"
+        },
+        {
+          "Name": "F",
+          "Value": "93"
+        },
+        {
+          "Name": "G",
+          "Value": "113"
+        },
+        {
+          "Name": "TWF",
+          "Value": "155"
+        },
+        {
+          "Name": "TWR",
+          "Value": "153"
+        },
+        {
+          "Name": "WD",
+          "Value": ""
+        }
+      ]
+    },
+    {
+      "Specs": [
+        {
+          "Name": "Make",
+          "Value": "ACURA"
+        },
+        {
+          "Name": "Model",
+          "Value": "NSX"
+        },
+        {
+          "Name": "MYR",
+          "Value": "91"
+        },
+        {
+          "Name": "OL",
+          "Value": "441"
+        },
+        {
+          "Name": "OW",
+          "Value": "181"
+        },
+        {
+          "Name": "OH",
+          "Value": "117"
+        },
+        {
+          "Name": "WB",
+          "Value": "253"
+        },
+        {
+          "Name": "CW",
+          "Value": "1365"
+        },
+        {
+          "Name": "A",
+          "Value": "119"
+        },
+        {
+          "Name": "B",
+          "Value": "89"
+        },
+        {
+          "Name": "C",
+          "Value": "27"
+        },
+        {
+          "Name": "D",
+          "Value": "69"
+        },
+        {
+          "Name": "E",
+          "Value": "98"
+        },
+        {
+          "Name": "F",
+          "Value": "92"
+        },
+        {
+          "Name": "G",
+          "Value": "96"
+        },
+        {
+          "Name": "TWF",
+          "Value": "151"
+        },
+        {
+          "Name": "TWR",
+          "Value": "153"
+        },
+        {
+          "Name": "WD",
+          "Value": ""
+        }
+      ]
+    }
+  ],
+  "SearchCriteria": "Year: 1995; Make: Acura; Units: Metric"
+}

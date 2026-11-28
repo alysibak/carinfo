@@ -1,0 +1,12 @@
+{
+  "action": "NHTSA",
+  "make": "MAKE",
+  "model": "MODEL",
+  "year": "YEAR",
+  "opened": "ODATE",
+  "closed": "CDATE",
+  "component": "COMPNAME",
+  "campaign": "CAMPNO",
+  "subject": "SUBJECT",
+  "summary": "SUMMARY"
+}

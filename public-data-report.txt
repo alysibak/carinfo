@@ -1,0 +1,56 @@
+Archive:  FLAT_RCL_PRE_2010.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+ 83786548  2026-11-27 08:01   FLAT_RCL_PRE_2010.txt
+---------                     -------
+ 83786548                     1 file
+Archive:  FLAT_RCL_POST_2010.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+314344629  2026-11-27 08:02   FLAT_RCL_POST_2010.txt
+---------                     -------
+314344629                     1 file
+Wrote nhtsa-recalls.json
+Done: 20474 recall campaigns over 57124 make, model and year listings
+Archive:  FLAT_CMPL.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+1626414061  2026-11-27 10:07   FLAT_CMPL.txt
+---------                     -------
+1626414061                     1 file
+Wrote nhtsa-complaints.json
+Done: complaints for 26571 make, model and year listings
+Archive:  FLAT_INV.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+390697788  2026-11-27 06:05   FLAT_INV.txt
+---------                     -------
+390697788                     1 file
+Wrote nhtsa-investigations.json
+Done: 2052 NHTSA investigations over 10212 make, model and year listings
+Transport Canada recalls: Vehicle Recalls Database (1ec92326-47ef-4110-b7ca-959fab03f96d)
+  vrdb_full_monthly.csv: 204.1 MB
+Done: Transport Canada recall files
+Wrote fuel-prices.json
+Done: 1750 prices, 2024-10–2026-10
+Done: 7 NRCan files
+  500 of 3036
+  1000 of 3036
+  1500 of 3036
+  2000 of 3036
+  2500 of 3036
+  3000 of 3036
+Wrote canadian-specs.json
+Done: 27558 Canadian vehicle specifications for 92 makes (0 requests failed)
+[car.service] Loaded ready DB: 37,152 cars in 0.4s
+Canadian recalls: 5832 recalls over 6680 model years (38828 of 43523 passenger rows matched to the site's models)
+  Most often unmatched: RAM 3500 (256), RAM 2500 (247), FORD F-250 SUPER DUTY (218), FORD F-350 SUPER DUTY (211), FORD F-450 SUPER DUTY (171), RAM 4500 (159), RAM 5500 (157), FORD F-550 SUPER DUTY (132), FORD E350 (112), MERCEDES-BENZ SPRINTER (107), CHEVROLET SILVERADO HD (102), RAM PROMASTER (102), GMC SIERRA HD (101), RAM 1500 (74), FORD F-450 CHASSIS CAB (56), FORD E450 (55), FORD F-350 CHASSIS CAB (55), FORD F-350 (49), MAZDA B SERIES (49), FORD F-600 (44), FORD F-550 CHASSIS CAB (43), MERCEDES-BENZ GT CLASS (40), RANGE ROVER EVOQUE (40), FORD ECONOLINE (35), HUMMER H2 (35)
+NHTSA complaints: 1383051 of 1492490 matched to the site's models (92.7%), 8022 model years
+  Most often unmatched: FORD F-250 SD (6558), DODGE RAM 2500 (5633), RAM 2500 (5187), FORD F-350 SD (3659), CHEVROLET SILVERADO 2500 (3097), DODGE RAM 3500 (2981), FORD F-350 (2579), FORD F-250 (2473), RAM 3500 (2376), GMC SIERRA 2500 (1732), FORD EXCURSION (1146), CHEVROLET SILVERADO 3500 (1081), DODGE DART (1081), SATURN LS (1076), CHEVROLET SILVERADO (1000), CHEVROLET SILVERADO 1500 (926), SUBARU OUTBACK (926), FORD E-350 (861), CHRYSLER 300 (825), SUBARU WRX (688), RAM PROMASTER (670), GMC SIERRA 3500 (594), HONDA GL1800 (556), OLDSMOBILE 88 (551), MAZDA B-SERIES TRUCK (541)
+NHTSA investigations: 1355 over 3837 model years (5222 of 10212 make, model and year listings matched)
+  Most often unmatched: FORD F-250 SD (25), FORD F-350 SD (25), VOLVO VN (22), FORD F-350 (22), FREIGHTLINER CASCADIA (21), FREIGHTLINER COLUMBIA (21), WESTERN STAR 5700 (21), FORD F-450 SD (21), FORD F-550 SD (21), VOLVO VNL (20), VOLVO VNM (20), MCI D4000 (20), MCI D4500 (20), MCI D4505 (18), PREVOST H3-45 (18), DODGE RAM 3500 (17), FREIGHTLINER CENTURY (17), WESTERN STAR 4700 (17), WESTERN STAR 4900 (17), WESTERN STAR 6900 (17), VOLVO VHD (17), FORD ECONOLINE (17), FORD F-250 (17), FORD E-450 (17), MCI D4005 (17)
+[car.service] Loaded ready DB: 37,152 cars in 0.4s
+NHTSA ratings: 12897 tested vehicles (11440 matched to the site's models); 18051 of 21083 cars from 2011 on described by a test, 10151 with an overall rating
+Pump prices: 19 cities, 2025-11 to 2026-10; Toronto regular $1.599/L
+[car.service] Loaded ready DB: 37,152 cars in 0.4s
+Canadian specifications: 26150 measured vehicles by model year (1119 rows with a missing or implausible measure left out); 29443 of 37152 cars sized
