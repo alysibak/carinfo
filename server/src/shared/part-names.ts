@@ -27,6 +27,8 @@ const PLAIN: Record<string, string> = {
   'EQUIPMENT ADAPTIVE/MOBILITY': 'Mobility equipment',
   'TRAILER HITCHES': 'Trailer hitch',
   'HIGH VOLTAGE': 'High-voltage system',
+  'HEATER, AIR CONDITIONER, ANTIFREEZE': 'Heating and air conditioning',
+  'HEATER, AIR CONDITIONER, ANTIFREEZE, DEFROSTER': 'Heating and air conditioning',
   LABEL: 'Labels',
   'OTHER/I AM NOT SURE': 'Other',
   'UNKNOWN OR OTHER': 'Other',

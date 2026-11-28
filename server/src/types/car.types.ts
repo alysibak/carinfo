@@ -582,6 +582,37 @@ export interface NhtsaInvestigation {
 }
 
 /**
+ * One of the makers' technical service bulletins NHTSA files: the maker's
+ * repair instructions to dealers for a problem it knows about. Not a recall.
+ */
+export interface ServiceBulletin {
+  /** NHTSA's number for it. */
+  id: string;
+  /** The maker's own number, which a dealer looks it up by: "19-001". */
+  number?: string;
+  /** When the maker issued it: "2019-03-01". */
+  date?: string;
+  /** NHTSA's systems it is filed under: "POWER TRAIN". */
+  parts: string[];
+  /** NHTSA's summary, cut to about two sentences; often in capitals. */
+  summary: string;
+  /** A warranty extension or a free repair program, by its own words. */
+  kind?: 'warranty' | 'program';
+}
+
+/** A model year's service bulletins: how many, on which parts, and those worth reading. */
+export interface BulletinSummary {
+  total: number;
+  /** How many name each system, most first. */
+  parts: Array<[string, number]>;
+  /**
+   * Newest first: every warranty extension and free repair program, then
+   * the newest on the parts owners complain about most.
+   */
+  shown: ServiceBulletin[];
+}
+
+/**
  * Where a model stands on Équité Association's list of Canada's most stolen
  * vehicles (config/most-stolen.ts): "Toyota RAV4", 1st of 10 in 2024.
  */
@@ -985,6 +1016,8 @@ export interface CarDashboard {
   complaints?: ComplaintSummary;
   /** NHTSA's defect investigations that cover the model year, newest first; absent where none. */
   investigations?: NhtsaInvestigation[];
+  /** The makers' service bulletins for the model year, where any are on file. */
+  bulletins?: BulletinSummary;
   /** Where the year stands among its model's years on file by complaints: 1st of 30. */
   complaintRank?: { position: number; of: number };
   /** Each vehicle NHTSA tested that describes this car, where its ratings are matched. */
@@ -998,6 +1031,7 @@ export interface CarDashboard {
     recalls?: string;
     complaints?: string;
     investigations?: string;
+    bulletins?: string;
     ratings?: string;
   };
 }

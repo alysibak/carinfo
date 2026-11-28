@@ -1,12 +1,18 @@
 import { readFileSync } from 'fs';
-import type { CanadianRecall, ComplaintSummary, NhtsaInvestigation } from '../types/car.types.js';
+import type {
+  BulletinSummary,
+  CanadianRecall,
+  ComplaintSummary,
+  NhtsaInvestigation,
+  ServiceBulletin,
+} from '../types/car.types.js';
 import { resolveDataFile } from '../utils/data-paths.js';
 
 /**
- * Transport Canada's recalls, NHTSA's owner complaints and its defect
- * investigations, by model line and model year
- * (scripts/build-safety-records.ts). Loaded on first use: most requests never
- * ask.
+ * Transport Canada's recalls, NHTSA's owner complaints, its defect
+ * investigations and the makers' service bulletins it files, by model line
+ * and model year (scripts/build-safety-records.ts). Loaded on first use: most
+ * requests never ask.
  */
 
 interface RecallFile {
@@ -26,7 +32,16 @@ interface InvestigationFile {
   byLine: Record<string, string[]>;
 }
 
+interface BulletinFile {
+  builtAt?: string;
+  /** The newest bulletin's date: how far NHTSA's file runs. */
+  newest?: string;
+  bulletins: Record<string, Omit<ServiceBulletin, 'id'>>;
+  byLine: Record<string, { total: number; parts: Array<[string, number]>; ids: string[] }>;
+}
+
 let recallFile: RecallFile | null | undefined;
+let bulletinFile: BulletinFile | null | undefined;
 let investigationFile: InvestigationFile | null | undefined;
 let complaintFile: ComplaintFile | null | undefined;
 /** Model lines with any matched record: only these can be said to have none in a year. */
@@ -114,6 +129,33 @@ export function investigationsFor(line: string, year: number): NhtsaInvestigatio
     .filter(isAboutTheCar);
 }
 
+function bulletinRecords(): BulletinFile | null {
+  if (bulletinFile === undefined) bulletinFile = load<BulletinFile>('bulletins.json');
+  return bulletinFile;
+}
+
+/**
+ * The makers' service bulletins for a model line and year, where any are on
+ * file. NHTSA's file is not complete, so none on file says nothing: absent.
+ */
+export function bulletinsFor(line: string, year: number): BulletinSummary | undefined {
+  const file = bulletinRecords();
+  const entry = file?.byLine[`${line}|${year}`];
+  if (!file || !entry?.total) return undefined;
+  return {
+    total: entry.total,
+    parts: entry.parts,
+    shown: entry.ids
+      .filter((id) => file.bulletins[id])
+      .map((id) => ({ id, ...file.bulletins[id] })),
+  };
+}
+
+/** How far NHTSA's bulletin file runs: its newest bulletin's date. */
+export function bulletinsNewest(): string | undefined {
+  return bulletinRecords()?.newest;
+}
+
 /**
  * Where a year stands among its model's years on file by owner complaints:
  * the 2018 CR-V has the most of its 30 years. Only for a year with complaints,
@@ -135,14 +177,21 @@ export function complaintRankFor(
  * The day each file was built from the government's records, which the
  * Public data workflow fetches the same day: "2026-10-20".
  */
-export function recordDates(): { recalls?: string; complaints?: string; investigations?: string } {
+export function recordDates(): {
+  recalls?: string;
+  complaints?: string;
+  investigations?: string;
+  bulletins?: string;
+} {
   const day = (iso?: string) => iso?.slice(0, 10);
   const recallDay = day(recalls()?.builtAt);
   const complaintDay = day(complaints()?.builtAt);
   const investigationDay = day(investigationRecords()?.builtAt);
+  const bulletinDay = day(bulletinRecords()?.builtAt);
   return {
     ...(recallDay ? { recalls: recallDay } : {}),
     ...(complaintDay ? { complaints: complaintDay } : {}),
     ...(investigationDay ? { investigations: investigationDay } : {}),
+    ...(bulletinDay ? { bulletins: bulletinDay } : {}),
   };
 }

@@ -47,6 +47,7 @@ import TheftRecord from '../components/TheftRecord';
 import SizeAndSpace from '../components/SizeAndSpace';
 import OnThisPage from '../components/OnThisPage';
 import PageChapter from '../components/PageChapter';
+import KnownFixes from '../components/KnownFixes';
 import { usePageSections } from '../hooks/usePageSections';
 import RecentlyViewed from '../components/RecentlyViewed';
 import CarPageSkeleton from '../components/CarPageSkeleton';
@@ -746,6 +747,8 @@ export default function CarDetail() {
           dashboard={dashboard}
           name={`${car.year} ${dashboard.modelPage?.label ?? `${car.make} ${car.model}`}`}
         />
+
+        <KnownFixes dashboard={dashboard} />
 
         {dashboard.theft && <TheftRecord theft={dashboard.theft} />}
       </PageChapter>

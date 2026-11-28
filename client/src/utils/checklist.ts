@@ -8,6 +8,7 @@ import {
   openFirst,
 } from './investigations';
 import { complaintPart, recallDate, recallNotice } from './recalls';
+import { bulletinReading } from './bulletins';
 import { powertrainNames, splitInvestigations, splitRecalls } from '@carinfo/shared/recall-scope';
 import { formatFeet, formatKg, formatMetres } from './size';
 import { formatTransmissionLabel } from './trimLabel';
@@ -31,7 +32,7 @@ export interface ChecklistSection {
 const asOf = (day?: string) => (day ? t(', records as of {date}', { date: recallDate(day) }) : '');
 
 export function checklistSections(dashboard: CarDashboard): ChecklistSection[] {
-  const { car, recalls, complaints, investigations, theft, recordDates } = dashboard;
+  const { car, recalls, complaints, investigations, bulletins, theft, recordDates } = dashboard;
   const name = `${car.year} ${dashboard.modelPage?.label ?? `${car.make} ${car.model}`}`;
   const sections: ChecklistSection[] = [];
 
@@ -154,6 +155,43 @@ export function checklistSections(dashboard: CarDashboard): ChecklistSection[] {
       })),
       source: t('NHTSA Office of Defects Investigation{asOf}', {
         asOf: asOf(recordDates?.investigations),
+      }),
+    });
+  }
+
+  // The maker's known fixes to ask about: any warranty extension first.
+  const fixes = bulletins
+    ? [...bulletins.shown.filter((b) => b.kind), ...bulletins.shown.filter((b) => !b.kind)].slice(
+        0,
+        8,
+      )
+    : [];
+  if (fixes.length) {
+    const names = [car.make, dashboard.modelPage?.label.replace(car.make, '').trim() ?? car.model];
+    sections.push({
+      id: 'fixes',
+      title: t('Known fixes to ask about'),
+      intro: t(
+        'The maker’s service bulletins for the {name}: warranty extensions, and the newest on the parts owners complain about most. Ask whether the work was done; a dealer can look each up by its number.',
+        { name },
+      ),
+      items: fixes.map((b) => ({
+        text: `${complaintPart(b.parts[0] ?? 'UNKNOWN OR OTHER')}: ${bulletinReading(b, names).headline}`,
+        detail: [
+          b.kind === 'warranty'
+            ? t('Warranty extended (U.S.)')
+            : b.kind === 'program'
+              ? t('Free repair program (U.S.)')
+              : '',
+          b.number ? t('bulletin {number}', { number: b.number }) : '',
+          b.date ? recallDate(b.date) : '',
+        ]
+          .filter(Boolean)
+          .join(' · '),
+        tick: true,
+      })),
+      source: t('Makers’ service bulletins on file with NHTSA (U.S.){asOf}', {
+        asOf: asOf(recordDates?.bulletins),
       }),
     });
   }

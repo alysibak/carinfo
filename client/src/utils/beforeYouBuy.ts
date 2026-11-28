@@ -22,13 +22,13 @@ const SHORT_PARTS: Record<string, string> = {
 };
 
 export interface BeforeYouBuyItem {
-  key: 'recalls' | 'complaints' | 'investigation' | 'safety' | 'theft';
+  key: 'recalls' | 'complaints' | 'investigation' | 'fixes' | 'safety' | 'theft';
   text: string;
   headline: string;
   detail: string;
   tone: 'good' | 'check' | 'info';
   stars?: number;
-  href: '#recalls' | '#safety' | '#theft';
+  href: '#recalls' | '#fixes' | '#safety' | '#theft';
 }
 
 const FCW_WORDS = {
@@ -58,7 +58,8 @@ function list(words: string[]): string {
 }
 
 export function beforeYouBuy(dashboard: CarDashboard): BeforeYouBuyItem[] {
-  const { car, recalls, complaints, complaintRank, investigations, modelPage, theft } = dashboard;
+  const { car, recalls, complaints, complaintRank, investigations, bulletins, modelPage, theft } =
+    dashboard;
   const name = `${car.year} ${modelPage?.label ?? `${car.make} ${car.model}`}`;
   const items: BeforeYouBuyItem[] = [];
 
@@ -175,6 +176,40 @@ export function beforeYouBuy(dashboard: CarDashboard): BeforeYouBuyItem[] {
             subject,
           })
         : t('Since {opened}: {subject}. A recall may follow.', { opened, subject }),
+      tone: 'check',
+    });
+  }
+
+  // A warranty extension or free repair the maker announced: U.S. programs,
+  // which a Canadian dealer can say whether it runs here too.
+  const programs = bulletins?.shown.filter((b) => b.kind) ?? [];
+  if (programs.length) {
+    const parts = [
+      ...new Set(
+        programs
+          .map((b) => complaintPart(b.parts[0] ?? 'UNKNOWN OR OTHER').toLowerCase())
+          .map((part) => SHORT_PARTS[part] ?? part)
+          .filter((part) => part !== 'other'),
+      ),
+    ].slice(0, 3);
+    const extended = programs.some((b) => b.kind === 'warranty');
+    items.push({
+      key: 'fixes',
+      href: '#fixes',
+      text: parts.length
+        ? t(
+            'In the U.S., the maker extended a warranty or offers a free repair on the {parts}: ask a Canadian dealer whether it applies here, and whether this car has had the work.',
+            { parts: list(parts) },
+          )
+        : t(
+            'In the U.S., the maker extended a warranty or offers a free repair: ask a Canadian dealer whether it applies here, and whether this car has had the work.',
+          ),
+      headline: extended ? t('Warranty extended by the maker') : t('Free repair from the maker'),
+      detail: parts.length
+        ? t('On the {parts}, in the U.S. Ask a dealer if it applies in Canada.', {
+            parts: list(parts),
+          })
+        : t('In the U.S. Ask a dealer if it applies in Canada.'),
       tone: 'check',
     });
   }

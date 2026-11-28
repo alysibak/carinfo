@@ -7,6 +7,9 @@ describe('plainPartName', () => {
     expect(plainPartName('VEHICLE SPEED CONTROL')).toBe('Accelerator and cruise control');
     expect(plainPartName('FUEL/PROPULSION SYSTEM')).toBe('Fuel and propulsion system');
     expect(plainPartName('ELECTRONIC STABILITY CONTROL (ESC)')).toBe('Stability control');
+    expect(plainPartName('HEATER, AIR CONDITIONER, ANTIFREEZE')).toBe(
+      'Heating and air conditioning',
+    );
     expect(plainPartName('Tether, Lower Anchor (on car seat or vehicle)')).toBe(
       'Child seat tether and anchors',
     );

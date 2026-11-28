@@ -116,6 +116,55 @@ describe('checklistSections', () => {
     );
   });
 
+  it('lists the maker’s known fixes to ask about, a warranty extension first', () => {
+    const sections = checklistSections(
+      dashboard(
+        {
+          bulletins: {
+            total: 12,
+            parts: [['ENGINE', 7]],
+            shown: [
+              {
+                id: '2',
+                number: '21-004',
+                date: '2021-02-01',
+                parts: ['ENGINE'],
+                summary: 'ENGINE OIL LEAK AT THE FRONT COVER. RESEAL THE COVER.',
+              },
+              {
+                id: '1',
+                number: 'ZE3',
+                date: '2020-07-15',
+                parts: ['POWER TRAIN'],
+                summary: 'WARRANTY EXTENSION: CVT. COVERAGE EXTENDED TO 10 YEARS.',
+                kind: 'warranty',
+              },
+            ],
+          },
+          recordDates: { bulletins: '2026-11-24' },
+        },
+        { make: 'Toyota', model: 'Corolla', year: 2020 },
+      ),
+    );
+    const fixes = sections.find((s) => s.id === 'fixes')!;
+    expect(fixes.title).toBe('Known fixes to ask about');
+    expect(fixes.items).toEqual([
+      {
+        text: 'Transmission and drivetrain: Warranty extension: CVT.',
+        detail: 'Warranty extended (U.S.) · bulletin ZE3 · Jul 15, 2020',
+        tick: true,
+      },
+      {
+        text: 'Engine: Engine oil leak at the front cover.',
+        detail: 'bulletin 21-004 · Feb 1, 2021',
+        tick: true,
+      },
+    ]);
+    expect(fixes.source).toBe(
+      'Makers’ service bulletins on file with NHTSA (U.S.), records as of Nov 24, 2026',
+    );
+  });
+
   it('says a matched model year has no recalls, rather than leaving it out', () => {
     const [, recalls] = checklistSections(dashboard({ recalls: [] }));
     expect(recalls.intro).toBe('Transport Canada lists no recalls for the 2020 Toyota Corolla.');

@@ -17,6 +17,7 @@ import { compareWithClass } from '../utils/class-comparison.js';
 import {
   canadianRecallsFor,
   complaintRankFor,
+  bulletinsFor,
   complaintsFor,
   investigationsFor,
   recordDates,
@@ -91,6 +92,7 @@ export function getCarDashboard(
     ? complaintRankFor(line, car.year, carService.lineYearsOf(car))
     : undefined;
   const investigations = investigationsFor(line, car.year);
+  const bulletins = bulletinsFor(line, car.year);
   const nhtsaTests = nhtsaTestsFor(car);
   const theft = theftRankOf(line);
   // Only worth the search where a rival could do better: below five stars,
@@ -115,10 +117,11 @@ export function getCarDashboard(
     ...(complaints ? { complaints } : {}),
     ...(complaintRank ? { complaintRank } : {}),
     ...(investigations.length ? { investigations } : {}),
+    ...(bulletins ? { bulletins } : {}),
     ...(nhtsaTests.length ? { nhtsaTests } : {}),
     ...(safer.length ? { saferAlternatives: safer } : {}),
     ...(theft ? { theft } : {}),
-    ...(recalls || complaints || investigations.length || nhtsaTests.length
+    ...(recalls || complaints || investigations.length || bulletins || nhtsaTests.length
       ? {
           recordDates: {
             ...recordDates(),

@@ -782,6 +782,46 @@ const fr: Record<string, string> = {
   '; as of {date}': ' ; au {date}',
   '{count} injury': '{count} blessure',
   '{count} injuries': '{count} blessures',
+  // Known fixes: the makers' service bulletins.
+  'Known fixes': 'Correctifs connus',
+  'Service bulletins: the maker’s repair instructions to dealers, for problems it knows about. A bulletin is not a recall: the repair is free only under warranty, or in a program the maker runs.':
+    'Bulletins de service : les instructions de réparation du constructeur aux concessionnaires, pour des problèmes qu’il connaît. Un bulletin n’est pas un rappel : la réparation n’est gratuite que sous garantie, ou dans un programme du constructeur.',
+  'Warranty extensions and free repairs': 'Garanties prolongées et réparations gratuites',
+  'These are the maker’s U.S. programs. Ask a Canadian dealer whether the same applies here, and whether this car has had the work.':
+    'Ce sont des programmes américains du constructeur. Demandez à un concessionnaire canadien si la même chose s’applique ici, et si ce véhicule a déjà reçu la réparation.',
+  'On the parts owners complain about most':
+    'Sur les pièces dont les propriétaires se plaignent le plus',
+  'On the parts with the most bulletins': 'Sur les pièces qui ont le plus de bulletins',
+  '{count} bulletin': '{count} bulletin',
+  '{count} bulletins': '{count} bulletins',
+  ' · warranty extended': ' · garantie prolongée',
+  ' · free repair': ' · réparation gratuite',
+  'bulletin {number}': 'bulletin {number}',
+  'NHTSA item {id}': 'Élément {id} de la NHTSA',
+  'Also on file: {parts}.': 'Aussi au dossier : {parts}.',
+  'A defect the maker won’t fix? The Canadian Motor Vehicle Arbitration Plan (CAMVAP) settles it for free, for a car in its current model year or the four before, with under 160,000 km.':
+    'Un défaut que le constructeur refuse de réparer ? Le Programme d’arbitrage pour les véhicules automobiles du Canada (PAVAC) le règle gratuitement, pour un véhicule de l’année-modèle en cours ou des quatre précédentes, ayant moins de 160 000 km.',
+  'Check if it qualifies': 'Vérifier s’il est admissible',
+  'In the U.S., the maker extended a warranty or offers a free repair on the {parts}: ask a Canadian dealer whether it applies here, and whether this car has had the work.':
+    'Aux États-Unis, le constructeur a prolongé une garantie ou offre une réparation gratuite pour : {parts}. Demandez à un concessionnaire canadien si cela s’applique ici, et si ce véhicule a déjà reçu la réparation.',
+  'In the U.S., the maker extended a warranty or offers a free repair: ask a Canadian dealer whether it applies here, and whether this car has had the work.':
+    'Aux États-Unis, le constructeur a prolongé une garantie ou offre une réparation gratuite. Demandez à un concessionnaire canadien si cela s’applique ici, et si ce véhicule a déjà reçu la réparation.',
+  'Warranty extended by the maker': 'Garantie prolongée par le constructeur',
+  'Known fixes to ask about': 'Correctifs connus à vérifier',
+  'The maker’s service bulletins for the {name}: warranty extensions, and the newest on the parts owners complain about most. Ask whether the work was done; a dealer can look each up by its number.':
+    'Les bulletins de service du constructeur pour le {name} : garanties prolongées, et les plus récents sur les pièces dont les propriétaires se plaignent le plus. Demandez si les travaux ont été faits ; un concessionnaire peut retrouver chacun par son numéro.',
+  'Warranty extended (U.S.)': 'Garantie prolongée (É.-U.)',
+  'Free repair program (U.S.)': 'Programme de réparation gratuite (É.-U.)',
+  'Makers’ service bulletins on file with NHTSA (U.S.){asOf}':
+    'Bulletins de service des constructeurs déposés auprès de la NHTSA (É.-U.){asOf}',
+  'Free repair from the maker': 'Réparation gratuite du constructeur',
+  'On the {parts}, in the U.S. Ask a dealer if it applies in Canada.':
+    'Pour : {parts}, aux États-Unis. Demandez à un concessionnaire si cela s’applique au Canada.',
+  'In the U.S. Ask a dealer if it applies in Canada.':
+    'Aux États-Unis. Demandez à un concessionnaire si cela s’applique au Canada.',
+  'The makers’ bulletins on file with': 'Les bulletins des constructeurs déposés auprès de la',
+  '(U.S.). Its file is not complete and leaves out recall bulletins. A dealer can look one up by its number':
+    '(É.-U.). Son fichier n’est pas complet et exclut les bulletins de rappel. Un concessionnaire peut en retrouver un par son numéro',
   '{count} death': '{count} décès',
   '{count} deaths': '{count} décès',
   'Fuel / energy per km: {value}': 'Carburant / énergie au km : {value}',
