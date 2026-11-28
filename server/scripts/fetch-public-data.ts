@@ -13,6 +13,7 @@
  *   recalls <FLAT_RCL.txt> <RCL.txt>    NHTSA recall campaigns, by make, model and year
  *   complaints <FLAT_CMPL.txt> <CMPL.txt>  NHTSA owner complaints, counted by make, model, year and part
  *   investigations <FLAT_INV.txt> <INV.txt>  NHTSA defect investigations, by make, model and year
+ *   bulletins <FLAT_TSBS.txt> <TSBS.txt>  the makers' service bulletins NHTSA files, by make, model and year
  *   canada-recalls                      Transport Canada's recall database, from open.canada.ca
  *   fuel-prices                         Statistics Canada's monthly pump prices, by city
  *   nrcan                               NRCan's fuel consumption ratings files: the cars sold in Canada
@@ -396,6 +397,118 @@ async function investigations(flatPath: string, layoutPath: string): Promise<voi
   );
 }
 
+/** A flat file's first lines as they are, before any field is picked from them. */
+async function headLines(path: string, n = 8): Promise<string[]> {
+  const lines = createInterface({ input: createReadStream(path, { encoding: 'latin1' }) });
+  const head: string[] = [];
+  for await (const line of lines) {
+    head.push(line);
+    if (head.length >= n) break;
+  }
+  lines.close();
+  return head;
+}
+
+/**
+ * The makers' technical service bulletins NHTSA files: their repair
+ * instructions to dealers for known problems, warranty extensions among
+ * them, by make, model and year since 1995. Fields are picked by name from
+ * NHTSA's layout notes, which this had not seen before its first run: the
+ * probes show what came, the head before any field is picked. Written
+ * gzipped, since the summaries run to tens of megabytes.
+ */
+async function bulletins(flatPath: string, layoutPath: string): Promise<void> {
+  probe('bulletins-head.json', await headLines(flatPath));
+  const fields = layoutFields(layoutPath, 6);
+  probe('bulletins-layout.json', fields);
+  const pick = (re: RegExp) => fields.find((name) => re.test(name));
+  const f = {
+    id: pick(/^(?:ID|NHTSA_?ID|ITEM_?(?:NO|NUM))$/),
+    number: pick(/^BUL(?:LETIN)?_?NO$|^BUL.*NUM/),
+    date: pick(/^BUL.*(?:DTE|DATE)$/),
+    added: pick(/^DATEA$/),
+    component: pick(/COMP/),
+    make: pick(/^MAKE/),
+    model: pick(/^MODEL/),
+    year: pick(/^YEAR/),
+    summary: pick(/SUMM|DESC/),
+  };
+  probe('bulletins-fields.json', f);
+  const missing = (['make', 'model', 'year', 'summary'] as const).filter((k) => !f[k]);
+  if (missing.length) throw new Error(`No ${missing.join(', ')} field in ${fields.join(', ')}`);
+  const get = (row: Record<string, string>, name?: string) => (name ? row[name] : '') ?? '';
+
+  const notes: Record<
+    string,
+    { number?: string; date?: string; added?: string; components: string[]; summary: string }
+  > = {};
+  const vehicles: Record<string, string[]> = {};
+  let rows = 0;
+  for await (const row of tabRows(flatPath, fields, 'bulletins-rows.json')) {
+    const y = year(get(row, f.year));
+    if (!y) continue;
+    const id = get(row, f.id) || `${get(row, f.number)}|${get(row, f.date)}`;
+    if (id === '|') continue;
+    rows++;
+    const note = (notes[id] ??= {
+      ...(get(row, f.number) ? { number: get(row, f.number) } : {}),
+      ...(get(row, f.date) ? { date: get(row, f.date) } : {}),
+      ...(get(row, f.added) ? { added: get(row, f.added) } : {}),
+      components: [],
+      summary: get(row, f.summary).slice(0, 1500),
+    });
+    const component = get(row, f.component);
+    if (component && !note.components.includes(component)) note.components.push(component);
+    const key = `${get(row, f.make)}|${get(row, f.model)}|${y}`;
+    const list = (vehicles[key] ??= []);
+    if (!list.includes(id)) list.push(id);
+  }
+
+  // How current the file is, for the report: bulletins by the year they were
+  // issued, and the newest dates on file.
+  const byYear = new Map<string, number>();
+  let newest = '';
+  let newestAdded = '';
+  for (const note of Object.values(notes)) {
+    const issued = note.date?.slice(0, 4) ?? '????';
+    byYear.set(issued, (byYear.get(issued) ?? 0) + 1);
+    if ((note.date ?? '') > newest) newest = note.date!;
+    if ((note.added ?? '') > newestAdded) newestAdded = note.added!;
+  }
+  const pack = () =>
+    gzipSync(
+      JSON.stringify({
+        source: 'https://static.nhtsa.gov/odi/ffdd/tsbs/FLAT_TSBS.zip',
+        fetchedAt: new Date().toISOString(),
+        fields,
+        picked: f,
+        bulletins: notes,
+        vehicles,
+      }),
+      { level: 9 },
+    );
+  let body = pack();
+  // GitHub refuses a file over 100 MB, and the whole run's push with it:
+  // shorter summaries keep the file under that.
+  if (body.length > 80e6) {
+    for (const note of Object.values(notes)) note.summary = note.summary.slice(0, 300);
+    body = pack();
+    console.log('  Summaries cut to 300 characters to keep the file under 80 MB');
+  }
+  writeFileSync(join(OUT, 'nhtsa-bulletins.json.gz'), body);
+  console.log(
+    `  Issued by year: ${[...byYear]
+      .sort()
+      .slice(-15)
+      .map(([y, n]) => `${y} ${n}`)
+      .join(', ')}`,
+  );
+  console.log(`  Newest bulletin ${newest || 'unknown'}, newest added ${newestAdded || 'unknown'}`);
+  console.log(
+    `Done: ${Object.keys(notes).length} service bulletins (${rows} rows) over ${Object.keys(vehicles).length} make, model and year listings, ${(body.length / 1e6).toFixed(1)} MB gzipped`,
+  );
+}
+
 interface CkanResource {
   name?: string;
   url: string;
@@ -511,6 +624,7 @@ const parts: Record<string, () => Promise<void>> = {
   recalls: () => recalls(files[0], files[1]),
   complaints: () => complaints(files[0], files[1]),
   investigations: () => investigations(files[0], files[1]),
+  bulletins: () => bulletins(files[0], files[1]),
   'canada-recalls': canadaRecalls,
   'fuel-prices': fuelPrices,
   nrcan,

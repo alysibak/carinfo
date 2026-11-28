@@ -3,9 +3,9 @@ name: Public data
 # Downloads the government data the site's safety, recall, complaint, size and
 # fuel-price facts come from (server/scripts/fetch-public-data.ts): NHTSA's
 # star ratings and safety features, its recall, complaint and investigation
-# files, Transport Canada's recalls and vehicle dimensions, Statistics Canada's
-# pump prices and NRCan's fuel consumption ratings. GitHub's runners reach
-# them all.
+# files and the makers' service bulletins, Transport Canada's recalls and
+# vehicle dimensions, Statistics Canada's pump prices and NRCan's fuel
+# consumption ratings. GitHub's runners reach them all.
 #
 # Everything it fetched goes to the public-data-files branch. The site's own
 # files built from it (matched to the site's cars) go on main once they pass
@@ -23,7 +23,7 @@ on:
   workflow_dispatch:
     inputs:
       parts:
-        description: 'Parts to fetch, space-separated (all, recalls, complaints, investigations, canada-recalls, fuel-prices, nrcan, canadian-specs, nhtsa-ratings); the rest keep their last files'
+        description: 'Parts to fetch, space-separated (all, recalls, complaints, investigations, bulletins, canada-recalls, fuel-prices, nrcan, canadian-specs, nhtsa-ratings); the rest keep their last files'
         default: all
 
 concurrency:
@@ -44,7 +44,7 @@ env:
   # The schedule fetches everything. A push, to try a change to the fetching,
   # skips NHTSA's star ratings, which take three hours; they keep the last
   # run's file.
-  PARTS: ${{ inputs.parts || (github.event_name == 'push' && 'recalls complaints investigations canada-recalls fuel-prices nrcan canadian-specs') || 'all' }}
+  PARTS: ${{ inputs.parts || (github.event_name == 'push' && 'recalls complaints investigations bulletins canada-recalls fuel-prices nrcan canadian-specs') || 'all' }}
 
 jobs:
   fetch:
@@ -112,6 +112,25 @@ jobs:
           cd "$GITHUB_WORKSPACE/server"
           mkdir -p data/public/probe && cp /tmp/inv/INV.txt data/public/probe/INV.txt
           $FETCH investigations /tmp/inv/all.txt /tmp/inv/INV.txt 2>&1 | tee -a ../public-data-report.txt
+
+      # The makers' service bulletins. The report also lists the bulletin and
+      # manufacturer-communication files NHTSA's datasets page links to.
+      - name: NHTSA service bulletins
+        if: env.PARTS == 'all' || contains(format(' {0} ', env.PARTS), ' bulletins ')
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/tsbs && cd /tmp/tsbs
+          if curl -fsSL --retry 2 -A 'Mozilla/5.0' -o datasets.html https://www.nhtsa.gov/nhtsa-datasets-and-apis; then
+            grep -oE 'href="[^"]+"' datasets.html | grep -iE 'tsb|comm|mfr' | sort -u | tee -a "$GITHUB_WORKSPACE/public-data-report.txt" || true
+          fi
+          curl -fsSL --retry 3 -o FLAT_TSBS.zip https://static.nhtsa.gov/odi/ffdd/tsbs/FLAT_TSBS.zip
+          curl -fsSL --retry 3 -o TSBS.txt https://static.nhtsa.gov/odi/ffdd/tsbs/TSBS.txt
+          unzip -l FLAT_TSBS.zip | tee -a "$GITHUB_WORKSPACE/public-data-report.txt"
+          unzip -o -q -d flat FLAT_TSBS.zip && rm FLAT_TSBS.zip
+          find flat -type f -exec cat {} + > all.txt && rm -r flat
+          cd "$GITHUB_WORKSPACE/server"
+          mkdir -p data/public/probe && cp /tmp/tsbs/TSBS.txt data/public/probe/TSBS.txt
+          $FETCH bulletins /tmp/tsbs/all.txt /tmp/tsbs/TSBS.txt 2>&1 | tee -a ../public-data-report.txt
 
       - name: Transport Canada recalls
         if: env.PARTS == 'all' || contains(format(' {0} ', env.PARTS), ' canada-recalls ')
